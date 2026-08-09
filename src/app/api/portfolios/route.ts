@@ -1,5 +1,6 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +27,11 @@ export async function GET() {
 
   const [{ data: portfolios, error: pErr }, { data: holdings, error: hErr }] =
     await Promise.all([
-      supabase.from("portfolios").select("*").order("sort_order"),
-      supabase.from("holdings").select("*").order("sort_order"),
+      supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .select("*")
+        .order("sort_order"),
+      supabase.from(PORTFELL_TABLES.holdings).select("*").order("sort_order"),
     ]);
 
   if (pErr || hErr) {
@@ -60,11 +64,11 @@ export async function POST(req: NextRequest) {
   }
 
   const { count } = await supabase
-    .from("portfolios")
+    .from(PORTFELL_TABLES.portfolios)
     .select("*", { count: "exact", head: true });
 
   const { data, error } = await supabase
-    .from("portfolios")
+    .from(PORTFELL_TABLES.portfolios)
     .insert({
       name,
       slug: slugify(name),
@@ -104,7 +108,7 @@ export async function PATCH(req: NextRequest) {
   if (body.name !== undefined) patch.name = body.name;
 
   const { data, error } = await supabase
-    .from("portfolios")
+    .from(PORTFELL_TABLES.portfolios)
     .update(patch)
     .eq("id", id)
     .select()
@@ -130,7 +134,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  const { error } = await supabase.from("portfolios").delete().eq("id", id);
+  const { error } = await supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .delete()
+    .eq("id", id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

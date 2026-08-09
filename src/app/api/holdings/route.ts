@@ -1,4 +1,5 @@
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { data, error } = await supabase
-    .from("holdings")
+    .from(PORTFELL_TABLES.holdings)
     .insert({
       portfolio_id: body.portfolio_id,
       ticker: String(body.ticker).toUpperCase(),
@@ -74,7 +75,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { data, error } = await supabase
-    .from("holdings")
+    .from(PORTFELL_TABLES.holdings)
     .update(patch)
     .eq("id", id)
     .select()
@@ -100,7 +101,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  const { error } = await supabase.from("holdings").delete().eq("id", id);
+  const { error } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .delete()
+    .eq("id", id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

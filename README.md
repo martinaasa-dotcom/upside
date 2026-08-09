@@ -11,18 +11,23 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Works immediately in **local demo** mode (data in `localStorage`), seeded with the Aasad / Anu / MaryAnn / Karud tabs.
 
-## Supabase (multi-device persistence)
+## Supabase (shared Upthink Platform DB)
 
-1. Create a Supabase project.
-2. Run `supabase/migrations/001_portfell_schema.sql` in the SQL editor.
-3. Copy `.env.example` → `.env.local` and fill in:
+Uses the existing **Upthink Platform** project with prefixed tables (`portfell_portfolios`, `portfell_holdings`) so it sits beside Gifttier/WrapTier/ShipTier.
+
+1. Tables are created via `supabase/migrations/003_portfell_upthink.sql` (already applied on Upthink).
+2. Copy `.env.example` → `.env.local` and set the Upthink URL + anon key:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_URL=https://jwjezdgggrgdgfsovgtx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
-4. Restart `npm run dev`. The dashboard switches to the Supabase source badge automatically.
+3. Restart `npm run dev`. The dashboard badge shows **Supabase** when connected.
+
+Without these env vars the app stays in **local demo** mode (`localStorage`).
+
+Friends on the same Vercel deploy share one live book (open RLS for personal use — add auth before a public audience).
 
 ## Features
 
