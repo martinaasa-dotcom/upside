@@ -14,4 +14,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Call % house baselines** (vol guidance): VST ~7%, BMNR ~15%, RKLB ~16%, CRWV ~18%, NBIS ~22%. Stock-target baselines: CRWV 90, NBIS 205, BMNR 19.50, VST 145, RKLB 77. See `CALL_PCT_BASELINES` / `STOCK_TARGET_BASELINES` in `src/lib/calculations.ts`.
 - Respect `localStorage` key `portfell-locked` and `data/locked-demo.json`. Never delete the lock. Prefer asking Martin to hit **Save** rather than bumping `portfell-demo-v*` to force a reseed.
 - Production data lives on the shared **Upthink Platform** Supabase project in `portfell_portfolios` / `portfell_holdings` (not a separate Supabase project).
+- After every push/prod deploy: verify Vercel production SHA matches `git rev-parse HEAD` before telling Martin it’s live (see `.cursor/rules/vercel-live-matches-push.mdc`).
 - No Milestones sheet in the seed.
