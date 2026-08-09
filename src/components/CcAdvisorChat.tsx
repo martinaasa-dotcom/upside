@@ -415,7 +415,9 @@ export function CcAdvisorChat({
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-white">Assistant Margus</h2>
           <p className="truncate text-xs text-zinc-500">
-            Chat for {context.portfolioName} · other sheets only when you ask
+            {context.adviseOnly
+              ? "Advise-only overview · open a sheet to apply changes"
+              : `Chat for ${context.portfolioName} · other sheets only when you ask`}
           </p>
         </div>
         <div className="relative" ref={rulesRef}>

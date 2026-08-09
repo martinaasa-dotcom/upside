@@ -1,5 +1,6 @@
 "use client";
 
+import { CashModal } from "@/components/CashModal";
 import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
@@ -9,6 +10,9 @@ import {
   type HoldingPatch,
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
+import { RenameSheetModal } from "@/components/RenameSheetModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useToast } from "@/components/ui/Toast";
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
 import {
@@ -21,7 +25,6 @@ import {
   patchHolding,
   renamePortfolio,
   resetDemoStore,
-  saveDemoStore,
   updateCash,
   upsertHolding,
 } from "@/lib/demo-store";
@@ -39,7 +42,18 @@ type DataSource = "demo" | "supabase";
 
 const CC_VISIBLE_KEY = "portfell-cc-visible-by-portfolio";
 
+function formatPricesAge(updatedAt: number | null, now: number): string {
+  if (updatedAt == null) return "Prices · —";
+  const sec = Math.max(0, Math.floor((now - updatedAt) / 1000));
+  if (sec < 5) return "Prices · just now";
+  if (sec < 60) return `Prices · ${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `Prices · ${min}m ago`;
+  return `Prices · ${Math.floor(min / 60)}h ago`;
+}
+
 export function Dashboard() {
+  const { push: toast } = useToast();
   const [source, setSource] = useState<DataSource>("demo");
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -51,8 +65,22 @@ export function Dashboard() {
     {}
   );
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
+  const [quotesDelayed, setQuotesDelayed] = useState(false);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const [modalOpen, setModalOpen] = useState(false);
+  const [cashModalOpen, setCashModalOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<
+    | { kind: "holding"; id: string; label: string }
+    | { kind: "sheet"; id: string; label: string }
+    | null
+  >(null);
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState<
     Record<string, boolean>
   >({});
@@ -116,8 +144,12 @@ export function Dashboard() {
 
   const loadPortfolios = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetch("/api/portfolios");
+      if (!res.ok) {
+        throw new Error(`Portfolios request failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.source === "supabase" && data.portfolios?.length) {
         setSource("supabase");
@@ -132,7 +164,11 @@ export function Dashboard() {
         setActiveId((prev) => prev || OVERVIEW_TAB_ID);
         setLocked(hasLockedSave());
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
+      setLoadError(
+        "Couldn’t load the shared book. Showing local demo — retry when ready."
+      );
       const demo = loadDemoStore();
       setSource("demo");
       setPortfolios(demo.portfolios);
@@ -164,9 +200,15 @@ export function Dashboard() {
             `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`,
             { cache: "no-store" }
           );
+          if (!quotesRes.ok) {
+            setQuotesDelayed(true);
+            throw new Error(`Quotes request failed (${quotesRes.status})`);
+          }
           const quotesJson = await quotesRes.json();
           nextQuotes = (quotesJson.quotes ?? {}) as Record<string, Quote>;
           setQuotes(nextQuotes);
+          setQuotesUpdatedAt(Date.now());
+          setQuotesDelayed(Boolean(quotesJson.delayed));
         }
 
         if (opts?.quotesOnly) return;
@@ -196,6 +238,7 @@ export function Dashboard() {
         setOptions(optJson.options ?? {});
       } catch (err) {
         console.error(err);
+        setQuotesDelayed(true);
       } finally {
         if (!opts?.silent) setRefreshing(false);
       }
@@ -206,6 +249,11 @@ export function Dashboard() {
   useEffect(() => {
     void loadPortfolios();
   }, [loadPortfolios]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const ccSignature = portfolioHoldings
     .map(
@@ -279,7 +327,7 @@ export function Dashboard() {
         }),
       });
       if (!res.ok) {
-        alert("Failed to save holding");
+        toast("Failed to save holding", "error");
         return;
       }
       await loadPortfolios();
@@ -298,6 +346,7 @@ export function Dashboard() {
       setHoldings(next.holdings);
     }
     setModalOpen(false);
+    toast("Holding saved", "success");
   }
 
   async function handlePatch(patch: HoldingPatch) {
@@ -321,7 +370,7 @@ export function Dashboard() {
         body: JSON.stringify({ id, ...fields }),
       });
       if (!res.ok) {
-        alert("Failed to update holding");
+        toast("Failed to update holding", "error");
         return;
       }
       setHoldings((prev) =>
@@ -666,12 +715,20 @@ export function Dashboard() {
   );
 
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this holding?")) return;
+  function requestDeleteHolding(id: string) {
+    const h = holdings.find((x) => x.id === id);
+    setConfirmDelete({
+      kind: "holding",
+      id,
+      label: h?.ticker ?? "holding",
+    });
+  }
+
+  async function deleteHoldingById(id: string) {
     if (source === "supabase") {
       const res = await fetch(`/api/holdings?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
-        alert("Failed to delete");
+        toast("Failed to delete holding", "error");
         return;
       }
       await loadPortfolios();
@@ -679,6 +736,7 @@ export function Dashboard() {
       const next = deleteHolding(loadDemoStore(), id);
       setHoldings(next.holdings);
     }
+    toast("Holding deleted", "success");
   }
 
   async function handleAddSheet(name: string) {
@@ -689,7 +747,7 @@ export function Dashboard() {
         body: JSON.stringify({ name }),
       });
       if (!res.ok) {
-        alert("Failed to add sheet");
+        toast("Failed to add sheet", "error");
         return;
       }
       const data = await res.json();
@@ -701,6 +759,7 @@ export function Dashboard() {
       const created = next.portfolios[next.portfolios.length - 1];
       setActiveId(created.id);
     }
+    toast("Sheet added", "success");
   }
 
   async function handleRenameSheet(id: string, name: string) {
@@ -711,7 +770,7 @@ export function Dashboard() {
         body: JSON.stringify({ id, name }),
       });
       if (!res.ok) {
-        alert("Failed to rename");
+        toast("Failed to rename sheet", "error");
         return;
       }
     } else {
@@ -720,13 +779,15 @@ export function Dashboard() {
     setPortfolios((prev) =>
       prev.map((p) => (p.id === id ? { ...p, name } : p))
     );
+    setRenameTarget(null);
+    toast("Sheet renamed", "success");
   }
 
-  async function handleDeleteSheet(id: string) {
+  async function deleteSheetById(id: string) {
     if (source === "supabase") {
       const res = await fetch(`/api/portfolios?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
-        alert("Failed to delete sheet");
+        toast("Failed to delete sheet", "error");
         return;
       }
       clearChatHistory(id);
@@ -739,14 +800,11 @@ export function Dashboard() {
       setHoldings(next.holdings);
       if (activeId === id) setActiveId(OVERVIEW_TAB_ID);
     }
+    toast("Sheet deleted", "success");
   }
 
-  async function handleEditCash() {
+  async function handleSaveCash(cash: number) {
     if (!activePortfolio) return;
-    const raw = prompt("Cash balance", String(activePortfolio.cash_balance));
-    if (raw === null) return;
-    const cash = Number(raw);
-    if (Number.isNaN(cash)) return;
 
     if (source === "demo") {
       const next = updateCash(loadDemoStore(), activePortfolio.id, cash);
@@ -758,7 +816,7 @@ export function Dashboard() {
         body: JSON.stringify({ id: activePortfolio.id, cash_balance: cash }),
       });
       if (!res.ok) {
-        alert("Failed to update cash");
+        toast("Failed to update cash", "error");
         return;
       }
       setPortfolios((prev) =>
@@ -767,6 +825,8 @@ export function Dashboard() {
         )
       );
     }
+    setCashModalOpen(false);
+    toast("Cash updated", "success");
   }
 
   function resetDemo() {
@@ -821,25 +881,35 @@ export function Dashboard() {
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1a2332_0%,_#09090b_55%)] text-zinc-100">
       <header className="border-b border-zinc-800/80 bg-zinc-950/50">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-4">
-          <div>
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-400/90">
               Portfolio
             </p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">
               {isOverview ? "Overview" : activePortfolio!.name}
             </h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span
+                className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  source === "supabase"
+                    ? "bg-sky-500/15 text-sky-300"
+                    : "bg-amber-500/15 text-amber-300"
+                }`}
+              >
+                {source === "supabase" ? "Supabase" : "Local demo"}
+              </span>
+              <span className="text-[11px] tabular-nums text-zinc-500">
+                {formatPricesAge(quotesUpdatedAt, nowTick)}
+              </span>
+              {quotesDelayed && (
+                <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-200/90">
+                  Prices may be delayed
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                source === "supabase"
-                  ? "bg-sky-500/15 text-sky-300"
-                  : "bg-amber-500/15 text-amber-300"
-              }`}
-            >
-              {source === "supabase" ? "Supabase" : "Local demo"}
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
             {!isOverview && (
               <button
                 type="button"
@@ -915,14 +985,87 @@ export function Dashboard() {
             )}
           </div>
         </div>
+        {source === "supabase" && (
+          <div className="mx-auto max-w-[1400px] px-4 pb-3">
+            <p className="text-xs text-zinc-500">
+              Shared live book — edits sync for everyone.
+            </p>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-5 px-4 py-5 pb-24">
+        {loadError && (
+          <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-rose-100">{loadError}</p>
+            <button
+              type="button"
+              onClick={() => void loadPortfolios()}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-rose-400/40 px-3 py-1.5 text-xs font-medium text-rose-100 hover:bg-rose-900/50"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </button>
+          </div>
+        )}
+
         {isOverview ? (
-          <OverviewDashboard
-            model={overview}
-            onOpenSheet={(id) => setActiveId(id)}
-          />
+          <>
+            <OverviewDashboard
+              model={overview}
+              onOpenSheet={(id) => setActiveId(id)}
+            />
+            <CcAdvisorChat
+              key={OVERVIEW_TAB_ID}
+              portfolioId={OVERVIEW_TAB_ID}
+              context={{
+                portfolioName: "Overview",
+                cashBalance: overview.totals.cash,
+                adviseOnly: true,
+                holdings: overview.tickers.map((t) => ({
+                  ticker: t.ticker,
+                  shares: t.shares,
+                  buyPrice: t.shares > 0 ? t.buyValue / t.shares : 0,
+                  price: t.price,
+                  cost: t.buyValue,
+                  value: t.currentValue,
+                  roiPct: t.roiPct,
+                  roiDollar: t.roiDollar,
+                  pctOfTotal:
+                    overview.totals.equityValue > 0
+                      ? t.currentValue / overview.totals.equityValue
+                      : 0,
+                  todayPct: t.todayPct,
+                  portfolios: t.portfolios,
+                })),
+                rows: [],
+                totals: {
+                  cost: overview.totals.buyValue,
+                  value: overview.totals.totalValue,
+                  roiPct: overview.totals.roiPct,
+                  roiDollar: overview.totals.roiDollar,
+                  yield2wAvg: 0,
+                  premiumTotal: 0,
+                },
+                otherPortfolios: portfolios.map((p) => ({
+                  name: p.name,
+                  cashBalance: p.cash_balance,
+                  holdings: holdings
+                    .filter((h) => h.portfolio_id === p.id)
+                    .map((h) => ({
+                      ticker: h.ticker,
+                      shares: h.shares,
+                      buyPrice: h.buy_price,
+                      callPct: h.target_call_pct,
+                      stockTarget: h.stock_target_override,
+                    })),
+                })),
+              }}
+              onApplyActions={() => {
+                /* advise-only — mutations disabled */
+              }}
+            />
+          </>
         ) : (
           <>
             <PortfolioTable
@@ -930,8 +1073,9 @@ export function Dashboard() {
               holdings={snapshot!.holdings}
               totals={snapshot!.totals}
               onPatch={handlePatch}
-              onDelete={handleDelete}
-              onEditCash={handleEditCash}
+              onDelete={requestDeleteHolding}
+              onEditCash={() => setCashModalOpen(true)}
+              onAddHolding={() => setModalOpen(true)}
             />
 
             {ccVisible && (
@@ -945,6 +1089,7 @@ export function Dashboard() {
                 onPatchStockTarget={(id, stockTarget) =>
                   handlePatch({ id, stock_target_override: stockTarget })
                 }
+                onAddHolding={() => setModalOpen(true)}
               />
             )}
 
@@ -1013,8 +1158,10 @@ export function Dashboard() {
         activeId={isOverview ? OVERVIEW_TAB_ID : activePortfolio!.id}
         onChange={setActiveId}
         onAdd={handleAddSheet}
-        onRename={handleRenameSheet}
-        onDelete={handleDeleteSheet}
+        onRenameRequest={(id, name) => setRenameTarget({ id, name })}
+        onDeleteRequest={(id, name) =>
+          setConfirmDelete({ kind: "sheet", id, label: name })
+        }
       />
 
       <HoldingModal
@@ -1022,6 +1169,49 @@ export function Dashboard() {
         portfolioName={activePortfolio?.name ?? ""}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
+      />
+
+      <CashModal
+        open={cashModalOpen}
+        portfolioName={activePortfolio?.name ?? ""}
+        initialCash={activePortfolio?.cash_balance ?? 0}
+        onClose={() => setCashModalOpen(false)}
+        onSave={handleSaveCash}
+      />
+
+      <RenameSheetModal
+        open={Boolean(renameTarget)}
+        initialName={renameTarget?.name ?? ""}
+        onClose={() => setRenameTarget(null)}
+        onSave={(name) => {
+          if (!renameTarget) return;
+          void handleRenameSheet(renameTarget.id, name);
+        }}
+      />
+
+      <ConfirmModal
+        open={Boolean(confirmDelete)}
+        title={
+          confirmDelete?.kind === "sheet"
+            ? "Delete portfolio sheet?"
+            : "Delete holding?"
+        }
+        body={
+          confirmDelete?.kind === "sheet"
+            ? `Delete “${confirmDelete.label}” and all of its holdings? This can’t be undone.`
+            : `Remove ${confirmDelete?.label ?? "this holding"} from the sheet?`
+        }
+        confirmLabel="Delete"
+        destructive
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (!confirmDelete) return;
+          if (confirmDelete.kind === "sheet") {
+            void deleteSheetById(confirmDelete.id);
+          } else {
+            void deleteHoldingById(confirmDelete.id);
+          }
+        }}
       />
     </div>
   );

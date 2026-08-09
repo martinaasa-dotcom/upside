@@ -17,6 +17,8 @@ export type CcChatContext = {
     roiDollar: number;
     pctOfTotal: number;
     todayPct: number | null;
+    /** Sheet names owning this ticker (Overview aggregate) */
+    portfolios?: string[];
   }>;
   rows: Array<{
     ticker: string;
@@ -50,6 +52,8 @@ export type CcChatContext = {
       stockTarget: number | null;
     }>;
   }>;
+  /** Overview chat: advise only — no mutating tools */
+  adviseOnly?: boolean;
 };
 
 export const ccAdvisorTools = {
@@ -329,10 +333,13 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
     ctx.holdings.length === 0
       ? "(no holdings)"
       : ctx.holdings
-          .map(
-            (h) =>
-              `${h.ticker}: shares=${h.shares}, buy=${h.buyPrice}, price=${h.price}, cost=${h.cost.toFixed(0)}, value=${h.value.toFixed(0)}, roi%=${(h.roiPct * 100).toFixed(1)}%, roi$=${h.roiDollar.toFixed(0)}, pctTotal=${(h.pctOfTotal * 100).toFixed(1)}%, today=${h.todayPct != null ? (h.todayPct * 100).toFixed(1) + "%" : "—"}`
-          )
+          .map((h) => {
+            const sheets =
+              h.portfolios && h.portfolios.length
+                ? ` sheets=[${h.portfolios.join(",")}]`
+                : "";
+            return `${h.ticker}${sheets}: shares=${h.shares}, buy=${h.buyPrice}, price=${h.price}, cost=${h.cost.toFixed(0)}, value=${h.value.toFixed(0)}, roi%=${(h.roiPct * 100).toFixed(1)}%, roi$=${h.roiDollar.toFixed(0)}, pctTotal=${(h.pctOfTotal * 100).toFixed(1)}%, today=${h.todayPct != null ? (h.todayPct * 100).toFixed(1) + "%" : "—"}`;
+          })
           .join("\n");
 
   const ccTable =
@@ -366,10 +373,14 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
           })
           .join("\n\n");
 
-  return `You are Assistant Margus for Portfell. This chat thread is for portfolio "${ctx.portfolioName}" only.
-Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
+  const adviseOnly = Boolean(ctx.adviseOnly);
 
-You can READ holdings + covered-call data below, and WRITE via tools:
+  const writeBlock = adviseOnly
+    ? `This is OVERVIEW mode (advise-only).
+You can READ all portfolios below and discuss winners, losers, concentration, Call %, and strategy.
+You MUST NOT claim to change any sheet. There are NO write tools in this mode.
+If the user asks to edit holdings, cash, Call %, or targets: tell them to open that portfolio tab and ask again there.`
+    : `You can READ holdings + covered-call data below, and WRITE via tools:
 - Holdings: updateHolding, addHolding, removeHolding, setCash
 - Covered calls: setCallPct, setCallPctBulk, setUniformCallPct
 - Stock targets: setStockTarget, setStockTargetBulk, clearStockTarget
@@ -386,7 +397,12 @@ When the user asks to copy / mirror / adapt strategy from another sheet:
 When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio table):
 1. Read tickers, shares, buy prices, cash, Call %, stock targets from the image carefully.
 2. Prefer tools to update the live portfolio to match (updateHolding / addHolding / setCash / setCallPct / setStockTarget) — do not only describe.
-3. Call out anything you cannot read clearly.
+3. Call out anything you cannot read clearly.`;
+
+  return `You are Assistant Margus for Portfell. This chat thread is for portfolio "${ctx.portfolioName}" only.
+Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
+
+${writeBlock}
 
 When the user asks to critique / review / advise on the CURRENT plan (or “current targets”):
 1. Use the Covered-call rows snapshot as ground truth (and/or proposeWritePlan WITH stockTarget+callPct passed through).

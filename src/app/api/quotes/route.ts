@@ -12,11 +12,22 @@ export async function GET(req: NextRequest) {
     .filter(Boolean);
 
   if (tickers.length === 0) {
-    return NextResponse.json({ quotes: {} });
+    return NextResponse.json({
+      quotes: {},
+      delayed: false,
+      updatedAt: new Date().toISOString(),
+    });
   }
 
-  const quotes = await fetchQuotes(tickers);
-  return NextResponse.json({ quotes }, {
-    headers: { "Cache-Control": "s-maxage=15, stale-while-revalidate=30" },
-  });
+  const { quotes, delayed } = await fetchQuotes(tickers);
+  return NextResponse.json(
+    {
+      quotes,
+      delayed,
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      headers: { "Cache-Control": "s-maxage=15, stale-while-revalidate=30" },
+    }
+  );
 }

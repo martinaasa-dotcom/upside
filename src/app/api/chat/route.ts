@@ -60,15 +60,17 @@ export async function POST(req: Request) {
     }) as CcChatContext;
 
     const vision = messagesHaveImages(messages);
+    const adviseOnly = Boolean(ccContext.adviseOnly);
+    const tools = adviseOnly ? undefined : ccAdvisorTools;
 
     const result = streamText({
       model: resolveAdvisorModel({ vision }),
       system: buildCcSystemPrompt(ccContext),
       messages: await convertToModelMessages(messages, {
-        tools: ccAdvisorTools,
+        tools,
       }),
-      tools: ccAdvisorTools,
-      stopWhen: stepCountIs(8),
+      tools,
+      stopWhen: stepCountIs(adviseOnly ? 3 : 8),
       maxRetries: 2,
       abortSignal: req.signal,
       onError: ({ error }) => {

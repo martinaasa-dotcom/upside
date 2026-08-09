@@ -33,9 +33,15 @@ function hashTicker(ticker: string): number {
   return Math.abs(h);
 }
 
-export async function fetchQuotes(tickers: string[]): Promise<Record<string, Quote>> {
+export type QuotesResult = {
+  quotes: Record<string, Quote>;
+  /** True when Yahoo failed for some/all tickers and seed fallbacks were used */
+  delayed: boolean;
+};
+
+export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
   const unique = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
-  if (unique.length === 0) return {};
+  if (unique.length === 0) return { quotes: {}, delayed: false };
 
   try {
     const yf = await getYahoo();
@@ -88,16 +94,18 @@ export async function fetchQuotes(tickers: string[]): Promise<Record<string, Quo
       if (row) map[row[0]] = row[1];
     }
 
+    let delayed = false;
     // Fill any missing tickers with fallback so UI stays complete
     for (const ticker of unique) {
       if (!map[ticker]) {
+        delayed = true;
         Object.assign(map, fallbackQuotes([ticker]));
       }
     }
-    return map;
+    return { quotes: map, delayed };
   } catch (err) {
     console.error("yahoo-finance2 unavailable", err);
-    return fallbackQuotes(unique);
+    return { quotes: fallbackQuotes(unique), delayed: true };
   }
 }
 
