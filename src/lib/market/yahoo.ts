@@ -1,0 +1,130 @@
+import type { Quote } from "@/lib/types";
+
+type YahooFinanceInstance = InstanceType<
+  typeof import("yahoo-finance2").default
+>;
+
+let yahoo: YahooFinanceInstance | null = null;
+
+async function getYahoo(): Promise<YahooFinanceInstance> {
+  if (yahoo) return yahoo;
+  const { default: YahooFinance } = await import("yahoo-finance2");
+  yahoo = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+  return yahoo;
+}
+
+function synthesizeSparkline(price: number, changePercent: number): number[] {
+  const points = 30;
+  const start = price / (1 + changePercent / 100);
+  const series: number[] = [];
+  for (let i = 0; i < points; i++) {
+    const t = i / (points - 1);
+    const drift = start + (price - start) * t;
+    const noise = Math.sin(i * 1.7) * price * 0.008;
+    series.push(Math.max(0.01, drift + noise));
+  }
+  series[series.length - 1] = price;
+  return series;
+}
+
+function hashTicker(ticker: string): number {
+  let h = 0;
+  for (let i = 0; i < ticker.length; i++) h = (h * 31 + ticker.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+export async function fetchQuotes(tickers: string[]): Promise<Record<string, Quote>> {
+  const unique = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
+  if (unique.length === 0) return {};
+
+  try {
+    const yf = await getYahoo();
+    const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
+    const results = await Promise.all(
+      unique.map(async (ticker) => {
+        try {
+          const [quote, chart] = await Promise.all([
+            yf.quote(ticker),
+            yf.chart(ticker, { period1, interval: "1d" }),
+          ]);
+
+          const price =
+            quote.regularMarketPrice ??
+            quote.postMarketPrice ??
+            quote.preMarketPrice ??
+            0;
+          const change = quote.regularMarketChange ?? 0;
+          const changePercent = (quote.regularMarketChangePercent ?? 0) / 100;
+          const previousClose =
+            quote.regularMarketPreviousClose ?? price - change;
+          const sparkline =
+            chart.quotes && chart.quotes.length > 1
+              ? chart.quotes
+                  .map((row) => row.close)
+                  .filter((c): c is number => typeof c === "number")
+              : synthesizeSparkline(price, changePercent * 100);
+
+          return [
+            ticker,
+            {
+              ticker,
+              price,
+              change,
+              changePercent,
+              previousClose,
+              sparkline,
+            } satisfies Quote,
+          ] as const;
+        } catch (err) {
+          console.error(`Quote failed for ${ticker}`, err);
+          return null;
+        }
+      })
+    );
+
+    const map: Record<string, Quote> = {};
+    for (const row of results) {
+      if (row) map[row[0]] = row[1];
+    }
+
+    // Fill any missing tickers with fallback so UI stays complete
+    for (const ticker of unique) {
+      if (!map[ticker]) {
+        Object.assign(map, fallbackQuotes([ticker]));
+      }
+    }
+    return map;
+  } catch (err) {
+    console.error("yahoo-finance2 unavailable", err);
+    return fallbackQuotes(unique);
+  }
+}
+
+function fallbackQuotes(tickers: string[]): Record<string, Quote> {
+  const seeds: Record<string, number> = {
+    NBIS: 162.4,
+    CRWV: 68.2,
+    RKLB: 48.9,
+    BMNR: 22.1,
+    VST: 178.5,
+    AAPL: 214.2,
+    MSFT: 425.1,
+  };
+
+  const map: Record<string, Quote> = {};
+  for (const ticker of tickers) {
+    const price = seeds[ticker] ?? 100;
+    const changePercent = ((hashTicker(ticker) % 20) - 10) / 1000;
+    const change = price * changePercent;
+    map[ticker] = {
+      ticker,
+      price,
+      change,
+      changePercent,
+      previousClose: price - change,
+      sparkline: synthesizeSparkline(price, changePercent * 100),
+    };
+  }
+  return map;
+}
