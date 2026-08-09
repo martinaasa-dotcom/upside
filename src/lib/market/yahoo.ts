@@ -128,3 +128,115 @@ function fallbackQuotes(tickers: string[]): Record<string, Quote> {
   }
   return map;
 }
+
+export type EarningsEvent = {
+  ticker: string;
+  date: string;
+  days: number;
+};
+
+export type CatalystEvent = {
+  ticker: string;
+  label: string;
+  date: string | null;
+  days: number | null;
+  kind: "earnings" | "theme";
+};
+
+/** Soft thematic catalysts — dated earnings come from Yahoo. */
+const THEME_CATALYSTS: Record<string, string[]> = {
+  NBIS: ["AI infra / capacity narrative"],
+  CRWV: ["Cloud GPU demand & utilization"],
+  RKLB: ["Launch cadence / Neutron progress"],
+  BMNR: ["Crypto treasury / ETH beta"],
+  VST: ["Power demand / data-center electricity"],
+  NVDA: ["AI chip cycle & guidance"],
+  AVGO: ["Custom AI ASIC / networking"],
+  RDDT: ["Ad cycle & user growth prints"],
+};
+
+function toDateKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export async function fetchNextEarningsDate(
+  ticker: string
+): Promise<Date | null> {
+  try {
+    const yf = await getYahoo();
+    const summary = await yf.quoteSummary(ticker, {
+      modules: ["earnings", "calendarEvents"],
+    });
+
+    const fromEarnings = summary.earnings?.earningsChart?.earningsDate?.[0];
+    const fromCalendar =
+      summary.calendarEvents?.earnings?.earningsDate?.[0] ??
+      summary.calendarEvents?.earnings?.earningsDate?.[1];
+
+    const raw = fromEarnings ?? fromCalendar;
+    if (!raw) return null;
+    const d = raw instanceof Date ? raw : new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  } catch (err) {
+    console.error(`Earnings lookup failed for ${ticker}`, err);
+    return null;
+  }
+}
+
+export async function fetchMarketEvents(tickers: string[]): Promise<{
+  earnings: EarningsEvent[];
+  catalysts: CatalystEvent[];
+}> {
+  const unique = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const earnings: EarningsEvent[] = [];
+  const catalysts: CatalystEvent[] = [];
+
+  await Promise.all(
+    unique.map(async (ticker) => {
+      const date = await fetchNextEarningsDate(ticker);
+      if (date) {
+        const days = Math.round(
+          (date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
+        );
+        if (days >= -1 && days <= 90) {
+          const row: EarningsEvent = {
+            ticker,
+            date: toDateKey(date),
+            days,
+          };
+          earnings.push(row);
+          catalysts.push({
+            ticker,
+            label: "Earnings report",
+            date: row.date,
+            days: row.days,
+            kind: "earnings",
+          });
+        }
+      }
+
+      for (const label of THEME_CATALYSTS[ticker] ?? []) {
+        catalysts.push({
+          ticker,
+          label,
+          date: null,
+          days: null,
+          kind: "theme",
+        });
+      }
+    })
+  );
+
+  earnings.sort((a, b) => a.days - b.days);
+  catalysts.sort((a, b) => {
+    if (a.days === null && b.days === null) return a.ticker.localeCompare(b.ticker);
+    if (a.days === null) return 1;
+    if (b.days === null) return -1;
+    return a.days - b.days;
+  });
+
+  return { earnings, catalysts };
+}

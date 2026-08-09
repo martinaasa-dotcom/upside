@@ -4,6 +4,7 @@ import {
   nextStrikeFromTarget,
   roundToStrike,
 } from "@/lib/market/resistance";
+import { fetchNextEarningsDate } from "@/lib/market/yahoo";
 import { differenceInCalendarDays } from "date-fns";
 
 type YahooFinanceInstance = InstanceType<
@@ -93,30 +94,6 @@ export function listLocalHighsAboveSpot(
     price,
     distancePct: (price - spot) / spot,
   }));
-}
-
-export async function fetchNextEarningsDate(
-  ticker: string
-): Promise<Date | null> {
-  try {
-    const yf = await getYahoo();
-    const summary = await yf.quoteSummary(ticker, {
-      modules: ["earnings", "calendarEvents"],
-    });
-
-    const fromEarnings = summary.earnings?.earningsChart?.earningsDate?.[0];
-    const fromCalendar =
-      summary.calendarEvents?.earnings?.earningsDate?.[0] ??
-      summary.calendarEvents?.earnings?.earningsDate?.[1];
-
-    const raw = fromEarnings ?? fromCalendar;
-    if (!raw) return null;
-    const d = raw instanceof Date ? raw : new Date(raw);
-    return Number.isNaN(d.getTime()) ? null : d;
-  } catch (err) {
-    console.error(`Earnings lookup failed for ${ticker}`, err);
-    return null;
-  }
 }
 
 async function fetchSpotAndHistory(ticker: string): Promise<{

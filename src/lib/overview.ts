@@ -1,10 +1,5 @@
 import { enrichHoldings } from "@/lib/calculations";
-import type {
-  EnrichedHolding,
-  Holding,
-  Portfolio,
-  Quote,
-} from "@/lib/types";
+import type { Holding, Portfolio, Quote } from "@/lib/types";
 
 export const OVERVIEW_TAB_ID = "__overview__";
 
@@ -20,20 +15,31 @@ export type SheetScore = {
   holdingCount: number;
 };
 
-export type PositionScore = EnrichedHolding & {
-  portfolioName: string;
-  portfolioId: string;
+/** One row per ticker, rolled up across every portfolio that owns it. */
+export type TickerScore = {
+  ticker: string;
+  portfolios: string[];
+  portfolioIds: string[];
+  shares: number;
+  buyValue: number;
+  currentValue: number;
+  roiDollar: number;
+  roiPct: number;
   todayDollar: number;
   todayPct: number | null;
+  price: number;
+  sparkline: number[];
 };
 
 export type OverviewModel = {
   sheets: SheetScore[];
-  positions: PositionScore[];
-  winners: PositionScore[];
-  losers: PositionScore[];
-  todayWinners: PositionScore[];
-  todayLosers: PositionScore[];
+  tickers: TickerScore[];
+  winners: TickerScore[];
+  losers: TickerScore[];
+  todayWinners: TickerScore[];
+  todayLosers: TickerScore[];
+  topHoldings: TickerScore[];
+  funFacts: string[];
   totals: {
     buyValue: number;
     equityValue: number;
@@ -45,19 +51,91 @@ export type OverviewModel = {
     todayPct: number | null;
     sheetCount: number;
     positionCount: number;
+    uniqueTickers: number;
   };
 };
 
-function todayPnL(h: EnrichedHolding): { dollar: number; pct: number | null } {
-  const pct = h.quote?.changePercent ?? null;
-  if (pct === null || Number.isNaN(pct)) {
+function todayDollarFor(
+  currentValue: number,
+  changePercent: number | null | undefined
+): { dollar: number; pct: number | null } {
+  if (changePercent === null || changePercent === undefined || Number.isNaN(changePercent)) {
     return { dollar: 0, pct: null };
   }
-  // Quote.changePercent is a fraction (0.015 = +1.5%)
-  return {
-    dollar: h.currentValue * pct,
-    pct,
-  };
+  return { dollar: currentValue * changePercent, pct: changePercent };
+}
+
+function buildFunFacts(
+  sheets: SheetScore[],
+  tickers: TickerScore[],
+  totals: OverviewModel["totals"]
+): string[] {
+  const facts: string[] = [];
+  if (!sheets.length || !tickers.length) return facts;
+
+  const biggestBook = [...sheets].sort((a, b) => b.totalValue - a.totalValue)[0];
+  const hottest = [...tickers].sort((a, b) => b.roiPct - a.roiPct)[0];
+  const coldest = [...tickers].sort((a, b) => a.roiPct - b.roiPct)[0];
+  const mostOwned = [...tickers].sort(
+    (a, b) => b.portfolios.length - a.portfolios.length || b.currentValue - a.currentValue
+  )[0];
+  const widest = tickers.filter((t) => t.portfolios.length >= 2);
+  const dayChamp = [...tickers]
+    .filter((t) => t.todayPct !== null)
+    .sort((a, b) => (b.todayPct ?? 0) - (a.todayPct ?? 0))[0];
+
+  if (biggestBook && totals.totalValue > 0) {
+    const share = biggestBook.totalValue / totals.totalValue;
+    facts.push(
+      `${biggestBook.portfolio.name} is the heavyweight book — ${Math.round(share * 100)}% of combined NAV.`
+    );
+  }
+
+  if (hottest && hottest.roiPct > 0) {
+    facts.push(
+      `${hottest.ticker} is the lifetime MVP at ${Math.round(hottest.roiPct * 1000) / 10}% ROI` +
+        (hottest.portfolios.length > 1
+          ? ` across ${hottest.portfolios.join(" · ")}.`
+          : ` (in ${hottest.portfolios[0]}).`)
+    );
+  }
+
+  if (coldest && coldest.roiPct < 0) {
+    facts.push(
+      `${coldest.ticker} is the drama queen at ${Math.round(coldest.roiPct * 1000) / 10}% — owned by ${coldest.portfolios.join(", ")}.`
+    );
+  }
+
+  if (mostOwned && mostOwned.portfolios.length >= 2) {
+    facts.push(
+      `${mostOwned.ticker} is the house favorite — sitting in ${mostOwned.portfolios.length} portfolios (${mostOwned.portfolios.join(", ")}).`
+    );
+  } else if (widest.length === 0) {
+    facts.push("Every ticker is a solo act — no overlapping names across portfolios.");
+  }
+
+  if (dayChamp && (dayChamp.todayPct ?? 0) > 0) {
+    facts.push(
+      `Today's main character: ${dayChamp.ticker} at ${Math.round((dayChamp.todayPct ?? 0) * 1000) / 10}% — worth ${Math.round(dayChamp.todayDollar).toLocaleString("en-US")} bucks of smile.`
+    );
+  }
+
+  if (totals.cash !== 0) {
+    facts.push(
+      totals.cash < 0
+        ? `Combined cash is ${Math.round(totals.cash).toLocaleString("en-US")} — someone is running hot on margin.`
+        : `There's ${Math.round(totals.cash).toLocaleString("en-US")} in dry powder across the family of books.`
+    );
+  }
+
+  const top = [...tickers].sort((a, b) => b.currentValue - a.currentValue)[0];
+  if (top && totals.equityValue > 0) {
+    facts.push(
+      `${top.ticker} alone is ${Math.round((top.currentValue / totals.equityValue) * 100)}% of all equity — concentration is a feature, not a bug (probably).`
+    );
+  }
+
+  return facts.slice(0, 6);
 }
 
 export function buildOverview(
@@ -75,7 +153,7 @@ export function buildOverview(
     let todayWeighted = 0;
     let todayWeight = 0;
     for (const h of enriched) {
-      const t = todayPnL(h);
+      const t = todayDollarFor(h.currentValue, h.quote?.changePercent);
       todayDollar += t.dollar;
       if (t.pct !== null) {
         todayWeighted += t.pct * h.currentValue;
@@ -95,26 +173,73 @@ export function buildOverview(
     };
   });
 
-  const positions: PositionScore[] = [];
+  const byTicker = new Map<
+    string,
+    {
+      portfolios: Set<string>;
+      portfolioIds: Set<string>;
+      shares: number;
+      buyValue: number;
+      currentValue: number;
+      roiDollar: number;
+      todayDollar: number;
+      quote: Quote | null;
+    }
+  >();
+
   for (const portfolio of portfolios) {
     const rows = holdings.filter((h) => h.portfolio_id === portfolio.id);
     const enriched = enrichHoldings(rows, quotes, portfolio.cash_balance);
     for (const h of enriched) {
-      const t = todayPnL(h);
-      positions.push({
-        ...h,
-        portfolioName: portfolio.name,
-        portfolioId: portfolio.id,
-        todayDollar: t.dollar,
-        todayPct: t.pct,
-      });
+      const key = h.ticker.toUpperCase();
+      const existing = byTicker.get(key) ?? {
+        portfolios: new Set<string>(),
+        portfolioIds: new Set<string>(),
+        shares: 0,
+        buyValue: 0,
+        currentValue: 0,
+        roiDollar: 0,
+        todayDollar: 0,
+        quote: h.quote,
+      };
+      existing.portfolios.add(portfolio.name);
+      existing.portfolioIds.add(portfolio.id);
+      existing.shares += h.shares;
+      existing.buyValue += h.buyValue;
+      existing.currentValue += h.currentValue;
+      existing.roiDollar += h.roiDollar;
+      existing.todayDollar += todayDollarFor(
+        h.currentValue,
+        h.quote?.changePercent
+      ).dollar;
+      if (h.quote) existing.quote = h.quote;
+      byTicker.set(key, existing);
     }
   }
 
-  const byRoi = [...positions].sort((a, b) => b.roiPct - a.roiPct);
-  const byToday = [...positions]
-    .filter((p) => p.todayPct !== null)
+  const tickers: TickerScore[] = [...byTicker.entries()].map(([ticker, row]) => {
+    const todayPct = row.quote?.changePercent ?? null;
+    return {
+      ticker,
+      portfolios: [...row.portfolios].sort(),
+      portfolioIds: [...row.portfolioIds],
+      shares: row.shares,
+      buyValue: row.buyValue,
+      currentValue: row.currentValue,
+      roiDollar: row.roiDollar,
+      roiPct: row.buyValue > 0 ? row.roiDollar / row.buyValue : 0,
+      todayDollar: row.todayDollar,
+      todayPct,
+      price: row.quote?.price ?? (row.shares > 0 ? row.currentValue / row.shares : 0),
+      sparkline: row.quote?.sparkline ?? [],
+    };
+  });
+
+  const byRoi = [...tickers].sort((a, b) => b.roiPct - a.roiPct);
+  const byToday = [...tickers]
+    .filter((t) => t.todayPct !== null)
     .sort((a, b) => (b.todayPct ?? 0) - (a.todayPct ?? 0));
+  const byValue = [...tickers].sort((a, b) => b.currentValue - a.currentValue);
 
   const buyValue = sheets.reduce((s, x) => s + x.buyValue, 0);
   const equityValue = sheets.reduce((s, x) => s + x.equityValue, 0);
@@ -123,31 +248,38 @@ export function buildOverview(
   const todayDollar = sheets.reduce((s, x) => s + x.todayDollar, 0);
   let todayWeighted = 0;
   let todayWeight = 0;
-  for (const p of positions) {
-    if (p.todayPct !== null) {
-      todayWeighted += p.todayPct * p.currentValue;
-      todayWeight += p.currentValue;
+  for (const t of tickers) {
+    if (t.todayPct !== null) {
+      todayWeighted += t.todayPct * t.currentValue;
+      todayWeight += t.currentValue;
     }
   }
 
+  const totals = {
+    buyValue,
+    equityValue,
+    cash,
+    totalValue: equityValue + cash,
+    roiDollar,
+    roiPct: buyValue > 0 ? roiDollar / buyValue : 0,
+    todayDollar,
+    todayPct: todayWeight > 0 ? todayWeighted / todayWeight : null,
+    sheetCount: portfolios.length,
+    positionCount: holdings.length,
+    uniqueTickers: tickers.length,
+  };
+
+  const sortedSheets = [...sheets].sort((a, b) => b.totalValue - a.totalValue);
+
   return {
-    sheets: [...sheets].sort((a, b) => b.totalValue - a.totalValue),
-    positions: [...positions].sort((a, b) => b.currentValue - a.currentValue),
-    winners: byRoi.filter((p) => p.roiPct > 0).slice(0, 5),
-    losers: byRoi.filter((p) => p.roiPct < 0).slice(-5).reverse(),
-    todayWinners: byToday.filter((p) => (p.todayPct ?? 0) > 0).slice(0, 5),
-    todayLosers: byToday.filter((p) => (p.todayPct ?? 0) < 0).slice(-5).reverse(),
-    totals: {
-      buyValue,
-      equityValue,
-      cash,
-      totalValue: equityValue + cash,
-      roiDollar,
-      roiPct: buyValue > 0 ? roiDollar / buyValue : 0,
-      todayDollar,
-      todayPct: todayWeight > 0 ? todayWeighted / todayWeight : null,
-      sheetCount: portfolios.length,
-      positionCount: positions.length,
-    },
+    sheets: sortedSheets,
+    tickers: byValue,
+    winners: byRoi.filter((t) => t.roiPct > 0).slice(0, 5),
+    losers: byRoi.filter((t) => t.roiPct < 0).slice(-5).reverse(),
+    todayWinners: byToday.filter((t) => (t.todayPct ?? 0) > 0).slice(0, 5),
+    todayLosers: byToday.filter((t) => (t.todayPct ?? 0) < 0).slice(-5).reverse(),
+    topHoldings: byValue.slice(0, 10),
+    funFacts: buildFunFacts(sortedSheets, tickers, totals),
+    totals,
   };
 }
