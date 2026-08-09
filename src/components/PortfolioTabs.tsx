@@ -1,8 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { OVERVIEW_TAB_ID } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
-import { Plus } from "lucide-react";
+import { LayoutDashboard, Plus } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
@@ -24,6 +25,7 @@ export function PortfolioTabs({
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const overviewActive = activeId === OVERVIEW_TAB_ID;
 
   function submit() {
     const trimmed = name.trim();
@@ -39,6 +41,22 @@ export function PortfolioTabs({
   return (
     <nav className="sticky bottom-0 z-20 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center gap-1 overflow-x-auto px-3 py-2">
+        <button
+          type="button"
+          onClick={() => onChange(OVERVIEW_TAB_ID)}
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1.5 px-4 py-2 text-sm transition",
+            overviewActive
+              ? "rounded-lg border border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-300 shadow-sm shadow-emerald-500/10"
+              : "rounded-lg border border-transparent text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
+          )}
+        >
+          <LayoutDashboard className="h-3.5 w-3.5" />
+          Overview
+        </button>
+
+        <div className="mx-1 h-6 w-px shrink-0 bg-zinc-800" aria-hidden />
+
         {portfolios.map((p) => {
           const active = p.id === activeId;
           return (

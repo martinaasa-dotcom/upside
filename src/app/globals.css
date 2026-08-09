@@ -49,3 +49,54 @@ body {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+@keyframes overview-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overview-pulse-soft {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px 0 rgba(52, 211, 153, 0.18);
+  }
+}
+
+@keyframes overview-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.overview-fade {
+  animation: overview-fade-up 0.55s ease-out both;
+}
+
+.overview-pulse {
+  animation: overview-pulse-soft 2.8s ease-in-out infinite;
+}
+
+.overview-bar {
+  transform-origin: left center;
+  animation: overview-bar-grow 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-fade,
+  .overview-pulse,
+  .overview-bar {
+    animation: none;
+  }
+}

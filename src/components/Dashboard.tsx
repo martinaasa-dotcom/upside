@@ -3,12 +3,14 @@
 import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
+import { OverviewDashboard } from "@/components/OverviewDashboard";
 import {
   PortfolioTable,
   type HoldingPatch,
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { buildSnapshot } from "@/lib/calculations";
+import { clearChatHistory } from "@/lib/chat-history";
 import {
   addPortfolio,
   deleteHolding,
@@ -23,7 +25,7 @@ import {
   updateCash,
   upsertHolding,
 } from "@/lib/demo-store";
-import { clearChatHistory } from "@/lib/chat-history";
+import { OVERVIEW_TAB_ID, buildOverview } from "@/lib/overview";
 import type {
   Holding,
   OptionCandidate,
@@ -43,7 +45,7 @@ export function Dashboard() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [saveFlash, setSaveFlash] = useState(false);
   const [locked, setLocked] = useState(false);
-  const [activeId, setActiveId] = useState<string>("");
+  const [activeId, setActiveId] = useState<string>(OVERVIEW_TAB_ID);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [options, setOptions] = useState<Record<string, OptionCandidate | null>>(
     {}
@@ -55,12 +57,19 @@ export function Dashboard() {
     Record<string, boolean>
   >({});
 
-  const activePortfolio =
-    portfolios.find((p) => p.id === activeId) ?? portfolios[0];
+  const isOverview = activeId === OVERVIEW_TAB_ID;
+  const activePortfolio = isOverview
+    ? null
+    : (portfolios.find((p) => p.id === activeId) ?? portfolios[0] ?? null);
 
   const ccVisible = activePortfolio
     ? ccVisibleByPortfolio[activePortfolio.id] !== false
     : true;
+
+  const allTickers = useMemo(() => {
+    const set = new Set(holdings.map((h) => h.ticker));
+    return [...set];
+  }, [holdings]);
 
   useEffect(() => {
     try {
@@ -100,6 +109,11 @@ export function Dashboard() {
     return buildSnapshot(activePortfolio, portfolioHoldings, quotes, options);
   }, [activePortfolio, portfolioHoldings, quotes, options]);
 
+  const overview = useMemo(
+    () => buildOverview(portfolios, holdings, quotes),
+    [portfolios, holdings, quotes]
+  );
+
   const loadPortfolios = useCallback(async () => {
     setLoading(true);
     try {
@@ -109,13 +123,13 @@ export function Dashboard() {
         setSource("supabase");
         setPortfolios(data.portfolios);
         setHoldings(data.holdings ?? []);
-        setActiveId((prev) => prev || data.portfolios[0].id);
+        setActiveId((prev) => prev || OVERVIEW_TAB_ID);
       } else {
         const demo = loadDemoStore();
         setSource("demo");
         setPortfolios(demo.portfolios);
         setHoldings(demo.holdings);
-        setActiveId((prev) => prev || demo.portfolios[0].id);
+        setActiveId((prev) => prev || OVERVIEW_TAB_ID);
         setLocked(hasLockedSave());
       }
     } catch {
@@ -123,7 +137,7 @@ export function Dashboard() {
       setSource("demo");
       setPortfolios(demo.portfolios);
       setHoldings(demo.holdings);
-      setActiveId((prev) => prev || demo.portfolios[0].id);
+      setActiveId((prev) => prev || OVERVIEW_TAB_ID);
       setLocked(hasLockedSave());
     } finally {
       setLoading(false);
@@ -200,29 +214,34 @@ export function Dashboard() {
     )
     .join("|");
 
+  // Quotes for every ticker (overview + sheet views); options only on a sheet
   useEffect(() => {
+    if (holdings.length === 0) return;
+    if (isOverview) {
+      void refreshMarkets(allTickers, holdings, undefined, {
+        quotesOnly: true,
+      });
+      return;
+    }
     if (!activePortfolio) return;
     const rows = holdings.filter((h) => h.portfolio_id === activePortfolio.id);
-    const tickers = rows.map((h) => h.ticker);
-    void refreshMarkets(tickers, rows);
+    void refreshMarkets(allTickers, rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePortfolio?.id, ccSignature, refreshMarkets]);
+  }, [activePortfolio?.id, isOverview, ccSignature, allTickers.join(","), refreshMarkets]);
 
   // Free Yahoo poll: prices every 20s while the tab is visible (options stay on demand)
   useEffect(() => {
-    if (!activePortfolio) return;
+    if (allTickers.length === 0) return;
 
     const POLL_MS = 20_000;
     let cancelled = false;
 
     const tick = () => {
       if (cancelled || document.hidden) return;
-      const rows = holdings.filter(
-        (h) => h.portfolio_id === activePortfolio.id
-      );
-      const tickers = rows.map((h) => h.ticker);
-      if (tickers.length === 0) return;
-      void refreshMarkets(tickers, rows, undefined, {
+      const rows = isOverview
+        ? holdings
+        : holdings.filter((h) => h.portfolio_id === activePortfolio?.id);
+      void refreshMarkets(allTickers, rows, undefined, {
         quotesOnly: true,
         silent: true,
       });
@@ -239,7 +258,13 @@ export function Dashboard() {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [activePortfolio?.id, ccSignature, holdings, refreshMarkets]);
+  }, [
+    activePortfolio?.id,
+    isOverview,
+    allTickers.join(","),
+    holdings,
+    refreshMarkets,
+  ]);
 
   async function handleSave(values: HoldingFormValues) {
     if (!activePortfolio) return;
@@ -706,13 +731,13 @@ export function Dashboard() {
       }
       clearChatHistory(id);
       await loadPortfolios();
-      setActiveId((prev) => (prev === id ? "" : prev));
+      setActiveId((prev) => (prev === id ? OVERVIEW_TAB_ID : prev));
     } else {
       const next = deletePortfolio(loadDemoStore(), id);
       clearChatHistory(id);
       setPortfolios(next.portfolios);
       setHoldings(next.holdings);
-      if (activeId === id) setActiveId(next.portfolios[0]?.id ?? "");
+      if (activeId === id) setActiveId(OVERVIEW_TAB_ID);
     }
   }
 
@@ -757,7 +782,7 @@ export function Dashboard() {
     const demo = resetDemoStore();
     setPortfolios(demo.portfolios);
     setHoldings(demo.holdings);
-    setActiveId(demo.portfolios[0]?.id ?? "");
+    setActiveId(OVERVIEW_TAB_ID);
     setLocked(hasLockedSave());
   }
 
@@ -775,7 +800,16 @@ export function Dashboard() {
     });
   }
 
-  if (loading || !activePortfolio || !snapshot) {
+  if (loading || portfolios.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+        Loading Portfell…
+      </div>
+    );
+  }
+
+  if (!isOverview && (!activePortfolio || !snapshot)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -793,7 +827,7 @@ export function Dashboard() {
               Portfolio
             </p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">
-              {activePortfolio.name}
+              {isOverview ? "Overview" : activePortfolio!.name}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -806,27 +840,36 @@ export function Dashboard() {
             >
               {source === "supabase" ? "Supabase" : "Local demo"}
             </span>
+            {!isOverview && (
+              <button
+                type="button"
+                onClick={toggleCcVisible}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                title={
+                  ccVisible
+                    ? "Hide covered-call table"
+                    : "Show covered-call table"
+                }
+              >
+                {ccVisible ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+                {ccVisible ? "Hide CC" : "Show CC"}
+              </button>
+            )}
             <button
               type="button"
-              onClick={toggleCcVisible}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-              title={ccVisible ? "Hide covered-call table" : "Show covered-call table"}
-            >
-              {ccVisible ? (
-                <EyeOff className="h-3.5 w-3.5" />
-              ) : (
-                <Eye className="h-3.5 w-3.5" />
-              )}
-              {ccVisible ? "Hide CC" : "Show CC"}
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                refreshMarkets(
-                  portfolioHoldings.map((h) => h.ticker),
-                  portfolioHoldings
-                )
-              }
+              onClick={() => {
+                if (isOverview) {
+                  void refreshMarkets(allTickers, holdings, undefined, {
+                    quotesOnly: true,
+                  });
+                } else {
+                  void refreshMarkets(allTickers, portfolioHoldings);
+                }
+              }}
               disabled={refreshing}
               className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
             >
@@ -860,103 +903,114 @@ export function Dashboard() {
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
-            >
-              <Plus className="h-4 w-4" />
-              Add holding
-            </button>
+            {!isOverview && (
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+              >
+                <Plus className="h-4 w-4" />
+                Add holding
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-5 px-4 py-5 pb-24">
-        <PortfolioTable
-          portfolio={activePortfolio}
-          holdings={snapshot.holdings}
-          totals={snapshot.totals}
-          onPatch={handlePatch}
-          onDelete={handleDelete}
-          onEditCash={handleEditCash}
-        />
-
-        {ccVisible && (
-          <CoveredCallPanel
-            rows={snapshot.coveredCallRows}
-            yield2wAvg={snapshot.totals.yield2wAvg}
-            premiumTotal={snapshot.totals.premiumTotal}
-            onPatchTargetCall={(id, target_call_pct) =>
-              handlePatch({ id, target_call_pct })
-            }
-            onPatchStockTarget={(id, stockTarget) =>
-              handlePatch({ id, stock_target_override: stockTarget })
-            }
+        {isOverview ? (
+          <OverviewDashboard
+            model={overview}
+            onOpenSheet={(id) => setActiveId(id)}
           />
-        )}
+        ) : (
+          <>
+            <PortfolioTable
+              portfolio={activePortfolio!}
+              holdings={snapshot!.holdings}
+              totals={snapshot!.totals}
+              onPatch={handlePatch}
+              onDelete={handleDelete}
+              onEditCash={handleEditCash}
+            />
 
-        <CcAdvisorChat
-          key={activePortfolio.id}
-          portfolioId={activePortfolio.id}
-          context={{
-            portfolioName: activePortfolio.name,
-            cashBalance: activePortfolio.cash_balance,
-            holdings: snapshot.holdings.map((h) => ({
-              ticker: h.ticker,
-              shares: h.shares,
-              buyPrice: h.buy_price,
-              price: h.quote?.price ?? h.buy_price,
-              cost: h.buyValue,
-              value: h.currentValue,
-              roiPct: h.roiPct,
-              roiDollar: h.roiDollar,
-              pctOfTotal: h.pctOfTotal,
-              todayPct: h.quote?.changePercent ?? null,
-            })),
-            rows: snapshot.coveredCallRows.map((r) => ({
-              ticker: r.holding.ticker,
-              spot: r.spot,
-              callPct: r.targetCall,
-              stockTarget: r.stockTarget,
-              distance: r.targetDistance,
-              nextStrike: r.nextStrike,
-              contracts: r.contracts,
-              yield2w: r.yield2w,
-              premium: r.premium,
-              expiration: r.expiration,
-            })),
-            totals: {
-              cost: snapshot.totals.buyValue,
-              value: snapshot.totals.currentValue,
-              roiPct: snapshot.totals.roiPct,
-              roiDollar: snapshot.totals.roiDollar,
-              yield2wAvg: snapshot.totals.yield2wAvg,
-              premiumTotal: snapshot.totals.premiumTotal,
-            },
-            otherPortfolios: portfolios
-              .filter((p) => p.id !== activePortfolio.id)
-              .map((p) => ({
-                name: p.name,
-                cashBalance: p.cash_balance,
-                holdings: holdings
-                  .filter((h) => h.portfolio_id === p.id)
-                  .map((h) => ({
-                    ticker: h.ticker,
-                    shares: h.shares,
-                    buyPrice: h.buy_price,
-                    callPct: h.target_call_pct,
-                    stockTarget: h.stock_target_override,
+            {ccVisible && (
+              <CoveredCallPanel
+                rows={snapshot!.coveredCallRows}
+                yield2wAvg={snapshot!.totals.yield2wAvg}
+                premiumTotal={snapshot!.totals.premiumTotal}
+                onPatchTargetCall={(id, target_call_pct) =>
+                  handlePatch({ id, target_call_pct })
+                }
+                onPatchStockTarget={(id, stockTarget) =>
+                  handlePatch({ id, stock_target_override: stockTarget })
+                }
+              />
+            )}
+
+            <CcAdvisorChat
+              key={activePortfolio!.id}
+              portfolioId={activePortfolio!.id}
+              context={{
+                portfolioName: activePortfolio!.name,
+                cashBalance: activePortfolio!.cash_balance,
+                holdings: snapshot!.holdings.map((h) => ({
+                  ticker: h.ticker,
+                  shares: h.shares,
+                  buyPrice: h.buy_price,
+                  price: h.quote?.price ?? h.buy_price,
+                  cost: h.buyValue,
+                  value: h.currentValue,
+                  roiPct: h.roiPct,
+                  roiDollar: h.roiDollar,
+                  pctOfTotal: h.pctOfTotal,
+                  todayPct: h.quote?.changePercent ?? null,
+                })),
+                rows: snapshot!.coveredCallRows.map((r) => ({
+                  ticker: r.holding.ticker,
+                  spot: r.spot,
+                  callPct: r.targetCall,
+                  stockTarget: r.stockTarget,
+                  distance: r.targetDistance,
+                  nextStrike: r.nextStrike,
+                  contracts: r.contracts,
+                  yield2w: r.yield2w,
+                  premium: r.premium,
+                  expiration: r.expiration,
+                })),
+                totals: {
+                  cost: snapshot!.totals.buyValue,
+                  value: snapshot!.totals.currentValue,
+                  roiPct: snapshot!.totals.roiPct,
+                  roiDollar: snapshot!.totals.roiDollar,
+                  yield2wAvg: snapshot!.totals.yield2wAvg,
+                  premiumTotal: snapshot!.totals.premiumTotal,
+                },
+                otherPortfolios: portfolios
+                  .filter((p) => p.id !== activePortfolio!.id)
+                  .map((p) => ({
+                    name: p.name,
+                    cashBalance: p.cash_balance,
+                    holdings: holdings
+                      .filter((h) => h.portfolio_id === p.id)
+                      .map((h) => ({
+                        ticker: h.ticker,
+                        shares: h.shares,
+                        buyPrice: h.buy_price,
+                        callPct: h.target_call_pct,
+                        stockTarget: h.stock_target_override,
+                      })),
                   })),
-              })),
-          }}
-          onApplyActions={applyAdvisorActions}
-        />
+              }}
+              onApplyActions={applyAdvisorActions}
+            />
+          </>
+        )}
       </main>
 
       <PortfolioTabs
         portfolios={portfolios}
-        activeId={activePortfolio.id}
+        activeId={isOverview ? OVERVIEW_TAB_ID : activePortfolio!.id}
         onChange={setActiveId}
         onAdd={handleAddSheet}
         onRename={handleRenameSheet}
@@ -965,7 +1019,7 @@ export function Dashboard() {
 
       <HoldingModal
         open={modalOpen}
-        portfolioName={activePortfolio.name}
+        portfolioName={activePortfolio?.name ?? ""}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
       />
