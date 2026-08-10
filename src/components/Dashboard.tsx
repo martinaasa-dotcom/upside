@@ -1186,8 +1186,13 @@ export function Dashboard() {
               />
             )}
 
-            {forecastVisible && forecast && (
-              <ForecastPanel model={forecast} />
+            {forecastVisible && forecast && activePortfolio && (
+              <ForecastPanel
+                model={forecast}
+                portfolioId={activePortfolio.id}
+                portfolioName={activePortfolio.name}
+                cashBalance={activePortfolio.cash_balance}
+              />
             )}
 
             <CcAdvisorChat

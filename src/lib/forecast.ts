@@ -27,47 +27,6 @@ export const EOY_PRICE_TARGETS: Record<
   RDDT: { 2026: 180, 2027: 220, 2028: 200, 2029: 280, 2030: 350 },
 };
 
-export type ForecastSuggestion = {
-  year: ForecastYear | 2031;
-  theme: string;
-  add: string;
-  trim: string;
-};
-
-/** Year-by-year trim / add playbook from the milestones forecast sheet. */
-export const FORECAST_SUGGESTIONS: ForecastSuggestion[] = [
-  {
-    year: 2026,
-    theme: "The Liquidity Launchpad",
-    add: "BMNR and HOOD",
-    trim: "NOW / PLTR, or minor chunks from NBIS",
-  },
-  {
-    year: 2027,
-    theme: "The Cyclical Top (Take-Profit Window)",
-    add: "NBIS and CRWV",
-    trim: "BMNR and HOOD",
-  },
-  {
-    year: 2028,
-    theme: "The Crypto Winter & Power Rotation",
-    add: "SOFI and RKLB",
-    trim: "BMNR",
-  },
-  {
-    year: 2029,
-    theme: "The Trough Accumulation Window",
-    add: "BMNR and HOOD",
-    trim: "NBIS and CRWV",
-  },
-  {
-    year: 2030,
-    theme: "The Scale & Expansion Phase",
-    add: "SOFI and PLTR",
-    trim: "NBIS and CRWV",
-  },
-];
-
 export type ForecastRow = {
   ticker: string;
   shares: number;
@@ -88,7 +47,6 @@ export type ForecastModel = {
   eoyTotals: Record<ForecastYear, number>;
   /** Portfolio gain to last forecast year */
   gainPct: number | null;
-  suggestions: ForecastSuggestion[];
 };
 
 function priceForYear(
@@ -158,8 +116,5 @@ export function buildForecast(
     currentTotal,
     eoyTotals,
     gainPct,
-    suggestions: FORECAST_SUGGESTIONS.filter((s) =>
-      FORECAST_YEARS.includes(s.year as ForecastYear)
-    ),
   };
 }

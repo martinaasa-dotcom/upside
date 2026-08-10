@@ -3,9 +3,19 @@
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
 import { cn, currency, percent } from "@/lib/format";
 import type { ForecastModel } from "@/lib/forecast";
+import {
+  loadForecastPlan,
+  saveForecastPlan,
+  type ForecastPlan,
+} from "@/lib/forecast-plan";
+import { Loader2, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type Props = {
   model: ForecastModel;
+  portfolioId: string;
+  portfolioName: string;
+  cashBalance: number;
 };
 
 function signedTone(value: number) {
@@ -18,12 +28,66 @@ function yearLabel(year: number) {
   return `EOY ${year}`;
 }
 
-export function ForecastPanel({ model }: Props) {
+function formatGeneratedAt(iso: string) {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+export function ForecastPanel({
+  model,
+  portfolioId,
+  portfolioName,
+  cashBalance,
+}: Props) {
   const yearCols = model.years;
-  // Current + years + Gain
   const template = `minmax(4.5rem, 0.7fr) minmax(5.5rem, 1fr) ${yearCols
     .map(() => "minmax(5.5rem, 1fr)")
     .join(" ")} minmax(4rem, 0.7fr)`;
+
+  const [plan, setPlan] = useState<ForecastPlan | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPlan(loadForecastPlan(portfolioId));
+    setError(null);
+  }, [portfolioId]);
+
+  async function askMargus() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/forecast/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          portfolioId,
+          portfolioName,
+          cashBalance,
+          forecast: model,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to generate plan");
+      }
+      const next = data.plan as ForecastPlan;
+      saveForecastPlan(next);
+      setPlan(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate plan");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <section className="overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
@@ -206,30 +270,107 @@ export function ForecastPanel({ model }: Props) {
       )}
 
       <div className="border-t border-zinc-800/80 px-4 py-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Trim / add by year
-        </h3>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {model.suggestions.map((s) => (
-            <div
-              key={s.year}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-400/90">
-                {s.year}
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Margus plan · themes / trim / add
+            </h3>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Dynamic quarter + year themes with sector rotation — not a static
+              sheet paste.
+            </p>
+            {plan?.generatedAt && (
+              <p className="mt-1 text-[11px] text-zinc-600">
+                Last generated {formatGeneratedAt(plan.generatedAt)}
               </p>
-              <p className="mt-1 text-sm font-semibold text-white">{s.theme}</p>
-              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                <span className="font-medium text-emerald-300/90">Add</span>{" "}
-                {s.add}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                <span className="font-medium text-rose-300/90">Trim</span>{" "}
-                {s.trim}
-              </p>
-            </div>
-          ))}
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => void askMargus()}
+            disabled={busy || model.rows.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/60 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            {busy
+              ? "Margus is planning…"
+              : plan
+                ? "Refresh Margus plan"
+                : "Ask Margus for a plan"}
+          </button>
         </div>
+
+        {error && (
+          <p className="mt-3 rounded-lg border border-rose-500/30 bg-rose-950/40 px-3 py-2 text-sm text-rose-100">
+            {error}
+          </p>
+        )}
+
+        {!plan && !busy && !error && (
+          <div className="mt-3 rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
+            <p className="text-sm text-zinc-400">
+              No plan yet. Ask Margus to draft next-quarter and next-year themes,
+              sector rotation notes, and concrete add / trim actions for this
+              sheet.
+            </p>
+          </div>
+        )}
+
+        {plan && (
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  General advice
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+                  {plan.generalAdvice}
+                </p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Sector rotation
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+                  {plan.sectorRotation}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {plan.periods.map((s) => (
+                <div
+                  key={`${s.label}-${s.theme}`}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-400/90">
+                    {s.label}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">
+                    {s.theme}
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    <span className="font-medium text-emerald-300/90">Add</span>{" "}
+                    {s.add}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                    <span className="font-medium text-rose-300/90">Trim</span>{" "}
+                    {s.trim}
+                  </p>
+                  {s.notes && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+                      {s.notes}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
