@@ -174,9 +174,33 @@ const forecastStub = {
 const complete = ensureCompleteEoyTargets(
   forecastStub,
   [{ ticker: "NBIS", prices: { 2026: 120 } as never, rationale: "partial" }],
-  "base"
+  "bullish"
 );
 assert(complete[0]?.prices?.[2030], "ensureComplete fills years");
+assert(
+  (complete[0]?.prices?.[2030] ?? 0) > 100 * 3,
+  "bullish AI infra fill is multi-bagger"
+);
+const cryptoFill = ensureCompleteEoyTargets(
+  {
+    ...forecastStub,
+    rows: [
+      {
+        ...forecastStub.rows[0]!,
+        ticker: "BMNR",
+        currentPrice: 20,
+        currentValue: 20,
+      },
+    ],
+  },
+  [],
+  "bullish"
+);
+const cPrices = cryptoFill[0]!.prices;
+assert(
+  cPrices[2028]! < cPrices[2027]!,
+  "crypto fallback has a winter year"
+);
 assert(!isForecastFullyCovered(["NBIS"], {}), "coverage empty");
 assert(
   isForecastFullyCovered(["NBIS"], {

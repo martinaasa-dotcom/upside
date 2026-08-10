@@ -112,9 +112,9 @@ const cellNum =
   "flex min-w-0 w-full items-center justify-end whitespace-nowrap px-3 py-2 text-right tabular-nums";
 
 const STANCES: { id: ForecastStance; label: string; hint: string }[] = [
-  { id: "bearish", label: "Bearish", hint: "Conservative reasoned path" },
-  { id: "base", label: "Base", hint: "Balanced reasoned path" },
-  { id: "bullish", label: "Bullish", hint: "Optimistic but grounded" },
+  { id: "bearish", label: "Bearish", hint: "Slower, deeper winters — still non-linear" },
+  { id: "base", label: "Base", hint: "~70% of bullish AI/crypto conviction" },
+  { id: "bullish", label: "Bullish", hint: "Datacenter + crypto multi-bagger paths" },
 ];
 
 export function ForecastPanel({
@@ -134,7 +134,7 @@ export function ForecastPanel({
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stance, setStance] = useState<ForecastStance>("base");
+  const [stance, setStance] = useState<ForecastStance>("bullish");
   const [appliedFlash, setAppliedFlash] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
@@ -229,8 +229,9 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Margus reasons every EOY price (no house baselines) · portfolio
-              totals = shares × forecasted SP · next {yearCols.length} years
+              Margus reasons non-linear EOY paths (AI/crypto conviction bands) ·
+              portfolio totals = shares × forecasted SP · next{" "}
+              {yearCols.length} years
             </p>
             {flatCount > 0 && (
               <p className="mt-1 text-[11px] text-amber-200/80">
@@ -427,8 +428,9 @@ export function ForecastPanel({
               Margus plan · themes / trim / add / EOY path
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Pick a stance — Margus reasons full 2026–2030 paths for every
-              ticker (never leaves cells empty) and drafts themes.
+              Pick a stance — Margus uses thesis + conviction bands (datacenter /
+              crypto multi-baggers with bull runs and winters), never straight
+              lines.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">

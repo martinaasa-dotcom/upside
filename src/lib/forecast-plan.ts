@@ -2,6 +2,11 @@ import { z } from "zod";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
+import {
+  FORECAST_CONVICTION_PROMPT,
+  forecastThemeForTicker,
+  shapedFallbackPath,
+} from "@/lib/forecast-conviction";
 
 export const FORECAST_PLAN_STORAGE_KEY = "portfell-forecast-plan-by-portfolio";
 
@@ -88,16 +93,18 @@ export const forecastPlanSchema = z.object({
           .string()
           .describe("Exact ticker as listed in holdings (keep exchange suffix)"),
         prices: yearPriceSchema.describe(
-          "EOY stock prices for 2026–2030 matching the requested stance"
+          "NON-LINEAR EOY prices 2026–2030. Forbidden: equal steps / flat CAGR. Crypto needs a winter year; AI infra can rip with digestion as slower-up not collapse."
         ),
         rationale: z
           .string()
           .optional()
-          .describe("One short reason for this path vs spot"),
+          .describe(
+            "Name the path dynamics (bull run / winter / digestion) + micro-thesis in one tight sentence"
+          ),
       })
     )
     .describe(
-      "EOY SP prognosis for EVERY holding. Must include every ticker with ALL years 2026–2030 filled — never omit a year, never copy spot flat for all years unless genuinely range-bound with rationale."
+      "EOY SP for EVERY holding, all years 2026–2030. High-conviction AI infra / AI power / crypto magnitudes. Never paste spot across years. Never draw a straight line."
     ),
 });
 
@@ -143,17 +150,17 @@ export function saveForecastPlan(plan: ForecastPlan) {
 function stanceGuidance(stance: ForecastStance): string {
   switch (stance) {
     case "bearish":
-      return `STANCE = BEARISH. Bias EOY paths conservatively: slower growth, deeper drawdown years allowed, avoid heroic multiples. Still give a FULL reasoned 2026–2030 path per ticker — never leave a year blank and never paste spot into every year.`;
+      return `STANCE = BEARISH. Slower terminals (~35% of bullish upside bands) and deeper drawdowns OK — but paths must STILL be non-linear with named dynamics. No timid straight lines.`;
     case "bullish":
-      return `STANCE = BULLISH. Bias EOY paths optimistically but grounded: stronger upside into 2029–2030, allow higher multiples for AI/semi/space/crypto names already held. Do not invent lottery tickets. Every year must be a real reasoned level.`;
+      return `STANCE = BULLISH. Hit the conviction magnitude bands (AI infra ~4–8× by 2030, AI power ~2.5–5×, crypto ~3–7× with a winter). Reason every price from micro-thesis — size like a high-conviction bull, shape like a real market.`;
     default:
-      return `STANCE = BASE. Balanced prognosis from your own micro-thesis — realistic compounding with cyclicality. There are NO house price targets to copy. Reason from spot, sector, and structural tailwinds. Fill every year 2026–2030.`;
+      return `STANCE = BASE. Still structurally bullish on AI infra / datacenter power / crypto (~70% of bullish terminals). Non-linear paths mandatory. Do not collapse into sell-side "base case" timidity.`;
   }
 }
 
 /**
  * Guarantee every holding has every FORECAST_YEAR filled.
- * Prefer model prices; backfill gaps with stance-aware CAGR from spot (last resort).
+ * Prefer model prices; backfill gaps with theme-shaped non-linear paths (never flat CAGR).
  */
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
@@ -169,35 +176,28 @@ export function ensureCompleteEoyTargets(
     });
   }
 
-  const cagr =
-    stance === "bearish" ? 0.04 : stance === "bullish" ? 0.18 : 0.1;
-
   const out: ForecastPlan["eoyTargets"] = [];
   for (const row of forecast.rows) {
     const key = row.ticker.toUpperCase();
     const existing = byTicker.get(key);
+    const spot = row.currentPrice > 0 ? row.currentPrice : 1;
+    const theme = forecastThemeForTicker(row.ticker);
+    const shaped = shapedFallbackPath(spot, theme, stance);
     const prices = {
+      ...shaped,
       ...(existing?.prices ?? {}),
     } as Record<ForecastYear, number>;
-    const spot = row.currentPrice > 0 ? row.currentPrice : 1;
 
-    for (let i = 0; i < FORECAST_YEARS.length; i++) {
-      const year = FORECAST_YEARS[i];
+    for (const year of FORECAST_YEARS) {
       const p = prices[year];
       if (!(typeof p === "number" && p > 0)) {
-        // Prefer interpolate from nearest known model years
-        const filled = FORECAST_YEARS.map((y) => prices[y]).filter(
-          (n): n is number => typeof n === "number" && n > 0
-        );
-        if (filled.length >= 1) {
-          const lastKnown = filled[filled.length - 1]!;
-          prices[year] = Math.round(lastKnown * (1 + cagr * 0.35) * 100) / 100;
-        } else {
-          const yearsOut = i + 1;
-          prices[year] =
-            Math.round(spot * Math.pow(1 + cagr, yearsOut) * 100) / 100;
-        }
+        prices[year] = shaped[year];
       }
+    }
+
+    // If the model returned an almost-flat linear ramp, reshape crypto/AI to conviction path
+    if (isNearLinear(prices, spot) && theme !== "index") {
+      Object.assign(prices, shaped);
     }
 
     out.push({
@@ -205,10 +205,39 @@ export function ensureCompleteEoyTargets(
       prices: prices as ForecastPlan["eoyTargets"][number]["prices"],
       rationale:
         existing?.rationale ??
-        `Reasoned ${stance} path from spot ${spot.toFixed(2)}`,
+        `Thesis ${stance} ${theme} path from spot ${spot.toFixed(2)} (non-linear)`,
     });
   }
   return out;
+}
+
+/** Detect boring equal-step / near-constant YoY ramps the model sometimes emits. */
+function isNearLinear(
+  prices: Record<ForecastYear, number>,
+  spot: number
+): boolean {
+  const seq = [spot, ...FORECAST_YEARS.map((y) => prices[y])];
+  const yoy: number[] = [];
+  for (let i = 1; i < seq.length; i++) {
+    const prev = seq[i - 1]!;
+    const cur = seq[i]!;
+    if (!(prev > 0) || !(cur > 0)) return false;
+    yoy.push(cur / prev - 1);
+  }
+  if (yoy.length < 3) return false;
+  const mean = yoy.reduce((s, x) => s + x, 0) / yoy.length;
+  const variance =
+    yoy.reduce((s, x) => s + (x - mean) ** 2, 0) / yoy.length;
+  // Nearly identical YoY each year → linear idiot path
+  if (variance < 0.0008 && Math.abs(mean) < 0.35) return true;
+  // Nearly equal dollar steps
+  const steps: number[] = [];
+  for (let i = 1; i < seq.length; i++) steps.push(seq[i]! - seq[i - 1]!);
+  const stepMean = steps.reduce((s, x) => s + x, 0) / steps.length;
+  const stepVar =
+    steps.reduce((s, x) => s + (x - stepMean) ** 2, 0) / steps.length;
+  const scale = Math.max(Math.abs(stepMean), spot * 0.02);
+  return stepVar < (scale * 0.15) ** 2;
 }
 
 export function buildForecastPlanPrompt(input: {
@@ -230,18 +259,21 @@ export function buildForecastPlanPrompt(input: {
   const lines = input.forecast.rows.map((r) => {
     const sector =
       TICKER_SECTORS[r.ticker] ??
-      TICKER_SECTORS[r.ticker.split(".")[0]] ??
+      TICKER_SECTORS[r.ticker.split(".")[0]!] ??
       "unclassified";
-    return `${r.ticker} [${sector}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}`;
+    const theme = forecastThemeForTicker(r.ticker);
+    return `${r.ticker} [${sector} · theme=${theme}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}`;
   });
 
   const yearsList = FORECAST_YEARS.join(", ");
 
   return `${MARGUS_PERSONA}
 
+${FORECAST_CONVICTION_PROMPT}
+
 Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis for Upside portfolio "${input.portfolioName}".
 
-CRITICAL: There are NO house / spreadsheet EOY baselines. You MUST reason every price yourself from spot, micro-thesis, sector, and stance. Never leave a ticker or year empty. Never paste the same spot price across all years unless the name is a cash-like instrument (and say so in rationale).
+CRITICAL: Reason every price from each company's micro-thesis + the conviction bands above. Do NOT paste sell-side targets. Do NOT draw straight lines. Never leave a ticker or year empty. Never paste the same spot across all years unless cash-like (say so).
 
 Today (UTC): ${now.toISOString().slice(0, 10)} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
@@ -264,8 +296,8 @@ Requirements:
 5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList} — all five required, no omissions.
-   - Respect the STANCE bias with bottom-up reasoning (not consensus targets).
-   - ETFs: modest CAGR with mild cyclicality. Single stocks: allow digestion years. Crypto/treasury names: cycle-aware.
+   - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude on bullish/base. Space: digestion year.
+   - In each rationale, name the dynamics (bull run / winter / digestion) in one sentence.
 7. Do not invent fake share counts or claim trades already happened.
 8. Be concise.`;
 }
