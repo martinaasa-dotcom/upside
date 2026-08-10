@@ -1477,7 +1477,14 @@ export function Dashboard() {
         )}
 
         {isCompound ? (
-          <CompoundInterestSheet bookValue={overview.totals.totalValue} />
+          <CompoundInterestSheet
+            bookValue={overview.totals.totalValue}
+            sheets={overview.sheets.map((s) => ({
+              id: s.portfolio.id,
+              name: s.portfolio.name,
+              value: s.totalValue,
+            }))}
+          />
         ) : isOverview ? (
           <>
             <OverviewDashboard

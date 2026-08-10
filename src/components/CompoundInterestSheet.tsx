@@ -4,7 +4,6 @@ import {
   calculateCompound,
   COMPOUND_STORAGE_KEY,
   DEFAULT_COMPOUND_INPUTS,
-  type CompoundFrequency,
   type CompoundInputs,
   type ContributionFrequency,
   type ContributionMode,
@@ -23,22 +22,26 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-type CurrencyCode = "USD" | "EUR" | "GBP" | "INR" | "JPY";
+type CurrencyCode = "USD" | "EUR";
 
 const CURRENCIES: { code: CurrencyCode; symbol: string }[] = [
   { code: "USD", symbol: "$" },
   { code: "EUR", symbol: "€" },
-  { code: "GBP", symbol: "£" },
-  { code: "INR", symbol: "₹" },
-  { code: "JPY", symbol: "¥" },
 ];
 
 type ViewMode = "table" | "chart" | "summary" | "pie";
-type Breakdown = "yearly" | "monthly";
+
+export type CompoundSheetOption = {
+  id: string;
+  name: string;
+  value: number;
+};
 
 type Props = {
-  /** Seed from live book total when user taps “Use book value”. */
+  /** Full book total (all sheets). */
   bookValue: number;
+  /** Per-portfolio live values for principal picker. */
+  sheets: CompoundSheetOption[];
 };
 
 function loadStored(): CompoundInputs {
@@ -46,7 +49,11 @@ function loadStored(): CompoundInputs {
   try {
     const raw = localStorage.getItem(COMPOUND_STORAGE_KEY);
     if (!raw) return DEFAULT_COMPOUND_INPUTS;
-    return { ...DEFAULT_COMPOUND_INPUTS, ...JSON.parse(raw) };
+    return {
+      ...DEFAULT_COMPOUND_INPUTS,
+      ...JSON.parse(raw),
+      compound: "monthly",
+    };
   } catch {
     return DEFAULT_COMPOUND_INPUTS;
   }
@@ -86,11 +93,11 @@ function SegButton({
   );
 }
 
-export function CompoundInterestSheet({ bookValue }: Props) {
+export function CompoundInterestSheet({ bookValue, sheets }: Props) {
   const [draft, setDraft] = useState<CompoundInputs>(DEFAULT_COMPOUND_INPUTS);
   const [inputs, setInputs] = useState<CompoundInputs>(DEFAULT_COMPOUND_INPUTS);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
-  const [breakdown, setBreakdown] = useState<Breakdown>("yearly");
+  const [principalSource, setPrincipalSource] = useState<string>("custom");
   const [view, setView] = useState<ViewMode>("table");
   const [hydrated, setHydrated] = useState(false);
 
@@ -110,12 +117,11 @@ export function CompoundInterestSheet({ bookValue }: Props) {
     }
   }, [inputs, hydrated]);
 
-  const result = useMemo(() => calculateCompound(inputs), [inputs]);
-  const rows = breakdown === "yearly" ? result.yearly : result.monthly;
-  const displayRows =
-    breakdown === "monthly" && rows.length > 121
-      ? rows.filter((_, i) => i === 0 || i === rows.length - 1 || i % 3 === 0)
-      : rows;
+  const result = useMemo(
+    () => calculateCompound({ ...inputs, compound: "monthly" }),
+    [inputs]
+  );
+  const displayRows = result.yearly;
 
   function patchDraft<K extends keyof CompoundInputs>(
     key: K,
@@ -125,7 +131,20 @@ export function CompoundInterestSheet({ bookValue }: Props) {
   }
 
   function calculate() {
-    setInputs({ ...draft });
+    setInputs({ ...draft, compound: "monthly" });
+  }
+
+  function applyPrincipal(source: string) {
+    setPrincipalSource(source);
+    if (source === "book") {
+      patchDraft("principal", Math.round(bookValue * 100) / 100);
+      return;
+    }
+    if (source === "custom") return;
+    const sheet = sheets.find((s) => s.id === source);
+    if (sheet) {
+      patchDraft("principal", Math.round(sheet.value * 100) / 100);
+    }
   }
 
   const durationLabel =
@@ -157,39 +176,52 @@ export function CompoundInterestSheet({ bookValue }: Props) {
                 active={currency === c.code}
                 onClick={() => setCurrency(c.code)}
               >
-                {c.symbol}
+                {c.code}
               </SegButton>
             ))}
           </div>
         </div>
 
-        <label className="block text-xs text-zinc-400">
-          Initial investment
-          <div className="mt-1.5 flex gap-2">
+        <div>
+          <label className="block text-xs text-zinc-400">
+            Principal source
+            <select
+              value={principalSource}
+              onChange={(e) => applyPrincipal(e.target.value)}
+              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+            >
+              <option value="custom">Custom amount</option>
+              <option value="book">
+                All portfolios ({money(bookValue, currency, 0)})
+              </option>
+              {sheets.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({money(s.value, currency, 0)})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="mt-3 block text-xs text-zinc-400">
+            Initial investment
             <input
               type="text"
               inputMode="decimal"
               value={draft.principal}
-              onChange={(e) =>
+              onChange={(e) => {
+                setPrincipalSource("custom");
                 patchDraft(
                   "principal",
                   Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                )
-              }
+                );
+              }}
               onWheel={blockWheelChange}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              patchDraft("principal", Math.round(bookValue * 100) / 100)
-            }
-            className="mt-1.5 text-[11px] text-brand hover:text-brand-bright"
-          >
-            Use book value ({money(bookValue, currency, 0)})
-          </button>
-        </label>
+          </label>
+          <p className="mt-1.5 text-[11px] text-zinc-600">
+            Compounded monthly · deposit increase defaults to 2%/yr
+          </p>
+        </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <label className="block text-xs text-zinc-400">
@@ -224,24 +256,6 @@ export function CompoundInterestSheet({ bookValue }: Props) {
             </select>
           </label>
         </div>
-
-        <label className="block text-xs text-zinc-400">
-          Compound frequency
-          <select
-            value={draft.compound}
-            onChange={(e) =>
-              patchDraft("compound", e.target.value as CompoundFrequency)
-            }
-            className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-          >
-            <option value="annually">Annually (1/yr)</option>
-            <option value="semiannually">Semiannually (2/yr)</option>
-            <option value="quarterly">Quarterly (4/yr)</option>
-            <option value="monthly">Monthly (12/yr)</option>
-            <option value="daily">Daily (365/yr)</option>
-            <option value="continuous">Continuous</option>
-          </select>
-        </label>
 
         <div>
           <p className="mb-1.5 text-xs text-zinc-400">Duration</p>
@@ -515,20 +529,9 @@ export function CompoundInterestSheet({ bookValue }: Props) {
 
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 px-4 py-3">
-            <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/40 p-0.5">
-              <SegButton
-                active={breakdown === "monthly"}
-                onClick={() => setBreakdown("monthly")}
-              >
-                monthly
-              </SegButton>
-              <SegButton
-                active={breakdown === "yearly"}
-                onClick={() => setBreakdown("yearly")}
-              >
-                yearly
-              </SegButton>
-            </div>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Yearly breakdown
+            </p>
             <div className="flex gap-1">
               {(
                 [
@@ -561,9 +564,7 @@ export function CompoundInterestSheet({ bookValue }: Props) {
               <table className="w-full min-w-[32rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
-                    <th className="px-4 py-2.5 font-medium">
-                      {breakdown === "yearly" ? "Year" : "Month"}
-                    </th>
+                    <th className="px-4 py-2.5 font-medium">Year</th>
                     <th className="px-4 py-2.5 font-medium">Interest</th>
                     <th className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300">
                       Accrued interest
@@ -582,7 +583,7 @@ export function CompoundInterestSheet({ bookValue }: Props) {
                         className="border-b border-zinc-800/80 hover:bg-zinc-900/40"
                       >
                         <td className="px-4 py-2 tabular-nums text-zinc-300">
-                          {breakdown === "yearly" ? row.index : row.label}
+                          {row.index}
                         </td>
                         <td className="px-4 py-2 tabular-nums text-zinc-300">
                           {row.index === 0

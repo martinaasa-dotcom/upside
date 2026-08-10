@@ -302,7 +302,7 @@ export const DEFAULT_COMPOUND_INPUTS: CompoundInputs = {
   withdrawalAmount: 0,
   withdrawalFrequency: "monthly",
   increaseMode: "percent",
-  annualIncrease: 0,
+  annualIncrease: 2,
 };
 
-export const COMPOUND_STORAGE_KEY = "upside-compound-inputs-v1";
+export const COMPOUND_STORAGE_KEY = "upside-compound-inputs-v2";
