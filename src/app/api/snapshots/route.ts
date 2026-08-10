@@ -2,9 +2,10 @@ import {
   captureBookPayload,
   pruneOldSnapshots,
   restoreBookFromSnapshot,
+  restoreSheetFromSnapshot,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
-import { OWNER_PIN_HEADER, requireOwnerPin } from "@/lib/owner-pin";
+import { requireOwnerPin } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     action?: string;
     snapshotId?: string;
+    portfolioId?: string;
     label?: string;
   };
 
@@ -63,17 +65,29 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      // Safety: snapshot live book before wipe
+      await saveBookSnapshot(supabase, "pre_delete", "Before restore");
+      const counts = await restoreBookFromSnapshot(supabase, body.snapshotId);
+      return NextResponse.json({ ok: true, restored: counts });
+    }
+
+    if (body.action === "restore_sheet") {
+      if (!body.snapshotId || !body.portfolioId) {
+        return NextResponse.json(
+          { error: "snapshotId and portfolioId required" },
+          { status: 400 }
+        );
+      }
       await saveBookSnapshot(
         supabase,
         "pre_delete",
-        "Before restore"
+        "Before sheet restore"
       );
-      const counts = await restoreBookFromSnapshot(
+      const counts = await restoreSheetFromSnapshot(
         supabase,
-        body.snapshotId
+        body.snapshotId,
+        body.portfolioId
       );
-      return NextResponse.json({ ok: true, restored: counts });
+      return NextResponse.json({ ok: true, restoredSheet: counts });
     }
 
     if (body.action === "create" || !body.action) {
@@ -96,5 +110,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-export { OWNER_PIN_HEADER };

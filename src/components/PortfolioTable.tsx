@@ -34,6 +34,7 @@ type Props = {
   onDelete: (id: string) => void;
   onEditCash: () => void;
   onAddHolding?: () => void;
+  onAskMargus?: () => void;
 };
 
 function signedTone(value: number) {
@@ -125,7 +126,41 @@ export function PortfolioTable({
   onDelete,
   onEditCash,
   onAddHolding,
+  onAskMargus,
 }: Props) {
+  const emptyCta = (
+    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+      {onAskMargus && (
+        <button
+          type="button"
+          onClick={onAskMargus}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
+        >
+          Import screenshot
+        </button>
+      )}
+      {onAddHolding && (
+        <button
+          type="button"
+          onClick={onAddHolding}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+        >
+          <Plus className="h-4 w-4" />
+          Add holding
+        </button>
+      )}
+      {onAskMargus && (
+        <button
+          type="button"
+          onClick={onAskMargus}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
+        >
+          Ask Margus
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="flex items-center justify-between gap-3 border-b border-zinc-800/80 px-4 py-3">
@@ -155,16 +190,7 @@ export function PortfolioTable({
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
             <p className="text-sm text-zinc-400">No holdings on this sheet yet.</p>
-            {onAddHolding && (
-              <button
-                type="button"
-                onClick={onAddHolding}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
-              >
-                <Plus className="h-4 w-4" />
-                Add holding
-              </button>
-            )}
+            {emptyCta}
           </div>
         ) : (
           holdings.map((h) => (
@@ -194,7 +220,7 @@ export function PortfolioTable({
                   Shares
                   <InlineNumber
                     value={h.shares}
-                    digits={0}
+                    digits={4}
                     onCommit={(shares) => onPatch({ id: h.id, shares })}
                     className="w-full text-left"
                   />
@@ -272,16 +298,7 @@ export function PortfolioTable({
         {holdings.length === 0 ? (
           <div className="px-4 py-12 text-center">
             <p className="text-sm text-zinc-400">No holdings on this sheet yet.</p>
-            {onAddHolding && (
-              <button
-                type="button"
-                onClick={onAddHolding}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
-              >
-                <Plus className="h-4 w-4" />
-                Add holding
-              </button>
-            )}
+            {emptyCta}
           </div>
         ) : (
           <FluidTable template={TEMPLATE}>
@@ -309,7 +326,7 @@ export function PortfolioTable({
                 <div className={cn(cellBase, "py-1")}>
                   <InlineNumber
                     value={h.shares}
-                    digits={0}
+                    digits={4}
                     onCommit={(shares) => onPatch({ id: h.id, shares })}
                   />
                 </div>

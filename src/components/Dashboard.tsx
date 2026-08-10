@@ -18,7 +18,14 @@ import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
-import { OWNER_PIN_HEADER } from "@/lib/owner-pin-client";
+import { OwnerUnlockModal } from "@/components/OwnerUnlockModal";
+import {
+  getSessionPin,
+  loadActiveSheetId,
+  ownerPinHeaders,
+  saveActiveSheetId,
+  setSessionPin,
+} from "@/lib/owner-pin-client";
 import { buildForecast, type ForecastYear } from "@/lib/forecast";
 import {
   loadEoyOverrides,
@@ -47,8 +54,8 @@ import type {
   Portfolio,
   Quote,
 } from "@/lib/types";
-import { Eye, EyeOff, History, Plus, RefreshCw, Save } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff, History, Lock, Plus, RefreshCw, Save } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   CC_DEFAULT_VISIBLE,
@@ -127,6 +134,15 @@ export function Dashboard() {
     | null
   >(null);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [bookUnlocked, setBookUnlocked] = useState(false);
+  const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
+  const [margusExpandSignal, setMargusExpandSignal] = useState(0);
+  const [mobileMargusCollapsed] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
+  );
+  const bookRef = useRef({ portfolios, holdings });
+  bookRef.current = { portfolios, holdings };
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState(() =>
     loadVisibilityMap(CC_VISIBLE_KEY)
   );
@@ -268,11 +284,40 @@ export function Dashboard() {
     return null;
   }, [quotes]);
 
-  const loadPortfolios = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
+  const pickInitialSheet = useCallback(
+    (list: Portfolio[], prev: string) => {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const sheetParam = params.get("sheet")?.trim().toLowerCase();
+        if (sheetParam) {
+          const bySlugOrId = list.find(
+            (p) =>
+              p.id === sheetParam ||
+              p.slug?.toLowerCase() === sheetParam ||
+              p.name.toLowerCase() === sheetParam
+          );
+          if (bySlugOrId) return bySlugOrId.id;
+        }
+      }
+      if (prev && (prev === OVERVIEW_TAB_ID || list.some((p) => p.id === prev))) {
+        return prev;
+      }
+      const saved = loadActiveSheetId();
+      if (saved && (saved === OVERVIEW_TAB_ID || list.some((p) => p.id === saved))) {
+        return saved;
+      }
+      return OVERVIEW_TAB_ID;
+    },
+    []
+  );
+
+  const loadPortfolios = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) {
+      setLoading(true);
+      setLoadError(null);
+    }
     try {
-      const res = await fetch("/api/portfolios");
+      const res = await fetch("/api/portfolios", { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`Portfolios request failed (${res.status})`);
       }
@@ -281,30 +326,33 @@ export function Dashboard() {
         setSource("supabase");
         setPortfolios(data.portfolios);
         setHoldings(data.holdings ?? []);
-        setActiveId((prev) => prev || OVERVIEW_TAB_ID);
+        setBookSyncedAt(Date.now());
+        setActiveId((prev) => pickInitialSheet(data.portfolios, prev));
       } else {
         const demo = loadDemoStore();
         setSource("demo");
         setPortfolios(demo.portfolios);
         setHoldings(demo.holdings);
-        setActiveId((prev) => prev || OVERVIEW_TAB_ID);
+        setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
         setLocked(hasLockedSave());
       }
     } catch (err) {
       console.error(err);
-      setLoadError(
-        "Couldn’t load the shared book. Showing local demo — retry when ready."
-      );
-      const demo = loadDemoStore();
-      setSource("demo");
-      setPortfolios(demo.portfolios);
-      setHoldings(demo.holdings);
-      setActiveId((prev) => prev || OVERVIEW_TAB_ID);
-      setLocked(hasLockedSave());
+      if (!opts?.silent) {
+        setLoadError(
+          "Couldn’t load the shared book. Showing local demo — retry when ready."
+        );
+        const demo = loadDemoStore();
+        setSource("demo");
+        setPortfolios(demo.portfolios);
+        setHoldings(demo.holdings);
+        setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
+        setLocked(hasLockedSave());
+      }
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
-  }, []);
+  }, [pickInitialSheet]);
 
   const refreshMarkets = useCallback(
     async (
@@ -374,7 +422,75 @@ export function Dashboard() {
 
   useEffect(() => {
     void loadPortfolios();
+    const pin = getSessionPin();
+    if (pin) {
+      void fetch("/api/owner/verify", {
+        method: "POST",
+        headers: ownerPinHeaders(pin),
+      }).then((res) => {
+        if (res.ok) setBookUnlocked(true);
+      });
+    }
   }, [loadPortfolios]);
+
+  useEffect(() => {
+    saveActiveSheetId(activeId);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (activeId === OVERVIEW_TAB_ID) {
+      url.searchParams.delete("sheet");
+    } else {
+      const p = portfolios.find((x) => x.id === activeId);
+      if (p?.slug) url.searchParams.set("sheet", p.slug);
+      else url.searchParams.set("sheet", activeId);
+    }
+    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  }, [activeId, portfolios]);
+
+  useEffect(() => {
+    if (source !== "supabase") return;
+    const fingerprint = (ps: Portfolio[], hs: Holding[]) =>
+      JSON.stringify([
+        ps.map((p) => [p.id, p.cash_balance, p.name]),
+        hs.map((h) => [
+          h.id,
+          h.ticker,
+          h.shares,
+          h.buy_price,
+          h.target_call_pct,
+          h.stock_target_override,
+        ]),
+      ]);
+
+    const tick = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await fetch("/api/portfolios", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.source !== "supabase") return;
+        const nextP = (data.portfolios ?? []) as Portfolio[];
+        const nextH = (data.holdings ?? []) as Holding[];
+        const nextSig = fingerprint(nextP, nextH);
+        const local = bookRef.current;
+        const localSig = fingerprint(local.portfolios, local.holdings);
+        if (nextSig === localSig) {
+          setBookSyncedAt(Date.now());
+          return;
+        }
+        setPortfolios(nextP);
+        setHoldings(nextH);
+        setBookSyncedAt(Date.now());
+        toast("Book updated elsewhere — synced", "info");
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const id = window.setInterval(() => void tick(), 45_000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowTick(Date.now()), 1000);
@@ -403,11 +519,11 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePortfolio?.id, isOverview, ccSignature, allTickers.join(","), refreshMarkets]);
 
-  // Free Yahoo poll: prices every 20s while the tab is visible (options stay on demand)
+  // Free Yahoo poll: prices every 45s while the tab is visible (options stay on demand)
   useEffect(() => {
     if (allTickers.length === 0) return;
 
-    const POLL_MS = 20_000;
+    const POLL_MS = 45_000;
     let cancelled = false;
 
     const tick = () => {
@@ -440,23 +556,54 @@ export function Dashboard() {
     refreshMarkets,
   ]);
 
-  async function handleSave(values: HoldingFormValues) {
+  async function ensureBookPin(): Promise<string | null> {
+    const existing = getSessionPin();
+    if (existing) return existing;
+    setUnlockOpen(true);
+    toast("Unlock the book with your owner PIN to edit", "info");
+    return null;
+  }
+
+  async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+    const pin = getSessionPin();
+    const headers = ownerPinHeaders(
+      pin || undefined,
+      {
+        ...(init?.headers as Record<string, string> | undefined),
+      }
+    );
+    if (init?.body && !headers["Content-Type"] && !headers["content-type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+    const res = await fetch(input, { ...init, headers });
+    if (res.status === 401 || res.status === 429) {
+      setBookUnlocked(false);
+      setUnlockOpen(true);
+    }
+    return res;
+  }
+
+    async function handleSave(values: HoldingFormValues) {
     if (!activePortfolio) return;
 
     if (source === "supabase") {
-      const res = await fetch("/api/holdings", {
+      if (!(await ensureBookPin())) return;
+      const res = await apiFetch("/api/holdings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
           portfolio_id: activePortfolio.id,
         }),
       });
       if (!res.ok) {
-        toast("Failed to save holding", "error");
+        const data = await res.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to save holding",
+          "error"
+        );
         return;
       }
-      await loadPortfolios();
+      await loadPortfolios({ silent: true });
     } else {
       const store = loadDemoStore();
       const next = upsertHolding(store, {
@@ -490,13 +637,17 @@ export function Dashboard() {
     }
 
     if (source === "supabase") {
-      const res = await fetch("/api/holdings", {
+      if (!(await ensureBookPin())) return;
+      const res = await apiFetch("/api/holdings", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ...fields }),
       });
       if (!res.ok) {
-        toast("Failed to update holding", "error");
+        const data = await res.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to update holding",
+          "error"
+        );
         return;
       }
       setHoldings((prev) =>
@@ -674,249 +825,196 @@ export function Dashboard() {
         return;
       }
 
-      // Supabase path — optimistic local updates + API
-      for (const action of actions) {
-        if (
-          action.action === "set_call_pct" ||
-          action.action === "update_holding"
-        ) {
-          const h = findHolding(action.ticker, holdings);
-          if (!h) continue;
-          const fields: Record<string, number> = {};
-          if (action.action === "set_call_pct") {
-            fields.target_call_pct = action.callPct;
-            setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-          } else {
-            if (action.shares != null) fields.shares = action.shares;
-            if (action.buyPrice != null) fields.buy_price = action.buyPrice;
-            if (action.shares != null) {
-              setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-            }
-          }
-          if (!Object.keys(fields).length) continue;
-          void fetch("/api/holdings", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: h.id, ...fields }),
-          });
-          setHoldings((prev) =>
-            prev.map((x) => (x.id === h.id ? { ...x, ...fields } : x))
+      // Supabase path — await mutations + dedicated import endpoint
+      void (async () => {
+        if (!(await ensureBookPin())) {
+          toast("Unlock required before Margus can apply changes", "error");
+          return;
+        }
+
+        let working = [...holdings];
+        const findH = (ticker: string) =>
+          working.find(
+            (h) =>
+              h.portfolio_id === activePortfolio.id &&
+              h.ticker.toUpperCase() === ticker.toUpperCase()
           );
-        } else if (action.action === "set_call_pct_bulk") {
-          for (const u of action.updates) {
-            const h = findHolding(u.ticker, holdings);
+
+        let failures = 0;
+        const patchHoldingApi = async (
+          id: string,
+          fields: Record<string, number | null>
+        ) => {
+          const res = await apiFetch("/api/holdings", {
+            method: "PATCH",
+            body: JSON.stringify({ id, ...fields }),
+          });
+          if (!res.ok) {
+            failures += 1;
+            return false;
+          }
+          working = working.map((x) =>
+            x.id === id ? ({ ...x, ...fields } as Holding) : x
+          );
+          setHoldings((prev) =>
+            prev.map((x) => (x.id === id ? { ...x, ...fields } : x))
+          );
+          return true;
+        };
+
+        for (const action of actions) {
+          if (
+            action.action === "set_call_pct" ||
+            action.action === "update_holding"
+          ) {
+            const h = findH(action.ticker);
             if (!h) continue;
-            setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-            void fetch("/api/holdings", {
+            const fields: Record<string, number | null> = {};
+            if (action.action === "set_call_pct") {
+              fields.target_call_pct = action.callPct;
+              setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+            } else {
+              if (action.shares != null) fields.shares = action.shares;
+              if (action.buyPrice != null) fields.buy_price = action.buyPrice;
+              if (action.shares != null) {
+                setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+              }
+            }
+            if (!Object.keys(fields).length) continue;
+            await patchHoldingApi(h.id, fields);
+          } else if (action.action === "set_call_pct_bulk") {
+            for (const u of action.updates) {
+              const h = findH(u.ticker);
+              if (!h) continue;
+              setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+              await patchHoldingApi(h.id, { target_call_pct: u.callPct });
+            }
+          } else if (action.action === "set_uniform_call_pct") {
+            for (const h of working.filter(
+              (x) => x.portfolio_id === activePortfolio.id
+            )) {
+              setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+              await patchHoldingApi(h.id, { target_call_pct: action.callPct });
+            }
+          } else if (action.action === "set_cash") {
+            const res = await apiFetch("/api/portfolios", {
               method: "PATCH",
-              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                id: h.id,
-                target_call_pct: u.callPct,
+                id: activePortfolio.id,
+                cash_balance: action.cash,
               }),
             });
-            setHoldings((prev) =>
-              prev.map((x) =>
-                x.id === h.id ? { ...x, target_call_pct: u.callPct } : x
-              )
-            );
-          }
-        } else if (action.action === "set_uniform_call_pct") {
-          for (const h of holdings.filter(
-            (x) => x.portfolio_id === activePortfolio.id
-          )) {
-            setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-            void fetch("/api/holdings", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: h.id,
-                target_call_pct: action.callPct,
-              }),
-            });
-          }
-          setHoldings((prev) =>
-            prev.map((h) =>
-              h.portfolio_id === activePortfolio.id
-                ? { ...h, target_call_pct: action.callPct }
-                : h
-            )
-          );
-        } else if (action.action === "set_cash") {
-          void fetch("/api/portfolios", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: activePortfolio.id,
-              cash_balance: action.cash,
-            }),
-          });
-          setPortfolios((prev) =>
-            prev.map((p) =>
-              p.id === activePortfolio.id
-                ? { ...p, cash_balance: action.cash }
-                : p
-            )
-          );
-        } else if (action.action === "add_holding") {
-          void fetch("/api/holdings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              portfolio_id: activePortfolio.id,
-              ticker: action.ticker,
-              shares: action.shares,
-              buy_price: action.buyPrice,
-              target_call_pct: action.callPct,
-              sort_order:
-                holdings.filter((h) => h.portfolio_id === activePortfolio.id)
-                  .length + 1,
-            }),
-          }).then(() => loadPortfolios());
-        } else if (action.action === "import_sheet") {
-          void (async () => {
-            if (action.cash != null) {
-              await fetch("/api/portfolios", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  id: activePortfolio.id,
-                  cash_balance: action.cash,
-                }),
-              });
+            if (!res.ok) failures += 1;
+            else {
               setPortfolios((prev) =>
                 prev.map((p) =>
                   p.id === activePortfolio.id
-                    ? { ...p, cash_balance: action.cash as number }
+                    ? { ...p, cash_balance: action.cash }
                     : p
                 )
               );
             }
-
-            let sortBase = holdings.filter(
-              (h) => h.portfolio_id === activePortfolio.id
-            ).length;
-            for (const row of action.holdings) {
-              const existing = findHolding(row.ticker, holdings);
-              if (existing) {
-                await fetch("/api/holdings", {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    id: existing.id,
-                    shares: row.shares,
-                    buy_price: row.buyPrice,
-                    target_call_pct: row.callPct,
-                  }),
-                });
-              } else {
-                sortBase += 1;
-                await fetch("/api/holdings", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    portfolio_id: activePortfolio.id,
-                    ticker: row.ticker,
-                    shares: row.shares,
-                    buy_price: row.buyPrice,
-                    target_call_pct: row.callPct,
-                    sort_order: sortBase,
-                  }),
-                });
-              }
-            }
-            await loadPortfolios();
-          })();
-        } else if (action.action === "remove_holding") {
-          const h = findHolding(action.ticker, holdings);
-          if (!h) continue;
-          void fetch(`/api/holdings?id=${h.id}`, { method: "DELETE" });
-          setHoldings((prev) => prev.filter((x) => x.id !== h.id));
-        } else if (action.action === "set_stock_target") {
-          const h = findHolding(action.ticker, holdings);
-          if (!h) continue;
-          setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-          void fetch("/api/holdings", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: h.id,
-              stock_target_override: action.stockTarget,
-            }),
-          });
-          setHoldings((prev) =>
-            prev.map((x) =>
-              x.id === h.id
-                ? { ...x, stock_target_override: action.stockTarget }
-                : x
-            )
-          );
-        } else if (action.action === "set_stock_target_bulk") {
-          for (const u of action.updates) {
-            const h = findHolding(u.ticker, holdings);
-            if (!h) continue;
-            setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-            void fetch("/api/holdings", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
+          } else if (action.action === "add_holding") {
+            const res = await apiFetch("/api/holdings", {
+              method: "POST",
               body: JSON.stringify({
-                id: h.id,
-                stock_target_override: u.stockTarget,
+                portfolio_id: activePortfolio.id,
+                ticker: action.ticker,
+                shares: action.shares,
+                buy_price: action.buyPrice,
+                target_call_pct: action.callPct,
+                sort_order:
+                  working.filter((h) => h.portfolio_id === activePortfolio.id)
+                    .length + 1,
               }),
             });
-            setHoldings((prev) =>
-              prev.map((x) =>
-                x.id === h.id
-                  ? { ...x, stock_target_override: u.stockTarget }
-                  : x
-              )
-            );
-          }
-        } else if (action.action === "clear_stock_target") {
-          const h = findHolding(action.ticker, holdings);
-          if (!h) continue;
-          setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-          void fetch("/api/holdings", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: h.id,
-              stock_target_override: null,
-            }),
-          });
-          setHoldings((prev) =>
-            prev.map((x) =>
-              x.id === h.id ? { ...x, stock_target_override: null } : x
-            )
-          );
-        } else if (action.action === "apply_write_plan") {
-          for (const u of action.updates) {
-            const h = findHolding(u.ticker, holdings);
+            if (!res.ok) failures += 1;
+            else await loadPortfolios({ silent: true });
+          } else if (action.action === "import_sheet") {
+            const res = await apiFetch("/api/holdings/import", {
+              method: "POST",
+              body: JSON.stringify({
+                portfolio_id: activePortfolio.id,
+                cash: action.cash ?? null,
+                holdings: action.holdings.map((row) => ({
+                  ticker: row.ticker,
+                  shares: row.shares,
+                  buy_price: row.buyPrice,
+                  target_call_pct: row.callPct,
+                })),
+              }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              failures += 1;
+              toast(
+                typeof data.error === "string"
+                  ? data.error
+                  : "Import failed",
+                "error"
+              );
+            } else {
+              const upserted = Number(data.upserted ?? 0);
+              const failed = Array.isArray(data.failed) ? data.failed.length : 0;
+              const cashBit = data.cashUpdated ? " · cash updated" : "";
+              toast(
+                `Imported ${upserted} ticker${upserted === 1 ? "" : "s"}${cashBit}${
+                  failed ? ` · ${failed} failed` : ""
+                }`,
+                failed ? "error" : "success"
+              );
+              await loadPortfolios({ silent: true });
+            }
+          } else if (action.action === "remove_holding") {
+            const h = findH(action.ticker);
+            if (!h) continue;
+            const res = await apiFetch(`/api/holdings?id=${h.id}`, {
+              method: "DELETE",
+            });
+            if (!res.ok) failures += 1;
+            else {
+              working = working.filter((x) => x.id !== h.id);
+              setHoldings((prev) => prev.filter((x) => x.id !== h.id));
+            }
+          } else if (action.action === "set_stock_target") {
+            const h = findH(action.ticker);
             if (!h) continue;
             setOptions((opts) => ({ ...opts, [h.ticker]: null }));
-            void fetch("/api/holdings", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                id: h.id,
+            await patchHoldingApi(h.id, {
+              stock_target_override: action.stockTarget,
+            });
+          } else if (action.action === "set_stock_target_bulk") {
+            for (const u of action.updates) {
+              const h = findH(u.ticker);
+              if (!h) continue;
+              setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+              await patchHoldingApi(h.id, {
+                stock_target_override: u.stockTarget,
+              });
+            }
+          } else if (action.action === "clear_stock_target") {
+            const h = findH(action.ticker);
+            if (!h) continue;
+            setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+            await patchHoldingApi(h.id, { stock_target_override: null });
+          } else if (action.action === "apply_write_plan") {
+            for (const u of action.updates) {
+              const h = findH(u.ticker);
+              if (!h) continue;
+              setOptions((opts) => ({ ...opts, [h.ticker]: null }));
+              await patchHoldingApi(h.id, {
                 stock_target_override: u.stockTarget,
                 target_call_pct: u.callPct,
-              }),
-            });
-            setHoldings((prev) =>
-              prev.map((x) =>
-                x.id === h.id
-                  ? {
-                      ...x,
-                      stock_target_override: u.stockTarget,
-                      target_call_pct: u.callPct,
-                    }
-                  : x
-              )
-            );
+              });
+            }
           }
         }
-      }
+
+        if (failures > 0) {
+          toast(`${failures} advisor write(s) failed`, "error");
+          await loadPortfolios({ silent: true });
+        }
+      })();
     },
     // refreshMarkets / loadPortfolios are stable enough via closure for advisor tools
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -933,26 +1031,32 @@ export function Dashboard() {
     });
   }
 
-  async function deleteHoldingById(id: string) {
+  async function deleteHoldingById(id: string): Promise<boolean> {
+    const removed = holdings.find((h) => h.id === id);
     if (source === "supabase") {
-      const res = await fetch(`/api/holdings?id=${id}`, { method: "DELETE" });
+      if (!(await ensureBookPin())) return false;
+      const res = await apiFetch(`/api/holdings?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
         toast("Failed to delete holding", "error");
-        return;
+        return false;
       }
-      await loadPortfolios();
+      setHoldings((prev) => prev.filter((h) => h.id !== id));
     } else {
       const next = deleteHolding(loadDemoStore(), id);
       setHoldings(next.holdings);
     }
     toast("Holding deleted", "success");
+    if (removed && source === "supabase") {
+      // Soft undo window via toast action isn't available — re-add on demand not wired.
+    }
+    return true;
   }
 
   async function handleAddSheet(name: string) {
     if (source === "supabase") {
-      const res = await fetch("/api/portfolios", {
+      if (!(await ensureBookPin())) return;
+      const res = await apiFetch("/api/portfolios", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
       if (!res.ok) {
@@ -975,9 +1079,9 @@ export function Dashboard() {
 
   async function handleRenameSheet(id: string, name: string) {
     if (source === "supabase") {
-      const res = await fetch("/api/portfolios", {
+      if (!(await ensureBookPin())) return;
+      const res = await apiFetch("/api/portfolios", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name }),
       });
       if (!res.ok) {
@@ -994,17 +1098,17 @@ export function Dashboard() {
     toast("Sheet renamed", "success");
   }
 
-  async function deleteSheetById(id: string, pin?: string) {
-    const ownerPin = pin?.trim() ?? "";
+  async function deleteSheetById(id: string, pin?: string): Promise<boolean> {
+    const ownerPin = (pin?.trim() || getSessionPin()).trim();
     if (!ownerPin) {
       toast("Owner PIN required to delete a sheet", "error");
-      return;
+      return false;
     }
 
     if (source === "supabase") {
-      const res = await fetch(`/api/portfolios?id=${id}`, {
+      const res = await apiFetch(`/api/portfolios?id=${id}`, {
         method: "DELETE",
-        headers: { [OWNER_PIN_HEADER]: ownerPin },
+        headers: ownerPinHeaders(ownerPin),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -1012,15 +1116,17 @@ export function Dashboard() {
           typeof data.error === "string" ? data.error : "Failed to delete sheet",
           "error"
         );
-        return;
+        return false;
       }
+      setSessionPin(ownerPin);
+      setBookUnlocked(true);
       clearChatHistory(id);
-      await loadPortfolios();
+      await loadPortfolios({ silent: true });
       setActiveId((prev) => (prev === id ? OVERVIEW_TAB_ID : prev));
     } else {
       const verify = await fetch("/api/owner/verify", {
         method: "POST",
-        headers: { [OWNER_PIN_HEADER]: ownerPin },
+        headers: ownerPinHeaders(ownerPin),
       });
       if (!verify.ok) {
         const data = await verify.json().catch(() => ({}));
@@ -1028,8 +1134,10 @@ export function Dashboard() {
           typeof data.error === "string" ? data.error : "Invalid owner PIN",
           "error"
         );
-        return;
+        return false;
       }
+      setSessionPin(ownerPin);
+      setBookUnlocked(true);
       const next = deletePortfolio(loadDemoStore(), id);
       clearChatHistory(id);
       setPortfolios(next.portfolios);
@@ -1037,6 +1145,7 @@ export function Dashboard() {
       if (activeId === id) setActiveId(OVERVIEW_TAB_ID);
     }
     toast("Sheet deleted", "success");
+    return true;
   }
 
   async function handleSaveCash(cash: number) {
@@ -1046,9 +1155,9 @@ export function Dashboard() {
       const next = updateCash(loadDemoStore(), activePortfolio.id, cash);
       setPortfolios(next.portfolios);
     } else {
-      const res = await fetch("/api/portfolios", {
+      if (!(await ensureBookPin())) return;
+      const res = await apiFetch("/api/portfolios", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: activePortfolio.id, cash_balance: cash }),
       });
       if (!res.ok) {
@@ -1142,9 +1251,33 @@ export function Dashboard() {
             >
               {formatPricesAge(quotesUpdatedAt, nowTick)}
               {quotesDelayed ? " · delayed" : ""}
+              {source === "supabase" && bookSyncedAt
+                ? ` · book ${formatPricesAge(bookSyncedAt, nowTick).replace("Prices · ", "")}`
+                : ""}
             </span>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {source === "supabase" && (
+              <button
+                type="button"
+                onClick={() => setUnlockOpen(true)}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium ${
+                  bookUnlocked
+                    ? "border-emerald-500/40 text-emerald-300"
+                    : "border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
+                }`}
+                title={
+                  bookUnlocked
+                    ? "Book unlocked for edits this session"
+                    : "Unlock shared book edits"
+                }
+              >
+                <Lock className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">
+                  {bookUnlocked ? "Unlocked" : "Unlock"}
+                </span>
+              </button>
+            )}
             {!isOverview && (
               <>
                 <button
@@ -1341,6 +1474,9 @@ export function Dashboard() {
               onDelete={requestDeleteHolding}
               onEditCash={() => setCashModalOpen(true)}
               onAddHolding={() => setModalOpen(true)}
+              onAskMargus={() =>
+                setMargusExpandSignal((n) => n + 1)
+              }
             />
 
             {ccVisible && (
@@ -1374,6 +1510,8 @@ export function Dashboard() {
             <CcAdvisorChat
               key={activePortfolio!.id}
               portfolioId={activePortfolio!.id}
+              defaultCollapsed={mobileMargusCollapsed}
+              expandSignal={margusExpandSignal}
               context={{
                 portfolioName: activePortfolio!.name,
                 cashBalance: activePortfolio!.cash_balance,
@@ -1485,23 +1623,43 @@ export function Dashboard() {
         destructive
         requirePin={confirmDelete?.kind === "sheet"}
         pinLabel="Owner PIN"
+        initialPin={getSessionPin()}
         onClose={() => setConfirmDelete(null)}
-        onConfirm={(pin) => {
-          if (!confirmDelete) return;
+        onConfirm={async (pin) => {
+          if (!confirmDelete) return false;
           if (confirmDelete.kind === "sheet") {
-            void deleteSheetById(confirmDelete.id, pin);
-          } else {
-            void deleteHoldingById(confirmDelete.id);
+            return deleteSheetById(confirmDelete.id, pin);
           }
+          return deleteHoldingById(confirmDelete.id);
         }}
       />
 
       <SnapshotsModal
         open={snapshotsOpen}
         onClose={() => setSnapshotsOpen(false)}
-        onRestored={() => {
-          toast("Book restored from snapshot", "success");
-          void loadPortfolios();
+        activePortfolioId={
+          !isOverview ? activePortfolio?.id ?? null : null
+        }
+        activePortfolioName={
+          !isOverview ? activePortfolio?.name ?? null : null
+        }
+        onRestored={(mode) => {
+          toast(
+            mode === "sheet"
+              ? "Sheet restored from snapshot"
+              : "Book restored from snapshot",
+            "success"
+          );
+          void loadPortfolios({ silent: true });
+        }}
+      />
+
+      <OwnerUnlockModal
+        open={unlockOpen}
+        onClose={() => setUnlockOpen(false)}
+        onUnlocked={() => {
+          setBookUnlocked(true);
+          toast("Book unlocked for this tab", "success");
         }}
       />
     </div>

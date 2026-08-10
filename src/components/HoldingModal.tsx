@@ -28,6 +28,7 @@ export function HoldingModal({
   const [shares, setShares] = useState("");
   const [buyPrice, setBuyPrice] = useState("");
   const [targetCall, setTargetCall] = useState("15");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -35,20 +36,36 @@ export function HoldingModal({
     setShares("");
     setBuyPrice("");
     setTargetCall("15");
+    setError(null);
   }, [open]);
 
   if (!open) return null;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const sharesN = Math.round(parseDecimal(shares));
+    const sharesN = parseDecimal(shares);
     const buyN = parseDecimal(buyPrice);
     const callN = Math.round(parseDecimal(targetCall));
-    if (!ticker.trim() || !sharesN || !buyN || Number.isNaN(callN)) return;
+    if (!ticker.trim()) {
+      setError("Ticker is required");
+      return;
+    }
+    if (!Number.isFinite(sharesN) || sharesN <= 0) {
+      setError("Shares must be a positive number");
+      return;
+    }
+    if (!Number.isFinite(buyN) || buyN <= 0) {
+      setError("Buy price must be a positive number");
+      return;
+    }
+    if (!Number.isFinite(callN) || callN < 0 || callN > 100) {
+      setError("Target call % must be 0–100");
+      return;
+    }
 
     onSave({
       ticker: ticker.trim().toUpperCase(),
-      shares: sharesN,
+      shares: Math.round(sharesN * 10000) / 10000,
       buy_price: Math.round(buyN * 100) / 100,
       target_call_pct: callN / 100,
     });
@@ -86,7 +103,10 @@ export function HoldingModal({
             <input
               autoFocus
               value={ticker}
-              onChange={(e) => setTicker(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                setTicker(e.target.value.toUpperCase());
+                setError(null);
+              }}
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
               placeholder="NBIS"
               required
@@ -97,9 +117,14 @@ export function HoldingModal({
               Shares
               <input
                 type="text"
-                inputMode="numeric"
+                inputMode="decimal"
                 value={shares}
-                onChange={(e) => setShares(e.target.value.replace(/[^\d]/g, ""))}
+                onChange={(e) => {
+                  setShares(
+                    e.target.value.replace(/,/g, ".").replace(/[^\d.]/g, "")
+                  );
+                  setError(null);
+                }}
                 onWheel={blockWheelChange}
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
                 required
@@ -111,11 +136,12 @@ export function HoldingModal({
                 type="text"
                 inputMode="decimal"
                 value={buyPrice}
-                onChange={(e) =>
+                onChange={(e) => {
                   setBuyPrice(
                     e.target.value.replace(/,/g, ".").replace(/[^\d.]/g, "")
-                  )
-                }
+                  );
+                  setError(null);
+                }}
                 onWheel={blockWheelChange}
                 className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
                 required
@@ -128,14 +154,17 @@ export function HoldingModal({
               type="text"
               inputMode="numeric"
               value={targetCall}
-              onChange={(e) =>
-                setTargetCall(e.target.value.replace(/[^\d]/g, ""))
-              }
+              onChange={(e) => {
+                setTargetCall(e.target.value.replace(/[^\d]/g, ""));
+                setError(null);
+              }}
               onWheel={blockWheelChange}
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </label>
         </div>
+
+        {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
           <button

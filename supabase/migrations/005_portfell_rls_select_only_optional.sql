@@ -1,0 +1,14 @@
+-- OPTIONAL: only after SUPABASE_SERVICE_ROLE_KEY is set on the API.
+-- Deny anon/authenticated writes; API must use service role for mutations.
+-- Do not apply until service role is configured or all writes will fail.
+
+-- drop policy if exists "portfell_portfolios_all" on public.portfell_portfolios;
+-- drop policy if exists "portfell_holdings_all" on public.portfell_holdings;
+-- drop policy if exists "portfell_book_snapshots_all" on public.portfell_book_snapshots;
+--
+-- create policy "portfell_portfolios_select" on public.portfell_portfolios
+--   for select using (true);
+-- create policy "portfell_holdings_select" on public.portfell_holdings
+--   for select using (true);
+-- create policy "portfell_book_snapshots_select" on public.portfell_book_snapshots
+--   for select using (true);

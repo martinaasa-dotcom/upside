@@ -51,6 +51,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = requireOwnerPin(req);
+  if (denied) return denied;
+
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -87,6 +90,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = requireOwnerPin(req);
+  if (denied) return denied;
+
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(

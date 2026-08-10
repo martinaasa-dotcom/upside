@@ -186,6 +186,16 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
   const maxSheet = Math.max(...sheets.map((s) => s.totalValue), 1);
   const dayUp = (totals.todayDollar ?? 0) >= 0;
   const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
+  const [tickerQuery, setTickerQuery] = useState("");
+
+  const attention = tickers.filter(
+    (t) => t.todayPct == null || Math.abs(t.roiPct) < 0.001
+  );
+  const filteredTickers = tickerQuery.trim()
+    ? tickers.filter((t) =>
+        t.ticker.toLowerCase().includes(tickerQuery.trim().toLowerCase())
+      )
+    : [];
 
   useEffect(() => {
     const list = tickers.map((t) => t.ticker);
@@ -262,6 +272,52 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
             </p>
           </div>
         </div>
+
+        <div className="relative mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <label className="block min-w-0 flex-1 text-xs font-medium text-zinc-500">
+            Jump to ticker
+            <input
+              value={tickerQuery}
+              onChange={(e) => setTickerQuery(e.target.value.toUpperCase())}
+              placeholder="NBIS, CRWV…"
+              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+            />
+          </label>
+          {attention.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 sm:justify-end">
+              {attention.slice(0, 6).map((t) => (
+                <button
+                  key={t.ticker}
+                  type="button"
+                  onClick={() => openFirstPortfolio(t)}
+                  className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-100 hover:bg-amber-500/20"
+                  title="Needs a look — flat P&L or missing today %"
+                >
+                  {t.ticker}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {tickerQuery.trim() && (
+          <div className="relative mt-3 flex flex-wrap gap-2">
+            {filteredTickers.length === 0 ? (
+              <p className="text-sm text-zinc-500">No match</p>
+            ) : (
+              filteredTickers.map((t) => (
+                <button
+                  key={t.ticker}
+                  type="button"
+                  onClick={() => openFirstPortfolio(t)}
+                  className="rounded-lg border border-zinc-700 bg-zinc-900/60 px-3 py-1.5 text-sm text-zinc-100 hover:border-brand/50"
+                >
+                  {t.ticker}{" "}
+                  <span className={tone(t.roiPct)}>{percent(t.roiPct)}</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
 
         <div className="relative mt-6 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {[

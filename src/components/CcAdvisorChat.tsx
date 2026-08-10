@@ -78,6 +78,10 @@ type Props = {
   portfolioId: string;
   context: CcChatContext;
   onApplyActions: (actions: AdvisorAction[]) => void;
+  /** On small screens, start collapsed to shorten the stack. */
+  defaultCollapsed?: boolean;
+  /** Bump to expand + scroll Margus into view (empty-state CTAs). */
+  expandSignal?: number;
 };
 
 type ToolPart = {
@@ -271,10 +275,13 @@ export function CcAdvisorChat({
   portfolioId,
   context,
   onApplyActions,
+  defaultCollapsed = false,
+  expandSignal = 0,
 }: Props) {
   const [input, setInput] = useState("");
   const [pendingImages, setPendingImages] = useState<FileUIPart[]>([]);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const initialMessages = useMemo(
     () => loadChatHistory(portfolioId),
     [portfolioId]
@@ -283,8 +290,17 @@ export function CcAdvisorChat({
   const contextRef = useRef(context);
   contextRef.current = context;
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const rulesRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!expandSignal) return;
+    setCollapsed(false);
+    window.requestAnimationFrame(() => {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [expandSignal]);
 
   const transport = useMemo(
     () =>
@@ -426,19 +442,37 @@ export function CcAdvisorChat({
   const canSend = !busy && (Boolean(input.trim()) || pendingImages.length > 0);
 
   return (
-    <section className="relative flex h-[630px] flex-col overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
+    <section
+      ref={sectionRef}
+      className={`relative flex flex-col overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70 ${
+        collapsed ? "h-auto" : "h-[630px]"
+      }`}
+    >
       <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800/80 px-4 py-3">
-        <div className="rounded-lg bg-brand/10 p-1.5 text-brand">
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="rounded-lg bg-brand/10 p-1.5 text-brand hover:bg-brand/20"
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand Margus" : "Collapse Margus"}
+        >
           <Sparkles className="h-4 w-4" />
-        </div>
-        <div className="min-w-0 flex-1">
+        </button>
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="min-w-0 flex-1 text-left"
+        >
           <h2 className="text-sm font-semibold text-white">Assistant Margus</h2>
           <p className="truncate text-xs text-zinc-500">
-            {context.adviseOnly
-              ? "Advise-only overview · open a sheet to apply changes"
-              : `Chat for ${context.portfolioName} · other sheets only when you ask`}
+            {collapsed
+              ? "Tap to expand"
+              : context.adviseOnly
+                ? "Advise-only overview · open a sheet to apply changes"
+                : `Chat for ${context.portfolioName} · other sheets only when you ask`}
           </p>
-        </div>
+        </button>
+        {!collapsed && (
         <div className="relative" ref={rulesRef}>
           <button
             type="button"
@@ -486,8 +520,11 @@ export function CcAdvisorChat({
             </div>
           )}
         </div>
+        )}
       </header>
 
+      {!collapsed && (
+      <>
       <div
         ref={scrollerRef}
         className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
@@ -699,6 +736,8 @@ export function CcAdvisorChat({
           </button>
         </div>
       </form>
+      </>
+      )}
     </section>
   );
 }
