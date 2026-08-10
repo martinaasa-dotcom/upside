@@ -3,6 +3,7 @@
 import { CashModal } from "@/components/CashModal";
 import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
+import { ForecastPanel } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { OverviewDashboard } from "@/components/OverviewDashboard";
 import {
@@ -15,6 +16,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useToast } from "@/components/ui/Toast";
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
+import { buildForecast } from "@/lib/forecast";
 import {
   addPortfolio,
   deleteHolding,
@@ -41,6 +43,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type DataSource = "demo" | "supabase";
 
 const CC_VISIBLE_KEY = "portfell-cc-visible-by-portfolio";
+const FORECAST_VISIBLE_KEY = "portfell-forecast-visible-by-portfolio";
 
 function formatPricesAge(updatedAt: number | null, now: number): string {
   if (updatedAt == null) return "Prices · —";
@@ -107,6 +110,9 @@ export function Dashboard() {
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState<
     Record<string, boolean>
   >({});
+  const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] = useState<
+    Record<string, boolean>
+  >({});
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const activePortfolio = isOverview
@@ -115,6 +121,9 @@ export function Dashboard() {
 
   const ccVisible = activePortfolio
     ? ccVisibleByPortfolio[activePortfolio.id] !== false
+    : true;
+  const forecastVisible = activePortfolio
+    ? forecastVisibleByPortfolio[activePortfolio.id] !== false
     : true;
 
   const allTickers = useMemo(() => {
@@ -133,6 +142,19 @@ export function Dashboard() {
     }
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FORECAST_VISIBLE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, boolean>;
+      if (parsed && typeof parsed === "object") {
+        setForecastVisibleByPortfolio(parsed);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   function toggleCcVisible() {
     if (!activePortfolio) return;
     setCcVisibleByPortfolio((prev) => {
@@ -140,6 +162,20 @@ export function Dashboard() {
       const next = { ...prev, [activePortfolio.id]: nextVisible };
       try {
         localStorage.setItem(CC_VISIBLE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
+
+  function toggleForecastVisible() {
+    if (!activePortfolio) return;
+    setForecastVisibleByPortfolio((prev) => {
+      const nextVisible = prev[activePortfolio.id] === false;
+      const next = { ...prev, [activePortfolio.id]: nextVisible };
+      try {
+        localStorage.setItem(FORECAST_VISIBLE_KEY, JSON.stringify(next));
       } catch {
         /* ignore */
       }
@@ -164,6 +200,15 @@ export function Dashboard() {
     () => buildOverview(portfolios, holdings, quotes),
     [portfolios, holdings, quotes]
   );
+
+  const forecast = useMemo(() => {
+    if (!activePortfolio) return null;
+    return buildForecast(
+      portfolioHoldings,
+      quotes,
+      activePortfolio.cash_balance
+    );
+  }, [activePortfolio, portfolioHoldings, quotes]);
 
   const marketState = useMemo(() => {
     for (const q of Object.values(quotes)) {
@@ -941,23 +986,40 @@ export function Dashboard() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {!isOverview && (
-              <button
-                type="button"
-                onClick={toggleCcVisible}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-                title={
-                  ccVisible
-                    ? "Hide covered-call table"
-                    : "Show covered-call table"
-                }
-              >
-                {ccVisible ? (
-                  <EyeOff className="h-3.5 w-3.5" />
-                ) : (
-                  <Eye className="h-3.5 w-3.5" />
-                )}
-                {ccVisible ? "Hide CC" : "Show CC"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={toggleCcVisible}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                  title={
+                    ccVisible
+                      ? "Hide covered-call table"
+                      : "Show covered-call table"
+                  }
+                >
+                  {ccVisible ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                  {ccVisible ? "Hide CC" : "Show CC"}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleForecastVisible}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                  title={
+                    forecastVisible ? "Hide forecast" : "Show forecast"
+                  }
+                >
+                  {forecastVisible ? (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5" />
+                  )}
+                  {forecastVisible ? "Hide forecast" : "Show forecast"}
+                </button>
+              </>
             )}
             <button
               type="button"
@@ -1123,6 +1185,10 @@ export function Dashboard() {
                 }
                 onAddHolding={() => setModalOpen(true)}
               />
+            )}
+
+            {forecastVisible && forecast && (
+              <ForecastPanel model={forecast} />
             )}
 
             <CcAdvisorChat
