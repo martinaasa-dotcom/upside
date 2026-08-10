@@ -219,7 +219,7 @@ export function LabSheet({
       ? "Entire book"
       : (portfolios.find((p) => p.id === scopeId)?.name ?? "Sheet");
 
-  const showScope =
+  const scopeApplies =
     tab === "alloc" ||
     tab === "shock" ||
     tab === "corr" ||
@@ -358,29 +358,33 @@ export function LabSheet({
           Sandbox tools for the book — allocation, shocks, paper trading,
           income log, and digests. Edits sync when the book is unlocked.
         </p>
-        {showScope && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-              Scope
-            </span>
-            <select
-              value={scopeId}
-              onChange={(e) => setScopeId(e.target.value)}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-white"
-            >
-              <option value="book">Entire book</option>
-              {portfolios.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-[11px] text-zinc-600">
-              What-ifs run on {scopeLabel}
-            </span>
-          </div>
-        )}
-        <div className="mt-3 flex flex-wrap gap-1 border-b border-zinc-800 pb-2">
+        <div className="mt-3 flex h-8 min-h-8 items-center gap-2 overflow-hidden">
+          <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+            Scope
+          </span>
+          <select
+            value={scopeId}
+            onChange={(e) => setScopeId(e.target.value)}
+            disabled={!scopeApplies}
+            className={cn(
+              "shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-white",
+              !scopeApplies && "cursor-not-allowed opacity-40"
+            )}
+          >
+            <option value="book">Entire book</option>
+            {portfolios.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <span className="min-w-0 truncate text-[11px] text-zinc-600">
+            {scopeApplies
+              ? `What-ifs run on ${scopeLabel}`
+              : "Scope unused on this tool"}
+          </span>
+        </div>
+        <div className="mt-3 flex min-h-[2.25rem] flex-wrap gap-1 border-b border-zinc-800 pb-2">
           {GROUPS.map((g) => (
             <button
               key={g.id}
@@ -397,7 +401,7 @@ export function LabSheet({
             </button>
           ))}
         </div>
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div className="mt-2 flex min-h-[2rem] flex-wrap gap-1">
           {groupTabs.map((t) => (
             <button
               key={t.id}
