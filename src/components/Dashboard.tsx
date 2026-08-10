@@ -975,40 +975,37 @@ export function Dashboard() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
-      <header className="border-b border-brand-deep/25 bg-[#121214]/70 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-          <div className="min-w-0">
-            <UpsideLogo variant="wordmark" className="text-[15px] text-white" />
-            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-white">
+      <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <UpsideLogo variant="mark" className="h-6 w-6" title="Upside" />
+            <h1 className="truncate text-lg font-semibold tracking-tight text-white">
               {isOverview ? "Overview" : activePortfolio!.name}
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                  source === "supabase"
-                    ? "bg-sky-500/15 text-sky-300"
-                    : "bg-amber-500/15 text-amber-300"
-                }`}
-              >
-                {source === "supabase" ? "Supabase" : "Local demo"}
-              </span>
-              <span className="text-[11px] tabular-nums text-zinc-500">
-                {formatPricesAge(quotesUpdatedAt, nowTick)}
-              </span>
-              {quotesDelayed && (
-                <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-200/90">
-                  Prices may be delayed
-                </span>
-              )}
-            </div>
+            <span className="hidden text-zinc-700 sm:inline" aria-hidden>
+              ·
+            </span>
+            <span
+              className="hidden truncate text-xs tabular-nums text-zinc-500 sm:inline"
+              title={
+                source === "supabase"
+                  ? "Shared live book"
+                  : locked
+                    ? "Local demo (saved)"
+                    : "Local demo"
+              }
+            >
+              {formatPricesAge(quotesUpdatedAt, nowTick)}
+              {quotesDelayed ? " · delayed" : ""}
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
             {!isOverview && (
               <>
                 <button
                   type="button"
                   onClick={toggleCcVisible}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
                   title={
                     ccVisible
                       ? "Hide covered-call table"
@@ -1020,12 +1017,14 @@ export function Dashboard() {
                   ) : (
                     <Eye className="h-3.5 w-3.5" />
                   )}
-                  {ccVisible ? "Hide CC" : "Show CC"}
+                  <span className="hidden sm:inline">
+                    {ccVisible ? "Hide CC" : "Show CC"}
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={toggleForecastVisible}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
                   title={
                     forecastVisible ? "Hide forecast" : "Show forecast"
                   }
@@ -1035,7 +1034,9 @@ export function Dashboard() {
                   ) : (
                     <Eye className="h-3.5 w-3.5" />
                   )}
-                  {forecastVisible ? "Hide forecast" : "Show forecast"}
+                  <span className="hidden sm:inline">
+                    {forecastVisible ? "Hide forecast" : "Show forecast"}
+                  </span>
                 </button>
               </>
             )}
@@ -1051,28 +1052,30 @@ export function Dashboard() {
                 }
               }}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
               />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             {source === "demo" && (
               <>
                 <button
                   type="button"
                   onClick={saveLock}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-deep/80 bg-brand/10 px-3 py-2 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20 hover:text-brand-bright"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-brand-deep/80 bg-brand/10 px-2.5 py-1.5 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20"
                   title="Lock current portfolios & holdings so seed resets cannot overwrite them"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  {saveFlash ? "Saved" : "Save"}
+                  <span className="hidden sm:inline">
+                    {saveFlash ? "Saved" : "Save"}
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={resetDemo}
-                  className="hidden rounded-lg px-3 py-2 text-xs text-zinc-500 hover:text-zinc-300 sm:inline"
+                  className="hidden rounded-md px-2.5 py-1.5 text-xs text-zinc-500 hover:text-zinc-300 sm:inline"
                   title={
                     locked
                       ? "Restore last Save (does not clear your lock)"
@@ -1087,21 +1090,15 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+                className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
               >
-                <Plus className="h-4 w-4" />
-                Add holding
+                <Plus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Add holding</span>
+                <span className="sm:hidden">Add</span>
               </button>
             )}
           </div>
         </div>
-        {source === "supabase" && (
-          <div className="mx-auto max-w-[1400px] px-4 pb-3">
-            <p className="text-xs text-zinc-500">
-              Shared live book — edits sync for everyone.
-            </p>
-          </div>
-        )}
       </header>
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-5 px-4 py-5 pb-24">
