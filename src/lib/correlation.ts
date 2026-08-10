@@ -45,3 +45,22 @@ export function correlationMatrix(
   }
   return cells.sort((x, y) => Math.abs(y.corr) - Math.abs(x.corr));
 }
+
+/** Square matrix for heat-grid UI (diagonal = 1). */
+export function correlationGrid(
+  series: Array<{ ticker: string; sparkline: number[] }>
+): { tickers: string[]; grid: (number | null)[][] } {
+  const tickers = series.map((s) => s.ticker);
+  const grid: (number | null)[][] = tickers.map(() =>
+    tickers.map(() => null)
+  );
+  for (let i = 0; i < series.length; i++) {
+    grid[i]![i] = 1;
+    for (let j = i + 1; j < series.length; j++) {
+      const c = pearson(series[i]!.sparkline, series[j]!.sparkline);
+      grid[i]![j] = c;
+      grid[j]![i] = c;
+    }
+  }
+  return { tickers, grid };
+}

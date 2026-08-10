@@ -9,6 +9,7 @@ import { ForecastPanel } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
 import { LabSheet } from "@/components/LabSheet";
+import { HeaderOverflowMenu, type HeaderMenuItem } from "@/components/HeaderOverflowMenu";
 import { MacroStrip } from "@/components/MacroStrip";
 import { OverviewDashboard } from "@/components/OverviewDashboard";
 import {
@@ -50,6 +51,7 @@ import { loadCashflows } from "@/lib/cashflow";
 import { loadArena } from "@/lib/paper-arena";
 import { loadJournal } from "@/lib/trade-journal";
 import {
+  dismissAlert,
   loadDismissedAlertIds,
   saveDismissedAlertIds,
 } from "@/lib/alert-dismiss";
@@ -108,15 +110,9 @@ import type {
   Quote,
 } from "@/lib/types";
 import {
-  Eye,
-  EyeOff,
-  History,
-  Link2,
   Lock,
   Plus,
   RefreshCw,
-  Save,
-  Undo2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -1699,6 +1695,69 @@ export function Dashboard() {
     return items;
   }, [portfolios, overview.tickers, undoStack.length]);
 
+  const headerMenuItems: HeaderMenuItem[] = useMemo(() => {
+    const items: HeaderMenuItem[] = [];
+    if (!guestMode && undoStack.length > 0) {
+      items.push({
+        id: "undo",
+        label: "Undo Margus write",
+        onSelect: () => undoLastMargusWrite(),
+      });
+    }
+    items.push({
+      id: "cmd",
+      label: "Command palette",
+      hint: "⌘K",
+      onSelect: () => setCmdOpen(true),
+    });
+    if (source === "supabase" && !guestMode) {
+      items.push({
+        id: "share",
+        label: "Copy guest link",
+        onSelect: () => void handleCreateShare(),
+      });
+      items.push({
+        id: "snapshots",
+        label: "Snapshots",
+        onSelect: () => setSnapshotsOpen(true),
+      });
+    }
+    if (!isMetaTab) {
+      items.push({
+        id: "cc",
+        label: ccVisible ? "Hide covered calls" : "Show covered calls",
+        onSelect: () => toggleCcVisible(),
+      });
+      items.push({
+        id: "forecast",
+        label: forecastVisible ? "Hide forecast" : "Show forecast",
+        onSelect: () => toggleForecastVisible(),
+      });
+    }
+    if (source === "demo") {
+      items.push({
+        id: "save",
+        label: saveFlash ? "Saved" : "Save demo lock",
+        onSelect: () => saveLock(),
+      });
+      items.push({
+        id: "reset",
+        label: locked ? "Restore save" : "Reset demo",
+        onSelect: () => resetDemo(),
+      });
+    }
+    return items;
+  }, [
+    guestMode,
+    undoStack.length,
+    source,
+    isMetaTab,
+    ccVisible,
+    forecastVisible,
+    saveFlash,
+    locked,
+  ]);
+
   const syntheticTickers = useMemo(() => {
     // Heuristic: short sparkline or zero change with delayed flag
     if (!quotesDelayed) return [] as string[];
@@ -1746,20 +1805,8 @@ export function Dashboard() {
               className="shrink-0 text-[18px] text-white"
             />
             <span className="hidden h-5 w-px shrink-0 bg-zinc-700 sm:block" aria-hidden />
-            <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white sm:ml-1">
-              {isOverview
-                ? "Overview"
-                : isCompound
-                  ? "Compound"
-                  : isLab
-                    ? "Lab"
-                    : activePortfolio!.name}
-            </h1>
-            <span className="hidden text-zinc-700 sm:inline" aria-hidden>
-              ·
-            </span>
-            <span
-              className="hidden truncate text-xs tabular-nums text-zinc-500 sm:inline"
+            <h1
+              className="min-w-0 truncate text-lg font-semibold tracking-tight text-white sm:ml-1"
               title={
                 source === "supabase"
                   ? "Shared live book"
@@ -1768,45 +1815,16 @@ export function Dashboard() {
                     : "Local demo"
               }
             >
-              {formatPricesAge(quotesUpdatedAt, nowTick)}
-              {quotesDelayed ? " · delayed" : ""}
-              {source === "supabase" && bookSyncedAt
-                ? ` · book ${formatPricesAge(bookSyncedAt, nowTick).replace("Prices · ", "")}`
-                : ""}
-            </span>
-            <MacroStrip />
+              {isOverview
+                ? "Overview"
+                : isCompound
+                  ? "Compound"
+                  : isLab
+                    ? "Lab"
+                    : activePortfolio!.name}
+            </h1>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-            {!guestMode && undoStack.length > 0 && (
-              <button
-                type="button"
-                onClick={undoLastMargusWrite}
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-                title="Undo last Margus write"
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-                Undo
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setCmdOpen(true)}
-              className="hidden items-center gap-1 rounded-md border border-zinc-700 px-2 py-1.5 text-[10px] font-medium text-zinc-500 hover:text-zinc-300 sm:inline-flex"
-              title="Command palette"
-            >
-              ⌘K
-            </button>
-            {source === "supabase" && !guestMode && (
-              <button
-                type="button"
-                onClick={() => void handleCreateShare()}
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-                title="Copy a 14-day read-only guest link"
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Share</span>
-              </button>
-            )}
+          <div className="flex shrink-0 items-center justify-end gap-1.5">
             {source === "supabase" && (
               <button
                 type="button"
@@ -1824,52 +1842,9 @@ export function Dashboard() {
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">
-                  {bookUnlocked ? "Unlocked" : "Unlock to edit"}
-                </span>
-                <span className="sm:hidden">
-                  {bookUnlocked ? "OK" : "PIN"}
+                  {bookUnlocked ? "Unlocked" : "Unlock"}
                 </span>
               </button>
-            )}
-            {!isMetaTab && (
-              <>
-                <button
-                  type="button"
-                  onClick={toggleCcVisible}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-                  title={
-                    ccVisible
-                      ? "Hide covered-call table"
-                      : "Show covered-call table"
-                  }
-                >
-                  {ccVisible ? (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  ) : (
-                    <Eye className="h-3.5 w-3.5" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {ccVisible ? "Hide CC" : "Show CC"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={toggleForecastVisible}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-                  title={
-                    forecastVisible ? "Hide forecast" : "Show forecast"
-                  }
-                >
-                  {forecastVisible ? (
-                    <EyeOff className="h-3.5 w-3.5" />
-                  ) : (
-                    <Eye className="h-3.5 w-3.5" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {forecastVisible ? "Hide forecast" : "Show forecast"}
-                  </span>
-                </button>
-              </>
             )}
             <button
               type="button"
@@ -1884,50 +1859,13 @@ export function Dashboard() {
               }}
               disabled={refreshing}
               className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
+              title="Refresh prices"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
               />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden md:inline">Refresh</span>
             </button>
-            {source === "supabase" && (
-              <button
-                type="button"
-                onClick={() => setSnapshotsOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
-                title="Nightly backups & restore"
-              >
-                <History className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Snapshots</span>
-              </button>
-            )}
-            {source === "demo" && (
-              <>
-                <button
-                  type="button"
-                  onClick={saveLock}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-brand-deep/80 bg-brand/10 px-2.5 py-1.5 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20"
-                  title="Lock current portfolios & holdings so seed resets cannot overwrite them"
-                >
-                  <Save className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">
-                    {saveFlash ? "Saved" : "Save"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={resetDemo}
-                  className="hidden rounded-md px-2.5 py-1.5 text-xs text-zinc-500 hover:text-zinc-300 sm:inline"
-                  title={
-                    locked
-                      ? "Restore last Save (does not clear your lock)"
-                      : "Restore factory demo seed"
-                  }
-                >
-                  {locked ? "Restore save" : "Reset demo"}
-                </button>
-              </>
-            )}
             {!isMetaTab && (
               <button
                 type="button"
@@ -1939,7 +1877,27 @@ export function Dashboard() {
                 <span className="sm:hidden">Add</span>
               </button>
             )}
+            <HeaderOverflowMenu items={headerMenuItems} />
           </div>
+        </div>
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 border-t border-zinc-800/60 px-4 py-1.5">
+          <span
+            className="truncate text-[11px] tabular-nums text-zinc-500"
+            title={
+              source === "supabase"
+                ? "Shared live book"
+                : locked
+                  ? "Local demo (saved)"
+                  : "Local demo"
+            }
+          >
+            {formatPricesAge(quotesUpdatedAt, nowTick)}
+            {quotesDelayed ? " · delayed" : ""}
+            {source === "supabase" && bookSyncedAt
+              ? ` · book ${formatPricesAge(bookSyncedAt, nowTick).replace("Prices · ", "")}`
+              : ""}
+          </span>
+          <MacroStrip />
         </div>
       </header>
 
@@ -1990,6 +1948,10 @@ export function Dashboard() {
             lab={labBundle}
             onLabChange={patchLab}
             guest={guestMode}
+            dismissedAlertIds={alertToastsSent}
+            onDismissAlert={(id) =>
+              setAlertToastsSent((prev) => dismissAlert(id, prev))
+            }
           />
         ) : isCompound ? (
           <CompoundInterestSheet

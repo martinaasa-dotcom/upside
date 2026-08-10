@@ -48,6 +48,15 @@ export function addJournalEntry(
   return next;
 }
 
+export function removeJournalEntry(
+  entries: JournalEntry[],
+  id: string
+): JournalEntry[] {
+  const next = entries.filter((e) => e.id !== id);
+  saveJournal(next);
+  return next;
+}
+
 /** P&L if shares sold at `exitPrice` were instead held to `nowPrice`. */
 export function whatIfHeld(opts: {
   shares: number;

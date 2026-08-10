@@ -46,6 +46,15 @@ export function addCashflow(
   return next;
 }
 
+export function removeCashflow(
+  entries: CashflowEntry[],
+  id: string
+): CashflowEntry[] {
+  const next = entries.filter((e) => e.id !== id);
+  saveCashflows(next);
+  return next;
+}
+
 export function trailingIncome(entries: CashflowEntry[], days = 365): number {
   const cut = Date.now() - days * 86400000;
   return entries
@@ -55,4 +64,15 @@ export function trailingIncome(entries: CashflowEntry[], days = 365): number {
         (e.kind === "dividend" || e.kind === "premium")
     )
     .reduce((s, e) => s + e.amount, 0);
+}
+
+export function netCashMoves(entries: CashflowEntry[], days = 365): number {
+  const cut = Date.now() - days * 86400000;
+  return entries
+    .filter((e) => new Date(e.at).getTime() >= cut)
+    .reduce((s, e) => {
+      if (e.kind === "withdrawal") return s - Math.abs(e.amount);
+      if (e.kind === "deposit") return s + e.amount;
+      return s + e.amount;
+    }, 0);
 }
