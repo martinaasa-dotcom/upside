@@ -12,6 +12,7 @@ import {
 } from "@/lib/forecast-plan";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
+import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -49,10 +50,6 @@ function formatGeneratedAt(iso: string) {
   } catch {
     return iso;
   }
-}
-
-function blockWheelChange(e: React.WheelEvent<HTMLInputElement>) {
-  e.currentTarget.blur();
 }
 
 function EoyPriceInput({
