@@ -1061,8 +1061,12 @@ export function Dashboard() {
       <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <UpsideLogo variant="mark" className="h-6 w-6" title="Upside" />
-            <h1 className="truncate text-lg font-semibold tracking-tight text-white">
+            <UpsideLogo
+              variant="wordmark"
+              className="shrink-0 text-[13px] text-white"
+            />
+            <span className="hidden h-4 w-px shrink-0 bg-zinc-700 sm:block" aria-hidden />
+            <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white sm:ml-1">
               {isOverview ? "Overview" : activePortfolio!.name}
             </h1>
             <span className="hidden text-zinc-700 sm:inline" aria-hidden>
