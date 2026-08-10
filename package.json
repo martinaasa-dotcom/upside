@@ -13,6 +13,7 @@
     "@ai-sdk/react": "^4.0.61",
     "@supabase/supabase-js": "^2.112.2",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "ai": "^7.0.58",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
