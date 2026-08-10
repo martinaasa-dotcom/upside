@@ -1091,9 +1091,9 @@ export function Dashboard() {
           <div className="flex min-w-0 items-center gap-2.5">
             <UpsideLogo
               variant="wordmark"
-              className="shrink-0 text-[13px] text-white"
+              className="shrink-0 text-[15px] text-white"
             />
-            <span className="hidden h-4 w-px shrink-0 bg-zinc-700 sm:block" aria-hidden />
+            <span className="hidden h-5 w-px shrink-0 bg-zinc-700 sm:block" aria-hidden />
             <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white sm:ml-1">
               {isOverview ? "Overview" : activePortfolio!.name}
             </h1>
