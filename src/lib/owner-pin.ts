@@ -161,7 +161,9 @@ export async function requireOwnerAccess(
  * Book-level gate removed — sheets are open unless they set their own secret.
  * Kept as a no-op so call sites compile; prefer requireOwnerAccess for sheet edits.
  */
-export function requireOwnerPin(_req?: Request): NextResponse | null {
+/** @deprecated Book PIN removed — open unless the target sheet is locked. */
+export function requireOwnerPin(req?: Request): NextResponse | null {
+  void req;
   return null;
 }
 
