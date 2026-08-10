@@ -51,11 +51,14 @@ import { Eye, EyeOff, History, Plus, RefreshCw, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  CC_DEFAULT_VISIBLE,
   CC_VISIBLE_KEY,
+  FORECAST_DEFAULT_VISIBLE,
   FORECAST_VISIBLE_KEY,
   isPanelVisible,
   loadVisibilityMap,
   saveVisibilityMap,
+  setPanelVisible,
   toggleVisibilityMap,
 } from "@/lib/panel-visibility";
 
@@ -138,10 +141,14 @@ export function Dashboard() {
     : (portfolios.find((p) => p.id === activeId) ?? null);
 
   const ccVisible = activePortfolio
-    ? isPanelVisible(ccVisibleByPortfolio, activePortfolio)
+    ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, true)
     : true;
   const forecastVisible = activePortfolio
-    ? isPanelVisible(forecastVisibleByPortfolio, activePortfolio)
+    ? isPanelVisible(
+        forecastVisibleByPortfolio,
+        activePortfolio,
+        FORECAST_DEFAULT_VISIBLE
+      )
     : true;
 
   const allTickers = useMemo(() => {
@@ -157,10 +164,27 @@ export function Dashboard() {
     setEoyOverrides(loadEoyOverrides(activePortfolio.id));
   }, [activePortfolio?.id]);
 
+  function seedNewSheetPanelDefaults(portfolio: {
+    id: string;
+    slug?: string | null;
+  }) {
+    setCcVisibleByPortfolio((prev) => {
+      const next = setPanelVisible(prev, portfolio, CC_DEFAULT_VISIBLE);
+      saveVisibilityMap(CC_VISIBLE_KEY, next);
+      return next;
+    });
+    setForecastVisibleByPortfolio((prev) => {
+      const next = setPanelVisible(prev, portfolio, FORECAST_DEFAULT_VISIBLE);
+      saveVisibilityMap(FORECAST_VISIBLE_KEY, next);
+      return next;
+    });
+  }
+
   function toggleCcVisible() {
     if (!activePortfolio) return;
     setCcVisibleByPortfolio((prev) => {
-      const next = toggleVisibilityMap(prev, activePortfolio);
+      // Unset legacy sheets default to visible; new sheets are seeded hidden.
+      const next = toggleVisibilityMap(prev, activePortfolio, true);
       saveVisibilityMap(CC_VISIBLE_KEY, next);
       return next;
     });
@@ -169,7 +193,11 @@ export function Dashboard() {
   function toggleForecastVisible() {
     if (!activePortfolio) return;
     setForecastVisibleByPortfolio((prev) => {
-      const next = toggleVisibilityMap(prev, activePortfolio);
+      const next = toggleVisibilityMap(
+        prev,
+        activePortfolio,
+        FORECAST_DEFAULT_VISIBLE
+      );
       saveVisibilityMap(FORECAST_VISIBLE_KEY, next);
       return next;
     });
@@ -933,11 +961,13 @@ export function Dashboard() {
       }
       const data = await res.json();
       setPortfolios((prev) => [...prev, data.portfolio]);
+      seedNewSheetPanelDefaults(data.portfolio);
       setActiveId(data.portfolio.id);
     } else {
       const next = addPortfolio(loadDemoStore(), name);
       setPortfolios(next.portfolios);
       const created = next.portfolios[next.portfolios.length - 1];
+      seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
     }
     toast("Sheet added", "success");

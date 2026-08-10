@@ -3,9 +3,14 @@
 export const CC_VISIBLE_KEY = "portfell-cc-visible-by-portfolio";
 export const FORECAST_VISIBLE_KEY = "portfell-forecast-visible-by-portfolio";
 
+/** New sheets start with CC collapsed. */
+export const CC_DEFAULT_VISIBLE = false;
+/** New sheets keep Forecast open. */
+export const FORECAST_DEFAULT_VISIBLE = true;
+
 export type VisibilityMap = Record<string, boolean>;
 
-type PortfolioKey = { id: string; slug: string };
+type PortfolioKey = { id: string; slug?: string | null };
 
 function canUseStorage() {
   return typeof window !== "undefined";
@@ -32,20 +37,41 @@ export function saveVisibilityMap(storageKey: string, map: VisibilityMap) {
   }
 }
 
-/** Visible unless explicitly stored as false (checks slug then id). */
-export function isPanelVisible(map: VisibilityMap, portfolio: PortfolioKey) {
-  if (portfolio.slug && map[portfolio.slug] === false) return false;
-  if (map[portfolio.id] === false) return false;
-  return true;
+function storedFlag(
+  map: VisibilityMap,
+  portfolio: PortfolioKey
+): boolean | undefined {
+  if (portfolio.slug && portfolio.slug in map) return map[portfolio.slug];
+  if (portfolio.id in map) return map[portfolio.id];
+  return undefined;
+}
+
+/** Uses stored true/false when present; otherwise `defaultVisible`. */
+export function isPanelVisible(
+  map: VisibilityMap,
+  portfolio: PortfolioKey,
+  defaultVisible = true
+) {
+  const stored = storedFlag(map, portfolio);
+  return stored === undefined ? defaultVisible : stored;
+}
+
+export function setPanelVisible(
+  map: VisibilityMap,
+  portfolio: PortfolioKey,
+  visible: boolean
+): VisibilityMap {
+  const next: VisibilityMap = { ...map, [portfolio.id]: visible };
+  if (portfolio.slug) next[portfolio.slug] = visible;
+  return next;
 }
 
 /** Flip visibility and write under both slug and id so demo/supabase keys stay aligned. */
 export function toggleVisibilityMap(
   map: VisibilityMap,
-  portfolio: PortfolioKey
+  portfolio: PortfolioKey,
+  defaultVisible = true
 ): VisibilityMap {
-  const nextVisible = !isPanelVisible(map, portfolio);
-  const next: VisibilityMap = { ...map, [portfolio.id]: nextVisible };
-  if (portfolio.slug) next[portfolio.slug] = nextVisible;
-  return next;
+  const nextVisible = !isPanelVisible(map, portfolio, defaultVisible);
+  return setPanelVisible(map, portfolio, nextVisible);
 }
