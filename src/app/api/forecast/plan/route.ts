@@ -30,6 +30,9 @@ export async function POST(req: Request) {
     const portfolioName = String(body.portfolioName ?? "Portfolio");
     const cashBalance = Number(body.cashBalance ?? 0);
     const forecast = body.forecast as ForecastModel | undefined;
+    const stanceRaw = String(body.stance ?? "base");
+    const stance =
+      stanceRaw === "bearish" || stanceRaw === "bullish" ? stanceRaw : "base";
 
     if (!portfolioId || !forecast?.rows) {
       return Response.json(
@@ -42,6 +45,7 @@ export async function POST(req: Request) {
       portfolioName,
       cashBalance,
       forecast,
+      stance,
     });
 
     const { object } = await generateObject({
@@ -58,6 +62,7 @@ export async function POST(req: Request) {
         generatedAt: new Date().toISOString(),
         portfolioId,
         portfolioName,
+        stance,
       },
     });
   } catch (err) {

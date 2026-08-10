@@ -2,20 +2,31 @@
 
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
 import { cn, currency, percent } from "@/lib/format";
-import type { ForecastModel } from "@/lib/forecast";
+import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   loadForecastPlan,
+  planEoyPaths,
   saveForecastPlan,
   type ForecastPlan,
+  type ForecastStance,
 } from "@/lib/forecast-plan";
-import { Loader2, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { countOverrides } from "@/lib/forecast-overrides";
+import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
+import { blockWheelChange } from "@/lib/number-input";
+import { Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   model: ForecastModel;
   portfolioId: string;
   portfolioName: string;
   cashBalance: number;
+  overrides: PortfolioEoyOverrides;
+  onSetEoyPrice: (ticker: string, year: ForecastYear, price: number) => void;
+  onApplyMargusPaths: (
+    paths: { ticker: string; prices: Partial<Record<ForecastYear, number>> }[]
+  ) => void;
+  onClearOverrides: () => void;
 };
 
 function signedTone(value: number) {
@@ -41,11 +52,75 @@ function formatGeneratedAt(iso: string) {
   }
 }
 
+function EoyPriceInput({
+  value,
+  targeted,
+  onCommit,
+}: {
+  value: number;
+  targeted: boolean;
+  onCommit: (n: number) => void;
+}) {
+  const display = value.toFixed(2);
+  const [draft, setDraft] = useState(display);
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setDraft(display);
+  }, [display]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      title={targeted ? "Edit EOY target" : "No house target — type a price"}
+      onChange={(e) => {
+        setDraft(e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, ""));
+      }}
+      onFocus={() => {
+        focused.current = true;
+      }}
+      onWheel={blockWheelChange}
+      onBlur={() => {
+        focused.current = false;
+        const n = Number.parseFloat(draft);
+        if (!Number.isNaN(n) && n > 0) {
+          onCommit(Math.round(n * 100) / 100);
+        } else {
+          setDraft(display);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") {
+          setDraft(display);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className={cn(
+        "no-spinner w-full min-w-[4.5rem] rounded px-1 py-0.5 text-left tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40",
+        targeted ? "text-zinc-100" : "text-zinc-500"
+      )}
+    />
+  );
+}
+
+const STANCES: { id: ForecastStance; label: string; hint: string }[] = [
+  { id: "bearish", label: "Bearish", hint: "Conservative EOY path" },
+  { id: "base", label: "Base", hint: "Balanced house-like" },
+  { id: "bullish", label: "Bullish", hint: "Optimistic but grounded" },
+];
+
 export function ForecastPanel({
   model,
   portfolioId,
   portfolioName,
   cashBalance,
+  overrides,
+  onSetEoyPrice,
+  onApplyMargusPaths,
+  onClearOverrides,
 }: Props) {
   const yearCols = model.years;
   const template = `minmax(4.5rem, 0.7fr) minmax(5.5rem, 1fr) ${yearCols
@@ -55,15 +130,23 @@ export function ForecastPanel({
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stance, setStance] = useState<ForecastStance>("base");
+  const [appliedFlash, setAppliedFlash] = useState(false);
+  const overrideCount = countOverrides(overrides);
+  const flatCount = model.rows.filter((r) => !r.hasTargets).length;
 
   useEffect(() => {
-    setPlan(loadForecastPlan(portfolioId));
+    const loaded = loadForecastPlan(portfolioId);
+    setPlan(loaded);
+    if (loaded?.stance) setStance(loaded.stance);
     setError(null);
+    setAppliedFlash(false);
   }, [portfolioId]);
 
   async function askMargus() {
     setBusy(true);
     setError(null);
+    setAppliedFlash(false);
     try {
       const res = await fetch("/api/forecast/plan", {
         method: "POST",
@@ -73,6 +156,7 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
+          stance,
         }),
       });
       const data = await res.json();
@@ -82,6 +166,12 @@ export function ForecastPanel({
       const next = data.plan as ForecastPlan;
       saveForecastPlan(next);
       setPlan(next);
+
+      const paths = planEoyPaths(next);
+      if (paths.length > 0) {
+        onApplyMargusPaths(paths);
+        setAppliedFlash(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate plan");
     } finally {
@@ -89,14 +179,47 @@ export function ForecastPanel({
     }
   }
 
+  function reapplyPlanPrices() {
+    if (!plan) return;
+    const paths = planEoyPaths(plan);
+    if (paths.length === 0) {
+      setError("This plan has no EOY prices to apply.");
+      return;
+    }
+    onApplyMargusPaths(paths);
+    setAppliedFlash(true);
+    setError(null);
+  }
+
   return (
     <section className="overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
       <header className="border-b border-zinc-800/80 px-4 py-3">
-        <h2 className="text-sm font-semibold text-white">Forecast</h2>
-        <p className="mt-0.5 text-xs text-zinc-500">
-          Stock price targets · portfolio totals = current shares × forecasted
-          SP · next {yearCols.length} years
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Forecast</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Editable EOY stock prices · portfolio totals = shares × forecasted
+              SP · next {yearCols.length} years
+            </p>
+            {flatCount > 0 && (
+              <p className="mt-1 text-[11px] text-amber-200/80">
+                {flatCount} ticker{flatCount === 1 ? "" : "s"} still flat at
+                spot (no house target) — edit cells or ask Margus with a stance.
+              </p>
+            )}
+          </div>
+          {overrideCount > 0 && (
+            <button
+              type="button"
+              onClick={onClearOverrides}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+              title="Clear manual and Margus EOY overrides for this sheet"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset overrides ({overrideCount})
+            </button>
+          )}
+        </div>
       </header>
 
       {model.rows.length === 0 ? (
@@ -119,7 +242,7 @@ export function ForecastPanel({
                     </p>
                     <p className="text-xs text-zinc-500">
                       {r.shares.toLocaleString("en-US")} shares
-                      {!r.hasTargets && " · flat (no house target)"}
+                      {!r.hasTargets && " · flat (no target yet)"}
                     </p>
                   </div>
                   <p
@@ -143,9 +266,11 @@ export function ForecastPanel({
                   {yearCols.map((y) => (
                     <div key={y}>
                       <p className="text-zinc-500">{yearLabel(y)}</p>
-                      <p className="tabular-nums text-zinc-100">
-                        {currency(r.eoyPrices[y])}
-                      </p>
+                      <EoyPriceInput
+                        value={r.eoyPrices[y]}
+                        targeted={r.targetedYears[y]}
+                        onCommit={(n) => onSetEoyPrice(r.ticker, y, n)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -205,20 +330,22 @@ export function ForecastPanel({
                     )}
                   >
                     {r.ticker}
+                    {!r.hasTargets && (
+                      <span className="mt-0.5 block text-[10px] font-normal tracking-normal text-zinc-600">
+                        no target
+                      </span>
+                    )}
                   </div>
                   <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
                     {currency(r.currentPrice)}
                   </div>
                   {yearCols.map((y) => (
-                    <div
-                      key={y}
-                      className={cn(
-                        cellBase,
-                        "tabular-nums",
-                        r.hasTargets ? "text-zinc-100" : "text-zinc-500"
-                      )}
-                    >
-                      {currency(r.eoyPrices[y])}
+                    <div key={y} className={cellBase}>
+                      <EoyPriceInput
+                        value={r.eoyPrices[y]}
+                        targeted={r.targetedYears[y]}
+                        onCommit={(n) => onSetEoyPrice(r.ticker, y, n)}
+                      />
                     </div>
                   ))}
                   <div
@@ -273,35 +400,69 @@ export function ForecastPanel({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Margus plan · themes / trim / add
+              Margus plan · themes / trim / add / EOY path
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Dynamic quarter + year themes with sector rotation — not a static
-              sheet paste.
+              Pick a stance — Margus reads this table and writes EOY prices into
+              it, plus quarter/year themes.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">
                 Last generated {formatGeneratedAt(plan.generatedAt)}
+                {plan.stance ? ` · ${plan.stance}` : ""}
+                {appliedFlash ? " · prices applied" : ""}
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => void askMargus()}
-            disabled={busy || model.rows.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/60 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
-          >
-            {busy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            {busy
-              ? "Margus is planning…"
-              : plan
-                ? "Refresh Margus plan"
-                : "Ask Margus for a plan"}
-          </button>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <div className="inline-flex rounded-lg border border-zinc-700 p-0.5">
+              {STANCES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  title={s.hint}
+                  onClick={() => setStance(s.id)}
+                  className={cn(
+                    "rounded-md px-2.5 py-1 text-[11px] font-medium transition",
+                    stance === s.id
+                      ? "bg-emerald-500/15 text-emerald-300"
+                      : "text-zinc-500 hover:text-zinc-300"
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {plan && (plan.eoyTargets?.length ?? 0) > 0 && (
+                <button
+                  type="button"
+                  onClick={reapplyPlanPrices}
+                  disabled={busy}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
+                >
+                  Re-apply Margus prices
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => void askMargus()}
+                disabled={busy || model.rows.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/60 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
+              >
+                {busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                {busy
+                  ? "Margus is planning…"
+                  : plan
+                    ? "Refresh Margus plan"
+                    : "Ask Margus for a plan"}
+              </button>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -313,9 +474,9 @@ export function ForecastPanel({
         {!plan && !busy && !error && (
           <div className="mt-3 rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
             <p className="text-sm text-zinc-400">
-              No plan yet. Ask Margus to draft next-quarter and next-year themes,
-              sector rotation notes, and concrete add / trim actions for this
-              sheet.
+              No plan yet. Choose Bearish / Base / Bullish, then ask Margus to
+              fill EOY prices and draft themes for this sheet — especially useful
+              for Karud names that have no house targets yet.
             </p>
           </div>
         )}
@@ -340,6 +501,27 @@ export function ForecastPanel({
                 </p>
               </div>
             </div>
+
+            {(plan.eoyTargets?.length ?? 0) > 0 && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  Margus EOY rationale
+                </p>
+                <ul className="mt-2 space-y-1.5">
+                  {plan.eoyTargets.map((t) => (
+                    <li
+                      key={t.ticker}
+                      className="text-xs leading-relaxed text-zinc-400"
+                    >
+                      <span className="font-semibold text-zinc-200">
+                        {t.ticker}
+                      </span>
+                      {t.rationale ? ` — ${t.rationale}` : " — path applied"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {plan.periods.map((s) => (
