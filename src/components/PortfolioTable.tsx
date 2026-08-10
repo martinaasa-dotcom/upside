@@ -128,18 +128,17 @@ export function PortfolioTable({
 }: Props) {
   return (
     <section className="overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
-      <header className="border-b border-zinc-800/80 px-4 py-3">
+      <header className="flex items-center justify-between gap-3 border-b border-zinc-800/80 px-4 py-3">
         <h2 className="text-sm font-semibold text-white">Holdings</h2>
-      </header>
-
-      {/* Mobile cards */}
-      <div className="space-y-2 p-3 md:hidden">
         <button
           type="button"
           onClick={onEditCash}
-          className="flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3 text-left"
+          className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-zinc-900"
+          title="Edit cash"
         >
-          <span className="text-sm font-medium text-amber-300/90">Cash</span>
+          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            Cash
+          </span>
           <span
             className={cn(
               "text-sm font-semibold tabular-nums",
@@ -149,7 +148,10 @@ export function PortfolioTable({
             {currency(portfolio.cash_balance)}
           </span>
         </button>
+      </header>
 
+      {/* Mobile cards */}
+      <div className="space-y-2 p-3 md:hidden">
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
             <p className="text-sm text-zinc-400">No holdings on this sheet yet.</p>
@@ -289,34 +291,6 @@ export function PortfolioTable({
                   {label}
                 </div>
               ))}
-            </FluidRow>
-
-            <FluidRow className="border-zinc-800/70 bg-zinc-900/30">
-              <div className={cn(cellBase, "font-medium text-amber-300/90")}>
-                CASH
-              </div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cellBase}>
-                <button
-                  type="button"
-                  onClick={onEditCash}
-                  className={cn(
-                    "tabular-nums hover:underline",
-                    signedTone(portfolio.cash_balance)
-                  )}
-                >
-                  {currency(portfolio.cash_balance)}
-                </button>
-              </div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cn(cellBase, "text-zinc-600")}>—</div>
-              <div className={cellBase} />
             </FluidRow>
 
             {holdings.map((h) => (
