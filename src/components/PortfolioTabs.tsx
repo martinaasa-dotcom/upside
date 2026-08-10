@@ -60,36 +60,43 @@ export function PortfolioTabs({
 
   return (
     <nav className="sticky bottom-0 z-20 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-1 overflow-x-auto px-3 py-2">
+      <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 overflow-x-auto px-3 py-2">
         <button
           type="button"
           onClick={() => onChange(OVERVIEW_TAB_ID)}
           className={cn(
-            "inline-flex shrink-0 items-center gap-1.5 px-4 py-2 text-sm transition",
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm transition",
             overviewActive
-              ? "rounded-lg border border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-300 shadow-sm shadow-emerald-500/10"
-              : "rounded-lg border border-transparent text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
+              ? "bg-emerald-500/15 font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-500/40"
+              : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
           )}
         >
           <LayoutDashboard className="h-3.5 w-3.5" />
           Overview
         </button>
 
-        <div className="mx-1 h-6 w-px shrink-0 bg-zinc-800" aria-hidden />
+        <div className="mx-0.5 h-5 w-px shrink-0 bg-zinc-800" aria-hidden />
 
         {portfolios.map((p) => {
           const active = p.id === activeId;
+          const menuOpen = menuId === p.id;
           return (
-            <div key={p.id} className="relative flex shrink-0 items-center">
+            <div
+              key={p.id}
+              className={cn(
+                "relative flex h-9 shrink-0 items-stretch overflow-hidden rounded-lg transition",
+                active
+                  ? "bg-zinc-800 text-white ring-1 ring-inset ring-zinc-600"
+                  : "text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-200"
+              )}
+            >
               <button
                 type="button"
                 onClick={() => onChange(p.id)}
                 onDoubleClick={() => onRenameRequest?.(p.id, p.name)}
                 className={cn(
-                  "px-3 py-2 text-sm transition sm:px-4",
-                  active
-                    ? "rounded-l-lg border border-r-0 border-zinc-600 bg-zinc-800 font-semibold text-white shadow-sm"
-                    : "rounded-l-lg border border-r-0 border-transparent text-zinc-400 hover:bg-zinc-900/70 hover:text-zinc-200"
+                  "px-3 text-sm transition",
+                  active && "font-semibold"
                 )}
               >
                 {p.name}
@@ -98,19 +105,21 @@ export function PortfolioTabs({
                 type="button"
                 onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
                 className={cn(
-                  "rounded-r-lg border px-1.5 py-2 text-zinc-500 transition hover:text-zinc-200",
+                  "flex items-center border-l px-2 transition",
                   active
-                    ? "border-zinc-600 bg-zinc-800"
-                    : "border-transparent hover:bg-zinc-900/70"
+                    ? "border-zinc-600/80 text-zinc-300 hover:bg-zinc-700/60 hover:text-white"
+                    : "border-transparent text-zinc-500 hover:text-zinc-200",
+                  menuOpen && "bg-zinc-700/50 text-white"
                 )}
                 aria-label={`Options for ${p.name}`}
+                aria-expanded={menuOpen}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </button>
-              {menuId === p.id && (
+              {menuOpen && (
                 <div
                   ref={menuRef}
-                  className="absolute bottom-full left-0 z-30 mb-1 min-w-[9rem] rounded-lg border border-zinc-700 bg-zinc-950 py-1 shadow-xl"
+                  className="absolute bottom-full left-0 z-30 mb-1.5 min-w-[9rem] rounded-lg border border-zinc-700 bg-zinc-950 py-1 shadow-xl"
                 >
                   <button
                     type="button"
@@ -142,7 +151,7 @@ export function PortfolioTabs({
 
         {adding ? (
           <form
-            className="flex shrink-0 items-center gap-1"
+            className="flex h-9 shrink-0 items-center"
             onSubmit={(e) => {
               e.preventDefault();
               submit();
@@ -160,14 +169,14 @@ export function PortfolioTabs({
                 }
               }}
               placeholder="Sheet name"
-              className="w-32 rounded-lg border border-zinc-600 bg-zinc-900 px-3 py-1.5 text-sm text-white outline-none focus:border-emerald-500"
+              className="h-9 w-32 rounded-lg border border-zinc-600 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-emerald-500"
             />
           </form>
         ) : (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-dashed border-zinc-700 px-3 py-2 text-sm text-zinc-400 transition hover:border-emerald-500/50 hover:text-emerald-400"
+            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg px-3 text-sm text-zinc-500 transition hover:bg-zinc-900 hover:text-emerald-400"
             aria-label="Add sheet"
           >
             <Plus className="h-3.5 w-3.5" />
