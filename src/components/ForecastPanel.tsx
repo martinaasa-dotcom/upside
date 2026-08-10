@@ -74,7 +74,7 @@ function EoyPriceInput({
       type="text"
       inputMode="decimal"
       value={draft}
-      title={targeted ? "Edit EOY target" : "No house target — type a price"}
+      title={targeted ? "Edit EOY target" : "Awaiting Margus path — or type a price"}
       onChange={(e) => {
         setDraft(e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, ""));
       }}
@@ -112,8 +112,8 @@ const cellNum =
   "flex min-w-0 w-full items-center justify-end whitespace-nowrap px-3 py-2 text-right tabular-nums";
 
 const STANCES: { id: ForecastStance; label: string; hint: string }[] = [
-  { id: "bearish", label: "Bearish", hint: "Conservative EOY path" },
-  { id: "base", label: "Base", hint: "Balanced house-like" },
+  { id: "bearish", label: "Bearish", hint: "Conservative reasoned path" },
+  { id: "base", label: "Base", hint: "Balanced reasoned path" },
   { id: "bullish", label: "Bullish", hint: "Optimistic but grounded" },
 ];
 
@@ -138,6 +138,9 @@ export function ForecastPanel({
   const [appliedFlash, setAppliedFlash] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
+  const holdingsKey = model.rows.map((r) => r.ticker).join("|");
+  const autoKeyRef = useRef<string>("");
+  const askInFlight = useRef(false);
 
   useEffect(() => {
     const loaded = loadForecastPlan(portfolioId);
@@ -145,12 +148,19 @@ export function ForecastPanel({
     if (loaded?.stance) setStance(loaded.stance);
     setError(null);
     setAppliedFlash(false);
+    autoKeyRef.current = "";
   }, [portfolioId]);
 
-  async function askMargus() {
+  async function askMargus(opts?: {
+    auto?: boolean;
+    stanceOverride?: ForecastStance;
+  }) {
+    if (askInFlight.current) return;
+    askInFlight.current = true;
     setBusy(true);
     setError(null);
     setAppliedFlash(false);
+    const useStance = opts?.stanceOverride ?? stance;
     try {
       const res = await fetch("/api/forecast/plan", {
         method: "POST",
@@ -160,7 +170,7 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
-          stance,
+          stance: useStance,
         }),
       });
       const data = await res.json();
@@ -175,13 +185,30 @@ export function ForecastPanel({
       if (paths.length > 0) {
         onApplyMargusPaths(paths);
         setAppliedFlash(true);
+        autoKeyRef.current = `${portfolioId}:${holdingsKey}:${useStance}`;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate plan");
+      if (opts?.auto) {
+        autoKeyRef.current = "";
+      }
     } finally {
+      askInFlight.current = false;
       setBusy(false);
     }
   }
+
+  // Always fill incomplete forecasts via reasoning model — never leave flats.
+  useEffect(() => {
+    if (model.rows.length === 0) return;
+    if (flatCount === 0) return;
+    if (busy || askInFlight.current) return;
+    const key = `${portfolioId}:${holdingsKey}:${stance}`;
+    if (autoKeyRef.current === key) return;
+    autoKeyRef.current = key;
+    void askMargus({ auto: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional auto-fill trigger
+  }, [portfolioId, holdingsKey, flatCount, stance]);
 
   function reapplyPlanPrices() {
     if (!plan) return;
@@ -202,13 +229,14 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Editable EOY stock prices · portfolio totals = shares × forecasted
-              SP · next {yearCols.length} years
+              Margus reasons every EOY price (no house baselines) · portfolio
+              totals = shares × forecasted SP · next {yearCols.length} years
             </p>
             {flatCount > 0 && (
               <p className="mt-1 text-[11px] text-amber-200/80">
-                {flatCount} ticker{flatCount === 1 ? "" : "s"} still flat at
-                spot (no house target) — edit cells or ask Margus with a stance.
+                {busy
+                  ? `Margus is filling ${flatCount} ticker${flatCount === 1 ? "" : "s"}…`
+                  : `${flatCount} ticker${flatCount === 1 ? "" : "s"} still need a reasoned path — auto-running Margus.`}
               </p>
             )}
           </div>
@@ -246,7 +274,7 @@ export function ForecastPanel({
                     </p>
                     <p className="text-xs text-zinc-500">
                       {r.shares.toLocaleString("en-US")} shares
-                      {!r.hasTargets && " · flat (no target yet)"}
+                      {!r.hasTargets && " · awaiting Margus"}
                     </p>
                   </div>
                   <p
@@ -333,7 +361,7 @@ export function ForecastPanel({
                     {r.ticker}
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-[10px] font-normal tracking-normal text-zinc-600">
-                        no target
+                        awaiting Margus
                       </span>
                     )}
                   </div>
@@ -399,8 +427,8 @@ export function ForecastPanel({
               Margus plan · themes / trim / add / EOY path
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Pick a stance — Margus reads this table and writes EOY prices into
-              it, plus quarter/year themes.
+              Pick a stance — Margus reasons full 2026–2030 paths for every
+              ticker (never leaves cells empty) and drafts themes.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">
@@ -417,7 +445,10 @@ export function ForecastPanel({
                   key={s.id}
                   type="button"
                   title={s.hint}
-                  onClick={() => setStance(s.id)}
+                  onClick={() => {
+                    setStance(s.id);
+                    void askMargus({ stanceOverride: s.id });
+                  }}
                   className={cn(
                     "rounded-md px-2.5 py-1 text-[11px] font-medium transition",
                     stance === s.id
@@ -452,10 +483,10 @@ export function ForecastPanel({
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
                 {busy
-                  ? "Margus is planning…"
+                  ? "Margus is reasoning…"
                   : plan
-                    ? "Refresh Margus plan"
-                    : "Ask Margus for a plan"}
+                    ? "Refresh Margus forecast"
+                    : "Ask Margus for a forecast"}
               </button>
             </div>
           </div>
@@ -470,13 +501,18 @@ export function ForecastPanel({
         {!plan && !busy && !error && (
           <div className="mt-3 rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
             <p className="text-sm text-zinc-400">
-              No plan yet. Choose Bearish / Base / Bullish, then ask Margus to
-              fill EOY prices and draft themes for this sheet — especially useful
-              for tickers that have no house targets yet.
+              Choose Bearish / Base / Bullish — Margus will reason EOY prices for
+              every holding automatically (no house targets).
             </p>
           </div>
         )}
 
+        {busy && !plan && (
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-brand-deep/30 bg-brand/5 px-4 py-6 text-sm text-brand-bright">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Reasoning full EOY paths for this sheet…
+          </div>
+        )}
         {plan && (
           <div className="mt-4 space-y-4">
             <div className="grid gap-3 md:grid-cols-2">

@@ -1,17 +1,18 @@
 import { resolveAdvisorModel } from "@/lib/ai/model";
 import {
   buildForecastPlanPrompt,
+  ensureCompleteEoyTargets,
   forecastPlanSchema,
 } from "@/lib/forecast-plan";
 import type { ForecastModel } from "@/lib/forecast";
 import { generateObject } from "ai";
 
-export const maxDuration = 90;
+export const maxDuration = 120;
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
-    resolveAdvisorModel();
+    resolveAdvisorModel({ reasoning: true });
   } catch (err) {
     return Response.json(
       {
@@ -49,16 +50,28 @@ export async function POST(req: Request) {
     });
 
     const { object } = await generateObject({
-      model: resolveAdvisorModel(),
+      model: resolveAdvisorModel({ reasoning: true }),
       schema: forecastPlanSchema,
       prompt,
       maxRetries: 2,
       abortSignal: req.signal,
+      providerOptions: {
+        openrouter: {
+          reasoning: { effort: "high", max_tokens: 6000 },
+        },
+      },
     });
+
+    const eoyTargets = ensureCompleteEoyTargets(
+      forecast,
+      object.eoyTargets ?? [],
+      stance
+    );
 
     return Response.json({
       plan: {
         ...object,
+        eoyTargets,
         generatedAt: new Date().toISOString(),
         portfolioId,
         portfolioName,

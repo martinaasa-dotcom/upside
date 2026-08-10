@@ -18,15 +18,22 @@ const DEFAULT_VISION_MODEL =
  */
 export function resolveAdvisorModel(options?: {
   vision?: boolean;
+  /** Prefer the main text / reasoning-capable model (forecast plans). */
+  reasoning?: boolean;
 }): LanguageModel {
-  const vision = Boolean(options?.vision);
+  const vision = Boolean(options?.vision) && !options?.reasoning;
   const modelId = vision
     ? (process.env.MODEL_VISION ??
       process.env.OPENROUTER_VISION_MODEL ??
       DEFAULT_VISION_MODEL)
-    : (process.env.MODEL ??
-      process.env.OPENROUTER_MODEL ??
-      DEFAULT_TEXT_MODEL);
+    : options?.reasoning
+      ? (process.env.MODEL_FORECAST ??
+        process.env.MODEL ??
+        process.env.OPENROUTER_MODEL ??
+        DEFAULT_TEXT_MODEL)
+      : (process.env.MODEL ??
+        process.env.OPENROUTER_MODEL ??
+        DEFAULT_TEXT_MODEL);
 
   const openrouterKey = process.env.OPENROUTER_API_KEY;
   if (openrouterKey && openrouterKey !== "your_key_here") {

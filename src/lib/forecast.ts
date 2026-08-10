@@ -5,41 +5,19 @@ import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 export const FORECAST_YEARS = [2026, 2027, 2028, 2029, 2030] as const;
 export type ForecastYear = (typeof FORECAST_YEARS)[number];
 
-/**
- * House EOY price targets by ticker (USD).
- * Edit when Martin pastes an updated milestones / forecast sheet.
- * Tickers without a row fall back to live quote unless manually / Margus-overridden.
- */
-export const EOY_PRICE_TARGETS: Record<
-  string,
-  Partial<Record<ForecastYear, number>>
-> = {
-  NBIS: { 2026: 250, 2027: 340, 2028: 300, 2029: 450, 2030: 580 },
-  CRWV: { 2026: 110, 2027: 180, 2028: 160, 2029: 320, 2030: 480 },
-  RKLB: { 2026: 85, 2027: 120, 2028: 150, 2029: 200, 2030: 260 },
-  BMNR: { 2026: 28, 2027: 45, 2028: 22, 2029: 55, 2030: 80 },
-  VST: { 2026: 160, 2027: 175, 2028: 190, 2029: 210, 2030: 230 },
-  SOFI: { 2026: 25, 2027: 35, 2028: 45, 2029: 60, 2030: 75 },
-  HOOD: { 2026: 80, 2027: 110, 2028: 70, 2029: 140, 2030: 180 },
-  PLTR: { 2026: 140, 2027: 160, 2028: 150, 2029: 200, 2030: 250 },
-  NOW: { 2026: 900, 2027: 1000, 2028: 1100, 2029: 1200, 2030: 1400 },
-  NVDA: { 2026: 200, 2027: 240, 2028: 220, 2029: 300, 2030: 380 },
-  AVGO: { 2026: 400, 2027: 450, 2028: 480, 2029: 550, 2030: 650 },
-  RDDT: { 2026: 180, 2027: 220, 2028: 200, 2029: 280, 2030: 350 },
-};
-
 export type ForecastRow = {
   ticker: string;
   shares: number;
   currentPrice: number;
   currentValue: number;
-  /** EOY mark price per year (override, house target, or flat live price) */
+  /** EOY mark price per year (Margus/manual override, else temporary spot) */
   eoyPrices: Record<ForecastYear, number>;
   eoyValues: Record<ForecastYear, number>;
-  /** Which years come from override or house target (not flat spot) */
+  /** True when that year has a Margus/manual override (not placeholder spot) */
   targetedYears: Record<ForecastYear, boolean>;
   /** (final EOY stock price − current SP) / current SP */
   gainPct: number | null;
+  /** True when every forecast year has an override */
   hasTargets: boolean;
 };
 
@@ -57,8 +35,8 @@ function normalizeTickerKey(ticker: string) {
 }
 
 /**
- * Resolve EOY SP: manual/Margus override → house baseline → live spot.
- * Also try base symbol without exchange suffix (ASML.AS → ASML) for house only.
+ * Resolve EOY SP from Margus/manual overrides only.
+ * Never use hardcoded house baselines — missing years stay at spot until the model fills them.
  */
 function priceForYear(
   ticker: string,
@@ -71,15 +49,25 @@ function priceForYear(
   if (typeof override === "number" && override > 0) {
     return { price: override, targeted: true };
   }
-
-  const house =
-    EOY_PRICE_TARGETS[key]?.[year] ??
-    EOY_PRICE_TARGETS[key.split(".")[0]]?.[year];
-  if (typeof house === "number" && house > 0) {
-    return { price: house, targeted: true };
-  }
-
   return { price: spot, targeted: false };
+}
+
+/** True when every holding has a positive override for every forecast year. */
+export function isForecastFullyCovered(
+  tickers: string[],
+  overrides?: PortfolioEoyOverrides
+): boolean {
+  if (!tickers.length) return true;
+  for (const ticker of tickers) {
+    const key = normalizeTickerKey(ticker);
+    const row = overrides?.[key];
+    if (!row) return false;
+    for (const year of FORECAST_YEARS) {
+      const p = row[year];
+      if (!(typeof p === "number" && p > 0)) return false;
+    }
+  }
+  return true;
 }
 
 export function buildForecast(
@@ -96,7 +84,7 @@ export function buildForecast(
       const eoyPrices = {} as Record<ForecastYear, number>;
       const eoyValues = {} as Record<ForecastYear, number>;
       const targetedYears = {} as Record<ForecastYear, boolean>;
-      let hasTargets = false;
+      let targetedCount = 0;
       for (const year of FORECAST_YEARS) {
         const { price, targeted } = priceForYear(
           h.ticker,
@@ -104,7 +92,7 @@ export function buildForecast(
           spot,
           overrides
         );
-        if (targeted) hasTargets = true;
+        if (targeted) targetedCount += 1;
         eoyPrices[year] = price;
         eoyValues[year] = h.shares * price;
         targetedYears[year] = targeted;
@@ -122,7 +110,7 @@ export function buildForecast(
         eoyValues,
         targetedYears,
         gainPct,
-        hasTargets,
+        hasTargets: targetedCount === FORECAST_YEARS.length,
       };
     });
 
