@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Upside",
+  title: "Upside - Portfolio Tracker",
   description:
     "Live portfolio book with covered-call targets and Assistant Margus.",
   applicationName: "Upside",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     apple: "/upside-icon.svg",
   },
   openGraph: {
-    title: "Upside",
+    title: "Upside - Portfolio Tracker",
     description:
       "Live portfolio book with covered-call targets and Assistant Margus.",
     siteName: "Upside",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Upside",
+    title: "Upside - Portfolio Tracker",
     description:
       "Live portfolio book with covered-call targets and Assistant Margus.",
     images: ["/upside-icon.svg"],
