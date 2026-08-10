@@ -4,6 +4,7 @@ import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
 import {
   FORECAST_CONVICTION_PROMPT,
+  enforcePathRules,
   forecastThemeForTicker,
   shapedFallbackPath,
 } from "@/lib/forecast-conviction";
@@ -212,17 +213,68 @@ export function saveForecastPlan(plan: ForecastPlan) {
 function stanceGuidance(stance: ForecastStance): string {
   switch (stance) {
     case "bearish":
-      return `STANCE = BEARISH. Slower terminals (~35% of bullish upside bands) and deeper drawdowns OK — but paths must STILL be non-linear with named dynamics. No timid straight lines.`;
+      return `STANCE = BEARISH. Soften the spreadsheet BASE (~55% of base upside), deeper winters OK — still non-linear. Do not invent a timid "everything dips in 2026" book.`;
     case "bullish":
-      return `STANCE = BULLISH. Hit the conviction magnitude bands (AI infra ~4–8× by 2030, AI power ~2.5–5×, crypto ~3–7× with a winter). Reason every price from micro-thesis — size like a high-conviction bull, shape like a real market.`;
+      return `STANCE = BULLISH. Same shapes as Martin's BASE spreadsheet, but materially HIGHER (~+25–40% vs base on terminals; 2026 still above base 2026). NBIS/CRWV must clear spot hard in 2026.`;
     default:
-      return `STANCE = BASE. Still structurally bullish on AI infra / datacenter power / crypto (~70% of bullish terminals). Non-linear paths mandatory. Do not collapse into sell-side "base case" timidity.`;
+      return `STANCE = BASE. Match Martin's spreadsheet magnitude (NBIS ~1.33× spot by EOY 2026 → ~5.6× by 2030; CRWV ~1.26× → ~6.4×; BMNR rip then 2028 winter). This is NOT a quiet sell-side base. Forbidden: EOY 2026 below spot on NBIS/CRWV/BMNR/VST.`;
   }
+}
+
+/** Model path is too timid vs calibrated BASE (e.g. NBIS 182 when sheet says ~255). */
+function isTimidVsBase(
+  prices: Record<ForecastYear, number>,
+  shaped: Record<ForecastYear, number>,
+  spot: number,
+  theme: ReturnType<typeof forecastThemeForTicker>,
+  stance: ForecastStance
+): boolean {
+  if (stance === "bearish") return false;
+  const y2026 = FORECAST_YEARS[0]!;
+  const y2030 = FORECAST_YEARS[FORECAST_YEARS.length - 1]!;
+  const p26 = prices[y2026];
+  const s26 = shaped[y2026];
+  const p30 = prices[y2030];
+  const s30 = shaped[y2030];
+
+  // Classic bug: AI infra / crypto opening year below spot on base/bullish
+  if (
+    (theme === "ai_infra" ||
+      theme === "ai_power" ||
+      theme === "crypto" ||
+      theme === "space") &&
+    typeof p26 === "number" &&
+    p26 < spot * 1.05
+  ) {
+    return true;
+  }
+
+  // 2026 far below spreadsheet-shaped floor
+  if (
+    typeof p26 === "number" &&
+    typeof s26 === "number" &&
+    p26 < s26 * 0.85
+  ) {
+    return true;
+  }
+
+  // Terminal massively under base calibration
+  if (
+    typeof p30 === "number" &&
+    typeof s30 === "number" &&
+    theme !== "index" &&
+    p30 < s30 * 0.7
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
  * Guarantee every holding has every FORECAST_YEAR filled.
- * Prefer model prices; backfill gaps with theme-shaped non-linear paths (never flat CAGR).
+ * Prefer model prices only when they clear conviction floors; otherwise use
+ * spreadsheet-calibrated shaped paths (Martin's BASE sheet).
  */
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
@@ -244,8 +296,8 @@ export function ensureCompleteEoyTargets(
     const existing = byTicker.get(key);
     const spot = row.currentPrice > 0 ? row.currentPrice : 1;
     const theme = forecastThemeForTicker(row.ticker);
-    const shaped = shapedFallbackPath(spot, theme, stance);
-    const prices = {
+    const shaped = shapedFallbackPath(spot, theme, stance, row.ticker);
+    let prices = {
       ...shaped,
       ...(existing?.prices ?? {}),
     } as Record<ForecastYear, number>;
@@ -257,17 +309,23 @@ export function ensureCompleteEoyTargets(
       }
     }
 
-    // If the model returned an almost-flat linear ramp, reshape crypto/AI to conviction path
-    if (isNearLinear(prices, spot) && theme !== "index") {
-      Object.assign(prices, shaped);
+    const reshape =
+      (isNearLinear(prices, spot) && theme !== "index") ||
+      isTimidVsBase(prices, shaped, spot, theme, stance);
+
+    if (reshape) {
+      prices = { ...shaped };
+    } else {
+      prices = enforcePathRules(prices, spot, theme, stance);
     }
 
     out.push({
       ticker: row.ticker,
       prices: prices as ForecastPlan["eoyTargets"][number]["prices"],
-      rationale:
-        existing?.rationale ??
-        `Thesis ${stance} ${theme} path from spot ${spot.toFixed(2)} (non-linear)`,
+      rationale: reshape
+        ? `Calibrated ${stance} ${theme} path (sheet-aligned; model path rejected as too timid)`
+        : existing?.rationale ??
+          `Thesis ${stance} ${theme} path from spot ${spot.toFixed(2)} (non-linear)`,
     });
   }
   return out;

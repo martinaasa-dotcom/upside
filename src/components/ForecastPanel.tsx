@@ -4,6 +4,7 @@ import { FluidRow, FluidTable } from "@/components/FluidTable";
 import { cn, currency, percent } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
+  ensureCompleteEoyTargets,
   loadForecastPlan,
   planEoyPaths,
   saveForecastPlan,
@@ -31,6 +32,18 @@ type Props = {
   ) => void;
   onClearOverrides: () => void;
 };
+
+function calibratedPaths(plan: ForecastPlan, model: ForecastModel) {
+  const eoyTargets = ensureCompleteEoyTargets(
+    model,
+    plan.eoyTargets ?? [],
+    plan.stance ?? "base"
+  );
+  return {
+    eoyTargets,
+    paths: planEoyPaths({ ...plan, eoyTargets }),
+  };
+}
 
 function signedTone(value: number) {
   if (value > 0) return "text-gain";
@@ -115,9 +128,9 @@ const cellNum =
   "flex min-w-0 w-full items-center justify-end whitespace-nowrap px-3 py-2 text-right tabular-nums";
 
 const STANCES: { id: ForecastStance; label: string; hint: string }[] = [
-  { id: "bearish", label: "Bearish", hint: "Slower, deeper winters — still non-linear" },
-  { id: "base", label: "Base", hint: "~70% of bullish AI/crypto conviction" },
-  { id: "bullish", label: "Bullish", hint: "Datacenter + crypto multi-bagger paths" },
+  { id: "bearish", label: "Bearish", hint: "Softer than spreadsheet BASE" },
+  { id: "base", label: "Base", hint: "Martin’s sheet (NBIS ~255 EOY’26)" },
+  { id: "bullish", label: "Bullish", hint: "Above BASE — higher terminals" },
 ];
 
 export function ForecastPanel({
@@ -137,7 +150,7 @@ export function ForecastPanel({
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stance, setStance] = useState<ForecastStance>("bullish");
+  const [stance, setStance] = useState<ForecastStance>("base");
   const [appliedFlash, setAppliedFlash] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
@@ -148,6 +161,7 @@ export function ForecastPanel({
   );
   const autoKeyRef = useRef<string>("");
   const reappliedRef = useRef<string>("");
+  const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
 
   useEffect(() => {
@@ -158,6 +172,7 @@ export function ForecastPanel({
     setAppliedFlash(false);
     autoKeyRef.current = "";
     reappliedRef.current = "";
+    calibrateKeyRef.current = "";
   }, [portfolioId]);
 
   async function askMargus(opts?: {
@@ -190,16 +205,19 @@ export function ForecastPanel({
         ...(data.plan as ForecastPlan),
         holdingsKey,
       };
-      saveForecastPlan(next);
-      setPlan(next);
+      // Belt-and-suspenders: re-calibrate to spreadsheet BASE floors client-side
+      const { eoyTargets, paths } = calibratedPaths(next, model);
+      const calibrated: ForecastPlan = { ...next, eoyTargets };
+      saveForecastPlan(calibrated);
+      setPlan(calibrated);
 
-      const paths = planEoyPaths(next);
       if (paths.length > 0) {
         onApplyMargusPaths(paths);
         setAppliedFlash(true);
       }
       autoKeyRef.current = `${portfolioId}:${holdingsKey}`;
-      reappliedRef.current = `${portfolioId}:${holdingsKey}`;
+      reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
+      calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate plan");
       if (opts?.auto) {
@@ -211,6 +229,34 @@ export function ForecastPanel({
     }
   }
 
+  // Upgrade cached timid plans (e.g. NBIS 182) to spreadsheet BASE without waiting for LLM.
+  useEffect(() => {
+    if (model.rows.length === 0) return;
+    if (!plan || (plan.eoyTargets?.length ?? 0) === 0) return;
+    const key = `${portfolioId}:${holdingsKey}`;
+    if (calibrateKeyRef.current === key) return;
+    calibrateKeyRef.current = key;
+
+    const { eoyTargets, paths } = calibratedPaths(plan, model);
+    const before = JSON.stringify(plan.eoyTargets ?? []);
+    const after = JSON.stringify(eoyTargets);
+    if (before === after) {
+      if (flatCount > 0 && paths.length > 0) {
+        onApplyMargusPaths(paths);
+        reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
+      }
+      return;
+    }
+    const next: ForecastPlan = { ...plan, eoyTargets, holdingsKey };
+    saveForecastPlan(next);
+    setPlan(next);
+    if (paths.length > 0) {
+      onApplyMargusPaths(paths);
+      reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one calibrate pass per sheet/holdings
+  }, [portfolioId, holdingsKey, plan, model.rows.length, flatCount]);
+
   // Restore saved Margus prices into the grid without calling the model.
   useEffect(() => {
     if (model.rows.length === 0) return;
@@ -219,7 +265,7 @@ export function ForecastPanel({
     const key = `${portfolioId}:${holdingsKey}:reapply`;
     if (reappliedRef.current === key) return;
     reappliedRef.current = key;
-    const paths = planEoyPaths(plan);
+    const { paths } = calibratedPaths(plan, model);
     if (paths.length > 0) onApplyMargusPaths(paths);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
   }, [portfolioId, holdingsKey, flatCount, plan]);
@@ -243,11 +289,14 @@ export function ForecastPanel({
 
   function reapplyPlanPrices() {
     if (!plan) return;
-    const paths = planEoyPaths(plan);
+    const { eoyTargets, paths } = calibratedPaths(plan, model);
     if (paths.length === 0) {
       setError("This plan has no EOY prices to apply.");
       return;
     }
+    const next: ForecastPlan = { ...plan, eoyTargets, holdingsKey };
+    saveForecastPlan(next);
+    setPlan(next);
     onApplyMargusPaths(paths);
     setAppliedFlash(true);
     setError(null);
