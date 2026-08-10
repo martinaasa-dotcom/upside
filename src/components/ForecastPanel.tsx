@@ -1,6 +1,6 @@
 "use client";
 
-import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
+import { FluidRow, FluidTable } from "@/components/FluidTable";
 import { cn, currency, percent } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
@@ -99,12 +99,17 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "no-spinner w-full min-w-[4.5rem] rounded px-1 py-0.5 text-left tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
+        "no-spinner w-full min-w-0 rounded px-1 py-0.5 text-right tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
         targeted ? "text-zinc-100" : "text-zinc-500"
       )}
     />
   );
 }
+
+const cellLabel =
+  "flex min-w-0 w-full flex-col items-start justify-center whitespace-nowrap px-3 py-2 text-left";
+const cellNum =
+  "flex min-w-0 w-full items-center justify-end whitespace-nowrap px-3 py-2 text-right tabular-nums";
 
 const STANCES: { id: ForecastStance; label: string; hint: string }[] = [
   { id: "bearish", label: "Bearish", hint: "Conservative EOY path" },
@@ -123,9 +128,8 @@ export function ForecastPanel({
   onClearOverrides,
 }: Props) {
   const yearCols = model.years;
-  const template = `minmax(4.5rem, 0.7fr) minmax(5.5rem, 1fr) ${yearCols
-    .map(() => "minmax(5.5rem, 1fr)")
-    .join(" ")} minmax(4rem, 0.7fr)`;
+  // Ticker | Current SP | EOY×N | Gain — numeric cols share width evenly
+  const template = `minmax(5.5rem, 0.85fr) repeat(${yearCols.length + 1}, minmax(6.5rem, 1fr)) minmax(4.5rem, 0.7fr)`;
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -310,37 +314,34 @@ export function ForecastPanel({
           {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
-              <FluidRow className="border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                <div className={cellBase}>Ticker</div>
-                <div className={cellBase}>Current SP</div>
+              <FluidRow className="justify-items-stretch border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                <div className={cellLabel}>Ticker</div>
+                <div className={cellNum}>Current SP</div>
                 {yearCols.map((y) => (
-                  <div key={y} className={cellBase}>
+                  <div key={y} className={cellNum}>
                     {yearLabel(y)}
                   </div>
                 ))}
-                <div className={cellBase}>Gain</div>
+                <div className={cellNum}>Gain</div>
               </FluidRow>
 
               {model.rows.map((r) => (
-                <FluidRow key={r.ticker} className="hover:bg-zinc-900/40">
-                  <div
-                    className={cn(
-                      cellBase,
-                      "font-semibold tracking-wide text-white"
-                    )}
-                  >
+                <FluidRow
+                  key={r.ticker}
+                  className="justify-items-stretch hover:bg-zinc-900/40"
+                >                  <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
                     {r.ticker}
                     {!r.hasTargets && (
-                      <span className="mt-0.5 block text-[10px] font-normal tracking-normal text-zinc-600">
+                      <span className="mt-0.5 text-[10px] font-normal tracking-normal text-zinc-600">
                         no target
                       </span>
                     )}
                   </div>
-                  <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
+                  <div className={cn(cellNum, "text-zinc-100")}>
                     {currency(r.currentPrice)}
                   </div>
                   {yearCols.map((y) => (
-                    <div key={y} className={cellBase}>
+                    <div key={y} className={cellNum}>
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
                         targeted={r.targetedYears[y]}
@@ -350,8 +351,8 @@ export function ForecastPanel({
                   ))}
                   <div
                     className={cn(
-                      cellBase,
-                      "tabular-nums font-medium",
+                      cellNum,
+                      "font-medium",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
                         : "text-zinc-600"
@@ -362,27 +363,22 @@ export function ForecastPanel({
                 </FluidRow>
               ))}
 
-              <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
-                <div className={cn(cellBase, "py-2.5 text-white")}>
+              <FluidRow className="justify-items-stretch border-t border-zinc-700 bg-zinc-900/60 font-semibold">
+                <div className={cn(cellLabel, "py-2.5 text-white")}>
                   Portfolio
                 </div>
-                <div
-                  className={cn(cellBase, "py-2.5 tabular-nums text-white")}
-                >
+                <div className={cn(cellNum, "py-2.5 text-white")}>
                   {currency(model.currentTotal)}
                 </div>
                 {yearCols.map((y) => (
-                  <div
-                    key={y}
-                    className={cn(cellBase, "py-2.5 tabular-nums text-white")}
-                  >
+                  <div key={y} className={cn(cellNum, "py-2.5 text-white")}>
                     {currency(model.eoyTotals[y])}
                   </div>
                 ))}
                 <div
                   className={cn(
-                    cellBase,
-                    "py-2.5 tabular-nums",
+                    cellNum,
+                    "py-2.5",
                     model.gainPct != null
                       ? signedTone(model.gainPct)
                       : "text-zinc-600"
