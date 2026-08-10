@@ -7,7 +7,13 @@ import {
   buildStrikeAlerts,
   type UpsideAlert,
 } from "@/lib/alerts";
-import { SHOCKS, shockedPrice, type ShockId } from "@/lib/book-shock";
+import {
+  SHOCKS,
+  getShockProfile,
+  shockedPct,
+  shockedPrice,
+  type ShockId,
+} from "@/lib/book-shock";
 import {
   addCashflow,
   netCashMoves,
@@ -111,6 +117,8 @@ export function LabSheet({
   const [group, setGroup] = useState<LabGroup>("book");
   const [tab, setTab] = useState<LabTab>("alloc");
   const [shock, setShock] = useState<ShockId>("none");
+  /** What-if scope: full book or a single sheet */
+  const [scopeId, setScopeId] = useState<string>("book");
   const [versusA, setVersusA] = useState(portfolios[0]?.id ?? "");
   const [versusB, setVersusB] = useState(
     portfolios[1]?.id ?? portfolios[0]?.id ?? ""
@@ -159,13 +167,71 @@ export function LabSheet({
     setTab(id);
   }
 
+  const scopedTickers = useMemo(() => {
+    if (scopeId === "book") return overview.tickers;
+    const rows = holdings.filter((h) => h.portfolio_id === scopeId);
+    const byTicker = new Map<
+      string,
+      { ticker: string; shares: number; buyValue: number; sparkline: number[] }
+    >();
+    for (const h of rows) {
+      const prev = byTicker.get(h.ticker) ?? {
+        ticker: h.ticker,
+        shares: 0,
+        buyValue: 0,
+        sparkline: [],
+      };
+      prev.shares += h.shares;
+      prev.buyValue += h.shares * h.buy_price;
+      const spark = quotes[h.ticker]?.sparkline ?? [];
+      if (spark.length > prev.sparkline.length) prev.sparkline = spark;
+      byTicker.set(h.ticker, prev);
+    }
+    return [...byTicker.values()].map((t) => {
+      const price = quotes[t.ticker]?.price ?? t.buyValue / Math.max(t.shares, 1);
+      const currentValue = t.shares * price;
+      return {
+        ticker: t.ticker,
+        shares: t.shares,
+        price,
+        currentValue,
+        buyValue: t.buyValue,
+        sparkline: t.sparkline,
+        portfolios: [],
+        portfolioIds: [scopeId],
+        roiDollar: currentValue - t.buyValue,
+        roiPct: t.buyValue > 0 ? (currentValue - t.buyValue) / t.buyValue : 0,
+        todayDollar: 0,
+        todayPct: quotes[t.ticker]?.changePercent ?? null,
+      };
+    });
+  }, [scopeId, overview.tickers, holdings, quotes]);
+
+  const scopedCash = useMemo(() => {
+    if (scopeId === "book") return overview.totals.cash;
+    return (
+      portfolios.find((p) => p.id === scopeId)?.cash_balance ?? 0
+    );
+  }, [scopeId, overview.totals.cash, portfolios]);
+
+  const scopeLabel =
+    scopeId === "book"
+      ? "Entire book"
+      : (portfolios.find((p) => p.id === scopeId)?.name ?? "Sheet");
+
+  const showScope =
+    tab === "alloc" ||
+    tab === "shock" ||
+    tab === "corr" ||
+    tab === "calendar";
+
   const sheetHoldings = useMemo(
     () =>
-      overview.tickers.map((t) => ({
+      scopedTickers.map((t) => ({
         ticker: t.ticker,
         currentValue: t.currentValue,
       })),
-    [overview.tickers]
+    [scopedTickers]
   );
 
   const sectors = useMemo(
@@ -193,11 +259,11 @@ export function LabSheet({
 
   const corrSeries = useMemo(
     () =>
-      overview.tickers
+      scopedTickers
         .filter((t) => (t.sparkline?.length ?? 0) > 5)
         .slice(0, 8)
         .map((t) => ({ ticker: t.ticker, sparkline: t.sparkline ?? [] })),
-    [overview.tickers]
+    [scopedTickers]
   );
   const corrPairs = useMemo(
     () => correlationMatrix(corrSeries).slice(0, 10),
@@ -206,14 +272,16 @@ export function LabSheet({
   const corrHeat = useMemo(() => correlationGrid(corrSeries), [corrSeries]);
 
   const shockRows = useMemo(() => {
-    return overview.tickers
+    return scopedTickers
       .map((t) => {
         const livePx = t.price;
         const shockPx = shockedPrice(t.ticker, livePx, shock);
         const liveVal = t.currentValue;
         const shockVal = t.shares * shockPx;
+        const profile = getShockProfile(t.ticker);
         return {
           ticker: t.ticker,
+          label: profile.label,
           shares: t.shares,
           livePx,
           shockPx,
@@ -221,31 +289,37 @@ export function LabSheet({
           shockVal,
           delta: shockVal - liveVal,
           deltaPct: liveVal > 0 ? (shockVal - liveVal) / liveVal : 0,
+          movePct: shockedPct(t.ticker, shock),
         };
       })
       .sort((a, b) => a.delta - b.delta);
-  }, [overview.tickers, shock]);
+  }, [scopedTickers, shock]);
 
   const shockTotals = useMemo(() => {
     const liveEquity = shockRows.reduce((s, r) => s + r.liveVal, 0);
     const shockEquity = shockRows.reduce((s, r) => s + r.shockVal, 0);
-    const live = liveEquity + overview.totals.cash;
-    const shocked = shockEquity + overview.totals.cash;
+    const live = liveEquity + scopedCash;
+    const shocked = shockEquity + scopedCash;
     return { live, shocked, delta: shocked - live };
-  }, [shockRows, overview.totals.cash]);
+  }, [shockRows, scopedCash]);
+
+  const scopedCcRows = useMemo(() => {
+    if (scopeId === "book") return coveredCallRows;
+    return coveredCallRows.filter((r) => r.holding.portfolio_id === scopeId);
+  }, [coveredCallRows, scopeId]);
 
   const recap = useMemo(() => buildWeeklyRecap(overview), [overview]);
 
   const ccByExpiry = useMemo(() => {
     const map = new Map<string, CoveredCallRow[]>();
-    for (const r of coveredCallRows) {
+    for (const r of scopedCcRows) {
       const exp = r.expiration ?? "—";
       const list = map.get(exp) ?? [];
       list.push(r);
       map.set(exp, list);
     }
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [coveredCallRows]);
+  }, [scopedCcRows]);
 
   function sheetStats(id: string) {
     const sheet = overview.sheets.find((s) => s.portfolio.id === id);
@@ -284,6 +358,28 @@ export function LabSheet({
           Sandbox tools for the book — allocation, shocks, paper trading,
           income log, and digests. Edits sync when the book is unlocked.
         </p>
+        {showScope && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+              Scope
+            </span>
+            <select
+              value={scopeId}
+              onChange={(e) => setScopeId(e.target.value)}
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-white"
+            >
+              <option value="book">Entire book</option>
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <span className="text-[11px] text-zinc-600">
+              What-ifs run on {scopeLabel}
+            </span>
+          </div>
+        )}
         <div className="mt-3 flex flex-wrap gap-1 border-b border-zinc-800 pb-2">
           {GROUPS.map((g) => (
             <button
@@ -612,10 +708,14 @@ export function LabSheet({
 
       {tab === "shock" && (
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <p className="text-sm font-semibold text-white">Book-wide shock lab</p>
-          <p className="text-xs text-zinc-500">
-            {SHOCKS.find((s) => s.id === shock)?.tagline}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-white">Shock lab</p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {SHOCKS.find((s) => s.id === shock)?.tagline} · {scopeLabel}
+              </p>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {SHOCKS.map((s) => (
               <button
@@ -661,37 +761,65 @@ export function LabSheet({
           </div>
           {shock !== "none" && (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[28rem] text-left text-xs">
+              <table className="w-full min-w-[36rem] text-left text-xs">
                 <thead className="text-zinc-500">
                   <tr className="border-b border-zinc-800">
-                    <th className="py-1.5 font-medium">Ticker</th>
-                    <th className="py-1.5 font-medium">Live</th>
-                    <th className="py-1.5 font-medium">Shock</th>
+                    <th className="py-1.5 pr-2 font-medium">Ticker</th>
+                    <th className="py-1.5 pr-2 font-medium">Theme</th>
+                    <th className="py-1.5 pr-2 font-medium">Move</th>
+                    <th className="py-1.5 pr-2 font-medium">Live</th>
+                    <th className="py-1.5 pr-2 font-medium">Shock</th>
                     <th className="py-1.5 font-medium">Δ value</th>
                   </tr>
                 </thead>
                 <tbody>
                   {shockRows.map((r) => (
                     <tr key={r.ticker} className="border-b border-zinc-900">
-                      <td className="py-1.5 font-medium text-white">
+                      <td className="py-1.5 pr-2 font-medium text-white">
                         {r.ticker}
                       </td>
-                      <td className="py-1.5 tabular-nums text-zinc-400">
+                      <td className="max-w-[10rem] truncate py-1.5 pr-2 text-zinc-500">
+                        {r.label}
+                      </td>
+                      <td
+                        className={cn(
+                          "py-1.5 pr-2 tabular-nums",
+                          r.movePct === 0
+                            ? "text-zinc-500"
+                            : r.movePct > 0
+                              ? "text-gain"
+                              : "text-loss"
+                        )}
+                      >
+                        {percent(r.movePct)}
+                      </td>
+                      <td className="py-1.5 pr-2 tabular-nums text-zinc-400">
                         {currency(r.liveVal, 0)}
                       </td>
-                      <td className="py-1.5 tabular-nums text-zinc-300">
+                      <td className="py-1.5 pr-2 tabular-nums text-zinc-300">
                         {currency(r.shockVal, 0)}
                       </td>
                       <td
                         className={cn(
                           "py-1.5 tabular-nums",
-                          r.delta >= 0 ? "text-gain" : "text-loss"
+                          r.delta === 0
+                            ? "text-zinc-500"
+                            : r.delta > 0
+                              ? "text-gain"
+                              : "text-loss"
                         )}
                       >
-                        {currency(r.delta, 0)} ({percent(r.deltaPct)})
+                        {currency(r.delta, 0)}
                       </td>
                     </tr>
                   ))}
+                  {shockRows.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-3 text-zinc-500">
+                        No holdings in this scope.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

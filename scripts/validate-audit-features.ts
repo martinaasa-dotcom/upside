@@ -65,7 +65,15 @@ const earn = buildEarningsAlerts([
 assert(earn.length === 1, "earnings window");
 
 assert(buildGoalAlert(true, "Hit 100k"), "goal alert");
-assert(shockedPrice("NBIS", 100, "ai_down20") === 80, "ai shock");
+assert(Math.abs(shockedPrice("NBIS", 100, "ai_down20") - 80) < 1e-9, "ai shock nbis");
+assert(Math.abs(shockedPrice("VST", 100, "ai_down20") - 83) < 1e-9, "ai shock vst");
+assert(Math.abs(shockedPrice("PWR", 100, "ai_down20") - 84) < 1e-9, "ai shock pwr");
+assert(Math.abs(shockedPrice("BMNR", 100, "btc_winter35") - 65) < 1e-9, "crypto bmnr");
+assert(
+  Math.abs(shockedPrice("NBIS", 100, "btc_winter35") - 82.5) < 1e-9,
+  "crypto spill nbis"
+);
+assert(shockedPrice("SPY", 100, "btc_winter35") < 100, "crypto hits index beta");
 assert(SHOCKS.length >= 4, "shock catalog");
 
 let stack = pushUndoSnapshot([], {
