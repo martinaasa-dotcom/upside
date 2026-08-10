@@ -30,21 +30,67 @@ export function ForecastPanel({ model }: Props) {
       <header className="border-b border-zinc-800/80 px-4 py-3">
         <h2 className="text-sm font-semibold text-white">Forecast</h2>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Current book vs house EOY price targets · next {yearCols.length} years
+          Stock price targets · portfolio totals = current shares × forecasted
+          SP · next {yearCols.length} years
         </p>
       </header>
 
       {model.rows.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-zinc-500">
-          Add holdings to project EOY values.
+          Add holdings to project EOY prices.
         </div>
       ) : (
         <>
           {/* Mobile */}
           <div className="space-y-2 p-3 md:hidden">
+            {model.rows.map((r) => (
+              <div
+                key={r.ticker}
+                className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-3 py-3"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div>
+                    <p className="text-base font-semibold text-white">
+                      {r.ticker}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {r.shares.toLocaleString("en-US")} shares
+                      {!r.hasTargets && " · flat (no house target)"}
+                    </p>
+                  </div>
+                  <p
+                    className={cn(
+                      "text-sm font-medium tabular-nums",
+                      r.gainPct != null
+                        ? signedTone(r.gainPct)
+                        : "text-zinc-600"
+                    )}
+                  >
+                    {r.gainPct != null ? percent(r.gainPct) : "—"}
+                  </p>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-zinc-500">Current SP</p>
+                    <p className="tabular-nums text-zinc-100">
+                      {currency(r.currentPrice)}
+                    </p>
+                  </div>
+                  {yearCols.map((y) => (
+                    <div key={y}>
+                      <p className="text-zinc-500">{yearLabel(y)}</p>
+                      <p className="tabular-nums text-zinc-100">
+                        {currency(r.eoyPrices[y])}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 px-3 py-3">
               <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                Portfolio
+                Portfolio value
               </p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-white">
                 {currency(model.currentTotal)}
@@ -70,41 +116,6 @@ export function ForecastPanel({ model }: Props) {
                 </p>
               )}
             </div>
-
-            {model.rows.map((r) => (
-              <div
-                key={r.ticker}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-3 py-3"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-base font-semibold text-white">
-                    {r.ticker}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-sm font-medium tabular-nums",
-                      r.gainPct != null ? signedTone(r.gainPct) : "text-zinc-600"
-                    )}
-                  >
-                    {r.gainPct != null ? percent(r.gainPct) : "—"}
-                  </p>
-                </div>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Now {currency(r.currentValue)}
-                  {!r.hasTargets && " · flat (no house target)"}
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                  {yearCols.map((y) => (
-                    <div key={y}>
-                      <p className="text-zinc-500">{yearLabel(y)}</p>
-                      <p className="tabular-nums text-zinc-100">
-                        {currency(r.eoyValues[y])}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
           </div>
 
           {/* Desktop */}
@@ -112,7 +123,7 @@ export function ForecastPanel({ model }: Props) {
             <FluidTable template={template}>
               <FluidRow className="border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                 <div className={cellBase}>Ticker</div>
-                <div className={cellBase}>Current</div>
+                <div className={cellBase}>Current SP</div>
                 {yearCols.map((y) => (
                   <div key={y} className={cellBase}>
                     {yearLabel(y)}
@@ -132,7 +143,7 @@ export function ForecastPanel({ model }: Props) {
                     {r.ticker}
                   </div>
                   <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
-                    {currency(r.currentValue)}
+                    {currency(r.currentPrice)}
                   </div>
                   {yearCols.map((y) => (
                     <div
@@ -143,7 +154,7 @@ export function ForecastPanel({ model }: Props) {
                         r.hasTargets ? "text-zinc-100" : "text-zinc-500"
                       )}
                     >
-                      {currency(r.eoyValues[y])}
+                      {currency(r.eoyPrices[y])}
                     </div>
                   ))}
                   <div
@@ -165,20 +176,14 @@ export function ForecastPanel({ model }: Props) {
                   Portfolio
                 </div>
                 <div
-                  className={cn(
-                    cellBase,
-                    "py-2.5 tabular-nums text-white"
-                  )}
+                  className={cn(cellBase, "py-2.5 tabular-nums text-white")}
                 >
                   {currency(model.currentTotal)}
                 </div>
                 {yearCols.map((y) => (
                   <div
                     key={y}
-                    className={cn(
-                      cellBase,
-                      "py-2.5 tabular-nums text-white"
-                    )}
+                    className={cn(cellBase, "py-2.5 tabular-nums text-white")}
                   >
                     {currency(model.eoyTotals[y])}
                   </div>

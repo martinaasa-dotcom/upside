@@ -76,7 +76,7 @@ export type ForecastRow = {
   /** EOY mark price per year (target or flat live price) */
   eoyPrices: Record<ForecastYear, number>;
   eoyValues: Record<ForecastYear, number>;
-  /** (final EOY value − current) / current */
+  /** (final EOY stock price − current SP) / current SP — same as position gain if shares fixed */
   gainPct: number | null;
   hasTargets: boolean;
 };
@@ -124,9 +124,9 @@ export function buildForecast(
       }
       const currentValue = h.shares * spot;
       const lastYear = FORECAST_YEARS[FORECAST_YEARS.length - 1];
-      const lastValue = eoyValues[lastYear];
+      const lastPrice = eoyPrices[lastYear];
       const gainPct =
-        currentValue !== 0 ? (lastValue - currentValue) / currentValue : null;
+        spot !== 0 ? (lastPrice - spot) / spot : null;
       return {
         ticker: h.ticker,
         shares: h.shares,
