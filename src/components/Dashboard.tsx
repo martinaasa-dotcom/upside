@@ -11,7 +11,7 @@ import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
 import { LabSheet } from "@/components/LabSheet";
 import { HeaderOverflowMenu, type HeaderMenuItem } from "@/components/HeaderOverflowMenu";
 import { MacroStrip } from "@/components/MacroStrip";
-import { OverviewDashboard } from "@/components/OverviewDashboard";
+import { OverviewDashboard, type LabDeepLink } from "@/components/OverviewDashboard";
 import {
   PortfolioTable,
   type HoldingPatch,
@@ -49,6 +49,7 @@ import {
 } from "@/lib/lab-sync-client";
 import { loadCashflows } from "@/lib/cashflow";
 import { loadArena } from "@/lib/paper-arena";
+import { loadWatchlist } from "@/lib/watchlist";
 import {
   dismissAlert,
   loadDismissedAlertIds,
@@ -231,6 +232,7 @@ export function Dashboard() {
   const [shareLabel, setShareLabel] = useState<string | null>(null);
   const [labBundle, setLabBundle] = useState<LabBundle>(() => emptyLabBundle());
   const [labReady, setLabReady] = useState(false);
+  const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
   const labDirtyRef = useRef(false);
   const [costBasisOpen, setCostBasisOpen] = useState(false);
   const [costBasisRows, setCostBasisRows] = useState<CostBasisRow[]>([]);
@@ -257,6 +259,10 @@ export function Dashboard() {
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
   const isMetaTab = isOverview || isCompound || isLab;
+
+  useEffect(() => {
+    if (guestMode && isLab) setActiveId(OVERVIEW_TAB_ID);
+  }, [guestMode, isLab]);
   const activePortfolio =
     isMetaTab
       ? null
@@ -1733,32 +1739,34 @@ export function Dashboard() {
         group: "Go",
         run: () => setActiveId(COMPOUND_TAB_ID),
       },
-      {
+    ];
+    if (!guestMode) {
+      items.push({
         id: "lab",
         label: "Lab",
         group: "Go",
         hint: "Play layer",
         run: () => setActiveId(LAB_TAB_ID),
-      },
-      {
+      });
+      items.push({
         id: "undo",
         label: "Undo last Margus write",
         group: "Edit",
         run: () => undoLastMargusWrite(),
-      },
-      {
+      });
+      items.push({
         id: "unlock",
         label: "Unlock locked sheet",
         group: "Edit",
         run: () => setUnlockOpen(true),
-      },
-      {
+      });
+      items.push({
         id: "snapshots",
         label: "Snapshots",
         group: "Edit",
         run: () => setSnapshotsOpen(true),
-      },
-    ];
+      });
+    }
     for (const p of portfolios) {
       items.push({
         id: `sheet-${p.id}`,
@@ -1781,9 +1789,8 @@ export function Dashboard() {
       });
     }
     return items;
-    // undoLastMargusWrite is a stable-enough handler for cmd palette; length gates Undo item
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
-  }, [portfolios, overview.tickers, undoStack.length]);
+  }, [portfolios, overview.tickers, undoStack.length, guestMode]);
 
   const headerMenuItems: HeaderMenuItem[] = useMemo(() => {
     const items: HeaderMenuItem[] = [];
@@ -1891,8 +1898,8 @@ export function Dashboard() {
       {guestMode && (
         <div className="border-b border-zinc-700 bg-zinc-900 px-4 py-1.5 text-center text-[11px] text-zinc-400">
           {shareLabel
-            ? `${shareLabel} · read-only`
-            : "Guest read-only link · edits disabled"}
+            ? `${shareLabel} · View-only · no unlock needed`
+            : "View-only · no unlock needed"}
         </div>
       )}
       <StaleQuotesBanner
@@ -1931,7 +1938,7 @@ export function Dashboard() {
             </h1>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
-            {source === "supabase" && needsSheetUnlock && (
+            {source === "supabase" && needsSheetUnlock && !guestMode && (
               <button
                 type="button"
                 onClick={() => setUnlockOpen(true)}
@@ -2025,7 +2032,7 @@ export function Dashboard() {
           </div>
         )}
 
-        {needsSheetUnlock && (
+        {needsSheetUnlock && !guestMode && (
           <div className="flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-brand-bright">
               “{activePortfolio?.name}” is locked — unlock with its PIN/password
@@ -2062,6 +2069,8 @@ export function Dashboard() {
             onDismissAlert={(id) =>
               setAlertToastsSent((prev) => dismissAlert(id, prev))
             }
+            intentTab={labIntent}
+            onIntentConsumed={() => setLabIntent(null)}
           />
         ) : isCompound ? (
           <CompoundInterestSheet
@@ -2084,7 +2093,12 @@ export function Dashboard() {
                 return buildSnapshot(p, rows, quotes, options).coveredCallRows;
               })}
               cashflows={labBundle.cashflows}
-              onOpenLab={() => setActiveId(LAB_TAB_ID)}
+              marketState={marketState}
+              guest={guestMode}
+              onOpenLab={(tab) => {
+                if (tab) setLabIntent(tab);
+                setActiveId(LAB_TAB_ID);
+              }}
             />
             <CcAdvisorChat
               key={OVERVIEW_TAB_ID}
@@ -2095,6 +2109,7 @@ export function Dashboard() {
                 adviseOnly: true,
                 eurUsd,
                 gbpUsd,
+                watchlist: loadWatchlist(),
                 holdings: overview.tickers.map((t) => ({
                   ticker: t.ticker,
                   shares: t.shares,
@@ -2207,6 +2222,7 @@ export function Dashboard() {
                 cashBalance: activePortfolio!.cash_balance,
                 eurUsd,
                 gbpUsd,
+                watchlist: loadWatchlist(),
                 holdings: snapshot!.holdings.map((h) => ({
                   ticker: h.ticker,
                   shares: h.shares,
@@ -2268,6 +2284,7 @@ export function Dashboard() {
         activeId={activeId}
         onChange={setActiveId}
         onAdd={handleAddSheet}
+        guest={guestMode}
         onRenameRequest={(id, name) => setRenameTarget({ id, name })}
         onDeleteRequest={(id, name) =>
           setConfirmDelete({ kind: "sheet", id, label: name })

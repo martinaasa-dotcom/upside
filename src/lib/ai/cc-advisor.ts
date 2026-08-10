@@ -73,6 +73,8 @@ export type CcChatContext = {
   eurUsd?: number | null;
   /** USD per 1 GBP */
   gbpUsd?: number | null;
+  /** Not-owned-yet names Margus may discuss without sheet pollution */
+  watchlist?: string[];
 };
 
 type AdvisorFx = { eurUsd: number | null; gbpUsd: number | null };
@@ -741,6 +743,7 @@ House strategy:
 Be concise. Prefer tools over invented numbers. After tools, briefly confirm.
 
 Market session: ${ctx.marketState ?? "unknown"}
+Watchlist (not owned — discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}
 Cash: ${ctx.cashBalance}
 Portfolio totals: cost=${ctx.totals.cost.toFixed(0)}, value=${ctx.totals.value.toFixed(0)}, roi%=${(ctx.totals.roiPct * 100).toFixed(1)}%, roi$=${ctx.totals.roiDollar.toFixed(0)}, ccYieldAvg=${(ctx.totals.yield2wAvg * 100).toFixed(2)}%, premiumTotal=${ctx.totals.premiumTotal.toFixed(2)}
 

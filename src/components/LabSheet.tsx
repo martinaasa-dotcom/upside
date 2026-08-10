@@ -17,11 +17,19 @@ import {
 } from "@/lib/book-shock";
 import {
   addCashflow,
+  alreadyLoggedPremium,
+  logPremiumFromCc,
   netCashMoves,
   removeCashflow,
   trailingIncome,
   type CashflowEntry,
 } from "@/lib/cashflow";
+import {
+  addWatchlistTicker,
+  loadWatchlist,
+  removeWatchlistTicker,
+} from "@/lib/watchlist";
+import type { LabDeepLink } from "@/components/OverviewDashboard";
 import { buildCcSeason } from "@/lib/cc-season";
 import {
   correlationGrid,
@@ -72,12 +80,16 @@ type Props = {
   guest?: boolean;
   dismissedAlertIds?: Set<string>;
   onDismissAlert?: (id: string) => void;
+  /** Deep-link from Overview (versus / arena / …). */
+  intentTab?: LabDeepLink | null;
+  onIntentConsumed?: () => void;
 };
 
-type LabGroup = "book" | "income" | "trade" | "digest";
+type LabGroup = "book" | "income" | "trade" | "digest" | "advanced";
 type LabTab =
   | "alloc"
   | "versus"
+  | "watch"
   | "shock"
   | "corr"
   | "calendar"
@@ -92,20 +104,31 @@ const GROUPS: { id: LabGroup; label: string }[] = [
   { id: "income", label: "Income" },
   { id: "trade", label: "Trade" },
   { id: "digest", label: "Digest" },
+  { id: "advanced", label: "Advanced" },
 ];
 
 const TABS: { id: LabTab; group: LabGroup; label: string }[] = [
   { id: "alloc", group: "book", label: "Allocation" },
   { id: "versus", group: "book", label: "Versus" },
-  { id: "shock", group: "book", label: "Shock" },
-  { id: "corr", group: "book", label: "Correlation" },
+  { id: "watch", group: "book", label: "Watchlist" },
   { id: "calendar", group: "income", label: "CC calendar" },
   { id: "season", group: "income", label: "CC season" },
   { id: "cashflow", group: "income", label: "Cashflow" },
   { id: "arena", group: "trade", label: "Arena" },
   { id: "recap", group: "digest", label: "Weekly recap" },
   { id: "alerts", group: "digest", label: "Alerts" },
+  { id: "shock", group: "advanced", label: "Shock" },
+  { id: "corr", group: "advanced", label: "Correlation" },
 ];
+
+const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
+  versus: "versus",
+  arena: "arena",
+  calendar: "calendar",
+  alerts: "alerts",
+  watch: "watch",
+  season: "season",
+};
 
 export function LabSheet({
   overview,
@@ -119,6 +142,8 @@ export function LabSheet({
   guest,
   dismissedAlertIds,
   onDismissAlert,
+  intentTab,
+  onIntentConsumed,
 }: Props) {
   const [group, setGroup] = useState<LabGroup>("book");
   const [tab, setTab] = useState<LabTab>("alloc");
@@ -139,6 +164,13 @@ export function LabSheet({
   const [aCash, setACash] = useState(arena.cash);
   const [arenaMsg, setArenaMsg] = useState<string | null>(null);
   const [challenge, setChallenge] = useState<ArenaChallenge | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchDraft, setWatchDraft] = useState("");
+  const [logFlash, setLogFlash] = useState<string | null>(null);
+
+  useEffect(() => {
+    setWatchlist(loadWatchlist());
+  }, []);
 
   useEffect(() => {
     if (!cloneSheetId && portfolios[0]) setCloneSheetId(portfolios[0].id);
@@ -164,6 +196,31 @@ export function LabSheet({
     const meta = TABS.find((t) => t.id === id);
     if (meta) setGroup(meta.group);
     setTab(id);
+  }
+
+  useEffect(() => {
+    if (!intentTab) return;
+    const id = INTENT_TO_TAB[intentTab];
+    selectTab(id);
+    onIntentConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intentTab]);
+
+  function logRowPremium(r: CoveredCallRow, exp: string) {
+    if (r.premium == null || !(r.premium > 0)) return;
+    const { entries, already } = logPremiumFromCc(cashflows, {
+      ticker: r.holding.ticker,
+      amount: r.premium,
+      expiry: exp,
+      contracts: r.contracts,
+    });
+    if (already) {
+      setLogFlash(`${r.holding.ticker} already logged recently`);
+    } else {
+      onLabChange({ cashflows: entries });
+      setLogFlash(`Logged ${r.holding.ticker} premium → cashflow`);
+    }
+    window.setTimeout(() => setLogFlash(null), 2500);
   }
 
   const scopedTickers = useMemo(() => {
@@ -368,8 +425,8 @@ export function LabSheet({
           <h2 className="text-sm font-semibold text-white">Lab</h2>
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Sandbox tools for the book — allocation, shocks, paper trading,
-          income log, and digests. Edits sync when the book is unlocked.
+          Sandbox tools — income, Versus, Arena. Shock & Correlation live under
+          Advanced. Edits sync when a locked sheet is unlocked.
         </p>
         <div className="mt-3 flex h-8 min-h-8 items-center gap-2 overflow-hidden">
           <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
@@ -526,6 +583,69 @@ export function LabSheet({
             ))}
             {rivalry.length === 0 && (
               <li className="text-sm text-zinc-500">No sheets to rank.</li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {tab === "watch" && (
+        <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+          <p className="text-sm font-semibold text-white">Watchlist</p>
+          <p className="text-xs text-zinc-500">
+            Names Margus can talk about without polluting sheets — SaaS,
+            healthcare, drones, whatever’s on deck.
+          </p>
+          {!guest && (
+            <form
+              className="flex flex-wrap gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!watchDraft.trim()) return;
+                setWatchlist((prev) =>
+                  addWatchlistTicker(prev, watchDraft.trim())
+                );
+                setWatchDraft("");
+              }}
+            >
+              <input
+                value={watchDraft}
+                onChange={(e) => setWatchDraft(e.target.value.toUpperCase())}
+                placeholder="Ticker"
+                className="w-28 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
+              />
+              <button
+                type="submit"
+                className="rounded-lg border border-brand/40 bg-brand/10 px-3 py-1.5 text-xs font-medium text-brand-bright"
+              >
+                Add
+              </button>
+            </form>
+          )}
+          <ul className="flex flex-wrap gap-2">
+            {watchlist.map((t) => (
+              <li
+                key={t}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-950/50 px-2.5 py-1 text-sm text-zinc-200"
+              >
+                {t}
+                {!guest && (
+                  <button
+                    type="button"
+                    className="text-[10px] text-zinc-500 hover:text-rose-300"
+                    onClick={() =>
+                      setWatchlist((prev) => removeWatchlistTicker(prev, t))
+                    }
+                    aria-label={`Remove ${t}`}
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+            {watchlist.length === 0 && (
+              <li className="text-sm text-zinc-500">
+                Empty — add tickers you’re curious about.
+              </li>
             )}
           </ul>
         </div>
@@ -926,6 +1046,13 @@ export function LabSheet({
               </span>
             )}
           </div>
+          <p className="mb-3 text-xs text-zinc-500">
+            One-tap Log premium books the modeled fill into Cashflow — closes the
+            CC season loop.
+          </p>
+          {logFlash && (
+            <p className="mb-2 text-xs text-brand-bright">{logFlash}</p>
+          )}
           {ccByExpiry.length === 0 ? (
             <p className="text-sm text-zinc-500">
               No covered-call rows yet — add holdings with enough shares for
@@ -953,30 +1080,54 @@ export function LabSheet({
                           : `~${currency(prem)} prem`}
                       </span>
                     </div>
-                    <ul className="mt-2 space-y-1 text-xs text-zinc-500">
-                      {rows.map((r) => (
-                        <li
-                          key={r.holding.id}
-                          className="flex justify-between gap-2"
-                        >
-                          <span>
-                            {r.holding.ticker}
-                            {r.nextStrike != null
-                              ? ` · strike ${currency(r.nextStrike)}`
-                              : ""}
-                            {r.contracts > 0
-                              ? ` · ${r.contracts} ct`
-                              : " · <100 sh"}
-                          </span>
-                          <span className="tabular-nums">
-                            {r.premium != null
-                              ? currency(r.premium)
-                              : r.contracts > 0
-                                ? "…"
-                                : "—"}
-                          </span>
-                        </li>
-                      ))}
+                    <ul className="mt-2 space-y-1.5 text-xs text-zinc-500">
+                      {rows.map((r) => {
+                        const logged =
+                          r.premium != null &&
+                          alreadyLoggedPremium(
+                            cashflows,
+                            r.holding.ticker,
+                            r.premium,
+                            exp
+                          );
+                        return (
+                          <li
+                            key={r.holding.id}
+                            className="flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <span>
+                              {r.holding.ticker}
+                              {r.nextStrike != null
+                                ? ` · strike ${currency(r.nextStrike)}`
+                                : ""}
+                              {r.contracts > 0
+                                ? ` · ${r.contracts} ct`
+                                : " · <100 sh"}
+                            </span>
+                            <span className="inline-flex items-center gap-2">
+                              <span className="tabular-nums text-zinc-300">
+                                {r.premium != null
+                                  ? currency(r.premium)
+                                  : r.contracts > 0
+                                    ? "…"
+                                    : "—"}
+                              </span>
+                              {!guest &&
+                                r.premium != null &&
+                                r.premium > 0 && (
+                                  <button
+                                    type="button"
+                                    disabled={logged}
+                                    onClick={() => logRowPremium(r, exp)}
+                                    className="rounded border border-brand/40 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright hover:bg-brand/15 disabled:cursor-default disabled:border-zinc-700 disabled:text-zinc-600"
+                                  >
+                                    {logged ? "Logged" : "Log premium"}
+                                  </button>
+                                )}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 );
@@ -1305,9 +1456,13 @@ export function LabSheet({
 
       {tab === "alerts" && (
         <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-            <Target className="h-4 w-4 text-brand" /> Live alerts
+          <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-white">
+            <Target className="h-4 w-4 text-brand" /> Digest · dismissible queue
           </div>
+          <p className="mb-3 text-xs text-zinc-500">
+            Action cards you can clear. Overview briefing is the daily narrative
+            — same signals aren’t rewritten there.
+          </p>
           {alerts.length === 0 ? (
             <p className="text-sm text-zinc-500">
               Quiet — no earnings ≤7d or strikes under pressure

@@ -8,9 +8,22 @@ import {
   cn,
 } from "@/lib/format";
 import { buildInvestorBriefing } from "@/lib/investor-briefing";
+import {
+  sessionLabel,
+  sessionShort,
+  sessionKind,
+} from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CashflowEntry } from "@/lib/cashflow";
 import type { CoveredCallRow } from "@/lib/types";
+import {
+  buildSheetRivalry,
+  rivalryTagline,
+} from "@/lib/sheet-rivalry";
+import {
+  loadArenaChallenge,
+  todaysChallengeBrief,
+} from "@/lib/arena-challenge";
 import {
   calendarDaysBetweenKeys,
   formatRelativeDays,
@@ -29,12 +42,20 @@ import {
   Lightbulb,
   Radar,
   Snowflake,
+  Swords,
   TrendingDown,
   TrendingUp,
   Trophy,
-  Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+
+export type LabDeepLink =
+  | "versus"
+  | "arena"
+  | "calendar"
+  | "alerts"
+  | "watch"
+  | "season";
 
 type EarningsEvent = { ticker: string; date: string; days: number };
 
@@ -43,7 +64,9 @@ type Props = {
   onOpenSheet: (portfolioId: string) => void;
   coveredCallRows?: CoveredCallRow[];
   cashflows?: CashflowEntry[];
-  onOpenLab?: () => void;
+  onOpenLab?: (tab?: LabDeepLink) => void;
+  marketState?: string | null;
+  guest?: boolean;
 };
 
 function tone(value: number) {
@@ -196,6 +219,8 @@ export function OverviewDashboard({
   coveredCallRows = [],
   cashflows = [],
   onOpenLab,
+  marketState = null,
+  guest = false,
 }: Props) {
   const {
     totals,
@@ -209,19 +234,9 @@ export function OverviewDashboard({
     tickers,
   } = model;
   const maxSheet = Math.max(...sheets.map((s) => s.totalValue), 1);
-  const dayUp = (totals.todayDollar ?? 0) >= 0;
   const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
-  const [tickerQuery, setTickerQuery] = useState("");
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
-
-  const attention = tickers.filter(
-    (t) => t.todayPct == null || Math.abs(t.roiPct) < 0.001
-  );
-  const filteredTickers = tickerQuery.trim()
-    ? tickers.filter((t) =>
-        t.ticker.toLowerCase().includes(tickerQuery.trim().toLowerCase())
-      )
-    : [];
+  const [arenaNote, setArenaNote] = useState<string | null>(null);
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
   useEffect(() => {
@@ -248,9 +263,18 @@ export function OverviewDashboard({
     const prev = loadVisitSnapshot();
     if (prev) setVisitDiff(diffSinceLastVisit(prev, model));
     saveVisitSnapshot(captureVisitSnapshot(model));
-    // Only on first meaningful load / ticker set change — not every quote tick
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerKey]);
+
+  useEffect(() => {
+    const c = loadArenaChallenge();
+    if (c?.dayKey === todayKeyInTz()) {
+      setArenaNote(c.note);
+      return;
+    }
+    const brief = todaysChallengeBrief(tickers.map((t) => t.ticker));
+    setArenaNote(brief.note);
+  }, [tickerKey, tickers]);
 
   const upcomingEarnings = useMemo(() => {
     if (!earnings) return null;
@@ -275,6 +299,10 @@ export function OverviewDashboard({
     [model, upcomingEarnings, coveredCallRows, cashflows]
   );
 
+  const rivalry = useMemo(() => buildSheetRivalry(model), [model]);
+  const houseLeader = rivalry[0];
+  const kind = sessionKind(marketState);
+
   function openFirstPortfolio(t: TickerScore) {
     const id = t.portfolioIds[0];
     if (id) onOpenSheet(id);
@@ -282,243 +310,215 @@ export function OverviewDashboard({
 
   return (
     <div className="space-y-8">
-      <section className="overview-fade relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/80 p-6 sm:p-7">
-        <div
-          className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand/12 blur-3xl"
-          aria-hidden
-        />
-
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand/90">
-              All portfolios · live glance
-            </p>
-            <h2 className="mt-1 text-[1.75rem] font-semibold tracking-tight text-white sm:text-3xl">
-              Command center
-            </h2>
-            <p className="mt-2 text-base text-zinc-400">
-              {totals.sheetCount} portfolios · {totals.uniqueTickers} tickers ·{" "}
-              {totals.positionCount} positions
-            </p>
-          </div>
+      {/* Hero habit loop — sticky on phone */}
+      <section className="overview-fade sticky top-0 z-20 -mx-1 space-y-3 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_70%)] px-1 pb-3 pt-1 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0">
+        <div className="relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/95 p-5 shadow-lg shadow-black/40 backdrop-blur-md sm:bg-[#161618]/80 sm:p-7 sm:shadow-none sm:backdrop-blur-none">
           <div
-            className={cn(
-              "overview-pulse rounded-2xl border px-5 py-3.5",
-              dayUp
-                ? "border-emerald-500/30 bg-emerald-500/10"
-                : "border-rose-500/30 bg-rose-500/10"
-            )}
-          >
-            <div className="flex items-center gap-1.5 text-sm font-medium uppercase tracking-wide text-zinc-400">
-              <Zap
-                className={cn(
-                  "h-4 w-4",
-                  dayUp ? "text-gain" : "text-loss"
-                )}
-              />
-              Today
-            </div>
-            <p
-              className={cn(
-                "mt-1 text-[1.75rem] font-bold tabular-nums",
-                tone(totals.todayDollar)
-              )}
-            >
-              {signedCurrency(totals.todayDollar)}
-            </p>
-            <p className={cn("text-base tabular-nums", tone(totals.todayPct ?? 0))}>
-              {totals.todayPct !== null ? percent(totals.todayPct) : "—"}
-            </p>
-          </div>
-        </div>
+            className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand/12 blur-3xl"
+            aria-hidden
+          />
 
-        <div className="relative mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <label className="block min-w-0 flex-1 text-xs font-medium text-zinc-500">
-            Jump to ticker
-            <input
-              value={tickerQuery}
-              onChange={(e) => setTickerQuery(e.target.value.toUpperCase())}
-              placeholder="NBIS, CRWV…"
-              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900/80 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            />
-          </label>
-          {attention.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 sm:justify-end">
-              {attention.slice(0, 6).map((t) => (
-                <button
-                  key={t.ticker}
-                  type="button"
-                  onClick={() => openFirstPortfolio(t)}
-                  className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-100 hover:bg-amber-500/20"
-                  title="Needs a look — flat P&L or missing today %"
-                >
-                  {t.ticker}
-                </button>
-              ))}
+          <div className="relative flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+                  <Radar className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                    Today’s briefing
+                  </h2>
+                  <p className="mt-0.5 text-sm text-zinc-500">
+                    Own · write · wait · Tallinn day
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-        {tickerQuery.trim() && (
-          <div className="relative mt-3 flex flex-wrap gap-2">
-            {filteredTickers.length === 0 ? (
-              <p className="text-sm text-zinc-500">No match</p>
-            ) : (
-              filteredTickers.map((t) => (
-                <button
-                  key={t.ticker}
-                  type="button"
-                  onClick={() => openFirstPortfolio(t)}
-                  className="rounded-lg border border-zinc-700 bg-zinc-900/60 px-3 py-1.5 text-sm text-zinc-100 hover:border-brand/50"
-                >
-                  {t.ticker}{" "}
-                  <span className={tone(t.roiPct)}>{percent(t.roiPct)}</span>
-                </button>
-              ))
-            )}
-          </div>
-        )}
-
-        <div className="relative mt-6 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              label: "Total value",
-              value: currency(totals.totalValue, 0),
-              sub: `Equity ${currency(totals.equityValue, 0)}`,
-            },
-            {
-              label: "Unrealized P&L",
-              value: signedCurrency(totals.roiDollar),
-              sub: percent(totals.roiPct),
-              tone: totals.roiDollar,
-            },
-            {
-              label: "Cash",
-              value: currency(totals.cash, 0),
-              sub: totals.cash < 0 ? "Net margin / debt" : "Dry powder",
-            },
-            {
-              label: "Cost basis",
-              value: currency(totals.buyValue, 0),
-              sub: "All equity cost",
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 px-4 py-4"
-            >
-              <p className="text-sm uppercase tracking-wide text-zinc-500">
-                {stat.label}
-              </p>
-              <p
+            <div className="flex flex-wrap items-center gap-2">
+              <span
                 className={cn(
-                  "mt-1.5 text-2xl font-semibold tabular-nums text-white",
-                  "tone" in stat && typeof stat.tone === "number"
-                    ? tone(stat.tone)
-                    : undefined
+                  "rounded-lg border px-2.5 py-1 text-[11px] font-medium tabular-nums",
+                  kind === "open"
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                    : kind === "pre" || kind === "ah"
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-100"
+                      : "border-zinc-700 bg-zinc-900/80 text-zinc-400"
                 )}
+                title={sessionLabel(marketState)}
               >
-                {stat.value}
-              </p>
-              <p
-                className={cn(
-                  "mt-1 text-sm text-zinc-400",
-                  "tone" in stat && typeof stat.tone === "number"
-                    ? tone(stat.tone)
-                    : undefined
-                )}
-              >
-                {stat.sub}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
-              <Radar className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white">
-                Today’s briefing
-              </h3>
-              <p className="mt-1 text-base text-zinc-400">
-                Actions · watches · one play · Tallinn day
-              </p>
-            </div>
-          </div>
-          {onOpenLab && (
-            <button
-              type="button"
-              onClick={onOpenLab}
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-brand/40 hover:text-brand-bright"
-            >
-              Open Lab
-            </button>
-          )}
-        </div>
-        <ul className="space-y-2.5">
-          {briefing.map((b) => (
-            <li
-              key={b.id}
-              className={cn(
-                "rounded-2xl border px-4 py-3.5",
-                b.kind === "action"
-                  ? "border-amber-500/30 bg-amber-500/[0.07]"
-                  : b.kind === "play"
-                    ? "border-brand/30 bg-brand/10"
-                    : "border-zinc-800/80 bg-zinc-900/40"
+                {sessionShort(marketState)}
+                <span className={cn("ml-1.5", tone(totals.todayDollar))}>
+                  {signedCurrency(totals.todayDollar)}
+                </span>
+              </span>
+              {!guest && onOpenLab && (
+                <button
+                  type="button"
+                  onClick={() => onOpenLab("alerts")}
+                  className="rounded-lg border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-400 hover:border-brand/40 hover:text-brand-bright"
+                >
+                  Digest
+                </button>
               )}
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                {b.kind}
-                {b.ticker ? ` · ${b.ticker}` : ""}
-              </p>
-              <p className="mt-1 text-base font-medium text-white">{b.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                {b.detail}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {visitDiff && (
-        <section className="overview-fade rounded-3xl border border-zinc-800/80 bg-[#161618]/60 p-6 sm:p-7">
-          <div className="mb-4">
-            <h3 className="text-xl font-semibold text-white">
-              Since last open
-            </h3>
-            <p className="mt-1 text-sm text-zinc-500">
-              Snapshot from{" "}
-              {new Date(visitDiff.previousAt).toLocaleString("en-GB", {
-                timeZone: "Europe/Tallinn",
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </p>
+            </div>
           </div>
-          <ul className="space-y-2">
-            {visitDiff.lines.map((line) => (
+
+          {/* Scoreboard strip */}
+          <div className="relative mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              {
+                label: "Book",
+                value: currency(totals.totalValue, 0),
+                sub: `${totals.sheetCount} sheets`,
+              },
+              {
+                label: "Today",
+                value: signedCurrency(totals.todayDollar),
+                sub: totals.todayPct != null ? percent(totals.todayPct) : "—",
+                tone: totals.todayDollar,
+              },
+              {
+                label: "P&L",
+                value: signedCurrency(totals.roiDollar),
+                sub: percent(totals.roiPct),
+                tone: totals.roiDollar,
+              },
+              {
+                label: "Cash",
+                value: currency(totals.cash, 0),
+                sub: totals.cash < 0 ? "Margin" : "Powder",
+              },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-3 py-2.5"
+              >
+                <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  {s.label}
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-base font-semibold tabular-nums text-white sm:text-lg",
+                    "tone" in s && typeof s.tone === "number"
+                      ? tone(s.tone)
+                      : undefined
+                  )}
+                >
+                  {s.value}
+                </p>
+                <p
+                  className={cn(
+                    "text-[11px] text-zinc-500",
+                    "tone" in s && typeof s.tone === "number"
+                      ? tone(s.tone)
+                      : undefined
+                  )}
+                >
+                  {s.sub}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <ul className="relative mt-4 space-y-2">
+            {briefing.map((b) => (
               <li
-                key={line.id}
+                key={b.id}
                 className={cn(
-                  "rounded-xl border border-zinc-800/70 px-3 py-2.5 text-sm",
-                  line.tone === "up"
-                    ? "text-gain"
-                    : line.tone === "down"
-                      ? "text-loss"
-                      : "text-zinc-300"
+                  "rounded-2xl border px-3.5 py-3",
+                  b.kind === "action"
+                    ? "border-amber-500/30 bg-amber-500/[0.07]"
+                    : b.kind === "play"
+                      ? "border-brand/30 bg-brand/10"
+                      : "border-zinc-800/80 bg-zinc-900/40"
                 )}
               >
-                {line.text}
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                  {b.kind}
+                  {b.ticker ? ` · ${b.ticker}` : ""}
+                </p>
+                <p className="mt-0.5 text-[15px] font-medium text-white">
+                  {b.title}
+                </p>
+                <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">
+                  {b.detail}
+                </p>
               </li>
             ))}
           </ul>
-        </section>
-      )}
+
+          {visitDiff && (
+            <div className="relative mt-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/40 px-3.5 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                Since last open
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {visitDiff.lines.slice(0, 4).map((line) => (
+                  <li
+                    key={line.id}
+                    className={cn(
+                      "text-sm",
+                      line.tone === "up"
+                        ? "text-gain"
+                        : line.tone === "down"
+                          ? "text-loss"
+                          : "text-zinc-300"
+                    )}
+                  >
+                    {line.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* House leader + Daily arena */}
+      <section className="overview-fade grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          disabled={guest || !onOpenLab}
+          onClick={() => onOpenLab?.("versus")}
+          className="rounded-2xl border border-brand/25 bg-brand/10 px-4 py-4 text-left transition hover:border-brand/50 disabled:cursor-default disabled:opacity-80"
+        >
+          <div className="flex items-center gap-2 text-brand-bright">
+            <Trophy className="h-4 w-4" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide">
+              House leader
+            </span>
+          </div>
+          <p className="mt-2 text-lg font-semibold text-white">
+            {houseLeader?.name ?? "—"}
+          </p>
+          <p className="mt-1 text-sm text-zinc-400">
+            {rivalryTagline(houseLeader)}
+          </p>
+          {!guest && (
+            <p className="mt-2 text-[11px] text-brand/80">Open Versus →</p>
+          )}
+        </button>
+        <button
+          type="button"
+          disabled={guest || !onOpenLab}
+          onClick={() => onOpenLab?.("arena")}
+          className="rounded-2xl border border-zinc-700 bg-zinc-900/50 px-4 py-4 text-left transition hover:border-zinc-500 disabled:cursor-default disabled:opacity-80"
+        >
+          <div className="flex items-center gap-2 text-zinc-300">
+            <Swords className="h-4 w-4" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide">
+              Daily arena
+            </span>
+          </div>
+          <p className="mt-2 text-lg font-semibold text-white">Paper sandbox</p>
+          <p className="mt-1 text-sm text-zinc-400">
+            {arenaNote ?? "Beat the live book without touching real sheets."}
+          </p>
+          {!guest && (
+            <p className="mt-2 text-[11px] text-zinc-500">Open Arena →</p>
+          )}
+        </button>
+      </section>
 
       <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
         <div className="mb-5">
@@ -716,48 +716,48 @@ export function OverviewDashboard({
             </p>
           ) : (
             upcomingEarnings.map((e, index) => {
-                const owned = tickers.find((t) => t.ticker === e.ticker);
-                const soon = e.days <= 7;
-                const when = formatRelativeDays(e.days);
-                return (
-                  <div
-                    key={e.ticker}
-                    className={cn(
-                      "rounded-2xl border px-4 py-3.5",
-                      soon
-                        ? "border-amber-500/30 bg-amber-500/[0.07]"
-                        : "border-zinc-800/80 bg-zinc-900/30"
-                    )}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 space-y-1.5">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="text-sm tabular-nums text-zinc-500">
-                            #{index + 1}
+              const owned = tickers.find((t) => t.ticker === e.ticker);
+              const soon = e.days <= 7;
+              const when = formatRelativeDays(e.days);
+              return (
+                <div
+                  key={e.ticker}
+                  className={cn(
+                    "rounded-2xl border px-4 py-3.5",
+                    soon
+                      ? "border-amber-500/30 bg-amber-500/[0.07]"
+                      : "border-zinc-800/80 bg-zinc-900/30"
+                  )}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="text-sm tabular-nums text-zinc-500">
+                          #{index + 1}
+                        </span>
+                        <span className="text-lg font-semibold text-white">
+                          {e.ticker}
+                        </span>
+                        {soon && (
+                          <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-sm font-medium text-amber-200">
+                            Soon
                           </span>
-                          <span className="text-lg font-semibold text-white">
-                            {e.ticker}
-                          </span>
-                          {soon && (
-                            <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-sm font-medium text-amber-200">
-                              Soon
-                            </span>
-                          )}
-                        </div>
-                        {owned && <PortfolioChips names={owned.portfolios} />}
+                        )}
                       </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-base font-medium tabular-nums text-zinc-100">
-                          {when}
-                        </p>
-                        <p className="mt-0.5 text-sm tabular-nums text-zinc-500">
-                          {e.date}
-                        </p>
-                      </div>
+                      {owned && <PortfolioChips names={owned.portfolios} />}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-base font-medium tabular-nums text-zinc-100">
+                        {when}
+                      </p>
+                      <p className="mt-0.5 text-sm tabular-nums text-zinc-500">
+                        {e.date}
+                      </p>
                     </div>
                   </div>
-                );
-              })
+                </div>
+              );
+            })
           )}
         </div>
       </section>
@@ -789,6 +789,7 @@ export function OverviewDashboard({
           )}
         </ul>
       </section>
+
     </div>
   );
 }

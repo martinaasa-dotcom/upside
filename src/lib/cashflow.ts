@@ -76,3 +76,58 @@ export function netCashMoves(entries: CashflowEntry[], days = 365): number {
       return s + e.amount;
     }, 0);
 }
+
+/** Fingerprint so calendar “Log premium” doesn’t double-book the same modeled fill. */
+export function premiumLogKey(ticker: string, amount: number, expiry?: string) {
+  const exp = (expiry ?? "—").trim() || "—";
+  return `cc-prem:${ticker.toUpperCase()}:${exp}:${Math.round(amount * 100)}`;
+}
+
+export function alreadyLoggedPremium(
+  entries: CashflowEntry[],
+  ticker: string,
+  amount: number,
+  expiry?: string,
+  withinHours = 72
+): boolean {
+  const key = premiumLogKey(ticker, amount, expiry);
+  const cut = Date.now() - withinHours * 3600_000;
+  return entries.some(
+    (e) =>
+      e.kind === "premium" &&
+      e.note.includes(key) &&
+      new Date(e.at).getTime() >= cut
+  );
+}
+
+/** One-tap from CC calendar → cashflow (season meter). */
+export function logPremiumFromCc(
+  entries: CashflowEntry[],
+  input: {
+    ticker: string;
+    amount: number;
+    expiry?: string;
+    contracts?: number;
+  }
+): { entries: CashflowEntry[]; already: boolean } {
+  const amount = Math.round(input.amount * 100) / 100;
+  if (!(amount > 0)) return { entries, already: false };
+  if (alreadyLoggedPremium(entries, input.ticker, amount, input.expiry)) {
+    return { entries, already: true };
+  }
+  const key = premiumLogKey(input.ticker, amount, input.expiry);
+  const ct =
+    input.contracts != null && input.contracts > 0
+      ? ` · ${input.contracts} ct`
+      : "";
+  const exp = input.expiry && input.expiry !== "—" ? ` exp ${input.expiry}` : "";
+  return {
+    already: false,
+    entries: addCashflow(entries, {
+      kind: "premium",
+      ticker: input.ticker.toUpperCase(),
+      amount,
+      note: `CC premium${exp}${ct} · ${key}`,
+    }),
+  };
+}

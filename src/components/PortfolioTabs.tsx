@@ -14,6 +14,8 @@ type Props = {
   onAdd: (name: string) => void;
   onRenameRequest?: (id: string, name: string) => void;
   onDeleteRequest?: (id: string, name: string) => void;
+  /** Guests: Overview + Compound only — no Lab / sheet mutations. */
+  guest?: boolean;
 };
 
 type OpenMenu = {
@@ -48,12 +50,16 @@ export function PortfolioTabs({
   onAdd,
   onRenameRequest,
   onDeleteRequest,
+  guest = false,
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [menu, setMenu] = useState<OpenMenu | null>(null);
   const [mounted, setMounted] = useState(false);
   const sheetActive = portfolios.some((p) => p.id === activeId);
+  const modes = guest
+    ? MODES.filter((m) => m.id !== LAB_TAB_ID)
+    : MODES;
 
   useEffect(() => {
     setMounted(true);
@@ -123,9 +129,12 @@ export function PortfolioTabs({
           <div
             role="tablist"
             aria-label="Workspace"
-            className="grid h-10 w-full grid-cols-3 overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:w-[21rem]"
+            className={cn(
+              "grid h-10 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
+              modes.length === 2 ? "grid-cols-2 sm:w-[14rem]" : "grid-cols-3 sm:w-[21rem]"
+            )}
           >
-            {MODES.map(({ id, label, Icon }) => {
+            {modes.map(({ id, label, Icon }) => {
               const active = activeId === id;
               return (
                 <button
@@ -221,7 +230,7 @@ export function PortfolioTabs({
                   className="h-7 w-28 rounded border border-zinc-600 bg-zinc-900 px-2 text-[13px] text-white outline-none focus:border-brand"
                 />
               </form>
-            ) : (
+            ) : !guest ? (
               <button
                 type="button"
                 onClick={() => setAdding(true)}
@@ -231,13 +240,14 @@ export function PortfolioTabs({
                 <Plus className="h-3.5 w-3.5" />
                 New
               </button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
 
       {mounted &&
         menu &&
+        !guest &&
         createPortal(
           <div
             data-sheet-menu
