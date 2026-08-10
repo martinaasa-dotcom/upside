@@ -69,13 +69,14 @@ export function UpsideLogo({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2.5 leading-none text-white",
+        "inline-flex items-center gap-2 leading-none text-white",
         className
       )}
       aria-label={title}
     >
-      <UpsideMark className="h-[1.35em] w-[1.35em] shrink-0" />
-      <span className="translate-y-[0.14em] text-[1em] font-semibold uppercase tracking-[0.26em]">
+      {/* Optical pad: wide-tracked caps sit slightly high; nudge mark up 1px vs text. */}
+      <UpsideMark className="relative top-[-0.5px] h-[1.15em] w-[1.15em] shrink-0" />
+      <span className="pt-[0.08em] text-[1em] font-semibold uppercase tracking-[0.22em]">
         Upside
       </span>
     </span>

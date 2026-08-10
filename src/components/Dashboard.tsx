@@ -1799,14 +1799,17 @@ export function Dashboard() {
       />
       <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-3">
             <UpsideLogo
               variant="wordmark"
-              className="shrink-0 text-[18px] text-white"
+              className="shrink-0 text-[15px] text-white"
             />
-            <span className="hidden h-5 w-px shrink-0 bg-zinc-700 sm:block" aria-hidden />
+            <span
+              className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
+              aria-hidden
+            />
             <h1
-              className="min-w-0 truncate text-lg font-semibold tracking-tight text-white sm:ml-1"
+              className="min-w-0 truncate text-[15px] font-medium leading-none tracking-tight text-zinc-300"
               title={
                 source === "supabase"
                   ? "Shared live book"
