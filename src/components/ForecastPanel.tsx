@@ -472,7 +472,7 @@ export function ForecastPanel({
             <p className="text-sm text-zinc-400">
               No plan yet. Choose Bearish / Base / Bullish, then ask Margus to
               fill EOY prices and draft themes for this sheet — especially useful
-              for Karud names that have no house targets yet.
+              for tickers that have no house targets yet.
             </p>
           </div>
         )}
