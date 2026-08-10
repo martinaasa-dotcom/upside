@@ -727,9 +727,14 @@ export function Dashboard() {
     )
     .join("|");
 
-  // Quotes for every ticker (overview + sheet views); options only on a sheet
+  // Quotes for every ticker; options when on a sheet OR Lab (CC calendar needs premiums)
   useEffect(() => {
     if (holdings.length === 0) return;
+    if (isLab) {
+      // Full options scan so Lab CC calendar / income isn't stuck at $0
+      void refreshMarkets(allTickers, holdings);
+      return;
+    }
     if (isMetaTab) {
       void refreshMarkets(allTickers, holdings, undefined, {
         quotesOnly: true,
@@ -740,7 +745,14 @@ export function Dashboard() {
     const rows = holdings.filter((h) => h.portfolio_id === activePortfolio.id);
     void refreshMarkets(allTickers, rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePortfolio?.id, isMetaTab, ccSignature, allTickers.join(","), refreshMarkets]);
+  }, [
+    activePortfolio?.id,
+    isMetaTab,
+    isLab,
+    ccSignature,
+    allTickersKey,
+    refreshMarkets,
+  ]);
 
   // Free Yahoo poll: prices every 45s while the tab is visible (options stay on demand)
   useEffect(() => {
@@ -1927,7 +1939,9 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => {
-                if (isMetaTab) {
+                if (isLab) {
+                  void refreshMarkets(allTickers, holdings);
+                } else if (isMetaTab) {
                   void refreshMarkets(allTickers, holdings, undefined, {
                     quotesOnly: true,
                   });
@@ -1937,7 +1951,7 @@ export function Dashboard() {
               }}
               disabled={refreshing}
               className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
-              title="Refresh prices"
+              title={isLab ? "Refresh prices & option premiums" : "Refresh prices"}
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}

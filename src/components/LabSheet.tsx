@@ -833,26 +833,41 @@ export function LabSheet({
 
       {tab === "calendar" && (
         <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-            <CalendarDays className="h-4 w-4 text-brand" /> CC income calendar
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-white">
+            <span className="inline-flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-brand" /> CC income calendar
+            </span>
+            {scopedCcRows.some((r) => r.premium == null && r.contracts > 0) && (
+              <span className="text-[11px] font-normal text-zinc-500">
+                Scanning option premiums…
+              </span>
+            )}
           </div>
           {ccByExpiry.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              No expiries on covered-call rows yet — set strikes on a sheet.
+              No covered-call rows yet — add holdings with enough shares for
+              contracts.
             </p>
           ) : (
             <div className="space-y-3">
               {ccByExpiry.map(([exp, rows]) => {
                 const prem = rows.reduce((s, r) => s + (r.premium ?? 0), 0);
+                const missing = rows.some(
+                  (r) => r.premium == null && r.contracts > 0
+                );
                 return (
                   <div
                     key={exp}
                     className="rounded-lg border border-zinc-800 px-3 py-2"
                   >
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium text-white">{exp}</span>
+                      <span className="font-medium text-white">
+                        {exp === "—" ? "Awaiting expiry (options scan)" : exp}
+                      </span>
                       <span className="tabular-nums text-brand-bright">
-                        ~{currency(prem)} prem
+                        {missing && prem === 0
+                          ? "…"
+                          : `~${currency(prem)} prem`}
                       </span>
                     </div>
                     <ul className="mt-2 space-y-1 text-xs text-zinc-500">
@@ -866,9 +881,16 @@ export function LabSheet({
                             {r.nextStrike != null
                               ? ` · strike ${currency(r.nextStrike)}`
                               : ""}
+                            {r.contracts > 0
+                              ? ` · ${r.contracts} ct`
+                              : " · <100 sh"}
                           </span>
                           <span className="tabular-nums">
-                            {r.premium != null ? currency(r.premium) : "—"}
+                            {r.premium != null
+                              ? currency(r.premium)
+                              : r.contracts > 0
+                                ? "…"
+                                : "—"}
                           </span>
                         </li>
                       ))}
