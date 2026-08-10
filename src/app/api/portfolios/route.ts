@@ -1,4 +1,6 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
+import { saveBookSnapshot } from "@/lib/book-snapshot";
+import { requireOwnerPin } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -121,6 +123,9 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const denied = requireOwnerPin(req);
+  if (denied) return denied;
+
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -134,12 +139,36 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  const { error } = await supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .delete()
-    .eq("id", id);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const { data: sheet } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("name")
+      .eq("id", id)
+      .maybeSingle();
+
+    await saveBookSnapshot(
+      supabase,
+      "pre_delete",
+      sheet?.name
+        ? `Before delete · ${sheet.name}`
+        : "Before delete"
+    );
+
+    const { error } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .delete()
+      .eq("id", id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to snapshot before delete",
+      },
+      { status: 500 }
+    );
   }
-  return NextResponse.json({ ok: true });
 }

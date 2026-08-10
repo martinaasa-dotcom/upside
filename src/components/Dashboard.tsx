@@ -14,9 +14,11 @@ import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
+import { OWNER_PIN_HEADER } from "@/lib/owner-pin-client";
 import { buildForecast, type ForecastYear } from "@/lib/forecast";
 import {
   loadEoyOverrides,
@@ -45,7 +47,7 @@ import type {
   Portfolio,
   Quote,
 } from "@/lib/types";
-import { Eye, EyeOff, Plus, RefreshCw, Save } from "lucide-react";
+import { Eye, EyeOff, History, Plus, RefreshCw, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -121,6 +123,7 @@ export function Dashboard() {
     | { kind: "sheet"; id: string; label: string }
     | null
   >(null);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState(() =>
     loadVisibilityMap(CC_VISIBLE_KEY)
   );
@@ -961,17 +964,42 @@ export function Dashboard() {
     toast("Sheet renamed", "success");
   }
 
-  async function deleteSheetById(id: string) {
+  async function deleteSheetById(id: string, pin?: string) {
+    const ownerPin = pin?.trim() ?? "";
+    if (!ownerPin) {
+      toast("Owner PIN required to delete a sheet", "error");
+      return;
+    }
+
     if (source === "supabase") {
-      const res = await fetch(`/api/portfolios?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/portfolios?id=${id}`, {
+        method: "DELETE",
+        headers: { [OWNER_PIN_HEADER]: ownerPin },
+      });
       if (!res.ok) {
-        toast("Failed to delete sheet", "error");
+        const data = await res.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to delete sheet",
+          "error"
+        );
         return;
       }
       clearChatHistory(id);
       await loadPortfolios();
       setActiveId((prev) => (prev === id ? OVERVIEW_TAB_ID : prev));
     } else {
+      const verify = await fetch("/api/owner/verify", {
+        method: "POST",
+        headers: { [OWNER_PIN_HEADER]: ownerPin },
+      });
+      if (!verify.ok) {
+        const data = await verify.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Invalid owner PIN",
+          "error"
+        );
+        return;
+      }
       const next = deletePortfolio(loadDemoStore(), id);
       clearChatHistory(id);
       setPortfolios(next.portfolios);
@@ -1146,6 +1174,17 @@ export function Dashboard() {
               />
               <span className="hidden sm:inline">Refresh</span>
             </button>
+            {source === "supabase" && (
+              <button
+                type="button"
+                onClick={() => setSnapshotsOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                title="Nightly backups & restore"
+              >
+                <History className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Snapshots</span>
+              </button>
+            )}
             {source === "demo" && (
               <>
                 <button
@@ -1409,19 +1448,30 @@ export function Dashboard() {
         }
         body={
           confirmDelete?.kind === "sheet"
-            ? `Delete “${confirmDelete.label}” and all of its holdings? This can’t be undone.`
+            ? `Delete “${confirmDelete.label}” and all of its holdings? A safety snapshot is saved first. Owner PIN required.`
             : `Remove ${confirmDelete?.label ?? "this holding"} from the sheet?`
         }
         confirmLabel="Delete"
         destructive
+        requirePin={confirmDelete?.kind === "sheet"}
+        pinLabel="Owner PIN"
         onClose={() => setConfirmDelete(null)}
-        onConfirm={() => {
+        onConfirm={(pin) => {
           if (!confirmDelete) return;
           if (confirmDelete.kind === "sheet") {
-            void deleteSheetById(confirmDelete.id);
+            void deleteSheetById(confirmDelete.id, pin);
           } else {
             void deleteHoldingById(confirmDelete.id);
           }
+        }}
+      />
+
+      <SnapshotsModal
+        open={snapshotsOpen}
+        onClose={() => setSnapshotsOpen(false)}
+        onRestored={() => {
+          toast("Book restored from snapshot", "success");
+          void loadPortfolios();
         }}
       />
     </div>

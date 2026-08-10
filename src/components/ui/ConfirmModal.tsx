@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type Props = {
   open: boolean;
@@ -9,7 +10,10 @@ type Props = {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
-  onConfirm: () => void;
+  /** When set, show a PIN field and pass the value to onConfirm. */
+  requirePin?: boolean;
+  pinLabel?: string;
+  onConfirm: (pin?: string) => void;
   onClose: () => void;
 };
 
@@ -20,9 +24,17 @@ export function ConfirmModal({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   destructive = false,
+  requirePin = false,
+  pinLabel = "Owner PIN",
   onConfirm,
   onClose,
 }: Props) {
+  const [pin, setPin] = useState("");
+
+  useEffect(() => {
+    if (!open) setPin("");
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -45,6 +57,27 @@ export function ConfirmModal({
           </button>
         </div>
         <p className="text-sm leading-relaxed text-zinc-400">{body}</p>
+        {requirePin && (
+          <label className="mt-4 block text-xs font-medium text-zinc-400">
+            {pinLabel}
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onConfirm(pin);
+                  onClose();
+                }
+              }}
+              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+              placeholder="••••••"
+              autoFocus
+            />
+          </label>
+        )}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
@@ -56,13 +89,14 @@ export function ConfirmModal({
           <button
             type="button"
             onClick={() => {
-              onConfirm();
+              onConfirm(requirePin ? pin : undefined);
               onClose();
             }}
+            disabled={requirePin && !pin.trim()}
             className={
               destructive
-                ? "rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400"
-                : "rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+                ? "rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-40"
+                : "rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
             }
           >
             {confirmLabel}
