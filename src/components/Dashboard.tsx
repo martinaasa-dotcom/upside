@@ -17,7 +17,14 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useToast } from "@/components/ui/Toast";
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
-import { buildForecast } from "@/lib/forecast";
+import { buildForecast, type ForecastYear } from "@/lib/forecast";
+import {
+  loadEoyOverrides,
+  mergeEoyTargetPaths,
+  saveEoyOverrides,
+  setEoyOverride,
+  type PortfolioEoyOverrides,
+} from "@/lib/forecast-overrides";
 import {
   addPortfolio,
   deleteHolding,
@@ -114,6 +121,7 @@ export function Dashboard() {
   const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] = useState<
     Record<string, boolean>
   >({});
+  const [eoyOverrides, setEoyOverrides] = useState<PortfolioEoyOverrides>({});
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const activePortfolio = isOverview
@@ -155,6 +163,14 @@ export function Dashboard() {
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    if (!activePortfolio) {
+      setEoyOverrides({});
+      return;
+    }
+    setEoyOverrides(loadEoyOverrides(activePortfolio.id));
+  }, [activePortfolio?.id]);
 
   function toggleCcVisible() {
     if (!activePortfolio) return;
@@ -207,9 +223,40 @@ export function Dashboard() {
     return buildForecast(
       portfolioHoldings,
       quotes,
-      activePortfolio.cash_balance
+      activePortfolio.cash_balance,
+      eoyOverrides
     );
-  }, [activePortfolio, portfolioHoldings, quotes]);
+  }, [activePortfolio, portfolioHoldings, quotes, eoyOverrides]);
+
+  function commitEoyPrice(
+    ticker: string,
+    year: ForecastYear,
+    price: number
+  ) {
+    if (!activePortfolio) return;
+    setEoyOverrides((prev) => {
+      const next = setEoyOverride(prev, ticker, year, price);
+      saveEoyOverrides(activePortfolio.id, next);
+      return next;
+    });
+  }
+
+  function applyMargusEoyPaths(
+    paths: { ticker: string; prices: Partial<Record<ForecastYear, number>> }[]
+  ) {
+    if (!activePortfolio) return;
+    setEoyOverrides((prev) => {
+      const next = mergeEoyTargetPaths(prev, paths);
+      saveEoyOverrides(activePortfolio.id, next);
+      return next;
+    });
+  }
+
+  function clearEoyOverrides() {
+    if (!activePortfolio) return;
+    setEoyOverrides({});
+    saveEoyOverrides(activePortfolio.id, {});
+  }
 
   const marketState = useMemo(() => {
     for (const q of Object.values(quotes)) {
@@ -1192,6 +1239,10 @@ export function Dashboard() {
                 portfolioId={activePortfolio.id}
                 portfolioName={activePortfolio.name}
                 cashBalance={activePortfolio.cash_balance}
+                overrides={eoyOverrides}
+                onSetEoyPrice={commitEoyPrice}
+                onApplyMargusPaths={applyMargusEoyPaths}
+                onClearOverrides={clearEoyOverrides}
               />
             )}
 

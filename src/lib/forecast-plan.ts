@@ -1,7 +1,10 @@
 import { z } from "zod";
-import type { ForecastModel } from "@/lib/forecast";
+import type { ForecastModel, ForecastYear } from "@/lib/forecast";
+import { FORECAST_YEARS } from "@/lib/forecast";
 
 export const FORECAST_PLAN_STORAGE_KEY = "portfell-forecast-plan-by-portfolio";
+
+export type ForecastStance = "bearish" | "base" | "bullish";
 
 /** Rough sector tags so Margus can talk rotation without inventing holdings. */
 export const TICKER_SECTORS: Record<string, string> = {
@@ -17,7 +20,27 @@ export const TICKER_SECTORS: Record<string, string> = {
   NVDA: "Semiconductors / AI chips",
   AVGO: "Semiconductors",
   RDDT: "Consumer internet / social",
+  PWR: "Power / infrastructure services",
+  ASML: "Semiconductors / lithography",
+  "ASML.AS": "Semiconductors / lithography",
+  GOOGL: "Big tech / advertising",
+  SPY: "US large-cap index",
+  "CSPX.L": "US large-cap index (UCITS)",
+  "VWCE.DE": "Global equity ETF",
+  "SMH.L": "Semiconductor ETF",
+  "ABEA.DE": "Big tech / advertising (EU listing)",
+  "JEDI.L": "Thematic ETF",
+  "ANX.PA": "European equity",
+  "EX13.VI": "European equity ETF",
 };
+
+const yearPriceSchema = z.object({
+  2026: z.number().positive().optional(),
+  2027: z.number().positive().optional(),
+  2028: z.number().positive().optional(),
+  2029: z.number().positive().optional(),
+  2030: z.number().positive().optional(),
+});
 
 export const forecastPlanSchema = z.object({
   generalAdvice: z
@@ -57,12 +80,31 @@ export const forecastPlanSchema = z.object({
     )
     .min(2)
     .max(6),
+  eoyTargets: z
+    .array(
+      z.object({
+        ticker: z
+          .string()
+          .describe("Exact ticker as listed in holdings (keep exchange suffix)"),
+        prices: yearPriceSchema.describe(
+          "EOY stock prices for 2026–2030 matching the requested stance"
+        ),
+        rationale: z
+          .string()
+          .optional()
+          .describe("One short reason for this path vs spot"),
+      })
+    )
+    .describe(
+      "EOY SP prognosis for EVERY holding on the sheet. Must cover all tickers. Stance-aware: bearish = conservative / lower path, base = house-like, bullish = optimistic but not fantasy."
+    ),
 });
 
 export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
   generatedAt: string;
   portfolioId: string;
   portfolioName: string;
+  stance: ForecastStance;
 };
 
 export type StoredForecastPlans = Record<string, ForecastPlan>;
@@ -75,7 +117,11 @@ export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
     const parsed = JSON.parse(raw) as StoredForecastPlans;
     const plan = parsed?.[portfolioId];
     if (!plan?.periods?.length) return null;
-    return plan;
+    return {
+      ...plan,
+      stance: plan.stance ?? "base",
+      eoyTargets: plan.eoyTargets ?? [],
+    };
   } catch {
     return null;
   }
@@ -93,10 +139,22 @@ export function saveForecastPlan(plan: ForecastPlan) {
   }
 }
 
+function stanceGuidance(stance: ForecastStance): string {
+  switch (stance) {
+    case "bearish":
+      return `STANCE = BEARISH. Bias EOY paths conservatively: slower growth, deeper drawdown years allowed, avoid heroic multiples. Still give a full 2026–2030 path per ticker (not flat spot copies unless genuinely range-bound).`;
+    case "bullish":
+      return `STANCE = BULLISH. Bias EOY paths optimistically but grounded: stronger upside into 2029–2030, allow higher multiples for AI/semi/space names already held. Do not invent lottery tickets.`;
+    default:
+      return `STANCE = BASE. Balanced house-like prognosis: realistic compounding with some cyclicality. Prefer continuity with existing house targets when present; fill gaps for tickers that are currently flat.`;
+  }
+}
+
 export function buildForecastPlanPrompt(input: {
   portfolioName: string;
   cashBalance: number;
   forecast: ForecastModel;
+  stance: ForecastStance;
   now?: Date;
 }): string {
   const now = input.now ?? new Date();
@@ -109,26 +167,33 @@ export function buildForecastPlanPrompt(input: {
       : { q: quarter + 1, y: year };
 
   const lines = input.forecast.rows.map((r) => {
-    const sector = TICKER_SECTORS[r.ticker] ?? "unclassified";
+    const sector =
+      TICKER_SECTORS[r.ticker] ??
+      TICKER_SECTORS[r.ticker.split(".")[0]] ??
+      "unclassified";
     const eoy = input.forecast.years
       .map((y) => `${y}=${r.eoyPrices[y].toFixed(2)}`)
       .join(", ");
-    return `${r.ticker} [${sector}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, eoySP=[${eoy}], hasHouseTarget=${r.hasTargets}`;
+    return `${r.ticker} [${sector}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, currentEoySP=[${eoy}], hasTarget=${r.hasTargets}`;
   });
 
   const totals = input.forecast.years
     .map((y) => `${y}=${input.forecast.eoyTotals[y].toFixed(0)}`)
     .join(", ");
 
-  return `You are Assistant Margus for Upside. Build an actionable trim/add + theme plan for portfolio "${input.portfolioName}".
+  const yearsList = FORECAST_YEARS.join(", ");
+
+  return `You are Assistant Margus for Upside. Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis table for portfolio "${input.portfolioName}".
 
 Today (UTC): ${now.toISOString().slice(0, 10)} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
+${stanceGuidance(input.stance)}
+
 Cash: ${input.cashBalance}
 Current portfolio value (equity+cash): ${input.forecast.currentTotal.toFixed(0)}
-Projected portfolio values at house EOY SPs: ${totals}
+Projected portfolio values at CURRENT table EOY SPs: ${totals}
 
-Holdings (assume share counts stay fixed unless you explicitly recommend trimming/adding size):
+Holdings (share counts stay fixed unless you explicitly recommend trimming/adding size):
 ${lines.length ? lines.join("\n") : "(no holdings)"}
 
 Requirements:
@@ -138,8 +203,22 @@ Requirements:
    - Then 2–3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful — not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
 3. Add/Trim must be actionable for THIS book — prefer names already held; if suggesting a new ticker, say why and keep it light.
-4. sectorRotation: talk through plausible rotations (AI infra vs power vs crypto vs fintech/space) given concentration in this book.
+4. sectorRotation: talk through plausible rotations given concentration in this book.
 5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.
-6. Do not invent fake share counts or claim trades already happened.
-7. Be concise.`;
+6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
+   - Provide prices for years ${yearsList}.
+   - Respect the STANCE bias.
+   - Tickers currently marked hasTarget=false are flat at spot — you MUST invent a reasoned path for them (ETFs can be modest CAGR; single stocks can have cyclical years).
+   - Tickers with existing targets may be adjusted up/down to match stance — do not ignore them.
+7. Do not invent fake share counts or claim trades already happened.
+8. Be concise.`;
+}
+
+export function planEoyPaths(
+  plan: ForecastPlan
+): { ticker: string; prices: Partial<Record<ForecastYear, number>> }[] {
+  return (plan.eoyTargets ?? []).map((t) => ({
+    ticker: t.ticker,
+    prices: t.prices as Partial<Record<ForecastYear, number>>,
+  }));
 }
