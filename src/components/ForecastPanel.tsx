@@ -99,7 +99,7 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "no-spinner w-full min-w-[4.5rem] rounded px-1 py-0.5 text-left tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40",
+        "no-spinner w-full min-w-[4.5rem] rounded px-1 py-0.5 text-left tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
         targeted ? "text-zinc-100" : "text-zinc-500"
       )}
     />
