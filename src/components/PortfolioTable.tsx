@@ -30,7 +30,7 @@ type Props = {
     roiPct: number;
     unrealizedProfits: number;
   };
-  onPatch: (patch: HoldingPatch) => void;
+  onPatch: (patch: HoldingPatch) => void | boolean | Promise<void | boolean>;
   onDelete: (id: string) => void;
   onEditCash: () => void;
   onAddHolding?: () => void;
@@ -51,7 +51,7 @@ function InlineNumber({
 }: {
   value: number;
   digits?: number;
-  onCommit: (n: number) => void;
+  onCommit: (n: number) => void | boolean | Promise<void | boolean>;
   className?: string;
 }) {
   const display = formatDecimal(value, digits);
@@ -62,14 +62,33 @@ function InlineNumber({
     if (!focused.current) setDraft(display);
   }, [display]);
 
+  async function commit() {
+    focused.current = false;
+    const n = parseDecimal(draft);
+    if (Number.isNaN(n) || n === value) {
+      setDraft(display);
+      return;
+    }
+    const rounded =
+      digits <= 0
+        ? Math.round(n)
+        : Math.round(n * 10 ** digits) / 10 ** digits;
+    try {
+      const ok = await onCommit(rounded);
+      if (ok === false) setDraft(formatDecimal(value, digits));
+    } catch {
+      setDraft(formatDecimal(value, digits));
+    }
+  }
+
   return (
     <input
       type="text"
-      inputMode={digits === 0 ? "numeric" : "decimal"}
+      inputMode={digits <= 0 ? "numeric" : "decimal"}
       value={draft}
       onChange={(e) => {
         const next =
-          digits === 0
+          digits <= 0
             ? e.target.value.replace(/[^\d-]/g, "")
             : e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, "");
         setDraft(next);
@@ -79,11 +98,7 @@ function InlineNumber({
       }}
       onWheel={blockWheelChange}
       onBlur={() => {
-        focused.current = false;
-        const n = parseDecimal(draft);
-        if (!Number.isNaN(n) && n !== value) {
-          onCommit(digits === 0 ? Math.round(n) : Math.round(n * 100) / 100);
-        } else setDraft(display);
+        void commit();
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();

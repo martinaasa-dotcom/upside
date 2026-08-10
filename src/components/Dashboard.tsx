@@ -144,6 +144,7 @@ export function Dashboard() {
   );
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
+  const pendingPatchRef = useRef<HoldingPatch | null>(null);
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState(() =>
     loadVisibilityMap(CC_VISIBLE_KEY)
   );
@@ -582,8 +583,8 @@ export function Dashboard() {
   async function ensureBookPin(): Promise<string | null> {
     const existing = getSessionPin();
     if (existing) return existing;
+    setBookUnlocked(false);
     setUnlockOpen(true);
-    toast("Unlock the book with your owner PIN to edit", "info");
     return null;
   }
 
@@ -606,7 +607,7 @@ export function Dashboard() {
     return res;
   }
 
-    async function handleSave(values: HoldingFormValues) {
+  async function handleSave(values: HoldingFormValues) {
     if (!activePortfolio) return;
 
     if (source === "supabase") {
@@ -645,7 +646,7 @@ export function Dashboard() {
     toast("Holding saved", "success");
   }
 
-  async function handlePatch(patch: HoldingPatch) {
+  async function handlePatch(patch: HoldingPatch): Promise<boolean> {
     const { id, ...fields } = patch;
 
     // Clear stale option when strike-driving fields change
@@ -660,26 +661,36 @@ export function Dashboard() {
     }
 
     if (source === "supabase") {
-      if (!(await ensureBookPin())) return;
+      if (!(await ensureBookPin())) {
+        pendingPatchRef.current = patch;
+        toast("Enter owner PIN to save edits", "info");
+        return false;
+      }
       const res = await apiFetch("/api/holdings", {
         method: "PATCH",
         body: JSON.stringify({ id, ...fields }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (res.status === 401 || res.status === 429) {
+          pendingPatchRef.current = patch;
+          toast("Unlock required — enter owner PIN to save", "info");
+          return false;
+        }
         toast(
           typeof data.error === "string" ? data.error : "Failed to update holding",
           "error"
         );
-        return;
+        return false;
       }
       setHoldings((prev) =>
         prev.map((h) => (h.id === id ? { ...h, ...fields } : h))
       );
-    } else {
-      const next = patchHolding(loadDemoStore(), id, fields);
-      setHoldings(next.holdings);
+      return true;
     }
+    const next = patchHolding(loadDemoStore(), id, fields);
+    setHoldings(next.holdings);
+    return true;
   }
 
   const applyAdvisorActions = useCallback(
@@ -1288,20 +1299,23 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setUnlockOpen(true)}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium ${
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold ${
                   bookUnlocked
                     ? "border-emerald-500/40 text-emerald-300"
-                    : "border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
+                    : "border-brand/60 bg-brand/15 text-brand-bright hover:bg-brand/25"
                 }`}
                 title={
                   bookUnlocked
                     ? "Book unlocked for edits this session"
-                    : "Unlock shared book edits"
+                    : "Unlock shared book edits with owner PIN"
                 }
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">
-                  {bookUnlocked ? "Unlocked" : "Unlock"}
+                  {bookUnlocked ? "Unlocked" : "Unlock to edit"}
+                </span>
+                <span className="sm:hidden">
+                  {bookUnlocked ? "OK" : "PIN"}
                 </span>
               </button>
             )}
@@ -1428,6 +1442,22 @@ export function Dashboard() {
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Retry
+            </button>
+          </div>
+        )}
+
+        {source === "supabase" && !bookUnlocked && !isOverview && !isCompound && (
+          <div className="flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-brand-bright">
+              Shared book is view-only until you unlock with the owner PIN.
+            </p>
+            <button
+              type="button"
+              onClick={() => setUnlockOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Unlock to edit
             </button>
           </div>
         )}
@@ -1689,6 +1719,9 @@ export function Dashboard() {
         onUnlocked={() => {
           setBookUnlocked(true);
           toast("Book unlocked for this tab", "success");
+          const pending = pendingPatchRef.current;
+          pendingPatchRef.current = null;
+          if (pending) void handlePatch(pending);
         }}
       />
     </div>
