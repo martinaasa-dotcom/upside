@@ -2,7 +2,10 @@ import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 
 const DEFAULT_TEXT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
-/** Vision + tools — used when the user pastes/attaches screenshots */
+/**
+ * Vision + tools. Prefer a capable omni model; reasoning budget is capped in /api/chat
+ * so screenshot→importSheet doesn't stall on endless thinking.
+ */
 const DEFAULT_VISION_MODEL =
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
 

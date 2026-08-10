@@ -49,6 +49,19 @@ const KNOWN_SUFFIXES = new Set([
   ".HK",
 ]);
 
+/** Common Lightyear / EU-broker symbols → Yahoo */
+const BROKER_BARE_TO_YAHOO: Record<string, string> = {
+  RHM: "RHM.DE",
+  HAG: "HAG.DE",
+  VEUR: "VEUR.DE",
+  VUAA: "VUAA.DE",
+  "2B7K": "2B7K.DE",
+  VWCE: "VWCE.DE",
+  IWDA: "IWDA.AS",
+  SXR8: "SXR8.DE",
+  CSPX: "CSPX.L",
+};
+
 export function normalizeYahooTicker(raw: string): string {
   let t = raw.trim().toUpperCase().replace(/\s+/g, "");
   if (!t) return t;
@@ -72,6 +85,26 @@ export function normalizeYahooTicker(raw: string): string {
   }
 
   return t;
+}
+
+/**
+ * Resolve a broker screenshot ticker (+ optional ISIN) to a Yahoo symbol.
+ * Prefer explicit exchange suffixes; else map known EU names; else ISIN country.
+ */
+export function resolveImportTicker(raw: string, isin?: string | null): string {
+  const base = normalizeYahooTicker(raw);
+  if (!base) return base;
+  if (base.includes(".")) return base;
+  if (BROKER_BARE_TO_YAHOO[base]) return BROKER_BARE_TO_YAHOO[base];
+
+  const code = (isin ?? "").trim().toUpperCase();
+  if (code.startsWith("US") || code.startsWith("KY")) return base;
+  if (code.startsWith("DE") || code.startsWith("IE") || code.startsWith("NL")) {
+    return `${base}.DE`;
+  }
+  if (code.startsWith("GB") || code.startsWith("JE")) return `${base}.L`;
+  if (code.startsWith("FR")) return `${base}.PA`;
+  return base;
 }
 
 export function tickerExchangeHint(ticker: string): string | null {

@@ -130,6 +130,7 @@ export function Dashboard() {
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
   const [quotesDelayed, setQuotesDelayed] = useState(false);
   const [eurUsd, setEurUsd] = useState<number | null>(null);
+  const [gbpUsd, setGbpUsd] = useState<number | null>(null);
   const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState(
     () => loadDisplayCurrencyMap()
   );
@@ -416,6 +417,8 @@ export function Dashboard() {
           setQuotesDelayed(Boolean(quotesJson.delayed));
           const fxEur = quotesJson.fx?.eurUsd;
           if (typeof fxEur === "number" && fxEur > 0) setEurUsd(fxEur);
+          const fxGbp = quotesJson.fx?.gbpUsd;
+          if (typeof fxGbp === "number" && fxGbp > 0) setGbpUsd(fxGbp);
         }
 
         if (opts?.quotesOnly) return;
@@ -797,6 +800,7 @@ export function Dashboard() {
             let sortBase = nextHoldings.filter(
               (h) => h.portfolio_id === activePortfolio.id
             ).length;
+            const imported = new Set<string>();
             for (const row of action.holdings) {
               const existing = findHolding(row.ticker, nextHoldings);
               if (!existing) sortBase += 1;
@@ -811,6 +815,21 @@ export function Dashboard() {
                 stock_target_override: existing?.stock_target_override ?? null,
                 sort_order: existing?.sort_order ?? sortBase,
               });
+              nextHoldings = store.holdings;
+              imported.add(row.ticker.toUpperCase());
+            }
+            if (action.replace !== false) {
+              for (const h of nextHoldings.filter(
+                (x) => x.portfolio_id === activePortfolio.id
+              )) {
+                if (imported.has(h.ticker.toUpperCase())) continue;
+                store = deleteHolding(store, h.id);
+                setOptions((opts) => {
+                  const next = { ...opts };
+                  delete next[h.ticker];
+                  return next;
+                });
+              }
               nextHoldings = store.holdings;
             }
             const tickers = action.holdings.map((h) => h.ticker);
@@ -984,6 +1003,7 @@ export function Dashboard() {
               body: JSON.stringify({
                 portfolio_id: activePortfolio.id,
                 cash: action.cash ?? null,
+                replace: action.replace !== false,
                 holdings: action.holdings.map((row) => ({
                   ticker: row.ticker,
                   shares: row.shares,
@@ -1003,10 +1023,12 @@ export function Dashboard() {
               );
             } else {
               const upserted = Number(data.upserted ?? 0);
+              const removed = Number(data.removed ?? 0);
               const failed = Array.isArray(data.failed) ? data.failed.length : 0;
               const cashBit = data.cashUpdated ? " · cash updated" : "";
+              const removeBit = removed ? ` · removed ${removed}` : "";
               toast(
-                `Imported ${upserted} ticker${upserted === 1 ? "" : "s"}${cashBit}${
+                `Imported ${upserted} ticker${upserted === 1 ? "" : "s"}${cashBit}${removeBit}${
                   failed ? ` · ${failed} failed` : ""
                 }`,
                 failed ? "error" : "success"
@@ -1496,6 +1518,8 @@ export function Dashboard() {
                 portfolioName: "Overview",
                 cashBalance: overview.totals.cash,
                 adviseOnly: true,
+                eurUsd,
+                gbpUsd,
                 holdings: overview.tickers.map((t) => ({
                   ticker: t.ticker,
                   shares: t.shares,
@@ -1605,6 +1629,8 @@ export function Dashboard() {
               context={{
                 portfolioName: activePortfolio!.name,
                 cashBalance: activePortfolio!.cash_balance,
+                eurUsd,
+                gbpUsd,
                 holdings: snapshot!.holdings.map((h) => ({
                   ticker: h.ticker,
                   shares: h.shares,

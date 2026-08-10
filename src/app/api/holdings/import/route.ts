@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOwnerPin } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { normalizeYahooTicker } from "@/lib/ticker";
+import { normalizeYahooTicker, resolveImportTicker } from "@/lib/ticker";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +11,12 @@ type ImportRow = {
   shares: number;
   buy_price: number;
   target_call_pct?: number;
+  isin?: string;
 };
 
 /**
  * Atomic-ish sheet import: set cash (optional) + upsert all equity rows.
- * Avoids stale client holdings closures and partial fire-and-forget loops.
+ * Optional replace removes holdings not present in the payload.
  */
 export async function POST(req: NextRequest) {
   const denied = requireOwnerPin(req);
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     portfolio_id?: string;
     cash?: number | null;
+    replace?: boolean;
     holdings?: ImportRow[];
   };
 
@@ -77,23 +79,29 @@ export async function POST(req: NextRequest) {
   let sortBase = (existing ?? []).length;
   let upserted = 0;
   const failed: string[] = [];
+  const keep = new Set<string>();
 
   for (const row of rows) {
-    const ticker = normalizeYahooTicker(String(row.ticker ?? ""));
+    const ticker = resolveImportTicker(
+      String(row.ticker ?? ""),
+      row.isin
+    ) || normalizeYahooTicker(String(row.ticker ?? ""));
     if (!ticker) continue;
     const shares = Number(row.shares);
     const buyPrice = Number(row.buy_price);
     const callPct = Number(row.target_call_pct ?? 0.15);
-    if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(buyPrice)) {
+    if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(buyPrice) || !(buyPrice > 0)) {
       failed.push(ticker || "?");
       continue;
     }
 
-    const prev = byTicker.get(ticker);
+    keep.add(ticker.toUpperCase());
+    const prev = byTicker.get(ticker.toUpperCase());
     if (prev) {
       const { error } = await supabase
         .from(PORTFELL_TABLES.holdings)
         .update({
+          ticker,
           shares,
           buy_price: buyPrice,
           target_call_pct: callPct,
@@ -122,8 +130,22 @@ export async function POST(req: NextRequest) {
       if (error) failed.push(ticker);
       else {
         upserted += 1;
-        if (data) byTicker.set(ticker, data);
+        if (data) byTicker.set(String(data.ticker).toUpperCase(), data);
       }
+    }
+  }
+
+  let removed = 0;
+  if (body.replace !== false && rows.length > 0) {
+    const toRemove = (existing ?? []).filter(
+      (h) => !keep.has(String(h.ticker).toUpperCase())
+    );
+    for (const h of toRemove) {
+      const { error } = await supabase
+        .from(PORTFELL_TABLES.holdings)
+        .delete()
+        .eq("id", h.id);
+      if (!error) removed += 1;
     }
   }
 
@@ -131,6 +153,7 @@ export async function POST(req: NextRequest) {
     ok: failed.length === 0,
     cashUpdated,
     upserted,
+    removed,
     failed,
     total: rows.length,
   });

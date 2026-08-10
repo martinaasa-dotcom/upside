@@ -4,6 +4,7 @@ import {
   formatCallPctBaselines,
 } from "@/lib/calculations";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import { resolveImportTicker } from "@/lib/ticker";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -68,9 +69,31 @@ export type CcChatContext = {
   adviseOnly?: boolean;
   /** Yahoo marketState snapshot (PRE / REGULAR / POST / …) */
   marketState?: string | null;
+  /** USD per 1 EUR (Yahoo EURUSD=X) — for broker EUR→USD imports */
+  eurUsd?: number | null;
+  /** USD per 1 GBP */
+  gbpUsd?: number | null;
 };
 
-export const ccAdvisorTools = {
+type AdvisorFx = { eurUsd: number | null; gbpUsd: number | null };
+
+function toUsd(
+  amount: number,
+  currency: "USD" | "EUR" | "GBP",
+  fx: AdvisorFx
+): number {
+  if (!Number.isFinite(amount)) return 0;
+  if (currency === "EUR") {
+    return fx.eurUsd && fx.eurUsd > 0 ? amount * fx.eurUsd : amount;
+  }
+  if (currency === "GBP") {
+    return fx.gbpUsd && fx.gbpUsd > 0 ? amount * fx.gbpUsd : amount;
+  }
+  return amount;
+}
+
+export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null }) {
+  return {
   setCallPct: tool({
     description:
       "Set the Call % for one ticker. Call % is how far the Next Strike sits above the Stock Target (resistance). Example: stock target $100 and callPct 15 → next strike ~$115.",
@@ -205,25 +228,67 @@ export const ccAdvisorTools = {
 
   importSheet: tool({
     description:
-      "Import an entire holdings sheet in ONE call: optional cash plus every equity row (ticker, shares, buy price). Use this whenever the user pastes/attaches a spreadsheet screenshot or asks to import multiple holdings. Do not stop after the first ticker.",
+      "Import an entire holdings book in ONE call from a spreadsheet OR broker portfolio screenshot (Lightyear, etc.). Include every investment row. Prefer markValue (position value) when average buy/cost is missing — never stall asking for cost basis. Fold multi-currency cash + tiny MMFs into cashUsd. Call once with the full list.",
     inputSchema: z.object({
       cash: z
         .number()
         .optional()
         .describe(
-          "Cash balance from a CASH row (can be negative for margin/debt). Omit if no cash row."
+          "Legacy: cash already in USD. Prefer cashUsd / cashNative."
+        ),
+      cashUsd: z
+        .number()
+        .optional()
+        .describe(
+          "Total cash in USD after converting EUR/GBP cash rows + optional tiny MMF residual."
+        ),
+      cashNative: z
+        .number()
+        .optional()
+        .describe("Cash amount in cashCurrency before FX (e.g. EUR cash total)"),
+      cashCurrency: z
+        .enum(["USD", "EUR", "GBP"])
+        .optional()
+        .describe("Currency for cashNative; default USD"),
+      replace: z
+        .boolean()
+        .optional()
+        .describe(
+          "True for full broker portfolio screenshots — remove tickers on this sheet that are not in holdings. Default true for portfolio-breakdown imports."
         ),
       holdings: z
         .array(
           z.object({
             ticker: z
               .string()
-              .describe("Equity ticker only — never CASH, PORTFOLIO, or totals"),
+              .describe(
+                "Symbol column (RHM, VUAA, GOOGL…). Never CASH / PORTFOLIO / totals / MMF symbols you folded into cash."
+              ),
+            isin: z
+              .string()
+              .optional()
+              .describe("ISIN if visible — used to pick Yahoo suffix (.DE / .L)"),
             shares: z.number().positive(),
             buyPrice: z
               .number()
               .positive()
-              .describe("Average buy / cost basis per share in USD"),
+              .optional()
+              .describe(
+                "Average buy/cost per share in `currency` if shown. Omit when the sheet only has market Value."
+              ),
+            markValue: z
+              .number()
+              .positive()
+              .optional()
+              .describe(
+                "Position market value in `currency` (Value column). Required when buyPrice is missing — implied cost = markValue / shares."
+              ),
+            currency: z
+              .enum(["USD", "EUR", "GBP"])
+              .optional()
+              .describe(
+                "Native currency of buyPrice/markValue from the Value column (€ → EUR, $ → USD). Default USD."
+              ),
             callPct: z
               .number()
               .min(1)
@@ -233,9 +298,16 @@ export const ccAdvisorTools = {
           })
         )
         .min(1)
-        .describe("Every stock row visible in the sheet"),
+        .describe("Every investment / equity / ETF / bond row (not cash lines)"),
     }),
-    execute: async ({ cash, holdings }) => {
+    execute: async ({
+      cash,
+      cashUsd,
+      cashNative,
+      cashCurrency,
+      replace,
+      holdings,
+    }) => {
       const SKIP = new Set([
         "CASH",
         "PORTFOLIO",
@@ -244,39 +316,88 @@ export const ccAdvisorTools = {
         "UNREALIZED",
         "UNREALIZED PROFITS",
         "UNREALIZEDPROFIT",
+        "INVESTMENTS",
+        "MMFS",
+        "MONEYMARKET",
       ]);
-      const cleaned = holdings
-        .map((h) => ({
-          ticker: h.ticker.trim().toUpperCase(),
+      const notes: string[] = [];
+      const cleaned: Array<{
+        ticker: string;
+        shares: number;
+        buyPrice: number;
+        callPct: number;
+      }> = [];
+
+      for (const h of holdings) {
+        const ticker = resolveImportTicker(h.ticker, h.isin);
+        if (
+          !ticker ||
+          SKIP.has(ticker) ||
+          SKIP.has(h.ticker.trim().toUpperCase()) ||
+          ticker.startsWith("UNREALIZED") ||
+          ticker.startsWith("CASH")
+        ) {
+          continue;
+        }
+        if (!Number.isFinite(h.shares) || h.shares <= 0) continue;
+
+        const currency = h.currency ?? "USD";
+        let buyNative: number | null = null;
+        if (h.buyPrice != null && h.buyPrice > 0) buyNative = h.buyPrice;
+        else if (h.markValue != null && h.markValue > 0) {
+          buyNative = h.markValue / h.shares;
+          notes.push(`${ticker} cost←mark`);
+        }
+        if (buyNative == null || !(buyNative > 0)) {
+          notes.push(`skipped ${ticker} (no buy/mark)`);
+          continue;
+        }
+
+        const buyPrice = toUsd(buyNative, currency, fx);
+        if (
+          currency !== "USD" &&
+          ((currency === "EUR" && !(fx.eurUsd && fx.eurUsd > 0)) ||
+            (currency === "GBP" && !(fx.gbpUsd && fx.gbpUsd > 0)))
+        ) {
+          notes.push(`${ticker} FX missing — stored 1:1 as USD`);
+        }
+
+        cleaned.push({
+          ticker,
           shares: h.shares,
-          buyPrice: h.buyPrice,
+          buyPrice,
           callPct:
             h.callPct != null
               ? h.callPct / 100
-              : (callPctBaseline(h.ticker) ?? 0.15),
-        }))
-        .filter(
-          (h) =>
-            h.ticker &&
-            !SKIP.has(h.ticker) &&
-            !h.ticker.startsWith("UNREALIZED") &&
-            Number.isFinite(h.shares) &&
-            h.shares > 0 &&
-            Number.isFinite(h.buyPrice) &&
-            h.buyPrice > 0
-        );
-      // Dedupe by ticker (last wins)
+              : (callPctBaseline(ticker) ?? 0.15),
+        });
+      }
+
       const byTicker = new Map<string, (typeof cleaned)[number]>();
-      for (const h of cleaned) byTicker.set(h.ticker, h);
+      for (const row of cleaned) byTicker.set(row.ticker, row);
       const rows = [...byTicker.values()];
       const tickers = rows.map((h) => h.ticker);
+
+      let resolvedCash: number | null = null;
+      if (cashUsd != null && Number.isFinite(cashUsd)) resolvedCash = cashUsd;
+      else if (cashNative != null && Number.isFinite(cashNative)) {
+        resolvedCash = toUsd(cashNative, cashCurrency ?? "USD", fx);
+      } else if (cash != null && Number.isFinite(cash)) resolvedCash = cash;
+
+      const replaceBook = replace !== false;
+
       return {
         action: "import_sheet" as const,
-        cash: cash ?? null,
+        cash: resolvedCash,
+        replace: replaceBook,
         holdings: rows,
         message: `Imported ${rows.length} holding${rows.length === 1 ? "" : "s"}${
-          cash != null ? ` + cash $${cash.toLocaleString()}` : ""
-        }: ${tickers.join(", ")}`,
+          resolvedCash != null
+            ? ` + cash $${resolvedCash.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+            : ""
+        }${replaceBook ? " (replace sheet)" : ""}: ${tickers.join(", ")}${
+          notes.length ? ` · ${notes.slice(0, 6).join("; ")}` : ""
+        }`,
       };
     },
   }),
@@ -420,8 +541,11 @@ export const ccAdvisorTools = {
     }),
   }),
 };
+}
 
-export type CcAdvisorTools = typeof ccAdvisorTools;
+export const ccAdvisorTools = buildCcAdvisorTools();
+
+export type CcAdvisorTools = ReturnType<typeof buildCcAdvisorTools>;
 
 function fmtPctLabel(pct: number | null | undefined): string {
   if (pct == null || Number.isNaN(pct)) return "—";
@@ -516,11 +640,16 @@ When the user asks to copy / mirror / adapt strategy from another sheet:
 4. Briefly summarize what you copied vs skipped.
 
 When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio table) or asks to import holdings:
-1. Read EVERY equity row: ticker, # of shares, buy price. Also read CASH if present (can be negative).
-2. Call importSheet ONCE with cash (if any) + the full holdings array — never stop after the first ticker (e.g. do not import only NBIS when CRWV/RKLB/BMNR/VST are also in the image).
-3. Skip non-equity rows: CASH (use the cash field instead), PORTFOLIO, UNREALIZED*, totals, blanks, sparklines-only rows.
-4. Do not invent missing buy prices or share counts — omit that ticker and say so.
-5. Prefer importSheet over a chain of addHolding / setCash calls.`;
+1. Call importSheet ONCE with EVERY investment row — never stop after the first ticker, never chain addHolding instead.
+2. Broker "Portfolio breakdown" sheets often show Quantity + Value but NO buy/cost. That is fine: set markValue = Value and currency from the Value column (€→EUR, $→USD). buyPrice is optional. Do NOT refuse or stall asking for cost basis.
+3. Pass isin when visible so EU names resolve to Yahoo (RHM+DE ISIN → RHM.DE). US ISINs stay bare (GOOGL, MSTR, TSM).
+4. Cash: sum Cash-EUR / Cash-USD / Cash-GBP (convert via FX below, or pass cashNative+cashCurrency / cashUsd). Tiny MMFs (e.g. €1 liquidity fund) → fold into cash, do not import as a holding.
+5. Skip section headers and totals (Investments total, Portfolio total). Include ETFs, stocks, and bonds from the Investments table.
+6. replace=true (default) for full broker books so the sheet matches the screenshot.
+7. Prefer importSheet over a chain of addHolding / setCash calls.
+8. After the tool result, reply in 2–4 sentences confirming what imported — never go silent.
+
+FX for imports (USD per 1 unit): EURUSD=${ctx.eurUsd != null ? ctx.eurUsd.toFixed(4) : "unknown"} · GBPUSD=${ctx.gbpUsd != null ? ctx.gbpUsd.toFixed(4) : "unknown"}.`;
 
   return `${MARGUS_PERSONA}
 

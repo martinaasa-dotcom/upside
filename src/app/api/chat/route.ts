@@ -1,6 +1,6 @@
 import {
   buildCcSystemPrompt,
-  ccAdvisorTools,
+  buildCcAdvisorTools,
   type CcChatContext,
 } from "@/lib/ai/cc-advisor";
 import { resolveAdvisorModel } from "@/lib/ai/model";
@@ -61,7 +61,12 @@ export async function POST(req: Request) {
 
     const vision = messagesHaveImages(messages);
     const adviseOnly = Boolean(ccContext.adviseOnly);
-    const tools = adviseOnly ? undefined : ccAdvisorTools;
+    const tools = adviseOnly
+      ? undefined
+      : buildCcAdvisorTools({
+          eurUsd: ccContext.eurUsd ?? null,
+          gbpUsd: ccContext.gbpUsd ?? null,
+        });
 
     const result = streamText({
       model: resolveAdvisorModel({ vision }),
@@ -70,7 +75,17 @@ export async function POST(req: Request) {
         tools,
       }),
       tools,
-      stopWhen: stepCountIs(adviseOnly ? 3 : 12),
+      // Vision+tools: keep reasoning short so free omni models don't burn the budget and go silent
+      ...(vision
+        ? {
+            providerOptions: {
+              openrouter: {
+                reasoning: { effort: "low", max_tokens: 400 },
+              },
+            },
+          }
+        : {}),
+      stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 6 : 12),
       maxRetries: 2,
       abortSignal: req.signal,
       onError: ({ error }) => {

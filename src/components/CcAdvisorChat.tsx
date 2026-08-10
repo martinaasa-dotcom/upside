@@ -49,6 +49,7 @@ export type AdvisorAction =
   | {
       action: "import_sheet";
       cash: number | null;
+      replace?: boolean;
       holdings: Array<{
         ticker: string;
         shares: number;
@@ -647,8 +648,9 @@ export function CcAdvisorChat({
 
         {lastIsEmptyAssistant && !error && (
           <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-            Margus returned an empty reply (often a free-model rate limit). Wait a
-            few seconds and ask again.
+            Margus returned an empty reply (often a free-model rate limit or a
+            long screenshot import). Wait a few seconds and ask again — for
+            broker sheets, say “import this portfolio breakdown”.
           </div>
         )}
 
