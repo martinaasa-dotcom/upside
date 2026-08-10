@@ -1,8 +1,8 @@
 import type { FileUIPart } from "ai";
 
-const MAX_EDGE = 1600;
-const JPEG_QUALITY = 0.82;
-const MAX_BYTES = 3_500_000;
+const MAX_EDGE = 2048;
+const JPEG_QUALITY = 0.9;
+const MAX_BYTES = 4_500_000;
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {

@@ -83,9 +83,13 @@ export async function POST(req: Request) {
                 reasoning: { effort: "low", max_tokens: 400 },
               },
             },
+            // Force at least one tool when the user sent an image (import / add holding)
+            ...(adviseOnly
+              ? {}
+              : { toolChoice: "required" as const }),
           }
         : {}),
-      stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 6 : 12),
+      stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 12),
       maxRetries: 2,
       abortSignal: req.signal,
       onError: ({ error }) => {

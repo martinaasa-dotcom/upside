@@ -421,7 +421,7 @@ export function CcAdvisorChat({
     await sendMessage({
       text:
         text ||
-        "Please read this screenshot and update the portfolio / CC targets to match.",
+        "Read this broker screenshot carefully. If it is a single ticker (Shares + Avg buy), call addHolding with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call importSheet for every row. Then confirm what you saved.",
       files: files.length ? files : undefined,
     });
   }

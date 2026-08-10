@@ -201,11 +201,23 @@ export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null
 
   addHolding: tool({
     description:
-      "Add a single stock holding (or overwrite if ticker already exists). For spreadsheet / multi-ticker imports prefer importSheet instead.",
+      "Add or overwrite ONE holding. Use for single-ticker broker screens (Lightyear detail: Shares + Avg buy). For multi-row portfolio tables use importSheet instead.",
     inputSchema: z.object({
-      ticker: z.string().describe("Ticker symbol"),
-      shares: z.number().positive(),
-      buyPrice: z.number().positive().describe("Average buy price in USD"),
+      ticker: z
+        .string()
+        .describe(
+          "Symbol as shown (€RHM → RHM). EU names become Yahoo e.g. RHM.DE when possible."
+        ),
+      isin: z.string().optional().describe("ISIN if visible"),
+      shares: z.number().positive().describe("Share count — keep full decimals"),
+      buyPrice: z
+        .number()
+        .positive()
+        .describe("Average buy / cost per share in `currency`"),
+      currency: z
+        .enum(["USD", "EUR", "GBP"])
+        .optional()
+        .describe("€ → EUR, $ → USD. Default USD"),
       callPct: z
         .number()
         .min(1)
@@ -213,17 +225,22 @@ export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null
         .optional()
         .describe("Optional Call %, default ~15"),
     }),
-    execute: async ({ ticker, shares, buyPrice, callPct }) => ({
-      action: "add_holding" as const,
-      ticker: ticker.toUpperCase(),
-      shares,
-      buyPrice,
-      callPct:
-        callPct != null
-          ? callPct / 100
-          : (callPctBaseline(ticker) ?? 0.15),
-      message: `Added ${ticker.toUpperCase()}: ${shares} @ $${buyPrice}`,
-    }),
+    execute: async ({ ticker, isin, shares, buyPrice, currency, callPct }) => {
+      const resolved = resolveImportTicker(ticker, isin);
+      const cur = currency ?? "USD";
+      const buyUsd = toUsd(buyPrice, cur, fx);
+      return {
+        action: "add_holding" as const,
+        ticker: resolved,
+        shares,
+        buyPrice: buyUsd,
+        callPct:
+          callPct != null
+            ? callPct / 100
+            : (callPctBaseline(resolved) ?? 0.15),
+        message: `Added ${resolved}: ${shares} @ $${buyUsd.toFixed(2)} (from ${cur} ${buyPrice})`,
+      };
+    },
   }),
 
   importSheet: tool({
@@ -639,15 +656,24 @@ When the user asks to copy / mirror / adapt strategy from another sheet:
 3. Skip tickers that don't exist here unless they ask to add them.
 4. Briefly summarize what you copied vs skipped.
 
-When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio table) or asks to import holdings:
+When the user pastes or attaches a screenshot (spreadsheet, broker app, portfolio table, OR single-ticker detail) or asks to import holdings:
+
+**A) Single-ticker broker detail screen** (Lightyear etc. — big symbol like €RHM, fields Shares / Avg buy / Invested / chart):
+1. Read ticker (strip €/$ prefix), Shares (full decimals), Avg buy (cost basis — NOT the live market price at the top).
+2. Currency from € → EUR, $ → USD.
+3. Call addHolding ONCE with ticker, shares, buyPrice=Avg buy, currency. Example: RHM, 2.889580565, buyPrice 1239.69, currency EUR → Yahoo RHM.DE.
+4. Do NOT use the live spot as buyPrice. Do NOT refuse. Do NOT ask clarifying questions first — tool first, then confirm.
+5. replace is NOT needed; upsert this one name only.
+
+**B) Multi-row portfolio / breakdown table**:
 1. Call importSheet ONCE with EVERY investment row — never stop after the first ticker, never chain addHolding instead.
-2. Broker "Portfolio breakdown" sheets often show Quantity + Value but NO buy/cost. That is fine: set markValue = Value and currency from the Value column (€→EUR, $→USD). buyPrice is optional. Do NOT refuse or stall asking for cost basis.
-3. Pass isin when visible so EU names resolve to Yahoo (RHM+DE ISIN → RHM.DE). US ISINs stay bare (GOOGL, MSTR, TSM).
-4. Cash: sum Cash-EUR / Cash-USD / Cash-GBP (convert via FX below, or pass cashNative+cashCurrency / cashUsd). Tiny MMFs (e.g. €1 liquidity fund) → fold into cash, do not import as a holding.
-5. Skip section headers and totals (Investments total, Portfolio total). Include ETFs, stocks, and bonds from the Investments table.
-6. replace=true (default) for full broker books so the sheet matches the screenshot.
-7. Prefer importSheet over a chain of addHolding / setCash calls.
-8. After the tool result, reply in 2–4 sentences confirming what imported — never go silent.
+2. If Quantity + Value but NO Avg buy: set markValue = Value and currency from €/$. buyPrice optional.
+3. Pass isin when visible (RHM + DE ISIN → RHM.DE). US ISINs stay bare.
+4. Cash: sum Cash-EUR/USD/GBP (cashNative+cashCurrency or cashUsd). Tiny MMFs → fold into cash.
+5. Skip headers/totals. replace=true for full books.
+6. Prefer importSheet over a chain of addHolding / setCash.
+
+After ANY import tool: reply in 2–4 sentences confirming ticker, shares, USD cost — never go silent.
 
 FX for imports (USD per 1 unit): EURUSD=${ctx.eurUsd != null ? ctx.eurUsd.toFixed(4) : "unknown"} · GBPUSD=${ctx.gbpUsd != null ? ctx.gbpUsd.toFixed(4) : "unknown"}.`;
 
