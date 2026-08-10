@@ -10,26 +10,37 @@ import {
   type IncreaseMode,
   type RatePeriod,
 } from "@/lib/compound-interest";
+import {
+  buildCompareScenarios,
+  buildNarrative,
+  calculateWithShock,
+  estimateYearsToGoal,
+  findTippingYear,
+  goalProgress,
+  stayTheCourseInputs,
+  storyYears,
+  yearsToGoal,
+  type ShockKind,
+} from "@/lib/compound-play";
 import { cn } from "@/lib/format";
 import { blockWheelChange } from "@/lib/number-input";
 import {
   ArrowUpRight,
-  BarChart3,
   Calculator,
-  LayoutGrid,
-  PieChart,
-  Table2,
+  Copy,
+  Share2,
+  Sparkles,
+  Target,
+  Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type CurrencyCode = "USD" | "EUR";
 
-const CURRENCIES: { code: CurrencyCode; symbol: string }[] = [
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
+const CURRENCIES: { code: CurrencyCode; label: string }[] = [
+  { code: "USD", label: "USD" },
+  { code: "EUR", label: "EUR" },
 ];
-
-type ViewMode = "table" | "chart" | "summary" | "pie";
 
 export type CompoundSheetOption = {
   id: string;
@@ -38,9 +49,7 @@ export type CompoundSheetOption = {
 };
 
 type Props = {
-  /** Full book total (all sheets). */
   bookValue: number;
-  /** Per-portfolio live values for principal picker. */
   sheets: CompoundSheetOption[];
 };
 
@@ -59,7 +68,7 @@ function loadStored(): CompoundInputs {
   }
 }
 
-function money(value: number, currency: CurrencyCode, digits = 2): string {
+function money(value: number, currency: CurrencyCode, digits = 0): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
@@ -93,45 +102,157 @@ function SegButton({
   );
 }
 
+function DualPathChart({
+  stay,
+  active,
+  currency,
+}: {
+  stay: number[];
+  active: number[];
+  currency: CurrencyCode;
+}) {
+  const n = Math.max(stay.length, active.length, 2);
+  const max = Math.max(...stay, ...active, 1);
+  const w = 640;
+  const h = 200;
+  const pad = 16;
+
+  const toPoints = (series: number[]) =>
+    series
+      .map((v, i) => {
+        const x = pad + (i / Math.max(series.length - 1, 1)) * (w - pad * 2);
+        const y = h - pad - (v / max) * (h - pad * 2);
+        return `${x},${y}`;
+      })
+      .join(" ");
+
+  return (
+    <div>
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="h-auto w-full"
+        role="img"
+        aria-label="Stay the course vs active path"
+      >
+        <polyline
+          points={toPoints(stay)}
+          fill="none"
+          stroke="#71717a"
+          strokeWidth="2"
+          strokeDasharray="6 4"
+        />
+        <polyline
+          points={toPoints(active)}
+          fill="none"
+          stroke="#34d399"
+          strokeWidth="2.5"
+        />
+      </svg>
+      <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-0.5 w-4 border-t-2 border-dashed border-zinc-500" />
+          Stay the course · {money(stay[stay.length - 1] ?? 0, currency)}
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-gain">
+          <span className="h-0.5 w-4 bg-gain" />
+          Active path · {money(active[active.length - 1] ?? 0, currency)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function CompoundInterestSheet({ bookValue, sheets }: Props) {
   const [draft, setDraft] = useState<CompoundInputs>(DEFAULT_COMPOUND_INPUTS);
-  const [inputs, setInputs] = useState<CompoundInputs>(DEFAULT_COMPOUND_INPUTS);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [principalSource, setPrincipalSource] = useState<string>("custom");
-  const [view, setView] = useState<ViewMode>("table");
   const [hydrated, setHydrated] = useState(false);
+  const [shock, setShock] = useState<ShockKind>("none");
+  const [goal, setGoal] = useState(100_000);
+  const [storyIdx, setStoryIdx] = useState(0);
+  const [tipFlash, setTipFlash] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const stored = loadStored();
     setDraft(stored);
-    setInputs(stored);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(COMPOUND_STORAGE_KEY, JSON.stringify(inputs));
+      localStorage.setItem(COMPOUND_STORAGE_KEY, JSON.stringify(draft));
     } catch {
       /* ignore */
     }
-  }, [inputs, hydrated]);
+  }, [draft, hydrated]);
+
+  const liveInputs: CompoundInputs = useMemo(
+    () => ({ ...draft, compound: "monthly" }),
+    [draft]
+  );
 
   const result = useMemo(
-    () => calculateCompound({ ...inputs, compound: "monthly" }),
-    [inputs]
+    () => calculateWithShock(liveInputs, shock),
+    [liveInputs, shock]
   );
-  const displayRows = result.yearly;
+
+  const stayResult = useMemo(
+    () => calculateCompound(stayTheCourseInputs(liveInputs)),
+    [liveInputs]
+  );
+
+  const tipping = useMemo(
+    () => findTippingYear(result.yearly),
+    [result.yearly]
+  );
+
+  useEffect(() => {
+    if (tipping == null) return;
+    setTipFlash(true);
+    const id = window.setTimeout(() => setTipFlash(false), 1800);
+    return () => window.clearTimeout(id);
+  }, [tipping, draft.depositAmount]);
+
+  const compare = useMemo(
+    () => buildCompareScenarios(liveInputs, 6),
+    [liveInputs]
+  );
+
+  const narrative = useMemo(() => buildNarrative(result), [result]);
+
+  const storyOpts = useMemo(
+    () => storyYears(Math.max(liveInputs.years, 1)),
+    [liveInputs.years]
+  );
+
+  const storyYear = storyOpts[Math.min(storyIdx, storyOpts.length - 1)] ?? 1;
+  const storyRow =
+    result.yearly.find((y) => y.index === storyYear) ??
+    result.yearly[result.yearly.length - 1];
+
+  const goalYear = yearsToGoal(result.yearly, goal);
+  const progress = goalProgress(result.futureValue, goal);
+  const etaYears = estimateYearsToGoal({
+    principal: liveInputs.principal,
+    goal,
+    annualRatePct:
+      liveInputs.ratePeriod === "annual"
+        ? liveInputs.ratePercent
+        : liveInputs.ratePercent * 12,
+    monthlyDeposit:
+      liveInputs.contributionMode === "deposits" ||
+      liveInputs.contributionMode === "both"
+        ? liveInputs.depositAmount
+        : 0,
+  });
 
   function patchDraft<K extends keyof CompoundInputs>(
     key: K,
     value: CompoundInputs[K]
   ) {
     setDraft((prev) => ({ ...prev, [key]: value }));
-  }
-
-  function calculate() {
-    setInputs({ ...draft, compound: "monthly" });
   }
 
   function applyPrincipal(source: string) {
@@ -142,26 +263,62 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
     }
     if (source === "custom") return;
     const sheet = sheets.find((s) => s.id === source);
-    if (sheet) {
-      patchDraft("principal", Math.round(sheet.value * 100) / 100);
+    if (sheet) patchDraft("principal", Math.round(sheet.value * 100) / 100);
+  }
+
+  function setDepositLive(amount: number) {
+    setDraft((prev) => ({
+      ...prev,
+      depositAmount: amount,
+      contributionMode:
+        amount > 0
+          ? prev.contributionMode === "none"
+            ? "deposits"
+            : prev.contributionMode
+          : prev.contributionMode === "deposits"
+            ? "none"
+            : prev.contributionMode,
+    }));
+  }
+
+  async function copyPostcard() {
+    const text = [
+      `Upside compound postcard`,
+      `${money(result.principal, currency)} → ${money(result.futureValue, currency)} in ${liveInputs.years}y`,
+      `Interest ${money(result.totalInterest, currency)} · RoR ${(result.allTimeRoR * 100).toFixed(0)}%`,
+      liveInputs.depositAmount > 0
+        ? `+${money(liveInputs.depositAmount, currency)}/mo deposits @ ${liveInputs.annualIncrease}% YoY`
+        : `No deposits · pure compound`,
+      shock !== "none" ? `Shock: ${shock}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* ignore */
     }
   }
 
   const durationLabel =
-    inputs.months > 0
-      ? `${inputs.years} year${inputs.years === 1 ? "" : "s"}, ${inputs.months} month${inputs.months === 1 ? "" : "s"}`
-      : `${inputs.years} year${inputs.years === 1 ? "" : "s"}`;
+    liveInputs.months > 0
+      ? `${liveInputs.years}y ${liveInputs.months}m`
+      : `${liveInputs.years} year${liveInputs.years === 1 ? "" : "s"}`;
 
+  const staySeries = stayResult.yearly.map((y) => y.balance);
+  const activeSeries = result.yearly.map((y) => y.balance);
   const chartMax = Math.max(...result.yearly.map((r) => r.balance), 1);
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
-      {/* Inputs */}
+      {/* —— Inputs —— */}
       <aside className="space-y-5 rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
         <div>
-          <h2 className="text-sm font-semibold text-white">Compound Interest</h2>
+          <h2 className="text-sm font-semibold text-white">Compound playground</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Project growth of cash or your live book value.
+            Live projections — dial deposits, pick a sheet, shock the path.
           </p>
         </div>
 
@@ -169,14 +326,14 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
           <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
             Currency
           </p>
-          <div className="flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+          <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
             {CURRENCIES.map((c) => (
               <SegButton
                 key={c.code}
                 active={currency === c.code}
                 onClick={() => setCurrency(c.code)}
               >
-                {c.code}
+                {c.label}
               </SegButton>
             ))}
           </div>
@@ -192,11 +349,11 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             >
               <option value="custom">Custom amount</option>
               <option value="book">
-                All portfolios ({money(bookValue, currency, 0)})
+                All portfolios ({money(bookValue, currency)})
               </option>
               {sheets.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} ({money(s.value, currency, 0)})
+                  {s.name} ({money(s.value, currency)})
                 </option>
               ))}
             </select>
@@ -218,14 +375,11 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
               className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </label>
-          <p className="mt-1.5 text-[11px] text-zinc-600">
-            Compounded monthly · deposit increase defaults to 2%/yr
-          </p>
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <label className="block text-xs text-zinc-400">
-            Interest rate
+            Interest rate %
             <input
               type="text"
               inputMode="decimal"
@@ -251,61 +405,83 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             >
               <option value="annual">annual</option>
               <option value="monthly">monthly</option>
-              <option value="quarterly">quarterly</option>
-              <option value="daily">daily</option>
             </select>
           </label>
         </div>
 
         <div>
-          <p className="mb-1.5 text-xs text-zinc-400">Duration</p>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-[11px] text-zinc-500">
-              Years
-              <input
-                type="text"
-                inputMode="numeric"
-                value={draft.years}
-                onChange={(e) =>
-                  patchDraft(
-                    "years",
-                    Math.max(0, Math.floor(Number(e.target.value.replace(/\D/g, "")) || 0))
-                  )
-                }
-                onWheel={blockWheelChange}
-                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-              />
-            </label>
-            <label className="text-[11px] text-zinc-500">
-              Months
-              <input
-                type="text"
-                inputMode="numeric"
-                value={draft.months}
-                onChange={(e) =>
-                  patchDraft(
-                    "months",
-                    Math.min(
-                      11,
-                      Math.max(
-                        0,
-                        Math.floor(Number(e.target.value.replace(/\D/g, "")) || 0)
-                      )
-                    )
-                  )
-                }
-                onWheel={blockWheelChange}
-                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-              />
-            </label>
+          <p className="mb-1.5 text-xs text-zinc-400">Duration (years)</p>
+          <input
+            type="range"
+            min={1}
+            max={40}
+            value={draft.years}
+            onChange={(e) => patchDraft("years", Number(e.target.value))}
+            className="w-full accent-[var(--brand)]"
+          />
+          <div className="mt-1 flex justify-between text-[11px] text-zinc-500">
+            <span>1y</span>
+            <span className="tabular-nums text-zinc-300">{draft.years} years</span>
+            <span>40y</span>
           </div>
         </div>
 
+        {/* 4 — Contribution drama dial */}
+        <div
+          className={cn(
+            "rounded-xl border p-3 transition",
+            tipFlash
+              ? "border-gain/50 bg-gain/10"
+              : "border-zinc-800 bg-zinc-900/40"
+          )}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-zinc-300">
+              Monthly deposit dial
+            </p>
+            {tipping != null && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-gain">
+                Tip year {tipping}
+              </span>
+            )}
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={2000}
+            step={50}
+            value={Math.min(2000, draft.depositAmount)}
+            onChange={(e) => setDepositLive(Number(e.target.value))}
+            className="mt-3 w-full accent-[var(--brand)]"
+          />
+          <div className="mt-1 flex justify-between text-[11px] text-zinc-500">
+            <span>$0</span>
+            <span className="tabular-nums text-brand-bright">
+              {money(draft.depositAmount, currency)}/mo
+            </span>
+            <span>$2k</span>
+          </div>
+          <label className="mt-3 block text-[11px] text-zinc-500">
+            Annual deposit increase %
+            <input
+              type="text"
+              inputMode="decimal"
+              value={draft.annualIncrease}
+              onChange={(e) =>
+                patchDraft(
+                  "annualIncrease",
+                  Number(e.target.value.replace(/[^\d.]/g, "")) || 0
+                )
+              }
+              onWheel={blockWheelChange}
+              className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+            />
+          </label>
+        </div>
+
         <div>
-          <p className="mb-1.5 text-xs text-zinc-400">
-            Regular contributions (optional)
-          </p>
-          <div className="mb-2 flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+          <p className="mb-1.5 text-xs text-zinc-400">Contributions</p>
+          <div className="flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
             {(
               [
                 ["none", "None"],
@@ -325,150 +501,101 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
               </SegButton>
             ))}
           </div>
-
-          {(draft.contributionMode === "deposits" ||
-            draft.contributionMode === "both") && (
-            <div className="mb-2 grid grid-cols-[1fr_auto] gap-2">
-              <label className="text-[11px] text-zinc-500">
-                Deposit amount
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={draft.depositAmount}
-                  onChange={(e) =>
-                    patchDraft(
-                      "depositAmount",
-                      Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                    )
-                  }
-                  onWheel={blockWheelChange}
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-                />
-              </label>
-              <label className="text-[11px] text-zinc-500">
-                Frequency
-                <select
-                  value={draft.depositFrequency}
-                  onChange={(e) =>
-                    patchDraft(
-                      "depositFrequency",
-                      e.target.value as ContributionFrequency
-                    )
-                  }
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm text-white outline-none focus:border-brand"
-                >
-                  <option value="monthly">monthly</option>
-                  <option value="biweekly">biweekly</option>
-                  <option value="quarterly">quarterly</option>
-                  <option value="annually">annually</option>
-                </select>
-              </label>
-            </div>
-          )}
-
           {(draft.contributionMode === "withdrawals" ||
             draft.contributionMode === "both") && (
-            <div className="mb-2 grid grid-cols-[1fr_auto] gap-2">
-              <label className="text-[11px] text-zinc-500">
-                Withdrawal amount
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={draft.withdrawalAmount}
-                  onChange={(e) =>
-                    patchDraft(
-                      "withdrawalAmount",
-                      Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                    )
-                  }
-                  onWheel={blockWheelChange}
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-                />
-              </label>
-              <label className="text-[11px] text-zinc-500">
-                Frequency
-                <select
-                  value={draft.withdrawalFrequency}
-                  onChange={(e) =>
-                    patchDraft(
-                      "withdrawalFrequency",
-                      e.target.value as ContributionFrequency
-                    )
-                  }
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm text-white outline-none focus:border-brand"
-                >
-                  <option value="monthly">monthly</option>
-                  <option value="biweekly">biweekly</option>
-                  <option value="quarterly">quarterly</option>
-                  <option value="annually">annually</option>
-                </select>
-              </label>
-            </div>
+            <label className="mt-2 block text-[11px] text-zinc-500">
+              Withdrawal / mo
+              <input
+                type="text"
+                inputMode="decimal"
+                value={draft.withdrawalAmount}
+                onChange={(e) =>
+                  patchDraft(
+                    "withdrawalAmount",
+                    Number(e.target.value.replace(/[^\d.]/g, "")) || 0
+                  )
+                }
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+              />
+            </label>
           )}
-
-          {draft.contributionMode !== "none" && (
-            <div>
-              <p className="mb-1 text-[11px] text-zinc-500">
-                Annual contribution increase (optional)
-              </p>
-              <div className="flex gap-2">
-                <div className="flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5">
-                  <SegButton
-                    active={draft.increaseMode === "percent"}
-                    onClick={() =>
-                      patchDraft("increaseMode", "percent" as IncreaseMode)
-                    }
-                  >
-                    %
-                  </SegButton>
-                  <SegButton
-                    active={draft.increaseMode === "fixed"}
-                    onClick={() =>
-                      patchDraft("increaseMode", "fixed" as IncreaseMode)
-                    }
-                  >
-                    $
-                  </SegButton>
-                </div>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={draft.annualIncrease}
-                  onChange={(e) =>
-                    patchDraft(
-                      "annualIncrease",
-                      Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                    )
-                  }
-                  onWheel={blockWheelChange}
-                  className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-                />
-              </div>
-            </div>
+          {(draft.contributionMode === "deposits" ||
+            draft.contributionMode === "both") && (
+            <label className="mt-2 block text-[11px] text-zinc-500">
+              Deposit frequency
+              <select
+                value={draft.depositFrequency}
+                onChange={(e) =>
+                  patchDraft(
+                    "depositFrequency",
+                    e.target.value as ContributionFrequency
+                  )
+                }
+                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+              >
+                <option value="monthly">monthly</option>
+                <option value="annually">annually</option>
+              </select>
+            </label>
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={calculate}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gain px-4 py-2.5 text-sm font-semibold text-[#0a1f16] hover:brightness-110"
-        >
-          <Calculator className="h-4 w-4" />
-          Calculate
-        </button>
+        {/* 7 — Shock buttons */}
+        <div>
+          <p className="mb-1.5 text-xs text-zinc-400">Shock the path</p>
+          <div className="flex flex-wrap gap-1">
+            {(
+              [
+                ["none", "Smooth"],
+                ["drawdown30", "−30% Y1"],
+                ["flat2y", "Flat 2y"],
+              ] as const
+            ).map(([id, label]) => (
+              <SegButton
+                key={id}
+                active={shock === id}
+                onClick={() => setShock(id)}
+              >
+                {label}
+              </SegButton>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[11px] text-zinc-600">
+            Path dependence without a lecture — then compounding resumes.
+          </p>
+        </div>
+
+        <p className="text-[11px] text-zinc-600">
+          Compounded monthly · live updates as you dial
+        </p>
       </aside>
 
-      {/* Results */}
+      {/* —— Results playground —— */}
       <section className="space-y-5">
+        {/* Hero stats */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-6">
-          <h3 className="text-base font-semibold text-white sm:text-lg">
-            Interest calculation for {durationLabel}
-          </h3>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h3 className="text-base font-semibold text-white sm:text-lg">
+              Interest calculation for {durationLabel}
+            </h3>
+            <button
+              type="button"
+              onClick={() => void copyPostcard()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white"
+            >
+              {copied ? (
+                <Copy className="h-3.5 w-3.5 text-gain" />
+              ) : (
+                <Share2 className="h-3.5 w-3.5" />
+              )}
+              {copied ? "Copied" : "Postcard"}
+            </button>
+          </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                Future investment value
+                Future value
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-gain sm:text-3xl">
                 {money(result.futureValue, currency)}
@@ -476,7 +603,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             </div>
             <div>
               <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                Total interest earned
+                Total interest
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400 sm:text-3xl">
                 {money(result.totalInterest, currency)}
@@ -494,264 +621,334 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
 
           <div className="mt-5 grid gap-3 border-t border-zinc-800 pt-4 text-sm sm:grid-cols-3">
             <div>
-              <p className="text-xs text-zinc-500">Yearly rate → compounded</p>
+              <p className="text-xs text-zinc-500">Yearly → compounded</p>
               <p className="mt-0.5 tabular-nums text-zinc-200">
                 {(result.nominalAnnualRate * 100).toFixed(2)}% →{" "}
                 {(result.effectiveAnnualRate * 100).toFixed(2)}%
               </p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">All-time rate of return</p>
+              <p className="text-xs text-zinc-500">All-time RoR</p>
               <p className="mt-0.5 inline-flex items-center gap-1 tabular-nums text-gain">
-                {(result.allTimeRoR * 100).toFixed(2)}%
+                {(result.allTimeRoR * 100).toFixed(1)}%
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Time to double (no contrib.)</p>
+              <p className="text-xs text-zinc-500">Time to double</p>
               <p className="mt-0.5 tabular-nums text-zinc-200">
                 {Number.isFinite(result.doubleYears)
-                  ? `${result.doubleYears} years, ${result.doubleMonths} months`
+                  ? `${result.doubleYears}y ${result.doubleMonths}m`
                   : "—"}
               </p>
             </div>
           </div>
-
-          {result.totalContributions !== 0 && (
-            <p className="mt-3 text-xs text-zinc-500">
-              Net contributions:{" "}
-              <span className="tabular-nums text-zinc-300">
-                {money(result.totalContributions, currency)}
-              </span>
-            </p>
-          )}
         </div>
 
-        <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Yearly breakdown
-            </p>
-            <div className="flex gap-1">
-              {(
-                [
-                  ["table", Table2],
-                  ["chart", BarChart3],
-                  ["summary", LayoutGrid],
-                  ["pie", PieChart],
-                ] as const
-              ).map(([id, Icon]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setView(id)}
-                  className={cn(
-                    "rounded-md p-1.5 transition",
-                    view === id
-                      ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-                  )}
-                  aria-label={id}
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              ))}
+        {/* 1 — Dual path */}
+        <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+          <h4 className="text-sm font-semibold text-white">
+            Your book vs the path
+          </h4>
+          <p className="mt-1 text-xs text-zinc-500">
+            Dashed = stay invested, no new deposits. Solid = your dialed path
+            {shock !== "none" ? " (with shock)" : ""}.
+          </p>
+          <div className="mt-4">
+            <DualPathChart
+              stay={staySeries}
+              active={activeSeries}
+              currency={currency}
+            />
+          </div>
+        </div>
+
+        {/* 2 — Milestone race */}
+        <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Target className="h-4 w-4 text-brand" />
+            <h4 className="text-sm font-semibold text-white">Milestone race</h4>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {[50_000, 100_000, 250_000, 500_000, 1_000_000].map((g) => (
+              <SegButton
+                key={g}
+                active={goal === g}
+                onClick={() => setGoal(g)}
+              >
+                {money(g, currency)}
+              </SegButton>
+            ))}
+          </div>
+          <label className="mt-3 block text-[11px] text-zinc-500">
+            Custom goal
+            <input
+              type="text"
+              inputMode="decimal"
+              value={goal}
+              onChange={(e) =>
+                setGoal(Number(e.target.value.replace(/[^\d.]/g, "")) || 0)
+              }
+              className="mt-1 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+            />
+          </label>
+          <div className="mt-4 flex flex-wrap items-center gap-5">
+            <div
+              className="relative grid h-24 w-24 place-items-center rounded-full"
+              style={{
+                background: `conic-gradient(var(--gain) ${Math.min(progress, 1) * 360}deg, #27272a 0)`,
+              }}
+            >
+              <div className="grid h-[4.5rem] w-[4.5rem] place-items-center rounded-full bg-[#161618] text-center">
+                <span className="text-sm font-semibold tabular-nums text-white">
+                  {Math.min(progress * 100, 999).toFixed(0)}%
+                </span>
+              </div>
+            </div>
+            <div className="text-sm text-zinc-300">
+              <p>
+                End of horizon:{" "}
+                <span className="font-semibold text-white">
+                  {money(result.futureValue, currency)}
+                </span>
+                {" / "}
+                {money(goal, currency)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                {goalYear != null
+                  ? `Hits goal in year ${goalYear} on this path.`
+                  : etaYears != null
+                    ? `At this pace, roughly ${etaYears} years to the goal.`
+                    : "Won’t reach this goal in the current horizon — extend years or dial deposits."}
+              </p>
             </div>
           </div>
+        </div>
 
-          {view === "table" && (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[32rem] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
-                    <th className="px-4 py-2.5 font-medium">Year</th>
-                    <th className="px-4 py-2.5 font-medium">Interest</th>
-                    <th className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300">
-                      Accrued interest
-                    </th>
-                    <th className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300">
-                      Balance
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayRows.map((row, i) => {
-                    const isLast = i === displayRows.length - 1;
-                    return (
-                      <tr
-                        key={`${row.label}-${row.index}`}
-                        className="border-b border-zinc-800/80 hover:bg-zinc-900/40"
-                      >
-                        <td className="px-4 py-2 tabular-nums text-zinc-300">
-                          {row.index}
-                        </td>
-                        <td className="px-4 py-2 tabular-nums text-zinc-300">
-                          {row.index === 0
-                            ? "—"
-                            : money(row.interest, currency)}
-                        </td>
-                        <td
-                          className={cn(
-                            "px-4 py-2 tabular-nums",
-                            isLast
-                              ? "bg-orange-500/20 font-semibold text-orange-300"
-                              : "text-zinc-300"
-                          )}
-                        >
-                          {row.index === 0
-                            ? "—"
-                            : money(row.accruedInterest, currency)}
-                        </td>
-                        <td
-                          className={cn(
-                            "px-4 py-2 tabular-nums",
-                            isLast
-                              ? "bg-emerald-500/20 font-semibold text-gain"
-                              : "text-zinc-100"
-                          )}
-                        >
-                          {money(row.balance, currency)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {view === "chart" && (
-            <div className="px-4 py-5">
-              <svg
-                viewBox="0 0 640 220"
-                className="h-auto w-full"
-                role="img"
-                aria-label="Balance growth chart"
+        {/* 3 — Year-flip story cards */}
+        <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+          <h4 className="text-sm font-semibold text-white">Year-flip stories</h4>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {storyOpts.map((y, i) => (
+              <SegButton
+                key={y}
+                active={storyIdx === i}
+                onClick={() => setStoryIdx(i)}
               >
-                <defs>
-                  <linearGradient id="ciFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#34d399" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                {(() => {
-                  const pts = result.yearly;
-                  if (pts.length < 2) return null;
-                  const w = 640;
-                  const h = 200;
-                  const pad = 16;
-                  const coords = pts.map((p, i) => {
-                    const x =
-                      pad + (i / (pts.length - 1)) * (w - pad * 2);
-                    const y =
-                      h - pad - (p.balance / chartMax) * (h - pad * 2);
-                    return `${x},${y}`;
-                  });
-                  const line = coords.join(" ");
-                  const area = `${pad},${h - pad} ${line} ${w - pad},${h - pad}`;
-                  return (
-                    <>
-                      <polygon points={area} fill="url(#ciFill)" />
-                      <polyline
-                        points={line}
-                        fill="none"
-                        stroke="#34d399"
-                        strokeWidth="2.5"
-                      />
-                    </>
-                  );
-                })()}
-              </svg>
-              <p className="mt-2 text-center text-xs text-zinc-500">
-                Balance over {durationLabel}
+                Year {y}
+              </SegButton>
+            ))}
+          </div>
+          {storyRow && (
+            <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+              <p className="text-xs uppercase tracking-wide text-zinc-500">
+                Year {storyRow.index}
+              </p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+                {money(storyRow.balance, currency)}
+              </p>
+              <p className="mt-2 text-sm text-zinc-400">
+                {storyRow.index === 0
+                  ? "Starting line — nothing compounded yet."
+                  : storyRow.interest > storyRow.contributions &&
+                      storyRow.contributions > 0
+                    ? `Interest this year (${money(storyRow.interest, currency)}) beats deposits (${money(storyRow.contributions, currency)}). Money is working harder than you.`
+                    : `Interest earned this year: ${money(storyRow.interest, currency)}. Accrued interest: ${money(storyRow.accruedInterest, currency)}.`}
               </p>
             </div>
           )}
+        </div>
 
-          {view === "summary" && (
-            <div className="grid gap-3 p-4 sm:grid-cols-2">
-              {[
-                ["Ending balance", money(result.futureValue, currency)],
-                ["Interest earned", money(result.totalInterest, currency)],
-                ["Starting principal", money(result.principal, currency)],
-                [
-                  "Net contributions",
-                  money(result.totalContributions, currency),
-                ],
-                [
-                  "Effective annual rate",
-                  `${(result.effectiveAnnualRate * 100).toFixed(2)}%`,
-                ],
-                [
-                  "All-time RoR",
-                  `${(result.allTimeRoR * 100).toFixed(2)}%`,
-                ],
-              ].map(([label, value]) => (
-                <div
-                  key={label}
-                  className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-3"
+        {/* 5 — Lazy vs Upside */}
+        <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-brand" />
+            <h4 className="text-sm font-semibold text-white">
+              Lazy vs Upside
+            </h4>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            Same principal & horizon — not advice, just contrast.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {compare.map((s) => (
+              <div
+                key={s.id}
+                className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3"
+                style={{ borderTopColor: s.color, borderTopWidth: 2 }}
+              >
+                <p className="text-sm font-semibold text-white">{s.label}</p>
+                <p className="text-[11px] text-zinc-500">{s.tagline}</p>
+                <p
+                  className="mt-3 text-xl font-bold tabular-nums"
+                  style={{ color: s.color }}
                 >
-                  <p className="text-xs text-zinc-500">{label}</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums text-white">
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
+                  {money(s.result.futureValue, currency)}
+                </p>
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  Interest {money(s.result.totalInterest, currency)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {view === "pie" && (
-            <div className="flex flex-col items-center gap-4 px-4 py-6 sm:flex-row sm:justify-center">
-              {(() => {
-                const interest = Math.max(0, result.totalInterest);
-                const contrib = Math.max(0, result.totalContributions);
-                const prin = Math.max(0, result.principal);
-                const total = interest + contrib + prin || 1;
-                const a1 = (prin / total) * 360;
-                const a2 = a1 + (contrib / total) * 360;
-                const toXY = (deg: number) => {
-                  const rad = ((deg - 90) * Math.PI) / 180;
-                  return [100 + 80 * Math.cos(rad), 100 + 80 * Math.sin(rad)];
-                };
-                const arc = (start: number, end: number, color: string) => {
-                  if (end - start < 0.01) return null;
-                  const [x1, y1] = toXY(start);
-                  const [x2, y2] = toXY(end);
-                  const large = end - start > 180 ? 1 : 0;
+        {/* 8 — Margus narrative */}
+        <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-brand" />
+            <h4 className="text-sm font-semibold text-white">
+              Explain like I’m impatient
+            </h4>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {narrative.map((line) => (
+              <li
+                key={line}
+                className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 px-3 py-2 text-sm leading-relaxed text-zinc-300"
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Yearly table */}
+        <div className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/80">
+          <div className="border-b border-zinc-800 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Yearly breakdown
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
+                  <th className="px-4 py-2.5 font-medium">Year</th>
+                  <th className="px-4 py-2.5 font-medium">Interest</th>
+                  <th className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300">
+                    Accrued interest
+                  </th>
+                  <th className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300">
+                    Balance
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.yearly.map((row, i) => {
+                  const isLast = i === result.yearly.length - 1;
                   return (
-                    <path
-                      key={color}
-                      d={`M 100 100 L ${x1} ${y1} A 80 80 0 ${large} 1 ${x2} ${y2} Z`}
-                      fill={color}
-                    />
+                    <tr
+                      key={row.index}
+                      className="border-b border-zinc-800/80 hover:bg-zinc-900/40"
+                    >
+                      <td className="px-4 py-2 tabular-nums text-zinc-300">
+                        {row.index}
+                      </td>
+                      <td className="px-4 py-2 tabular-nums text-zinc-300">
+                        {row.index === 0
+                          ? "—"
+                          : money(row.interest, currency, 2)}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-4 py-2 tabular-nums",
+                          isLast
+                            ? "bg-orange-500/20 font-semibold text-orange-300"
+                            : "text-zinc-300"
+                        )}
+                      >
+                        {row.index === 0
+                          ? "—"
+                          : money(row.accruedInterest, currency, 2)}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-4 py-2 tabular-nums",
+                          isLast
+                            ? "bg-emerald-500/20 font-semibold text-gain"
+                            : "text-zinc-100"
+                        )}
+                      >
+                        {money(row.balance, currency, 2)}
+                      </td>
+                    </tr>
                   );
-                };
+                })}
+              </tbody>
+            </table>
+          </div>
+          {/* Mini area chart */}
+          <div className="border-t border-zinc-800 px-4 py-4">
+            <svg
+              viewBox="0 0 640 120"
+              className="h-auto w-full"
+              aria-hidden
+            >
+              <defs>
+                <linearGradient id="ciFill2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#34d399" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {(() => {
+                const pts = result.yearly;
+                if (pts.length < 2) return null;
+                const w = 640;
+                const h = 110;
+                const pad = 8;
+                const coords = pts.map((p, i) => {
+                  const x = pad + (i / (pts.length - 1)) * (w - pad * 2);
+                  const y = h - pad - (p.balance / chartMax) * (h - pad * 2);
+                  return `${x},${y}`;
+                });
+                const line = coords.join(" ");
+                const area = `${pad},${h - pad} ${line} ${w - pad},${h - pad}`;
                 return (
                   <>
-                    <svg viewBox="0 0 200 200" className="h-44 w-44">
-                      {arc(0, a1, "#38bdf8")}
-                      {arc(a1, a2, "#c5a059")}
-                      {arc(a2, 360, "#fb923c")}
-                    </svg>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2 text-zinc-300">
-                        <span className="h-2.5 w-2.5 rounded-full bg-sky-400" />
-                        Principal {money(prin, currency)}
-                      </li>
-                      <li className="flex items-center gap-2 text-zinc-300">
-                        <span className="h-2.5 w-2.5 rounded-full bg-brand" />
-                        Contributions {money(contrib, currency)}
-                      </li>
-                      <li className="flex items-center gap-2 text-zinc-300">
-                        <span className="h-2.5 w-2.5 rounded-full bg-orange-400" />
-                        Interest {money(interest, currency)}
-                      </li>
-                    </ul>
+                    <polygon points={area} fill="url(#ciFill2)" />
+                    <polyline
+                      points={line}
+                      fill="none"
+                      stroke="#34d399"
+                      strokeWidth="2"
+                    />
                   </>
                 );
               })()}
+            </svg>
+          </div>
+        </div>
+
+        {/* 6 — Postcard preview */}
+        <div className="rounded-xl border border-brand/30 bg-gradient-to-br from-brand/10 via-[#161618] to-[#161618] p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-brand" />
+              <h4 className="text-sm font-semibold text-white">
+                Compound postcard
+              </h4>
             </div>
-          )}
+            <button
+              type="button"
+              onClick={() => void copyPostcard()}
+              className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
+            >
+              {copied ? "Copied ✓" : "Copy share text"}
+            </button>
+          </div>
+          <p className="mt-4 text-lg font-semibold tracking-tight text-white sm:text-xl">
+            {money(result.principal, currency)} →{" "}
+            {money(result.futureValue, currency)}{" "}
+            <span className="text-zinc-500">in {durationLabel}</span>
+          </p>
+          <p className="mt-2 text-sm text-zinc-400">
+            Interest {money(result.totalInterest, currency)} ·{" "}
+            {(result.allTimeRoR * 100).toFixed(0)}% all-time RoR
+            {draft.depositAmount > 0
+              ? ` · +${money(draft.depositAmount, currency)}/mo`
+              : ""}
+          </p>
         </div>
       </section>
     </div>
