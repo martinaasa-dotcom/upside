@@ -1,4 +1,4 @@
-import { requireOwnerPin } from "@/lib/owner-pin";
+import { requireOwnerAccess } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker } from "@/lib/ticker";
@@ -7,23 +7,23 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const denied = requireOwnerPin(req);
-  if (denied) return denied;
-
-  const supabase = getSupabaseServer();
-  if (!supabase) {
-    return NextResponse.json(
-      { error: "Supabase not configured — use local demo store" },
-      { status: 400 }
-    );
-  }
-
   const body = await req.json();
   const portfolioId = body.portfolio_id as string;
   const ticker = normalizeYahooTicker(String(body.ticker ?? ""));
   if (!portfolioId || !ticker) {
     return NextResponse.json(
       { error: "portfolio_id and ticker required" },
+      { status: 400 }
+    );
+  }
+
+  const denied = await requireOwnerAccess(req, portfolioId);
+  if (denied) return denied;
+
+  const supabase = getSupabaseServer();
+  if (!supabase) {
+    return NextResponse.json(
+      { error: "Supabase not configured — use local demo store" },
       { status: 400 }
     );
   }
@@ -56,8 +56,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const denied = requireOwnerPin(req);
-  if (denied) return denied;
+  const body = await req.json();
+  const id = body.id as string;
+  if (!id) {
+    return NextResponse.json({ error: "id required" }, { status: 400 });
+  }
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -67,11 +70,19 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const body = await req.json();
-  const id = body.id as string;
-  if (!id) {
-    return NextResponse.json({ error: "id required" }, { status: 400 });
-  }
+  const { data: existing } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("portfolio_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  const denied = await requireOwnerAccess(
+    req,
+    (existing as { portfolio_id?: string } | null)?.portfolio_id ??
+      (body.portfolio_id as string | undefined) ??
+      null
+  );
+  if (denied) return denied;
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of [
@@ -108,8 +119,10 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = requireOwnerPin(req);
-  if (denied) return denied;
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "id required" }, { status: 400 });
+  }
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -119,10 +132,17 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "id required" }, { status: 400 });
-  }
+  const { data: existing } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("portfolio_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  const denied = await requireOwnerAccess(
+    req,
+    (existing as { portfolio_id?: string } | null)?.portfolio_id ?? null
+  );
+  if (denied) return denied;
 
   const { error } = await supabase
     .from(PORTFELL_TABLES.holdings)

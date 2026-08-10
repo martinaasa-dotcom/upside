@@ -1,17 +1,29 @@
 "use client";
 
-import { OWNER_PIN_HEADER, setSessionPin } from "@/lib/owner-pin-client";
+import { OWNER_PIN_HEADER, OWNER_PORTFOLIO_HEADER, setSessionPin } from "@/lib/owner-pin-client";
 import { Lock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** Called with the verified PIN (also stored in sessionStorage). */
+  /** Called with the verified PIN/password (also stored in sessionStorage). */
   onUnlocked: (pin: string) => void;
+  /** When set, sheet-specific PIN/password is also accepted. */
+  portfolioId?: string | null;
+  portfolioName?: string | null;
+  /** Sheet already has a custom secret (not book default). */
+  hasSheetSecret?: boolean;
 };
 
-export function OwnerUnlockModal({ open, onClose, onUnlocked }: Props) {
+export function OwnerUnlockModal({
+  open,
+  onClose,
+  onUnlocked,
+  portfolioId,
+  portfolioName,
+  hasSheetSecret,
+}: Props) {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,20 +41,28 @@ export function OwnerUnlockModal({ open, onClose, onUnlocked }: Props) {
   async function unlock() {
     const value = pin.trim();
     if (!value) {
-      setError("Enter owner PIN");
+      setError("Enter a PIN or password");
       return;
     }
     setBusy(true);
     setError(null);
     try {
+      const headers: Record<string, string> = {
+        [OWNER_PIN_HEADER]: value,
+        "Content-Type": "application/json",
+      };
+      if (portfolioId) headers[OWNER_PORTFOLIO_HEADER] = portfolioId;
       const res = await fetch("/api/owner/verify", {
         method: "POST",
-        headers: { [OWNER_PIN_HEADER]: value },
+        headers,
+        body: JSON.stringify({ portfolioId: portfolioId || undefined }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          typeof data.error === "string" ? data.error : "Invalid owner PIN"
+          typeof data.error === "string"
+            ? data.error
+            : "Invalid PIN or password"
         );
       }
       setSessionPin(value);
@@ -54,6 +74,8 @@ export function OwnerUnlockModal({ open, onClose, onUnlocked }: Props) {
       setBusy(false);
     }
   }
+
+  const sheetLabel = portfolioName?.trim() || "this sheet";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -77,16 +99,34 @@ export function OwnerUnlockModal({ open, onClose, onUnlocked }: Props) {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="text-sm text-zinc-400">
-          Shared book writes need the owner PIN. It stays in this tab’s session
-          until you close the tab.
-        </p>
+        <div className="space-y-2 text-sm text-zinc-400">
+          <p>
+            Enter a <span className="text-zinc-200">PIN or password</span> —
+            either works. Numeric PIN and longer password are both fine.
+          </p>
+          <p>
+            <span className="text-zinc-200">Book default</span> unlocks every
+            sheet.{" "}
+            {portfolioId ? (
+              <>
+                <span className="text-zinc-200">{sheetLabel}</span>{" "}
+                {hasSheetSecret
+                  ? "also has its own sheet PIN/password."
+                  : "uses the book default until you set a sheet-specific one."}
+              </>
+            ) : (
+              <>Sheet-specific secrets can be set from More → Sheet PIN.</>
+            )}
+          </p>
+          <p className="text-xs text-zinc-500">
+            Stays in this tab’s session until you close the tab.
+          </p>
+        </div>
         <label className="mt-4 block text-xs font-medium text-zinc-400">
-          Owner PIN
+          PIN or password
           <input
             type="password"
-            inputMode="numeric"
-            autoComplete="off"
+            autoComplete="current-password"
             autoFocus
             value={pin}
             onChange={(e) => setPin(e.target.value)}
@@ -94,7 +134,7 @@ export function OwnerUnlockModal({ open, onClose, onUnlocked }: Props) {
               if (e.key === "Enter") void unlock();
             }}
             className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            placeholder="••••••"
+            placeholder="PIN or password"
           />
         </label>
         {error && <p className="mt-2 text-sm text-rose-400">{error}</p>}

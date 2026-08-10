@@ -18,7 +18,7 @@ import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { isForecastFullyCovered } from "@/lib/forecast";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   model: ForecastModel;
@@ -163,8 +163,10 @@ export function ForecastPanel({
   const reappliedRef = useRef<string>("");
   const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
+  const [planHydrated, setPlanHydrated] = useState(false);
 
   useEffect(() => {
+    setPlanHydrated(false);
     const loaded = loadForecastPlan(portfolioId);
     setPlan(loaded);
     if (loaded?.stance) setStance(loaded.stance);
@@ -173,6 +175,7 @@ export function ForecastPanel({
     autoKeyRef.current = "";
     reappliedRef.current = "";
     calibrateKeyRef.current = "";
+    setPlanHydrated(true);
   }, [portfolioId]);
 
   async function askMargus(opts?: {
@@ -270,22 +273,24 @@ export function ForecastPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
   }, [portfolioId, holdingsKey, flatCount, plan]);
 
-  // Auto-reason only: first time, new ticker(s), or weekly refresh.
-  useEffect(() => {
-    if (model.rows.length === 0) return;
-    if (busy || askInFlight.current) return;
+  // Never auto-call the LLM on page open. Re-apply / calibrate locally only.
+  // User must hit Refresh Margus forecast (first run, new tickers, or weekly).
+  const autoHint = useMemo(() => {
+    if (!planHydrated || model.rows.length === 0) return null;
     const decision = shouldAutoRefreshForecast({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
     });
-    if (!decision.run) return;
-    const key = `${portfolioId}:${holdingsKey}:${decision.reason}`;
-    if (autoKeyRef.current === key) return;
-    autoKeyRef.current = key;
-    void askMargus({ auto: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberate auto policy
-  }, [portfolioId, holdingsKey, fullyCovered, plan?.generatedAt, plan?.holdingsKey]);
+    if (!decision.run) return null;
+    if (decision.reason === "first-run") {
+      return "No Margus plan yet — hit Refresh when you want him to reason.";
+    }
+    if (decision.reason === "new-holdings") {
+      return "Holdings changed since last plan — Refresh to re-reason.";
+    }
+    return "Plan is ~7 days old — Refresh when you want an update.";
+  }, [planHydrated, model.rows, plan, fullyCovered]);
 
   function reapplyPlanPrices() {
     if (!plan) return;
@@ -309,10 +314,13 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Paths are saved. Margus auto-refreshes only for new tickers or
-              about once a week — otherwise use Refresh.
+              Paths are saved locally. Margus never auto-reasons on open — pick a
+              stance and hit Refresh when you want a new plan.
             </p>
-            {flatCount > 0 && !busy && !plan && (
+            {autoHint && !busy && (
+              <p className="mt-1 text-[11px] text-amber-200/80">{autoHint}</p>
+            )}
+            {flatCount > 0 && !busy && !plan && !autoHint && (
               <p className="mt-1 text-[11px] text-amber-200/80">
                 No saved forecast yet — run Margus once to lock prices in.
               </p>
@@ -510,8 +518,8 @@ export function ForecastPanel({
               Margus plan · themes / trim / add / EOY path
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Pick a stance, then Refresh to re-reason. Saved plans stay until
-              holdings change or ~7 days pass.
+              Pick a stance, then Refresh when you want Margus to reason. He
+              never starts on his own when you open the site.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">

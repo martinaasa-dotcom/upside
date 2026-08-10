@@ -61,6 +61,7 @@ import {
   setConviction,
 } from "@/lib/conviction";
 import { OwnerUnlockModal } from "@/components/OwnerUnlockModal";
+import { SheetSecretModal } from "@/components/SheetSecretModal";
 import {
   getSessionPin,
   loadActiveSheetId,
@@ -205,6 +206,7 @@ export function Dashboard() {
   >(null);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [sheetSecretOpen, setSheetSecretOpen] = useState(false);
   const [bookUnlocked, setBookUnlocked] = useState(false);
   const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
@@ -793,7 +795,8 @@ export function Dashboard() {
       pin || undefined,
       {
         ...(init?.headers as Record<string, string> | undefined),
-      }
+      },
+      activePortfolio?.id ?? null
     );
     if (init?.body && !headers["Content-Type"] && !headers["content-type"]) {
       headers["Content-Type"] = "application/json";
@@ -1780,6 +1783,15 @@ export function Dashboard() {
         label: "Snapshots",
         onSelect: () => setSnapshotsOpen(true),
       });
+      if (!isMetaTab && activePortfolio) {
+        items.push({
+          id: "sheet-pin",
+          label: activePortfolio.has_access_secret
+            ? "Change sheet PIN / password"
+            : "Set sheet PIN / password",
+          onSelect: () => setSheetSecretOpen(true),
+        });
+      }
     }
     if (!isMetaTab) {
       items.push({
@@ -1817,6 +1829,8 @@ export function Dashboard() {
     forecastVisible,
     saveFlash,
     locked,
+    activePortfolio?.id,
+    activePortfolio?.has_access_secret,
   ]);
 
   const syntheticTickers = useMemo(() => {
@@ -1900,8 +1914,8 @@ export function Dashboard() {
                 }`}
                 title={
                   bookUnlocked
-                    ? "Book unlocked for edits this session"
-                    : "Unlock shared book edits with owner PIN"
+                    ? "Edits unlocked for this tab"
+                    : "Unlock with PIN or password (book default or this sheet’s)"
                 }
               >
                 <Lock className="h-3.5 w-3.5" />
@@ -2297,14 +2311,37 @@ export function Dashboard() {
       <OwnerUnlockModal
         open={unlockOpen}
         onClose={() => setUnlockOpen(false)}
+        portfolioId={activePortfolio?.id ?? null}
+        portfolioName={activePortfolio?.name ?? null}
+        hasSheetSecret={Boolean(activePortfolio?.has_access_secret)}
         onUnlocked={() => {
           setBookUnlocked(true);
-          toast("Book unlocked for this tab", "success");
+          toast("Unlocked for this tab", "success");
           const pending = pendingPatchRef.current;
           pendingPatchRef.current = null;
           if (pending) void handlePatch(pending);
         }}
       />
+
+      {activePortfolio && (
+        <SheetSecretModal
+          open={sheetSecretOpen}
+          portfolioId={activePortfolio.id}
+          portfolioName={activePortfolio.name}
+          hasSheetSecret={Boolean(activePortfolio.has_access_secret)}
+          onClose={() => setSheetSecretOpen(false)}
+          onChanged={(has) => {
+            setPortfolios((prev) =>
+              prev.map((p) =>
+                p.id === activePortfolio.id
+                  ? { ...p, has_access_secret: has }
+                  : p
+              )
+            );
+            setBookUnlocked(true);
+          }}
+        />
+      )}
 
       <CommandPalette
         open={cmdOpen}

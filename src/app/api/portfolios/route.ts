@@ -1,6 +1,6 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { saveBookSnapshot } from "@/lib/book-snapshot";
-import { requireOwnerPin } from "@/lib/owner-pin";
+import { requireOwnerAccess, requireOwnerPin } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -45,12 +45,20 @@ export async function GET() {
 
   return NextResponse.json({
     source: "supabase",
-    portfolios: portfolios ?? [],
+    portfolios: (portfolios ?? []).map((p) => {
+      const row = p as Record<string, unknown>;
+      const { access_secret_hash: _hash, ...rest } = row;
+      return {
+        ...rest,
+        has_access_secret: Boolean(_hash),
+      };
+    }),
     holdings: holdings ?? [],
   });
 }
 
 export async function POST(req: NextRequest) {
+  // Creating a sheet requires the book default secret
   const denied = requireOwnerPin(req);
   if (denied) return denied;
 
@@ -90,7 +98,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const denied = requireOwnerPin(req);
+  const body = await req.json();
+  const id = body.id as string;
+  if (!id) {
+    return NextResponse.json({ error: "id required" }, { status: 400 });
+  }
+
+  const denied = await requireOwnerAccess(req, id);
   if (denied) return denied;
 
   const supabase = getSupabaseServer();
@@ -99,12 +113,6 @@ export async function PATCH(req: NextRequest) {
       { error: "Supabase not configured" },
       { status: 400 }
     );
-  }
-
-  const body = await req.json();
-  const id = body.id as string;
-  if (!id) {
-    return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
   const patch: Record<string, unknown> = {
@@ -119,17 +127,26 @@ export async function PATCH(req: NextRequest) {
     .from(PORTFELL_TABLES.portfolios)
     .update(patch)
     .eq("id", id)
-    .select()
+    .select("id, name, slug, sort_order, cash_balance, created_at, updated_at, access_secret_hash")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ portfolio: data });
+  const row = data as Record<string, unknown>;
+  const { access_secret_hash: hash, ...rest } = row;
+  return NextResponse.json({
+    portfolio: { ...rest, has_access_secret: Boolean(hash) },
+  });
 }
 
 export async function DELETE(req: NextRequest) {
-  const denied = requireOwnerPin(req);
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "id required" }, { status: 400 });
+  }
+
+  const denied = await requireOwnerAccess(req, id);
   if (denied) return denied;
 
   const supabase = getSupabaseServer();
@@ -138,11 +155,6 @@ export async function DELETE(req: NextRequest) {
       { error: "Supabase not configured" },
       { status: 400 }
     );
-  }
-
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) {
-    return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
   try {
