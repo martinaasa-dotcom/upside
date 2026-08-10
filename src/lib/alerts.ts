@@ -1,4 +1,4 @@
-/** Client alerts: earnings, strike breach, goal. */
+/** Client alerts: earnings, strike breach, goal, decision cards. */
 
 export type UpsideAlert = {
   id: string;
@@ -56,6 +56,40 @@ export function buildEarningsAlerts(
       ticker: e.ticker,
       at: Date.now(),
     }));
+}
+
+/** Extra decision cards: margin, concentration. */
+export function buildDecisionAlerts(input: {
+  cash: number;
+  equityValue: number;
+  topTicker?: { ticker: string; value: number } | null;
+}): UpsideAlert[] {
+  const out: UpsideAlert[] = [];
+  if (input.cash < -500) {
+    out.push({
+      id: "decision-margin",
+      kind: "info",
+      title: "Margin in play",
+      detail: `Cash ${input.cash.toFixed(0)} — keep leverage intentional (~30% ceiling).`,
+      at: Date.now(),
+    });
+  }
+  if (
+    input.topTicker &&
+    input.equityValue > 0 &&
+    input.topTicker.value / input.equityValue >= 0.35
+  ) {
+    const share = (input.topTicker.value / input.equityValue) * 100;
+    out.push({
+      id: `decision-conc-${input.topTicker.ticker}`,
+      kind: "info",
+      title: `${input.topTicker.ticker} is ${share.toFixed(0)}% of equity`,
+      detail: "Know the blast radius if the thesis hiccups.",
+      ticker: input.topTicker.ticker,
+      at: Date.now(),
+    });
+  }
+  return out;
 }
 
 export function buildGoalAlert(

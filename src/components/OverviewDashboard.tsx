@@ -7,16 +7,27 @@ import {
   signedCurrency,
   cn,
 } from "@/lib/format";
+import { buildInvestorBriefing } from "@/lib/investor-briefing";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
+import type { CashflowEntry } from "@/lib/cashflow";
+import type { CoveredCallRow } from "@/lib/types";
 import {
   calendarDaysBetweenKeys,
   formatRelativeDays,
   todayKeyInTz,
 } from "@/lib/timezone";
 import {
+  captureVisitSnapshot,
+  diffSinceLastVisit,
+  loadVisitSnapshot,
+  saveVisitSnapshot,
+  type VisitDiff,
+} from "@/lib/visit-diff";
+import {
   CalendarDays,
   Flame,
   Lightbulb,
+  Radar,
   Snowflake,
   TrendingDown,
   TrendingUp,
@@ -30,6 +41,9 @@ type EarningsEvent = { ticker: string; date: string; days: number };
 type Props = {
   model: OverviewModel;
   onOpenSheet: (portfolioId: string) => void;
+  coveredCallRows?: CoveredCallRow[];
+  cashflows?: CashflowEntry[];
+  onOpenLab?: () => void;
 };
 
 function tone(value: number) {
@@ -176,7 +190,13 @@ function PortfolioLane({
   );
 }
 
-export function OverviewDashboard({ model, onOpenSheet }: Props) {
+export function OverviewDashboard({
+  model,
+  onOpenSheet,
+  coveredCallRows = [],
+  cashflows = [],
+  onOpenLab,
+}: Props) {
   const {
     totals,
     sheets,
@@ -192,6 +212,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
   const dayUp = (totals.todayDollar ?? 0) >= 0;
   const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
   const [tickerQuery, setTickerQuery] = useState("");
+  const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
 
   const attention = tickers.filter(
     (t) => t.todayPct == null || Math.abs(t.roiPct) < 0.001
@@ -222,6 +243,15 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
     };
   }, [tickerKey]);
 
+  useEffect(() => {
+    if (!model.tickers.length) return;
+    const prev = loadVisitSnapshot();
+    if (prev) setVisitDiff(diffSinceLastVisit(prev, model));
+    saveVisitSnapshot(captureVisitSnapshot(model));
+    // Only on first meaningful load / ticker set change — not every quote tick
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickerKey]);
+
   const upcomingEarnings = useMemo(() => {
     if (!earnings) return null;
     const today = todayKeyInTz();
@@ -233,6 +263,17 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       .filter((e) => e.days >= 0 && e.days <= 90)
       .sort((a, b) => a.days - b.days || a.ticker.localeCompare(b.ticker));
   }, [earnings]);
+
+  const briefing = useMemo(
+    () =>
+      buildInvestorBriefing({
+        model,
+        earnings: upcomingEarnings ?? [],
+        coveredCallRows,
+        cashflows,
+      }),
+    [model, upcomingEarnings, coveredCallRows, cashflows]
+  );
 
   function openFirstPortfolio(t: TickerScore) {
     const id = t.portfolioIds[0];
@@ -392,6 +433,92 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
           ))}
         </div>
       </section>
+
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+              <Radar className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">
+                Today’s briefing
+              </h3>
+              <p className="mt-1 text-base text-zinc-400">
+                Actions · watches · one play · Tallinn day
+              </p>
+            </div>
+          </div>
+          {onOpenLab && (
+            <button
+              type="button"
+              onClick={onOpenLab}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-brand/40 hover:text-brand-bright"
+            >
+              Open Lab
+            </button>
+          )}
+        </div>
+        <ul className="space-y-2.5">
+          {briefing.map((b) => (
+            <li
+              key={b.id}
+              className={cn(
+                "rounded-2xl border px-4 py-3.5",
+                b.kind === "action"
+                  ? "border-amber-500/30 bg-amber-500/[0.07]"
+                  : b.kind === "play"
+                    ? "border-brand/30 bg-brand/10"
+                    : "border-zinc-800/80 bg-zinc-900/40"
+              )}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                {b.kind}
+                {b.ticker ? ` · ${b.ticker}` : ""}
+              </p>
+              <p className="mt-1 text-base font-medium text-white">{b.title}</p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                {b.detail}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {visitDiff && (
+        <section className="overview-fade rounded-3xl border border-zinc-800/80 bg-[#161618]/60 p-6 sm:p-7">
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold text-white">
+              Since last open
+            </h3>
+            <p className="mt-1 text-sm text-zinc-500">
+              Snapshot from{" "}
+              {new Date(visitDiff.previousAt).toLocaleString("en-GB", {
+                timeZone: "Europe/Tallinn",
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </p>
+          </div>
+          <ul className="space-y-2">
+            {visitDiff.lines.map((line) => (
+              <li
+                key={line.id}
+                className={cn(
+                  "rounded-xl border border-zinc-800/70 px-3 py-2.5 text-sm",
+                  line.tone === "up"
+                    ? "text-gain"
+                    : line.tone === "down"
+                      ? "text-loss"
+                      : "text-zinc-300"
+                )}
+              >
+                {line.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
         <div className="mb-5">

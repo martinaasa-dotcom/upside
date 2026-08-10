@@ -3,6 +3,7 @@
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { allocationBySector, allocationByTicker } from "@/lib/allocation";
 import {
+  buildDecisionAlerts,
   buildEarningsAlerts,
   buildStrikeAlerts,
   type UpsideAlert,
@@ -21,12 +22,19 @@ import {
   trailingIncome,
   type CashflowEntry,
 } from "@/lib/cashflow";
+import { buildCcSeason } from "@/lib/cc-season";
 import {
   correlationGrid,
   correlationMatrix,
 } from "@/lib/correlation";
 import { currency, percent, cn } from "@/lib/format";
 import type { LabBundle } from "@/lib/lab-bundle";
+import {
+  arenaChallengeProgress,
+  loadArenaChallenge,
+  startDailyArenaChallenge,
+  type ArenaChallenge,
+} from "@/lib/arena-challenge";
 import {
   arenaBuy,
   arenaSell,
@@ -36,11 +44,9 @@ import {
   setArenaCash,
 } from "@/lib/paper-arena";
 import {
-  addJournalEntry,
-  removeJournalEntry,
-  whatIfHeld,
-  type JournalEntry,
-} from "@/lib/trade-journal";
+  buildSheetRivalry,
+  rivalryTagline,
+} from "@/lib/sheet-rivalry";
 import { buildWeeklyRecap } from "@/lib/weekly-recap";
 import type { OverviewModel } from "@/lib/overview";
 import type { CoveredCallRow, Holding, Portfolio, Quote } from "@/lib/types";
@@ -48,8 +54,8 @@ import {
   CalendarDays,
   Copy,
   FlaskConical,
-  Swords,
   Target,
+  Trophy,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -75,9 +81,9 @@ type LabTab =
   | "shock"
   | "corr"
   | "calendar"
+  | "season"
   | "cashflow"
   | "arena"
-  | "journal"
   | "recap"
   | "alerts";
 
@@ -94,9 +100,9 @@ const TABS: { id: LabTab; group: LabGroup; label: string }[] = [
   { id: "shock", group: "book", label: "Shock" },
   { id: "corr", group: "book", label: "Correlation" },
   { id: "calendar", group: "income", label: "CC calendar" },
+  { id: "season", group: "income", label: "CC season" },
   { id: "cashflow", group: "income", label: "Cashflow" },
   { id: "arena", group: "trade", label: "Arena" },
-  { id: "journal", group: "trade", label: "Journal" },
   { id: "recap", group: "digest", label: "Weekly recap" },
   { id: "alerts", group: "digest", label: "Alerts" },
 ];
@@ -119,20 +125,10 @@ export function LabSheet({
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
-  const [versusA, setVersusA] = useState(portfolios[0]?.id ?? "");
-  const [versusB, setVersusB] = useState(
-    portfolios[1]?.id ?? portfolios[0]?.id ?? ""
-  );
   const arena = lab.arena;
-  const journal = lab.journal;
   const cashflows = lab.cashflows;
   const badges = lab.badges ?? [];
   const [copied, setCopied] = useState(false);
-  const [jSide, setJSide] = useState<JournalEntry["side"]>("sell");
-  const [jTicker, setJTicker] = useState("");
-  const [jNote, setJNote] = useState("");
-  const [jShares, setJShares] = useState(0);
-  const [jPrice, setJPrice] = useState(0);
   const [cfAmount, setCfAmount] = useState(0);
   const [cfNote, setCfNote] = useState("");
   const [cfTicker, setCfTicker] = useState("");
@@ -142,16 +138,19 @@ export function LabSheet({
   const [aPrice, setAPrice] = useState(0);
   const [aCash, setACash] = useState(arena.cash);
   const [arenaMsg, setArenaMsg] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState<ArenaChallenge | null>(null);
 
   useEffect(() => {
-    if (!versusA && portfolios[0]) setVersusA(portfolios[0].id);
-    if (!versusB && portfolios[1]) setVersusB(portfolios[1].id);
     if (!cloneSheetId && portfolios[0]) setCloneSheetId(portfolios[0].id);
-  }, [portfolios, versusA, versusB, cloneSheetId]);
+  }, [portfolios, cloneSheetId]);
 
   useEffect(() => {
     setACash(arena.cash);
   }, [arena.cash, arena.updatedAt]);
+
+  useEffect(() => {
+    setChallenge(loadArenaChallenge());
+  }, [arena.updatedAt]);
 
   const groupTabs = TABS.filter((t) => t.group === group);
 
@@ -252,10 +251,20 @@ export function LabSheet({
         nextStrike: r.nextStrike,
       }))
     );
-    const all = [...buildEarningsAlerts(earnings), ...strike];
+    const top = [...overview.tickers].sort(
+      (a, b) => b.currentValue - a.currentValue
+    )[0];
+    const decisions = buildDecisionAlerts({
+      cash: overview.totals.cash,
+      equityValue: overview.totals.equityValue,
+      topTicker: top
+        ? { ticker: top.ticker, value: top.currentValue }
+        : null,
+    });
+    const all = [...buildEarningsAlerts(earnings), ...strike, ...decisions];
     if (!dismissedAlertIds?.size) return all;
     return all.filter((a) => !dismissedAlertIds.has(a.id));
-  }, [coveredCallRows, earnings, dismissedAlertIds]);
+  }, [coveredCallRows, earnings, dismissedAlertIds, overview]);
 
   const corrSeries = useMemo(
     () =>
@@ -308,6 +317,17 @@ export function LabSheet({
     return coveredCallRows.filter((r) => r.holding.portfolio_id === scopeId);
   }, [coveredCallRows, scopeId]);
 
+  const rivalry = useMemo(() => buildSheetRivalry(overview), [overview]);
+  const ccSeason = useMemo(
+    () =>
+      buildCcSeason({
+        cashflows,
+        coveredCallRows: scopedCcRows,
+        equityValue: overview.totals.equityValue,
+      }),
+    [cashflows, scopedCcRows, overview.totals.equityValue]
+  );
+
   const recap = useMemo(() => buildWeeklyRecap(overview), [overview]);
 
   const ccByExpiry = useMemo(() => {
@@ -321,23 +341,6 @@ export function LabSheet({
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [scopedCcRows]);
 
-  function sheetStats(id: string) {
-    const sheet = overview.sheets.find((s) => s.portfolio.id === id);
-    if (!sheet) return null;
-    return {
-      name: sheet.portfolio.name,
-      value: sheet.totalValue,
-      roi: sheet.roiPct,
-      cash: sheet.portfolio.cash_balance,
-      holdings: sheet.holdingCount,
-      today: sheet.todayDollar,
-      todayPct: sheet.todayPct,
-    };
-  }
-
-  const aStats = sheetStats(versusA);
-  const bStats = sheetStats(versusB);
-
   const prices: Record<string, number> = {};
   for (const [k, q] of Object.entries(quotes)) prices[k] = q.price;
   const arenaLive = arenaValue(arena, prices);
@@ -346,6 +349,16 @@ export function LabSheet({
     0
   );
   const arenaPnl = arenaLive - arena.cash - arenaCost;
+  const challengeProg =
+    challenge != null
+      ? arenaChallengeProgress(
+          challenge,
+          arenaLive,
+          overview.totals.todayPct
+        )
+      : null;
+
+  const maxRivalNav = Math.max(...rivalry.map((r) => r.value), 1);
 
   return (
     <div className="space-y-4">
@@ -428,81 +441,151 @@ export function LabSheet({
       )}
 
       {tab === "versus" && (
-        <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-            <Swords className="h-4 w-4 text-brand" /> Sheet versus
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <select
-              value={versusA}
-              onChange={(e) => setVersusA(e.target.value)}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white"
-            >
-              {portfolios.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={versusB}
-              onChange={(e) => setVersusB(e.target.value)}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white"
-            >
-              {portfolios.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          {aStats && bStats && (
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <VersusCard stats={aStats} />
-              <VersusCard stats={bStats} />
-              <div className="col-span-2 grid gap-2 rounded-lg border border-zinc-800 px-3 py-3 text-sm text-zinc-400 sm:grid-cols-3">
-                <p>
-                  Value{" "}
-                  <span
-                    className={
-                      aStats.value - bStats.value >= 0
-                        ? "text-gain"
-                        : "text-loss"
-                    }
-                  >
-                    {currency(aStats.value - bStats.value)}
-                  </span>
-                </p>
-                <p>
-                  ROI{" "}
-                  <span
-                    className={
-                      aStats.roi - bStats.roi >= 0 ? "text-gain" : "text-loss"
-                    }
-                  >
-                    {percent(aStats.roi - bStats.roi)}
-                  </span>
-                </p>
-                <p>
-                  Today{" "}
-                  <span
-                    className={
-                      aStats.today - bStats.today >= 0
-                        ? "text-gain"
-                        : "text-loss"
-                    }
-                  >
-                    {currency(aStats.today - bStats.today)}
-                  </span>
-                </p>
+        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Trophy className="h-4 w-4 text-brand" /> Family scoreboard
               </div>
+              <p className="mt-1 text-xs text-zinc-500">
+                {rivalryTagline(rivalry[0])} Points = today×3 + ROI×2 + NAV.
+              </p>
             </div>
-          )}
+          </div>
+          <ul className="space-y-2">
+            {rivalry.map((r, i) => (
+              <li
+                key={r.id}
+                className={cn(
+                  "rounded-xl border px-3 py-3",
+                  i === 0
+                    ? "border-brand/40 bg-brand/10"
+                    : "border-zinc-800 bg-zinc-950/40"
+                )}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs tabular-nums text-zinc-500">
+                      #{i + 1}
+                    </span>
+                    <span className="text-base font-semibold text-white">
+                      {r.name}
+                    </span>
+                    <span className="text-[11px] text-zinc-500">
+                      {r.score} pts · {r.holdingCount} names
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm tabular-nums text-zinc-100">
+                      {currency(r.value)}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-xs tabular-nums",
+                        r.todayDollar >= 0 ? "text-gain" : "text-loss"
+                      )}
+                    >
+                      Today {currency(r.todayDollar)}
+                      {r.todayPct != null ? ` · ${percent(r.todayPct)}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-900">
+                  <div
+                    className="h-full rounded-full bg-brand/70"
+                    style={{
+                      width: `${Math.max(4, (r.value / maxRivalNav) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-zinc-500">
+                  <span>
+                    Today rank{" "}
+                    <span className="text-zinc-300">#{r.medals.today}</span>
+                  </span>
+                  <span>
+                    ROI{" "}
+                    <span
+                      className={
+                        r.roiPct >= 0 ? "text-gain" : "text-loss"
+                      }
+                    >
+                      {percent(r.roiPct)}
+                    </span>{" "}
+                    <span className="text-zinc-600">#{r.medals.roi}</span>
+                  </span>
+                  <span>
+                    NAV rank{" "}
+                    <span className="text-zinc-300">#{r.medals.nav}</span>
+                  </span>
+                  <span className="tabular-nums">
+                    Cash {currency(r.cash)}
+                  </span>
+                </div>
+              </li>
+            ))}
+            {rivalry.length === 0 && (
+              <li className="text-sm text-zinc-500">No sheets to rank.</li>
+            )}
+          </ul>
         </div>
       )}
 
       {tab === "arena" && (
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+          <div className="rounded-lg border border-brand/25 bg-brand/10 px-3 py-3">
+            <p className="text-sm font-semibold text-white">
+              Daily boredom challenge
+            </p>
+            <p className="mt-1 text-xs text-zinc-400">
+              {!challenge || !challengeProg?.sameDay
+                ? "Reset the sandbox with today’s cash + live-book tickers only. Beat the live book’s day % — without touching real sheets."
+                : challenge.note}
+            </p>
+            {challengeProg && challenge?.dayKey && (
+              <p
+                className={cn(
+                  "mt-2 text-xs tabular-nums",
+                  challengeProg.arenaReturn >= 0 ? "text-gain" : "text-loss"
+                )}
+              >
+                Arena {percent(challengeProg.arenaReturn)}
+                {challengeProg.vsLive != null && (
+                  <span className="text-zinc-500">
+                    {" "}
+                    · vs live day{" "}
+                    <span
+                      className={
+                        challengeProg.vsLive >= 0 ? "text-gain" : "text-loss"
+                      }
+                    >
+                      {percent(challengeProg.vsLive)}
+                    </span>
+                  </span>
+                )}
+              </p>
+            )}
+            {!guest && (
+              <button
+                type="button"
+                className="mt-3 rounded-lg bg-brand/25 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/35"
+                onClick={() => {
+                  const { arena: next, challenge: ch } =
+                    startDailyArenaChallenge({
+                      tickers: overview.tickers.map((t) => t.ticker),
+                      liveDayPct: overview.totals.todayPct,
+                    });
+                  onLabChange({ arena: next });
+                  setChallenge(ch);
+                  setArenaMsg("Daily challenge started");
+                  setACash(next.cash);
+                }}
+              >
+                Start today’s challenge
+              </button>
+            )}
+          </div>
+
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-sm text-zinc-300">
@@ -903,136 +986,78 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "journal" && (
-        <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          {!guest && (
-            <div className="grid gap-2 sm:grid-cols-5">
-              <select
-                value={jSide}
-                onChange={(e) =>
-                  setJSide(e.target.value as JournalEntry["side"])
-                }
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              >
-                <option value="buy">Buy</option>
-                <option value="sell">Sell</option>
-                <option value="trim">Trim</option>
-                <option value="note">Note</option>
-              </select>
-              <input
-                value={jTicker}
-                onChange={(e) => setJTicker(e.target.value.toUpperCase())}
-                placeholder="Ticker"
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              <FormattedNumberInput
-                kind="money"
-                currency="USD"
-                digits={0}
-                value={jShares}
-                onChange={setJShares}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              <FormattedNumberInput
-                kind="money"
-                currency="USD"
-                digits={2}
-                value={jPrice}
-                onChange={setJPrice}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              <button
-                type="button"
-                className="rounded-lg bg-brand/20 text-xs font-medium text-brand-bright"
-                onClick={() => {
-                  if (!jTicker) return;
-                  if (jSide !== "note" && (!(jShares > 0) || !(jPrice > 0)))
-                    return;
-                  onLabChange({
-                    journal: addJournalEntry(journal, {
-                      ticker: jTicker,
-                      side: jSide,
-                      shares: jSide === "note" ? 0 : jShares,
-                      price: jSide === "note" ? 0 : jPrice,
-                      note: jNote || `${jSide} logged`,
-                    }),
-                  });
-                  setJNote("");
+      {tab === "season" && (
+        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-white">
+            <CalendarDays className="h-4 w-4 text-brand" /> CC income season
+          </div>
+          <p className="text-xs text-zinc-500">
+            {ccSeason.label} · soft target ~1% of equity (booked premium + 35% of
+            open modeled prem). Log fills in Cashflow.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                Booked
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-white">
+                {currency(ccSeason.bookedPremium)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                Open modeled
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-brand-bright">
+                {currency(ccSeason.openPremium)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                Target
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-zinc-100">
+                {currency(ccSeason.target)}
+              </p>
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 flex justify-between text-xs text-zinc-500">
+              <span>Season meter</span>
+              <span className="tabular-nums">
+                {Math.round(ccSeason.progress * 100)}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
+              <div
+                className="h-full rounded-full bg-brand"
+                style={{
+                  width: `${Math.min(100, ccSeason.progress * 100)}%`,
                 }}
-              >
-                Log entry
-              </button>
-              <input
-                value={jNote}
-                onChange={(e) => setJNote(e.target.value)}
-                placeholder="Note / thesis"
-                className="sm:col-span-5 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
               />
             </div>
-          )}
-          <ul className="space-y-2">
-            {journal.slice(0, 40).map((e) => {
-              const now = quotes[e.ticker]?.price;
-              const what =
-                now != null && (e.side === "sell" || e.side === "trim")
-                  ? whatIfHeld({
-                      shares: e.shares,
-                      exitPrice: e.price,
-                      nowPrice: now,
-                    })
-                  : null;
-              return (
-                <li
-                  key={e.id}
-                  className="flex items-start justify-between gap-2 rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-300"
-                >
-                  <div>
-                    <span className="font-medium text-white">
-                      {e.side.toUpperCase()} {e.ticker}
-                    </span>
-                    {e.side !== "note" && (
-                      <>
-                        {" "}
-                        {e.shares} @ {currency(e.price)}
-                      </>
-                    )}
-                    {what && (
-                      <span
-                        className={cn(
-                          "ml-2 text-xs",
-                          what.missedDollar >= 0 ? "text-gain" : "text-loss"
-                        )}
-                      >
-                        what-if held: {currency(what.missedDollar)} (
-                        {percent(what.missedPct)})
-                      </span>
-                    )}
-                    {e.note && (
-                      <p className="mt-0.5 text-xs text-zinc-500">{e.note}</p>
-                    )}
-                    <p className="text-[10px] text-zinc-600">
-                      {new Date(e.at).toLocaleString()}
-                    </p>
-                  </div>
-                  {!guest && (
-                    <button
-                      type="button"
-                      aria-label="Delete entry"
-                      className="rounded p-1 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300"
-                      onClick={() =>
-                        onLabChange({
-                          journal: removeJournalEntry(journal, e.id),
-                        })
-                      }
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-            {journal.length === 0 && (
-              <li className="text-zinc-500">No journal entries yet.</li>
+          </div>
+          <p className="text-xs text-zinc-500">
+            {ccSeason.contractsOpen} contracts with modeled premium
+            {ccSeason.nextExpiry ? ` · next expiry ${ccSeason.nextExpiry}` : ""}.
+          </p>
+          <ul className="space-y-1.5 text-xs text-zinc-400">
+            {ccSeason.premiumByExpiry.map((e) => (
+              <li
+                key={e.expiry}
+                className="flex justify-between rounded-lg border border-zinc-800/80 px-3 py-2"
+              >
+                <span>
+                  {e.expiry === "—" ? "Awaiting scan" : e.expiry}
+                  {e.contracts > 0 ? ` · ${e.contracts} ct` : ""}
+                </span>
+                <span className="tabular-nums text-zinc-200">
+                  {currency(e.premium)}
+                </span>
+              </li>
+            ))}
+            {ccSeason.premiumByExpiry.length === 0 && (
+              <li className="text-zinc-500">No CC rows in scope yet.</li>
             )}
           </ul>
         </div>
@@ -1351,49 +1376,6 @@ function AllocCard({
           <p className="text-sm text-zinc-500">No equity to allocate.</p>
         )}
       </div>
-    </div>
-  );
-}
-
-function VersusCard({
-  stats,
-}: {
-  stats: {
-    name: string;
-    value: number;
-    roi: number;
-    cash: number;
-    holdings: number;
-    today: number;
-    todayPct: number | null;
-  };
-}) {
-  return (
-    <div className="rounded-lg border border-zinc-800 px-3 py-3">
-      <p className="font-semibold text-white">{stats.name}</p>
-      <p className="mt-1 text-lg tabular-nums text-zinc-100">
-        {currency(stats.value)}
-      </p>
-      <p
-        className={cn(
-          "text-sm tabular-nums",
-          stats.roi >= 0 ? "text-gain" : "text-loss"
-        )}
-      >
-        {percent(stats.roi)} ROI
-      </p>
-      <p
-        className={cn(
-          "text-xs tabular-nums",
-          stats.today >= 0 ? "text-gain" : "text-loss"
-        )}
-      >
-        Today {currency(stats.today)}
-        {stats.todayPct != null ? ` (${percent(stats.todayPct)})` : ""}
-      </p>
-      <p className="mt-1 text-xs text-zinc-500">
-        Cash {currency(stats.cash)} · {stats.holdings} holdings
-      </p>
     </div>
   );
 }

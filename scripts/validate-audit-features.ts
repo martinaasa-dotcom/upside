@@ -22,7 +22,6 @@ import {
   seedArenaFromLive,
 } from "../src/lib/paper-arena";
 import { estimateGreenStreak } from "../src/lib/streaks";
-import { whatIfHeld } from "../src/lib/trade-journal";
 import { isForecastFullyCovered, FORECAST_YEARS } from "../src/lib/forecast";
 import { ensureCompleteEoyTargets } from "../src/lib/forecast-plan";
 import type { ForecastModel } from "../src/lib/forecast";
@@ -118,9 +117,6 @@ assert(
   ]).length === 1,
   "corr matrix"
 );
-
-const w = whatIfHeld({ shares: 10, exitPrice: 50, nowPrice: 60 });
-assert(w.missedDollar === 100, "what-if $");
 
 const cfs: CashflowEntry[] = [
   {

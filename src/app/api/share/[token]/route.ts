@@ -69,7 +69,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (labRow) {
       lab = {
         conviction: labRow.conviction ?? {},
-        journal: Array.isArray(labRow.journal) ? labRow.journal : [],
+        journal: [],
         cashflows: Array.isArray(labRow.cashflows) ? labRow.cashflows : [],
         arena:
           labRow.arena && typeof labRow.arena === "object"

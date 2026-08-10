@@ -2,7 +2,6 @@ import type { ConvictionMap } from "@/lib/conviction";
 import type { CashflowEntry } from "@/lib/cashflow";
 import type { ArenaState } from "@/lib/paper-arena";
 import { defaultArena } from "@/lib/paper-arena";
-import type { JournalEntry } from "@/lib/trade-journal";
 
 export type LabBadge = {
   id: string;
@@ -12,7 +11,8 @@ export type LabBadge = {
 
 export type LabBundle = {
   conviction: ConvictionMap;
-  journal: JournalEntry[];
+  /** @deprecated Journal removed — kept empty for API/DB shape. */
+  journal: [];
   cashflows: CashflowEntry[];
   arena: ArenaState;
   badges: LabBadge[];
@@ -29,7 +29,7 @@ export function emptyLabBundle(): LabBundle {
   };
 }
 
-/** Derive simple season badges from book stats (client or server). */
+/** Milestone badges from book stats — no streaks / XP. */
 export function deriveBadges(input: {
   greenStreakMax: number;
   roiPct: number;
@@ -41,8 +41,9 @@ export function deriveBadges(input: {
   function earn(id: string, label: string) {
     if (!byId.has(id)) byId.set(id, { id, label, earnedAt: now });
   }
-  if (input.greenStreakMax >= 5) earn("streak-5", "5-day green run");
-  if (input.greenStreakMax >= 10) earn("streak-10", "10-day heat");
+  // Drop legacy streak badges if present
+  byId.delete("streak-5");
+  byId.delete("streak-10");
   if (input.roiPct >= 0.25) earn("roi-25", "Book +25% lifetime");
   if (input.roiPct >= 0.5) earn("roi-50", "Book +50% lifetime");
   if (input.holdingCount >= 8) earn("diversified-8", "8+ names held");

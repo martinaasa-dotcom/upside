@@ -49,7 +49,6 @@ import {
 } from "@/lib/lab-sync-client";
 import { loadCashflows } from "@/lib/cashflow";
 import { loadArena } from "@/lib/paper-arena";
-import { loadJournal } from "@/lib/trade-journal";
 import {
   dismissAlert,
   loadDismissedAlertIds,
@@ -1545,7 +1544,7 @@ export function Dashboard() {
     void (async () => {
       const local: LabBundle = {
         conviction: loadConvictionMap(),
-        journal: loadJournal(),
+        journal: [],
         cashflows: loadCashflows(),
         arena: loadArena(),
         badges: [],
@@ -1560,10 +1559,7 @@ export function Dashboard() {
             Object.keys(remote.bundle.conviction ?? {}).length > 0
               ? remote.bundle.conviction
               : local.conviction,
-          journal:
-            (remote.bundle.journal?.length ?? 0) > 0
-              ? remote.bundle.journal
-              : local.journal,
+          journal: [],
           cashflows:
             (remote.bundle.cashflows?.length ?? 0) > 0
               ? remote.bundle.cashflows
@@ -2061,6 +2057,12 @@ export function Dashboard() {
             <OverviewDashboard
               model={overview}
               onOpenSheet={(id) => setActiveId(id)}
+              coveredCallRows={portfolios.flatMap((p) => {
+                const rows = holdings.filter((h) => h.portfolio_id === p.id);
+                return buildSnapshot(p, rows, quotes, options).coveredCallRows;
+              })}
+              cashflows={labBundle.cashflows}
+              onOpenLab={() => setActiveId(LAB_TAB_ID)}
             />
             <CcAdvisorChat
               key={OVERVIEW_TAB_ID}

@@ -5,7 +5,6 @@ import {
 import { saveArena } from "@/lib/paper-arena";
 import { saveCashflows } from "@/lib/cashflow";
 import { saveConvictionMap } from "@/lib/conviction";
-import { saveJournal } from "@/lib/trade-journal";
 import { ownerPinHeaders } from "@/lib/owner-pin-client";
 
 export type LabFetchResult = {
@@ -16,7 +15,6 @@ export type LabFetchResult = {
 /** Mirror Lab pieces into localStorage (offline / demo cache). */
 export function mirrorLabLocal(bundle: LabBundle) {
   saveConvictionMap(bundle.conviction ?? {});
-  saveJournal(bundle.journal ?? []);
   saveCashflows(bundle.cashflows ?? []);
   saveArena(bundle.arena);
 }
@@ -34,7 +32,7 @@ export async function fetchLabBundle(): Promise<LabFetchResult> {
     const bundle = data.bundle ?? emptyLabBundle();
     if (data.source === "supabase") {
       mirrorLabLocal(bundle);
-      return { source: "supabase", bundle };
+      return { source: "supabase", bundle: { ...bundle, journal: [] } };
     }
   } catch {
     /* fall through */
@@ -54,14 +52,13 @@ export async function pushLabBundle(
       }),
       body: JSON.stringify({
         conviction: bundle.conviction,
-        journal: bundle.journal,
+        journal: [],
         cashflows: bundle.cashflows,
         arena: bundle.arena,
         badges: bundle.badges,
       }),
     });
     if (res.status === 400) {
-      // Demo / no supabase — local mirror is enough
       return { ok: true };
     }
     if (!res.ok) {

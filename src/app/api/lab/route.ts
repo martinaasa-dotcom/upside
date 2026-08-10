@@ -11,7 +11,7 @@ function rowToBundle(row: Record<string, unknown> | null): LabBundle {
   if (!row) return emptyLabBundle();
   return {
     conviction: (row.conviction as LabBundle["conviction"]) ?? {},
-    journal: Array.isArray(row.journal) ? row.journal : [],
+    journal: [],
     cashflows: Array.isArray(row.cashflows) ? row.cashflows : [],
     arena:
       row.arena && typeof row.arena === "object"
@@ -63,7 +63,7 @@ export async function PUT(req: NextRequest) {
   const payload = {
     id: "book",
     conviction: body.conviction ?? {},
-    journal: body.journal ?? [],
+    journal: [],
     cashflows: body.cashflows ?? [],
     arena: body.arena ?? defaultArena(),
     badges: body.badges ?? [],
