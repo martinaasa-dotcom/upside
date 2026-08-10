@@ -3,6 +3,7 @@ import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
   forecastPlanSchema,
+  HOUSE_STANCE,
 } from "@/lib/forecast-plan";
 import type { ForecastModel } from "@/lib/forecast";
 import { generateObject } from "ai";
@@ -31,9 +32,7 @@ export async function POST(req: Request) {
     const portfolioName = String(body.portfolioName ?? "Portfolio");
     const cashBalance = Number(body.cashBalance ?? 0);
     const forecast = body.forecast as ForecastModel | undefined;
-    const stanceRaw = String(body.stance ?? "base");
-    const stance =
-      stanceRaw === "bearish" || stanceRaw === "bullish" ? stanceRaw : "base";
+    const stance = HOUSE_STANCE;
 
     if (!portfolioId || !forecast?.rows) {
       return Response.json(
@@ -75,7 +74,7 @@ export async function POST(req: Request) {
         generatedAt: new Date().toISOString(),
         portfolioId,
         portfolioName,
-        stance,
+        stance: HOUSE_STANCE,
       },
     });
   } catch (err) {

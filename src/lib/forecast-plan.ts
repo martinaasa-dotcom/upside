@@ -14,6 +14,9 @@ export const FORECAST_PLAN_STORAGE_KEY = "portfell-forecast-plan-by-portfolio";
 
 export type ForecastStance = "bearish" | "base" | "bullish";
 
+/** House path = Martin's spreadsheet BASE. No user stance toggle. */
+export const HOUSE_STANCE: ForecastStance = "base";
+
 /** Rough sector tags so Margus can talk rotation without inventing holdings. */
 export const TICKER_SECTORS: Record<string, string> = {
   NBIS: "AI infra / GPU cloud",
@@ -24,7 +27,10 @@ export const TICKER_SECTORS: Record<string, string> = {
   SOFI: "Fintech / consumer finance",
   HOOD: "Fintech / brokerage",
   PLTR: "AI software / data platforms",
-  NOW: "Enterprise / AI software",
+  NOW: "Enterprise SaaS / AI software",
+  CRM: "Enterprise SaaS",
+  DDOG: "Cloud SaaS / observability",
+  SNOW: "Data SaaS",
   NVDA: "Semiconductors / AI chips",
   AVGO: "Semiconductors / AI interconnect",
   RDDT: "Consumer internet / social",
@@ -32,6 +38,11 @@ export const TICKER_SECTORS: Record<string, string> = {
   ASML: "Semiconductors / lithography",
   "ASML.AS": "Semiconductors / lithography",
   GOOGL: "Big tech / AI spend",
+  UNH: "Healthcare / managed care",
+  LLY: "Healthcare / biopharma",
+  ISRG: "Healthcare / medtech",
+  AVAV: "Defense / drones",
+  KTOS: "Defense / drones",
   SPY: "US large-cap index",
   "CSPX.L": "US large-cap index (UCITS)",
   "VWCE.DE": "Global equity ETF",
@@ -73,12 +84,12 @@ export const forecastPlanSchema = z.object({
         add: z
           .string()
           .describe(
-            'ONE short line, max ~14 words. Format: "TICKER / TICKER — why". Example: "BMNR / HOOD — crypto + fintech rally on liquidity". Prefer book tickers. Never empty; say "Hold — no add" if nothing.'
+            'Actionable adds — multiple OK. Format: "NAME / NAME — why" or "SaaS / drones — why". Names can be book tickers, new tickers, or sectors (SaaS, healthcare, drones, AI power…). Max ~40 words. Never empty; say "Hold — no add" if nothing.'
           ),
         trim: z
           .string()
           .describe(
-            'ONE short line, max ~14 words. Format: "TICKER — why". Example: "NBIS — trim into AI digestion". Never empty; say "Hold — no trim" if nothing.'
+            'Actionable trims — multiple OK. Format: "TICKER / TICKER — why" or "fintech sleeve — why". Max ~40 words. Never empty; say "Hold — no trim" if nothing.'
           ),
         notes: z
           .string()
@@ -103,7 +114,7 @@ export const forecastPlanSchema = z.object({
           .string()
           .optional()
           .describe(
-            "Name the path dynamics (bull run / winter / digestion) + micro-thesis in one tight sentence"
+            "Human thesis in one sentence: micro-thesis + path dynamics (bull run / winter / digestion). Never say overridden, rejected, calibrated, or sheet-aligned."
           ),
       })
     )
@@ -123,7 +134,7 @@ export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
 
 export type StoredForecastPlans = Record<string, ForecastPlan>;
 
-export const FORECAST_AUTO_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+export const FORECAST_AUTO_REFRESH_MS = 24 * 60 * 60 * 1000; // daily thesis check
 
 export function forecastHoldingsKey(tickers: string[]): string {
   return [...new Set(tickers.map((t) => t.toUpperCase()))].sort().join("|");
@@ -133,10 +144,10 @@ export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "new-holdings" | "weekly";
+      reason: "first-run" | "new-holdings" | "daily";
     };
 
-/** Auto API refresh only for first run, new tickers, or weekly staleness. */
+/** Auto API refresh for first run, new tickers, or daily thesis check. */
 export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
@@ -169,9 +180,10 @@ export function shouldAutoRefreshForecast(input: {
   if (hasNew) return { run: true, reason: "new-holdings" };
 
   if (plan.generatedAt) {
-    const age = (input.nowMs ?? Date.now()) - new Date(plan.generatedAt).getTime();
+    const age =
+      (input.nowMs ?? Date.now()) - new Date(plan.generatedAt).getTime();
     if (Number.isFinite(age) && age >= FORECAST_AUTO_REFRESH_MS) {
-      return { run: true, reason: "weekly" };
+      return { run: true, reason: "daily" };
     }
   } else if (!input.fullyCovered) {
     return { run: true, reason: "first-run" };
@@ -217,7 +229,7 @@ function stanceGuidance(stance: ForecastStance): string {
     case "bullish":
       return `STANCE = BULLISH. Same shapes as Martin's BASE spreadsheet, but materially HIGHER (~+25–40% vs base on terminals; 2026 still above base 2026). NBIS/CRWV must clear spot hard in 2026.`;
     default:
-      return `STANCE = BASE. Match Martin's spreadsheet magnitude (NBIS ~1.33× spot by EOY 2026 → ~5.6× by 2030; CRWV ~1.26× → ~6.4×; BMNR rip then 2028 winter). This is NOT a quiet sell-side base. Forbidden: EOY 2026 below spot on NBIS/CRWV/BMNR/VST.`;
+      return `HOUSE PATH = BASE (Martin's spreadsheet rules). Match sheet magnitude (NBIS ~1.33× spot by EOY 2026 → ~5.6× by 2030; CRWV ~1.26× → ~6.4×; BMNR rip then 2028 winter). Consistency: if macro / company / sector thesis is unchanged, keep EOY magnitudes in the same neighborhood — only reprice when thesis meaningfully changes. Forbidden: EOY 2026 below spot on NBIS/CRWV/BMNR/VST.`;
   }
 }
 
@@ -271,6 +283,58 @@ function isTimidVsBase(
   return false;
 }
 
+function isJunkRationale(text: string | undefined): boolean {
+  if (!text?.trim()) return true;
+  return /too timid|sheet-aligned|overridden|rejected as|Calibrated \w+ \w+ path|Thesis \w+ \w+ path from spot/i.test(
+    text
+  );
+}
+
+function themeDynamicsLabel(
+  theme: ReturnType<typeof forecastThemeForTicker>
+): string {
+  switch (theme) {
+    case "ai_infra":
+      return "AI infra S-curve with digestion years, not a straight line";
+    case "ai_power":
+      return "datacenter power bottleneck compounding through buildout";
+    case "crypto":
+      return "crypto liquidity cycle with an explicit winter mid-path";
+    case "space":
+      return "launch-cadence story with digestion between expansion legs";
+    case "semi":
+      return "AI semi cycle — digests, then re-accelerates on spend";
+    case "fintech":
+      return "fintech beta to liquidity and risk appetite";
+    case "software":
+      return "software / SaaS adoption with mid-path digestion";
+    case "healthcare":
+      return "healthcare compounder with non-linear clinical / payer cycles";
+    case "drones":
+      return "defense / autonomy cadence with program digestion years";
+    case "index":
+      return "broad beta grind — muted vs single-name conviction";
+    default:
+      return "thesis path with non-linear bull / digestion phases";
+  }
+}
+
+function houseRationale(input: {
+  ticker: string;
+  theme: ReturnType<typeof forecastThemeForTicker>;
+  spot: number;
+  prices: Record<ForecastYear, number>;
+  existing?: string;
+  reshaped: boolean;
+}): string {
+  if (!input.reshaped && !isJunkRationale(input.existing)) {
+    return input.existing!.trim();
+  }
+  const y26 = input.prices[FORECAST_YEARS[0]!];
+  const y30 = input.prices[FORECAST_YEARS[FORECAST_YEARS.length - 1]!];
+  return `${input.ticker} — ${themeDynamicsLabel(input.theme)}; EOY’26 ~$${Math.round(y26)} → ’30 ~$${Math.round(y30)} (spot $${input.spot.toFixed(0)}).`;
+}
+
 /**
  * Guarantee every holding has every FORECAST_YEAR filled.
  * Prefer model prices only when they clear conviction floors; otherwise use
@@ -279,7 +343,7 @@ function isTimidVsBase(
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
   eoyTargets: ForecastPlan["eoyTargets"],
-  stance: ForecastStance
+  stance: ForecastStance = HOUSE_STANCE
 ): ForecastPlan["eoyTargets"] {
   const byTicker = new Map<string, ForecastPlan["eoyTargets"][number]>();
   for (const t of eoyTargets ?? []) {
@@ -322,10 +386,14 @@ export function ensureCompleteEoyTargets(
     out.push({
       ticker: row.ticker,
       prices: prices as ForecastPlan["eoyTargets"][number]["prices"],
-      rationale: reshape
-        ? `Calibrated ${stance} ${theme} path (sheet-aligned; model path rejected as too timid)`
-        : existing?.rationale ??
-          `Thesis ${stance} ${theme} path from spot ${spot.toFixed(2)} (non-linear)`,
+      rationale: houseRationale({
+        ticker: row.ticker,
+        theme,
+        spot,
+        prices,
+        existing: existing?.rationale,
+        reshaped: reshape,
+      }),
     });
   }
   return out;
@@ -364,7 +432,7 @@ export function buildForecastPlanPrompt(input: {
   portfolioName: string;
   cashBalance: number;
   forecast: ForecastModel;
-  stance: ForecastStance;
+  stance?: ForecastStance;
   now?: Date;
 }): string {
   const now = input.now ?? new Date();
@@ -386,6 +454,7 @@ export function buildForecastPlanPrompt(input: {
   });
 
   const yearsList = FORECAST_YEARS.join(", ");
+  const stance = input.stance ?? HOUSE_STANCE;
 
   return `${MARGUS_PERSONA}
 
@@ -397,7 +466,7 @@ CRITICAL: Reason every price from each company's micro-thesis + the conviction b
 
 Today (Europe/Tallinn): ${todayKeyInTz()} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
-${stanceGuidance(input.stance)}
+${stanceGuidance(stance)}
 
 Cash: ${input.cashBalance}
 Current portfolio value (equity+cash): ${input.forecast.currentTotal.toFixed(0)}
@@ -411,19 +480,19 @@ Requirements:
    - Next year (label "${year + 1}" or "Next year (${year + 1})")
    - Then 2–3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful — not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
-3. Add and Trim are SEPARATE one-liners — scannable actions, not essays:
-   - add: max ~14 words. "TICKERS — why" e.g. "BMNR / HOOD — fintech + crypto liquidity rally"
-   - trim: max ~14 words. "TICKER — why" e.g. "NBIS — light trim into AI digestion"
-   - If nothing to do: "Hold — no add" / "Hold — no trim" (never leave blank, never bury in notes)
-   - Prefer tickers already in this book; new names only if essential and named
-4. sectorRotation: talk through plausible rotations given concentration in this book.
+3. Add and Trim are SEPARATE action lines — multiple names/sectors allowed:
+   - add: up to ~40 words. "NAME / NAME — why" OR sector sleeves e.g. "SaaS / healthcare / drones — why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
+   - trim: up to ~40 words. Multiple tickers OK ("NBIS / CRWV — digestion") or a sleeve ("fintech sleeve — liquidity fade").
+   - If nothing to do: "Hold — no add" / "Hold — no trim" (never leave blank)
+4. sectorRotation: talk through plausible rotations — AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc. Do not stay stuck in one box.
 5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList} — all five required, no omissions.
-   - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude on bullish/base. Space: digestion year.
-   - In each rationale, name the dynamics (bull run / winter / digestion) in one sentence.
-7. Do not invent fake share counts or claim trades already happened.
-8. Be concise.`;
+   - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude. Space: digestion year.
+   - rationale: one human sentence on micro-thesis + dynamics. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path.
+7. Consistency: if macro / company / sector thesis is unchanged, keep EOY magnitudes in the same neighborhood as the house BASE bands — do not randomly reshuffle.
+8. Do not invent fake share counts or claim trades already happened.
+9. Be concise.`;
 }
 
 export function planEoyPaths(

@@ -5,13 +5,13 @@ import { cn, currency, percent } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   ensureCompleteEoyTargets,
+  HOUSE_STANCE,
   loadForecastPlan,
   planEoyPaths,
   saveForecastPlan,
   shouldAutoRefreshForecast,
   forecastHoldingsKey,
   type ForecastPlan,
-  type ForecastStance,
 } from "@/lib/forecast-plan";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
@@ -37,11 +37,11 @@ function calibratedPaths(plan: ForecastPlan, model: ForecastModel) {
   const eoyTargets = ensureCompleteEoyTargets(
     model,
     plan.eoyTargets ?? [],
-    plan.stance ?? "base"
+    HOUSE_STANCE
   );
   return {
     eoyTargets,
-    paths: planEoyPaths({ ...plan, eoyTargets }),
+    paths: planEoyPaths({ ...plan, eoyTargets, stance: HOUSE_STANCE }),
   };
 }
 
@@ -127,12 +127,6 @@ const cellLabel =
 const cellNum =
   "flex min-w-0 w-full items-center justify-end whitespace-nowrap px-3 py-2 text-right tabular-nums";
 
-const STANCES: { id: ForecastStance; label: string; hint: string }[] = [
-  { id: "bearish", label: "Bearish", hint: "Softer than spreadsheet BASE" },
-  { id: "base", label: "Base", hint: "Martin’s sheet (NBIS ~255 EOY’26)" },
-  { id: "bullish", label: "Bullish", hint: "Above BASE — higher terminals" },
-];
-
 export function ForecastPanel({
   model,
   portfolioId,
@@ -150,7 +144,6 @@ export function ForecastPanel({
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stance, setStance] = useState<ForecastStance>("base");
   const [appliedFlash, setAppliedFlash] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
@@ -169,7 +162,6 @@ export function ForecastPanel({
     setPlanHydrated(false);
     const loaded = loadForecastPlan(portfolioId);
     setPlan(loaded);
-    if (loaded?.stance) setStance(loaded.stance);
     setError(null);
     setAppliedFlash(false);
     autoKeyRef.current = "";
@@ -178,16 +170,12 @@ export function ForecastPanel({
     setPlanHydrated(true);
   }, [portfolioId]);
 
-  async function askMargus(opts?: {
-    auto?: boolean;
-    stanceOverride?: ForecastStance;
-  }) {
+  async function askMargus(opts?: { auto?: boolean }) {
     if (askInFlight.current) return;
     askInFlight.current = true;
     setBusy(true);
     setError(null);
     setAppliedFlash(false);
-    const useStance = opts?.stanceOverride ?? stance;
     try {
       const res = await fetch("/api/forecast/plan", {
         method: "POST",
@@ -197,7 +185,7 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
-          stance: useStance,
+          stance: HOUSE_STANCE,
         }),
       });
       const data = await res.json();
@@ -207,10 +195,15 @@ export function ForecastPanel({
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,
+        stance: HOUSE_STANCE,
       };
       // Belt-and-suspenders: re-calibrate to spreadsheet BASE floors client-side
       const { eoyTargets, paths } = calibratedPaths(next, model);
-      const calibrated: ForecastPlan = { ...next, eoyTargets };
+      const calibrated: ForecastPlan = {
+        ...next,
+        eoyTargets,
+        stance: HOUSE_STANCE,
+      };
       saveForecastPlan(calibrated);
       setPlan(calibrated);
 
@@ -218,7 +211,7 @@ export function ForecastPanel({
         onApplyMargusPaths(paths);
         setAppliedFlash(true);
       }
-      autoKeyRef.current = `${portfolioId}:${holdingsKey}`;
+      autoKeyRef.current = `${portfolioId}:${holdingsKey}:${calibrated.generatedAt}`;
       reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
@@ -273,39 +266,41 @@ export function ForecastPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
   }, [portfolioId, holdingsKey, flatCount, plan]);
 
-  // Never auto-call the LLM on page open. Re-apply / calibrate locally only.
-  // User must hit Refresh Margus forecast (first run, new tickers, or weekly).
-  const autoHint = useMemo(() => {
-    if (!planHydrated || model.rows.length === 0) return null;
+  // Daily / first-run / new-holdings: Margus re-reasons EOY when thesis may have shifted.
+  useEffect(() => {
+    if (!planHydrated || model.rows.length === 0) return;
+    if (askInFlight.current || busy) return;
     const decision = shouldAutoRefreshForecast({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
     });
-    if (!decision.run) return null;
-    if (decision.reason === "first-run") {
-      return "No Margus plan yet — hit Refresh when you want him to reason.";
-    }
-    if (decision.reason === "new-holdings") {
-      return "Holdings changed since last plan — Refresh to re-reason.";
-    }
-    return "Plan is ~7 days old — Refresh when you want an update.";
-  }, [planHydrated, model.rows, plan, fullyCovered]);
+    if (!decision.run) return;
+    const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
+    if (autoKeyRef.current === key) return;
+    autoKeyRef.current = key;
+    void askMargus({ auto: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
+  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy]);
 
-  function reapplyPlanPrices() {
-    if (!plan) return;
-    const { eoyTargets, paths } = calibratedPaths(plan, model);
-    if (paths.length === 0) {
-      setError("This plan has no EOY prices to apply.");
-      return;
+  const statusHint = useMemo(() => {
+    if (!planHydrated || model.rows.length === 0 || busy) return null;
+    const decision = shouldAutoRefreshForecast({
+      plan,
+      tickers: model.rows.map((r) => r.ticker),
+      fullyCovered,
+    });
+    if (decision.run && decision.reason === "first-run") {
+      return "No Margus plan yet — generating house BASE paths…";
     }
-    const next: ForecastPlan = { ...plan, eoyTargets, holdingsKey };
-    saveForecastPlan(next);
-    setPlan(next);
-    onApplyMargusPaths(paths);
-    setAppliedFlash(true);
-    setError(null);
-  }
+    if (decision.run && decision.reason === "new-holdings") {
+      return "New holdings detected — Margus is updating EOY paths…";
+    }
+    if (decision.run && decision.reason === "daily") {
+      return "Daily thesis check — Margus is refreshing EOY if anything shifted…";
+    }
+    return null;
+  }, [planHydrated, model.rows, plan, fullyCovered, busy]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
@@ -314,15 +309,16 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Paths are saved locally. Margus never auto-reasons on open — pick a
-              stance and hit Refresh when you want a new plan.
+              Margus keeps house BASE EOY paths. He rechecks daily (and when
+              holdings change) — only reprices when macro / company / sector
+              thesis shifts; otherwise stays consistent with your rules.
             </p>
-            {autoHint && !busy && (
-              <p className="mt-1 text-[11px] text-amber-200/80">{autoHint}</p>
+            {statusHint && (
+              <p className="mt-1 text-[11px] text-amber-200/80">{statusHint}</p>
             )}
-            {flatCount > 0 && !busy && !plan && !autoHint && (
+            {flatCount > 0 && !busy && !plan && !statusHint && (
               <p className="mt-1 text-[11px] text-amber-200/80">
-                No saved forecast yet — run Margus once to lock prices in.
+                No saved forecast yet — Margus will lock prices in shortly.
               </p>
             )}
             {busy && (
@@ -518,66 +514,33 @@ export function ForecastPanel({
               Margus plan · themes / trim / add / EOY path
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Pick a stance, then Refresh when you want Margus to reason. He
-              never starts on his own when you open the site.
+              Add / trim can be multiple names or sectors (SaaS, healthcare,
+              drones…). Manual refresh still available anytime.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">
                 Last generated {formatGeneratedAt(plan.generatedAt)}
-                {plan.stance ? ` · ${plan.stance}` : ""}
                 {appliedFlash ? " · prices applied" : ""}
               </p>
             )}
           </div>
-          <div className="flex flex-col items-stretch gap-2 sm:items-end">
-            <div className="inline-flex rounded-lg border border-zinc-700 p-0.5">
-              {STANCES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  title={`${s.hint} · then click Refresh`}
-                  onClick={() => setStance(s.id)}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-[11px] font-medium transition",
-                    stance === s.id
-                      ? "bg-brand/15 text-brand-bright"
-                      : "text-zinc-500 hover:text-zinc-300"
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {plan && (plan.eoyTargets?.length ?? 0) > 0 && (
-                <button
-                  type="button"
-                  onClick={reapplyPlanPrices}
-                  disabled={busy}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
-                >
-                  Re-apply Margus prices
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => void askMargus()}
-                disabled={busy || model.rows.length === 0}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-brand-deep/60 bg-brand/10 px-3 py-2 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20 disabled:opacity-50"
-              >
-                {busy ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-                {busy
-                  ? "Margus is reasoning…"
-                  : plan
-                    ? "Refresh Margus forecast"
-                    : "Ask Margus for a forecast"}
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => void askMargus()}
+            disabled={busy || model.rows.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-deep/60 bg-brand/10 px-3 py-2 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20 disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            {busy
+              ? "Margus is reasoning…"
+              : plan
+                ? "Refresh Margus forecast"
+                : "Ask Margus for a forecast"}
+          </button>
         </div>
 
         {error && (
@@ -589,8 +552,8 @@ export function ForecastPanel({
         {!plan && !busy && !error && (
           <div className="mt-3 rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
             <p className="text-sm text-zinc-400">
-              Choose Bearish / Base / Bullish — Margus will reason EOY prices for
-              every holding automatically (no house targets).
+              Margus will reason house BASE EOY paths for every holding
+              automatically.
             </p>
           </div>
         )}
@@ -660,7 +623,7 @@ export function ForecastPanel({
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-bright">
                         Add
                       </p>
-                      <p className="mt-0.5 text-xs leading-snug text-zinc-100">
+                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
                         {s.add?.trim() || "Hold — no add"}
                       </p>
                     </div>
@@ -668,7 +631,7 @@ export function ForecastPanel({
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
                         Trim
                       </p>
-                      <p className="mt-0.5 text-xs leading-snug text-zinc-100">
+                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
                         {s.trim?.trim() || "Hold — no trim"}
                       </p>
                     </div>

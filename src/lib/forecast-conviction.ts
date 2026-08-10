@@ -14,6 +14,8 @@ export type ForecastTheme =
   | "semi"
   | "fintech"
   | "software"
+  | "healthcare"
+  | "drones"
   | "index"
   | "other";
 
@@ -35,6 +37,8 @@ const THEME_BASE_MULTS: Record<ForecastTheme, number[]> = {
   // HOOD/SOFI sheet-ish
   fintech: [1.35, 1.85, 1.2, 1.8, 2.7],
   software: [1.12, 1.4, 1.2, 1.75, 2.5],
+  healthcare: [1.1, 1.35, 1.25, 1.7, 2.2],
+  drones: [1.2, 1.7, 1.4, 2.1, 3.0],
   semi: [1.2, 1.7, 1.45, 2.4, 3.4],
   index: [1.08, 1.18, 1.12, 1.3, 1.45],
   other: [1.15, 1.5, 1.35, 1.9, 2.6],
@@ -72,7 +76,10 @@ export function forecastThemeForTicker(ticker: string): ForecastTheme {
   if (["RKLB"].includes(base)) return "space";
   if (["NVDA", "AVGO", "TSM", "ASML"].includes(base)) return "semi";
   if (["HOOD", "SOFI"].includes(base)) return "fintech";
-  if (["PLTR", "NOW", "GOOGL"].includes(base)) return "software";
+  if (["PLTR", "NOW", "GOOGL", "CRM", "DDOG", "SNOW"].includes(base))
+    return "software";
+  if (["UNH", "LLY", "ISRG", "HIMS"].includes(base)) return "healthcare";
+  if (["AVAV", "KTOS", "RCAT"].includes(base)) return "drones";
   if (
     ["SPY", "CSPX", "VWCE", "SMH", "EX13", "JEDI"].includes(base) ||
     ticker.includes("=")
@@ -81,6 +88,9 @@ export function forecastThemeForTicker(ticker: string): ForecastTheme {
   }
   if (/BTC|ETH|CRYPTO|MINE/.test(base)) return "crypto";
   if (/CLOUD|GPU|AI/.test(base)) return "ai_infra";
+  if (/HEALTH|PHARMA|BIO/.test(base)) return "healthcare";
+  if (/DRONE|UAV|DEFENSE/.test(base)) return "drones";
+  if (/SAAS|SOFT/.test(base)) return "software";
   return "other";
 }
 
@@ -155,33 +165,31 @@ export const FORECAST_CONVICTION_PROMPT = `## Forecast conviction (MANDATORY)
 
 Macro backdrop: Tom Lee–style (liquidity + AI spend + crypto institutionalization) — structurally supportive for risk assets. Use that environment; do **not** copy Lee’s permabull extremes on every ticker/year. Paths stay non-linear.
 
-Martin's spreadsheet is the **BASE** case. You MUST align BASE paths to that magnitude. **Bullish must be higher than base.** Bearish is the only stance allowed to be meaningfully softer.
+Martin's spreadsheet is the **BASE** case (always — house path, no stance toggle). You MUST align paths to that magnitude. Consistency: if macro / company / sector thesis is unchanged, keep EOY magnitudes near prior house bands; only reprice when thesis meaningfully changes.
 
 ### Canonical BASE anchors (scale to today's spot; keep the shape)
 These are BASE — not "optimistic stretch":
-- **NBIS**: ~1.33× / 2.0× / 2.7× / 4.1× / 5.6× spot by EOY 2026→2030 (e.g. ~192 → ~255 → ~380 → ~520 → ~780 → ~1080). NEVER print EOY 2026 below spot on base/bullish.
+- **NBIS**: ~1.33× / 2.0× / 2.7× / 4.1× / 5.6× spot by EOY 2026→2030 (e.g. ~192 → ~255 → ~380 → ~520 → ~780 → ~1080). NEVER print EOY 2026 below spot.
 - **CRWV**: ~1.26× / 2.0× / 3.0× / 4.5× / 6.4× (e.g. ~91 → ~115 → ~185 → ~270 → ~410 → ~580).
 - **RKLB**: ~1.08× / 1.57× / 1.33× / 2.0× / 2.9× with a 2028 digestion dip after 2027.
 - **BMNR**: ~1.85× / 2.9× / 1.25× / 2.0× / 4.0× — 2026 UP hard, 2028 winter, then recover.
 - **VST / PWR (AI power)**: treat like datacenter electricity compounders — 2026 above spot, ~3–4.5× by 2030 on base.
-- **HOOD / SOFI / PLTR / NOW**: follow the same sheet style (up years + one mid-path washout).
-
-### Stance mapping (strict)
-- **base**: Match the anchors above (±15% OK). This is the default conviction book.
-- **bullish**: Same shape, **materially higher** than base (~+25–40% on terminals; 2026 still above base 2026).
-- **bearish**: Softer terminals (~45–60% of base upside) with deeper winters — still non-linear.
+- **HOOD / SOFI / PLTR / NOW / SaaS**: follow the same sheet style (up years + one mid-path washout).
+- **Healthcare / drones / defense**: non-linear compounders — classify and use theme multiples; do not force AI-infra shapes.
 
 ### Forbidden
-- EOY 2026 **below spot** for NBIS, CRWV, VST, PWR, BMNR on **base or bullish**. That is a failure (your 182-on-NBIS bug).
+- EOY 2026 **below spot** for NBIS, CRWV, VST, PWR, BMNR. That is a failure (your 182-on-NBIS bug).
 - Near-linear ramps (same $ or YoY for 3+ years).
-- Timid mid-single-digit paths on AI infra / crypto when stance is base or bullish.
-- Making "base" quieter than the spreadsheet.
+- Timid mid-single-digit paths on AI infra / crypto.
+- Making paths quieter than the spreadsheet.
+- Rationale phrases: overridden, rejected, too timid, sheet-aligned, calibrated path.
 
 ### Required dynamics
 - Non-linear paths: bull runs and/or consolidation years.
 - Crypto: violent mid-path winter, then recovery.
 - AI infra: digestion = slower UP year, not a collapse below spot early.
-- New tickers: classify to nearest theme and use that theme's BASE multiples.
+- New tickers / sectors (SaaS, healthcare, drones…): classify to nearest theme and use that theme's BASE multiples.
+- Trim/add lines may list multiple names or sector sleeves — not one ticker only.
 
 ### Rationale
-One sentence naming dynamics + why the 2026 print is above spot (for base/bullish leaders).`;
+One human sentence on micro-thesis + path dynamics (bull / winter / digestion). Never say overridden or rejected.`;
