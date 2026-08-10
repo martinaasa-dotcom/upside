@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export type AdvisorAction =
   | { action: "set_call_pct"; ticker: string; callPct: number }
@@ -113,39 +114,68 @@ function extractImages(
     .map((p) => ({ url: p.url!, mediaType: p.mediaType! }));
 }
 
+/** Fix jammed GFM tables (model often emits one long |…|…| line). */
+function normalizeMargusMarkdown(src: string): string {
+  let text = src.replace(/\r\n/g, "\n");
+
+  // Split concatenated markdown table rows onto their own lines
+  if (text.includes("|") && text.includes("---")) {
+    text = text
+      // "| --- |" or "|---|" separator after a row end
+      .replace(/\|(\s*)\|(\s*:?-{3,}:?\s*)\|/g, "|\n|$2|")
+      // New data row jammed after separator or prior row: "...| | TICK |"
+      .replace(/\|\s*\|\s+(?=[A-Z0-9.^][A-Z0-9.^=_-]{0,12}\s*\|)/g, "|\n| ")
+      // Separator row jammed: "| --- | --- |"
+      .replace(/\|(\s*-{3,}[^|\n]*)+\|/g, (m) => {
+        if (m.includes("\n")) return m;
+        return `\n${m}\n`;
+      });
+  }
+
+  // Collapse 3+ blank lines
+  text = text.replace(/\n{3,}/g, "\n\n");
+  return text.trim();
+}
+
 function ChatMarkdown({ children }: { children: string }) {
+  const md = normalizeMargusMarkdown(children);
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
       components={{
         h1: ({ children: c }) => (
-          <h3 className="mb-1.5 mt-2 text-sm font-semibold text-white first:mt-0">
+          <h3 className="mb-1.5 mt-3 text-sm font-semibold tracking-tight text-white first:mt-0">
             {c}
           </h3>
         ),
         h2: ({ children: c }) => (
-          <h3 className="mb-1.5 mt-2 text-sm font-semibold text-white first:mt-0">
+          <h3 className="mb-1.5 mt-3 text-sm font-semibold tracking-tight text-white first:mt-0">
             {c}
           </h3>
         ),
         h3: ({ children: c }) => (
-          <h4 className="mb-1 mt-2 text-sm font-semibold text-zinc-100 first:mt-0">
+          <h4 className="mb-1 mt-2.5 text-[13px] font-semibold text-zinc-100 first:mt-0">
             {c}
           </h4>
         ),
         p: ({ children: c }) => (
-          <p className="mb-2 last:mb-0 leading-relaxed text-zinc-200">{c}</p>
+          <p className="mb-2.5 last:mb-0 text-[13px] leading-relaxed text-zinc-300">
+            {c}
+          </p>
         ),
         ul: ({ children: c }) => (
-          <ul className="mb-2 list-disc space-y-1 pl-4 last:mb-0 text-zinc-200">
+          <ul className="mb-2.5 list-disc space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
             {c}
           </ul>
         ),
         ol: ({ children: c }) => (
-          <ol className="mb-2 list-decimal space-y-1 pl-4 last:mb-0 text-zinc-200">
+          <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
             {c}
           </ol>
         ),
-        li: ({ children: c }) => <li className="leading-relaxed">{c}</li>,
+        li: ({ children: c }) => (
+          <li className="leading-relaxed marker:text-zinc-600">{c}</li>
+        ),
         strong: ({ children: c }) => (
           <strong className="font-semibold text-white">{c}</strong>
         ),
@@ -176,37 +206,43 @@ function ChatMarkdown({ children }: { children: string }) {
           );
         },
         pre: ({ children: c }) => (
-          <pre className="mb-2 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950/80 p-2 last:mb-0">
+          <pre className="mb-2.5 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950/80 p-2 last:mb-0">
             {c}
           </pre>
         ),
         table: ({ children: c }) => (
-          <div className="mb-2 overflow-x-auto last:mb-0">
-            <table className="w-full border-collapse text-left text-xs">
+          <div className="mb-3 overflow-x-auto rounded-lg border border-zinc-800 last:mb-0">
+            <table className="w-full min-w-[18rem] border-collapse text-left text-[12px]">
               {c}
             </table>
           </div>
         ),
         thead: ({ children: c }) => (
-          <thead className="border-b border-zinc-700 text-zinc-400">{c}</thead>
+          <thead className="bg-zinc-900/90 text-[11px] uppercase tracking-wide text-zinc-500">
+            {c}
+          </thead>
+        ),
+        tbody: ({ children: c }) => <tbody className="text-zinc-300">{c}</tbody>,
+        tr: ({ children: c }) => (
+          <tr className="border-t border-zinc-800/90 first:border-t-0">{c}</tr>
         ),
         th: ({ children: c }) => (
-          <th className="px-2 py-1 font-medium">{c}</th>
+          <th className="whitespace-nowrap px-2.5 py-2 font-medium">{c}</th>
         ),
         td: ({ children: c }) => (
-          <td className="border-t border-zinc-800/80 px-2 py-1 text-zinc-300">
+          <td className="px-2.5 py-2 align-top tabular-nums text-zinc-300">
             {c}
           </td>
         ),
-        hr: () => <hr className="my-2 border-zinc-800" />,
+        hr: () => <hr className="my-3 border-zinc-800" />,
         blockquote: ({ children: c }) => (
-          <blockquote className="mb-2 border-l-2 border-brand/40 pl-2 text-zinc-400 last:mb-0">
+          <blockquote className="mb-2.5 border-l-2 border-brand/40 pl-3 text-[13px] text-zinc-400 last:mb-0">
             {c}
           </blockquote>
         ),
       }}
     >
-      {children}
+      {md}
     </ReactMarkdown>
   );
 }

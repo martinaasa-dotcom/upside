@@ -709,7 +709,7 @@ This table is the WRITE PLAN, not a generic options chain dump.
 7. **Contracts** — floor(shares / 100).
 8. **CC yield / Premium** — live mid for that Next Strike & expiry ÷ Spot (and total $ for all contracts).
 9. **Expiration** — chosen ~2–3 week expiry (earnings-aware).
-10. **preMarket / afterHours** — extended-hours last price and % vs prior close when Yahoo has them. Use these when the user asks about premarket, after-hours, overnight gaps, or “what’s moving before the open”.
+10. **preMarket / afterHours** — extended-hours last price and % vs prior close when Yahoo has them. Use these when the user asks about premarket, after-hours, overnight gaps, or “what’s moving before the open”. Format as a real Markdown table (one row per line) or tight bullets — never a single jammed pipe paragraph.
 11. **session / marketState** — Yahoo session flag (PREPRE, PRE, REGULAR, POST, POSTPOST, CLOSED, …). When PRE/PREPRE lean on preMarket; when POST/POSTPOST lean on afterHours.
 
 Example (do not confuse these):
