@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Upside - Portfolio Tracker",
+  title: "Upside",
   description:
-    "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
+    "Live portfolio book with covered-call targets and Assistant Margus.",
   applicationName: "Upside",
   icons: {
     icon: [{ url: "/upside-icon.svg", type: "image/svg+xml" }],
@@ -23,20 +23,22 @@ export const metadata: Metadata = {
     apple: "/upside-icon.svg",
   },
   openGraph: {
-    title: "Upside - Portfolio Tracker",
+    title: "Upside",
     description:
-      "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
+      "Live portfolio book with covered-call targets and Assistant Margus.",
     siteName: "Upside",
     type: "website",
+    url: "https://upside-upthink1.vercel.app",
     images: [{ url: "/upside-icon.svg", width: 128, height: 128, alt: "Upside" }],
   },
   twitter: {
     card: "summary",
-    title: "Upside - Portfolio Tracker",
+    title: "Upside",
     description:
-      "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
+      "Live portfolio book with covered-call targets and Assistant Margus.",
     images: ["/upside-icon.svg"],
   },
+  metadataBase: new URL("https://upside-upthink1.vercel.app"),
 };
 
 export default function RootLayout({
