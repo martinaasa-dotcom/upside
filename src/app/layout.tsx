@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: "Upside",
     type: "website",
     url: "https://upside-upthink1.vercel.app",
-    images: [{ url: "/upside-icon.svg", width: 128, height: 128, alt: "Upside" }],
+    images: [{ url: "/upside-icon.svg", width: 128, height: 128, alt: "Upside mark" }],
   },
   twitter: {
     card: "summary",

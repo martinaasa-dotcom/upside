@@ -28,7 +28,7 @@ type Props = {
 };
 
 function tone(value: number) {
-  if (value > 0) return "text-emerald-400";
+  if (value > 0) return "text-brand";
   if (value < 0) return "text-rose-400";
   return "text-zinc-400";
 }
@@ -72,7 +72,7 @@ function RankCard({
       className={cn(
         "group flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition hover:brightness-110",
         isUp
-          ? "border-emerald-500/25 bg-emerald-500/[0.07]"
+          ? "border-brand/25 bg-brand/[0.07]"
           : "border-rose-500/25 bg-rose-500/[0.07]"
       )}
     >
@@ -80,7 +80,7 @@ function RankCard({
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold tabular-nums",
           isUp
-            ? "bg-emerald-500/20 text-emerald-300"
+            ? "bg-brand/20 text-brand-bright"
             : "bg-rose-500/20 text-rose-300"
         )}
       >
@@ -128,7 +128,7 @@ function PortfolioLane({
     <button type="button" onClick={onOpen} className="group w-full text-left">
       <div className="mb-2 flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-lg font-semibold text-white group-hover:text-emerald-300">
+          <p className="truncate text-lg font-semibold text-white group-hover:text-brand-bright">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1 text-sm text-zinc-400">
@@ -150,7 +150,7 @@ function PortfolioLane({
           className={cn(
             "overview-bar h-full rounded-full",
             hot
-              ? "bg-gradient-to-r from-emerald-600 via-emerald-400 to-lime-300"
+              ? "bg-gradient-to-r from-brand-deep via-brand to-brand-bright"
               : "bg-gradient-to-r from-rose-700 via-rose-500 to-orange-400"
           )}
           style={{ width: `${width}%` }}
@@ -213,15 +213,15 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
 
   return (
     <div className="space-y-8">
-      <section className="overview-fade relative overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/60 p-6 sm:p-7">
+      <section className="overview-fade relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/80 p-6 sm:p-7">
         <div
-          className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-emerald-500/12 blur-3xl"
+          className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand/12 blur-3xl"
           aria-hidden
         />
 
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-400/90">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand/90">
               All portfolios · live glance
             </p>
             <h2 className="mt-1 text-[1.75rem] font-semibold tracking-tight text-white sm:text-3xl">
@@ -236,7 +236,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
             className={cn(
               "overview-pulse rounded-2xl border px-5 py-3.5",
               dayUp
-                ? "border-emerald-500/30 bg-emerald-500/10"
+                ? "border-brand/30 bg-brand/10"
                 : "border-rose-500/30 bg-rose-500/10"
             )}
           >
@@ -244,7 +244,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
               <Zap
                 className={cn(
                   "h-4 w-4",
-                  dayUp ? "text-emerald-400" : "text-rose-400"
+                  dayUp ? "text-brand" : "text-rose-400"
                 )}
               />
               Today
@@ -319,7 +319,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
         <div className="mb-5">
           <h3 className="text-xl font-semibold text-white">Portfolios</h3>
           <p className="mt-1 text-base text-zinc-400">
@@ -339,16 +339,16 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="overview-fade rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-zinc-950/40 p-6">
+        <div className="overview-fade rounded-3xl border border-brand/20 bg-gradient-to-b from-brand/5 to-zinc-950/40 p-6">
           <div className="mb-5 flex items-center gap-2.5">
-            <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-400">
+            <div className="rounded-xl bg-brand/15 p-2 text-brand">
               <Flame className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <h3 className="text-xl font-semibold text-white">Winners</h3>
               <p className="text-sm text-zinc-400">Best lifetime ROI</p>
             </div>
-            <TrendingUp className="ml-auto h-4 w-4 text-emerald-400" />
+            <TrendingUp className="ml-auto h-4 w-4 text-brand" />
           </div>
           <div className="space-y-3">
             {winners.length === 0 ? (
@@ -401,7 +401,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="overview-fade rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-6">
+        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6">
           <h3 className="text-xl font-semibold text-white">
             Today&apos;s gainzzz
           </h3>
@@ -422,7 +422,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
             )}
           </div>
         </div>
-        <div className="overview-fade rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-6">
+        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6">
           <h3 className="text-xl font-semibold text-white">
             Today&apos;s stinkies
           </h3>
@@ -445,7 +445,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
             <Trophy className="h-4 w-4" />
@@ -492,7 +492,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-zinc-800/80 bg-zinc-950/40 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
             <CalendarDays className="h-4 w-4" />

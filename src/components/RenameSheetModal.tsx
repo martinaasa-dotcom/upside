@@ -61,7 +61,7 @@ export function RenameSheetModal({
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             required
           />
         </label>
@@ -76,7 +76,7 @@ export function RenameSheetModal({
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
           >
             Save
           </button>

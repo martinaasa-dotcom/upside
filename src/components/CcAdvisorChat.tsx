@@ -140,7 +140,7 @@ function ChatMarkdown({ children }: { children: string }) {
             href={href}
             target="_blank"
             rel="noreferrer"
-            className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300"
+            className="text-brand underline underline-offset-2 hover:text-brand-bright"
           >
             {c}
           </a>
@@ -155,7 +155,7 @@ function ChatMarkdown({ children }: { children: string }) {
             );
           }
           return (
-            <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-[11px] text-emerald-300">
+            <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-[11px] text-brand-bright">
               {c}
             </code>
           );
@@ -185,7 +185,7 @@ function ChatMarkdown({ children }: { children: string }) {
         ),
         hr: () => <hr className="my-2 border-zinc-800" />,
         blockquote: ({ children: c }) => (
-          <blockquote className="mb-2 border-l-2 border-emerald-500/40 pl-2 text-zinc-400 last:mb-0">
+          <blockquote className="mb-2 border-l-2 border-brand/40 pl-2 text-zinc-400 last:mb-0">
             {c}
           </blockquote>
         ),
@@ -414,9 +414,9 @@ export function CcAdvisorChat({
   const canSend = !busy && (Boolean(input.trim()) || pendingImages.length > 0);
 
   return (
-    <section className="relative flex h-[630px] flex-col overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
+    <section className="relative flex h-[630px] flex-col overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800/80 px-4 py-3">
-        <div className="rounded-lg bg-emerald-500/10 p-1.5 text-emerald-400">
+        <div className="rounded-lg bg-brand/10 p-1.5 text-brand">
           <Sparkles className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
@@ -433,7 +433,7 @@ export function CcAdvisorChat({
             onClick={() => setRulesOpen((o) => !o)}
             className={`rounded-lg p-1.5 transition ${
               rulesOpen
-                ? "bg-emerald-500/15 text-emerald-400"
+                ? "bg-brand/15 text-brand"
                 : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
             }`}
             aria-label="Strategy rules"
@@ -462,7 +462,7 @@ export function CcAdvisorChat({
                     <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                       {r.title}
                     </p>
-                    <p className="mt-0.5 text-sm font-semibold text-emerald-400">
+                    <p className="mt-0.5 text-sm font-semibold text-brand">
                       {r.rule}
                     </p>
                     <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
@@ -494,7 +494,7 @@ export function CcAdvisorChat({
                   type="button"
                   disabled={busy}
                   onClick={() => sendMessage({ text: s })}
-                  className="rounded-full border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-50"
+                  className="rounded-full border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
                 >
                   {s}
                 </button>
@@ -572,7 +572,7 @@ export function CcAdvisorChat({
               {toolNotes.map((note, i) => (
                 <p
                   key={i}
-                  className="mt-1.5 whitespace-pre-wrap text-xs font-medium text-emerald-400"
+                  className="mt-1.5 whitespace-pre-wrap text-xs font-medium text-brand"
                 >
                   {note}
                 </p>
@@ -675,12 +675,12 @@ export function CcAdvisorChat({
             onPaste={(e) => void onPaste(e)}
             placeholder="Paste a screenshot or ask Margus…"
             disabled={busy}
-            className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-emerald-500/50 disabled:opacity-50"
+            className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!canSend}
-            className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-3 text-zinc-950 hover:bg-emerald-400 disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded-lg bg-brand px-3 text-[#121214] hover:bg-brand-bright disabled:opacity-40"
             aria-label="Send"
           >
             <Send className="h-4 w-4" />
