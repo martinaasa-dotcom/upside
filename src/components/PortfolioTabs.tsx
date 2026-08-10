@@ -4,7 +4,8 @@ import { cn } from "@/lib/format";
 import { OVERVIEW_TAB_ID } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
 import { LayoutDashboard, MoreHorizontal, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   portfolios: Portfolio[];
@@ -13,6 +14,13 @@ type Props = {
   onAdd: (name: string) => void;
   onRenameRequest?: (id: string, name: string) => void;
   onDeleteRequest?: (id: string, name: string) => void;
+};
+
+type OpenMenu = {
+  id: string;
+  name: string;
+  left: number;
+  bottom: number;
 };
 
 export function PortfolioTabs({
@@ -25,9 +33,13 @@ export function PortfolioTabs({
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
-  const [menuId, setMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menu, setMenu] = useState<OpenMenu | null>(null);
+  const [mounted, setMounted] = useState(false);
   const overviewActive = activeId === OVERVIEW_TAB_ID;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function submit() {
     const trimmed = name.trim();
@@ -41,29 +53,62 @@ export function PortfolioTabs({
   }
 
   useEffect(() => {
-    if (!menuId) return;
+    if (!menu) return;
     function onDoc(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuId(null);
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("[data-sheet-menu]") || target?.closest("[data-sheet-menu-trigger]")) {
+        return;
       }
+      setMenu(null);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setMenuId(null);
+      if (e.key === "Escape") setMenu(null);
+    }
+    function onScroll() {
+      setMenu(null);
     }
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onScroll);
+    // Close when the tab strip scrolls horizontally
+    document.addEventListener("scroll", onScroll, true);
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onScroll);
+      document.removeEventListener("scroll", onScroll, true);
     };
-  }, [menuId]);
+  }, [menu]);
+
+  function openMenu(
+    e: React.MouseEvent<HTMLButtonElement>,
+    id: string,
+    sheetName: string
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (menu?.id === id) {
+      setMenu(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenu({
+      id,
+      name: sheetName,
+      left: Math.min(rect.left, window.innerWidth - 160),
+      bottom: window.innerHeight - rect.top + 6,
+    });
+  }
 
   return (
     <nav className="sticky bottom-0 z-20 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 overflow-x-auto px-3 py-2">
         <button
           type="button"
-          onClick={() => onChange(OVERVIEW_TAB_ID)}
+          onClick={() => {
+            setMenu(null);
+            onChange(OVERVIEW_TAB_ID);
+          }}
           className={cn(
             "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm transition",
             overviewActive
@@ -79,12 +124,12 @@ export function PortfolioTabs({
 
         {portfolios.map((p) => {
           const active = p.id === activeId;
-          const menuOpen = menuId === p.id;
+          const menuOpen = menu?.id === p.id;
           return (
             <div
               key={p.id}
               className={cn(
-                "relative flex h-9 shrink-0 items-stretch overflow-hidden rounded-lg transition",
+                "relative flex h-9 shrink-0 items-stretch rounded-lg transition",
                 active
                   ? "bg-zinc-800 text-white ring-1 ring-inset ring-zinc-600"
                   : "text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-200"
@@ -92,10 +137,13 @@ export function PortfolioTabs({
             >
               <button
                 type="button"
-                onClick={() => onChange(p.id)}
+                onClick={() => {
+                  setMenu(null);
+                  onChange(p.id);
+                }}
                 onDoubleClick={() => onRenameRequest?.(p.id, p.name)}
                 className={cn(
-                  "px-3 text-sm transition",
+                  "rounded-l-lg px-3 text-sm transition",
                   active && "font-semibold"
                 )}
               >
@@ -103,9 +151,10 @@ export function PortfolioTabs({
               </button>
               <button
                 type="button"
-                onClick={() => setMenuId((id) => (id === p.id ? null : p.id))}
+                data-sheet-menu-trigger
+                onClick={(e) => openMenu(e, p.id, p.name)}
                 className={cn(
-                  "flex items-center border-l px-2 transition",
+                  "flex items-center rounded-r-lg border-l px-2 transition",
                   active
                     ? "border-zinc-600/80 text-zinc-300 hover:bg-zinc-700/60 hover:text-white"
                     : "border-transparent text-zinc-500 hover:text-zinc-200",
@@ -113,38 +162,10 @@ export function PortfolioTabs({
                 )}
                 aria-label={`Options for ${p.name}`}
                 aria-expanded={menuOpen}
+                aria-haspopup="menu"
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </button>
-              {menuOpen && (
-                <div
-                  ref={menuRef}
-                  className="absolute bottom-full left-0 z-30 mb-1.5 min-w-[9rem] rounded-lg border border-zinc-700 bg-zinc-950 py-1 shadow-xl"
-                >
-                  <button
-                    type="button"
-                    className="block w-full px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-900"
-                    onClick={() => {
-                      setMenuId(null);
-                      onRenameRequest?.(p.id, p.name);
-                    }}
-                  >
-                    Rename
-                  </button>
-                  {onDeleteRequest && portfolios.length > 1 && (
-                    <button
-                      type="button"
-                      className="block w-full px-3 py-2 text-left text-sm text-rose-300 hover:bg-zinc-900"
-                      onClick={() => {
-                        setMenuId(null);
-                        onDeleteRequest(p.id, p.name);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           );
         })}
@@ -184,6 +205,47 @@ export function PortfolioTabs({
           </button>
         )}
       </div>
+
+      {mounted &&
+        menu &&
+        createPortal(
+          <div
+            data-sheet-menu
+            role="menu"
+            className="fixed z-[100] min-w-[9rem] rounded-lg border border-zinc-700 bg-zinc-950 py-1 shadow-xl"
+            style={{ left: menu.left, bottom: menu.bottom }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-900"
+              onClick={() => {
+                const id = menu.id;
+                const sheetName = menu.name;
+                setMenu(null);
+                onRenameRequest?.(id, sheetName);
+              }}
+            >
+              Rename
+            </button>
+            {onDeleteRequest && portfolios.length > 1 && (
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-2 text-left text-sm text-rose-300 hover:bg-zinc-900"
+                onClick={() => {
+                  const id = menu.id;
+                  const sheetName = menu.name;
+                  setMenu(null);
+                  onDeleteRequest(id, sheetName);
+                }}
+              >
+                Delete
+              </button>
+            )}
+          </div>,
+          document.body
+        )}
     </nav>
   );
 }
