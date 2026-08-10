@@ -3,7 +3,7 @@
 import { cn } from "@/lib/format";
 import { COMPOUND_TAB_ID, LAB_TAB_ID, OVERVIEW_TAB_ID } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
-import { Calculator, FlaskConical, LayoutDashboard, MoreHorizontal, Plus } from "lucide-react";
+import { Calculator, FlaskConical, LayoutDashboard, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -19,9 +19,12 @@ type Props = {
 type OpenMenu = {
   id: string;
   name: string;
-  left: number;
-  bottom: number;
+  x: number;
+  y: number;
 };
+
+/** Fixed chip width so sheets read as equal columns. */
+const SHEET_TAB_WIDTH = "w-[7.25rem]";
 
 export function PortfolioTabs({
   portfolios,
@@ -58,9 +61,7 @@ export function PortfolioTabs({
     if (!menu) return;
     function onDoc(e: MouseEvent) {
       const target = e.target as HTMLElement | null;
-      if (target?.closest("[data-sheet-menu]") || target?.closest("[data-sheet-menu-trigger]")) {
-        return;
-      }
+      if (target?.closest("[data-sheet-menu]")) return;
       setMenu(null);
     }
     function onKey(e: KeyboardEvent) {
@@ -72,7 +73,6 @@ export function PortfolioTabs({
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
     window.addEventListener("resize", onScroll);
-    // Close when the tab strip scrolls horizontally
     document.addEventListener("scroll", onScroll, true);
     return () => {
       document.removeEventListener("mousedown", onDoc);
@@ -82,29 +82,26 @@ export function PortfolioTabs({
     };
   }, [menu]);
 
-  function openMenu(
-    e: React.MouseEvent<HTMLButtonElement>,
+  function openContextMenu(
+    e: React.MouseEvent,
     id: string,
     sheetName: string
   ) {
     e.preventDefault();
     e.stopPropagation();
-    if (menu?.id === id) {
-      setMenu(null);
-      return;
-    }
-    const rect = e.currentTarget.getBoundingClientRect();
+    const menuW = 144;
+    const menuH = 88;
     setMenu({
       id,
       name: sheetName,
-      left: Math.min(rect.left, window.innerWidth - 160),
-      bottom: window.innerHeight - rect.top + 6,
+      x: Math.min(e.clientX, window.innerWidth - menuW - 8),
+      y: Math.min(e.clientY, window.innerHeight - menuH - 8),
     });
   }
 
   return (
     <nav className="sticky bottom-0 z-20 border-t border-brand-deep/30 bg-[#121214]/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 overflow-x-auto px-3 py-2">
+      <div className="mx-auto flex max-w-[1400px] items-center gap-1 overflow-x-auto px-3 py-2">
         <button
           type="button"
           onClick={() => {
@@ -156,59 +153,39 @@ export function PortfolioTabs({
           Lab
         </button>
 
-        <div className="mx-0.5 h-5 w-px shrink-0 bg-zinc-800" aria-hidden />
+        <div className="mx-1 h-5 w-px shrink-0 bg-zinc-700" aria-hidden />
 
-        {portfolios.map((p) => {
-          const active = p.id === activeId;
-          const menuOpen = menu?.id === p.id;
-          return (
-            <div
-              key={p.id}
-              className={cn(
-                "relative flex h-9 shrink-0 items-stretch rounded-lg transition",
-                active
-                  ? "bg-zinc-800 text-white ring-1 ring-inset ring-zinc-600"
-                  : "text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-200"
-              )}
-            >
+        <div className="flex shrink-0 items-center divide-x divide-zinc-800 overflow-hidden rounded-lg border border-zinc-800">
+          {portfolios.map((p) => {
+            const active = p.id === activeId;
+            return (
               <button
+                key={p.id}
                 type="button"
+                title={`${p.name} · right-click for options`}
                 onClick={() => {
                   setMenu(null);
                   onChange(p.id);
                 }}
+                onContextMenu={(e) => openContextMenu(e, p.id, p.name)}
                 onDoubleClick={() => onRenameRequest?.(p.id, p.name)}
                 className={cn(
-                  "rounded-l-lg px-3 text-sm transition",
-                  active && "font-semibold"
+                  SHEET_TAB_WIDTH,
+                  "h-9 shrink-0 truncate px-2.5 text-center text-sm transition",
+                  active
+                    ? "bg-zinc-800 font-semibold text-white"
+                    : "bg-transparent text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-200"
                 )}
               >
                 {p.name}
               </button>
-              <button
-                type="button"
-                data-sheet-menu-trigger
-                onClick={(e) => openMenu(e, p.id, p.name)}
-                className={cn(
-                  "flex items-center rounded-r-lg border-l px-2 transition",
-                  active
-                    ? "border-zinc-600/80 text-zinc-300 hover:bg-zinc-700/60 hover:text-white"
-                    : "border-transparent text-zinc-500 hover:text-zinc-200",
-                  menuOpen && "bg-zinc-700/50 text-white"
-                )}
-                aria-label={`Options for ${p.name}`}
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {adding ? (
           <form
-            className="flex h-9 shrink-0 items-center"
+            className="ml-1 flex h-9 shrink-0 items-center"
             onSubmit={(e) => {
               e.preventDefault();
               submit();
@@ -226,14 +203,14 @@ export function PortfolioTabs({
                 }
               }}
               placeholder="Sheet name"
-              className="h-9 w-32 rounded-lg border border-zinc-600 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-brand"
+              className="h-9 w-[7.25rem] rounded-lg border border-zinc-600 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-brand"
             />
           </form>
         ) : (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg px-3 text-sm text-zinc-500 transition hover:bg-zinc-900 hover:text-brand"
+            className="ml-1 inline-flex h-9 shrink-0 items-center gap-1 rounded-lg px-3 text-sm text-zinc-500 transition hover:bg-zinc-900 hover:text-brand"
             aria-label="Add sheet"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -249,7 +226,7 @@ export function PortfolioTabs({
             data-sheet-menu
             role="menu"
             className="fixed z-[100] min-w-[9rem] rounded-lg border border-zinc-700 bg-zinc-950 py-1 shadow-xl"
-            style={{ left: menu.left, bottom: menu.bottom }}
+            style={{ left: menu.x, top: menu.y }}
           >
             <button
               type="button"
