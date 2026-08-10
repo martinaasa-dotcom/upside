@@ -55,17 +55,27 @@ function signedTone(value: number) {
 function InlineNumber({
   value,
   digits = 0,
+  /** How many decimals to show when blurred; commit still uses `digits`. */
+  displayDigits,
   onCommit,
   className,
 }: {
   value: number;
   digits?: number;
+  displayDigits?: number;
   onCommit: (n: number) => void | boolean | Promise<void | boolean>;
   className?: string;
 }) {
-  const display = formatDecimal(value, digits);
+  const shownDigits = displayDigits ?? digits;
+  const display = formatDecimal(value, shownDigits);
+  // Focus shows true fractional value without trailing zeros (30 not 30.0000)
+  const editDisplay =
+    digits <= 0
+      ? formatDecimal(value, 0)
+      : String(Number(value.toFixed(digits)));
   const [draft, setDraft] = useState(display);
   const focused = useRef(false);
+  const allowDecimal = digits > 0;
 
   useEffect(() => {
     if (!focused.current) setDraft(display);
@@ -74,7 +84,7 @@ function InlineNumber({
   async function commit() {
     focused.current = false;
     const n = parseDecimal(draft);
-    if (Number.isNaN(n) || n === value) {
+    if (Number.isNaN(n)) {
       setDraft(display);
       return;
     }
@@ -82,28 +92,32 @@ function InlineNumber({
       digits <= 0
         ? Math.round(n)
         : Math.round(n * 10 ** digits) / 10 ** digits;
+    if (rounded === value) {
+      setDraft(display);
+      return;
+    }
     try {
       const ok = await onCommit(rounded);
-      if (ok === false) setDraft(formatDecimal(value, digits));
+      if (ok === false) setDraft(formatDecimal(value, shownDigits));
     } catch {
-      setDraft(formatDecimal(value, digits));
+      setDraft(formatDecimal(value, shownDigits));
     }
   }
 
   return (
     <input
       type="text"
-      inputMode={digits <= 0 ? "numeric" : "decimal"}
+      inputMode={allowDecimal ? "decimal" : "numeric"}
       value={draft}
       onChange={(e) => {
-        const next =
-          digits <= 0
-            ? e.target.value.replace(/[^\d-]/g, "")
-            : e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, "");
+        const next = allowDecimal
+          ? e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, "")
+          : e.target.value.replace(/[^\d-]/g, "");
         setDraft(next);
       }}
       onFocus={() => {
         focused.current = true;
+        setDraft(editDisplay);
       }}
       onWheel={blockWheelChange}
       onBlur={() => {
@@ -276,6 +290,7 @@ export function PortfolioTable({
                   <InlineNumber
                     value={h.shares}
                     digits={4}
+                    displayDigits={0}
                     onCommit={(shares) => onPatch({ id: h.id, shares })}
                     className="w-full text-left"
                   />
@@ -382,6 +397,7 @@ export function PortfolioTable({
                   <InlineNumber
                     value={h.shares}
                     digits={4}
+                    displayDigits={0}
                     onCommit={(shares) => onPatch({ id: h.id, shares })}
                   />
                 </div>
