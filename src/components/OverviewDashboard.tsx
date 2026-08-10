@@ -339,7 +339,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="overview-fade rounded-3xl border border-brand/20 bg-gradient-to-b from-brand/5 to-zinc-950/40 p-6">
+        <div className="overview-fade rounded-3xl border border-brand/20 bg-gradient-to-b from-brand/5 to-[#161618]/40 p-6">
           <div className="mb-5 flex items-center gap-2.5">
             <div className="rounded-xl bg-brand/15 p-2 text-brand">
               <Flame className="h-4 w-4" />
@@ -369,7 +369,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
           </div>
         </div>
 
-        <div className="overview-fade rounded-3xl border border-rose-500/20 bg-gradient-to-b from-rose-500/5 to-zinc-950/40 p-6">
+        <div className="overview-fade rounded-3xl border border-rose-500/20 bg-gradient-to-b from-rose-500/5 to-[#161618]/40 p-6">
           <div className="mb-5 flex items-center gap-2.5">
             <div className="rounded-xl bg-rose-500/15 p-2 text-rose-400">
               <Snowflake className="h-4 w-4" />
@@ -570,7 +570,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-zinc-950/40 to-zinc-950/40 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-6 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
             <Lightbulb className="h-4 w-4" />
