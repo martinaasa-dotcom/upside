@@ -71,17 +71,19 @@ export const forecastPlanSchema = z.object({
         add: z
           .string()
           .describe(
-            "What to add or overweight — prefer tickers already in the book or clear adjacent themes"
+            'ONE short line, max ~14 words. Format: "TICKER / TICKER — why". Example: "BMNR / HOOD — crypto + fintech rally on liquidity". Prefer book tickers. Never empty; say "Hold — no add" if nothing.'
           ),
         trim: z
           .string()
           .describe(
-            "What to trim or underweight — be specific; say if nothing material"
+            'ONE short line, max ~14 words. Format: "TICKER — why". Example: "NBIS — trim into AI digestion". Never empty; say "Hold — no trim" if nothing.'
           ),
         notes: z
           .string()
           .optional()
-          .describe("Optional one-liner on catalysts, earnings, or sizing"),
+          .describe(
+            "Optional ONE short context line only — do NOT repeat add/trim tickers here"
+          ),
       })
     )
     .min(2)
@@ -291,7 +293,11 @@ Requirements:
    - Next year (label "${year + 1}" or "Next year (${year + 1})")
    - Then 2–3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful — not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
-3. Add/Trim must be actionable for THIS book — prefer names already held; if suggesting a new ticker, say why and keep it light.
+3. Add and Trim are SEPARATE one-liners — scannable actions, not essays:
+   - add: max ~14 words. "TICKERS — why" e.g. "BMNR / HOOD — fintech + crypto liquidity rally"
+   - trim: max ~14 words. "TICKER — why" e.g. "NBIS — light trim into AI digestion"
+   - If nothing to do: "Hold — no add" / "Hold — no trim" (never leave blank, never bury in notes)
+   - Prefer tickers already in this book; new names only if essential and named
 4. sectorRotation: talk through plausible rotations given concentration in this book.
 5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).

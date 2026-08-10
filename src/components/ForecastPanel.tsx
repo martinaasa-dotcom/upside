@@ -561,7 +561,7 @@ export function ForecastPanel({
               {plan.periods.map((s) => (
                 <div
                   key={`${s.label}-${s.theme}`}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
+                  className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-brand/90">
                     {s.label}
@@ -569,15 +569,25 @@ export function ForecastPanel({
                   <p className="mt-1 text-sm font-semibold text-white">
                     {s.theme}
                   </p>
-                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                    <span className="font-medium text-brand-bright/90">Add</span>{" "}
-                    {s.add}
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                    <span className="font-medium text-rose-300/90">Trim</span>{" "}
-                    {s.trim}
-                  </p>
-                  {s.notes && (
+                  <div className="mt-3 space-y-2">
+                    <div className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-bright">
+                        Add
+                      </p>
+                      <p className="mt-0.5 text-xs leading-snug text-zinc-100">
+                        {s.add?.trim() || "Hold — no add"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-rose-500/25 bg-rose-950/30 px-2.5 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
+                        Trim
+                      </p>
+                      <p className="mt-0.5 text-xs leading-snug text-zinc-100">
+                        {s.trim?.trim() || "Hold — no trim"}
+                      </p>
+                    </div>
+                  </div>
+                  {s.notes?.trim() && (
                     <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
                       {s.notes}
                     </p>
