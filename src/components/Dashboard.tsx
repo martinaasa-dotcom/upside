@@ -36,6 +36,25 @@ import {
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
 import {
+  deriveBadges,
+  emptyLabBundle,
+  type LabBundle,
+} from "@/lib/lab-bundle";
+import {
+  createShareLink,
+  fetchLabBundle,
+  mirrorLabLocal,
+  pushLabBundle,
+} from "@/lib/lab-sync-client";
+import { loadCashflows } from "@/lib/cashflow";
+import { loadArena } from "@/lib/paper-arena";
+import { loadJournal } from "@/lib/trade-journal";
+import {
+  loadDismissedAlertIds,
+  saveDismissedAlertIds,
+} from "@/lib/alert-dismiss";
+import { currency, percent } from "@/lib/format";
+import {
   loadConvictionMap,
   setConviction,
   type ConvictionMap,
@@ -92,6 +111,7 @@ import {
   Eye,
   EyeOff,
   History,
+  Link2,
   Lock,
   Plus,
   RefreshCw,
@@ -191,19 +211,29 @@ export function Dashboard() {
   );
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const shareTokenRef = useRef<string | null>(null);
+  if (shareTokenRef.current === null && typeof window !== "undefined") {
+    shareTokenRef.current =
+      new URLSearchParams(window.location.search).get("share")?.trim() || "";
+  }
   const [guestMode] = useState(() => {
     if (typeof window === "undefined") return false;
-    return new URLSearchParams(window.location.search).get("view") === "guest";
+    const sp = new URLSearchParams(window.location.search);
+    return sp.get("view") === "guest" || Boolean(sp.get("share")?.trim());
   });
+  const [shareLabel, setShareLabel] = useState<string | null>(null);
+  const [labBundle, setLabBundle] = useState<LabBundle>(() => emptyLabBundle());
+  const [labReady, setLabReady] = useState(false);
+  const labDirtyRef = useRef(false);
   const [costBasisOpen, setCostBasisOpen] = useState(false);
   const [costBasisRows, setCostBasisRows] = useState<CostBasisRow[]>([]);
   const [drawerTicker, setDrawerTicker] = useState<string | null>(null);
-  const [convictionMap, setConvictionMap] = useState<ConvictionMap>({});
+  const convictionMap = labBundle.conviction;
   const [earningsEvents, setEarningsEvents] = useState<
     Array<{ ticker: string; date: string; days: number }>
   >([]);
   const [alertToastsSent, setAlertToastsSent] = useState<Set<string>>(
-    () => new Set()
+    () => loadDismissedAlertIds()
   );
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
@@ -407,6 +437,40 @@ export function Dashboard() {
       setLoadError(null);
     }
     try {
+      const shareToken = shareTokenRef.current;
+      if (shareToken) {
+        const res = await fetch(
+          `/api/share/${encodeURIComponent(shareToken)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(
+            (err as { error?: string }).error ??
+              `Share link failed (${res.status})`
+          );
+        }
+        const data = await res.json();
+        setSource("supabase");
+        setPortfolios(data.portfolios ?? []);
+        setHoldings(data.holdings ?? []);
+        setBookSyncedAt(Date.now());
+        setShareLabel(
+          typeof data.label === "string" ? data.label : "Guest link"
+        );
+        if (data.lab) {
+          const bundle = {
+            ...emptyLabBundle(),
+            ...data.lab,
+          } as LabBundle;
+          setLabBundle(bundle);
+          mirrorLabLocal(bundle);
+          setLabReady(true);
+        }
+        setActiveId((prev) => pickInitialSheet(data.portfolios ?? [], prev));
+        return;
+      }
+
       const res = await fetch("/api/portfolios", { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`Portfolios request failed (${res.status})`);
@@ -430,7 +494,9 @@ export function Dashboard() {
       console.error(err);
       if (!opts?.silent) {
         setLoadError(
-          "Couldn’t load the shared book. Showing local demo — retry when ready."
+          err instanceof Error
+            ? err.message
+            : "Couldn’t load the shared book. Showing local demo — retry when ready."
         );
         const demo = loadDemoStore();
         setSource("demo");
@@ -542,12 +608,20 @@ export function Dashboard() {
       if (p?.slug) url.searchParams.set("sheet", p.slug);
       else url.searchParams.set("sheet", activeId);
     }
-    if (guestMode) url.searchParams.set("view", "guest");
+    if (guestMode) {
+      if (shareTokenRef.current) {
+        url.searchParams.set("share", shareTokenRef.current);
+        url.searchParams.delete("view");
+      } else {
+        url.searchParams.set("view", "guest");
+      }
+    }
     window.history.replaceState({}, "", `${url.pathname}${url.search}`);
   }, [activeId, portfolios, guestMode]);
 
   useEffect(() => {
     if (source !== "supabase") return;
+    if (shareTokenRef.current) return;
     const fingerprint = (ps: Portfolio[], hs: Holding[]) =>
       JSON.stringify([
         ps.map((p) => [p.id, p.cash_balance, p.name]),
@@ -1401,8 +1475,111 @@ export function Dashboard() {
   }
 
   useEffect(() => {
-    setConvictionMap(loadConvictionMap());
+    if (shareTokenRef.current) return;
+    let cancelled = false;
+    void (async () => {
+      const local: LabBundle = {
+        conviction: loadConvictionMap(),
+        journal: loadJournal(),
+        cashflows: loadCashflows(),
+        arena: loadArena(),
+        badges: [],
+      };
+      const remote = await fetchLabBundle();
+      if (cancelled) return;
+      if (remote.source === "supabase") {
+        const merged: LabBundle = {
+          ...emptyLabBundle(),
+          ...remote.bundle,
+          conviction:
+            Object.keys(remote.bundle.conviction ?? {}).length > 0
+              ? remote.bundle.conviction
+              : local.conviction,
+          journal:
+            (remote.bundle.journal?.length ?? 0) > 0
+              ? remote.bundle.journal
+              : local.journal,
+          cashflows:
+            (remote.bundle.cashflows?.length ?? 0) > 0
+              ? remote.bundle.cashflows
+              : local.cashflows,
+          arena: remote.bundle.arena ?? local.arena,
+          badges: remote.bundle.badges ?? [],
+        };
+        setLabBundle(merged);
+        mirrorLabLocal(merged);
+      } else {
+        setLabBundle(local);
+      }
+      setLabReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!labReady || guestMode || !labDirtyRef.current) return;
+    if (source === "supabase" && !bookUnlocked) return;
+    const t = window.setTimeout(() => {
+      labDirtyRef.current = false;
+      void pushLabBundle(labBundle).then((r) => {
+        if (!r.ok && r.error) toast(r.error, "error");
+      });
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [labBundle, labReady, guestMode, toast, bookUnlocked, source]);
+
+  function patchLab(patch: Partial<LabBundle>) {
+    if (guestMode) return;
+    labDirtyRef.current = true;
+    setLabBundle((prev) => ({ ...prev, ...patch }));
+  }
+
+  async function handleCreateShare() {
+    if (!bookUnlocked) {
+      setUnlockOpen(true);
+      toast("Unlock with PIN to create a share link", "info");
+      return;
+    }
+    const result = await createShareLink({
+      scope: "overview",
+      label: "Guest read-only",
+      daysValid: 14,
+    });
+    if (!result.ok || !result.url) {
+      toast(result.error ?? "Couldn’t create share link", "error");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(result.url);
+      toast("Guest link copied (14 days)", "success");
+    } catch {
+      toast(result.url, "info");
+    }
+  }
+
+  useEffect(() => {
+    if (!labReady || guestMode) return;
+    const nextBadges = deriveBadges({
+      greenStreakMax: 0,
+      roiPct: overview.totals.roiPct,
+      holdingCount: overview.totals.uniqueTickers,
+      existing: labBundle.badges,
+    });
+    const same =
+      nextBadges.length === labBundle.badges.length &&
+      nextBadges.every((b, i) => b.id === labBundle.badges[i]?.id);
+    if (same) return;
+    labDirtyRef.current = true;
+    setLabBundle((prev) => ({ ...prev, badges: nextBadges }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed badges from totals
+  }, [
+    labReady,
+    guestMode,
+    overview.totals.roiPct,
+    overview.totals.uniqueTickers,
+  ]);
 
   useEffect(() => {
     const tickers = overview.tickers.map((t) => t.ticker).slice(0, 40);
@@ -1442,6 +1619,7 @@ export function Dashboard() {
         updated.add(a.id);
         toast(a.title, "info");
       }
+      saveDismissedAlertIds(updated);
       return updated;
     });
   }, [snapshot?.coveredCallRows, earningsEvents, guestMode, toast]);
@@ -1550,7 +1728,9 @@ export function Dashboard() {
     <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
       {guestMode && (
         <div className="border-b border-zinc-700 bg-zinc-900 px-4 py-1.5 text-center text-[11px] text-zinc-400">
-          Guest read-only link · edits disabled
+          {shareLabel
+            ? `${shareLabel} · read-only`
+            : "Guest read-only link · edits disabled"}
         </div>
       )}
       <StaleQuotesBanner
@@ -1616,6 +1796,17 @@ export function Dashboard() {
             >
               ⌘K
             </button>
+            {source === "supabase" && !guestMode && (
+              <button
+                type="button"
+                onClick={() => void handleCreateShare()}
+                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                title="Copy a 14-day read-only guest link"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
+            )}
             {source === "supabase" && (
               <button
                 type="button"
@@ -1752,7 +1943,7 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-5 px-4 py-5 pb-24">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-5 px-4 py-5 pb-28 md:pb-24">
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
@@ -1796,6 +1987,8 @@ export function Dashboard() {
               })
             }
             earnings={earningsEvents}
+            lab={labBundle}
+            onLabChange={patchLab}
             guest={guestMode}
           />
         ) : isCompound ? (
@@ -2157,10 +2350,13 @@ export function Dashboard() {
             : null
         }
         onConviction={(level, thesis) => {
-          if (!drawerTicker) return;
-          setConvictionMap((prev) =>
-            setConviction(prev, drawerTicker, { level, thesis })
-          );
+          if (!drawerTicker || guestMode) return;
+          patchLab({
+            conviction: setConviction(convictionMap, drawerTicker, {
+              level,
+              thesis,
+            }),
+          });
         }}
         onClose={() => setDrawerTicker(null)}
         onAskMargus={
@@ -2171,6 +2367,60 @@ export function Dashboard() {
               }
         }
       />
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800/80 bg-[#121214]/95 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
+        <div className="pointer-events-auto mx-auto flex max-w-[1400px] items-center justify-between gap-3 text-xs">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+              {isOverview || isLab || isCompound
+                ? "Book"
+                : activePortfolio?.name ?? "Sheet"}
+            </p>
+            <p className="tabular-nums text-sm font-semibold text-white">
+              {currency(
+                isMetaTab
+                  ? overview.totals.totalValue
+                  : (snapshot?.totals.currentValue ??
+                    overview.totals.totalValue)
+              )}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+              Today
+            </p>
+            <p
+              className={`tabular-nums text-sm font-semibold ${
+                (isMetaTab
+                  ? overview.totals.todayDollar
+                  : (overview.sheets.find((s) => s.portfolio.id === activeId)
+                      ?.todayDollar ?? 0)) >= 0
+                  ? "text-gain"
+                  : "text-loss"
+              }`}
+            >
+              {currency(
+                isMetaTab
+                  ? overview.totals.todayDollar
+                  : (overview.sheets.find((s) => s.portfolio.id === activeId)
+                      ?.todayDollar ?? 0)
+              )}
+              {(isMetaTab
+                ? overview.totals.todayPct
+                : overview.sheets.find((s) => s.portfolio.id === activeId)
+                    ?.todayPct) != null && (
+                <span className="ml-1 text-[11px] font-normal opacity-80">
+                  {percent(
+                    (isMetaTab
+                      ? overview.totals.todayPct
+                      : overview.sheets.find((s) => s.portfolio.id === activeId)
+                          ?.todayPct) as number
+                  )}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

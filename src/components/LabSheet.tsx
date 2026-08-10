@@ -10,25 +10,19 @@ import {
 import { SHOCKS, shockedPrice, type ShockId } from "@/lib/book-shock";
 import {
   addCashflow,
-  loadCashflows,
   trailingIncome,
-  type CashflowEntry,
 } from "@/lib/cashflow";
 import { correlationMatrix } from "@/lib/correlation";
 import { currency, percent, cn } from "@/lib/format";
+import type { LabBundle } from "@/lib/lab-bundle";
 import {
   arenaValue,
   defaultArena,
-  loadArena,
-  saveArena,
   seedArenaFromLive,
-  type ArenaState,
 } from "@/lib/paper-arena";
 import {
   addJournalEntry,
-  loadJournal,
   whatIfHeld,
-  type JournalEntry,
 } from "@/lib/trade-journal";
 import { buildWeeklyRecap } from "@/lib/weekly-recap";
 import type { OverviewModel } from "@/lib/overview";
@@ -49,6 +43,8 @@ type Props = {
   quotes: Record<string, Quote>;
   coveredCallRows: CoveredCallRow[];
   earnings: Array<{ ticker: string; date: string; days: number }>;
+  lab: LabBundle;
+  onLabChange: (patch: Partial<LabBundle>) => void;
   guest?: boolean;
 };
 
@@ -84,15 +80,18 @@ export function LabSheet({
   quotes,
   coveredCallRows,
   earnings,
+  lab,
+  onLabChange,
   guest,
 }: Props) {
   const [tab, setTab] = useState<LabTab>("alloc");
   const [shock, setShock] = useState<ShockId>("none");
   const [versusA, setVersusA] = useState(portfolios[0]?.id ?? "");
   const [versusB, setVersusB] = useState(portfolios[1]?.id ?? portfolios[0]?.id ?? "");
-  const [arena, setArena] = useState<ArenaState>(defaultArena);
-  const [journal, setJournal] = useState<JournalEntry[]>([]);
-  const [cashflows, setCashflows] = useState<CashflowEntry[]>([]);
+  const arena = lab.arena;
+  const journal = lab.journal;
+  const cashflows = lab.cashflows;
+  const badges = lab.badges ?? [];
   const [copied, setCopied] = useState(false);
   const [jTicker, setJTicker] = useState("");
   const [jNote, setJNote] = useState("");
@@ -100,12 +99,6 @@ export function LabSheet({
   const [jPrice, setJPrice] = useState(0);
   const [cfAmount, setCfAmount] = useState(0);
   const [cfNote, setCfNote] = useState("");
-
-  useEffect(() => {
-    setArena(loadArena());
-    setJournal(loadJournal());
-    setCashflows(loadCashflows());
-  }, []);
 
   useEffect(() => {
     if (!versusA && portfolios[0]) setVersusA(portfolios[0].id);
@@ -311,7 +304,7 @@ export function LabSheet({
                     sheet.portfolio.cash_balance,
                     hs
                   );
-                  setArena(next);
+                  onLabChange({ arena: next });
                 }}
               >
                 Clone first sheet
@@ -320,9 +313,7 @@ export function LabSheet({
                 type="button"
                 className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
                 onClick={() => {
-                  const next = defaultArena();
-                  saveArena(next);
-                  setArena(next);
+                  onLabChange({ arena: defaultArena() });
                 }}
               >
                 Reset sandbox
@@ -472,7 +463,7 @@ export function LabSheet({
                     price: jPrice,
                     note: jNote || "Logged sell",
                   });
-                  setJournal(next);
+                  onLabChange({ journal: next });
                   setJNote("");
                 }}
               >
@@ -559,13 +550,13 @@ export function LabSheet({
                 className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300"
                 onClick={() => {
                   if (!(cfAmount > 0)) return;
-                  setCashflows(
-                    addCashflow(cashflows, {
+                  onLabChange({
+                    cashflows: addCashflow(cashflows, {
                       kind: "premium",
                       amount: cfAmount,
                       note: cfNote || "CC premium",
-                    })
-                  );
+                    }),
+                  });
                   setCfAmount(0);
                   setCfNote("");
                 }}
@@ -577,13 +568,13 @@ export function LabSheet({
                 className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300"
                 onClick={() => {
                   if (!(cfAmount > 0)) return;
-                  setCashflows(
-                    addCashflow(cashflows, {
+                  onLabChange({
+                    cashflows: addCashflow(cashflows, {
                       kind: "dividend",
                       amount: cfAmount,
                       note: cfNote || "Dividend",
-                    })
-                  );
+                    }),
+                  });
                   setCfAmount(0);
                   setCfNote("");
                 }}
@@ -663,6 +654,24 @@ export function LabSheet({
           <pre className="whitespace-pre-wrap rounded-lg bg-zinc-950/80 px-3 py-3 text-sm leading-relaxed text-zinc-300">
             {recap}
           </pre>
+          {badges.length > 0 && (
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Season badges
+              </p>
+              <ul className="flex flex-wrap gap-2">
+                {badges.map((b) => (
+                  <li
+                    key={b.id}
+                    className="rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1 text-xs text-brand-bright"
+                    title={b.earnedAt}
+                  >
+                    {b.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
