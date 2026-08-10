@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Upside — Portfolio & Covered Calls",
+  title: "Upside - Portfolio Tracker",
   description:
     "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
   applicationName: "Upside",
   openGraph: {
-    title: "Upside — Portfolio & Covered Calls",
+    title: "Upside - Portfolio Tracker",
     description:
       "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
     siteName: "Upside",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Upside — Portfolio & Covered Calls",
+    title: "Upside - Portfolio Tracker",
     description:
       "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
   },
