@@ -28,8 +28,8 @@ type Props = {
 };
 
 function tone(value: number) {
-  if (value > 0) return "text-brand";
-  if (value < 0) return "text-rose-400";
+  if (value > 0) return "text-gain";
+  if (value < 0) return "text-loss";
   return "text-zinc-400";
 }
 
@@ -72,7 +72,7 @@ function RankCard({
       className={cn(
         "group flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition hover:brightness-110",
         isUp
-          ? "border-brand/25 bg-brand/[0.07]"
+          ? "border-emerald-500/25 bg-emerald-500/[0.07]"
           : "border-rose-500/25 bg-rose-500/[0.07]"
       )}
     >
@@ -80,7 +80,7 @@ function RankCard({
         className={cn(
           "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold tabular-nums",
           isUp
-            ? "bg-brand/20 text-brand-bright"
+            ? "bg-emerald-500/20 text-emerald-300"
             : "bg-rose-500/20 text-rose-300"
         )}
       >
@@ -150,7 +150,7 @@ function PortfolioLane({
           className={cn(
             "overview-bar h-full rounded-full",
             hot
-              ? "bg-gradient-to-r from-brand-deep via-brand to-brand-bright"
+              ? "bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-300"
               : "bg-gradient-to-r from-rose-700 via-rose-500 to-orange-400"
           )}
           style={{ width: `${width}%` }}
@@ -236,7 +236,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
             className={cn(
               "overview-pulse rounded-2xl border px-5 py-3.5",
               dayUp
-                ? "border-brand/30 bg-brand/10"
+                ? "border-emerald-500/30 bg-emerald-500/10"
                 : "border-rose-500/30 bg-rose-500/10"
             )}
           >
@@ -244,7 +244,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
               <Zap
                 className={cn(
                   "h-4 w-4",
-                  dayUp ? "text-brand" : "text-rose-400"
+                  dayUp ? "text-gain" : "text-loss"
                 )}
               />
               Today
@@ -339,16 +339,16 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="overview-fade rounded-3xl border border-brand/20 bg-gradient-to-b from-brand/5 to-[#161618]/40 p-6">
+        <div className="overview-fade rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-[#161618]/40 p-6">
           <div className="mb-5 flex items-center gap-2.5">
-            <div className="rounded-xl bg-brand/15 p-2 text-brand">
+            <div className="rounded-xl bg-emerald-500/15 p-2 text-gain">
               <Flame className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <h3 className="text-xl font-semibold text-white">Winners</h3>
               <p className="text-sm text-zinc-400">Best lifetime ROI</p>
             </div>
-            <TrendingUp className="ml-auto h-4 w-4 text-brand" />
+            <TrendingUp className="ml-auto h-4 w-4 text-gain" />
           </div>
           <div className="space-y-3">
             {winners.length === 0 ? (

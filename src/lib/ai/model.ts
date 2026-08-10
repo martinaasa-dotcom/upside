@@ -33,7 +33,7 @@ export function resolveAdvisorModel(options?: {
       headers: {
         "HTTP-Referer":
           process.env.OPENROUTER_HTTP_REFERER ??
-          "https://upside-upthink1.vercel.app",
+          "https://upside-upthink-solutions.vercel.app",
         "X-Title":
           process.env.OPENROUTER_APP_TITLE ?? "Upside Assistant Margus",
       },

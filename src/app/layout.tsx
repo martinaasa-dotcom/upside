@@ -30,7 +30,7 @@ export const metadata: Metadata = {
       "Live portfolio book with covered-call targets and Assistant Margus.",
     siteName: "Upside",
     type: "website",
-    url: "https://upside-upthink1.vercel.app",
+    url: "https://upside-upthink-solutions.vercel.app",
     images: [{ url: "/upside-icon.svg", width: 128, height: 128, alt: "Upside mark" }],
   },
   twitter: {
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
       "Live portfolio book with covered-call targets and Assistant Margus.",
     images: ["/upside-icon.svg"],
   },
-  metadataBase: new URL("https://upside-upthink1.vercel.app"),
+  metadataBase: new URL("https://upside-upthink-solutions.vercel.app"),
 };
 
 export default function RootLayout({

@@ -8,7 +8,7 @@ alwaysApply: true
 Whenever you push to `main` or run a production deploy for this repo:
 
 1. Wait until the production deployment is **Ready** (not Building).
-2. Confirm the live production alias (`https://upside-upthink1.vercel.app` or the project’s current production URL) points at that deployment.
+2. Confirm the live production alias (`https://upside-upthink-solutions.vercel.app` or the project’s current production URL) points at that deployment.
 3. Compare the deployment’s git commit SHA to `git rev-parse HEAD` (or the SHA just pushed). They must match.
 4. Spot-check that the change is actually live (API route, distinctive UI string, or `vercel inspect` / deployments API meta).
 5. If live is behind HEAD: run/wait for `vercel --prod`, or wait for the GitHub integration build, then re-check. Do not tell the user it’s live until validation passes.

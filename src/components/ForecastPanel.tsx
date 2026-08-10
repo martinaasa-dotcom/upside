@@ -30,8 +30,8 @@ type Props = {
 };
 
 function signedTone(value: number) {
-  if (value > 0) return "text-brand";
-  if (value < 0) return "text-rose-400";
+  if (value > 0) return "text-gain";
+  if (value < 0) return "text-loss";
   return "text-zinc-300";
 }
 

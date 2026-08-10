@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const CANONICAL_HOST = "upside-upthink1.vercel.app";
+const CANONICAL_HOST = "upside-upthink-solutions.vercel.app";
 
-/** Send leftover portfolio-* hosts to the Upside production alias. */
+/** Send leftover portfolio / old Upside hosts to the canonical production alias. */
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
-  if (host.startsWith("portfolio-") || host === "portfolio.vercel.app") {
+  const legacy =
+    host.startsWith("portfolio-") ||
+    host === "portfolio.vercel.app" ||
+    host === "upside-upthink1.vercel.app" ||
+    host === "upside-git-main-upthink1.vercel.app";
+  if (legacy) {
     const url = request.nextUrl.clone();
     url.host = CANONICAL_HOST;
     url.protocol = "https";

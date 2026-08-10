@@ -11,7 +11,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Works immediately in **local demo** mode (data in `localStorage`), seeded with the Aasad / Anu / MaryAnn / Karud tabs.
 
-Production: [https://upside-upthink1.vercel.app](https://upside-upthink1.vercel.app)
+Production: [https://upside-upthink-solutions.vercel.app](https://upside-upthink-solutions.vercel.app)
 
 ## Supabase (shared Upthink Platform DB)
 
