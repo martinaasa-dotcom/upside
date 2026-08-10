@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
+import { normalizeYahooTicker, tickerExchangeHint } from "@/lib/ticker";
 
 export type HoldingFormValues = {
   ticker: string;
@@ -64,12 +65,15 @@ export function HoldingModal({
     }
 
     onSave({
-      ticker: ticker.trim().toUpperCase(),
+      ticker: normalizeYahooTicker(ticker),
       shares: Math.round(sharesN * 10000) / 10000,
       buy_price: Math.round(buyN * 100) / 100,
       target_call_pct: callN / 100,
     });
   }
+
+  const normalized = ticker.trim() ? normalizeYahooTicker(ticker) : "";
+  const exchangeHint = normalized ? tickerExchangeHint(normalized) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -108,9 +112,19 @@ export function HoldingModal({
                 setError(null);
               }}
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-              placeholder="NBIS"
+              placeholder="NBIS or VWCE.DE / VUSA.L"
               required
             />
+            <span className="text-[11px] leading-relaxed text-zinc-600">
+              US: bare symbol. London:{" "}
+              <span className="text-zinc-400">TICKER.L</span> or{" "}
+              <span className="text-zinc-400">LON:TICKER</span>. Xetra:{" "}
+              <span className="text-zinc-400">TICKER.DE</span>. Buy price in USD.
+              {exchangeHint && normalized !== ticker.trim().toUpperCase() && (
+                <> → {normalized}</>
+              )}
+              {exchangeHint && <> · {exchangeHint}</>}
+            </span>
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="grid gap-1 text-xs text-zinc-400">

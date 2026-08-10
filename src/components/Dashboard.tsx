@@ -48,6 +48,13 @@ import {
   updateCash,
   upsertHolding,
 } from "@/lib/demo-store";
+import {
+  getDisplayCurrency,
+  loadDisplayCurrencyMap,
+  saveDisplayCurrencyMap,
+  type DisplayCurrency,
+} from "@/lib/display-currency";
+import { normalizeYahooTicker } from "@/lib/ticker";
 import { COMPOUND_TAB_ID, OVERVIEW_TAB_ID, buildOverview } from "@/lib/overview";
 import type {
   Holding,
@@ -122,6 +129,10 @@ export function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
   const [quotesDelayed, setQuotesDelayed] = useState(false);
+  const [eurUsd, setEurUsd] = useState<number | null>(null);
+  const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState(
+    () => loadDisplayCurrencyMap()
+  );
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [modalOpen, setModalOpen] = useState(false);
   const [cashModalOpen, setCashModalOpen] = useState(false);
@@ -403,6 +414,8 @@ export function Dashboard() {
           setQuotes(nextQuotes);
           setQuotesUpdatedAt(Date.now());
           setQuotesDelayed(Boolean(quotesJson.delayed));
+          const fxEur = quotesJson.fx?.eurUsd;
+          if (typeof fxEur === "number" && fxEur > 0) setEurUsd(fxEur);
         }
 
         if (opts?.quotesOnly) return;
@@ -616,6 +629,7 @@ export function Dashboard() {
         method: "POST",
         body: JSON.stringify({
           ...values,
+          ticker: normalizeYahooTicker(values.ticker),
           portfolio_id: activePortfolio.id,
         }),
       });
@@ -1536,6 +1550,18 @@ export function Dashboard() {
               onAskMargus={() =>
                 setMargusExpandSignal((n) => n + 1)
               }
+              displayCurrency={getDisplayCurrency(
+                displayCurrencyByPortfolio,
+                activePortfolio!.id
+              )}
+              eurUsd={eurUsd}
+              onDisplayCurrencyChange={(code: DisplayCurrency) => {
+                setDisplayCurrencyByPortfolio((prev) => {
+                  const next = { ...prev, [activePortfolio!.id]: code };
+                  saveDisplayCurrencyMap(next);
+                  return next;
+                });
+              }}
             />
 
             {ccVisible && (

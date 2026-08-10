@@ -14,15 +14,17 @@ export async function GET(req: NextRequest) {
   if (tickers.length === 0) {
     return NextResponse.json({
       quotes: {},
+      fx: { eurUsd: null, gbpUsd: null },
       delayed: false,
       updatedAt: new Date().toISOString(),
     });
   }
 
-  const { quotes, delayed } = await fetchQuotes(tickers);
+  const { quotes, delayed, fx } = await fetchQuotes(tickers);
   return NextResponse.json(
     {
       quotes,
+      fx,
       delayed,
       updatedAt: new Date().toISOString(),
     },

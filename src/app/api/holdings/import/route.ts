@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireOwnerPin } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { normalizeYahooTicker } from "@/lib/ticker";
 
 export const dynamic = "force-dynamic";
 
@@ -78,9 +79,7 @@ export async function POST(req: NextRequest) {
   const failed: string[] = [];
 
   for (const row of rows) {
-    const ticker = String(row.ticker ?? "")
-      .trim()
-      .toUpperCase();
+    const ticker = normalizeYahooTicker(String(row.ticker ?? ""));
     if (!ticker) continue;
     const shares = Number(row.shares);
     const buyPrice = Number(row.buy_price);

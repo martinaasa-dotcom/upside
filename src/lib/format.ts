@@ -1,8 +1,12 @@
-export function currency(value: number | null | undefined, digits = 2): string {
+export function currency(
+  value: number | null | undefined,
+  digits = 2,
+  code: "USD" | "EUR" = "USD"
+): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: code,
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value);

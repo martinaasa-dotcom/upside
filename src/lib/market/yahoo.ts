@@ -1,4 +1,5 @@
 import type { Quote } from "@/lib/types";
+import { normalizeYahooTicker } from "@/lib/ticker";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -33,18 +34,84 @@ function hashTicker(ticker: string): number {
   return Math.abs(h);
 }
 
+export type FxRates = {
+  /** USD per 1 EUR */
+  eurUsd: number | null;
+  /** USD per 1 GBP */
+  gbpUsd: number | null;
+};
+
 export type QuotesResult = {
   quotes: Record<string, Quote>;
+  fx: FxRates;
   /** True when Yahoo failed for some/all tickers and seed fallbacks were used */
   delayed: boolean;
 };
 
+async function fetchFxRates(yf: YahooFinanceInstance): Promise<FxRates> {
+  try {
+    const [eur, gbp] = await Promise.all([
+      yf.quote("EURUSD=X"),
+      yf.quote("GBPUSD=X"),
+    ]);
+    return {
+      eurUsd:
+        typeof eur.regularMarketPrice === "number"
+          ? eur.regularMarketPrice
+          : null,
+      gbpUsd:
+        typeof gbp.regularMarketPrice === "number"
+          ? gbp.regularMarketPrice
+          : null,
+    };
+  } catch (err) {
+    console.error("FX quote failed", err);
+    return { eurUsd: null, gbpUsd: null };
+  }
+}
+
+/** Convert a Yahoo native price into USD (SP column is always USD). */
+function priceToUsd(
+  price: number,
+  currency: string | undefined,
+  fx: FxRates
+): number {
+  let px = price;
+  let cur = (currency ?? "USD").trim();
+  // London often quotes in pence
+  if (cur === "GBp" || cur === "GBX") {
+    px /= 100;
+    cur = "GBP";
+  }
+  const upper = cur.toUpperCase();
+  if (upper === "USD") return px;
+  if (upper === "EUR" && fx.eurUsd && fx.eurUsd > 0) return px * fx.eurUsd;
+  if (upper === "GBP" && fx.gbpUsd && fx.gbpUsd > 0) return px * fx.gbpUsd;
+  return px;
+}
+
+function scaleMoney(
+  value: number | null,
+  nativePrice: number,
+  usdPrice: number
+): number | null {
+  if (value == null || nativePrice <= 0) return value;
+  return value * (usdPrice / nativePrice);
+}
+
 export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
-  const unique = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
-  if (unique.length === 0) return { quotes: {}, delayed: false };
+  const unique = [
+    ...new Set(
+      tickers.map((t) => normalizeYahooTicker(t)).filter(Boolean)
+    ),
+  ];
+  if (unique.length === 0) {
+    return { quotes: {}, fx: { eurUsd: null, gbpUsd: null }, delayed: false };
+  }
 
   try {
     const yf = await getYahoo();
+    const fx = await fetchFxRates(yf);
     const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
     const results = await Promise.all(
@@ -55,42 +122,63 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
             yf.chart(ticker, { period1, interval: "1d" }),
           ]);
 
-          const price =
+          const nativePrice =
             quote.regularMarketPrice ??
             quote.postMarketPrice ??
             quote.preMarketPrice ??
             0;
-          const change = quote.regularMarketChange ?? 0;
+          const currency =
+            typeof quote.currency === "string" ? quote.currency : undefined;
+          const price = priceToUsd(nativePrice, currency, fx);
+          const scale = nativePrice > 0 ? price / nativePrice : 1;
+
+          const change = (quote.regularMarketChange ?? 0) * scale;
           const changePercent = (quote.regularMarketChangePercent ?? 0) / 100;
-          const previousClose =
-            quote.regularMarketPreviousClose ?? price - change;
+          const previousClose = priceToUsd(
+            quote.regularMarketPreviousClose ?? nativePrice - (quote.regularMarketChange ?? 0),
+            currency,
+            fx
+          );
           const sparkline =
             chart.quotes && chart.quotes.length > 1
               ? chart.quotes
                   .map((row) => row.close)
                   .filter((c): c is number => typeof c === "number")
+                  .map((c) => priceToUsd(c, currency, fx))
               : synthesizeSparkline(price, changePercent * 100);
 
-          const preMarketPrice =
+          const preMarketPrice = scaleMoney(
             typeof quote.preMarketPrice === "number"
               ? quote.preMarketPrice
-              : null;
-          const preMarketChange =
+              : null,
+            nativePrice,
+            price
+          );
+          const preMarketChange = scaleMoney(
             typeof quote.preMarketChange === "number"
               ? quote.preMarketChange
-              : null;
+              : null,
+            nativePrice,
+            price
+          );
           const preMarketChangePercent =
             typeof quote.preMarketChangePercent === "number"
               ? quote.preMarketChangePercent / 100
               : null;
-          const postMarketPrice =
+          const postMarketPrice = scaleMoney(
             typeof quote.postMarketPrice === "number"
               ? quote.postMarketPrice
-              : null;
-          const postMarketChange =
+              : null,
+            nativePrice,
+            price
+          );
+          const postMarketChange = scaleMoney(
             typeof quote.postMarketChange === "number"
               ? quote.postMarketChange
-              : null;
+              : null,
+            nativePrice,
+            price
+          );
           const postMarketChangePercent =
             typeof quote.postMarketChangePercent === "number"
               ? quote.postMarketChangePercent / 100
@@ -129,17 +217,20 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
     }
 
     let delayed = false;
-    // Fill any missing tickers with fallback so UI stays complete
     for (const ticker of unique) {
       if (!map[ticker]) {
         delayed = true;
         Object.assign(map, fallbackQuotes([ticker]));
       }
     }
-    return { quotes: map, delayed };
+    return { quotes: map, fx, delayed };
   } catch (err) {
     console.error("yahoo-finance2 unavailable", err);
-    return { quotes: fallbackQuotes(unique), delayed: true };
+    return {
+      quotes: fallbackQuotes(unique),
+      fx: { eurUsd: null, gbpUsd: null },
+      delayed: true,
+    };
   }
 }
 

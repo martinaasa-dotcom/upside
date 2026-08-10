@@ -1,6 +1,7 @@
 import { requireOwnerPin } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { normalizeYahooTicker } from "@/lib/ticker";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -19,9 +20,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const portfolioId = body.portfolio_id as string;
-  const ticker = String(body.ticker ?? "")
-    .trim()
-    .toUpperCase();
+  const ticker = normalizeYahooTicker(String(body.ticker ?? ""));
   if (!portfolioId || !ticker) {
     return NextResponse.json(
       { error: "portfolio_id and ticker required" },
@@ -85,7 +84,7 @@ export async function PATCH(req: NextRequest) {
     "sort_order",
   ]) {
     if (body[key] !== undefined) {
-      if (key === "ticker") patch[key] = String(body[key]).toUpperCase();
+      if (key === "ticker") patch[key] = normalizeYahooTicker(String(body[key]));
       else if (
         (key === "eoy_target" || key === "stock_target_override") &&
         body[key] === null

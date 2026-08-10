@@ -2,6 +2,10 @@
 
 import { cn, currency, percent } from "@/lib/format";
 import {
+  usdToDisplay,
+  type DisplayCurrency,
+} from "@/lib/display-currency";
+import {
   blockWheelChange,
   formatDecimal,
   parseDecimal,
@@ -35,6 +39,11 @@ type Props = {
   onEditCash: () => void;
   onAddHolding?: () => void;
   onAskMargus?: () => void;
+  /** Sheet display currency for totals/values (spot & buy stay USD). */
+  displayCurrency?: DisplayCurrency;
+  /** USD per 1 EUR — required when displayCurrency is EUR. */
+  eurUsd?: number | null;
+  onDisplayCurrencyChange?: (currency: DisplayCurrency) => void;
 };
 
 function signedTone(value: number) {
@@ -142,7 +151,14 @@ export function PortfolioTable({
   onEditCash,
   onAddHolding,
   onAskMargus,
+  displayCurrency = "USD",
+  eurUsd = null,
+  onDisplayCurrencyChange,
 }: Props) {
+  const money = (usd: number, digits = 2) =>
+    currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
+  const usd = (value: number, digits = 2) => currency(value, digits, "USD");
+
   const emptyCta = (
     <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
       {onAskMargus && (
@@ -178,13 +194,37 @@ export function PortfolioTable({
 
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
-      <header className="flex items-center justify-between gap-3 border-b border-zinc-800/80 px-4 py-3">
-        <h2 className="text-sm font-semibold text-white">Holdings</h2>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/80 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-semibold text-white">Holdings</h2>
+          {onDisplayCurrencyChange && (
+            <div
+              className="flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5"
+              title="Totals & values · spot and buy stay USD"
+            >
+              {(["USD", "EUR"] as const).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => onDisplayCurrencyChange(code)}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-[11px] font-semibold transition",
+                    displayCurrency === code
+                      ? "bg-brand/20 text-brand-bright"
+                      : "text-zinc-500 hover:text-zinc-300"
+                  )}
+                >
+                  {code}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={onEditCash}
           className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-zinc-900"
-          title="Edit cash"
+          title="Edit cash (stored in USD)"
         >
           <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
             Cash
@@ -195,7 +235,7 @@ export function PortfolioTable({
               signedTone(portfolio.cash_balance)
             )}
           >
-            {currency(portfolio.cash_balance)}
+            {money(portfolio.cash_balance)}
           </span>
         </button>
       </header>
@@ -252,13 +292,13 @@ export function PortfolioTable({
                 <div>
                   <p className="text-zinc-500">Price</p>
                   <p className="tabular-nums text-zinc-100">
-                    {currency(h.quote?.price ?? h.buy_price)}
+                    {usd(h.quote?.price ?? h.buy_price)}
                   </p>
                 </div>
                 <div>
                   <p className="text-zinc-500">Value</p>
                   <p className="tabular-nums text-zinc-100">
-                    {currency(h.currentValue)}
+                    {money(h.currentValue)}
                   </p>
                 </div>
                 <div>
@@ -275,7 +315,7 @@ export function PortfolioTable({
                       signedTone(h.roiDollar)
                     )}
                   >
-                    {currency(h.roiDollar)}
+                    {money(h.roiDollar)}
                   </p>
                 </div>
               </div>
@@ -299,9 +339,9 @@ export function PortfolioTable({
               </span>
             </div>
             <div className="mt-1 flex justify-between text-zinc-400">
-              <span>Value {currency(totals.currentValue)}</span>
+              <span>Value {money(totals.currentValue)}</span>
               <span className={signedTone(totals.roiDollar)}>
-                {currency(totals.roiDollar)}
+                {money(totals.roiDollar)}
               </span>
             </div>
           </div>
@@ -353,7 +393,7 @@ export function PortfolioTable({
                   />
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
-                  {currency(h.quote?.price ?? h.buy_price)}
+                  {usd(h.quote?.price ?? h.buy_price)}
                 </div>
                 <div
                   className={cn(
@@ -365,10 +405,10 @@ export function PortfolioTable({
                   {percent(h.roiPct)}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
-                  {currency(h.buyValue)}
+                  {money(h.buyValue)}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
-                  {currency(h.currentValue)}
+                  {money(h.currentValue)}
                 </div>
                 <div
                   className={cn(
@@ -377,7 +417,7 @@ export function PortfolioTable({
                     signedTone(h.roiDollar)
                   )}
                 >
-                  {currency(h.roiDollar)}
+                  {money(h.roiDollar)}
                 </div>
                 <div className={cellBase}>
                   <Sparkline
@@ -428,10 +468,10 @@ export function PortfolioTable({
                 {percent(totals.roiPct)}
               </div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-300")}>
-                {currency(totals.buyValue)}
+                {money(totals.buyValue)}
               </div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-white")}>
-                {currency(totals.currentValue)}
+                {money(totals.currentValue)}
               </div>
               <div
                 className={cn(
@@ -440,7 +480,7 @@ export function PortfolioTable({
                   signedTone(totals.roiDollar)
                 )}
               >
-                {currency(totals.roiDollar)}
+                {money(totals.roiDollar)}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
