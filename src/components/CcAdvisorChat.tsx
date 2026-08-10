@@ -46,6 +46,16 @@ export type AdvisorAction =
       buyPrice: number;
       callPct: number;
     }
+  | {
+      action: "import_sheet";
+      cash: number | null;
+      holdings: Array<{
+        ticker: string;
+        shares: number;
+        buyPrice: number;
+        callPct: number;
+      }>;
+    }
   | { action: "remove_holding"; ticker: string }
   | { action: "set_stock_target"; ticker: string; stockTarget: number }
   | {
@@ -203,6 +213,7 @@ const ACTION_TYPES = new Set([
   "tool-updateHolding",
   "tool-setCash",
   "tool-addHolding",
+  "tool-importSheet",
   "tool-removeHolding",
   "tool-setStockTarget",
   "tool-setStockTargetBulk",
@@ -250,8 +261,9 @@ const RULES = [
   },
   {
     title: "What Margus can change",
-    rule: "Shares, cash, Call %, Stock Target, write plans",
-    detail: "Critique uses your table values. Re-pick local highs only when you ask to rebuild.",
+    rule: "Shares, cash, Call %, Stock Target, sheet imports, write plans",
+    detail:
+      "Paste a spreadsheet screenshot and Margus should import every equity row via importSheet. Critique uses your table values.",
   },
 ] as const;
 

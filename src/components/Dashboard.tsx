@@ -559,6 +559,35 @@ export function Dashboard() {
               [action.ticker],
               nextHoldings.filter((h) => h.portfolio_id === activePortfolio.id)
             );
+          } else if (action.action === "import_sheet") {
+            if (action.cash != null) {
+              store = updateCash(store, activePortfolio.id, action.cash);
+              portfolios = store.portfolios;
+            }
+            let sortBase = nextHoldings.filter(
+              (h) => h.portfolio_id === activePortfolio.id
+            ).length;
+            for (const row of action.holdings) {
+              const existing = findHolding(row.ticker, nextHoldings);
+              if (!existing) sortBase += 1;
+              store = upsertHolding(store, {
+                id: existing?.id,
+                portfolio_id: activePortfolio.id,
+                ticker: row.ticker,
+                shares: row.shares,
+                buy_price: row.buyPrice,
+                eoy_target: existing?.eoy_target ?? null,
+                target_call_pct: row.callPct,
+                stock_target_override: existing?.stock_target_override ?? null,
+                sort_order: existing?.sort_order ?? sortBase,
+              });
+              nextHoldings = store.holdings;
+            }
+            const tickers = action.holdings.map((h) => h.ticker);
+            void refreshMarkets(
+              tickers,
+              nextHoldings.filter((h) => h.portfolio_id === activePortfolio.id)
+            );
           } else if (action.action === "remove_holding") {
             const h = findHolding(action.ticker, nextHoldings);
             if (!h) continue;
@@ -713,6 +742,60 @@ export function Dashboard() {
                   .length + 1,
             }),
           }).then(() => loadPortfolios());
+        } else if (action.action === "import_sheet") {
+          void (async () => {
+            if (action.cash != null) {
+              await fetch("/api/portfolios", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: activePortfolio.id,
+                  cash_balance: action.cash,
+                }),
+              });
+              setPortfolios((prev) =>
+                prev.map((p) =>
+                  p.id === activePortfolio.id
+                    ? { ...p, cash_balance: action.cash as number }
+                    : p
+                )
+              );
+            }
+
+            let sortBase = holdings.filter(
+              (h) => h.portfolio_id === activePortfolio.id
+            ).length;
+            for (const row of action.holdings) {
+              const existing = findHolding(row.ticker, holdings);
+              if (existing) {
+                await fetch("/api/holdings", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: existing.id,
+                    shares: row.shares,
+                    buy_price: row.buyPrice,
+                    target_call_pct: row.callPct,
+                  }),
+                });
+              } else {
+                sortBase += 1;
+                await fetch("/api/holdings", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    portfolio_id: activePortfolio.id,
+                    ticker: row.ticker,
+                    shares: row.shares,
+                    buy_price: row.buyPrice,
+                    target_call_pct: row.callPct,
+                    sort_order: sortBase,
+                  }),
+                });
+              }
+            }
+            await loadPortfolios();
+          })();
         } else if (action.action === "remove_holding") {
           const h = findHolding(action.ticker, holdings);
           if (!h) continue;

@@ -1,4 +1,8 @@
-import { STRATEGY, formatCallPctBaselines } from "@/lib/calculations";
+import {
+  STRATEGY,
+  callPctBaseline,
+  formatCallPctBaselines,
+} from "@/lib/calculations";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -173,7 +177,7 @@ export const ccAdvisorTools = {
 
   addHolding: tool({
     description:
-      "Add a new stock holding to the portfolio (or overwrite if ticker already exists).",
+      "Add a single stock holding (or overwrite if ticker already exists). For spreadsheet / multi-ticker imports prefer importSheet instead.",
     inputSchema: z.object({
       ticker: z.string().describe("Ticker symbol"),
       shares: z.number().positive(),
@@ -190,9 +194,90 @@ export const ccAdvisorTools = {
       ticker: ticker.toUpperCase(),
       shares,
       buyPrice,
-      callPct: callPct != null ? callPct / 100 : 0.15,
+      callPct:
+        callPct != null
+          ? callPct / 100
+          : (callPctBaseline(ticker) ?? 0.15),
       message: `Added ${ticker.toUpperCase()}: ${shares} @ $${buyPrice}`,
     }),
+  }),
+
+  importSheet: tool({
+    description:
+      "Import an entire holdings sheet in ONE call: optional cash plus every equity row (ticker, shares, buy price). Use this whenever the user pastes/attaches a spreadsheet screenshot or asks to import multiple holdings. Do not stop after the first ticker.",
+    inputSchema: z.object({
+      cash: z
+        .number()
+        .optional()
+        .describe(
+          "Cash balance from a CASH row (can be negative for margin/debt). Omit if no cash row."
+        ),
+      holdings: z
+        .array(
+          z.object({
+            ticker: z
+              .string()
+              .describe("Equity ticker only — never CASH, PORTFOLIO, or totals"),
+            shares: z.number().positive(),
+            buyPrice: z
+              .number()
+              .positive()
+              .describe("Average buy / cost basis per share in USD"),
+            callPct: z
+              .number()
+              .min(1)
+              .max(40)
+              .optional()
+              .describe("Optional Call % whole number; house baseline used if omitted"),
+          })
+        )
+        .min(1)
+        .describe("Every stock row visible in the sheet"),
+    }),
+    execute: async ({ cash, holdings }) => {
+      const SKIP = new Set([
+        "CASH",
+        "PORTFOLIO",
+        "TOTAL",
+        "TOTALS",
+        "UNREALIZED",
+        "UNREALIZED PROFITS",
+        "UNREALIZEDPROFIT",
+      ]);
+      const cleaned = holdings
+        .map((h) => ({
+          ticker: h.ticker.trim().toUpperCase(),
+          shares: h.shares,
+          buyPrice: h.buyPrice,
+          callPct:
+            h.callPct != null
+              ? h.callPct / 100
+              : (callPctBaseline(h.ticker) ?? 0.15),
+        }))
+        .filter(
+          (h) =>
+            h.ticker &&
+            !SKIP.has(h.ticker) &&
+            !h.ticker.startsWith("UNREALIZED") &&
+            Number.isFinite(h.shares) &&
+            h.shares > 0 &&
+            Number.isFinite(h.buyPrice) &&
+            h.buyPrice > 0
+        );
+      // Dedupe by ticker (last wins)
+      const byTicker = new Map<string, (typeof cleaned)[number]>();
+      for (const h of cleaned) byTicker.set(h.ticker, h);
+      const rows = [...byTicker.values()];
+      const tickers = rows.map((h) => h.ticker);
+      return {
+        action: "import_sheet" as const,
+        cash: cash ?? null,
+        holdings: rows,
+        message: `Imported ${rows.length} holding${rows.length === 1 ? "" : "s"}${
+          cash != null ? ` + cash $${cash.toLocaleString()}` : ""
+        }: ${tickers.join(", ")}`,
+      };
+    },
   }),
 
   removeHolding: tool({
@@ -416,7 +501,7 @@ You can READ all portfolios below and discuss winners, losers, concentration, Ca
 You MUST NOT claim to change any sheet. There are NO write tools in this mode.
 If the user asks to edit holdings, cash, Call %, or targets: tell them to open that portfolio tab and ask again there.`
     : `You can READ holdings + covered-call data below, and WRITE via tools:
-- Holdings: updateHolding, addHolding, removeHolding, setCash
+- Holdings: importSheet (preferred for screenshots / multi-ticker imports), updateHolding, addHolding, removeHolding, setCash
 - Covered calls: setCallPct, setCallPctBulk, setUniformCallPct
 - Stock targets: setStockTarget, setStockTargetBulk, clearStockTarget
 - Write planning: proposeWritePlan (analyze), applyWritePlan (commit targets + Call %)
@@ -429,10 +514,12 @@ When the user asks to copy / mirror / adapt strategy from another sheet:
 3. Skip tickers that don't exist here unless they ask to add them.
 4. Briefly summarize what you copied vs skipped.
 
-When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio table):
-1. Read tickers, shares, buy prices, cash, Call %, stock targets from the image carefully.
-2. Prefer tools to update the live portfolio to match (updateHolding / addHolding / setCash / setCallPct / setStockTarget) — do not only describe.
-3. Call out anything you cannot read clearly.`;
+When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio table) or asks to import holdings:
+1. Read EVERY equity row: ticker, # of shares, buy price. Also read CASH if present (can be negative).
+2. Call importSheet ONCE with cash (if any) + the full holdings array — never stop after the first ticker (e.g. do not import only NBIS when CRWV/RKLB/BMNR/VST are also in the image).
+3. Skip non-equity rows: CASH (use the cash field instead), PORTFOLIO, UNREALIZED*, totals, blanks, sparklines-only rows.
+4. Do not invent missing buy prices or share counts — omit that ticker and say so.
+5. Prefer importSheet over a chain of addHolding / setCash calls.`;
 
   return `You are Assistant Margus for Upside. This chat thread is for portfolio "${ctx.portfolioName}" only.
 Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.

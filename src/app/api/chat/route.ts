@@ -70,7 +70,7 @@ export async function POST(req: Request) {
         tools,
       }),
       tools,
-      stopWhen: stepCountIs(adviseOnly ? 3 : 8),
+      stopWhen: stepCountIs(adviseOnly ? 3 : 12),
       maxRetries: 2,
       abortSignal: req.signal,
       onError: ({ error }) => {
