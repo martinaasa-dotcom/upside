@@ -153,6 +153,8 @@ export function enforcePathRules(
 
 export const FORECAST_CONVICTION_PROMPT = `## Forecast conviction (MANDATORY)
 
+Macro backdrop: Tom Lee–style (liquidity + AI spend + crypto institutionalization) — structurally supportive for risk assets. Use that environment; do **not** copy Lee’s permabull extremes on every ticker/year. Paths stay non-linear.
+
 Martin's spreadsheet is the **BASE** case. You MUST align BASE paths to that magnitude. **Bullish must be higher than base.** Bearish is the only stance allowed to be meaningfully softer.
 
 ### Canonical BASE anchors (scale to today's spot; keep the shape)
