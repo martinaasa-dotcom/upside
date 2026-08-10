@@ -4,7 +4,7 @@ export type Portfolio = {
   slug: string;
   sort_order: number;
   cash_balance: number;
-  /** True when this sheet has its own PIN/password (not book default). */
+  /** True when this sheet has its own PIN/password lock. */
   has_access_secret?: boolean;
 };
 

@@ -16,6 +16,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Respect `localStorage` key `portfell-locked` and `data/locked-demo.json`. Never delete the lock. Prefer asking Martin to hit **Save** rather than bumping `portfell-demo-v*` to force a reseed.
 - Production data lives on the shared **Upthink Platform** Supabase project in `portfell_portfolios` / `portfell_holdings` (not a separate Supabase project).
 - Lab extras (conviction, cashflow, arena, badges) sync via `portfell_lab_state`; guest links via `portfell_share_links` (`/?share=TOKEN`, PIN to mint).
-- All shared-book mutations (holdings/portfolios/import/snapshots) require owner PIN env `UPSIDE_OWNER_PIN` (session unlock in UI). Rate-limited verify. Prefer `SUPABASE_SERVICE_ROLE_KEY` for API writes, then RLS select-only for anon. Nightly book snapshots: `portfell_book_snapshots` via `/api/cron/snapshot` (02:00 UTC).
+- All shared-book mutations for **locked sheets** require that sheet’s PIN/password (set at sheet onboarding or More → Sheet lock). Open sheets need no PIN. Optional admin override: env `UPSIDE_OWNER_PIN`. Rate-limited verify. Prefer `SUPABASE_SERVICE_ROLE_KEY` for API writes, then RLS select-only for anon. Nightly book snapshots: `portfell_book_snapshots` via `/api/cron/snapshot` (02:00 UTC).
 - After every push/prod deploy: verify Vercel production SHA matches `git rev-parse HEAD` before telling Martin it’s live (see `.cursor/rules/vercel-live-matches-push.mdc`).
 - No Milestones sheet in the seed.

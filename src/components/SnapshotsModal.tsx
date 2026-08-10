@@ -3,7 +3,6 @@
 import {
   getSessionPin,
   OWNER_PIN_HEADER,
-  setSessionPin,
 } from "@/lib/owner-pin-client";
 import { History, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -19,7 +18,6 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onRestored: (mode: "book" | "sheet") => void;
-  /** When set, offer sheet-only restore for this live portfolio. */
   activePortfolioId?: string | null;
   activePortfolioName?: string | null;
 };
@@ -44,27 +42,23 @@ export function SnapshotsModal({
   activePortfolioId,
   activePortfolioName,
 }: Props) {
-  const [pin, setPin] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<SnapMeta[]>([]);
 
-  const load = useCallback(async (ownerPin: string) => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/snapshots", {
-        headers: { [OWNER_PIN_HEADER]: ownerPin },
-      });
+      const pin = getSessionPin();
+      const headers: Record<string, string> = {};
+      if (pin) headers[OWNER_PIN_HEADER] = pin;
+      const res = await fetch("/api/snapshots", { headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to load snapshots");
       setSnapshots(data.snapshots ?? []);
-      setSessionPin(ownerPin);
-      setUnlocked(true);
     } catch (err) {
-      setUnlocked(false);
       setError(err instanceof Error ? err.message : "Failed to load");
     } finally {
       setLoading(false);
@@ -73,24 +67,13 @@ export function SnapshotsModal({
 
   useEffect(() => {
     if (!open) {
-      setUnlocked(false);
       setError(null);
       setSnapshots([]);
       setBusyId(null);
       return;
     }
-    const cached = getSessionPin();
-    setPin(cached);
-    if (cached) void load(cached);
+    void load();
   }, [open, load]);
-
-  async function unlock() {
-    if (!pin.trim()) {
-      setError("Enter owner PIN");
-      return;
-    }
-    await load(pin.trim());
-  }
 
   async function restoreBook(id: string, label: string) {
     if (
@@ -103,15 +86,17 @@ export function SnapshotsModal({
     setBusyId(id);
     setError(null);
     try {
+      const pin = getSessionPin();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (pin) headers[OWNER_PIN_HEADER] = pin;
       const res = await fetch("/api/snapshots", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          [OWNER_PIN_HEADER]: pin.trim(),
-        },
-        body: JSON.stringify({ action: "restore", snapshotId: id }),
+        headers,
+        body: JSON.stringify({ action: "restore", id }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Restore failed");
       onRestored("book");
       onClose();
@@ -124,10 +109,9 @@ export function SnapshotsModal({
 
   async function restoreSheet(id: string, label: string) {
     if (!activePortfolioId) return;
-    const sheet = activePortfolioName ?? "this sheet";
     if (
       !window.confirm(
-        `Restore only “${sheet}” from “${label}”? Other sheets stay as-is. A safety snapshot is taken first.`
+        `Restore “${label}” into ${activePortfolioName ?? "this sheet"} only?`
       )
     ) {
       return;
@@ -135,19 +119,21 @@ export function SnapshotsModal({
     setBusyId(`${id}:sheet`);
     setError(null);
     try {
+      const pin = getSessionPin();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (pin) headers[OWNER_PIN_HEADER] = pin;
       const res = await fetch("/api/snapshots", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          [OWNER_PIN_HEADER]: pin.trim(),
-        },
+        headers,
         body: JSON.stringify({
           action: "restore_sheet",
-          snapshotId: id,
+          id,
           portfolioId: activePortfolioId,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Sheet restore failed");
       onRestored("sheet");
       onClose();
@@ -162,19 +148,22 @@ export function SnapshotsModal({
     setLoading(true);
     setError(null);
     try {
+      const pin = getSessionPin();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (pin) headers[OWNER_PIN_HEADER] = pin;
       const res = await fetch("/api/snapshots", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          [OWNER_PIN_HEADER]: pin.trim(),
-        },
+        headers,
         body: JSON.stringify({ action: "create", label: "Manual snapshot" }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Snapshot failed");
-      await load(pin.trim());
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Snapshot failed");
+    } finally {
       setLoading(false);
     }
   }
@@ -182,19 +171,19 @@ export function SnapshotsModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
+      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-zinc-800 px-5 py-4">
           <div>
             <h3 className="flex items-center gap-2 text-base font-semibold text-white">
               <History className="h-4 w-4 text-brand" />
-              Book snapshots
+              Snapshots
             </h3>
             <p className="mt-1 text-xs text-zinc-500">
               Nightly backups + pre-delete safety copies. Prefer sheet restore
@@ -211,107 +200,78 @@ export function SnapshotsModal({
         </div>
 
         <div className="overflow-y-auto px-5 py-4">
-          {!unlocked ? (
-            <div className="space-y-3">
-              <label className="block text-xs font-medium text-zinc-400">
-                Owner PIN
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void unlock();
-                  }}
-                  className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-                  placeholder="••••••"
-                />
-              </label>
-              {error && <p className="text-sm text-rose-400">{error}</p>}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-zinc-500">
+                {snapshots.length} snapshot
+                {snapshots.length === 1 ? "" : "s"}
+              </p>
               <button
                 type="button"
-                onClick={() => void unlock()}
+                onClick={() => void createManual()}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-50"
+                className="rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
               >
-                {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                Unlock
+                Snapshot now
               </button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-zinc-500">
-                  {snapshots.length} snapshot
-                  {snapshots.length === 1 ? "" : "s"}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void createManual()}
-                  disabled={loading}
-                  className="rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
-                >
-                  Snapshot now
-                </button>
-              </div>
-              {error && <p className="text-sm text-rose-400">{error}</p>}
-              {loading && snapshots.length === 0 ? (
-                <p className="py-6 text-center text-sm text-zinc-500">
-                  Loading…
-                </p>
-              ) : snapshots.length === 0 ? (
-                <p className="py-6 text-center text-sm text-zinc-500">
-                  No snapshots yet. Nightly runs at 02:00 UTC, or tap Snapshot
-                  now.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {snapshots.map((s) => (
-                    <li
-                      key={s.id}
-                      className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-white">
-                          {s.label || s.kind}
-                        </p>
-                        <p className="text-[11px] text-zinc-500">
-                          {s.kind} · {formatWhen(s.created_at)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-wrap gap-1.5">
-                        {activePortfolioId && (
-                          <button
-                            type="button"
-                            disabled={busyId != null}
-                            onClick={() =>
-                              void restoreSheet(s.id, s.label || s.kind)
-                            }
-                            className="rounded-md border border-zinc-600 px-2.5 py-1.5 text-xs font-medium text-zinc-200 hover:border-zinc-400 disabled:opacity-50"
-                          >
-                            {busyId === `${s.id}:sheet`
-                              ? "…"
-                              : `Sheet${activePortfolioName ? ` · ${activePortfolioName}` : ""}`}
-                          </button>
-                        )}
+            {error && <p className="text-sm text-rose-400">{error}</p>}
+            {loading && snapshots.length === 0 ? (
+              <p className="flex items-center justify-center gap-2 py-6 text-sm text-zinc-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading…
+              </p>
+            ) : snapshots.length === 0 ? (
+              <p className="py-6 text-center text-sm text-zinc-500">
+                No snapshots yet. Nightly runs at 02:00 UTC, or tap Snapshot
+                now.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {snapshots.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white">
+                        {s.label || s.kind}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {s.kind} · {formatWhen(s.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-1.5">
+                      {activePortfolioId && (
                         <button
                           type="button"
                           disabled={busyId != null}
                           onClick={() =>
-                            void restoreBook(s.id, s.label || s.kind)
+                            void restoreSheet(s.id, s.label || s.kind)
                           }
-                          className="rounded-md bg-brand/15 px-2.5 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/25 disabled:opacity-50"
+                          className="rounded-md border border-zinc-600 px-2.5 py-1.5 text-xs font-medium text-zinc-200 hover:border-zinc-400 disabled:opacity-50"
                         >
-                          {busyId === s.id ? "…" : "Full book"}
+                          {busyId === `${s.id}:sheet`
+                            ? "…"
+                            : `Sheet${activePortfolioName ? ` · ${activePortfolioName}` : ""}`}
                         </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+                      )}
+                      <button
+                        type="button"
+                        disabled={busyId != null}
+                        onClick={() =>
+                          void restoreBook(s.id, s.label || s.kind)
+                        }
+                        className="rounded-md bg-brand/15 px-2.5 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/25 disabled:opacity-50"
+                      >
+                        {busyId === s.id ? "…" : "Full book"}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </div>

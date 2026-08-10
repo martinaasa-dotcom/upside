@@ -4,15 +4,16 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
 
-/** Header clients send for owner-gated mutations. */
+/** Header clients send for sheet-gated mutations. */
 export const OWNER_PIN_HEADER = "x-upside-owner-pin";
-/** Optional: which sheet the credential unlocks (for per-sheet PIN/password). */
+/** Which sheet the credential unlocks (for per-sheet PIN/password). */
 export const OWNER_PORTFOLIO_HEADER = "x-upside-portfolio-id";
 
 const pinFailBuckets = new Map<string, { count: number; resetAt: number }>();
 const PIN_WINDOW_MS = 15 * 60 * 1000;
 const PIN_MAX_FAILS = 12;
 
+/** Optional admin override (env). Not required for open sheets. */
 export function getOwnerPin(): string | null {
   const pin = process.env.UPSIDE_OWNER_PIN?.trim();
   return pin ? pin : null;
@@ -81,12 +82,11 @@ function masterOk(provided: string): boolean {
   return Boolean(expected && safeEqual(provided, expected));
 }
 
-async function sheetSecretOk(
-  portfolioId: string,
-  provided: string
-): Promise<boolean> {
+async function fetchSheetHash(
+  portfolioId: string
+): Promise<string | null> {
   const supabase = getSupabaseServer();
-  if (!supabase) return false;
+  if (!supabase) return null;
   const { data } = await supabase
     .from(PORTFELL_TABLES.portfolios)
     .select("access_secret_hash")
@@ -94,25 +94,34 @@ async function sheetSecretOk(
     .maybeSingle();
   const hash = (data as { access_secret_hash?: string | null } | null)
     ?.access_secret_hash;
+  return hash || null;
+}
+
+async function sheetSecretOk(
+  portfolioId: string,
+  provided: string
+): Promise<boolean> {
+  const hash = await fetchSheetHash(portfolioId);
   if (!hash) return false;
   return verifyAccessSecret(provided, hash);
 }
 
 /**
- * Book default PIN/password (env) OR optional per-sheet secret.
- * Pass portfolioId when the mutation targets a sheet.
+ * Per-sheet lock only.
+ * - No portfolioId / open sheet (no hash) → allow.
+ * - Locked sheet → require that sheet’s PIN/password (or optional UPSIDE_OWNER_PIN override).
  */
 export async function requireOwnerAccess(
   req: Request,
   portfolioId?: string | null
 ): Promise<NextResponse | null> {
-  const expected = getOwnerPin();
-  if (!expected) {
-    return NextResponse.json(
-      { error: "UPSIDE_OWNER_PIN is not configured on the server" },
-      { status: 503 }
-    );
-  }
+  const sheetId = portfolioId ?? readPortfolioIdHint(req);
+
+  // Book-wide or unknown target: open (no global PIN)
+  if (!sheetId) return null;
+
+  const hash = await fetchSheetHash(sheetId);
+  if (!hash) return null; // sheet is unlocked
 
   if (isRateLimited(req)) {
     return NextResponse.json(
@@ -125,18 +134,12 @@ export async function requireOwnerAccess(
   if (!provided) {
     notePinFailure(req);
     return NextResponse.json(
-      { error: "Owner PIN or password required" },
+      { error: "This sheet is locked — enter its PIN or password" },
       { status: 401 }
     );
   }
 
-  if (masterOk(provided)) {
-    clearPinFailures(req);
-    return null;
-  }
-
-  const sheetId = portfolioId ?? readPortfolioIdHint(req);
-  if (sheetId && (await sheetSecretOk(sheetId, provided))) {
+  if (masterOk(provided) || (await sheetSecretOk(sheetId, provided))) {
     clearPinFailures(req);
     return null;
   }
@@ -149,49 +152,27 @@ export async function requireOwnerAccess(
     );
   }
   return NextResponse.json(
-    { error: "Invalid owner PIN or password" },
+    { error: "Invalid sheet PIN or password" },
     { status: 401 }
   );
 }
 
-/** Book-level gate (master default only). Prefer requireOwnerAccess for sheet edits. */
-export function requireOwnerPin(req: Request): NextResponse | null {
-  const expected = getOwnerPin();
-  if (!expected) {
-    return NextResponse.json(
-      { error: "UPSIDE_OWNER_PIN is not configured on the server" },
-      { status: 503 }
-    );
-  }
-
-  if (isRateLimited(req)) {
-    return NextResponse.json(
-      { error: "Too many invalid PIN attempts. Try again later." },
-      { status: 429 }
-    );
-  }
-
-  const provided = readProvidedSecret(req);
-  if (!safeEqual(provided, expected)) {
-    notePinFailure(req);
-    if (isRateLimited(req)) {
-      return NextResponse.json(
-        { error: "Too many invalid PIN attempts. Try again later." },
-        { status: 429 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Invalid owner PIN or password" },
-      { status: 401 }
-    );
-  }
-  clearPinFailures(req);
+/**
+ * Book-level gate removed — sheets are open unless they set their own secret.
+ * Kept as a no-op so call sites compile; prefer requireOwnerAccess for sheet edits.
+ */
+export function requireOwnerPin(_req?: Request): NextResponse | null {
   return null;
 }
 
-/** True when provided secret matches book default. */
+/** True when provided secret matches optional admin override. */
 export function isMasterSecret(provided: string): boolean {
   return masterOk(provided.trim());
+}
+
+/** Whether a sheet currently has a lock hash. */
+export async function sheetIsLocked(portfolioId: string): Promise<boolean> {
+  return Boolean(await fetchSheetHash(portfolioId));
 }
 
 /** Vercel Cron sends Authorization: Bearer <CRON_SECRET>. */

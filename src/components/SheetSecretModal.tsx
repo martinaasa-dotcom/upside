@@ -4,6 +4,7 @@ import {
   getSessionPin,
   OWNER_PIN_HEADER,
   OWNER_PORTFOLIO_HEADER,
+  markSheetSessionUnlocked,
   setSessionPin,
 } from "@/lib/owner-pin-client";
 import { KeyRound, X } from "lucide-react";
@@ -47,8 +48,8 @@ export function SheetSecretModal({
 
   async function save(clear = false) {
     const auth = current.trim() || getSessionPin();
-    if (!auth) {
-      setError("Enter the book default or this sheet’s current PIN/password");
+    if (hasSheetSecret && !auth) {
+      setError("Enter this sheet’s current PIN/password");
       return;
     }
     if (!clear) {
@@ -65,13 +66,14 @@ export function SheetSecretModal({
     setError(null);
     setNote(null);
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        [OWNER_PORTFOLIO_HEADER]: portfolioId,
+      };
+      if (auth) headers[OWNER_PIN_HEADER] = auth;
       const res = await fetch("/api/owner/sheet-secret", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          [OWNER_PIN_HEADER]: auth,
-          [OWNER_PORTFOLIO_HEADER]: portfolioId,
-        },
+        headers,
         body: JSON.stringify(
           clear
             ? { portfolioId, clear: true }
@@ -84,11 +86,15 @@ export function SheetSecretModal({
           typeof data.error === "string" ? data.error : "Failed to update"
         );
       }
-      setSessionPin(clear ? auth : next.trim() || auth);
+      const saved = clear ? "" : next.trim();
+      if (saved) {
+        setSessionPin(saved);
+        markSheetSessionUnlocked(portfolioId, saved);
+      }
       onChanged(Boolean(data.hasAccessSecret));
       setNote(
         clear
-          ? "Sheet now uses the book default PIN/password."
+          ? "Sheet is unlocked — anyone with the link can edit."
           : data.note || "Sheet PIN/password saved."
       );
       if (!clear) {
@@ -114,7 +120,7 @@ export function SheetSecretModal({
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3 className="flex items-center gap-2 text-base font-semibold text-white">
             <KeyRound className="h-4 w-4 text-brand" />
-            Sheet PIN / password
+            Sheet lock · {portfolioName}
           </h3>
           <button
             type="button"
@@ -125,42 +131,37 @@ export function SheetSecretModal({
           </button>
         </div>
         <p className="text-sm text-zinc-400">
-          Set a PIN or password just for{" "}
-          <span className="text-zinc-200">{portfolioName}</span>. Leave sheets
-          on the book default, or give each sheet its own. Either a short PIN or
-          a longer password is fine.
-        </p>
-        <p className="mt-2 text-xs text-zinc-500">
-          Status:{" "}
           {hasSheetSecret
-            ? "custom sheet secret active"
-            : "using book default (UPSIDE_OWNER_PIN)"}
+            ? "Custom sheet secret active — required to edit this sheet."
+            : "Sheet is open. Set a PIN/password only if you want it locked."}
         </p>
 
-        <label className="mt-4 block text-xs font-medium text-zinc-400">
-          Current book or sheet PIN/password
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            placeholder="Required to change"
-          />
-        </label>
+        {hasSheetSecret && (
+          <label className="mt-4 block text-xs font-medium text-zinc-400">
+            Current PIN / password
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+            />
+          </label>
+        )}
+
         <label className="mt-3 block text-xs font-medium text-zinc-400">
-          New PIN or password
+          New PIN / password
           <input
             type="password"
             autoComplete="new-password"
             value={next}
             onChange={(e) => setNext(e.target.value)}
             className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            placeholder="Min 4 characters"
+            placeholder="At least 4 characters"
           />
         </label>
         <label className="mt-3 block text-xs font-medium text-zinc-400">
-          Confirm new PIN or password
+          Confirm new
           <input
             type="password"
             autoComplete="new-password"
@@ -171,17 +172,17 @@ export function SheetSecretModal({
         </label>
 
         {error && <p className="mt-2 text-sm text-rose-400">{error}</p>}
-        {note && <p className="mt-2 text-sm text-gain">{note}</p>}
+        {note && <p className="mt-2 text-sm text-emerald-400">{note}</p>}
 
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           {hasSheetSecret && (
             <button
               type="button"
-              onClick={() => void save(true)}
               disabled={busy}
-              className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white disabled:opacity-40"
+              onClick={() => void save(true)}
+              className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-40"
             >
-              Use book default
+              Remove lock
             </button>
           )}
           <button
@@ -194,10 +195,10 @@ export function SheetSecretModal({
           <button
             type="button"
             onClick={() => void save(false)}
-            disabled={busy || !next.trim()}
+            disabled={busy}
             className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
           >
-            {busy ? "…" : "Save sheet secret"}
+            {busy ? "…" : hasSheetSecret ? "Update lock" : "Lock sheet"}
           </button>
         </div>
       </div>

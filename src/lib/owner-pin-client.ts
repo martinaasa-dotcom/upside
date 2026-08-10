@@ -1,8 +1,9 @@
-/** Browser-safe constants + session PIN cache for shared-book writes. */
+/** Browser-safe constants + session PIN cache for locked-sheet writes. */
 
 export const OWNER_PIN_HEADER = "x-upside-owner-pin";
 export const OWNER_PORTFOLIO_HEADER = "x-upside-portfolio-id";
 const SESSION_PIN_KEY = "upside-owner-pin-session";
+const SESSION_UNLOCKED_SHEETS_KEY = "upside-unlocked-sheet-ids";
 export const ACTIVE_SHEET_KEY = "upside-active-sheet-id";
 
 export function getSessionPin(): string {
@@ -32,7 +33,57 @@ export function clearSessionPin() {
   }
 }
 
-/** Headers for mutating API calls (includes PIN when unlocked). */
+function readUnlockedSheetIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = sessionStorage.getItem(SESSION_UNLOCKED_SHEETS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as string[];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeUnlockedSheetIds(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(
+      SESSION_UNLOCKED_SHEETS_KEY,
+      JSON.stringify([...ids])
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isSheetSessionUnlocked(portfolioId: string): boolean {
+  return readUnlockedSheetIds().has(portfolioId);
+}
+
+export function markSheetSessionUnlocked(portfolioId: string, secret?: string) {
+  if (secret?.trim()) setSessionPin(secret.trim());
+  const ids = readUnlockedSheetIds();
+  ids.add(portfolioId);
+  writeUnlockedSheetIds(ids);
+}
+
+export function clearSheetSessionUnlocked(portfolioId?: string) {
+  if (!portfolioId) {
+    if (typeof window === "undefined") return;
+    try {
+      sessionStorage.removeItem(SESSION_UNLOCKED_SHEETS_KEY);
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
+  const ids = readUnlockedSheetIds();
+  ids.delete(portfolioId);
+  writeUnlockedSheetIds(ids);
+}
+
+/** Headers for mutating API calls (includes PIN when unlocking a locked sheet). */
 export function ownerPinHeaders(
   pin?: string,
   extra?: Record<string, string>,

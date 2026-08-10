@@ -1,18 +1,15 @@
 "use client";
 
-import { OWNER_PIN_HEADER, OWNER_PORTFOLIO_HEADER, setSessionPin } from "@/lib/owner-pin-client";
+import { OWNER_PIN_HEADER, OWNER_PORTFOLIO_HEADER, setSessionPin, markSheetSessionUnlocked } from "@/lib/owner-pin-client";
 import { Lock, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** Called with the verified PIN/password (also stored in sessionStorage). */
   onUnlocked: (pin: string) => void;
-  /** When set, sheet-specific PIN/password is also accepted. */
   portfolioId?: string | null;
   portfolioName?: string | null;
-  /** Sheet already has a custom secret (not book default). */
   hasSheetSecret?: boolean;
 };
 
@@ -41,7 +38,7 @@ export function OwnerUnlockModal({
   async function unlock() {
     const value = pin.trim();
     if (!value) {
-      setError("Enter a PIN or password");
+      setError("Enter this sheet’s PIN or password");
       return;
     }
     setBusy(true);
@@ -66,6 +63,7 @@ export function OwnerUnlockModal({
         );
       }
       setSessionPin(value);
+      if (portfolioId) markSheetSessionUnlocked(portfolioId, value);
       onUnlocked(value);
       onClose();
     } catch (err) {
@@ -89,7 +87,7 @@ export function OwnerUnlockModal({
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3 className="flex items-center gap-2 text-base font-semibold text-white">
             <Lock className="h-4 w-4 text-brand" />
-            Unlock edits
+            Unlock {sheetLabel}
           </h3>
           <button
             type="button"
@@ -101,25 +99,17 @@ export function OwnerUnlockModal({
         </div>
         <div className="space-y-2 text-sm text-zinc-400">
           <p>
-            Enter a <span className="text-zinc-200">PIN or password</span> —
-            either works. Numeric PIN and longer password are both fine.
+            This sheet is password-protected. Enter its{" "}
+            <span className="text-zinc-200">PIN or password</span> to edit.
           </p>
-          <p>
-            <span className="text-zinc-200">Book default</span> unlocks every
-            sheet.{" "}
-            {portfolioId ? (
-              <>
-                <span className="text-zinc-200">{sheetLabel}</span>{" "}
-                {hasSheetSecret
-                  ? "also has its own sheet PIN/password."
-                  : "uses the book default until you set a sheet-specific one."}
-              </>
-            ) : (
-              <>Sheet-specific secrets can be set from More → Sheet PIN.</>
-            )}
-          </p>
+          {!hasSheetSecret && (
+            <p className="text-xs text-amber-200/80">
+              This sheet isn’t marked locked — if unlock keeps failing, refresh
+              the page.
+            </p>
+          )}
           <p className="text-xs text-zinc-500">
-            Stays in this tab’s session until you close the tab.
+            Stays unlocked in this browser tab until you close it.
           </p>
         </div>
         <label className="mt-4 block text-xs font-medium text-zinc-400">

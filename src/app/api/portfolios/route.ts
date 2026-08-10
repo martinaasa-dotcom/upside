@@ -1,6 +1,6 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { saveBookSnapshot } from "@/lib/book-snapshot";
-import { requireOwnerAccess, requireOwnerPin } from "@/lib/owner-pin";
+import { requireOwnerAccess } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -58,10 +58,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  // Creating a sheet requires the book default secret
-  const denied = requireOwnerPin(req);
-  if (denied) return denied;
-
+  // New sheets are open by default; optional lock happens in onboarding UI
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -88,13 +85,19 @@ export async function POST(req: NextRequest) {
       sort_order: (count ?? 0) + 1,
       cash_balance: 0,
     })
-    .select()
+    .select(
+      "id, name, slug, sort_order, cash_balance, created_at, updated_at, access_secret_hash"
+    )
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ portfolio: data });
+  const row = data as Record<string, unknown>;
+  const { access_secret_hash: hash, ...rest } = row;
+  return NextResponse.json({
+    portfolio: { ...rest, has_access_secret: Boolean(hash) },
+  });
 }
 
 export async function PATCH(req: NextRequest) {
