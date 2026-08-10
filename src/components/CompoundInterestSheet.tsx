@@ -23,7 +23,7 @@ import {
   type ShockKind,
 } from "@/lib/compound-play";
 import { cn } from "@/lib/format";
-import { blockWheelChange } from "@/lib/number-input";
+import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import {
   ArrowUpRight,
   Calculator,
@@ -360,18 +360,14 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
           </label>
           <label className="mt-3 block text-xs text-zinc-400">
             Initial investment
-            <input
-              type="text"
-              inputMode="decimal"
+            <FormattedNumberInput
+              kind="money"
+              currency={currency}
               value={draft.principal}
-              onChange={(e) => {
+              onChange={(n) => {
                 setPrincipalSource("custom");
-                patchDraft(
-                  "principal",
-                  Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                );
+                patchDraft("principal", n);
               }}
-              onWheel={blockWheelChange}
               className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </label>
@@ -380,17 +376,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <label className="block text-xs text-zinc-400">
             Interest rate %
-            <input
-              type="text"
-              inputMode="decimal"
+            <FormattedNumberInput
+              kind="percent"
               value={draft.ratePercent}
-              onChange={(e) =>
-                patchDraft(
-                  "ratePercent",
-                  Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                )
-              }
-              onWheel={blockWheelChange}
+              onChange={(n) => patchDraft("ratePercent", n)}
               className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </label>
@@ -463,17 +452,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
           </div>
           <label className="mt-3 block text-[11px] text-zinc-500">
             Annual deposit increase %
-            <input
-              type="text"
-              inputMode="decimal"
+            <FormattedNumberInput
+              kind="percent"
               value={draft.annualIncrease}
-              onChange={(e) =>
-                patchDraft(
-                  "annualIncrease",
-                  Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                )
-              }
-              onWheel={blockWheelChange}
+              onChange={(n) => patchDraft("annualIncrease", n)}
               className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
             />
           </label>
@@ -505,16 +487,11 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             draft.contributionMode === "both") && (
             <label className="mt-2 block text-[11px] text-zinc-500">
               Withdrawal / mo
-              <input
-                type="text"
-                inputMode="decimal"
+              <FormattedNumberInput
+                kind="money"
+                currency={currency}
                 value={draft.withdrawalAmount}
-                onChange={(e) =>
-                  patchDraft(
-                    "withdrawalAmount",
-                    Number(e.target.value.replace(/[^\d.]/g, "")) || 0
-                  )
-                }
+                onChange={(n) => patchDraft("withdrawalAmount", n)}
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
               />
             </label>
@@ -682,13 +659,11 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
           </div>
           <label className="mt-3 block text-[11px] text-zinc-500">
             Custom goal
-            <input
-              type="text"
-              inputMode="decimal"
+            <FormattedNumberInput
+              kind="money"
+              currency={currency}
               value={goal}
-              onChange={(e) =>
-                setGoal(Number(e.target.value.replace(/[^\d.]/g, "")) || 0)
-              }
+              onChange={setGoal}
               className="mt-1 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </label>
