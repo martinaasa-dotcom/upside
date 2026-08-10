@@ -48,10 +48,16 @@ import type {
 import { Eye, EyeOff, Plus, RefreshCw, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type DataSource = "demo" | "supabase";
+import {
+  CC_VISIBLE_KEY,
+  FORECAST_VISIBLE_KEY,
+  isPanelVisible,
+  loadVisibilityMap,
+  saveVisibilityMap,
+  toggleVisibilityMap,
+} from "@/lib/panel-visibility";
 
-const CC_VISIBLE_KEY = "portfell-cc-visible-by-portfolio";
-const FORECAST_VISIBLE_KEY = "portfell-forecast-visible-by-portfolio";
+type DataSource = "demo" | "supabase";
 
 function formatPricesAge(updatedAt: number | null, now: number): string {
   if (updatedAt == null) return "Prices · —";
@@ -115,54 +121,30 @@ export function Dashboard() {
     | { kind: "sheet"; id: string; label: string }
     | null
   >(null);
-  const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState<
-    Record<string, boolean>
-  >({});
-  const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] = useState<
-    Record<string, boolean>
-  >({});
+  const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState(() =>
+    loadVisibilityMap(CC_VISIBLE_KEY)
+  );
+  const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] = useState(
+    () => loadVisibilityMap(FORECAST_VISIBLE_KEY)
+  );
   const [eoyOverrides, setEoyOverrides] = useState<PortfolioEoyOverrides>({});
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const activePortfolio = isOverview
     ? null
-    : (portfolios.find((p) => p.id === activeId) ?? portfolios[0] ?? null);
+    : (portfolios.find((p) => p.id === activeId) ?? null);
 
   const ccVisible = activePortfolio
-    ? ccVisibleByPortfolio[activePortfolio.id] !== false
+    ? isPanelVisible(ccVisibleByPortfolio, activePortfolio)
     : true;
   const forecastVisible = activePortfolio
-    ? forecastVisibleByPortfolio[activePortfolio.id] !== false
+    ? isPanelVisible(forecastVisibleByPortfolio, activePortfolio)
     : true;
 
   const allTickers = useMemo(() => {
     const set = new Set(holdings.map((h) => h.ticker));
     return [...set];
   }, [holdings]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CC_VISIBLE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Record<string, boolean>;
-      if (parsed && typeof parsed === "object") setCcVisibleByPortfolio(parsed);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(FORECAST_VISIBLE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Record<string, boolean>;
-      if (parsed && typeof parsed === "object") {
-        setForecastVisibleByPortfolio(parsed);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
 
   useEffect(() => {
     if (!activePortfolio) {
@@ -175,13 +157,8 @@ export function Dashboard() {
   function toggleCcVisible() {
     if (!activePortfolio) return;
     setCcVisibleByPortfolio((prev) => {
-      const nextVisible = prev[activePortfolio.id] === false;
-      const next = { ...prev, [activePortfolio.id]: nextVisible };
-      try {
-        localStorage.setItem(CC_VISIBLE_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+      const next = toggleVisibilityMap(prev, activePortfolio);
+      saveVisibilityMap(CC_VISIBLE_KEY, next);
       return next;
     });
   }
@@ -189,13 +166,8 @@ export function Dashboard() {
   function toggleForecastVisible() {
     if (!activePortfolio) return;
     setForecastVisibleByPortfolio((prev) => {
-      const nextVisible = prev[activePortfolio.id] === false;
-      const next = { ...prev, [activePortfolio.id]: nextVisible };
-      try {
-        localStorage.setItem(FORECAST_VISIBLE_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+      const next = toggleVisibilityMap(prev, activePortfolio);
+      saveVisibilityMap(FORECAST_VISIBLE_KEY, next);
       return next;
     });
   }
@@ -1310,7 +1282,7 @@ export function Dashboard() {
 
       <PortfolioTabs
         portfolios={portfolios}
-        activeId={isOverview ? OVERVIEW_TAB_ID : activePortfolio!.id}
+        activeId={activeId}
         onChange={setActiveId}
         onAdd={handleAddSheet}
         onRenameRequest={(id, name) => setRenameTarget({ id, name })}
