@@ -114,25 +114,67 @@ function extractImages(
     .map((p) => ({ url: p.url!, mediaType: p.mediaType! }));
 }
 
+function isMdSepCell(cell: string): boolean {
+  return /^:?-{3,}:?$/.test(cell.trim());
+}
+
+/**
+ * Rebuild a single jammed pipe line into a real GFM table.
+ * Avoids half-matching `| --- |` out of `| --- | --- | --- |` (that left a tiny 1-col box).
+ */
+function expandJammedTableLine(line: string): string {
+  const pipeCount = (line.match(/\|/g) ?? []).length;
+  if (pipeCount < 8 || !/-{3,}/.test(line)) return line;
+
+  const raw = line.split("|").map((s) => s.trim());
+  if (raw[0] === "") raw.shift();
+  if (raw.length && raw[raw.length - 1] === "") raw.pop();
+  const parts = raw;
+
+  const sepStart = parts.findIndex(isMdSepCell);
+  if (sepStart < 0) return line;
+
+  let sepCount = 0;
+  for (let i = sepStart; i < parts.length && isMdSepCell(parts[i]); i++) {
+    sepCount++;
+  }
+  if (sepCount < 2) return line;
+
+  const header = parts.slice(0, sepStart);
+  const body = parts.slice(sepStart + sepCount);
+  const cols = Math.max(sepCount, header.length, 2);
+
+  const pad = (row: string[]) => {
+    const next = row.slice(0, cols);
+    while (next.length < cols) next.push("");
+    return next;
+  };
+
+  const rows: string[][] = [];
+  if (header.some((c) => c.length > 0)) rows.push(pad(header));
+  rows.push(Array.from({ length: cols }, () => "---"));
+  for (let i = 0; i < body.length; i += cols) {
+    const slice = body.slice(i, i + cols);
+    if (slice.every((c) => c === "")) continue;
+    rows.push(pad(slice));
+  }
+
+  if (rows.length < 2) return line;
+  return rows.map((r) => `| ${r.join(" | ")} |`).join("\n");
+}
+
 /** Fix jammed GFM tables (model often emits one long |…|…| line). */
 function normalizeMargusMarkdown(src: string): string {
   let text = src.replace(/\r\n/g, "\n");
 
-  // Split concatenated markdown table rows onto their own lines
-  if (text.includes("|") && text.includes("---")) {
-    text = text
-      // "| --- |" or "|---|" separator after a row end
-      .replace(/\|(\s*)\|(\s*:?-{3,}:?\s*)\|/g, "|\n|$2|")
-      // New data row jammed after separator or prior row: "...| | TICK |"
-      .replace(/\|\s*\|\s+(?=[A-Z0-9.^][A-Z0-9.^=_-]{0,12}\s*\|)/g, "|\n| ")
-      // Separator row jammed: "| --- | --- |"
-      .replace(/\|(\s*-{3,}[^|\n]*)+\|/g, (m) => {
-        if (m.includes("\n")) return m;
-        return `\n${m}\n`;
-      });
-  }
+  text = text
+    .split("\n")
+    .map((line) => expandJammedTableLine(line))
+    .join("\n");
 
-  // Collapse 3+ blank lines
+  // Lone separator crumbs from bad model output / old normalizer
+  text = text.replace(/^\|(?:\s*:?-{3,}:?\s*\|)+\s*$/gm, "");
+
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
 }
@@ -140,110 +182,118 @@ function normalizeMargusMarkdown(src: string): string {
 function ChatMarkdown({ children }: { children: string }) {
   const md = normalizeMargusMarkdown(children);
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        h1: ({ children: c }) => (
-          <h3 className="mb-1.5 mt-3 text-sm font-semibold tracking-tight text-white first:mt-0">
-            {c}
-          </h3>
-        ),
-        h2: ({ children: c }) => (
-          <h3 className="mb-1.5 mt-3 text-sm font-semibold tracking-tight text-white first:mt-0">
-            {c}
-          </h3>
-        ),
-        h3: ({ children: c }) => (
-          <h4 className="mb-1 mt-2.5 text-[13px] font-semibold text-zinc-100 first:mt-0">
-            {c}
-          </h4>
-        ),
-        p: ({ children: c }) => (
-          <p className="mb-2.5 last:mb-0 text-[13px] leading-relaxed text-zinc-300">
-            {c}
-          </p>
-        ),
-        ul: ({ children: c }) => (
-          <ul className="mb-2.5 list-disc space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
-            {c}
-          </ul>
-        ),
-        ol: ({ children: c }) => (
-          <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
-            {c}
-          </ol>
-        ),
-        li: ({ children: c }) => (
-          <li className="leading-relaxed marker:text-zinc-600">{c}</li>
-        ),
-        strong: ({ children: c }) => (
-          <strong className="font-semibold text-white">{c}</strong>
-        ),
-        em: ({ children: c }) => <em className="italic text-zinc-300">{c}</em>,
-        a: ({ href, children: c }) => (
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            className="text-brand underline underline-offset-2 hover:text-brand-bright"
-          >
-            {c}
-          </a>
-        ),
-        code: ({ children: c, className }) => {
-          const block = Boolean(className);
-          if (block) {
+    <div className="w-full min-w-0">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children: c }) => (
+            <h3 className="mb-1.5 mt-3 text-sm font-semibold tracking-tight text-white first:mt-0">
+              {c}
+            </h3>
+          ),
+          h2: ({ children: c }) => (
+            <h3 className="mb-1.5 mt-3 text-sm font-semibold tracking-tight text-white first:mt-0">
+              {c}
+            </h3>
+          ),
+          h3: ({ children: c }) => (
+            <h4 className="mb-1 mt-2.5 text-[13px] font-semibold text-zinc-100 first:mt-0">
+              {c}
+            </h4>
+          ),
+          p: ({ children: c }) => (
+            <p className="mb-2.5 last:mb-0 text-[13px] leading-relaxed text-zinc-300">
+              {c}
+            </p>
+          ),
+          ul: ({ children: c }) => (
+            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
+              {c}
+            </ul>
+          ),
+          ol: ({ children: c }) => (
+            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
+              {c}
+            </ol>
+          ),
+          li: ({ children: c }) => (
+            <li className="leading-relaxed marker:text-zinc-600">{c}</li>
+          ),
+          strong: ({ children: c }) => (
+            <strong className="font-semibold text-white">{c}</strong>
+          ),
+          em: ({ children: c }) => (
+            <em className="italic text-zinc-300">{c}</em>
+          ),
+          a: ({ href, children: c }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand underline underline-offset-2 hover:text-brand-bright"
+            >
+              {c}
+            </a>
+          ),
+          code: ({ children: c, className }) => {
+            const block = Boolean(className);
+            if (block) {
+              return (
+                <code className="block w-full overflow-x-auto rounded-md bg-zinc-950/80 px-2 py-1.5 font-mono text-[11px] text-zinc-300">
+                  {c}
+                </code>
+              );
+            }
             return (
-              <code className="block overflow-x-auto rounded-md bg-zinc-950/80 px-2 py-1.5 font-mono text-[11px] text-zinc-300">
+              <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-[11px] text-brand-bright">
                 {c}
               </code>
             );
-          }
-          return (
-            <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-[11px] text-brand-bright">
+          },
+          pre: ({ children: c }) => (
+            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950/80 p-2 last:mb-0">
               {c}
-            </code>
-          );
-        },
-        pre: ({ children: c }) => (
-          <pre className="mb-2.5 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950/80 p-2 last:mb-0">
-            {c}
-          </pre>
-        ),
-        table: ({ children: c }) => (
-          <div className="mb-3 overflow-x-auto rounded-lg border border-zinc-800 last:mb-0">
-            <table className="w-full min-w-[18rem] border-collapse text-left text-[12px]">
+            </pre>
+          ),
+          table: ({ children: c }) => (
+            <div className="mb-3 w-full min-w-0 overflow-x-auto last:mb-0">
+              <table className="w-full border-collapse text-left text-[12px]">
+                {c}
+              </table>
+            </div>
+          ),
+          thead: ({ children: c }) => (
+            <thead className="border-b border-zinc-700 text-[11px] uppercase tracking-wide text-zinc-500">
               {c}
-            </table>
-          </div>
-        ),
-        thead: ({ children: c }) => (
-          <thead className="bg-zinc-900/90 text-[11px] uppercase tracking-wide text-zinc-500">
-            {c}
-          </thead>
-        ),
-        tbody: ({ children: c }) => <tbody className="text-zinc-300">{c}</tbody>,
-        tr: ({ children: c }) => (
-          <tr className="border-t border-zinc-800/90 first:border-t-0">{c}</tr>
-        ),
-        th: ({ children: c }) => (
-          <th className="whitespace-nowrap px-2.5 py-2 font-medium">{c}</th>
-        ),
-        td: ({ children: c }) => (
-          <td className="px-2.5 py-2 align-top tabular-nums text-zinc-300">
-            {c}
-          </td>
-        ),
-        hr: () => <hr className="my-3 border-zinc-800" />,
-        blockquote: ({ children: c }) => (
-          <blockquote className="mb-2.5 border-l-2 border-brand/40 pl-3 text-[13px] text-zinc-400 last:mb-0">
-            {c}
-          </blockquote>
-        ),
-      }}
-    >
-      {md}
-    </ReactMarkdown>
+            </thead>
+          ),
+          tbody: ({ children: c }) => (
+            <tbody className="text-zinc-300">{c}</tbody>
+          ),
+          tr: ({ children: c }) => (
+            <tr className="border-t border-zinc-800/90 first:border-t-0">{c}</tr>
+          ),
+          th: ({ children: c }) => (
+            <th className="whitespace-nowrap py-2 pr-3 text-left font-medium first:pl-0">
+              {c}
+            </th>
+          ),
+          td: ({ children: c }) => (
+            <td className="py-2 pr-3 align-top tabular-nums text-zinc-300 first:pl-0">
+              {c}
+            </td>
+          ),
+          hr: () => <hr className="my-3 border-zinc-800" />,
+          blockquote: ({ children: c }) => (
+            <blockquote className="mb-2.5 border-l-2 border-brand/40 pl-3 text-[13px] text-zinc-400 last:mb-0">
+              {c}
+            </blockquote>
+          ),
+        }}
+      >
+        {md}
+      </ReactMarkdown>
+    </div>
   );
 }
 
@@ -624,7 +674,7 @@ export function CcAdvisorChat({
               className={
                 message.role === "user"
                   ? "ml-6 rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100"
-                  : "mr-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
+                  : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
               }
             >
               <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
@@ -644,7 +694,7 @@ export function CcAdvisorChat({
                 </div>
               )}
               {text ? (
-                <div className="max-h-56 overflow-y-auto text-sm leading-relaxed">
+                <div className="w-full min-w-0 text-sm leading-relaxed">
                   {message.role === "assistant" ? (
                     <ChatMarkdown>{text}</ChatMarkdown>
                   ) : (
