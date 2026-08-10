@@ -101,7 +101,7 @@ export function PortfolioTabs({
   }
 
   return (
-    <nav className="sticky bottom-0 z-20 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur">
+    <nav className="sticky bottom-0 z-20 border-t border-brand-deep/30 bg-[#121214]/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 overflow-x-auto px-3 py-2">
         <button
           type="button"
@@ -112,7 +112,7 @@ export function PortfolioTabs({
           className={cn(
             "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm transition",
             overviewActive
-              ? "bg-emerald-500/15 font-semibold text-emerald-300 ring-1 ring-inset ring-emerald-500/40"
+              ? "bg-brand/15 font-semibold text-brand-bright ring-1 ring-inset ring-brand/40"
               : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
           )}
         >
@@ -190,14 +190,14 @@ export function PortfolioTabs({
                 }
               }}
               placeholder="Sheet name"
-              className="h-9 w-32 rounded-lg border border-zinc-600 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-emerald-500"
+              className="h-9 w-32 rounded-lg border border-zinc-600 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-brand"
             />
           </form>
         ) : (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg px-3 text-sm text-zinc-500 transition hover:bg-zinc-900 hover:text-emerald-400"
+            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg px-3 text-sm text-zinc-500 transition hover:bg-zinc-900 hover:text-brand"
             aria-label="Add sheet"
           >
             <Plus className="h-3.5 w-3.5" />

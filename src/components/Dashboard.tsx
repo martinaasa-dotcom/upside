@@ -985,8 +985,8 @@ export function Dashboard() {
 
   if (loading || portfolios.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950">
-        <UpsideLogo variant="icon" className="h-16 w-16" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#121214]">
+        <UpsideLogo variant="icon" className="h-28 w-24" />
         <p className="text-sm text-zinc-500">Loading…</p>
       </div>
     );
@@ -994,16 +994,16 @@ export function Dashboard() {
 
   if (!isOverview && (!activePortfolio || !snapshot)) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950">
-        <UpsideLogo variant="icon" className="h-16 w-16" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#121214]">
+        <UpsideLogo variant="icon" className="h-28 w-24" />
         <p className="text-sm text-zinc-500">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1a2332_0%,_#09090b_55%)] text-zinc-100">
-      <header className="border-b border-zinc-800/80 bg-zinc-950/50">
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
+      <header className="border-b border-brand-deep/25 bg-[#121214]/70 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <UpsideLogo variant="wordmark" className="text-[15px] text-white" />
@@ -1091,7 +1091,7 @@ export function Dashboard() {
                 <button
                   type="button"
                   onClick={saveLock}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/80 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 hover:text-emerald-200"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-deep/80 bg-brand/10 px-3 py-2 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20 hover:text-brand-bright"
                   title="Lock current portfolios & holdings so seed resets cannot overwrite them"
                 >
                   <Save className="h-3.5 w-3.5" />
@@ -1115,7 +1115,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
               >
                 <Plus className="h-4 w-4" />
                 Add holding

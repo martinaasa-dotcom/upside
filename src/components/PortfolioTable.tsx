@@ -37,7 +37,7 @@ type Props = {
 };
 
 function signedTone(value: number) {
-  if (value > 0) return "text-emerald-400";
+  if (value > 0) return "text-brand";
   if (value < 0) return "text-rose-400";
   return "text-zinc-300";
 }
@@ -92,7 +92,7 @@ function InlineNumber({
         }
       }}
       className={cn(
-        "no-spinner rounded px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40",
+        "no-spinner rounded px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
         className ?? "mx-auto w-[5.25rem]"
       )}
     />
@@ -127,7 +127,7 @@ export function PortfolioTable({
   onAddHolding,
 }: Props) {
   return (
-    <section className="overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
+    <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="flex items-center justify-between gap-3 border-b border-zinc-800/80 px-4 py-3">
         <h2 className="text-sm font-semibold text-white">Holdings</h2>
         <button
@@ -159,7 +159,7 @@ export function PortfolioTable({
               <button
                 type="button"
                 onClick={onAddHolding}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
               >
                 <Plus className="h-4 w-4" />
                 Add holding
@@ -276,7 +276,7 @@ export function PortfolioTable({
               <button
                 type="button"
                 onClick={onAddHolding}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
               >
                 <Plus className="h-4 w-4" />
                 Add holding

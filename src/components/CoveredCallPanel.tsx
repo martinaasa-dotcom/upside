@@ -21,7 +21,7 @@ type Props = {
 };
 
 function signedTone(value: number) {
-  if (value > 0) return "text-emerald-400";
+  if (value > 0) return "text-brand";
   if (value < 0) return "text-rose-400";
   return "text-zinc-300";
 }
@@ -66,7 +66,7 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="no-spinner w-10 rounded py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40"
+        className="no-spinner w-10 rounded py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
       />
       <span className="text-xs text-zinc-500">%</span>
     </div>
@@ -118,7 +118,7 @@ function InlineStockTarget({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="no-spinner w-16 rounded py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40"
+        className="no-spinner w-16 rounded py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
       />
     </div>
   );
@@ -148,7 +148,7 @@ export function CoveredCallPanel({
   onAddHolding,
 }: Props) {
   return (
-    <section className="overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
+    <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="border-b border-zinc-800/80 px-4 py-3">
         <h2 className="text-sm font-semibold text-white">
           Covered Call Targets
@@ -166,7 +166,7 @@ export function CoveredCallPanel({
               <button
                 type="button"
                 onClick={onAddHolding}
-                className="mt-3 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="mt-3 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
               >
                 Add holding
               </button>
@@ -220,7 +220,7 @@ export function CoveredCallPanel({
                 </div>
                 <div>
                   <p className="text-zinc-500">Next strike</p>
-                  <p className="tabular-nums font-semibold text-emerald-400">
+                  <p className="tabular-nums font-semibold text-brand">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
@@ -280,7 +280,7 @@ export function CoveredCallPanel({
                   <button
                     type="button"
                     onClick={onAddHolding}
-                    className="rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+                    className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
                   >
                     Add holding
                   </button>
@@ -328,7 +328,7 @@ export function CoveredCallPanel({
               <div
                 className={cn(
                   cellBase,
-                  "tabular-nums font-semibold text-emerald-400"
+                  "tabular-nums font-semibold text-brand"
                 )}
               >
                 {r.nextStrike != null ? currency(r.nextStrike) : "—"}

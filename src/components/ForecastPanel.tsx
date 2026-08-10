@@ -30,7 +30,7 @@ type Props = {
 };
 
 function signedTone(value: number) {
-  if (value > 0) return "text-emerald-400";
+  if (value > 0) return "text-brand";
   if (value < 0) return "text-rose-400";
   return "text-zinc-300";
 }
@@ -192,7 +192,7 @@ export function ForecastPanel({
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950/40">
+    <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="border-b border-zinc-800/80 px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -425,7 +425,7 @@ export function ForecastPanel({
                   className={cn(
                     "rounded-md px-2.5 py-1 text-[11px] font-medium transition",
                     stance === s.id
-                      ? "bg-emerald-500/15 text-emerald-300"
+                      ? "bg-brand/15 text-brand-bright"
                       : "text-zinc-500 hover:text-zinc-300"
                   )}
                 >
@@ -448,7 +448,7 @@ export function ForecastPanel({
                 type="button"
                 onClick={() => void askMargus()}
                 disabled={busy || model.rows.length === 0}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-700/60 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand-deep/60 bg-brand/10 px-3 py-2 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20 disabled:opacity-50"
               >
                 {busy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -529,14 +529,14 @@ export function ForecastPanel({
                   key={`${s.label}-${s.theme}`}
                   className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-400/90">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand/90">
                     {s.label}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {s.theme}
                   </p>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                    <span className="font-medium text-emerald-300/90">Add</span>{" "}
+                    <span className="font-medium text-brand-bright/90">Add</span>{" "}
                     {s.add}
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-400">

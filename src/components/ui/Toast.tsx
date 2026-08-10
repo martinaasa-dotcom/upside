@@ -56,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={cn(
               "pointer-events-auto flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm shadow-xl backdrop-blur",
               t.kind === "success" &&
-                "border-emerald-500/30 bg-emerald-950/90 text-emerald-100",
+                "border-brand/30 bg-brand-dark/90 text-brand-bright",
               t.kind === "error" &&
                 "border-rose-500/30 bg-rose-950/90 text-rose-100",
               t.kind === "info" &&
