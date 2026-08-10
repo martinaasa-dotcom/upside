@@ -93,6 +93,7 @@ import {
   getDisplayCurrency,
   loadDisplayCurrencyMap,
   saveDisplayCurrencyMap,
+  usdToDisplay,
   type DisplayCurrency,
 } from "@/lib/display-currency";
 import { normalizeYahooTicker } from "@/lib/ticker";
@@ -180,6 +181,12 @@ export function Dashboard() {
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
   const [quotesDelayed, setQuotesDelayed] = useState(false);
   const [eurUsd, setEurUsd] = useState<number | null>(null);
+  const [eurUsdDetail, setEurUsdDetail] = useState<{
+    open: number | null;
+    previousClose: number | null;
+    last: number | null;
+    rate: number | null;
+  } | null>(null);
   const [gbpUsd, setGbpUsd] = useState<number | null>(null);
   const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState(
     () => loadDisplayCurrencyMap()
@@ -506,6 +513,47 @@ export function Dashboard() {
     }
   }, [pickInitialSheet]);
 
+  const applyFxPayload = useCallback((fx: {
+    eurUsd?: number | null;
+    eurUsdOpen?: number | null;
+    eurUsdPreviousClose?: number | null;
+    eurUsdLast?: number | null;
+    gbpUsd?: number | null;
+  } | null | undefined) => {
+    if (!fx) return;
+    const last = typeof fx.eurUsdLast === "number" ? fx.eurUsdLast : null;
+    const open = typeof fx.eurUsdOpen === "number" ? fx.eurUsdOpen : null;
+    const previousClose =
+      typeof fx.eurUsdPreviousClose === "number"
+        ? fx.eurUsdPreviousClose
+        : null;
+    const rate =
+      typeof fx.eurUsd === "number" && fx.eurUsd > 0
+        ? fx.eurUsd
+        : last ?? previousClose ?? open;
+    if (rate && rate > 0) setEurUsd(rate);
+    setEurUsdDetail({
+      rate: rate && rate > 0 ? rate : null,
+      open,
+      previousClose,
+      last,
+    });
+    if (typeof fx.gbpUsd === "number" && fx.gbpUsd > 0) setGbpUsd(fx.gbpUsd);
+  }, []);
+
+  const refreshFx = useCallback(async () => {
+    try {
+      const res = await fetch("/api/quotes?tickers=EURUSD%3DX", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      applyFxPayload(json.fx);
+    } catch {
+      /* ignore */
+    }
+  }, [applyFxPayload]);
+
   const refreshMarkets = useCallback(
     async (
       tickers: string[],
@@ -516,6 +564,7 @@ export function Dashboard() {
       if (tickers.length === 0) {
         setQuotes({});
         setOptions({});
+        await refreshFx();
         return;
       }
       if (!opts?.silent) setRefreshing(true);
@@ -535,10 +584,7 @@ export function Dashboard() {
           setQuotes(nextQuotes);
           setQuotesUpdatedAt(Date.now());
           setQuotesDelayed(Boolean(quotesJson.delayed));
-          const fxEur = quotesJson.fx?.eurUsd;
-          if (typeof fxEur === "number" && fxEur > 0) setEurUsd(fxEur);
-          const fxGbp = quotesJson.fx?.gbpUsd;
-          if (typeof fxGbp === "number" && fxGbp > 0) setGbpUsd(fxGbp);
+          applyFxPayload(quotesJson.fx);
         }
 
         if (opts?.quotesOnly) return;
@@ -573,8 +619,14 @@ export function Dashboard() {
         if (!opts?.silent) setRefreshing(false);
       }
     },
-    []
+    [applyFxPayload, refreshFx]
   );
+
+  useEffect(() => {
+    void refreshFx();
+    const id = window.setInterval(() => void refreshFx(), 120_000);
+    return () => window.clearInterval(id);
+  }, [refreshFx]);
 
   useEffect(() => {
     void loadPortfolios();
@@ -1973,6 +2025,8 @@ export function Dashboard() {
               name: s.portfolio.name,
               value: s.totalValue,
             }))}
+            eurUsd={eurUsd}
+            eurUsdDetail={eurUsdDetail}
           />
         ) : isOverview ? (
           <>
@@ -2350,12 +2404,24 @@ export function Dashboard() {
                 : activePortfolio?.name ?? "Sheet"}
             </p>
             <p className="tabular-nums text-sm font-semibold text-white">
-              {currency(
-                isMetaTab
+              {(() => {
+                const usdAmt = isMetaTab
                   ? overview.totals.totalValue
                   : (snapshot?.totals.currentValue ??
-                    overview.totals.totalValue)
-              )}
+                    overview.totals.totalValue);
+                const code =
+                  activePortfolio != null
+                    ? getDisplayCurrency(
+                        displayCurrencyByPortfolio,
+                        activePortfolio.id
+                      )
+                    : "USD";
+                return currency(
+                  usdToDisplay(usdAmt, code, eurUsd),
+                  2,
+                  code
+                );
+              })()}
             </p>
           </div>
           <div className="text-right">
@@ -2372,12 +2438,24 @@ export function Dashboard() {
                   : "text-loss"
               }`}
             >
-              {currency(
-                isMetaTab
+              {(() => {
+                const usdAmt = isMetaTab
                   ? overview.totals.todayDollar
                   : (overview.sheets.find((s) => s.portfolio.id === activeId)
-                      ?.todayDollar ?? 0)
-              )}
+                      ?.todayDollar ?? 0);
+                const code =
+                  activePortfolio != null
+                    ? getDisplayCurrency(
+                        displayCurrencyByPortfolio,
+                        activePortfolio.id
+                      )
+                    : "USD";
+                return currency(
+                  usdToDisplay(usdAmt, code, eurUsd),
+                  2,
+                  code
+                );
+              })()}
               {(isMetaTab
                 ? overview.totals.todayPct
                 : overview.sheets.find((s) => s.portfolio.id === activeId)

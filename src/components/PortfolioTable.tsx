@@ -3,6 +3,7 @@
 import { cn, currency, percent } from "@/lib/format";
 import {
   usdToDisplay,
+  formatEurUsdHint,
   type DisplayCurrency,
 } from "@/lib/display-currency";
 import {
@@ -216,7 +217,11 @@ export function PortfolioTable({
           {onDisplayCurrencyChange && (
             <div
               className="flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5"
-              title="Totals & values · spot and buy stay USD"
+              title={
+                eurUsd && eurUsd > 0
+                  ? `Values convert via ${formatEurUsdHint(eurUsd)}. Spot stays USD.`
+                  : "Totals & values · waiting for EURUSD"
+              }
             >
               {(["USD", "EUR"] as const).map((code) => (
                 <button

@@ -22,6 +22,15 @@ import {
   type ShockKind,
 } from "@/lib/compound-play";
 import { cn } from "@/lib/format";
+import {
+  displayToUsd,
+  formatEurUsdHint,
+  loadCompoundCurrency,
+  saveCompoundCurrency,
+  usdToDisplay,
+  type DisplayCurrency,
+  type EurUsdQuote,
+} from "@/lib/display-currency";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import {
   ArrowUpRight,
@@ -34,7 +43,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-type CurrencyCode = "USD" | "EUR";
+type CurrencyCode = DisplayCurrency;
 
 const CURRENCIES: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD" },
@@ -48,8 +57,13 @@ export type CompoundSheetOption = {
 };
 
 type Props = {
+  /** Book value in USD */
   bookValue: number;
+  /** Sheet values in USD */
   sheets: CompoundSheetOption[];
+  /** USD per 1 EUR (Yahoo EURUSD) */
+  eurUsd?: number | null;
+  eurUsdDetail?: EurUsdQuote | null;
 };
 
 function loadStored(): CompoundInputs {
@@ -67,13 +81,19 @@ function loadStored(): CompoundInputs {
   }
 }
 
-function money(value: number, currency: CurrencyCode, digits = 0): string {
+function money(
+  amountUsd: number,
+  currency: CurrencyCode,
+  eurUsd: number | null,
+  digits = 0
+): string {
+  const shown = usdToDisplay(amountUsd, currency, eurUsd);
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  }).format(value);
+  }).format(shown);
 }
 
 function SegButton({
@@ -105,10 +125,12 @@ function DualPathChart({
   stay,
   active,
   currency,
+  eurUsd,
 }: {
   stay: number[];
   active: number[];
   currency: CurrencyCode;
+  eurUsd: number | null;
 }) {
   const max = Math.max(...stay, ...active, 1);
   const w = 640;
@@ -149,18 +171,23 @@ function DualPathChart({
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-0.5 w-4 border-t-2 border-dashed border-zinc-500" />
-          Stay the course · {money(stay[stay.length - 1] ?? 0, currency)}
+          Stay the course · {money(stay[stay.length - 1] ?? 0, currency, eurUsd)}
         </span>
         <span className="inline-flex items-center gap-1.5 text-gain">
           <span className="h-0.5 w-4 bg-gain" />
-          Active path · {money(active[active.length - 1] ?? 0, currency)}
+          Active path · {money(active[active.length - 1] ?? 0, currency, eurUsd)}
         </span>
       </div>
     </div>
   );
 }
 
-export function CompoundInterestSheet({ bookValue, sheets }: Props) {
+export function CompoundInterestSheet({
+  bookValue,
+  sheets,
+  eurUsd = null,
+  eurUsdDetail = null,
+}: Props) {
   const [draft, setDraft] = useState<CompoundInputs>(DEFAULT_COMPOUND_INPUTS);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [principalSource, setPrincipalSource] = useState<string>("custom");
@@ -174,8 +201,33 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
   useEffect(() => {
     const stored = loadStored();
     setDraft(stored);
+    setCurrency(loadCompoundCurrency());
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveCompoundCurrency(currency);
+  }, [currency, hydrated]);
+
+  const fxReady = currency === "USD" || (eurUsd != null && eurUsd > 0);
+  const fxHint = formatEurUsdHint(eurUsd, eurUsdDetail);
+
+  function show(amountUsd: number, digits = 0) {
+    return money(amountUsd, currency, eurUsd, digits);
+  }
+
+  function setCurrencySafe(next: CurrencyCode) {
+    setCurrency(next);
+  }
+
+  /** Money inputs are shown in display currency; draft stays USD. */
+  function onMoneyUsdChange(
+    displayAmount: number,
+    apply: (usd: number) => void
+  ) {
+    apply(Math.round(displayToUsd(displayAmount, currency, eurUsd) * 100) / 100);
+  }
 
   useEffect(() => {
     if (!hydrated) return;
@@ -282,10 +334,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
   async function copyPostcard() {
     const text = [
       `Upside compound postcard`,
-      `${money(result.principal, currency)} → ${money(result.futureValue, currency)} in ${liveInputs.years}y`,
-      `Interest ${money(result.totalInterest, currency)} · RoR ${(result.allTimeRoR * 100).toFixed(0)}%`,
+      `${show(result.principal)} → ${show(result.futureValue)} in ${liveInputs.years}y`,
+      `Interest ${show(result.totalInterest)} · RoR ${(result.allTimeRoR * 100).toFixed(0)}%`,
       liveInputs.depositAmount > 0
-        ? `+${money(liveInputs.depositAmount, currency)}/mo deposits @ ${liveInputs.annualIncrease}% YoY`
+        ? `+${show(liveInputs.depositAmount)}/mo deposits @ ${liveInputs.annualIncrease}% YoY`
         : `No deposits · pure compound`,
       shock !== "none" ? `Shock: ${shock}` : null,
     ]
@@ -329,12 +381,25 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
               <SegButton
                 key={c.code}
                 active={currency === c.code}
-                onClick={() => setCurrency(c.code)}
+                onClick={() => setCurrencySafe(c.code)}
               >
                 {c.label}
               </SegButton>
             ))}
           </div>
+          <p
+            className={cn(
+              "mt-1.5 text-[10px] tabular-nums",
+              fxReady ? "text-zinc-500" : "text-amber-300/90"
+            )}
+            title="Book amounts stay USD; EUR uses Yahoo EURUSD last → close → open"
+          >
+            {currency === "EUR"
+              ? fxHint
+              : eurUsd && eurUsd > 0
+                ? `Book USD · ${fxHint}`
+                : "Book USD"}
+          </p>
         </div>
 
         <div>
@@ -347,11 +412,11 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             >
               <option value="custom">Custom amount</option>
               <option value="book">
-                All portfolios ({money(bookValue, currency)})
+                All portfolios ({show(bookValue)})
               </option>
               {sheets.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} ({money(s.value, currency)})
+                  {s.name} ({show(s.value)})
                 </option>
               ))}
             </select>
@@ -361,10 +426,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             <FormattedNumberInput
               kind="money"
               currency={currency}
-              value={draft.principal}
+              value={usdToDisplay(draft.principal, currency, eurUsd)}
               onChange={(n) => {
                 setPrincipalSource("custom");
-                patchDraft("principal", n);
+                onMoneyUsdChange(n, (usd) => patchDraft("principal", usd));
               }}
               className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
@@ -442,11 +507,11 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             className="mt-3 w-full accent-[var(--brand)]"
           />
           <div className="mt-1 flex justify-between text-[11px] text-zinc-500">
-            <span>$0</span>
+            <span>{show(0)}</span>
             <span className="tabular-nums text-brand-bright">
-              {money(draft.depositAmount, currency)}/mo
+              {show(draft.depositAmount)}/mo
             </span>
-            <span>$2k</span>
+            <span>{show(2000)}</span>
           </div>
           <label className="mt-3 block text-[11px] text-zinc-500">
             Annual deposit increase %
@@ -488,8 +553,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
               <FormattedNumberInput
                 kind="money"
                 currency={currency}
-                value={draft.withdrawalAmount}
-                onChange={(n) => patchDraft("withdrawalAmount", n)}
+                value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
+                onChange={(n) =>
+                  onMoneyUsdChange(n, (usd) => patchDraft("withdrawalAmount", usd))
+                }
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
               />
             </label>
@@ -573,7 +640,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                 Future value
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-gain sm:text-3xl">
-                {money(result.futureValue, currency)}
+                {show(result.futureValue)}
               </p>
             </div>
             <div>
@@ -581,7 +648,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                 Total interest
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400 sm:text-3xl">
-                {money(result.totalInterest, currency)}
+                {show(result.totalInterest)}
               </p>
             </div>
             <div>
@@ -589,7 +656,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                 Initial balance
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-sky-400 sm:text-3xl">
-                {money(result.principal, currency)}
+                {show(result.principal)}
               </p>
             </div>
           </div>
@@ -634,6 +701,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
               stay={staySeries}
               active={activeSeries}
               currency={currency}
+              eurUsd={eurUsd}
             />
           </div>
         </div>
@@ -651,7 +719,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                 active={goal === g}
                 onClick={() => setGoal(g)}
               >
-                {money(g, currency)}
+                {show(g)}
               </SegButton>
             ))}
           </div>
@@ -660,8 +728,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             <FormattedNumberInput
               kind="money"
               currency={currency}
-              value={goal}
-              onChange={setGoal}
+              value={usdToDisplay(goal, currency, eurUsd)}
+              onChange={(n) =>
+                onMoneyUsdChange(n, (usd) => setGoal(Math.round(usd)))
+              }
               className="mt-1 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </label>
@@ -682,10 +752,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
               <p>
                 End of horizon:{" "}
                 <span className="font-semibold text-white">
-                  {money(result.futureValue, currency)}
+                  {show(result.futureValue)}
                 </span>
                 {" / "}
-                {money(goal, currency)}
+                {show(goal)}
               </p>
               <p className="mt-1 text-xs text-zinc-500">
                 {goalYear != null
@@ -718,15 +788,15 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                 Year {storyRow.index}
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-white">
-                {money(storyRow.balance, currency)}
+                {show(storyRow.balance)}
               </p>
               <p className="mt-2 text-sm text-zinc-400">
                 {storyRow.index === 0
                   ? "Starting line — nothing compounded yet."
                   : storyRow.interest > storyRow.contributions &&
                       storyRow.contributions > 0
-                    ? `Interest this year (${money(storyRow.interest, currency)}) beats deposits (${money(storyRow.contributions, currency)}). Money is working harder than you.`
-                    : `Interest earned this year: ${money(storyRow.interest, currency)}. Accrued interest: ${money(storyRow.accruedInterest, currency)}.`}
+                    ? `Interest this year (${show(storyRow.interest)}) beats deposits (${show(storyRow.contributions)}). Money is working harder than you.`
+                    : `Interest earned this year: ${show(storyRow.interest)}. Accrued interest: ${show(storyRow.accruedInterest)}.`}
               </p>
             </div>
           )}
@@ -756,10 +826,10 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                   className="mt-3 text-xl font-bold tabular-nums"
                   style={{ color: s.color }}
                 >
-                  {money(s.result.futureValue, currency)}
+                  {show(s.result.futureValue)}
                 </p>
                 <p className="mt-1 text-[11px] text-zinc-500">
-                  Interest {money(s.result.totalInterest, currency)}
+                  Interest {show(s.result.totalInterest)}
                 </p>
               </div>
             ))}
@@ -821,7 +891,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                       <td className="px-4 py-2 tabular-nums text-zinc-300">
                         {row.index === 0
                           ? "—"
-                          : money(row.interest, currency, 2)}
+                          : show(row.interest, 2)}
                       </td>
                       <td
                         className={cn(
@@ -833,7 +903,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                       >
                         {row.index === 0
                           ? "—"
-                          : money(row.accruedInterest, currency, 2)}
+                          : show(row.accruedInterest, 2)}
                       </td>
                       <td
                         className={cn(
@@ -843,7 +913,7 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
                             : "text-zinc-100"
                         )}
                       >
-                        {money(row.balance, currency, 2)}
+                        {show(row.balance, 2)}
                       </td>
                     </tr>
                   );
@@ -911,15 +981,15 @@ export function CompoundInterestSheet({ bookValue, sheets }: Props) {
             </button>
           </div>
           <p className="mt-4 text-lg font-semibold tracking-tight text-white sm:text-xl">
-            {money(result.principal, currency)} →{" "}
-            {money(result.futureValue, currency)}{" "}
+            {show(result.principal)} →{" "}
+            {show(result.futureValue)}{" "}
             <span className="text-zinc-500">in {durationLabel}</span>
           </p>
           <p className="mt-2 text-sm text-zinc-400">
-            Interest {money(result.totalInterest, currency)} ·{" "}
+            Interest {show(result.totalInterest)} ·{" "}
             {(result.allTimeRoR * 100).toFixed(0)}% all-time RoR
             {draft.depositAmount > 0
-              ? ` · +${money(draft.depositAmount, currency)}/mo`
+              ? ` · +${show(draft.depositAmount)}/mo`
               : ""}
           </p>
         </div>

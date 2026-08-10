@@ -1,4 +1,4 @@
-import { fetchQuotes } from "@/lib/market/yahoo";
+import { fetchFxOnly, fetchQuotes } from "@/lib/market/yahoo";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -11,13 +11,23 @@ export async function GET(req: NextRequest) {
     .map((t) => t.trim().toUpperCase())
     .filter(Boolean);
 
-  if (tickers.length === 0) {
-    return NextResponse.json({
-      quotes: {},
-      fx: { eurUsd: null, gbpUsd: null },
-      delayed: false,
-      updatedAt: new Date().toISOString(),
-    });
+  // FX-only: Compound / empty books still need EURUSD open·close·last
+  if (
+    tickers.length === 0 ||
+    (tickers.length === 1 && tickers[0] === "EURUSD=X")
+  ) {
+    const fx = await fetchFxOnly();
+    return NextResponse.json(
+      {
+        quotes: {},
+        fx,
+        delayed: false,
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=120" },
+      }
+    );
   }
 
   const { quotes, delayed, fx } = await fetchQuotes(tickers);

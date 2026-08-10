@@ -35,8 +35,14 @@ function hashTicker(ticker: string): number {
 }
 
 export type FxRates = {
-  /** USD per 1 EUR */
+  /** USD per 1 EUR — preferred conversion rate (last → prev close → open) */
   eurUsd: number | null;
+  /** EURUSD regular session open */
+  eurUsdOpen: number | null;
+  /** EURUSD previous close */
+  eurUsdPreviousClose: number | null;
+  /** EURUSD last / regular market price */
+  eurUsdLast: number | null;
   /** USD per 1 GBP */
   gbpUsd: number | null;
 };
@@ -48,25 +54,49 @@ export type QuotesResult = {
   delayed: boolean;
 };
 
+const EMPTY_FX: FxRates = {
+  eurUsd: null,
+  eurUsdOpen: null,
+  eurUsdPreviousClose: null,
+  eurUsdLast: null,
+  gbpUsd: null,
+};
+
+function numOrNull(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
+}
+
 async function fetchFxRates(yf: YahooFinanceInstance): Promise<FxRates> {
   try {
     const [eur, gbp] = await Promise.all([
       yf.quote("EURUSD=X"),
       yf.quote("GBPUSD=X"),
     ]);
+    const last = numOrNull(eur.regularMarketPrice);
+    const open = numOrNull(eur.regularMarketOpen);
+    const previousClose = numOrNull(eur.regularMarketPreviousClose);
+    const eurUsd = last ?? previousClose ?? open;
     return {
-      eurUsd:
-        typeof eur.regularMarketPrice === "number"
-          ? eur.regularMarketPrice
-          : null,
-      gbpUsd:
-        typeof gbp.regularMarketPrice === "number"
-          ? gbp.regularMarketPrice
-          : null,
+      eurUsd,
+      eurUsdOpen: open,
+      eurUsdPreviousClose: previousClose,
+      eurUsdLast: last,
+      gbpUsd: numOrNull(gbp.regularMarketPrice),
     };
   } catch (err) {
     console.error("FX quote failed", err);
-    return { eurUsd: null, gbpUsd: null };
+    return { ...EMPTY_FX };
+  }
+}
+
+/** Fetch EURUSD/GBPUSD only (for Compound / empty books). */
+export async function fetchFxOnly(): Promise<FxRates> {
+  try {
+    const yf = await getYahoo();
+    return await fetchFxRates(yf);
+  } catch (err) {
+    console.error("FX-only fetch failed", err);
+    return { ...EMPTY_FX };
   }
 }
 
@@ -106,7 +136,7 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
     ),
   ];
   if (unique.length === 0) {
-    return { quotes: {}, fx: { eurUsd: null, gbpUsd: null }, delayed: false };
+    return { quotes: {}, fx: { ...EMPTY_FX }, delayed: false };
   }
 
   try {
@@ -228,7 +258,7 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
     console.error("yahoo-finance2 unavailable", err);
     return {
       quotes: fallbackQuotes(unique),
-      fx: { eurUsd: null, gbpUsd: null },
+      fx: { ...EMPTY_FX },
       delayed: true,
     };
   }
