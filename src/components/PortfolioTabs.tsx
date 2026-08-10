@@ -23,10 +23,22 @@ type OpenMenu = {
   y: number;
 };
 
-const metaTab =
-  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[13px] transition";
-const sheetTab =
-  "box-border h-8 w-[6.5rem] min-w-[6.5rem] max-w-[6.5rem] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-md px-2 text-center text-[13px] transition";
+/** Shared chip chrome for meta tabs + sheets. */
+const chipBase =
+  "box-border inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-[13px] ring-1 ring-inset transition";
+
+const chipIdle =
+  "bg-zinc-950/60 text-zinc-400 ring-zinc-800 hover:bg-zinc-900 hover:text-zinc-200";
+
+const chipActiveMeta =
+  "bg-brand/15 font-medium text-brand-bright ring-brand/45";
+
+const chipActiveSheet =
+  "bg-zinc-800 font-medium text-white ring-zinc-500";
+
+/** Fixed width for every sheet chip. */
+const sheetChip =
+  "w-[6.75rem] min-w-[6.75rem] max-w-[6.75rem] overflow-hidden text-ellipsis whitespace-nowrap";
 
 export function PortfolioTabs({
   portfolios,
@@ -103,121 +115,107 @@ export function PortfolioTabs({
 
   return (
     <nav className="sticky bottom-0 z-20 border-t border-zinc-800/80 bg-[#121214]/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-2 overflow-x-auto px-4 py-2.5">
-        <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              setMenu(null);
-              onChange(OVERVIEW_TAB_ID);
-            }}
-            className={cn(
-              metaTab,
-              overviewActive
-                ? "bg-brand/15 font-medium text-brand-bright ring-1 ring-inset ring-brand/40"
-                : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
-            )}
-          >
-            <LayoutDashboard className="h-3.5 w-3.5" />
-            Overview
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMenu(null);
-              onChange(COMPOUND_TAB_ID);
-            }}
-            className={cn(
-              metaTab,
-              compoundActive
-                ? "bg-brand/15 font-medium text-brand-bright ring-1 ring-inset ring-brand/40"
-                : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
-            )}
-          >
-            <Calculator className="h-3.5 w-3.5" />
-            Compound
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMenu(null);
-              onChange(LAB_TAB_ID);
-            }}
-            className={cn(
-              metaTab,
-              labActive
-                ? "bg-brand/15 font-medium text-brand-bright ring-1 ring-inset ring-brand/40"
-                : "text-zinc-500 hover:bg-zinc-900 hover:text-zinc-200"
-            )}
-          >
-            <FlaskConical className="h-3.5 w-3.5" />
-            Lab
-          </button>
-        </div>
-
-        <div className="h-4 w-px shrink-0 bg-zinc-800" aria-hidden />
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          {portfolios.map((p) => {
-            const active = p.id === activeId;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                title={`${p.name} · right-click to rename or delete`}
-                onClick={() => {
-                  setMenu(null);
-                  onChange(p.id);
-                }}
-                onContextMenu={(e) => openContextMenu(e, p.id, p.name)}
-                onDoubleClick={() => onRenameRequest?.(p.id, p.name)}
-                className={cn(
-                  sheetTab,
-                  active
-                    ? "bg-zinc-800 font-medium text-white ring-1 ring-inset ring-zinc-600"
-                    : "bg-zinc-950/80 text-zinc-400 ring-1 ring-inset ring-zinc-800/90 hover:bg-zinc-900 hover:text-zinc-200"
-                )}
-              >
-                {p.name}
-              </button>
-            );
-          })}
-
-          {adding ? (
-            <form
-              className="flex h-8 shrink-0 items-center"
-              onSubmit={(e) => {
-                e.preventDefault();
-                submit();
-              }}
-            >
-              <input
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={submit}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setAdding(false);
-                    setName("");
-                  }
-                }}
-                placeholder="Name"
-                className="box-border h-8 w-[6.5rem] rounded-md border border-zinc-600 bg-zinc-900 px-2 text-[13px] text-white outline-none focus:border-brand"
-              />
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md px-2 text-[13px] text-zinc-500 transition hover:bg-zinc-900 hover:text-brand-bright"
-              aria-label="Add sheet"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              New
-            </button>
+      <div className="mx-auto flex max-w-[1400px] items-center gap-1.5 overflow-x-auto px-4 py-2.5">
+        <button
+          type="button"
+          onClick={() => {
+            setMenu(null);
+            onChange(OVERVIEW_TAB_ID);
+          }}
+          className={cn(
+            chipBase,
+            overviewActive ? chipActiveMeta : chipIdle
           )}
-        </div>
+        >
+          <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+          Overview
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMenu(null);
+            onChange(COMPOUND_TAB_ID);
+          }}
+          className={cn(
+            chipBase,
+            compoundActive ? chipActiveMeta : chipIdle
+          )}
+        >
+          <Calculator className="h-3.5 w-3.5 shrink-0" />
+          Compound
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMenu(null);
+            onChange(LAB_TAB_ID);
+          }}
+          className={cn(chipBase, labActive ? chipActiveMeta : chipIdle)}
+        >
+          <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+          Lab
+        </button>
+
+        <div className="mx-0.5 h-4 w-px shrink-0 bg-zinc-700/80" aria-hidden />
+
+        {portfolios.map((p) => {
+          const active = p.id === activeId;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              title={`${p.name} · right-click to rename or delete`}
+              onClick={() => {
+                setMenu(null);
+                onChange(p.id);
+              }}
+              onContextMenu={(e) => openContextMenu(e, p.id, p.name)}
+              onDoubleClick={() => onRenameRequest?.(p.id, p.name)}
+              className={cn(
+                chipBase,
+                sheetChip,
+                active ? chipActiveSheet : chipIdle
+              )}
+            >
+              {p.name}
+            </button>
+          );
+        })}
+
+        {adding ? (
+          <form
+            className="flex h-8 shrink-0 items-center"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submit();
+            }}
+          >
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={submit}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setAdding(false);
+                  setName("");
+                }
+              }}
+              placeholder="Name"
+              className="box-border h-8 w-[6.75rem] rounded-md border border-zinc-600 bg-zinc-900 px-2 text-[13px] text-white outline-none ring-1 ring-inset ring-zinc-700 focus:border-brand focus:ring-brand/40"
+            />
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className={cn(chipBase, chipIdle, "text-zinc-500")}
+            aria-label="Add sheet"
+          >
+            <Plus className="h-3.5 w-3.5 shrink-0" />
+            New
+          </button>
+        )}
       </div>
 
       {mounted &&
