@@ -1,4 +1,5 @@
 import { enrichHoldings } from "@/lib/calculations";
+import { buildDailyFunFacts } from "@/lib/fun-facts";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 
 export const OVERVIEW_TAB_ID = "__overview__";
@@ -65,79 +66,6 @@ function todayDollarFor(
     return { dollar: 0, pct: null };
   }
   return { dollar: currentValue * changePercent, pct: changePercent };
-}
-
-function buildFunFacts(
-  sheets: SheetScore[],
-  tickers: TickerScore[],
-  totals: OverviewModel["totals"]
-): string[] {
-  const facts: string[] = [];
-  if (!sheets.length || !tickers.length) return facts;
-
-  const biggestBook = [...sheets].sort((a, b) => b.totalValue - a.totalValue)[0];
-  const hottest = [...tickers].sort((a, b) => b.roiPct - a.roiPct)[0];
-  const coldest = [...tickers].sort((a, b) => a.roiPct - b.roiPct)[0];
-  const mostOwned = [...tickers].sort(
-    (a, b) => b.portfolios.length - a.portfolios.length || b.currentValue - a.currentValue
-  )[0];
-  const widest = tickers.filter((t) => t.portfolios.length >= 2);
-  const dayChamp = [...tickers]
-    .filter((t) => t.todayPct !== null)
-    .sort((a, b) => (b.todayPct ?? 0) - (a.todayPct ?? 0))[0];
-
-  if (biggestBook && totals.totalValue > 0) {
-    const share = biggestBook.totalValue / totals.totalValue;
-    facts.push(
-      `${biggestBook.portfolio.name} is the heavyweight book — ${Math.round(share * 100)}% of combined NAV.`
-    );
-  }
-
-  if (hottest && hottest.roiPct > 0) {
-    facts.push(
-      `${hottest.ticker} is the lifetime MVP at ${Math.round(hottest.roiPct * 1000) / 10}% ROI` +
-        (hottest.portfolios.length > 1
-          ? ` across ${hottest.portfolios.join(" · ")}.`
-          : ` (in ${hottest.portfolios[0]}).`)
-    );
-  }
-
-  if (coldest && coldest.roiPct < 0) {
-    facts.push(
-      `${coldest.ticker} is the drama queen at ${Math.round(coldest.roiPct * 1000) / 10}% — owned by ${coldest.portfolios.join(", ")}.`
-    );
-  }
-
-  if (mostOwned && mostOwned.portfolios.length >= 2) {
-    facts.push(
-      `${mostOwned.ticker} is the house favorite — sitting in ${mostOwned.portfolios.length} portfolios (${mostOwned.portfolios.join(", ")}).`
-    );
-  } else if (widest.length === 0) {
-    facts.push("Every ticker is a solo act — no overlapping names across portfolios.");
-  }
-
-  if (dayChamp && (dayChamp.todayPct ?? 0) > 0) {
-    facts.push(
-      `Today's main character: ${dayChamp.ticker} at ${Math.round((dayChamp.todayPct ?? 0) * 1000) / 10}% — worth ${Math.round(dayChamp.todayDollar).toLocaleString("en-US")} bucks of smile.`
-    );
-  }
-
-  if (totals.cash !== 0) {
-    facts.push(
-      totals.cash < 0
-        ? `Combined cash is ${Math.round(totals.cash).toLocaleString("en-US")} — someone is running hot on margin.`
-        : `There's ${Math.round(totals.cash).toLocaleString("en-US")} in dry powder across the family of books.`
-    );
-  }
-
-  const top = [...tickers].sort((a, b) => b.currentValue - a.currentValue)[0];
-  if (top && totals.equityValue > 0) {
-    facts.push(
-      `${top.ticker} alone is ${Math.round((top.currentValue / totals.equityValue) * 100)}% of all equity — concentration is a feature, not a bug (probably).`
-    );
-  }
-
-  return facts.slice(0, 6);
 }
 
 export function buildOverview(
@@ -281,7 +209,7 @@ export function buildOverview(
     todayWinners: byToday.filter((t) => (t.todayPct ?? 0) > 0).slice(0, 5),
     todayLosers: byToday.filter((t) => (t.todayPct ?? 0) < 0).slice(-5).reverse(),
     topHoldings: byValue.slice(0, 10),
-    funFacts: buildFunFacts(sortedSheets, tickers, totals),
+    funFacts: buildDailyFunFacts(sortedSheets, tickers, totals),
     totals,
   };
 }

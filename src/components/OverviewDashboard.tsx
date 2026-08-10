@@ -642,16 +642,18 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
           </div>
           <div>
             <h3 className="text-xl font-semibold text-white">Fun facts</h3>
-            <p className="mt-1 text-base text-zinc-400">From the live books</p>
+            <p className="mt-1 text-base text-zinc-400">
+              10 new ones every Tallinn day
+            </p>
           </div>
         </div>
         <ul className="space-y-3">
           {funFacts.length === 0 ? (
             <li className="text-base text-zinc-500">Waiting on quotes…</li>
           ) : (
-            funFacts.map((fact) => (
+            funFacts.map((fact, i) => (
               <li
-                key={fact}
+                key={`${i}-${fact.slice(0, 24)}`}
                 className="rounded-2xl border border-zinc-800/70 bg-zinc-950/50 px-4 py-3.5 text-base leading-relaxed text-zinc-200"
               >
                 {fact}
