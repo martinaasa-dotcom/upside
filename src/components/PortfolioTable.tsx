@@ -39,6 +39,7 @@ type Props = {
   onEditCash: () => void;
   onAddHolding?: () => void;
   onAskMargus?: () => void;
+  onOpenTicker?: (ticker: string) => void;
   /** Sheet display currency for totals/values (spot & buy stay USD). */
   displayCurrency?: DisplayCurrency;
   /** USD per 1 EUR — required when displayCurrency is EUR. */
@@ -165,6 +166,7 @@ export function PortfolioTable({
   onEditCash,
   onAddHolding,
   onAskMargus,
+  onOpenTicker,
   displayCurrency = "USD",
   eurUsd = null,
   onDisplayCurrencyChange,
@@ -269,7 +271,19 @@ export function PortfolioTable({
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-base font-semibold text-white">{h.ticker}</p>
+                  <p className="text-base font-semibold text-white">
+                    {onOpenTicker ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenTicker(h.ticker)}
+                        className="hover:text-brand-bright"
+                      >
+                        {h.ticker}
+                      </button>
+                    ) : (
+                      h.ticker
+                    )}
+                  </p>
                   <p className="text-sm text-zinc-500">
                     {percent(h.pctOfTotal)} of book ·{" "}
                     {h.quote ? percent(h.quote.changePercent) : "—"} today
@@ -388,7 +402,17 @@ export function PortfolioTable({
                     "font-semibold tracking-wide text-white"
                   )}
                 >
-                  {h.ticker}
+                  {onOpenTicker ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenTicker(h.ticker)}
+                      className="hover:text-brand-bright"
+                    >
+                      {h.ticker}
+                    </button>
+                  ) : (
+                    h.ticker
+                  )}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
                   {percent(h.pctOfTotal)}

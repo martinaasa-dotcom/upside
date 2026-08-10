@@ -1,0 +1,56 @@
+/** Per-ticker conviction + thesis (localStorage). */
+
+export type ConvictionLevel = 1 | 2 | 3 | 4 | 5;
+
+export type ConvictionEntry = {
+  level: ConvictionLevel;
+  thesis: string;
+  updatedAt: string;
+};
+
+export type ConvictionMap = Record<string, ConvictionEntry>;
+
+const KEY = "upside-conviction-v1";
+
+export function loadConvictionMap(): ConvictionMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as ConvictionMap;
+  } catch {
+    return {};
+  }
+}
+
+export function saveConvictionMap(map: ConvictionMap) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function setConviction(
+  map: ConvictionMap,
+  ticker: string,
+  patch: Partial<ConvictionEntry>
+): ConvictionMap {
+  const key = ticker.toUpperCase();
+  const prev = map[key] ?? {
+    level: 3 as ConvictionLevel,
+    thesis: "",
+    updatedAt: new Date().toISOString(),
+  };
+  const next: ConvictionMap = {
+    ...map,
+    [key]: {
+      level: (patch.level ?? prev.level) as ConvictionLevel,
+      thesis: patch.thesis ?? prev.thesis,
+      updatedAt: new Date().toISOString(),
+    },
+  };
+  saveConvictionMap(next);
+  return next;
+}

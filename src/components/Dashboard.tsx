@@ -2,10 +2,14 @@
 
 import { CashModal } from "@/components/CashModal";
 import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
+import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
+import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
 import { ForecastPanel } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
+import { LabSheet } from "@/components/LabSheet";
+import { MacroStrip } from "@/components/MacroStrip";
 import { OverviewDashboard } from "@/components/OverviewDashboard";
 import {
   PortfolioTable,
@@ -13,12 +17,29 @@ import {
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
+import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
+import { TickerDrawer } from "@/components/TickerDrawer";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
+import {
+  buildEarningsAlerts,
+  buildStrikeAlerts,
+} from "@/lib/alerts";
+import {
+  captureSheetSnapshot,
+  popUndoSnapshot,
+  pushUndoSnapshot,
+  type BookUndoSnapshot,
+} from "@/lib/book-undo";
 import { buildSnapshot } from "@/lib/calculations";
 import { clearChatHistory } from "@/lib/chat-history";
+import {
+  loadConvictionMap,
+  setConviction,
+  type ConvictionMap,
+} from "@/lib/conviction";
 import { OwnerUnlockModal } from "@/components/OwnerUnlockModal";
 import {
   getSessionPin,
@@ -55,14 +76,28 @@ import {
   type DisplayCurrency,
 } from "@/lib/display-currency";
 import { normalizeYahooTicker } from "@/lib/ticker";
-import { COMPOUND_TAB_ID, OVERVIEW_TAB_ID, buildOverview } from "@/lib/overview";
+import {
+  COMPOUND_TAB_ID,
+  LAB_TAB_ID,
+  OVERVIEW_TAB_ID,
+  buildOverview,
+} from "@/lib/overview";
 import type {
   Holding,
   OptionCandidate,
   Portfolio,
   Quote,
 } from "@/lib/types";
-import { Eye, EyeOff, History, Lock, Plus, RefreshCw, Save } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  History,
+  Lock,
+  Plus,
+  RefreshCw,
+  Save,
+  Undo2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -154,6 +189,22 @@ export function Dashboard() {
   const [mobileMargusCollapsed] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
   );
+  const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [guestMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("view") === "guest";
+  });
+  const [costBasisOpen, setCostBasisOpen] = useState(false);
+  const [costBasisRows, setCostBasisRows] = useState<CostBasisRow[]>([]);
+  const [drawerTicker, setDrawerTicker] = useState<string | null>(null);
+  const [convictionMap, setConvictionMap] = useState<ConvictionMap>({});
+  const [earningsEvents, setEarningsEvents] = useState<
+    Array<{ ticker: string; date: string; days: number }>
+  >([]);
+  const [alertToastsSent, setAlertToastsSent] = useState<Set<string>>(
+    () => new Set()
+  );
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
   const pendingPatchRef = useRef<HoldingPatch | null>(null);
@@ -167,8 +218,10 @@ export function Dashboard() {
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const isCompound = activeId === COMPOUND_TAB_ID;
+  const isLab = activeId === LAB_TAB_ID;
+  const isMetaTab = isOverview || isCompound || isLab;
   const activePortfolio =
-    isOverview || isCompound
+    isMetaTab
       ? null
       : (portfolios.find((p) => p.id === activeId) ?? null);
 
@@ -309,6 +362,9 @@ export function Dashboard() {
           if (sheetParam === "compound" || sheetParam === COMPOUND_TAB_ID) {
             return COMPOUND_TAB_ID;
           }
+          if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) {
+            return LAB_TAB_ID;
+          }
           if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
             return OVERVIEW_TAB_ID;
           }
@@ -325,6 +381,7 @@ export function Dashboard() {
         prev &&
         (prev === OVERVIEW_TAB_ID ||
           prev === COMPOUND_TAB_ID ||
+          prev === LAB_TAB_ID ||
           list.some((p) => p.id === prev))
       ) {
         return prev;
@@ -334,6 +391,7 @@ export function Dashboard() {
         saved &&
         (saved === OVERVIEW_TAB_ID ||
           saved === COMPOUND_TAB_ID ||
+          saved === LAB_TAB_ID ||
           list.some((p) => p.id === saved))
       ) {
         return saved;
@@ -477,13 +535,16 @@ export function Dashboard() {
       url.searchParams.delete("sheet");
     } else if (activeId === COMPOUND_TAB_ID) {
       url.searchParams.set("sheet", "compound");
+    } else if (activeId === LAB_TAB_ID) {
+      url.searchParams.set("sheet", "lab");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
       if (p?.slug) url.searchParams.set("sheet", p.slug);
       else url.searchParams.set("sheet", activeId);
     }
+    if (guestMode) url.searchParams.set("view", "guest");
     window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-  }, [activeId, portfolios]);
+  }, [activeId, portfolios, guestMode]);
 
   useEffect(() => {
     if (source !== "supabase") return;
@@ -545,7 +606,7 @@ export function Dashboard() {
   // Quotes for every ticker (overview + sheet views); options only on a sheet
   useEffect(() => {
     if (holdings.length === 0) return;
-    if (isOverview || isCompound) {
+    if (isMetaTab) {
       void refreshMarkets(allTickers, holdings, undefined, {
         quotesOnly: true,
       });
@@ -555,7 +616,7 @@ export function Dashboard() {
     const rows = holdings.filter((h) => h.portfolio_id === activePortfolio.id);
     void refreshMarkets(allTickers, rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePortfolio?.id, isOverview, isCompound, ccSignature, allTickers.join(","), refreshMarkets]);
+  }, [activePortfolio?.id, isMetaTab, ccSignature, allTickers.join(","), refreshMarkets]);
 
   // Free Yahoo poll: prices every 45s while the tab is visible (options stay on demand)
   useEffect(() => {
@@ -566,10 +627,9 @@ export function Dashboard() {
 
     const tick = () => {
       if (cancelled || document.hidden) return;
-      const rows =
-        isOverview || isCompound
-          ? holdings
-          : holdings.filter((h) => h.portfolio_id === activePortfolio?.id);
+      const rows = isMetaTab
+        ? holdings
+        : holdings.filter((h) => h.portfolio_id === activePortfolio?.id);
       void refreshMarkets(allTickers, rows, undefined, {
         quotesOnly: true,
         silent: true,
@@ -589,8 +649,7 @@ export function Dashboard() {
     };
   }, [
     activePortfolio?.id,
-    isOverview,
-    isCompound,
+    isMetaTab,
     allTickers.join(","),
     holdings,
     refreshMarkets,
@@ -713,6 +772,18 @@ export function Dashboard() {
   const applyAdvisorActions = useCallback(
     (actions: AdvisorAction[]) => {
       if (!actions.length || !activePortfolio) return;
+
+      setUndoStack((stack) =>
+        pushUndoSnapshot(
+          stack,
+          captureSheetSnapshot({
+            label: `Margus · ${actions.map((a) => a.action).slice(0, 3).join(", ")}`,
+            portfolio: activePortfolio,
+            holdings,
+            eoyOverrides,
+          })
+        )
+      );
 
       const findHolding = (ticker: string, list: Holding[]) =>
         list.find(
@@ -837,6 +908,15 @@ export function Dashboard() {
               tickers,
               nextHoldings.filter((h) => h.portfolio_id === activePortfolio.id)
             );
+            setCostBasisRows(
+              action.holdings.map((row) => ({
+                ticker: row.ticker,
+                shares: row.shares,
+                suggestedBuy: row.buyPrice,
+                buyPrice: row.buyPrice,
+              }))
+            );
+            setCostBasisOpen(true);
           } else if (action.action === "remove_holding") {
             const h = findHolding(action.ticker, nextHoldings);
             if (!h) continue;
@@ -1034,6 +1114,17 @@ export function Dashboard() {
                 failed ? "error" : "success"
               );
               await loadPortfolios({ silent: true });
+              if (upserted > 0) {
+                setCostBasisRows(
+                  action.holdings.map((row) => ({
+                    ticker: row.ticker,
+                    shares: row.shares,
+                    suggestedBuy: row.buyPrice,
+                    buyPrice: row.buyPrice,
+                  }))
+                );
+                setCostBasisOpen(true);
+              }
             }
           } else if (action.action === "remove_holding") {
             const h = findH(action.ticker);
@@ -1088,9 +1179,43 @@ export function Dashboard() {
     },
     // refreshMarkets / loadPortfolios are stable enough via closure for advisor tools
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activePortfolio, holdings, source]
+    [activePortfolio, holdings, source, eoyOverrides]
   );
 
+  function undoLastMargusWrite() {
+    const { stack, snap } = popUndoSnapshot(undoStack);
+    if (!snap) {
+      toast("Nothing to undo", "info");
+      return;
+    }
+    setUndoStack(stack);
+    setPortfolios((prev) =>
+      prev.map((p) =>
+        p.id === snap.portfolioId ? { ...p, cash_balance: snap.cashBalance } : p
+      )
+    );
+    setHoldings((prev) => [
+      ...prev.filter((h) => h.portfolio_id !== snap.portfolioId),
+      ...snap.holdings,
+    ]);
+    setEoyOverrides(snap.eoyOverrides);
+    saveEoyOverrides(snap.portfolioId, snap.eoyOverrides);
+    if (source === "demo") {
+      const store = loadDemoStore();
+      let next = updateCash(store, snap.portfolioId, snap.cashBalance);
+      for (const h of next.holdings.filter(
+        (x) => x.portfolio_id === snap.portfolioId
+      )) {
+        next = deleteHolding(next, h.id);
+      }
+      for (const h of snap.holdings) {
+        next = upsertHolding(next, { ...h });
+      }
+      setPortfolios(next.portfolios);
+      setHoldings(next.holdings);
+    }
+    toast(`Undid: ${snap.label}`, "success");
+  }
 
   function requestDeleteHolding(id: string) {
     const h = holdings.find((x) => x.id === id);
@@ -1275,6 +1400,136 @@ export function Dashboard() {
     });
   }
 
+  useEffect(() => {
+    setConvictionMap(loadConvictionMap());
+  }, []);
+
+  useEffect(() => {
+    const tickers = overview.tickers.map((t) => t.ticker).slice(0, 40);
+    if (!tickers.length) return;
+    let cancelled = false;
+    void fetch(
+      `/api/market/events?tickers=${encodeURIComponent(tickers.join(","))}`
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const events = Array.isArray(data.earnings) ? data.earnings : [];
+        setEarningsEvents(events);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [overview.tickers.map((t) => t.ticker).join(",")]);
+
+  useEffect(() => {
+    if (guestMode) return;
+    const strike = buildStrikeAlerts(
+      (snapshot?.coveredCallRows ?? []).map((r) => ({
+        ticker: r.holding.ticker,
+        spot: r.spot,
+        stockTarget: r.stockTarget,
+        nextStrike: r.nextStrike,
+      }))
+    );
+    const earn = buildEarningsAlerts(earningsEvents);
+    const next = [...earn, ...strike];
+    setAlertToastsSent((prev) => {
+      const updated = new Set(prev);
+      for (const a of next) {
+        if (updated.has(a.id)) continue;
+        updated.add(a.id);
+        toast(a.title, "info");
+      }
+      return updated;
+    });
+  }, [snapshot?.coveredCallRows, earningsEvents, guestMode, toast]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCmdOpen((o) => !o);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const commandItems: CommandItem[] = useMemo(() => {
+    const items: CommandItem[] = [
+      {
+        id: "overview",
+        label: "Overview",
+        group: "Go",
+        run: () => setActiveId(OVERVIEW_TAB_ID),
+      },
+      {
+        id: "compound",
+        label: "Compound",
+        group: "Go",
+        run: () => setActiveId(COMPOUND_TAB_ID),
+      },
+      {
+        id: "lab",
+        label: "Lab",
+        group: "Go",
+        hint: "Play layer",
+        run: () => setActiveId(LAB_TAB_ID),
+      },
+      {
+        id: "undo",
+        label: "Undo last Margus write",
+        group: "Edit",
+        run: () => undoLastMargusWrite(),
+      },
+      {
+        id: "unlock",
+        label: "Unlock to edit",
+        group: "Edit",
+        run: () => setUnlockOpen(true),
+      },
+      {
+        id: "snapshots",
+        label: "Snapshots",
+        group: "Edit",
+        run: () => setSnapshotsOpen(true),
+      },
+    ];
+    for (const p of portfolios) {
+      items.push({
+        id: `sheet-${p.id}`,
+        label: p.name,
+        group: "Sheets",
+        run: () => setActiveId(p.id),
+      });
+    }
+    for (const t of overview.tickers.slice(0, 30)) {
+      items.push({
+        id: `ticker-${t.ticker}`,
+        label: t.ticker,
+        group: "Tickers",
+        hint: t.portfolios[0],
+        run: () => {
+          const sheet = portfolios.find((p) => t.portfolios.includes(p.name));
+          if (sheet) setActiveId(sheet.id);
+          setDrawerTicker(t.ticker);
+        },
+      });
+    }
+    return items;
+  }, [portfolios, overview.tickers, undoStack.length]);
+
+  const syntheticTickers = useMemo(() => {
+    // Heuristic: short sparkline or zero change with delayed flag
+    if (!quotesDelayed) return [] as string[];
+    return Object.keys(quotes).filter((t) => {
+      const q = quotes[t];
+      return !q?.sparkline || q.sparkline.length < 5;
+    });
+  }, [quotes, quotesDelayed]);
+
   if (loading || portfolios.length === 0) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214]">
@@ -1283,7 +1538,7 @@ export function Dashboard() {
     );
   }
 
-  if (!isOverview && !isCompound && (!activePortfolio || !snapshot)) {
+  if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214]">
         <UpsideLogo variant="icon" />
@@ -1293,6 +1548,16 @@ export function Dashboard() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
+      {guestMode && (
+        <div className="border-b border-zinc-700 bg-zinc-900 px-4 py-1.5 text-center text-[11px] text-zinc-400">
+          Guest read-only link · edits disabled
+        </div>
+      )}
+      <StaleQuotesBanner
+        delayed={quotesDelayed}
+        updatedAt={quotesUpdatedAt}
+        syntheticTickers={syntheticTickers}
+      />
       <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -1306,7 +1571,9 @@ export function Dashboard() {
                 ? "Overview"
                 : isCompound
                   ? "Compound"
-                  : activePortfolio!.name}
+                  : isLab
+                    ? "Lab"
+                    : activePortfolio!.name}
             </h1>
             <span className="hidden text-zinc-700 sm:inline" aria-hidden>
               ·
@@ -1327,8 +1594,28 @@ export function Dashboard() {
                 ? ` · book ${formatPricesAge(bookSyncedAt, nowTick).replace("Prices · ", "")}`
                 : ""}
             </span>
+            <MacroStrip />
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {!guestMode && undoStack.length > 0 && (
+              <button
+                type="button"
+                onClick={undoLastMargusWrite}
+                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                title="Undo last Margus write"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                Undo
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setCmdOpen(true)}
+              className="hidden items-center gap-1 rounded-md border border-zinc-700 px-2 py-1.5 text-[10px] font-medium text-zinc-500 hover:text-zinc-300 sm:inline-flex"
+              title="Command palette"
+            >
+              ⌘K
+            </button>
             {source === "supabase" && (
               <button
                 type="button"
@@ -1353,7 +1640,7 @@ export function Dashboard() {
                 </span>
               </button>
             )}
-            {!isOverview && !isCompound && (
+            {!isMetaTab && (
               <>
                 <button
                   type="button"
@@ -1396,7 +1683,7 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => {
-                if (isOverview || isCompound) {
+                if (isMetaTab) {
                   void refreshMarkets(allTickers, holdings, undefined, {
                     quotesOnly: true,
                   });
@@ -1450,7 +1737,7 @@ export function Dashboard() {
                 </button>
               </>
             )}
-            {!isOverview && !isCompound && (
+            {!isMetaTab && (
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
@@ -1480,7 +1767,7 @@ export function Dashboard() {
           </div>
         )}
 
-        {source === "supabase" && !bookUnlocked && !isOverview && !isCompound && (
+        {source === "supabase" && !bookUnlocked && !isMetaTab && !guestMode && (
           <div className="flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-brand-bright">
               Shared book is view-only until you unlock with the owner PIN.
@@ -1496,7 +1783,22 @@ export function Dashboard() {
           </div>
         )}
 
-        {isCompound ? (
+        {isLab ? (
+          <LabSheet
+            overview={overview}
+            portfolios={portfolios}
+            holdings={holdings}
+            quotes={quotes}
+            coveredCallRows={
+              portfolios.flatMap((p) => {
+                const rows = holdings.filter((h) => h.portfolio_id === p.id);
+                return buildSnapshot(p, rows, quotes, options).coveredCallRows;
+              })
+            }
+            earnings={earningsEvents}
+            guest={guestMode}
+          />
+        ) : isCompound ? (
           <CompoundInterestSheet
             bookValue={overview.totals.totalValue}
             sheets={overview.sheets.map((s) => ({
@@ -1579,6 +1881,7 @@ export function Dashboard() {
               onAskMargus={() =>
                 setMargusExpandSignal((n) => n + 1)
               }
+              onOpenTicker={(t) => setDrawerTicker(t)}
               displayCurrency={getDisplayCurrency(
                 displayCurrencyByPortfolio,
                 activePortfolio!.id
@@ -1754,10 +2057,10 @@ export function Dashboard() {
         open={snapshotsOpen}
         onClose={() => setSnapshotsOpen(false)}
         activePortfolioId={
-          !isOverview && !isCompound ? activePortfolio?.id ?? null : null
+          !isMetaTab ? activePortfolio?.id ?? null : null
         }
         activePortfolioName={
-          !isOverview && !isCompound ? activePortfolio?.name ?? null : null
+          !isMetaTab ? activePortfolio?.name ?? null : null
         }
         onRestored={(mode) => {
           toast(
@@ -1780,6 +2083,93 @@ export function Dashboard() {
           pendingPatchRef.current = null;
           if (pending) void handlePatch(pending);
         }}
+      />
+
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        items={commandItems}
+      />
+
+      <CostBasisModal
+        open={costBasisOpen && !guestMode}
+        rows={costBasisRows}
+        onChangeRow={(ticker, buyPrice) =>
+          setCostBasisRows((prev) =>
+            prev.map((r) =>
+              r.ticker === ticker ? { ...r, buyPrice } : r
+            )
+          )
+        }
+        onClose={() => setCostBasisOpen(false)}
+        onApply={async () => {
+          if (!activePortfolio) {
+            setCostBasisOpen(false);
+            return;
+          }
+          for (const row of costBasisRows) {
+            const h = holdings.find(
+              (x) =>
+                x.portfolio_id === activePortfolio.id &&
+                x.ticker.toUpperCase() === row.ticker.toUpperCase()
+            );
+            if (!h) continue;
+            await handlePatch({
+              id: h.id,
+              buy_price: row.buyPrice,
+            });
+          }
+          setCostBasisOpen(false);
+          toast("Cost basis updated", "success");
+        }}
+      />
+
+      <TickerDrawer
+        open={Boolean(drawerTicker)}
+        ticker={drawerTicker}
+        spot={drawerTicker ? quotes[drawerTicker]?.price ?? null : null}
+        shares={
+          drawerTicker
+            ? holdings
+                .filter((h) => h.ticker === drawerTicker)
+                .reduce((s, h) => s + h.shares, 0)
+            : null
+        }
+        buyPrice={
+          drawerTicker
+            ? (() => {
+                const rows = holdings.filter((h) => h.ticker === drawerTicker);
+                const sh = rows.reduce((s, h) => s + h.shares, 0);
+                const cost = rows.reduce(
+                  (s, h) => s + h.shares * h.buy_price,
+                  0
+                );
+                return sh > 0 ? cost / sh : null;
+              })()
+            : null
+        }
+        sparkline={
+          drawerTicker ? quotes[drawerTicker]?.sparkline : undefined
+        }
+        conviction={
+          drawerTicker
+            ? convictionMap[drawerTicker.toUpperCase()] ?? null
+            : null
+        }
+        onConviction={(level, thesis) => {
+          if (!drawerTicker) return;
+          setConvictionMap((prev) =>
+            setConviction(prev, drawerTicker, { level, thesis })
+          );
+        }}
+        onClose={() => setDrawerTicker(null)}
+        onAskMargus={
+          guestMode
+            ? undefined
+            : () => {
+                setMargusExpandSignal((n) => n + 1);
+              }
+        }
       />
     </div>
   );

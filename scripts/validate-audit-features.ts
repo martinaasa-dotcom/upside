@@ -1,0 +1,194 @@
+/**
+ * Validation harness for audit feature libs (no browser).
+ * Run: npx tsx scripts/validate-audit-features.ts
+ */
+import { allocationBySector, allocationByTicker } from "../src/lib/allocation";
+import {
+  buildEarningsAlerts,
+  buildGoalAlert,
+  buildStrikeAlerts,
+} from "../src/lib/alerts";
+import { shockedPrice, SHOCKS } from "../src/lib/book-shock";
+import {
+  captureSheetSnapshot,
+  popUndoSnapshot,
+  pushUndoSnapshot,
+} from "../src/lib/book-undo";
+import { trailingIncome, type CashflowEntry } from "../src/lib/cashflow";
+import { correlationMatrix, pearson } from "../src/lib/correlation";
+import {
+  arenaValue,
+  defaultArena,
+  seedArenaFromLive,
+} from "../src/lib/paper-arena";
+import { estimateGreenStreak } from "../src/lib/streaks";
+import { whatIfHeld } from "../src/lib/trade-journal";
+import { buildWeeklyRecap } from "../src/lib/weekly-recap";
+import { isForecastFullyCovered, FORECAST_YEARS } from "../src/lib/forecast";
+import { ensureCompleteEoyTargets } from "../src/lib/forecast-plan";
+import type { ForecastModel } from "../src/lib/forecast";
+
+function assert(cond: unknown, msg: string) {
+  if (!cond) throw new Error(`FAIL: ${msg}`);
+}
+
+const slices = allocationBySector([
+  { ticker: "NBIS", currentValue: 100 },
+  { ticker: "RHM.DE", currentValue: 40 },
+  { ticker: "VST", currentValue: 60 },
+]);
+assert(slices.length >= 2, "allocation sectors");
+assert(
+  Math.abs(slices.reduce((s, x) => s + x.pct, 0) - 1) < 1e-9,
+  "alloc pct sum"
+);
+
+const byT = allocationByTicker(
+  [
+    { ticker: "A", currentValue: 90 },
+    { ticker: "B", currentValue: 5 },
+    { ticker: "C", currentValue: 5 },
+  ],
+  1
+);
+assert(byT.some((x) => x.label === "Other"), "ticker other bucket");
+
+const strike = buildStrikeAlerts([
+  { ticker: "X", spot: 110, stockTarget: 100, nextStrike: 120 },
+]);
+assert(strike.length >= 1, "strike alerts");
+
+const earn = buildEarningsAlerts([
+  { ticker: "X", date: "2026-08-12", days: 2 },
+  { ticker: "Y", date: "2026-09-01", days: 20 },
+]);
+assert(earn.length === 1, "earnings window");
+
+assert(buildGoalAlert(true, "Hit 100k"), "goal alert");
+assert(shockedPrice("NBIS", 100, "ai_down20") === 80, "ai shock");
+assert(SHOCKS.length >= 4, "shock catalog");
+
+let stack = pushUndoSnapshot([], {
+  label: "test",
+  portfolioId: "p1",
+  cashBalance: 1,
+  holdings: [],
+  eoyOverrides: {},
+});
+const popped = popUndoSnapshot(stack);
+assert(popped.snap?.label === "test", "undo pop");
+
+assert(Math.abs((pearson([1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7]) ?? 0) - 1) < 1e-6, "pearson");
+assert(
+  correlationMatrix([
+    { ticker: "A", sparkline: [1, 2, 3, 4, 5, 6] },
+    { ticker: "B", sparkline: [2, 3, 4, 5, 6, 7] },
+  ]).length === 1,
+  "corr matrix"
+);
+
+const w = whatIfHeld({ shares: 10, exitPrice: 50, nowPrice: 60 });
+assert(w.missedDollar === 100, "what-if $");
+
+const cfs: CashflowEntry[] = [
+  {
+    id: "1",
+    at: new Date().toISOString(),
+    kind: "premium",
+    amount: 25,
+    note: "test",
+  },
+];
+assert(trailingIncome(cfs) === 25, "cashflow trailing");
+
+const arena = defaultArena();
+assert(arenaValue(arena, {}) === 10_000, "arena cash");
+const seeded = seedArenaFromLive(500, [
+  {
+    id: "h1",
+    portfolio_id: "p",
+    ticker: "NBIS",
+    shares: 2,
+    buy_price: 100,
+    eoy_target: null,
+    target_call_pct: 0.2,
+    stock_target_override: null,
+    sort_order: 1,
+  },
+]);
+assert(seeded.holdings.length === 1, "arena seed");
+assert(estimateGreenStreak([1, 2, 3, 4]).greenDays >= 3, "streak");
+
+const forecastStub = {
+  years: FORECAST_YEARS,
+  rows: [
+    {
+      ticker: "NBIS",
+      shares: 1,
+      currentPrice: 100,
+      currentValue: 100,
+      eoyPrices: {
+        2026: 100,
+        2027: 100,
+        2028: 100,
+        2029: 100,
+        2030: 100,
+      },
+      eoyValues: {
+        2026: 100,
+        2027: 100,
+        2028: 100,
+        2029: 100,
+        2030: 100,
+      },
+      targetedYears: {
+        2026: false,
+        2027: false,
+        2028: false,
+        2029: false,
+        2030: false,
+      },
+      gainPct: 0,
+      hasTargets: false,
+    },
+  ],
+  currentTotal: 100,
+  eoyTotals: {
+    2026: 100,
+    2027: 100,
+    2028: 100,
+    2029: 100,
+    2030: 100,
+  },
+  gainPct: 0,
+} as ForecastModel;
+
+const complete = ensureCompleteEoyTargets(
+  forecastStub,
+  [{ ticker: "NBIS", prices: { 2026: 120 } as never, rationale: "partial" }],
+  "base"
+);
+assert(complete[0]?.prices?.[2030], "ensureComplete fills years");
+assert(!isForecastFullyCovered(["NBIS"], {}), "coverage empty");
+assert(
+  isForecastFullyCovered(["NBIS"], {
+    NBIS: { 2026: 1, 2027: 1, 2028: 1, 2029: 1, 2030: 1 },
+  }),
+  "coverage full"
+);
+
+const snap = captureSheetSnapshot({
+  label: "cap",
+  portfolio: {
+    id: "p",
+    name: "T",
+    slug: "t",
+    sort_order: 0,
+    cash_balance: 0,
+  },
+  holdings: [],
+  eoyOverrides: {},
+});
+assert(snap.portfolioId === "p", "capture");
+
+console.log("validate-audit-features: ALL PASSED");
