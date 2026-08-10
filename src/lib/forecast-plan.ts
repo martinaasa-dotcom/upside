@@ -115,9 +115,69 @@ export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
   portfolioId: string;
   portfolioName: string;
   stance: ForecastStance;
+  /** Sorted ticker fingerprint when the plan was generated */
+  holdingsKey?: string;
 };
 
 export type StoredForecastPlans = Record<string, ForecastPlan>;
+
+export const FORECAST_AUTO_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function forecastHoldingsKey(tickers: string[]): string {
+  return [...new Set(tickers.map((t) => t.toUpperCase()))].sort().join("|");
+}
+
+export type ForecastAutoRefresh =
+  | { run: false; reason: "ok" | "empty" }
+  | {
+      run: true;
+      reason: "first-run" | "new-holdings" | "weekly";
+    };
+
+/** Auto API refresh only for first run, new tickers, or weekly staleness. */
+export function shouldAutoRefreshForecast(input: {
+  plan: ForecastPlan | null;
+  tickers: string[];
+  fullyCovered: boolean;
+  nowMs?: number;
+}): ForecastAutoRefresh {
+  const tickers = input.tickers.map((t) => t.toUpperCase());
+  if (tickers.length === 0) return { run: false, reason: "empty" };
+
+  const key = forecastHoldingsKey(tickers);
+  const plan = input.plan;
+
+  if (!plan) {
+    if (!input.fullyCovered) return { run: true, reason: "first-run" };
+    return { run: false, reason: "ok" };
+  }
+
+  if (!plan.generatedAt && !input.fullyCovered) {
+    return { run: true, reason: "first-run" };
+  }
+
+  const planKey =
+    plan.holdingsKey ??
+    forecastHoldingsKey((plan.eoyTargets ?? []).map((t) => t.ticker));
+  const planSet = new Set(
+    planKey
+      ? planKey.split("|").filter(Boolean)
+      : (plan.eoyTargets ?? []).map((t) => t.ticker.toUpperCase())
+  );
+  const hasNew = tickers.some((t) => !planSet.has(t));
+  if (hasNew) return { run: true, reason: "new-holdings" };
+
+  if (plan.generatedAt) {
+    const age = (input.nowMs ?? Date.now()) - new Date(plan.generatedAt).getTime();
+    if (Number.isFinite(age) && age >= FORECAST_AUTO_REFRESH_MS) {
+      return { run: true, reason: "weekly" };
+    }
+  } else if (!input.fullyCovered) {
+    return { run: true, reason: "first-run" };
+  }
+
+  return { run: false, reason: "ok" };
+}
 
 export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
   if (typeof window === "undefined") return null;

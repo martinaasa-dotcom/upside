@@ -7,11 +7,14 @@ import {
   loadForecastPlan,
   planEoyPaths,
   saveForecastPlan,
+  shouldAutoRefreshForecast,
+  forecastHoldingsKey,
   type ForecastPlan,
   type ForecastStance,
 } from "@/lib/forecast-plan";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
+import { isForecastFullyCovered } from "@/lib/forecast";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -138,8 +141,13 @@ export function ForecastPanel({
   const [appliedFlash, setAppliedFlash] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
-  const holdingsKey = model.rows.map((r) => r.ticker).join("|");
+  const holdingsKey = forecastHoldingsKey(model.rows.map((r) => r.ticker));
+  const fullyCovered = isForecastFullyCovered(
+    model.rows.map((r) => r.ticker),
+    overrides
+  );
   const autoKeyRef = useRef<string>("");
+  const reappliedRef = useRef<string>("");
   const askInFlight = useRef(false);
 
   useEffect(() => {
@@ -149,6 +157,7 @@ export function ForecastPanel({
     setError(null);
     setAppliedFlash(false);
     autoKeyRef.current = "";
+    reappliedRef.current = "";
   }, [portfolioId]);
 
   async function askMargus(opts?: {
@@ -177,7 +186,10 @@ export function ForecastPanel({
       if (!res.ok) {
         throw new Error(data.error ?? "Failed to generate plan");
       }
-      const next = data.plan as ForecastPlan;
+      const next: ForecastPlan = {
+        ...(data.plan as ForecastPlan),
+        holdingsKey,
+      };
       saveForecastPlan(next);
       setPlan(next);
 
@@ -185,8 +197,9 @@ export function ForecastPanel({
       if (paths.length > 0) {
         onApplyMargusPaths(paths);
         setAppliedFlash(true);
-        autoKeyRef.current = `${portfolioId}:${holdingsKey}:${useStance}`;
       }
+      autoKeyRef.current = `${portfolioId}:${holdingsKey}`;
+      reappliedRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate plan");
       if (opts?.auto) {
@@ -198,17 +211,35 @@ export function ForecastPanel({
     }
   }
 
-  // Always fill incomplete forecasts via reasoning model — never leave flats.
+  // Restore saved Margus prices into the grid without calling the model.
   useEffect(() => {
     if (model.rows.length === 0) return;
     if (flatCount === 0) return;
+    if (!plan || (plan.eoyTargets?.length ?? 0) === 0) return;
+    const key = `${portfolioId}:${holdingsKey}:reapply`;
+    if (reappliedRef.current === key) return;
+    reappliedRef.current = key;
+    const paths = planEoyPaths(plan);
+    if (paths.length > 0) onApplyMargusPaths(paths);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
+  }, [portfolioId, holdingsKey, flatCount, plan]);
+
+  // Auto-reason only: first time, new ticker(s), or weekly refresh.
+  useEffect(() => {
+    if (model.rows.length === 0) return;
     if (busy || askInFlight.current) return;
-    const key = `${portfolioId}:${holdingsKey}:${stance}`;
+    const decision = shouldAutoRefreshForecast({
+      plan,
+      tickers: model.rows.map((r) => r.ticker),
+      fullyCovered,
+    });
+    if (!decision.run) return;
+    const key = `${portfolioId}:${holdingsKey}:${decision.reason}`;
     if (autoKeyRef.current === key) return;
     autoKeyRef.current = key;
     void askMargus({ auto: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional auto-fill trigger
-  }, [portfolioId, holdingsKey, flatCount, stance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberate auto policy
+  }, [portfolioId, holdingsKey, fullyCovered, plan?.generatedAt, plan?.holdingsKey]);
 
   function reapplyPlanPrices() {
     if (!plan) return;
@@ -229,15 +260,17 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Margus reasons non-linear EOY paths (AI/crypto conviction bands) ·
-              portfolio totals = shares × forecasted SP · next{" "}
-              {yearCols.length} years
+              Paths are saved. Margus auto-refreshes only for new tickers or
+              about once a week — otherwise use Refresh.
             </p>
-            {flatCount > 0 && (
+            {flatCount > 0 && !busy && !plan && (
               <p className="mt-1 text-[11px] text-amber-200/80">
-                {busy
-                  ? `Margus is filling ${flatCount} ticker${flatCount === 1 ? "" : "s"}…`
-                  : `${flatCount} ticker${flatCount === 1 ? "" : "s"} still need a reasoned path — auto-running Margus.`}
+                No saved forecast yet — run Margus once to lock prices in.
+              </p>
+            )}
+            {busy && (
+              <p className="mt-1 text-[11px] text-amber-200/80">
+                Margus is updating the forecast…
               </p>
             )}
           </div>
@@ -428,9 +461,8 @@ export function ForecastPanel({
               Margus plan · themes / trim / add / EOY path
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Pick a stance — Margus uses thesis + conviction bands (datacenter /
-              crypto multi-baggers with bull runs and winters), never straight
-              lines.
+              Pick a stance, then Refresh to re-reason. Saved plans stay until
+              holdings change or ~7 days pass.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">
@@ -446,11 +478,8 @@ export function ForecastPanel({
                 <button
                   key={s.id}
                   type="button"
-                  title={s.hint}
-                  onClick={() => {
-                    setStance(s.id);
-                    void askMargus({ stanceOverride: s.id });
-                  }}
+                  title={`${s.hint} · then click Refresh`}
+                  onClick={() => setStance(s.id)}
                   className={cn(
                     "rounded-md px-2.5 py-1 text-[11px] font-medium transition",
                     stance === s.id
