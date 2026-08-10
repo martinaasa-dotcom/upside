@@ -1,5 +1,6 @@
 import type { Quote } from "@/lib/types";
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -326,7 +327,7 @@ const THEME_CATALYSTS: Record<string, string[]> = {
 };
 
 function toDateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return dateKeyInTz(d);
 }
 
 export async function fetchNextEarningsDate(
@@ -358,8 +359,6 @@ export async function fetchMarketEvents(tickers: string[]): Promise<{
   catalysts: CatalystEvent[];
 }> {
   const unique = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const earnings: EarningsEvent[] = [];
   const catalysts: CatalystEvent[] = [];
@@ -368,10 +367,9 @@ export async function fetchMarketEvents(tickers: string[]): Promise<{
     unique.map(async (ticker) => {
       const date = await fetchNextEarningsDate(ticker);
       if (date) {
-        const days = Math.round(
-          (date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
-        );
-        if (days >= -1 && days <= 90) {
+        const days = daysUntilInTz(date);
+        // Upcoming only (Tallinn calendar) — drop yesterday/past
+        if (days >= 0 && days <= 90) {
           const row: EarningsEvent = {
             ticker,
             date: toDateKey(date),

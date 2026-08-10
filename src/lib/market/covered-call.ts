@@ -5,7 +5,7 @@ import {
   roundToStrike,
 } from "@/lib/market/resistance";
 import type { OptionCandidate } from "@/lib/types";
-import { differenceInCalendarDays } from "date-fns";
+import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -21,8 +21,7 @@ async function getYahoo(): Promise<YahooFinanceInstance> {
 }
 
 function toDateKey(d: Date | string): string {
-  const date = typeof d === "string" ? new Date(d) : d;
-  return date.toISOString().slice(0, 10);
+  return dateKeyInTz(d);
 }
 
 /**
@@ -92,11 +91,10 @@ export async function scanCoveredCall(params: {
       (d: Date | string) => (typeof d === "string" ? new Date(d) : d)
     );
 
-    const today = new Date();
     const nearby = expirations
       .map((exp) => ({
         exp,
-        days: differenceInCalendarDays(exp, today),
+        days: daysUntilInTz(exp),
         key: toDateKey(exp),
       }))
       .filter(
@@ -243,7 +241,7 @@ function syntheticCandidate(
 
   return {
     ticker: ticker.toUpperCase(),
-    expiration: exp.toISOString().slice(0, 10),
+    expiration: toDateKey(exp),
     strike,
     bid: midPx * 0.95,
     ask: midPx * 1.05,

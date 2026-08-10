@@ -5,7 +5,7 @@ import {
   roundToStrike,
 } from "@/lib/market/resistance";
 import { fetchNextEarningsDate } from "@/lib/market/yahoo";
-import { differenceInCalendarDays } from "date-fns";
+import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -67,8 +67,7 @@ function mid(bid?: number | null, ask?: number | null, last?: number | null) {
 }
 
 function toDateKey(d: Date | string): string {
-  const date = typeof d === "string" ? new Date(d) : d;
-  return date.toISOString().slice(0, 10);
+  return dateKeyInTz(d);
 }
 
 /** Local highs above spot, nearest first */
@@ -131,13 +130,12 @@ type ExpCandidate = { exp: Date; days: number; key: string };
 async function listExpirations(ticker: string): Promise<ExpCandidate[]> {
   const yf = await getYahoo();
   const chain = await yf.options(ticker);
-  const today = new Date();
   return (chain.expirationDates ?? [])
     .map((d: Date | string) => {
       const exp = typeof d === "string" ? new Date(d) : d;
       return {
         exp,
-        days: differenceInCalendarDays(exp, today),
+        days: daysUntilInTz(exp),
         key: toDateKey(exp),
       };
     })
@@ -440,9 +438,7 @@ export async function buildWritePlan(params: {
 
   const earningsDate = await fetchNextEarningsDate(ticker);
   const daysToEarnings =
-    earningsDate != null
-      ? differenceInCalendarDays(earningsDate, new Date())
-      : null;
+    earningsDate != null ? daysUntilInTz(earningsDate) : null;
 
   let expirations: ExpCandidate[] = [];
   try {

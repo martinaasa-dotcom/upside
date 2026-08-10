@@ -8,6 +8,7 @@ import {
   forecastThemeForTicker,
   shapedFallbackPath,
 } from "@/lib/forecast-conviction";
+import { todayKeyInTz } from "@/lib/timezone";
 
 export const FORECAST_PLAN_STORAGE_KEY = "portfell-forecast-plan-by-portfolio";
 
@@ -394,7 +395,7 @@ Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis f
 
 CRITICAL: Reason every price from each company's micro-thesis + the conviction bands above. Do NOT paste sell-side targets. Do NOT draw straight lines. Never leave a ticker or year empty. Never paste the same spot across all years unless cash-like (say so).
 
-Today (UTC): ${now.toISOString().slice(0, 10)} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
+Today (Europe/Tallinn): ${todayKeyInTz()} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
 ${stanceGuidance(input.stance)}
 

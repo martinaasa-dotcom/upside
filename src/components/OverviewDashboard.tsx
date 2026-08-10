@@ -9,6 +9,11 @@ import {
 } from "@/lib/format";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import {
+  calendarDaysBetweenKeys,
+  formatRelativeDays,
+  todayKeyInTz,
+} from "@/lib/timezone";
+import {
   CalendarDays,
   Flame,
   Lightbulb,
@@ -18,7 +23,7 @@ import {
   Trophy,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type EarningsEvent = { ticker: string; date: string; days: number };
 
@@ -216,6 +221,18 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       cancelled = true;
     };
   }, [tickerKey]);
+
+  const upcomingEarnings = useMemo(() => {
+    if (!earnings) return null;
+    const today = todayKeyInTz();
+    return earnings
+      .map((e) => ({
+        ...e,
+        days: calendarDaysBetweenKeys(today, e.date),
+      }))
+      .filter((e) => e.days >= 0 && e.days <= 90)
+      .sort((a, b) => a.days - b.days || a.ticker.localeCompare(b.ticker));
+  }, [earnings]);
 
   function openFirstPortfolio(t: TickerScore) {
     const id = t.portfolioIds[0];
@@ -559,31 +576,22 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
               Upcoming earnings
             </h3>
             <p className="mt-1 text-base text-zinc-400">
-              Soonest first · next 90 days
+              Soonest first · next 90 days · Tallinn
             </p>
           </div>
         </div>
         <div className="space-y-3">
-          {earnings === null ? (
+          {upcomingEarnings === null ? (
             <p className="text-base text-zinc-500">Loading…</p>
-          ) : earnings.length === 0 ? (
+          ) : upcomingEarnings.length === 0 ? (
             <p className="text-base text-zinc-500">
               No earnings dates in the next 90 days.
             </p>
           ) : (
-            [...earnings]
-              .sort((a, b) => a.days - b.days || a.ticker.localeCompare(b.ticker))
-              .map((e, index) => {
+            upcomingEarnings.map((e, index) => {
                 const owned = tickers.find((t) => t.ticker === e.ticker);
                 const soon = e.days <= 7;
-                const when =
-                  e.days === 0
-                    ? "Today"
-                    : e.days === 1
-                      ? "Tomorrow"
-                      : e.days <= 7
-                        ? `In ${e.days} days`
-                        : `In ${e.days} days`;
+                const when = formatRelativeDays(e.days);
                 return (
                   <div
                     key={e.ticker}

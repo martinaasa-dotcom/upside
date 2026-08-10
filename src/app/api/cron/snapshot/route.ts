@@ -5,6 +5,7 @@ import {
 } from "@/lib/book-snapshot";
 import { requireCronAuth } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
+import { todayKeyInTz } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const day = new Date().toISOString().slice(0, 10);
+    const day = todayKeyInTz();
     const payload = await captureBookPayload(supabase);
     const snap = await saveBookSnapshot(
       supabase,
