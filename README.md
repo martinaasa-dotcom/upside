@@ -62,7 +62,7 @@ Get a key at [openrouter.ai/keys](https://openrouter.ai/keys). Restart `npm run 
 
 Optional Groq fallback: set `GROQ_API_KEY` instead (OpenAI-compatible at `https://api.groq.com/openai/v1`).
 
-The **Assistant Margus** chat can explain the book and change Call % via tools — the table updates live.
+The **Assistant Margus** chat is a high-conviction, forward-looking strategist (persona in `src/lib/ai/margus-persona.ts`) — it can explain the book and change Call % via tools; the table updates live.
 
 
 

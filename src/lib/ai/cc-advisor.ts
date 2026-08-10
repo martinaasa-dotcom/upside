@@ -3,6 +3,7 @@ import {
   callPctBaseline,
   formatCallPctBaselines,
 } from "@/lib/calculations";
+import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -521,7 +522,9 @@ When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio ta
 4. Do not invent missing buy prices or share counts — omit that ticker and say so.
 5. Prefer importSheet over a chain of addHolding / setCash calls.`;
 
-  return `You are Assistant Margus for Upside. This chat thread is for portfolio "${ctx.portfolioName}" only.
+  return `${MARGUS_PERSONA}
+
+This chat thread is for Upside portfolio "${ctx.portfolioName}" only.
 Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
 
 ${writeBlock}

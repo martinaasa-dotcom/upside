@@ -272,29 +272,29 @@ export function buildNarrative(result: CompoundResult): string[] {
   const lines: string[] = [];
   const tip = findTippingYear(result.yearly);
   lines.push(
-    `Start ${fmt(result.principal)} → land on ${fmt(result.futureValue)} in ${formatHorizon(result.durationYears)}.`
+    `Path: ${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)} — structural compounding, not a straight line.`
   );
   lines.push(
-    `Interest does ${fmt(result.totalInterest)} of the heavy lifting (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR).`
+    `Interest does ${fmt(result.totalInterest)} of the heavy lifting (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR). That’s the thesis validation in the math.`
   );
   if (result.totalContributions > 0) {
     lines.push(
-      `You add ${fmt(result.totalContributions)} along the way — compounding still outruns deposits${tip ? ` by year ${tip}` : ""}.`
+      `You add ${fmt(result.totalContributions)} along the way — deposits are the fuel; compounding is the S-curve${tip ? ` (tips past deposits by year ${tip})` : ""}.`
     );
   } else if (tip == null) {
     lines.push(
-      `No fresh deposits — pure compounding. Double-ish pace: ~${result.doubleYears}y ${result.doubleMonths}m at this rate.`
+      `No fresh deposits — pure compounding. Rough double pace: ~${result.doubleYears}y ${result.doubleMonths}m at this rate. Stay the course through the breathers.`
     );
   }
   if (tip != null) {
     lines.push(
-      `Tipping point: year ${tip} is when yearly interest first beats what you put in that year. That’s the “money working harder than you” moment.`
+      `Tipping point: year ${tip} — yearly interest first beats what you put in. Money working harder than you; that’s the multi-year edge.`
     );
   }
   const mid = result.yearly.find((y) => y.index === Math.floor(result.durationYears / 2));
   if (mid && mid.index > 0) {
     lines.push(
-      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already in the account.`
+      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already on the books — pullbacks along the way are resets, not thesis breaks.`
     );
   }
   return lines.slice(0, 5);

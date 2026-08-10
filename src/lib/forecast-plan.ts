@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
 
@@ -183,7 +184,9 @@ export function buildForecastPlanPrompt(input: {
 
   const yearsList = FORECAST_YEARS.join(", ");
 
-  return `You are Assistant Margus for Upside. Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis table for portfolio "${input.portfolioName}".
+  return `${MARGUS_PERSONA}
+
+Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis table for Upside portfolio "${input.portfolioName}". Apply your stance through this lens: high-conviction micro-theses, structural tailwinds, and realistic path (pullbacks OK; broken thesis ≠ noise).
 
 Today (UTC): ${now.toISOString().slice(0, 10)} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
