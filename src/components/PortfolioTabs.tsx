@@ -1,9 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/format";
-import { OVERVIEW_TAB_ID } from "@/lib/overview";
+import { COMPOUND_TAB_ID, OVERVIEW_TAB_ID } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
-import { LayoutDashboard, MoreHorizontal, Plus } from "lucide-react";
+import { Calculator, LayoutDashboard, MoreHorizontal, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -36,6 +36,7 @@ export function PortfolioTabs({
   const [menu, setMenu] = useState<OpenMenu | null>(null);
   const [mounted, setMounted] = useState(false);
   const overviewActive = activeId === OVERVIEW_TAB_ID;
+  const compoundActive = activeId === COMPOUND_TAB_ID;
 
   useEffect(() => {
     setMounted(true);
@@ -118,6 +119,23 @@ export function PortfolioTabs({
         >
           <LayoutDashboard className="h-3.5 w-3.5" />
           Overview
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMenu(null);
+            onChange(COMPOUND_TAB_ID);
+          }}
+          className={cn(
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm transition",
+            compoundActive
+              ? "bg-brand/15 font-semibold text-brand-bright ring-1 ring-inset ring-brand/40"
+              : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+          )}
+        >
+          <Calculator className="h-3.5 w-3.5" />
+          Compound
         </button>
 
         <div className="mx-0.5 h-5 w-px shrink-0 bg-zinc-800" aria-hidden />

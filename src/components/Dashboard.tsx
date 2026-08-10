@@ -5,6 +5,7 @@ import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
 import { ForecastPanel } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
+import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
 import { OverviewDashboard } from "@/components/OverviewDashboard";
 import {
   PortfolioTable,
@@ -47,7 +48,7 @@ import {
   updateCash,
   upsertHolding,
 } from "@/lib/demo-store";
-import { OVERVIEW_TAB_ID, buildOverview } from "@/lib/overview";
+import { COMPOUND_TAB_ID, OVERVIEW_TAB_ID, buildOverview } from "@/lib/overview";
 import type {
   Holding,
   OptionCandidate,
@@ -152,9 +153,11 @@ export function Dashboard() {
   const [eoyOverrides, setEoyOverrides] = useState<PortfolioEoyOverrides>({});
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
-  const activePortfolio = isOverview
-    ? null
-    : (portfolios.find((p) => p.id === activeId) ?? null);
+  const isCompound = activeId === COMPOUND_TAB_ID;
+  const activePortfolio =
+    isOverview || isCompound
+      ? null
+      : (portfolios.find((p) => p.id === activeId) ?? null);
 
   const ccVisible = activePortfolio
     ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, true)
@@ -290,6 +293,12 @@ export function Dashboard() {
         const params = new URLSearchParams(window.location.search);
         const sheetParam = params.get("sheet")?.trim().toLowerCase();
         if (sheetParam) {
+          if (sheetParam === "compound" || sheetParam === COMPOUND_TAB_ID) {
+            return COMPOUND_TAB_ID;
+          }
+          if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
+            return OVERVIEW_TAB_ID;
+          }
           const bySlugOrId = list.find(
             (p) =>
               p.id === sheetParam ||
@@ -299,11 +308,21 @@ export function Dashboard() {
           if (bySlugOrId) return bySlugOrId.id;
         }
       }
-      if (prev && (prev === OVERVIEW_TAB_ID || list.some((p) => p.id === prev))) {
+      if (
+        prev &&
+        (prev === OVERVIEW_TAB_ID ||
+          prev === COMPOUND_TAB_ID ||
+          list.some((p) => p.id === prev))
+      ) {
         return prev;
       }
       const saved = loadActiveSheetId();
-      if (saved && (saved === OVERVIEW_TAB_ID || list.some((p) => p.id === saved))) {
+      if (
+        saved &&
+        (saved === OVERVIEW_TAB_ID ||
+          saved === COMPOUND_TAB_ID ||
+          list.some((p) => p.id === saved))
+      ) {
         return saved;
       }
       return OVERVIEW_TAB_ID;
@@ -439,6 +458,8 @@ export function Dashboard() {
     const url = new URL(window.location.href);
     if (activeId === OVERVIEW_TAB_ID) {
       url.searchParams.delete("sheet");
+    } else if (activeId === COMPOUND_TAB_ID) {
+      url.searchParams.set("sheet", "compound");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
       if (p?.slug) url.searchParams.set("sheet", p.slug);
@@ -507,7 +528,7 @@ export function Dashboard() {
   // Quotes for every ticker (overview + sheet views); options only on a sheet
   useEffect(() => {
     if (holdings.length === 0) return;
-    if (isOverview) {
+    if (isOverview || isCompound) {
       void refreshMarkets(allTickers, holdings, undefined, {
         quotesOnly: true,
       });
@@ -517,7 +538,7 @@ export function Dashboard() {
     const rows = holdings.filter((h) => h.portfolio_id === activePortfolio.id);
     void refreshMarkets(allTickers, rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePortfolio?.id, isOverview, ccSignature, allTickers.join(","), refreshMarkets]);
+  }, [activePortfolio?.id, isOverview, isCompound, ccSignature, allTickers.join(","), refreshMarkets]);
 
   // Free Yahoo poll: prices every 45s while the tab is visible (options stay on demand)
   useEffect(() => {
@@ -528,9 +549,10 @@ export function Dashboard() {
 
     const tick = () => {
       if (cancelled || document.hidden) return;
-      const rows = isOverview
-        ? holdings
-        : holdings.filter((h) => h.portfolio_id === activePortfolio?.id);
+      const rows =
+        isOverview || isCompound
+          ? holdings
+          : holdings.filter((h) => h.portfolio_id === activePortfolio?.id);
       void refreshMarkets(allTickers, rows, undefined, {
         quotesOnly: true,
         silent: true,
@@ -551,6 +573,7 @@ export function Dashboard() {
   }, [
     activePortfolio?.id,
     isOverview,
+    isCompound,
     allTickers.join(","),
     holdings,
     refreshMarkets,
@@ -1214,7 +1237,7 @@ export function Dashboard() {
     );
   }
 
-  if (!isOverview && (!activePortfolio || !snapshot)) {
+  if (!isOverview && !isCompound && (!activePortfolio || !snapshot)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#121214]">
         <UpsideLogo variant="icon" className="h-28 w-24" />
@@ -1234,7 +1257,11 @@ export function Dashboard() {
             />
             <span className="hidden h-5 w-px shrink-0 bg-zinc-700 sm:block" aria-hidden />
             <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white sm:ml-1">
-              {isOverview ? "Overview" : activePortfolio!.name}
+              {isOverview
+                ? "Overview"
+                : isCompound
+                  ? "Compound"
+                  : activePortfolio!.name}
             </h1>
             <span className="hidden text-zinc-700 sm:inline" aria-hidden>
               ·
@@ -1278,7 +1305,7 @@ export function Dashboard() {
                 </span>
               </button>
             )}
-            {!isOverview && (
+            {!isOverview && !isCompound && (
               <>
                 <button
                   type="button"
@@ -1321,7 +1348,7 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => {
-                if (isOverview) {
+                if (isOverview || isCompound) {
                   void refreshMarkets(allTickers, holdings, undefined, {
                     quotesOnly: true,
                   });
@@ -1375,7 +1402,7 @@ export function Dashboard() {
                 </button>
               </>
             )}
-            {!isOverview && (
+            {!isOverview && !isCompound && (
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
@@ -1405,7 +1432,9 @@ export function Dashboard() {
           </div>
         )}
 
-        {isOverview ? (
+        {isCompound ? (
+          <CompoundInterestSheet bookValue={overview.totals.totalValue} />
+        ) : isOverview ? (
           <>
             <OverviewDashboard
               model={overview}
@@ -1638,10 +1667,10 @@ export function Dashboard() {
         open={snapshotsOpen}
         onClose={() => setSnapshotsOpen(false)}
         activePortfolioId={
-          !isOverview ? activePortfolio?.id ?? null : null
+          !isOverview && !isCompound ? activePortfolio?.id ?? null : null
         }
         activePortfolioName={
-          !isOverview ? activePortfolio?.name ?? null : null
+          !isOverview && !isCompound ? activePortfolio?.name ?? null : null
         }
         onRestored={(mode) => {
           toast(

@@ -2,6 +2,7 @@ import { enrichHoldings } from "@/lib/calculations";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 
 export const OVERVIEW_TAB_ID = "__overview__";
+export const COMPOUND_TAB_ID = "__compound__";
 
 export type SheetScore = {
   portfolio: Portfolio;
