@@ -1231,8 +1231,8 @@ export function Dashboard() {
   if (loading || portfolios.length === 0) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#121214]">
-        <UpsideLogo variant="icon" className="h-28 w-24" />
-        <p className="text-sm text-zinc-500">Loading…</p>
+        <UpsideLogo variant="icon" />
+        <p className="text-center text-sm text-zinc-500">Loading…</p>
       </div>
     );
   }
@@ -1240,8 +1240,8 @@ export function Dashboard() {
   if (!isOverview && !isCompound && (!activePortfolio || !snapshot)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#121214]">
-        <UpsideLogo variant="icon" className="h-28 w-24" />
-        <p className="text-sm text-zinc-500">Loading…</p>
+        <UpsideLogo variant="icon" />
+        <p className="text-center text-sm text-zinc-500">Loading…</p>
       </div>
     );
   }
