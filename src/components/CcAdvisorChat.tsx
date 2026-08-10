@@ -399,7 +399,7 @@ export function CcAdvisorChat({
 
   const suggestions = [
     "Give me the updated CC write plan",
-    "Copy Call % and targets from Aasad",
+    "Copy Call % and targets from another sheet",
     "Which names should wait for earnings?",
     "Tighten Call % on the names with room",
   ];

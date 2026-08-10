@@ -32,9 +32,10 @@ export function resolveAdvisorModel(options?: {
       baseURL: "https://openrouter.ai/api/v1",
       headers: {
         "HTTP-Referer":
-          process.env.OPENROUTER_HTTP_REFERER ?? "http://localhost:3000",
+          process.env.OPENROUTER_HTTP_REFERER ??
+          "https://portfolio-upthink1.vercel.app",
         "X-Title":
-          process.env.OPENROUTER_APP_TITLE ?? "Portfell Assistant Margus",
+          process.env.OPENROUTER_APP_TITLE ?? "Upside Assistant Margus",
       },
     });
     return openrouter.chat(modelId);

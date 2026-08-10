@@ -864,7 +864,7 @@ export function Dashboard() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-        Loading Portfell…
+        Loading Upside…
       </div>
     );
   }
@@ -873,7 +873,7 @@ export function Dashboard() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-        Loading Portfell…
+        Loading Upside…
       </div>
     );
   }
@@ -884,7 +884,7 @@ export function Dashboard() {
         <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-400/90">
-              Portfolio
+              Upside
             </p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">
               {isOverview ? "Overview" : activePortfolio!.name}

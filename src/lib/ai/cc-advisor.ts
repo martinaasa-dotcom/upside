@@ -399,7 +399,7 @@ When the user pastes or attaches a screenshot (spreadsheet, broker, portfolio ta
 2. Prefer tools to update the live portfolio to match (updateHolding / addHolding / setCash / setCallPct / setStockTarget) — do not only describe.
 3. Call out anything you cannot read clearly.`;
 
-  return `You are Assistant Margus for Portfell. This chat thread is for portfolio "${ctx.portfolioName}" only.
+  return `You are Assistant Margus for Upside. This chat thread is for portfolio "${ctx.portfolioName}" only.
 Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
 
 ${writeBlock}

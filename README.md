@@ -1,6 +1,6 @@
-# Portfell
+# Upside
 
-Multi-portfolio tracker that replicates your Google Sheets **Portfell** layout — live Yahoo Finance prices, yield/strike targets, and automated covered-call scanning (14D · 12–20% OTM · ~5% 2-weekly yield).
+Multi-portfolio tracker (formerly the Google Sheets **Portfell** book) — live Yahoo Finance prices, yield/strike targets, and automated covered-call scanning (14D · 12–20% OTM · ~5% 2-weekly yield).
 
 ## Quick start
 
@@ -10,6 +10,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Works immediately in **local demo** mode (data in `localStorage`), seeded with the Aasad / Anu / MaryAnn / Karud tabs.
+
+Production: [https://portfolio-upthink1.vercel.app](https://portfolio-upthink1.vercel.app)
 
 ## Supabase (shared Upthink Platform DB)
 

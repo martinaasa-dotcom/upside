@@ -1,4 +1,4 @@
--- Portfell on shared Upthink Platform Supabase
+-- Upside (legacy table prefix portfell_*) on shared Upthink Platform Supabase
 -- Prefixed tables sit beside gifttier_*/wraptier_*/shiptier_*
 
 create extension if not exists "pgcrypto";

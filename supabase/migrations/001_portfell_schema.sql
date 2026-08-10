@@ -1,4 +1,4 @@
--- Portfell portfolio tracker schema
+-- Upside portfolio tracker schema (legacy filename)
 -- Run in Supabase SQL editor or via `supabase db push`
 
 create extension if not exists "pgcrypto";
