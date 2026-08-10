@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Upside">
+  <circle cx="64" cy="64" r="64" fill="#0B111B"/>
+  <path d="M64 30 L90 68 H38 Z" fill="#FFFFFF"/>
+  <text
+    x="64"
+    y="96"
+    text-anchor="middle"
+    fill="#FFFFFF"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+    font-size="13"
+    font-weight="700"
+    letter-spacing="0.32em"
+  >UPSIDE</text>
+</svg>

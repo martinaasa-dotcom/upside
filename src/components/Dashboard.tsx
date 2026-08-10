@@ -12,6 +12,7 @@ import {
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
+import { UpsideLogo } from "@/components/UpsideLogo";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useToast } from "@/components/ui/Toast";
 import { buildSnapshot } from "@/lib/calculations";
@@ -937,18 +938,18 @@ export function Dashboard() {
 
   if (loading || portfolios.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-        Loading Upside…
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950">
+        <UpsideLogo variant="icon" className="h-16 w-16" />
+        <p className="text-sm text-zinc-500">Loading…</p>
       </div>
     );
   }
 
   if (!isOverview && (!activePortfolio || !snapshot)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-        Loading Upside…
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950">
+        <UpsideLogo variant="icon" className="h-16 w-16" />
+        <p className="text-sm text-zinc-500">Loading…</p>
       </div>
     );
   }
@@ -958,10 +959,8 @@ export function Dashboard() {
       <header className="border-b border-zinc-800/80 bg-zinc-950/50">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-400/90">
-              Upside
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">
+            <UpsideLogo variant="wordmark" className="text-[15px] text-white" />
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-white">
               {isOverview ? "Overview" : activePortfolio!.name}
             </h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">

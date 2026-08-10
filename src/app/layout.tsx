@@ -17,18 +17,25 @@ export const metadata: Metadata = {
   description:
     "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
   applicationName: "Upside",
+  icons: {
+    icon: [{ url: "/upside-icon.svg", type: "image/svg+xml" }],
+    shortcut: "/upside-icon.svg",
+    apple: "/upside-icon.svg",
+  },
   openGraph: {
     title: "Upside - Portfolio Tracker",
     description:
       "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
     siteName: "Upside",
     type: "website",
+    images: [{ url: "/upside-icon.svg", width: 128, height: 128, alt: "Upside" }],
   },
   twitter: {
     card: "summary",
     title: "Upside - Portfolio Tracker",
     description:
       "Multi-portfolio tracker with live prices and automated covered-call strike scanning.",
+    images: ["/upside-icon.svg"],
   },
 };
 
