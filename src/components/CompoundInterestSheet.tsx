@@ -7,7 +7,6 @@ import {
   type CompoundInputs,
   type ContributionFrequency,
   type ContributionMode,
-  type IncreaseMode,
   type RatePeriod,
 } from "@/lib/compound-interest";
 import {
@@ -111,7 +110,6 @@ function DualPathChart({
   active: number[];
   currency: CurrencyCode;
 }) {
-  const n = Math.max(stay.length, active.length, 2);
   const max = Math.max(...stay, ...active, 1);
   const w = 640;
   const h = 200;

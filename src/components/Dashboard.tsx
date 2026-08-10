@@ -59,7 +59,6 @@ import { currency, percent } from "@/lib/format";
 import {
   loadConvictionMap,
   setConviction,
-  type ConvictionMap,
 } from "@/lib/conviction";
 import { OwnerUnlockModal } from "@/components/OwnerUnlockModal";
 import {
@@ -266,6 +265,7 @@ export function Dashboard() {
     const set = new Set(holdings.map((h) => h.ticker));
     return [...set];
   }, [holdings]);
+  const allTickersKey = allTickers.join(",");
 
   useEffect(() => {
     if (!activePortfolio) {
@@ -273,7 +273,7 @@ export function Dashboard() {
       return;
     }
     setEoyOverrides(loadEoyOverrides(activePortfolio.id));
-  }, [activePortfolio?.id]);
+  }, [activePortfolio]);
 
   function seedNewSheetPanelDefaults(portfolio: {
     id: string;
@@ -717,10 +717,12 @@ export function Dashboard() {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisibility);
     };
+    // ticker identity via allTickersKey fingerprint
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- allTickers covered by key
   }, [
     activePortfolio?.id,
     isMetaTab,
-    allTickers.join(","),
+    allTickersKey,
     holdings,
     refreshMarkets,
   ]);
@@ -1577,12 +1579,15 @@ export function Dashboard() {
     overview.totals.uniqueTickers,
   ]);
 
+  const overviewTickerKey = overview.tickers
+    .map((t) => t.ticker)
+    .slice(0, 40)
+    .join(",");
   useEffect(() => {
-    const tickers = overview.tickers.map((t) => t.ticker).slice(0, 40);
-    if (!tickers.length) return;
+    if (!overviewTickerKey) return;
     let cancelled = false;
     void fetch(
-      `/api/market/events?tickers=${encodeURIComponent(tickers.join(","))}`
+      `/api/market/events?tickers=${encodeURIComponent(overviewTickerKey)}`
     )
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -1594,7 +1599,7 @@ export function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [overview.tickers.map((t) => t.ticker).join(",")]);
+  }, [overviewTickerKey]);
 
   useEffect(() => {
     if (guestMode) return;
@@ -1693,6 +1698,8 @@ export function Dashboard() {
       });
     }
     return items;
+    // undoLastMargusWrite is a stable-enough handler for cmd palette; length gates Undo item
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [portfolios, overview.tickers, undoStack.length]);
 
   const headerMenuItems: HeaderMenuItem[] = useMemo(() => {
@@ -1747,6 +1754,8 @@ export function Dashboard() {
       });
     }
     return items;
+    // Handlers are plain functions in this component; rebuild when visible UI state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- menu chrome deps only
   }, [
     guestMode,
     undoStack.length,

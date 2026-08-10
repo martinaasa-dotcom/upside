@@ -66,7 +66,6 @@ export function calculateWithShock(
 
     const afterCrash = year1.balance * 0.7;
     const remainingYears = Math.max(0, inputs.years - 1);
-    const remainingMonths = remainingYears === 0 ? 0 : inputs.months;
     // Restart from crashed balance for remaining horizon
     const tail = calculateCompound({
       ...inputs,

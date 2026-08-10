@@ -197,12 +197,13 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
       )
     : [];
 
+  const tickerKey = tickers.map((t) => t.ticker).join(",");
   useEffect(() => {
-    const list = tickers.map((t) => t.ticker);
+    const list = tickerKey ? tickerKey.split(",") : [];
     if (!list.length) return;
     let cancelled = false;
     void fetch(
-      `/api/market/events?tickers=${encodeURIComponent(list.join(","))}`
+      `/api/market/events?tickers=${encodeURIComponent(tickerKey)}`
     )
       .then((r) => r.json())
       .then((data: { earnings?: EarningsEvent[] }) => {
@@ -214,7 +215,7 @@ export function OverviewDashboard({ model, onOpenSheet }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tickers.map((t) => t.ticker).join(",")]);
+  }, [tickerKey]);
 
   function openFirstPortfolio(t: TickerScore) {
     const id = t.portfolioIds[0];

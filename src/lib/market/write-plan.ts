@@ -1,4 +1,4 @@
-import { STRATEGY, callPctBaseline, formatCallPctBaselines } from "@/lib/calculations";
+import { STRATEGY, callPctBaseline } from "@/lib/calculations";
 import {
   findLocalHighs,
   nextStrikeFromTarget,

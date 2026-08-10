@@ -70,7 +70,7 @@ export function mergeEoyTargetPaths(
   current: PortfolioEoyOverrides,
   paths: { ticker: string; prices: Partial<Record<ForecastYear, number>> }[]
 ): PortfolioEoyOverrides {
-  let next = { ...current };
+  const next = { ...current };
   for (const path of paths) {
     const key = path.ticker.toUpperCase();
     const row = { ...(next[key] ?? {}) };

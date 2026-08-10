@@ -1,4 +1,5 @@
 import { nextStrikeFromTarget, resolveStockTarget } from "@/lib/market/resistance";
+import { roundMoney, safeDiv } from "@/lib/money";
 import type {
   CoveredCallRow,
   EnrichedHolding,
@@ -17,10 +18,10 @@ export function enrichHoldings(
   const withValues = holdings.map((h) => {
     const quote = quotes[h.ticker] ?? null;
     const price = quote?.price ?? h.buy_price;
-    const buyValue = h.shares * h.buy_price;
-    const currentValue = h.shares * price;
-    const roiDollar = currentValue - buyValue;
-    const roiPct = h.buy_price > 0 ? (price - h.buy_price) / h.buy_price : 0;
+    const buyValue = roundMoney(h.shares * h.buy_price);
+    const currentValue = roundMoney(h.shares * price);
+    const roiDollar = roundMoney(currentValue - buyValue);
+    const roiPct = safeDiv(price - h.buy_price, h.buy_price);
     return {
       ...h,
       quote,
@@ -37,7 +38,7 @@ export function enrichHoldings(
 
   return withValues.map((h) => ({
     ...h,
-    pctOfTotal: total !== 0 ? h.currentValue / total : 0,
+    pctOfTotal: safeDiv(h.currentValue, total),
   }));
 }
 
@@ -120,15 +121,19 @@ export function buildSnapshot(
     optionsByTicker
   );
 
-  const buyValue = enriched.reduce((s, h) => s + h.buyValue, 0);
-  const currentValue =
-    enriched.reduce((s, h) => s + h.currentValue, 0) + portfolio.cash_balance;
+  const buyValue = roundMoney(
+    enriched.reduce((s, h) => s + h.buyValue, 0)
+  );
+  const currentValue = roundMoney(
+    enriched.reduce((s, h) => s + h.currentValue, 0) + portfolio.cash_balance
+  );
   // Cost-weighted portfolio return: Σ(P&L) / Σ(cost) — not a simple average of row ROI%
-  const roiDollar = enriched.reduce((s, h) => s + h.roiDollar, 0);
-  const roiPct = buyValue > 0 ? roiDollar / buyValue : 0;
-  const premiumTotal = coveredCallRows.reduce(
-    (s, r) => s + (r.premium ?? 0),
-    0
+  const roiDollar = roundMoney(
+    enriched.reduce((s, h) => s + h.roiDollar, 0)
+  );
+  const roiPct = safeDiv(roiDollar, buyValue);
+  const premiumTotal = roundMoney(
+    coveredCallRows.reduce((s, r) => s + (r.premium ?? 0), 0)
   );
   const yieldVals = coveredCallRows
     .map((r) => r.yield2w)

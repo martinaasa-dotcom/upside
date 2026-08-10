@@ -51,20 +51,6 @@ export function SnapshotsModal({
   const [error, setError] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<SnapMeta[]>([]);
 
-  useEffect(() => {
-    if (!open) {
-      setUnlocked(false);
-      setError(null);
-      setSnapshots([]);
-      setBusyId(null);
-      return;
-    }
-    const cached = getSessionPin();
-    setPin(cached);
-    if (cached) void load(cached);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   const load = useCallback(async (ownerPin: string) => {
     setLoading(true);
     setError(null);
@@ -84,6 +70,19 @@ export function SnapshotsModal({
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setUnlocked(false);
+      setError(null);
+      setSnapshots([]);
+      setBusyId(null);
+      return;
+    }
+    const cached = getSessionPin();
+    setPin(cached);
+    if (cached) void load(cached);
+  }, [open, load]);
 
   async function unlock() {
     if (!pin.trim()) {

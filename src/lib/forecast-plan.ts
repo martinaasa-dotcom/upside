@@ -145,7 +145,6 @@ export function shouldAutoRefreshForecast(input: {
   const tickers = input.tickers.map((t) => t.toUpperCase());
   if (tickers.length === 0) return { run: false, reason: "empty" };
 
-  const key = forecastHoldingsKey(tickers);
   const plan = input.plan;
 
   if (!plan) {

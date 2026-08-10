@@ -51,15 +51,11 @@ export function FormattedNumberInput(props: FormattedNumberInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(() => blurFormat(props, value));
 
+  const currencyKey = props.kind === "money" ? props.currency : "pct";
   useEffect(() => {
     if (!focused.current) setText(blurFormat(props, value));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    value,
-    props.kind,
-    props.kind === "money" ? props.currency : "pct",
-    digits,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- format from props.kind/currency/digits
+  }, [value, props.kind, currencyKey, digits]);
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const el = e.target;

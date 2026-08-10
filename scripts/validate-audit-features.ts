@@ -23,10 +23,11 @@ import {
 } from "../src/lib/paper-arena";
 import { estimateGreenStreak } from "../src/lib/streaks";
 import { whatIfHeld } from "../src/lib/trade-journal";
-import { buildWeeklyRecap } from "../src/lib/weekly-recap";
 import { isForecastFullyCovered, FORECAST_YEARS } from "../src/lib/forecast";
 import { ensureCompleteEoyTargets } from "../src/lib/forecast-plan";
 import type { ForecastModel } from "../src/lib/forecast";
+import { roundMoney, safeDiv } from "../src/lib/money";
+import { enrichHoldings } from "../src/lib/calculations";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(`FAIL: ${msg}`);
@@ -76,7 +77,7 @@ assert(
 assert(shockedPrice("SPY", 100, "btc_winter35") < 100, "crypto hits index beta");
 assert(SHOCKS.length >= 4, "shock catalog");
 
-let stack = pushUndoSnapshot([], {
+const stack = pushUndoSnapshot([], {
   label: "test",
   portfolioId: "p1",
   cashBalance: 1,
@@ -85,6 +86,29 @@ let stack = pushUndoSnapshot([], {
 });
 const popped = popUndoSnapshot(stack);
 assert(popped.snap?.label === "test", "undo pop");
+
+assert(roundMoney(0.1 + 0.2) === 0.3, "roundMoney 0.1+0.2");
+assert(safeDiv(10, 0) === 0, "safeDiv zero den");
+assert(safeDiv(Number.NaN, 5) === 0, "safeDiv nan");
+const zeroBasis = enrichHoldings(
+  [
+    {
+      id: "1",
+      portfolio_id: "p",
+      ticker: "X",
+      shares: 10,
+      buy_price: 0,
+      eoy_target: null,
+      target_call_pct: 0.1,
+      stock_target_override: null,
+      sort_order: 0,
+    },
+  ],
+  { X: { ticker: "X", price: 5, currency: "USD" } as never },
+  0
+);
+assert(zeroBasis[0]?.roiPct === 0, "zero cost basis roiPct");
+assert(zeroBasis[0]?.roiDollar === 50, "zero cost basis pnl dollars");
 
 assert(Math.abs((pearson([1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7]) ?? 0) - 1) < 1e-6, "pearson");
 assert(
