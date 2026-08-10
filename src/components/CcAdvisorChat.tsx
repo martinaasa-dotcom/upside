@@ -397,12 +397,19 @@ export function CcAdvisorChat({
     });
   }
 
-  const suggestions = [
-    "Give me the updated CC write plan",
-    "Copy Call % and targets from another sheet",
-    "Which names should wait for earnings?",
-    "Tighten Call % on the names with room",
-  ];
+  const suggestions = context.adviseOnly
+    ? [
+        "What’s moving in premarket / after hours?",
+        "Which names are the biggest overnight gaps?",
+        "Any concentration risk across sheets?",
+        "Which sheets are winning today?",
+      ]
+    : [
+        "Give me the updated CC write plan",
+        "Copy Call % and targets from another sheet",
+        "What’s moving in premarket / after hours?",
+        "Tighten Call % on the names with room",
+      ];
 
   const canSend = !busy && (Boolean(input.trim()) || pendingImages.length > 0);
 

@@ -34,11 +34,23 @@ export type CoveredCallTarget = {
 
 export type Quote = {
   ticker: string;
+  /** Regular-session last (or best available when session closed) */
   price: number;
   change: number;
+  /** Fraction, e.g. 0.015 = +1.5% */
   changePercent: number;
   previousClose: number;
   sparkline: number[];
+  /** Yahoo marketState: PREPRE | PRE | REGULAR | POST | POSTPOST | CLOSED | … */
+  marketState: string | null;
+  preMarketPrice: number | null;
+  preMarketChange: number | null;
+  /** Fraction */
+  preMarketChangePercent: number | null;
+  postMarketPrice: number | null;
+  postMarketChange: number | null;
+  /** Fraction */
+  postMarketChangePercent: number | null;
 };
 
 export type OptionCandidate = {

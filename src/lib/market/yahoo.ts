@@ -71,6 +71,33 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
                   .filter((c): c is number => typeof c === "number")
               : synthesizeSparkline(price, changePercent * 100);
 
+          const preMarketPrice =
+            typeof quote.preMarketPrice === "number"
+              ? quote.preMarketPrice
+              : null;
+          const preMarketChange =
+            typeof quote.preMarketChange === "number"
+              ? quote.preMarketChange
+              : null;
+          const preMarketChangePercent =
+            typeof quote.preMarketChangePercent === "number"
+              ? quote.preMarketChangePercent / 100
+              : null;
+          const postMarketPrice =
+            typeof quote.postMarketPrice === "number"
+              ? quote.postMarketPrice
+              : null;
+          const postMarketChange =
+            typeof quote.postMarketChange === "number"
+              ? quote.postMarketChange
+              : null;
+          const postMarketChangePercent =
+            typeof quote.postMarketChangePercent === "number"
+              ? quote.postMarketChangePercent / 100
+              : null;
+          const marketState =
+            typeof quote.marketState === "string" ? quote.marketState : null;
+
           return [
             ticker,
             {
@@ -80,6 +107,13 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
               changePercent,
               previousClose,
               sparkline,
+              marketState,
+              preMarketPrice,
+              preMarketChange,
+              preMarketChangePercent,
+              postMarketPrice,
+              postMarketChange,
+              postMarketChangePercent,
             } satisfies Quote,
           ] as const;
         } catch (err) {
@@ -132,6 +166,13 @@ function fallbackQuotes(tickers: string[]): Record<string, Quote> {
       changePercent,
       previousClose: price - change,
       sparkline: synthesizeSparkline(price, changePercent * 100),
+      marketState: null,
+      preMarketPrice: null,
+      preMarketChange: null,
+      preMarketChangePercent: null,
+      postMarketPrice: null,
+      postMarketChange: null,
+      postMarketChangePercent: null,
     };
   }
   return map;

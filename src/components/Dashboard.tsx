@@ -52,6 +52,29 @@ function formatPricesAge(updatedAt: number | null, now: number): string {
   return `Prices · ${Math.floor(min / 60)}h ago`;
 }
 
+function extendedHoursFromQuote(q: Quote | null | undefined) {
+  if (!q) {
+    return {
+      marketState: null as string | null,
+      preMarketPrice: null as number | null,
+      preMarketChange: null as number | null,
+      preMarketChangePercent: null as number | null,
+      postMarketPrice: null as number | null,
+      postMarketChange: null as number | null,
+      postMarketChangePercent: null as number | null,
+    };
+  }
+  return {
+    marketState: q.marketState,
+    preMarketPrice: q.preMarketPrice,
+    preMarketChange: q.preMarketChange,
+    preMarketChangePercent: q.preMarketChangePercent,
+    postMarketPrice: q.postMarketPrice,
+    postMarketChange: q.postMarketChange,
+    postMarketChangePercent: q.postMarketChangePercent,
+  };
+}
+
 export function Dashboard() {
   const { push: toast } = useToast();
   const [source, setSource] = useState<DataSource>("demo");
@@ -141,6 +164,13 @@ export function Dashboard() {
     () => buildOverview(portfolios, holdings, quotes),
     [portfolios, holdings, quotes]
   );
+
+  const marketState = useMemo(() => {
+    for (const q of Object.values(quotes)) {
+      if (q.marketState) return q.marketState;
+    }
+    return null;
+  }, [quotes]);
 
   const loadPortfolios = useCallback(async () => {
     setLoading(true);
@@ -1037,8 +1067,10 @@ export function Dashboard() {
                       : 0,
                   todayPct: t.todayPct,
                   portfolios: t.portfolios,
+                  ...extendedHoursFromQuote(quotes[t.ticker]),
                 })),
                 rows: [],
+                marketState,
                 totals: {
                   cost: overview.totals.buyValue,
                   value: overview.totals.totalValue,
@@ -1110,6 +1142,7 @@ export function Dashboard() {
                   roiDollar: h.roiDollar,
                   pctOfTotal: h.pctOfTotal,
                   todayPct: h.quote?.changePercent ?? null,
+                  ...extendedHoursFromQuote(h.quote),
                 })),
                 rows: snapshot!.coveredCallRows.map((r) => ({
                   ticker: r.holding.ticker,
@@ -1123,6 +1156,7 @@ export function Dashboard() {
                   premium: r.premium,
                   expiration: r.expiration,
                 })),
+                marketState,
                 totals: {
                   cost: snapshot!.totals.buyValue,
                   value: snapshot!.totals.currentValue,

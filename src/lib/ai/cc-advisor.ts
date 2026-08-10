@@ -19,6 +19,13 @@ export type CcChatContext = {
     todayPct: number | null;
     /** Sheet names owning this ticker (Overview aggregate) */
     portfolios?: string[];
+    marketState?: string | null;
+    preMarketPrice?: number | null;
+    preMarketChange?: number | null;
+    preMarketChangePercent?: number | null;
+    postMarketPrice?: number | null;
+    postMarketChange?: number | null;
+    postMarketChangePercent?: number | null;
   }>;
   rows: Array<{
     ticker: string;
@@ -54,6 +61,8 @@ export type CcChatContext = {
   }>;
   /** Overview chat: advise only — no mutating tools */
   adviseOnly?: boolean;
+  /** Yahoo marketState snapshot (PRE / REGULAR / POST / …) */
+  marketState?: string | null;
 };
 
 export const ccAdvisorTools = {
@@ -328,6 +337,32 @@ export const ccAdvisorTools = {
 
 export type CcAdvisorTools = typeof ccAdvisorTools;
 
+function fmtPctLabel(pct: number | null | undefined): string {
+  if (pct == null || Number.isNaN(pct)) return "—";
+  return `${(pct * 100).toFixed(2)}%`;
+}
+
+function fmtPriceLabel(price: number | null | undefined): string {
+  if (price == null || Number.isNaN(price)) return "—";
+  return String(price);
+}
+
+function holdingExtendedHoursLine(h: CcChatContext["holdings"][number]): string {
+  const bits: string[] = [];
+  if (h.marketState) bits.push(`session=${h.marketState}`);
+  if (h.preMarketPrice != null || h.preMarketChangePercent != null) {
+    bits.push(
+      `preMarket=${fmtPriceLabel(h.preMarketPrice)} (${fmtPctLabel(h.preMarketChangePercent)})`
+    );
+  }
+  if (h.postMarketPrice != null || h.postMarketChangePercent != null) {
+    bits.push(
+      `afterHours=${fmtPriceLabel(h.postMarketPrice)} (${fmtPctLabel(h.postMarketChangePercent)})`
+    );
+  }
+  return bits.length ? `, ${bits.join(", ")}` : "";
+}
+
 export function buildCcSystemPrompt(ctx: CcChatContext): string {
   const holdingsTable =
     ctx.holdings.length === 0
@@ -338,7 +373,7 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
               h.portfolios && h.portfolios.length
                 ? ` sheets=[${h.portfolios.join(",")}]`
                 : "";
-            return `${h.ticker}${sheets}: shares=${h.shares}, buy=${h.buyPrice}, price=${h.price}, cost=${h.cost.toFixed(0)}, value=${h.value.toFixed(0)}, roi%=${(h.roiPct * 100).toFixed(1)}%, roi$=${h.roiDollar.toFixed(0)}, pctTotal=${(h.pctOfTotal * 100).toFixed(1)}%, today=${h.todayPct != null ? (h.todayPct * 100).toFixed(1) + "%" : "—"}`;
+            return `${h.ticker}${sheets}: shares=${h.shares}, buy=${h.buyPrice}, price=${h.price}, cost=${h.cost.toFixed(0)}, value=${h.value.toFixed(0)}, roi%=${(h.roiPct * 100).toFixed(1)}%, roi$=${h.roiDollar.toFixed(0)}, pctTotal=${(h.pctOfTotal * 100).toFixed(1)}%, today=${h.todayPct != null ? (h.todayPct * 100).toFixed(1) + "%" : "—"}${holdingExtendedHoursLine(h)}`;
           })
           .join("\n");
 
@@ -417,7 +452,7 @@ When the user asks to pick NEW stock targets, re-find local highs, or rebuild th
 ### Covered Call Targets — column glossary (memorize this)
 This table is the WRITE PLAN, not a generic options chain dump.
 
-1. **Spot** — live share price now.
+1. **Spot / price** — regular-session last (or best available). For overnight / gap talk use preMarket* and afterHours* fields.
 2. **Stock Target** — the price level you are writing *toward* (resistance / local high / manual level). It is NOT the option strike.
 3. **Call %** — safety buffer ABOVE Stock Target. Volatility-scaled. Example: target $100 + Call 15% → Next Strike $115.
 4. **Distance** — how far Spot is from Stock Target = (Stock Target − Spot) / Spot.
@@ -429,6 +464,8 @@ This table is the WRITE PLAN, not a generic options chain dump.
 7. **Contracts** — floor(shares / 100).
 8. **CC yield / Premium** — live mid for that Next Strike & expiry ÷ Spot (and total $ for all contracts).
 9. **Expiration** — chosen ~2–3 week expiry (earnings-aware).
+10. **preMarket / afterHours** — extended-hours last price and % vs prior close when Yahoo has them. Use these when the user asks about premarket, after-hours, overnight gaps, or “what’s moving before the open”.
+11. **session / marketState** — Yahoo session flag (PREPRE, PRE, REGULAR, POST, POSTPOST, CLOSED, …). When PRE/PREPRE lean on preMarket; when POST/POSTPOST lean on afterHours.
 
 Example (do not confuse these):
 - Spot $188, Stock Target $205, Call 22% → Distance ≈ +9% (to target), Next Strike ≈ $250, strikeOtmFromSpot ≈ +33%.
@@ -458,10 +495,11 @@ House strategy:
 
 Be concise. Prefer tools over invented numbers. After tools, briefly confirm.
 
+Market session: ${ctx.marketState ?? "unknown"}
 Cash: ${ctx.cashBalance}
 Portfolio totals: cost=${ctx.totals.cost.toFixed(0)}, value=${ctx.totals.value.toFixed(0)}, roi%=${(ctx.totals.roiPct * 100).toFixed(1)}%, roi$=${ctx.totals.roiDollar.toFixed(0)}, ccYieldAvg=${(ctx.totals.yield2wAvg * 100).toFixed(2)}%, premiumTotal=${ctx.totals.premiumTotal.toFixed(2)}
 
-Holdings:
+Holdings (includes preMarket / afterHours when available):
 ${holdingsTable}
 
 Covered-call rows:
