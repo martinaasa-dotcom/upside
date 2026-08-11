@@ -72,3 +72,8 @@ insert into public.portfell_seed_claims (email, portfolio_slug) values
   ('rasmusmarjapuu@gmail.com', 'karud'),
   ('karukaroliine99@gmail.com', 'karud')
 on conflict do nothing;
+
+-- Lap owner (claim on first Google sign-in)
+insert into public.portfell_seed_claims (email, portfolio_slug) values
+  ('liinaanette@gmail.com', 'lap')
+on conflict do nothing;

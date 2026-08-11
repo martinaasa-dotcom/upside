@@ -15,7 +15,7 @@
 | `martin.aasa@upthink.ee` | Aasad, Anu, MaryAnn |
 | `rasmusmarjapuu@gmail.com` | Karud |
 | `karukaroliine99@gmail.com` | Karud |
-| Seed row / `UPSIDE_SEED_LAP_EMAIL` | Lap |
+| `liinaanette@gmail.com` | Lap |
 
 Multiple emails can map to the **same** `portfolio_slug` in `portfell_seed_claims` for co-ownership.
 
