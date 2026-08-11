@@ -48,7 +48,7 @@ function buildPrompt(
     const roiPct = (c.roiPct * 100).toFixed(0);
     const flag = c.needsAttention ? " **NEEDS ATTENTION — down ≥5%**" : "";
     const parts = [
-      `- **${c.ticker}** · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup — not in book)"}`,
+      `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup — not in book)"}`,
       conv?.thesis ? `  Owner thesis: ${conv.thesis}` : "",
       conv?.level ? `  Conviction: ${conv.level}/5` : "",
       ctx?.sector ? `  Sector: ${ctx.sector}` : "",
@@ -71,20 +71,33 @@ function buildPrompt(
   return `${MARGUS_PERSONA}
 
 ## Task — Thesis Pulse
-Martin uses this when a **big line drops hard** and he asks: *should I sell?*
+Martin uses this when a **big line drops hard**. He asks: *should I sell — or add the dip?*
 
 Primary job: **down ≥5% moves** (including pre-market / after-hours). Also covers other big book lines for context.
 
 ${fg}
 
-For **each** ticker:
-1. **situation** — 2–3 short sentences explaining what's going on **right now**, grounded in the supplied headlines. No filler.
-2. **moveReason** — one sentence on what drove the move (cite headline when possible).
-3. **thesisStatus** — \`intact\` if the long-term thesis still holds; \`watch\` if something needs monitoring; \`broken\` only if fundamentals/narrative clearly broke (not just a red day or earnings vol).
-4. **earningsNote** — if last print was within ~45 days or next is within ~14 days, say clean vs nasty surprise; else empty string.
-5. **verdict** — one sentence for a holder debating a sale: **hold**, add on dip, trim, or watch. Be direct on down days — don't reflexively say hold.
+### Action rules (Martin buys intact dips — do NOT default everything to hold)
+- **action** = \`add\` | \`hold\` | \`trim\` | \`watch\`
+- **intact thesis + red day** on house compounders (**NBIS, CRWV, RKLB, VST, BMNR**, AI infra / space): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal.
+- **addLevel** — always give a concrete price plan when thesis is intact or action is add:
+  - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
+  - Or \`Add now ~$X · stagger below ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy).
+  - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · stagger below ~$72\` — NOT "wait for $50".
+- Use **hold** only when you would not deploy (max concentration, broken narrative, no cash story).
+- Use **trim** only when thesis is broken or euphorically extended.
+- On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
-**summary**: one sentence — lead with sharp drops and whether they're noise or real thesis risk.
+For **each** ticker:
+1. **situation** — 2–3 short sentences, grounded in headlines.
+2. **moveReason** — one sentence (cite headline when possible).
+3. **thesisStatus** — intact / watch / broken.
+4. **action** — add / hold / trim / watch per rules above.
+5. **addLevel** — price trigger string (required for add; required for intact+down; empty for trim).
+6. **earningsNote** — if relevant; else empty string.
+7. **verdict** — one sentence tying **action + addLevel** to the thesis.
+
+**summary**: one sentence — lead with dips that are add opportunities vs real thesis breaks.
 
 Keep fields short. Use the headlines — don't invent news.
 

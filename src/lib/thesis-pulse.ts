@@ -34,6 +34,8 @@ export type PulseCandidate = {
 
 export type ThesisStatus = "intact" | "watch" | "broken";
 
+export type PulseAction = "add" | "hold" | "trim" | "watch";
+
 export type PulseHeadline = {
   title: string;
   publisher: string;
@@ -47,6 +49,9 @@ export type PulseCheck = {
   moveReason: string;
   thesisStatus: ThesisStatus;
   earningsNote: string;
+  action: PulseAction;
+  /** When to add — "Add now ~$X" or "Add now · more below ~$Y". Empty if trim. */
+  addLevel: string;
   verdict: string;
 };
 
@@ -76,6 +81,16 @@ export const pulseReportSchema = z.object({
           "One sentence on what drove the move (cite news when possible)."
         ),
       thesisStatus: z.enum(["intact", "watch", "broken"]),
+      action: z
+        .enum(["add", "hold", "trim", "watch"])
+        .describe(
+          "add = deploy on intact thesis dip; hold = no change; trim = reduce; watch = wait for clarity."
+        ),
+      addLevel: z
+        .string()
+        .describe(
+          'Concrete add trigger: "Add now ~$X" and/or "stagger below ~$Y". Required when action=add or thesis intact on a dip. Empty only for trim. Not greedy — Y within ~5–12% below spot.'
+        ),
       earningsNote: z
         .string()
         .describe(
@@ -84,13 +99,13 @@ export const pulseReportSchema = z.object({
       verdict: z
         .string()
         .describe(
-          "One sentence for a holder debating a sale: hold, add on dip, trim, or watch — thesis-first."
+          "One sentence tying action + addLevel to the thesis — not generic hold language."
         ),
     })
   ),
 });
 
-const PULSE_CACHE_KEY = "upside-pulse-v2";
+const PULSE_CACHE_KEY = "upside-pulse-v3";
 
 export function effectiveMove(quote: Quote | null | undefined): {
   pct: number | null;
@@ -244,6 +259,13 @@ export function statusLabel(status: ThesisStatus): string {
   if (status === "intact") return "Thesis intact";
   if (status === "watch") return "Watch";
   return "Thesis at risk";
+}
+
+export function actionLabel(action: PulseAction): string {
+  if (action === "add") return "Add";
+  if (action === "trim") return "Trim";
+  if (action === "watch") return "Wait";
+  return "Hold";
 }
 
 export function sectorForTicker(ticker: string): string | null {

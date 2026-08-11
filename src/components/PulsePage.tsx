@@ -19,6 +19,8 @@ import {
   loadPulseCache,
   savePulseCache,
   statusLabel,
+  actionLabel,
+  type PulseAction,
   type PulseCheck,
   type PulseHeadline,
   type PulseReport,
@@ -48,6 +50,26 @@ function StatusIcon({ status }: { status: ThesisStatus }) {
     return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
   if (status === "watch") return <Eye className="h-4 w-4 text-amber-400" />;
   return <XCircle className="h-4 w-4 text-rose-400" />;
+}
+
+function ActionBadge({ action }: { action: PulseAction }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide",
+        action === "add" &&
+          "border-emerald-500/40 bg-emerald-500/15 text-emerald-200",
+        action === "hold" &&
+          "border-zinc-600/80 bg-zinc-900/60 text-zinc-300",
+        action === "trim" &&
+          "border-rose-500/40 bg-rose-500/15 text-rose-200",
+        action === "watch" &&
+          "border-amber-500/40 bg-amber-500/15 text-amber-200"
+      )}
+    >
+      {actionLabel(action)}
+    </span>
+  );
 }
 
 function statusBorder(status: ThesisStatus, urgent: boolean) {
@@ -129,10 +151,13 @@ function PulseCard({
           )}
         </div>
         {check && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-[11px] font-medium text-zinc-200">
-            <StatusIcon status={status} />
-            {statusLabel(status)}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ActionBadge action={check.action} />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-[11px] font-medium text-zinc-200">
+              <StatusIcon status={status} />
+              {statusLabel(status)}
+            </span>
+          </div>
         )}
       </div>
 
@@ -169,7 +194,10 @@ function PulseCard({
               {check.earningsNote}
             </p>
           ) : null}
-          <p className="font-medium text-white">{check.verdict}</p>
+          {check.addLevel ? (
+            <p className="font-medium text-brand-bright">{check.addLevel}</p>
+          ) : null}
+          <p className="text-zinc-100">{check.verdict}</p>
         </div>
       ) : null}
 
@@ -347,10 +375,11 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               Should you sell — or is the thesis intact?
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-              Built for red days: flags big lines down{" "}
-              {formatMovePct(-PULSE_DOWN_THRESHOLD)} or more (incl. pre-market /
-              after-hours), pulls live news, and gives a plain read. By default
-              your top book positions are here in one view.
+              Built for red days: should you sell — or add the dip? Flags big
+              lines down {formatMovePct(-PULSE_DOWN_THRESHOLD)}+ (incl.
+              pre/after-hours), pulls news, and gives an action + price level.
+              Intact thesis dips on house names should read as adds, not
+              automatic holds.
             </p>
           </div>
           <button
