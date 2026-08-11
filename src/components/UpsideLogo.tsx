@@ -14,7 +14,7 @@ function UpsideMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 100 100"
-      className={cn("shrink-0", className)}
+      className={cn("block shrink-0", className)}
       fill="none"
       aria-hidden
     >
@@ -69,18 +69,15 @@ export function UpsideLogo({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 leading-none text-white",
+        "inline-flex items-baseline gap-1.5 leading-none text-white",
         className
       )}
+      role="img"
       aria-label={title}
     >
-      {/*
-        Raise the mark slightly so it optically centers with the caps —
-        keep the word untranslated so the whole lockup shares a midline
-        with sibling header text (e.g. Overview).
-      */}
-      <UpsideMark className="-translate-y-[0.04em] h-[1em] w-[1em] shrink-0" />
-      <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
+      {/* Cap-height mark, shifted onto the text baseline */}
+      <UpsideMark className="relative top-[0.15em] h-[0.82em] w-[0.82em]" />
+      <span className="-mr-[0.22em] font-semibold uppercase tracking-[0.22em]">
         Upside
       </span>
     </span>
