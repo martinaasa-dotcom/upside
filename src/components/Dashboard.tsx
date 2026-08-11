@@ -1557,7 +1557,11 @@ export function Dashboard() {
     if (source === "supabase") {
       const res = await apiFetch(`/api/holdings?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
-        toast("Failed to delete holding", "error");
+        const data = await res.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to delete holding",
+          "error"
+        );
         return false;
       }
       setHoldings((prev) => prev.filter((h) => h.id !== id));
@@ -1579,11 +1583,14 @@ export function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast("Failed to add sheet", "error");
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to add sheet",
+          "error"
+        );
         return;
       }
-      const data = await res.json();
       setPortfolios((prev) => [...prev, data.portfolio]);
       seedNewSheetPanelDefaults(data.portfolio);
       setActiveId(data.portfolio.id);
@@ -1604,7 +1611,11 @@ export function Dashboard() {
         body: JSON.stringify({ id, name }),
       });
       if (!res.ok) {
-        toast("Failed to rename sheet", "error");
+        const data = await res.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to rename sheet",
+          "error"
+        );
         return;
       }
     } else {
@@ -1656,7 +1667,11 @@ export function Dashboard() {
         body: JSON.stringify({ id: activePortfolio.id, cash_balance: cash }),
       });
       if (!res.ok) {
-        toast("Failed to update cash", "error");
+        const data = await res.json().catch(() => ({}));
+        toast(
+          typeof data.error === "string" ? data.error : "Failed to update cash",
+          "error"
+        );
         return;
       }
       setPortfolios((prev) =>
