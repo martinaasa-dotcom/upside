@@ -3,6 +3,7 @@
 import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -81,25 +82,41 @@ export function CommunitiesList() {
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
           {loading ? (
-            <p className="text-sm text-zinc-500">Loading…</p>
+            <div className="space-y-2" aria-hidden>
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  className="h-[3.75rem] animate-pulse rounded-2xl border border-brand-deep/20 bg-[#161618]/70"
+                />
+              ))}
+            </div>
           ) : (
             <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
               {communities.length === 0 && (
-                <li className="px-4 py-8 text-sm text-zinc-500">
-                  No communities yet. Create one or accept an invite.
+                <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                  <Users className="h-6 w-6 text-zinc-600" />
+                  <p className="text-sm text-zinc-400">
+                    No communities yet.
+                  </p>
+                  <p className="text-xs text-zinc-600">
+                    Create one below, or ask a member for an invite link.
+                  </p>
                 </li>
               )}
               {communities.map((c) => (
                 <li key={c.id}>
                   <Link
                     href={`/communities/${c.id}`}
-                    className="flex items-center justify-between px-4 py-4 transition hover:bg-brand/5"
+                    className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-brand/5"
                   >
-                    <span className="text-sm font-semibold text-zinc-100">
+                    <span className="min-w-0 truncate text-sm font-semibold text-zinc-100">
                       {c.name}
                     </span>
-                    <span className="text-xs capitalize text-brand-bright/80">
-                      {c.role}
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs capitalize text-brand-bright/80">
+                        {c.role}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-zinc-600" />
                     </span>
                   </Link>
                 </li>

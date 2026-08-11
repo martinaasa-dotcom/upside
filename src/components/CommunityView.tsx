@@ -3,11 +3,14 @@
 import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
 import { buildOverview } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import {
   ArrowLeft,
+  Check,
+  Copy,
   Link2,
   Shield,
   UserMinus,
@@ -73,6 +76,11 @@ export function CommunityView({ communityId }: Props) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{
+    userId: string;
+    name: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -218,7 +226,6 @@ export function CommunityView({ communityId }: Props) {
   }
 
   async function removeMember(userId: string) {
-    if (!confirm("Remove this member from the community?")) return;
     setBusy(true);
     try {
       const res = await fetch(
@@ -230,8 +237,10 @@ export function CommunityView({ communityId }: Props) {
         throw new Error((data as { error?: string }).error ?? "Remove failed");
       }
       await load();
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Remove failed");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -337,6 +346,12 @@ export function CommunityView({ communityId }: Props) {
                       );
                       return sum + (score?.totalValue ?? 0);
                     }, 0);
+                    const sheetToday = sheets.reduce((sum, p) => {
+                      const score = overview.sheets.find(
+                        (s) => s.portfolio.id === p.id
+                      );
+                      return sum + (score?.todayDollar ?? 0);
+                    }, 0);
                     const emails = memberEmails(m);
                     return (
                       <li
@@ -376,6 +391,20 @@ export function CommunityView({ communityId }: Props) {
                             {sheets.length === 1 ? "" : "s"}
                             {" · "}
                             {currency(sheetValue)}
+                            {sheets.length > 0 && (
+                              <>
+                                {" · today "}
+                                <span
+                                  className={
+                                    sheetToday >= 0
+                                      ? "text-emerald-400"
+                                      : "text-red-400"
+                                  }
+                                >
+                                  {signedCurrency(sheetToday)}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </button>
                         {isAdmin && !m.is_you && (
@@ -397,7 +426,12 @@ export function CommunityView({ communityId }: Props) {
                             <button
                               type="button"
                               disabled={busy}
-                              onClick={() => void removeMember(m.user_id)}
+                              onClick={() =>
+                                setRemoveTarget({
+                                  userId: m.user_id,
+                                  name: profileName(m.user_id),
+                                })
+                              }
                               className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-red-300"
                             >
                               <UserMinus className="h-3 w-3" />
@@ -417,6 +451,12 @@ export function CommunityView({ communityId }: Props) {
                         (s) => s.portfolio.id === sheet.id
                       );
                       return sum + (score?.totalValue ?? 0);
+                    }, 0);
+                    const sheetToday = sheets.reduce((sum, sheet) => {
+                      const score = overview.sheets.find(
+                        (s) => s.portfolio.id === sheet.id
+                      );
+                      return sum + (score?.todayDollar ?? 0);
                     }, 0);
                     const ownerKey = `pending:${p.key}`;
                     return (
@@ -448,6 +488,20 @@ export function CommunityView({ communityId }: Props) {
                             {sheets.length === 1 ? "" : "s"}
                             {" · "}
                             {currency(sheetValue)}
+                            {sheets.length > 0 && (
+                              <>
+                                {" · today "}
+                                <span
+                                  className={
+                                    sheetToday >= 0
+                                      ? "text-emerald-400"
+                                      : "text-red-400"
+                                  }
+                                >
+                                  {signedCurrency(sheetToday)}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </button>
                       </li>
@@ -484,9 +538,29 @@ export function CommunityView({ communityId }: Props) {
                     </button>
                   </div>
                   {inviteUrl && (
-                    <p className="break-all text-xs text-emerald-400/90">
-                      Copied: {inviteUrl}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-900/50 bg-emerald-950/20 px-3 py-2">
+                      <p className="min-w-0 flex-1 break-all text-xs text-emerald-300/90">
+                        {inviteUrl}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await navigator.clipboard
+                            .writeText(inviteUrl)
+                            .catch(() => undefined);
+                          setInviteCopied(true);
+                          window.setTimeout(() => setInviteCopied(false), 1500);
+                        }}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-700/60 px-2 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-900/40"
+                      >
+                        {inviteCopied ? (
+                          <Check className="h-3 w-3" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                        {inviteCopied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
                   )}
                 </section>
               )}
@@ -572,6 +646,19 @@ export function CommunityView({ communityId }: Props) {
           )}
         </main>
       </div>
+
+      <ConfirmModal
+        open={Boolean(removeTarget)}
+        title="Remove member?"
+        body={`Remove ${removeTarget?.name ?? "this member"} from the community? They'll lose read access to everyone else's book and can be re-invited later.`}
+        confirmLabel="Remove"
+        destructive
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={async () => {
+          if (!removeTarget) return false;
+          return removeMember(removeTarget.userId);
+        }}
+      />
     </SignInGate>
   );
 }
@@ -613,16 +700,22 @@ function ReadOnlyHoldings({
   quotes: Record<string, Quote>;
   cash: number;
 }) {
+  const totalValue =
+    holdings.reduce((s, h) => s + (quotes[h.ticker]?.price ?? 0) * h.shares, 0) +
+    cash;
   return (
     <div className="overflow-x-auto rounded-xl border border-zinc-800">
-      <table className="w-full min-w-[32rem] text-left text-sm">
+      <table className="w-full min-w-[36rem] text-left text-sm">
         <thead className="border-b border-zinc-800 text-xs text-zinc-500">
           <tr>
             <th className="px-3 py-2 font-medium">Ticker</th>
+            <th className="px-3 py-2 font-medium">% Book</th>
             <th className="px-3 py-2 font-medium">Shares</th>
             <th className="px-3 py-2 font-medium">Price</th>
+            <th className="px-3 py-2 font-medium">Today</th>
             <th className="px-3 py-2 font-medium">Value</th>
-            <th className="px-3 py-2 font-medium">P&L</th>
+            <th className="px-3 py-2 font-medium">ROI %</th>
+            <th className="px-3 py-2 font-medium">P&amp;L</th>
           </tr>
         </thead>
         <tbody>
@@ -631,16 +724,42 @@ function ReadOnlyHoldings({
             const value = price * h.shares;
             const cost = h.buy_price * h.shares;
             const pnl = value - cost;
+            const roiPct = cost > 0 ? pnl / cost : 0;
+            const todayPct = quotes[h.ticker]?.changePercent ?? null;
+            const pctBook = totalValue > 0 ? value / totalValue : 0;
             return (
               <tr key={h.id} className="border-b border-zinc-800/60">
                 <td className="px-3 py-2 font-medium">{h.ticker}</td>
+                <td className="px-3 py-2 tabular-nums text-zinc-500">
+                  {percent(pctBook)}
+                </td>
                 <td className="px-3 py-2 tabular-nums text-zinc-400">
                   {h.shares}
                 </td>
                 <td className="px-3 py-2 font-semibold tabular-nums text-white">
                   {currency(price)}
                 </td>
+                <td
+                  className={cn(
+                    "px-3 py-2 tabular-nums",
+                    todayPct == null
+                      ? "text-zinc-600"
+                      : todayPct >= 0
+                        ? "text-emerald-400"
+                        : "text-red-400"
+                  )}
+                >
+                  {todayPct != null ? percent(todayPct) : "—"}
+                </td>
                 <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
+                <td
+                  className={cn(
+                    "px-3 py-2 tabular-nums",
+                    roiPct >= 0 ? "text-emerald-400" : "text-red-400"
+                  )}
+                >
+                  {percent(roiPct)}
+                </td>
                 <td
                   className={cn(
                     "px-3 py-2 tabular-nums",
@@ -652,8 +771,15 @@ function ReadOnlyHoldings({
               </tr>
             );
           })}
+          {holdings.length === 0 && (
+            <tr>
+              <td className="px-3 py-6 text-center text-zinc-500" colSpan={8}>
+                No holdings on this sheet.
+              </td>
+            </tr>
+          )}
           <tr>
-            <td className="px-3 py-2 text-zinc-500" colSpan={3}>
+            <td className="px-3 py-2 text-zinc-500" colSpan={6}>
               Cash
             </td>
             <td className="px-3 py-2 tabular-nums" colSpan={2}>
