@@ -303,6 +303,7 @@ export function Dashboard() {
   const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
   const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
+  const [confirmResetForecast, setConfirmResetForecast] = useState(false);
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
@@ -2306,7 +2307,7 @@ export function Dashboard() {
                 overrides={eoyOverrides}
                 onSetEoyPrice={commitEoyPrice}
                 onApplyMargusPaths={applyMargusEoyPaths}
-                onClearOverrides={clearEoyOverrides}
+                onClearOverrides={() => setConfirmResetForecast(true)}
               />
             )}
           </>
@@ -2420,6 +2421,20 @@ export function Dashboard() {
             return deleteSheetById(confirmDelete.id);
           }
           return deleteHoldingById(confirmDelete.id);
+        }}
+      />
+
+      <ConfirmModal
+        open={confirmResetForecast}
+        title="Reset forecast overrides?"
+        body={`Clears every manual and Margus-generated EOY price target on ${
+          activePortfolio?.name ?? "this sheet"
+        } — Margus will need to re-reason the whole forecast from scratch on next visit. This can't be undone.`}
+        confirmLabel="Reset"
+        destructive
+        onClose={() => setConfirmResetForecast(false)}
+        onConfirm={() => {
+          clearEoyOverrides();
         }}
       />
 

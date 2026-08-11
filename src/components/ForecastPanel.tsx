@@ -55,6 +55,12 @@ function yearLabel(year: number) {
   return `EOY ${year}`;
 }
 
+/** Current calendar year gets a "this year" cue so the nearest, most-actionable
+ * target doesn't blend into the same-looking longer-horizon columns. */
+function isCurrentYear(year: number) {
+  return year === new Date().getFullYear();
+}
+
 function formatGeneratedAt(iso: string) {
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -388,7 +394,15 @@ export function ForecastPanel({
                   </div>
                   {yearCols.map((y) => (
                     <div key={y} className="text-center">
-                      <p className="text-zinc-500">{yearLabel(y)}</p>
+                      <p
+                        className={cn(
+                          "text-zinc-500",
+                          isCurrentYear(y) && "text-brand-bright"
+                        )}
+                      >
+                        {yearLabel(y)}
+                        {isCurrentYear(y) && " · now"}
+                      </p>
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
                         targeted={r.targetedYears[y]}
@@ -410,7 +424,15 @@ export function ForecastPanel({
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 {yearCols.map((y) => (
                   <div key={y}>
-                    <p className="text-zinc-500">{yearLabel(y)}</p>
+                    <p
+                      className={cn(
+                        "text-zinc-500",
+                        isCurrentYear(y) && "text-brand-bright"
+                      )}
+                    >
+                      {yearLabel(y)}
+                      {isCurrentYear(y) && " · now"}
+                    </p>
                     <p className="tabular-nums text-zinc-100">
                       {currency(model.eoyTotals[y])}
                     </p>
@@ -437,8 +459,16 @@ export function ForecastPanel({
                 <div className={cellLabel}>Ticker</div>
                 <div className={cellNum}>Current SP</div>
                 {yearCols.map((y) => (
-                  <div key={y} className={cellNum}>
+                  <div
+                    key={y}
+                    className={cn(
+                      cellNum,
+                      isCurrentYear(y) && "text-brand-bright"
+                    )}
+                    title={isCurrentYear(y) ? "This year" : undefined}
+                  >
                     {yearLabel(y)}
+                    {isCurrentYear(y) && " · now"}
                   </div>
                 ))}
                 <div className={cellNum}>Gain</div>
