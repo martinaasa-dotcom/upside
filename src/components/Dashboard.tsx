@@ -302,9 +302,6 @@ export function Dashboard() {
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
-  const [mobileMargusCollapsed] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false
-  );
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
@@ -2231,61 +2228,6 @@ export function Dashboard() {
               onOpenPulse={() => setActiveId(PULSE_TAB_ID)}
               onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
             />
-            <CcAdvisorChat
-              key={OVERVIEW_TAB_ID}
-              portfolioId={OVERVIEW_TAB_ID}
-              context={{
-                portfolioName: "Overview",
-                cashBalance: overview.totals.cash,
-                adviseOnly: true,
-                eurUsd,
-                gbpUsd,
-                watchlist: loadWatchlist(),
-                holdings: overview.tickers.map((t) => ({
-                  ticker: t.ticker,
-                  shares: t.shares,
-                  buyPrice: t.shares > 0 ? t.buyValue / t.shares : 0,
-                  price: t.price,
-                  cost: t.buyValue,
-                  value: t.currentValue,
-                  roiPct: t.roiPct,
-                  roiDollar: t.roiDollar,
-                  pctOfTotal:
-                    overview.totals.equityValue > 0
-                      ? t.currentValue / overview.totals.equityValue
-                      : 0,
-                  todayPct: t.todayPct,
-                  portfolios: t.portfolios,
-                  ...extendedHoursFromQuote(quotes[t.ticker]),
-                })),
-                rows: [],
-                marketState,
-                totals: {
-                  cost: overview.totals.buyValue,
-                  value: overview.totals.totalValue,
-                  roiPct: overview.totals.roiPct,
-                  roiDollar: overview.totals.roiDollar,
-                  yield2wAvg: 0,
-                  premiumTotal: 0,
-                },
-                otherPortfolios: portfolios.map((p) => ({
-                  name: p.name,
-                  cashBalance: p.cash_balance,
-                  holdings: holdings
-                    .filter((h) => h.portfolio_id === p.id)
-                    .map((h) => ({
-                      ticker: h.ticker,
-                      shares: h.shares,
-                      buyPrice: h.buy_price,
-                      callPct: h.target_call_pct,
-                      stockTarget: h.stock_target_override,
-                    })),
-                })),
-              }}
-              onApplyActions={() => {
-                /* advise-only — mutations disabled */
-              }}
-            />
           </>
         ) : (
           <>
@@ -2342,70 +2284,6 @@ export function Dashboard() {
                 onClearOverrides={clearEoyOverrides}
               />
             )}
-
-            <CcAdvisorChat
-              key={activePortfolio!.id}
-              portfolioId={activePortfolio!.id}
-              defaultCollapsed={mobileMargusCollapsed}
-              expandSignal={margusExpandSignal}
-              context={{
-                portfolioName: activePortfolio!.name,
-                cashBalance: activePortfolio!.cash_balance,
-                eurUsd,
-                gbpUsd,
-                watchlist: loadWatchlist(),
-                holdings: snapshot!.holdings.map((h) => ({
-                  ticker: h.ticker,
-                  shares: h.shares,
-                  buyPrice: h.buy_price,
-                  price: h.quote?.price ?? h.buy_price,
-                  cost: h.buyValue,
-                  value: h.currentValue,
-                  roiPct: h.roiPct,
-                  roiDollar: h.roiDollar,
-                  pctOfTotal: h.pctOfTotal,
-                  todayPct: h.quote?.changePercent ?? null,
-                  ...extendedHoursFromQuote(h.quote),
-                })),
-                rows: snapshot!.coveredCallRows.map((r) => ({
-                  ticker: r.holding.ticker,
-                  spot: r.spot,
-                  callPct: r.targetCall,
-                  stockTarget: r.stockTarget,
-                  distance: r.targetDistance,
-                  nextStrike: r.nextStrike,
-                  contracts: r.contracts,
-                  yield2w: r.yield2w,
-                  premium: r.premium,
-                  expiration: r.expiration,
-                })),
-                marketState,
-                totals: {
-                  cost: snapshot!.totals.buyValue,
-                  value: snapshot!.totals.currentValue,
-                  roiPct: snapshot!.totals.roiPct,
-                  roiDollar: snapshot!.totals.roiDollar,
-                  yield2wAvg: snapshot!.totals.yield2wAvg,
-                  premiumTotal: snapshot!.totals.premiumTotal,
-                },
-                otherPortfolios: portfolios
-                  .filter((p) => p.id !== activePortfolio!.id)
-                  .map((p) => ({
-                    name: p.name,
-                    cashBalance: p.cash_balance,
-                    holdings: holdings
-                      .filter((h) => h.portfolio_id === p.id)
-                      .map((h) => ({
-                        ticker: h.ticker,
-                        shares: h.shares,
-                        buyPrice: h.buy_price,
-                        callPct: h.target_call_pct,
-                        stockTarget: h.stock_target_override,
-                      })),
-                  })),
-              }}
-              onApplyActions={applyAdvisorActions}
-            />
           </>
         )}
       </main>
@@ -2624,6 +2502,134 @@ export function Dashboard() {
         onAskMargus={() => {
           setMargusExpandSignal((n) => n + 1);
         }}
+      />
+
+      <CcAdvisorChat
+        key={
+          !isMetaTab && activePortfolio && snapshot
+            ? activePortfolio.id
+            : OVERVIEW_TAB_ID
+        }
+        portfolioId={
+          !isMetaTab && activePortfolio && snapshot
+            ? activePortfolio.id
+            : OVERVIEW_TAB_ID
+        }
+        expandSignal={margusExpandSignal}
+        onApplyActions={
+          !isMetaTab && activePortfolio && snapshot
+            ? applyAdvisorActions
+            : () => {
+                /* advise-only on Overview / Lab / Pulse / Compound */
+              }
+        }
+        context={
+          !isMetaTab && activePortfolio && snapshot
+            ? {
+                portfolioName: activePortfolio.name,
+                cashBalance: activePortfolio.cash_balance,
+                eurUsd,
+                gbpUsd,
+                watchlist: loadWatchlist(),
+                holdings: snapshot.holdings.map((h) => ({
+                  ticker: h.ticker,
+                  shares: h.shares,
+                  buyPrice: h.buy_price,
+                  price: h.quote?.price ?? h.buy_price,
+                  cost: h.buyValue,
+                  value: h.currentValue,
+                  roiPct: h.roiPct,
+                  roiDollar: h.roiDollar,
+                  pctOfTotal: h.pctOfTotal,
+                  todayPct: h.quote?.changePercent ?? null,
+                  ...extendedHoursFromQuote(h.quote),
+                })),
+                rows: snapshot.coveredCallRows.map((r) => ({
+                  ticker: r.holding.ticker,
+                  spot: r.spot,
+                  callPct: r.targetCall,
+                  stockTarget: r.stockTarget,
+                  distance: r.targetDistance,
+                  nextStrike: r.nextStrike,
+                  contracts: r.contracts,
+                  yield2w: r.yield2w,
+                  premium: r.premium,
+                  expiration: r.expiration,
+                })),
+                marketState,
+                totals: {
+                  cost: snapshot.totals.buyValue,
+                  value: snapshot.totals.currentValue,
+                  roiPct: snapshot.totals.roiPct,
+                  roiDollar: snapshot.totals.roiDollar,
+                  yield2wAvg: snapshot.totals.yield2wAvg,
+                  premiumTotal: snapshot.totals.premiumTotal,
+                },
+                otherPortfolios: portfolios
+                  .filter((p) => p.id !== activePortfolio.id)
+                  .map((p) => ({
+                    name: p.name,
+                    cashBalance: p.cash_balance,
+                    holdings: holdings
+                      .filter((h) => h.portfolio_id === p.id)
+                      .map((h) => ({
+                        ticker: h.ticker,
+                        shares: h.shares,
+                        buyPrice: h.buy_price,
+                        callPct: h.target_call_pct,
+                        stockTarget: h.stock_target_override,
+                      })),
+                  })),
+              }
+            : {
+                portfolioName: "Overview",
+                cashBalance: overview.totals.cash,
+                adviseOnly: true,
+                eurUsd,
+                gbpUsd,
+                watchlist: loadWatchlist(),
+                holdings: overview.tickers.map((t) => ({
+                  ticker: t.ticker,
+                  shares: t.shares,
+                  buyPrice: t.shares > 0 ? t.buyValue / t.shares : 0,
+                  price: t.price,
+                  cost: t.buyValue,
+                  value: t.currentValue,
+                  roiPct: t.roiPct,
+                  roiDollar: t.roiDollar,
+                  pctOfTotal:
+                    overview.totals.equityValue > 0
+                      ? t.currentValue / overview.totals.equityValue
+                      : 0,
+                  todayPct: t.todayPct,
+                  portfolios: t.portfolios,
+                  ...extendedHoursFromQuote(quotes[t.ticker]),
+                })),
+                rows: [],
+                marketState,
+                totals: {
+                  cost: overview.totals.buyValue,
+                  value: overview.totals.totalValue,
+                  roiPct: overview.totals.roiPct,
+                  roiDollar: overview.totals.roiDollar,
+                  yield2wAvg: 0,
+                  premiumTotal: 0,
+                },
+                otherPortfolios: portfolios.map((p) => ({
+                  name: p.name,
+                  cashBalance: p.cash_balance,
+                  holdings: holdings
+                    .filter((h) => h.portfolio_id === p.id)
+                    .map((h) => ({
+                      ticker: h.ticker,
+                      shares: h.shares,
+                      buyPrice: h.buy_price,
+                      callPct: h.target_call_pct,
+                      stockTarget: h.stock_target_override,
+                    })),
+                })),
+              }
+        }
       />
     </div>
   );

@@ -80,9 +80,7 @@ type Props = {
   portfolioId: string;
   context: CcChatContext;
   onApplyActions: (actions: AdvisorAction[]) => void;
-  /** On small screens, start collapsed to shorten the stack. */
-  defaultCollapsed?: boolean;
-  /** Bump to expand + scroll Margus into view (empty-state CTAs). */
+  /** Bump to open the floating Margus panel (empty-state / drawer CTAs). */
   expandSignal?: number;
 };
 
@@ -400,13 +398,12 @@ export function CcAdvisorChat({
   portfolioId,
   context,
   onApplyActions,
-  defaultCollapsed = false,
   expandSignal = 0,
 }: Props) {
   const [input, setInput] = useState("");
   const [pendingImages, setPendingImages] = useState<FileUIPart[]>([]);
   const [rulesOpen, setRulesOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [open, setOpen] = useState(false);
   const initialMessages = useMemo(
     () => loadChatHistory(portfolioId),
     [portfolioId]
@@ -415,17 +412,24 @@ export function CcAdvisorChat({
   const contextRef = useRef(context);
   contextRef.current = context;
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const rulesRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!expandSignal) return;
-    setCollapsed(false);
-    window.requestAnimationFrame(() => {
-      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    setOpen(true);
   }, [expandSignal]);
+
+  // Close on Escape when the panel is open (rules popover handles its own Esc).
+  useEffect(() => {
+    if (!open || rulesOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, rulesOpen]);
 
   const transport = useMemo(
     () =>
@@ -567,303 +571,322 @@ export function CcAdvisorChat({
   const canSend = !busy && (Boolean(input.trim()) || pendingImages.length > 0);
 
   return (
-    <section
-      ref={sectionRef}
-      className={`relative flex flex-col overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70 ${
-        collapsed ? "h-auto" : "h-[min(520px,calc(100dvh-12rem))] md:h-[630px]"
-      }`}
-    >
-      <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800/80 px-4 py-3">
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          className="rounded-lg bg-brand/10 p-1.5 text-brand hover:bg-brand/20"
-          aria-expanded={!collapsed}
-          title={collapsed ? "Expand Margus" : "Collapse Margus"}
+    <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60] flex flex-col items-end gap-3">
+      {open && (
+        <section
+          ref={panelRef}
+          className="pointer-events-auto flex w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-[#161618] shadow-2xl shadow-black/60"
+          style={{ height: "min(36rem, calc(100dvh - 6.5rem))" }}
+          role="dialog"
+          aria-label="Assistant Margus"
         >
-          <Sparkles className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          className="min-w-0 flex-1 text-left"
-        >
-          <h2 className="text-sm font-semibold text-white">Assistant Margus</h2>
-          <p className="truncate text-xs text-zinc-500">
-            {collapsed
-              ? "Tap to expand"
-              : context.adviseOnly
-                ? "Advise-only overview · open a sheet to apply changes"
-                : `Chat for ${context.portfolioName} · other sheets only when you ask`}
-          </p>
-        </button>
-        {!collapsed && (
-        <div className="relative" ref={rulesRef}>
-          <button
-            type="button"
-            onClick={() => setRulesOpen((o) => !o)}
-            className={`rounded-lg p-1.5 transition ${
-              rulesOpen
-                ? "bg-brand/15 text-brand"
-                : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
-            }`}
-            aria-label="Strategy rules"
-            aria-expanded={rulesOpen}
-          >
-            <BookOpen className="h-4 w-4" />
-          </button>
-          {rulesOpen && (
-            <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  House rules
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setRulesOpen(false)}
-                  className="rounded p-3 text-zinc-500 hover:text-zinc-300 sm:p-0.5"
-                  aria-label="Close rules"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <ul className="max-h-72 space-y-2.5 overflow-y-auto">
-                {RULES.map((r) => (
-                  <li key={r.title} className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                      {r.title}
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold text-brand">
-                      {r.rule}
-                    </p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
-                      {r.detail}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+          <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800/80 px-3 py-2.5">
+            <div className="rounded-lg bg-brand/10 p-1.5 text-brand">
+              <Sparkles className="h-4 w-4" />
             </div>
-          )}
-        </div>
-        )}
-      </header>
-
-      {!collapsed && (
-      <>
-      <div
-        ref={scrollerRef}
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
-      >
-        {messages.length === 0 && (
-          <div className="space-y-3 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/30 p-3">
-            <p className="text-xs leading-relaxed text-zinc-400">
-              I can read holdings and covered calls, and update shares, buy
-              price, cash, Call %, or add/remove tickers. Open the book icon for
-              house rules.
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => sendMessage({ text: s })}
-                  className="rounded-full border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map((message) => {
-          const text = extractText(
-            message.parts as Array<{ type: string; text?: string }>
-          );
-          const images = extractImages(
-            message.parts as Array<{
-              type: string;
-              url?: string;
-              mediaType?: string;
-            }>
-          );
-          const toolParts = message.parts as ToolPart[];
-          const toolNotes = toolParts
-            .filter(
-              (p) =>
-                p.state === "output-available" &&
-                typeof (p.output as { message?: string })?.message === "string"
-            )
-            .map((p) => (p.output as { message: string }).message);
-          const toolPending = toolParts.some(
-            (p) =>
-              p.toolCallId &&
-              p.state !== "output-available" &&
-              p.state !== "output-error"
-          );
-
-          if (!text && !images.length && toolNotes.length === 0 && !toolPending)
-            return null;
-
-          return (
-            <div
-              key={message.id}
-              className={
-                message.role === "user"
-                  ? "ml-0 max-w-[95%] rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 sm:ml-6"
-                  : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
-              }
-            >
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                {message.role === "user" ? "You" : "Margus"}
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-white">
+                Assistant Margus
+              </h2>
+              <p className="truncate text-xs text-zinc-500">
+                {context.adviseOnly
+                  ? "Advise-only · open a sheet to apply changes"
+                  : `Chat for ${context.portfolioName}`}
               </p>
-              {images.length > 0 && (
-                <div className="mb-2 flex flex-wrap gap-2">
-                  {images.map((img, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={`${message.id}-img-${i}`}
-                      src={img.url}
-                      alt="Attached"
-                      className="max-h-40 max-w-full rounded-md border border-zinc-700 object-contain"
-                    />
-                  ))}
+            </div>
+            <div className="relative" ref={rulesRef}>
+              <button
+                type="button"
+                onClick={() => setRulesOpen((o) => !o)}
+                className={`rounded-lg p-1.5 transition ${
+                  rulesOpen
+                    ? "bg-brand/15 text-brand"
+                    : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                }`}
+                aria-label="Strategy rules"
+                aria-expanded={rulesOpen}
+              >
+                <BookOpen className="h-4 w-4" />
+              </button>
+              {rulesOpen && (
+                <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                      House rules
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setRulesOpen(false)}
+                      className="rounded p-3 text-zinc-500 hover:text-zinc-300 sm:p-0.5"
+                      aria-label="Close rules"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <ul className="max-h-72 space-y-2.5 overflow-y-auto">
+                    {RULES.map((r) => (
+                      <li
+                        key={r.title}
+                        className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0"
+                      >
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                          {r.title}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold text-brand">
+                          {r.rule}
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                          {r.detail}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
-              {text ? (
-                <div className="w-full min-w-0 text-sm leading-relaxed">
-                  {message.role === "assistant" ? (
-                    <ChatMarkdown>{text}</ChatMarkdown>
-                  ) : (
-                    <p className="whitespace-pre-wrap break-words">{text}</p>
-                  )}
-                </div>
-              ) : null}
-              {toolPending && !text && toolNotes.length === 0 ? (
-                <p className="text-xs text-zinc-500">Running analysis…</p>
-              ) : null}
-              {toolNotes.map((note, i) => (
-                <p
-                  key={i}
-                  className="mt-1.5 whitespace-pre-wrap break-words text-xs font-medium text-brand"
-                >
-                  {note}
-                </p>
-              ))}
             </div>
-          );
-        })}
-
-        {busy && (
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Thinking…
             <button
               type="button"
-              onClick={() => stop()}
-              className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
+              onClick={() => setOpen(false)}
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+              aria-label="Close Margus"
             >
-              <Square className="h-2.5 w-2.5 fill-current" />
-              Stop
+              <X className="h-4 w-4" />
             </button>
-          </div>
-        )}
+          </header>
 
-        {lastIsEmptyAssistant && !error && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-            Margus returned an empty reply (often a free-model rate limit or a
-            long screenshot import). Wait a few seconds and ask again — for
-            broker sheets, say “import this portfolio breakdown”.
-          </div>
-        )}
+          <div
+            ref={scrollerRef}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
+          >
+            {messages.length === 0 && (
+              <div className="space-y-3 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/30 p-3">
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  I can read holdings and covered calls, and update shares, buy
+                  price, cash, Call %, or add/remove tickers. Open the book icon
+                  for house rules.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => sendMessage({ text: s })}
+                      className="rounded-full border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {error && (
-          <div className="rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-xs text-rose-300">
-            {/OPENROUTER|GROQ|API key|503|LLM/i.test(error.message)
-              ? "Add OPENROUTER_API_KEY to .env.local (https://openrouter.ai/keys), then restart the dev server."
-              : /network|fetch|Failed to fetch|Load failed|aborted/i.test(
-                    error.message
-                  )
-                ? "Connection dropped (dev server restart or a long reply). Refresh the page and ask again — critiques can take ~30–60s on the Super model."
-                : error.message}
-          </div>
-        )}
-      </div>
+            {messages.map((message) => {
+              const text = extractText(
+                message.parts as Array<{ type: string; text?: string }>
+              );
+              const images = extractImages(
+                message.parts as Array<{
+                  type: string;
+                  url?: string;
+                  mediaType?: string;
+                }>
+              );
+              const toolParts = message.parts as ToolPart[];
+              const toolNotes = toolParts
+                .filter(
+                  (p) =>
+                    p.state === "output-available" &&
+                    typeof (p.output as { message?: string })?.message ===
+                      "string"
+                )
+                .map((p) => (p.output as { message: string }).message);
+              const toolPending = toolParts.some(
+                (p) =>
+                  p.toolCallId &&
+                  p.state !== "output-available" &&
+                  p.state !== "output-error"
+              );
 
-      <form
-        onSubmit={onSubmit}
-        className="flex shrink-0 flex-col gap-2 border-t border-zinc-800/80 p-3"
-      >
-        {pendingImages.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {pendingImages.map((img, i) => (
-              <div
-                key={`${img.filename ?? "img"}-${i}`}
-                className="relative h-16 w-16 overflow-hidden rounded-md border border-zinc-700"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.url}
-                  alt={img.filename ?? "Pending"}
-                  className="h-full w-full object-cover"
-                />
+              if (
+                !text &&
+                !images.length &&
+                toolNotes.length === 0 &&
+                !toolPending
+              )
+                return null;
+
+              return (
+                <div
+                  key={message.id}
+                  className={
+                    message.role === "user"
+                      ? "ml-0 max-w-[95%] rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 sm:ml-6"
+                      : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
+                  }
+                >
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                    {message.role === "user" ? "You" : "Margus"}
+                  </p>
+                  {images.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {images.map((img, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={`${message.id}-img-${i}`}
+                          src={img.url}
+                          alt="Attached"
+                          className="max-h-40 max-w-full rounded-md border border-zinc-700 object-contain"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {text ? (
+                    <div className="w-full min-w-0 text-sm leading-relaxed">
+                      {message.role === "assistant" ? (
+                        <ChatMarkdown>{text}</ChatMarkdown>
+                      ) : (
+                        <p className="whitespace-pre-wrap break-words">{text}</p>
+                      )}
+                    </div>
+                  ) : null}
+                  {toolPending && !text && toolNotes.length === 0 ? (
+                    <p className="text-xs text-zinc-500">Running analysis…</p>
+                  ) : null}
+                  {toolNotes.map((note, i) => (
+                    <p
+                      key={i}
+                      className="mt-1.5 whitespace-pre-wrap break-words text-xs font-medium text-brand"
+                    >
+                      {note}
+                    </p>
+                  ))}
+                </div>
+              );
+            })}
+
+            {busy && (
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Thinking…
                 <button
                   type="button"
-                  onClick={() =>
-                    setPendingImages((prev) => prev.filter((_, j) => j !== i))
-                  }
-                  className="absolute right-0.5 top-0.5 rounded bg-black/70 p-0.5 text-zinc-200 hover:text-white"
-                  aria-label="Remove image"
+                  onClick={() => stop()}
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
                 >
-                  <X className="h-3 w-3" />
+                  <Square className="h-2.5 w-2.5 fill-current" />
+                  Stop
                 </button>
               </div>
-            ))}
+            )}
+
+            {lastIsEmptyAssistant && !error && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+                Margus returned an empty reply (often a free-model rate limit or
+                a long screenshot import). Wait a few seconds and ask again —
+                for broker sheets, say “import this portfolio breakdown”.
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-xs text-rose-300">
+                {/OPENROUTER|GROQ|API key|503|LLM/i.test(error.message)
+                  ? "Add OPENROUTER_API_KEY to .env.local (https://openrouter.ai/keys), then restart the dev server."
+                  : /network|fetch|Failed to fetch|Load failed|aborted/i.test(
+                        error.message
+                      )
+                    ? "Connection dropped (dev server restart or a long reply). Refresh the page and ask again — critiques can take ~30–60s on the Super model."
+                    : error.message}
+              </div>
+            )}
           </div>
-        )}
-        <div className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.length) void addImageFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center justify-center rounded-lg border border-zinc-700 px-2.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
-            aria-label="Attach image"
-            title="Attach screenshot"
+
+          <form
+            onSubmit={onSubmit}
+            className="flex shrink-0 flex-col gap-2 border-t border-zinc-800/80 p-3"
           >
-            <ImagePlus className="h-4 w-4" />
-          </button>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onPaste={(e) => void onPaste(e)}
-            placeholder="Paste a screenshot or ask Margus…"
-            disabled={busy}
-            className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!canSend}
-            className="inline-flex items-center justify-center rounded-lg bg-brand px-3 text-[#121214] hover:bg-brand-bright disabled:opacity-40"
-            aria-label="Send"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
-      </form>
-      </>
+            {pendingImages.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pendingImages.map((img, i) => (
+                  <div
+                    key={`${img.filename ?? "img"}-${i}`}
+                    className="relative h-16 w-16 overflow-hidden rounded-md border border-zinc-700"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img.url}
+                      alt={img.filename ?? "Pending"}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPendingImages((prev) =>
+                          prev.filter((_, j) => j !== i)
+                        )
+                      }
+                      className="absolute right-0.5 top-0.5 rounded bg-black/70 p-0.5 text-zinc-200 hover:text-white"
+                      aria-label="Remove image"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.length) void addImageFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center justify-center rounded-lg border border-zinc-700 px-2.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+                aria-label="Attach image"
+                title="Attach screenshot"
+              >
+                <ImagePlus className="h-4 w-4" />
+              </button>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onPaste={(e) => void onPaste(e)}
+                placeholder="Paste a screenshot or ask Margus…"
+                disabled={busy}
+                className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={!canSend}
+                className="inline-flex items-center justify-center rounded-lg bg-brand px-3 text-[#121214] hover:bg-brand-bright disabled:opacity-40"
+                aria-label="Send"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+          </form>
+        </section>
       )}
-    </section>
+
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-brand-mid/50 bg-brand-bright text-[#1a1510] shadow-lg shadow-black/40 transition hover:bg-[#F0E4C8] hover:scale-[1.03] active:scale-[0.97]"
+        aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
+        aria-expanded={open}
+        title="Assistant Margus"
+      >
+        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
+      </button>
+    </div>
   );
 }
