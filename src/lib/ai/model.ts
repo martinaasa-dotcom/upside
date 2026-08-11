@@ -9,6 +9,102 @@ const DEFAULT_TEXT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 const DEFAULT_VISION_MODEL =
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
 
+/** Free-tier backups when the primary OpenRouter model is rate-limited / down. */
+const DEFAULT_TEXT_FALLBACKS = [
+  "nvidia/nemotron-3-nano-30b-a3b:free",
+  "openai/gpt-oss-20b:free",
+  "qwen/qwen3-14b:free",
+];
+
+const DEFAULT_VISION_FALLBACKS = [
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "google/gemini-2.0-flash-exp:free",
+];
+
+function parseEnvList(raw: string | undefined): string[] {
+  if (!raw?.trim()) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function uniq(ids: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+export function resolveAdvisorModelId(options?: {
+  vision?: boolean;
+  reasoning?: boolean;
+}): string {
+  const vision = Boolean(options?.vision) && !options?.reasoning;
+  if (vision) {
+    return (
+      process.env.MODEL_VISION ??
+      process.env.OPENROUTER_VISION_MODEL ??
+      DEFAULT_VISION_MODEL
+    );
+  }
+  if (options?.reasoning) {
+    return (
+      process.env.MODEL_FORECAST ??
+      process.env.MODEL ??
+      process.env.OPENROUTER_MODEL ??
+      DEFAULT_TEXT_MODEL
+    );
+  }
+  return (
+    process.env.MODEL ?? process.env.OPENROUTER_MODEL ?? DEFAULT_TEXT_MODEL
+  );
+}
+
+/** OpenRouter `models` fallbacks (excludes primary). */
+export function resolveAdvisorFallbackIds(options?: {
+  vision?: boolean;
+  reasoning?: boolean;
+}): string[] {
+  const primary = resolveAdvisorModelId(options);
+  const vision = Boolean(options?.vision) && !options?.reasoning;
+  const fromEnv = parseEnvList(
+    vision
+      ? process.env.MODEL_VISION_FALLBACKS ?? process.env.MODEL_FALLBACKS
+      : process.env.MODEL_FALLBACKS
+  );
+  const defaults = vision ? DEFAULT_VISION_FALLBACKS : DEFAULT_TEXT_FALLBACKS;
+  return uniq([...fromEnv, ...defaults]).filter((id) => id !== primary);
+}
+
+/**
+ * Inject OpenRouter `models` fallbacks into chat/completions JSON bodies.
+ * Rate-limits / downtime on the primary then walk the chain server-side.
+ */
+function openRouterFetchWithFallbacks(
+  fallbacks: string[]
+): typeof fetch | undefined {
+  if (!fallbacks.length) return undefined;
+  return async (input, init) => {
+    try {
+      if (init?.body && typeof init.body === "string") {
+        const parsed = JSON.parse(init.body) as Record<string, unknown>;
+        if (!Array.isArray(parsed.models)) {
+          parsed.models = fallbacks;
+          init = { ...init, body: JSON.stringify(parsed) };
+        }
+      }
+    } catch {
+      /* leave body alone */
+    }
+    return fetch(input, init);
+  };
+}
+
 /**
  * CC Advisor model via OpenAI-compatible providers.
  *
@@ -18,22 +114,10 @@ const DEFAULT_VISION_MODEL =
  */
 export function resolveAdvisorModel(options?: {
   vision?: boolean;
-  /** Prefer the main text / reasoning-capable model (forecast plans). */
   reasoning?: boolean;
 }): LanguageModel {
-  const vision = Boolean(options?.vision) && !options?.reasoning;
-  const modelId = vision
-    ? (process.env.MODEL_VISION ??
-      process.env.OPENROUTER_VISION_MODEL ??
-      DEFAULT_VISION_MODEL)
-    : options?.reasoning
-      ? (process.env.MODEL_FORECAST ??
-        process.env.MODEL ??
-        process.env.OPENROUTER_MODEL ??
-        DEFAULT_TEXT_MODEL)
-      : (process.env.MODEL ??
-        process.env.OPENROUTER_MODEL ??
-        DEFAULT_TEXT_MODEL);
+  const modelId = resolveAdvisorModelId(options);
+  const fallbacks = resolveAdvisorFallbackIds(options);
 
   const openrouterKey = process.env.OPENROUTER_API_KEY;
   if (openrouterKey && openrouterKey !== "your_key_here") {
@@ -47,6 +131,7 @@ export function resolveAdvisorModel(options?: {
         "X-Title":
           process.env.OPENROUTER_APP_TITLE ?? "Upside Assistant Margus",
       },
+      fetch: openRouterFetchWithFallbacks(fallbacks),
     });
     return openrouter.chat(modelId);
   }

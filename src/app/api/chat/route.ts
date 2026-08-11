@@ -94,7 +94,7 @@ export async function POST(req: Request) {
           }
         : {}),
       stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 12),
-      maxRetries: 2,
+      maxRetries: 3,
       abortSignal: req.signal,
       onError: ({ error }) => {
         console.error("[chat]", error);
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
         const msg =
           error instanceof Error ? error.message : "Chat request failed";
         if (/rate.?limit|429|temporar/i.test(msg)) {
-          return "Model is rate-limited right now. Wait a few seconds and try again, or switch MODEL in .env.local.";
+          return "Model is busy / rate-limited. Wait a few seconds and try again — Margus will auto-fallback to another model when possible.";
         }
         if (/timeout|504|timed out/i.test(msg)) {
           return "Model timed out. Try again — free models are flaky under load.";
@@ -119,7 +119,16 @@ export async function POST(req: Request) {
     const msg =
       err instanceof Error
         ? err.message
-        : "Chat failed — try again or switch MODEL in .env.local";
+        : "Chat failed — try again in a moment";
+    if (/rate.?limit|429|temporar/i.test(msg)) {
+      return Response.json(
+        {
+          error:
+            "Model is busy / rate-limited. Wait a few seconds and try again.",
+        },
+        { status: 429 }
+      );
+    }
     return Response.json({ error: msg }, { status: 500 });
   }
 }

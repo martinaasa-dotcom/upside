@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       return Response.json(
         {
           error:
-            "Model is rate-limited. Wait a few seconds and try again, or switch MODEL in .env.local.",
+            "Model is busy / rate-limited. Wait a few seconds and try again.",
         },
         { status: 429 }
       );
