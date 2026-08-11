@@ -532,7 +532,7 @@ export function CcAdvisorChat({
     <section
       ref={sectionRef}
       className={`relative flex flex-col overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70 ${
-        collapsed ? "h-auto" : "h-[630px]"
+        collapsed ? "h-auto" : "h-[min(520px,calc(100dvh-12rem))] md:h-[630px]"
       }`}
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800/80 px-4 py-3">
@@ -673,7 +673,7 @@ export function CcAdvisorChat({
               key={message.id}
               className={
                 message.role === "user"
-                  ? "ml-6 rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100"
+                  ? "ml-0 max-w-[95%] rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 sm:ml-6"
                   : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
               }
             >

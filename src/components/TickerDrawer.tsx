@@ -47,8 +47,8 @@ export function TickerDrawer({
         aria-label="Close drawer"
         onClick={onClose}
       />
-      <aside className="relative flex h-full w-full max-w-md flex-col border-l border-zinc-700 bg-[#121214] shadow-2xl">
-        <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3">
+    <div className="relative flex h-full w-full max-w-none flex-col border-l border-zinc-700 bg-[#121214] shadow-2xl sm:max-w-md">
+        <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div>
             <h3 className="text-lg font-semibold text-white">{ticker}</h3>
             <p className="text-xs text-zinc-500">
@@ -65,7 +65,7 @@ export function TickerDrawer({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="space-y-4 overflow-y-auto px-4 py-4">
+        <div className="space-y-4 overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
               Streak
@@ -152,7 +152,7 @@ export function TickerDrawer({
             </button>
           )}
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

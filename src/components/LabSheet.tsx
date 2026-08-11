@@ -428,40 +428,42 @@ export function LabSheet({
           Sandbox tools — income, Versus, Arena. Shock & Correlation live under
           Advanced. Edits sync when a locked sheet is unlocked.
         </p>
-        <div className="mt-3 flex h-8 min-h-8 items-center gap-2 overflow-hidden">
-          <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-            Scope
-          </span>
-          <select
-            value={scopeId}
-            onChange={(e) => setScopeId(e.target.value)}
-            disabled={!scopeApplies}
-            className={cn(
-              "shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-white",
-              !scopeApplies && "cursor-not-allowed opacity-40"
-            )}
-          >
-            <option value="book">Entire book</option>
-            {portfolios.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <span className="min-w-0 truncate text-[11px] text-zinc-600">
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+          <div className="flex min-h-8 items-center gap-2">
+            <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+              Scope
+            </span>
+            <select
+              value={scopeId}
+              onChange={(e) => setScopeId(e.target.value)}
+              disabled={!scopeApplies}
+              className={cn(
+                "min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-xs text-white sm:flex-none sm:shrink-0",
+                !scopeApplies && "cursor-not-allowed opacity-40"
+              )}
+            >
+              <option value="book">Entire book</option>
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span className="min-w-0 text-[11px] text-zinc-600">
             {scopeApplies
               ? `What-ifs run on ${scopeLabel}`
               : "Scope unused on this tool"}
           </span>
         </div>
-        <div className="mt-3 flex min-h-[2.25rem] flex-wrap gap-1 border-b border-zinc-800 pb-2">
+        <div className="scrollbar-none mt-3 flex min-h-[2.25rem] gap-1 overflow-x-auto border-b border-zinc-800 pb-2 snap-x snap-mandatory">
           {GROUPS.map((g) => (
             <button
               key={g.id}
               type="button"
               onClick={() => selectGroup(g.id)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-xs font-semibold transition",
+                "shrink-0 snap-start rounded-md px-3 py-2 text-xs font-semibold transition touch-target",
                 group === g.id
                   ? "bg-zinc-100 text-[#121214]"
                   : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
@@ -471,14 +473,14 @@ export function LabSheet({
             </button>
           ))}
         </div>
-        <div className="mt-2 flex min-h-[2rem] flex-wrap gap-1">
+        <div className="scrollbar-none mt-2 flex min-h-[2rem] gap-1 overflow-x-auto snap-x snap-mandatory">
           {groupTabs.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => selectTab(t.id)}
               className={cn(
-                "rounded-md px-2.5 py-1.5 text-xs font-medium transition",
+                "shrink-0 snap-start rounded-md px-2.5 py-2 text-xs font-medium transition touch-target",
                 tab === t.id
                   ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40"
                   : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"

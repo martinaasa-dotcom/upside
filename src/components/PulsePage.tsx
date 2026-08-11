@@ -566,7 +566,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           </button>
         </div>
 
-        <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex gap-2">
+        <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
             <input
@@ -602,7 +602,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           <button
             type="submit"
             disabled={!searchInput.trim() || loading}
-            className="shrink-0 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
+            className="shrink-0 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40 sm:py-2"
           >
             {checkingTicker ? "Checking…" : "Check"}
           </button>

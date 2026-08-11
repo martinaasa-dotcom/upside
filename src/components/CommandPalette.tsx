@@ -55,14 +55,14 @@ export function CommandPalette({ open, onClose, items }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center px-3 pt-[12vh]">
+    <div className="fixed inset-0 z-[90] flex items-start justify-center px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-3 sm:pt-[12vh]">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Close command palette"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
+      <div className="relative max-h-[min(70dvh,32rem)] w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
         <input
           ref={inputRef}
           value={q}

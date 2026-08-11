@@ -1994,7 +1994,7 @@ export function Dashboard() {
         syntheticTickers={syntheticTickers}
       />
       <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-2.5">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -2092,7 +2092,7 @@ export function Dashboard() {
             <HeaderOverflowMenu items={headerMenuItems} />
           </div>
         </div>
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 border-t border-zinc-800/60 px-4 py-1.5">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-1.5 border-t border-zinc-800/60 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
           <span
             className="truncate text-[11px] tabular-nums text-zinc-500"
             title={
@@ -2113,7 +2113,7 @@ export function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-5 px-4 py-5 pb-28 md:pb-24">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-5 sm:pb-28 md:pb-24">
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
@@ -2393,6 +2393,50 @@ export function Dashboard() {
         onDeleteRequest={(id, name) =>
           setConfirmDelete({ kind: "sheet", id, label: name })
         }
+        mobileSummary={{
+          title:
+            isOverview || isLab || isCompound
+              ? "Book"
+              : (activePortfolio?.name ?? "Sheet"),
+          totalValue: (() => {
+            const usdAmt = isMetaTab
+              ? overview.totals.totalValue
+              : (snapshot?.totals.currentValue ?? overview.totals.totalValue);
+            const code =
+              activePortfolio != null
+                ? getDisplayCurrency(
+                    displayCurrencyByPortfolio,
+                    activePortfolio.id
+                  )
+                : "USD";
+            return currency(usdToDisplay(usdAmt, code, eurUsd), 2, code);
+          })(),
+          todayValue: (() => {
+            const usdAmt = isMetaTab
+              ? overview.totals.todayDollar
+              : (overview.sheets.find((s) => s.portfolio.id === activeId)
+                  ?.todayDollar ?? 0);
+            const code =
+              activePortfolio != null
+                ? getDisplayCurrency(
+                    displayCurrencyByPortfolio,
+                    activePortfolio.id
+                  )
+                : "USD";
+            return currency(usdToDisplay(usdAmt, code, eurUsd), 2, code);
+          })(),
+          todayPct: (() => {
+            const pct = isMetaTab
+              ? overview.totals.todayPct
+              : overview.sheets.find((s) => s.portfolio.id === activeId)
+                  ?.todayPct;
+            return pct != null ? percent(pct) : null;
+          })(),
+          todayPositive: (isMetaTab
+            ? overview.totals.todayDollar
+            : (overview.sheets.find((s) => s.portfolio.id === activeId)
+                ?.todayDollar ?? 0)) >= 0,
+        }}
       />
 
       <HoldingModal
@@ -2626,84 +2670,6 @@ export function Dashboard() {
               }
         }
       />
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800/80 bg-[#121214]/95 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden">
-        <div className="pointer-events-auto mx-auto flex max-w-[1400px] items-center justify-between gap-3 text-xs">
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-              {isOverview || isLab || isCompound
-                ? "Book"
-                : activePortfolio?.name ?? "Sheet"}
-            </p>
-            <p className="tabular-nums text-sm font-semibold text-white">
-              {(() => {
-                const usdAmt = isMetaTab
-                  ? overview.totals.totalValue
-                  : (snapshot?.totals.currentValue ??
-                    overview.totals.totalValue);
-                const code =
-                  activePortfolio != null
-                    ? getDisplayCurrency(
-                        displayCurrencyByPortfolio,
-                        activePortfolio.id
-                      )
-                    : "USD";
-                return currency(
-                  usdToDisplay(usdAmt, code, eurUsd),
-                  2,
-                  code
-                );
-              })()}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-              Today
-            </p>
-            <p
-              className={`tabular-nums text-sm font-semibold ${
-                (isMetaTab
-                  ? overview.totals.todayDollar
-                  : (overview.sheets.find((s) => s.portfolio.id === activeId)
-                      ?.todayDollar ?? 0)) >= 0
-                  ? "text-gain"
-                  : "text-loss"
-              }`}
-            >
-              {(() => {
-                const usdAmt = isMetaTab
-                  ? overview.totals.todayDollar
-                  : (overview.sheets.find((s) => s.portfolio.id === activeId)
-                      ?.todayDollar ?? 0);
-                const code =
-                  activePortfolio != null
-                    ? getDisplayCurrency(
-                        displayCurrencyByPortfolio,
-                        activePortfolio.id
-                      )
-                    : "USD";
-                return currency(
-                  usdToDisplay(usdAmt, code, eurUsd),
-                  2,
-                  code
-                );
-              })()}
-              {(isMetaTab
-                ? overview.totals.todayPct
-                : overview.sheets.find((s) => s.portfolio.id === activeId)
-                    ?.todayPct) != null && (
-                <span className="ml-1 text-[11px] font-normal opacity-80">
-                  {percent(
-                    (isMetaTab
-                      ? overview.totals.todayPct
-                      : overview.sheets.find((s) => s.portfolio.id === activeId)
-                          ?.todayPct) as number
-                  )}
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

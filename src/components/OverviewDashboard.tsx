@@ -175,7 +175,7 @@ function RankCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition hover:brightness-110",
+        "group flex w-full items-center gap-2.5 rounded-2xl border px-3 py-3 text-left transition hover:brightness-110 sm:gap-3 sm:px-4 sm:py-3.5",
         isUp
           ? "border-emerald-500/25 bg-emerald-500/[0.07]"
           : "border-rose-500/25 bg-rose-500/[0.07]"
@@ -193,8 +193,8 @@ function RankCard({
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className="text-lg font-semibold text-white">{ticker.ticker}</span>
-          <span className="text-sm text-zinc-400">
+          <span className="text-base font-semibold text-white sm:text-lg">{ticker.ticker}</span>
+          <span className="text-xs text-zinc-400 sm:text-sm">
             {currency(ticker.currentValue, 0)}
           </span>
         </div>
@@ -205,7 +205,7 @@ function RankCard({
         </div>
       </div>
       <div className="shrink-0 text-right">
-        <div className={cn("text-xl font-bold tabular-nums", tone(metric))}>
+        <div className={cn("text-lg font-bold tabular-nums sm:text-xl", tone(metric))}>
           {percent(metric)}
         </div>
         <div className={cn("text-sm tabular-nums", tone(dollar))}>
@@ -412,8 +412,8 @@ export function OverviewDashboard({
   return (
     <div className="space-y-8">
       {/* Hero habit loop — sticky on phone */}
-      <section className="overview-fade sticky top-0 z-20 -mx-1 space-y-3 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_70%)] px-1 pb-3 pt-1 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0">
-        <div className="relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/95 p-5 shadow-lg shadow-black/40 backdrop-blur-md sm:bg-[#161618]/80 sm:p-7 sm:shadow-none sm:backdrop-blur-none">
+      <section className="overview-fade space-y-3 max-sm:static max-sm:z-0 sm:space-y-3">
+        <div className="relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/95 p-4 shadow-lg shadow-black/40 backdrop-blur-md sm:bg-[#161618]/80 sm:p-7 sm:shadow-none sm:backdrop-blur-none">
           <div
             className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand/12 blur-3xl"
             aria-hidden
@@ -626,7 +626,7 @@ export function OverviewDashboard({
         </button>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
         <div className="mb-5">
           <h3 className="text-xl font-semibold text-white">Portfolios</h3>
           <p className="mt-1 text-base text-zinc-400">
@@ -645,8 +645,8 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="overview-fade rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-[#161618]/40 p-6">
+      <section className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className="overview-fade rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-[#161618]/40 p-4 sm:p-6">
           <div className="mb-5 flex items-center gap-2.5">
             <div className="rounded-xl bg-emerald-500/15 p-2 text-gain">
               <Flame className="h-4 w-4" />
@@ -676,7 +676,7 @@ export function OverviewDashboard({
           </div>
         </div>
 
-        <div className="overview-fade rounded-3xl border border-rose-500/20 bg-gradient-to-b from-rose-500/5 to-[#161618]/40 p-6">
+        <div className="overview-fade rounded-3xl border border-rose-500/20 bg-gradient-to-b from-rose-500/5 to-[#161618]/40 p-4 sm:p-6">
           <div className="mb-5 flex items-center gap-2.5">
             <div className="rounded-xl bg-rose-500/15 p-2 text-rose-400">
               <Snowflake className="h-4 w-4" />
@@ -707,8 +707,8 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6">
+      <section className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
           <h3 className="text-xl font-semibold text-white">
             Today&apos;s gainzzz
           </h3>
@@ -729,7 +729,7 @@ export function OverviewDashboard({
             )}
           </div>
         </div>
-        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6">
+        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
           <h3 className="text-xl font-semibold text-white">
             Today&apos;s stinkies
           </h3>
@@ -752,7 +752,7 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
             <Trophy className="h-4 w-4" />
@@ -799,7 +799,7 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
             <CalendarDays className="h-4 w-4" />
@@ -868,7 +868,7 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-6 sm:p-7">
+      <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">
           <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
             <Lightbulb className="h-4 w-4" />

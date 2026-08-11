@@ -106,7 +106,7 @@ export function MacroStrip() {
   }>;
 
   return (
-    <div className="flex max-w-[min(100%,42rem)] items-center gap-2 overflow-x-auto text-[10px] tabular-nums text-zinc-500 sm:max-w-none sm:gap-3 sm:text-[11px]">
+    <div className="flex w-full max-w-none items-center gap-1.5 overflow-x-auto text-[10px] tabular-nums text-zinc-500 sm:max-w-none sm:gap-3 sm:text-[11px]">
       {items.map((i) => (
         <span key={i.label} title={i.title}>
           <span className="text-zinc-600">{i.label}</span>{" "}

@@ -1,7 +1,7 @@
 "use client";
 
 import { Calculator, FlaskConical, LayoutDashboard, Plus, Activity } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
 import {
@@ -21,6 +21,14 @@ type Props = {
   onDeleteRequest?: (id: string, name: string) => void;
   /** Guests: Overview + Compound only — no Lab / sheet mutations. */
   guest?: boolean;
+  /** Compact book/sheet totals shown above tabs on phone. */
+  mobileSummary?: {
+    title: string;
+    totalValue: string;
+    todayValue: string;
+    todayPct: string | null;
+    todayPositive: boolean;
+  };
 };
 
 type OpenMenu = {
@@ -61,11 +69,13 @@ export function PortfolioTabs({
   onRenameRequest,
   onDeleteRequest,
   guest = false,
+  mobileSummary,
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [menu, setMenu] = useState<OpenMenu | null>(null);
   const [mounted, setMounted] = useState(false);
+  const longPressRef = useRef<number | null>(null);
   const sheetActive = portfolios.some((p) => p.id === activeId);
   const modes = guest
     ? MODES.filter((m) => m.id !== LAB_TAB_ID)
@@ -129,19 +139,86 @@ export function PortfolioTabs({
     });
   }
 
+  function openContextMenuAt(
+    x: number,
+    y: number,
+    id: string,
+    sheetName: string
+  ) {
+    const menuW = 144;
+    const menuH = 88;
+    setMenu({
+      id,
+      name: sheetName,
+      x: Math.min(x, window.innerWidth - menuW - 8),
+      y: Math.min(y, window.innerHeight - menuH - 8),
+    });
+  }
+
+  function startSheetLongPress(
+    e: React.TouchEvent,
+    id: string,
+    sheetName: string
+  ) {
+    if (guest) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    longPressRef.current = window.setTimeout(() => {
+      openContextMenuAt(touch.clientX, touch.clientY, id, sheetName);
+    }, 480);
+  }
+
+  function cancelSheetLongPress() {
+    if (longPressRef.current != null) {
+      window.clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  }
+
   return (
-    <nav className="sticky bottom-0 z-20 border-t border-zinc-800/80 bg-[#121214]/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-end sm:gap-4">
+    <nav className="sticky bottom-0 z-30 border-t border-zinc-800/80 bg-[#121214]/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-3 py-2 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2.5">
+        {mobileSummary && (
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-800/70 pb-2 md:hidden">
+            <div className="min-w-0">
+              <p className="truncate text-[10px] uppercase tracking-wide text-zinc-500">
+                {mobileSummary.title}
+              </p>
+              <p className="truncate text-sm font-semibold tabular-nums text-white">
+                {mobileSummary.totalValue}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                Today
+              </p>
+              <p
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  mobileSummary.todayPositive ? "text-gain" : "text-loss"
+                )}
+              >
+                {mobileSummary.todayValue}
+                {mobileSummary.todayPct ? (
+                  <span className="ml-1 text-[11px] font-normal opacity-80">
+                    {mobileSummary.todayPct}
+                  </span>
+                ) : null}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* App modes — one segmented control, equal cells (Lab isn't tiny) */}
-        <div className="shrink-0">
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+        <div className="shrink-0 md:min-w-0">
+          <p className="mb-1 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:block">
             Workspace
           </p>
           <div
             role="tablist"
             aria-label="Workspace"
             className={cn(
-              "grid h-10 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
+              "grid h-11 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
               modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
               modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
               modeCols >= 4 && "grid-cols-4 sm:w-[28rem]"
@@ -160,14 +237,15 @@ export function PortfolioTabs({
                     onChange(id);
                   }}
                   className={cn(
-                    "inline-flex min-w-0 items-center justify-center gap-1.5 px-2 text-[12px] font-medium transition sm:text-[13px]",
+                    "touch-target inline-flex min-w-0 items-center justify-center gap-1 px-1.5 text-[11px] font-medium transition sm:gap-1.5 sm:px-2 sm:text-[13px]",
                     active
                       ? "bg-brand text-[#121214] shadow-sm"
                       : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
                   )}
                 >
-                  <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" />
-                  <span className="truncate">{label}</span>
+                  <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                  <span className="hidden truncate sm:inline">{label}</span>
+                  <span className="sr-only sm:hidden">{label}</span>
                 </button>
               );
             })}
@@ -176,14 +254,14 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+          <p className="mb-1 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:block">
             Sheets
           </p>
           <div
             role="tablist"
             aria-label="Portfolio sheets"
             className={cn(
-              "flex h-10 items-stretch gap-0.5 overflow-x-auto border-b border-zinc-800/90",
+              "scrollbar-none flex h-11 items-stretch gap-0.5 overflow-x-auto border-b border-zinc-800/90 snap-x snap-mandatory",
               sheetActive ? "border-zinc-700" : "border-zinc-800/60"
             )}
           >
@@ -195,21 +273,27 @@ export function PortfolioTabs({
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  title={`${p.name} · right-click to rename or delete`}
+                  title={`${p.name} · long-press to rename or delete`}
                   onClick={() => {
                     setMenu(null);
                     onChange(p.id);
                   }}
                   onContextMenu={(e) => openContextMenu(e, p.id, p.name)}
                   onDoubleClick={() => onRenameRequest?.(p.id, p.name)}
+                  onTouchStart={(e) => startSheetLongPress(e, p.id, p.name)}
+                  onTouchEnd={cancelSheetLongPress}
+                  onTouchMove={cancelSheetLongPress}
+                  onTouchCancel={cancelSheetLongPress}
                   className={cn(
-                    "relative shrink-0 px-3 text-[13px] transition",
+                    "touch-target relative shrink-0 snap-start px-3 text-[13px] transition",
                     active
                       ? "font-semibold text-white"
                       : "text-zinc-500 hover:text-zinc-200"
                   )}
                 >
-                  <span className="flex h-full items-center">{p.name}</span>
+                  <span className="flex h-full items-center whitespace-nowrap">
+                    {p.name}
+                  </span>
                   {active && (
                     <span
                       aria-hidden
