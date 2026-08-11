@@ -5,17 +5,17 @@ import {
   restoreSheetFromSnapshot,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
-import { requireMasterAccess } from "@/lib/owner-pin";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-/** List recent snapshots (metadata only). Requires owner PIN. */
-export async function GET(req: NextRequest) {
-  const denied = requireMasterAccess(req);
-  if (denied) return denied;
+/** List recent snapshots (metadata only). */
+export async function GET() {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -37,10 +37,10 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ snapshots: data ?? [] });
 }
 
-/** Create a manual snapshot, or restore one. Requires owner PIN. */
+/** Create a manual snapshot, or restore one. */
 export async function POST(req: NextRequest) {
-  const denied = requireMasterAccess(req);
-  if (denied) return denied;
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -53,25 +53,28 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     action?: string;
     snapshotId?: string;
+    id?: string;
     portfolioId?: string;
     label?: string;
   };
 
+  const snapshotId = body.snapshotId ?? body.id;
+
   try {
     if (body.action === "restore") {
-      if (!body.snapshotId) {
+      if (!snapshotId) {
         return NextResponse.json(
           { error: "snapshotId required" },
           { status: 400 }
         );
       }
       await saveBookSnapshot(supabase, "pre_delete", "Before restore");
-      const counts = await restoreBookFromSnapshot(supabase, body.snapshotId);
+      const counts = await restoreBookFromSnapshot(supabase, snapshotId);
       return NextResponse.json({ ok: true, restored: counts });
     }
 
     if (body.action === "restore_sheet") {
-      if (!body.snapshotId || !body.portfolioId) {
+      if (!snapshotId || !body.portfolioId) {
         return NextResponse.json(
           { error: "snapshotId and portfolioId required" },
           { status: 400 }
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
       );
       const counts = await restoreSheetFromSnapshot(
         supabase,
-        body.snapshotId,
+        snapshotId,
         body.portfolioId
       );
       return NextResponse.json({ ok: true, restoredSheet: counts });

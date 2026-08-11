@@ -1,5 +1,4 @@
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
-import { requireOwnerAccess } from "@/lib/owner-pin";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -24,9 +23,6 @@ export async function POST(req: NextRequest) {
 
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
-
-  const denied = await requireOwnerAccess(req, portfolioId);
-  if (denied) return denied;
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -95,9 +91,6 @@ export async function PATCH(req: NextRequest) {
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
 
-  const denied = await requireOwnerAccess(req, portfolioId);
-  if (denied) return denied;
-
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of [
     "ticker",
@@ -160,9 +153,6 @@ export async function DELETE(req: NextRequest) {
 
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
-
-  const denied = await requireOwnerAccess(req, portfolioId);
-  if (denied) return denied;
 
   const { error } = await supabase
     .from(PORTFELL_TABLES.holdings)

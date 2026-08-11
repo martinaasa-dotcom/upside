@@ -3,7 +3,7 @@ import {
   pruneOldSnapshots,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
-import { requireCronAuth } from "@/lib/owner-pin";
+import { requireCronAuth } from "@/lib/cron-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { todayKeyInTz } from "@/lib/timezone";
 import { NextResponse } from "next/server";

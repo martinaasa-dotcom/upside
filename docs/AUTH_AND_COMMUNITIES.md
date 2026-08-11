@@ -5,8 +5,7 @@
 - **My book**: Google-signed-in users co-own portfolios via `portfell_portfolio_owners` (many users ↔ many portfolios). Full live read **and** write for every co-owner.
 - `portfell_portfolios.owner_id` remains as optional primary/creator hint; **authorization uses the junction table**.
 - **Communities**: members see each co-owner’s book live, **read-only**.
-- Sheet PIN/password remains an **optional extra lock** on top of co-ownership.
-- Guest `/?share=TOKEN` links stay time-limited external read-only views of the creator’s co-owned book.
+- Sheet PIN/password and guest share links are **removed** — Google session + co-ownership is the only gate.
 
 ## Seed ownership (test circle)
 
@@ -26,7 +25,7 @@ Claims: `/auth/callback` + `GET /api/portfolios` via `ensureProfileAndClaims` �
 
 Ops SQL: `scripts/seed-ownership.sql`.
 
-Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email": "…" }` (caller must already co-own).
+Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email": "…" }` (caller must already co-own), or mint an invite from **My account**.
 
 ## My Account (`/account`)
 
@@ -36,11 +35,10 @@ Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email
 ## Migrations
 
 - `008` profiles + ownership + communities + RLS  
-- `009` share links `created_by`  
+- `009` share links `created_by` (dropped in `013`)  
 - `010` claim RPC (superseded claim body in `011`)  
 - `011` `portfell_portfolio_owners` + co-owner RLS  
 - `012` profile `bio` + `portfell_portfolio_invites`  
+- `013` drop sheet `access_secret_hash` + `portfell_share_links`  
 
-## PIN notes
-
-Writes require a signed-in **co-owner**, then optional sheet PIN.
+Writes require a signed-in **co-owner** only.

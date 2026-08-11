@@ -5,8 +5,6 @@ import { UpsideLogo } from "@/components/UpsideLogo";
 import { useState } from "react";
 
 type Props = {
-  /** Guest share links skip the gate. */
-  bypass?: boolean;
   children: React.ReactNode;
 };
 
@@ -14,7 +12,7 @@ type Props = {
  * Requires Google SSO when Supabase is configured.
  * Demo / no-Supabase local mode renders children immediately.
  */
-export function SignInGate({ bypass, children }: Props) {
+export function SignInGate({ children }: Props) {
   const { ready, user, signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -23,7 +21,7 @@ export function SignInGate({ bypass, children }: Props) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  if (bypass || !needsAuth) return <>{children}</>;
+  if (!needsAuth) return <>{children}</>;
   if (!ready) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-500">

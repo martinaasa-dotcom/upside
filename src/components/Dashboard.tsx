@@ -46,7 +46,6 @@ import {
   type LabBundle,
 } from "@/lib/lab-bundle";
 import {
-  createShareLink,
   fetchLabBundle,
   mirrorLabLocal,
   pushLabBundle,
@@ -70,18 +69,10 @@ import {
   recordVisitToday,
   type VisitStreakState,
 } from "@/lib/visit-streak";
-import { OwnerUnlockModal } from "@/components/OwnerUnlockModal";
-import { SheetLockOnboardingModal } from "@/components/SheetLockOnboardingModal";
-import { SheetSecretModal } from "@/components/SheetSecretModal";
 import {
-  getSessionPin,
-  isSheetSessionUnlocked,
   loadActiveSheetId,
-  markSheetSessionUnlocked,
-  ownerPinHeaders,
   saveActiveSheetId,
-  setSessionPin,
-} from "@/lib/owner-pin-client";
+} from "@/lib/active-sheet";
 import { buildForecast, type ForecastYear } from "@/lib/forecast";
 import {
   loadEoyOverrides,
@@ -125,7 +116,6 @@ import type {
   Quote,
 } from "@/lib/types";
 import {
-  Lock,
   Plus,
   RefreshCw,
 } from "lucide-react";
@@ -280,10 +270,6 @@ export function Dashboard() {
     | null
   >(null);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const [sheetSecretOpen, setSheetSecretOpen] = useState(false);
-  const [unlockEpoch, setUnlockEpoch] = useState(0);
-  const [lockOnboarding, setLockOnboarding] = useState<{ id: string; name: string } | null>(null);
   const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
   const [mobileMargusCollapsed] = useState(() =>
@@ -291,18 +277,7 @@ export function Dashboard() {
   );
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const shareTokenRef = useRef<string | null>(null);
-  if (shareTokenRef.current === null && typeof window !== "undefined") {
-    shareTokenRef.current =
-      new URLSearchParams(window.location.search).get("share")?.trim() || "";
-  }
-  const [guestMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const sp = new URLSearchParams(window.location.search);
-    return sp.get("view") === "guest" || Boolean(sp.get("share")?.trim());
-  });
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
-  const [shareLabel, setShareLabel] = useState<string | null>(null);
   const [labBundle, setLabBundle] = useState<LabBundle>(() => emptyLabBundle());
   const [labReady, setLabReady] = useState(false);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
@@ -328,7 +303,6 @@ export function Dashboard() {
   alertToastsSentRef.current = alertToastsSent;
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
-  const pendingPatchRef = useRef<HoldingPatch | null>(null);
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState(() =>
     loadVisibilityMap(CC_VISIBLE_KEY)
   );
@@ -343,26 +317,10 @@ export function Dashboard() {
   const isPulse = activeId === PULSE_TAB_ID;
   const isMetaTab = isOverview || isCompound || isLab || isPulse;
 
-  useEffect(() => {
-    if (guestMode && isLab) setActiveId(OVERVIEW_TAB_ID);
-  }, [guestMode, isLab]);
   const activePortfolio =
     isMetaTab
       ? null
       : (portfolios.find((p) => p.id === activeId) ?? null);
-
-  const activeSheetUnlocked =
-    !activePortfolio?.has_access_secret ||
-    (activePortfolio != null && isSheetSessionUnlocked(activePortfolio.id));
-  // unlockEpoch re-renders after session unlock
-  void unlockEpoch;
-
-  const needsSheetUnlock =
-    source === "supabase" &&
-    !guestMode &&
-    !isMetaTab &&
-    Boolean(activePortfolio?.has_access_secret) &&
-    !activeSheetUnlocked;
 
   const ccVisible = activePortfolio
     ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, true)
@@ -552,40 +510,6 @@ export function Dashboard() {
       setLoadError(null);
     }
     try {
-      const shareToken = shareTokenRef.current;
-      if (shareToken) {
-        const res = await fetch(
-          `/api/share/${encodeURIComponent(shareToken)}`,
-          { cache: "no-store" }
-        );
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(
-            (err as { error?: string }).error ??
-              `Share link failed (${res.status})`
-          );
-        }
-        const data = await res.json();
-        setSource("supabase");
-        setPortfolios(data.portfolios ?? []);
-        setHoldings(data.holdings ?? []);
-        setBookSyncedAt(Date.now());
-        setShareLabel(
-          typeof data.label === "string" ? data.label : "Guest link"
-        );
-        if (data.lab) {
-          const bundle = {
-            ...emptyLabBundle(),
-            ...data.lab,
-          } as LabBundle;
-          setLabBundle(bundle);
-          mirrorLabLocal(bundle);
-          setLabReady(true);
-        }
-        setActiveId((prev) => pickInitialSheet(data.portfolios ?? [], prev));
-        return;
-      }
-
       const res = await fetch("/api/portfolios", { cache: "no-store" });
       if (!res.ok) {
         if (res.status === 401) {
@@ -748,9 +672,8 @@ export function Dashboard() {
   }, [loadPortfolios]);
 
   // Personal daily-visit streak — device-local, counts once per Tallinn day
-  // regardless of which tab loads first. Skipped for guest/share-link views.
+  // regardless of which tab loads first.
   useEffect(() => {
-    if (guestMode) return;
     const { state, justHitMilestone } = recordVisitToday();
     setVisitStreak(state);
     if (justHitMilestone) toast(milestoneToast(justHitMilestone), "success");
@@ -786,14 +709,9 @@ export function Dashboard() {
       if (p?.slug) url.searchParams.set("sheet", p.slug);
       else url.searchParams.set("sheet", activeId);
     }
-    if (guestMode) {
-      if (shareTokenRef.current) {
-        url.searchParams.set("share", shareTokenRef.current);
-        url.searchParams.delete("view");
-      } else {
-        url.searchParams.set("view", "guest");
-      }
-    }
+    // Drop legacy guest/share query params if present.
+    url.searchParams.delete("share");
+    url.searchParams.delete("view");
     const href = `${url.pathname}${url.search}`;
     const state = { upsideSheet: activeId };
 
@@ -817,7 +735,7 @@ export function Dashboard() {
     }
 
     window.history.pushState(state, "", href);
-  }, [activeId, portfolios, guestMode]);
+  }, [activeId, portfolios]);
 
   useEffect(() => {
     function onPopState(e: PopStateEvent) {
@@ -851,7 +769,6 @@ export function Dashboard() {
 
   useEffect(() => {
     if (source !== "supabase") return;
-    if (shareTokenRef.current) return;
     const fingerprint = (ps: Portfolio[], hs: Holding[]) =>
       JSON.stringify([
         ps.map((p) => [p.id, p.cash_balance, p.name]),
@@ -968,61 +885,20 @@ export function Dashboard() {
     refreshMarkets,
   ]);
 
-  async function ensureSheetWriteAccess(
-    portfolioId?: string | null
-  ): Promise<boolean> {
-    if (source !== "supabase") return true;
-    if (guestMode) return false;
-    const id = portfolioId ?? activePortfolio?.id ?? null;
-    if (!id) return true;
-    const sheet =
-      portfolios.find((p) => p.id === id) ??
-      (activePortfolio?.id === id ? activePortfolio : null);
-    if (!sheet?.has_access_secret) return true;
-    if (isSheetSessionUnlocked(id)) return true;
-
-    const pin = getSessionPin();
-    if (pin) {
-      const res = await fetch("/api/owner/verify", {
-        method: "POST",
-        headers: ownerPinHeaders(pin, { "Content-Type": "application/json" }, id),
-        body: JSON.stringify({ portfolioId: id }),
-      });
-      if (res.ok) {
-        markSheetSessionUnlocked(id, pin);
-        setUnlockEpoch((n) => n + 1);
-        return true;
-      }
-    }
-    setUnlockOpen(true);
-    return false;
-  }
-
   async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
-    const pin = getSessionPin();
-    const headers = ownerPinHeaders(
-      pin || undefined,
-      {
-        ...(init?.headers as Record<string, string> | undefined),
-      },
-      activePortfolio?.id ?? null
-    );
+    const headers: Record<string, string> = {
+      ...(init?.headers as Record<string, string> | undefined),
+    };
     if (init?.body && !headers["Content-Type"] && !headers["content-type"]) {
       headers["Content-Type"] = "application/json";
     }
-    const res = await fetch(input, { ...init, headers });
-    if (res.status === 401 || res.status === 429) {
-      setUnlockOpen(true);
-      setUnlockEpoch((n) => n + 1);
-    }
-    return res;
+    return fetch(input, { ...init, headers });
   }
 
   async function handleSave(values: HoldingFormValues) {
     if (!activePortfolio) return;
 
     if (source === "supabase") {
-      if (!(await ensureSheetWriteAccess())) return;
       const res = await apiFetch("/api/holdings", {
         method: "POST",
         body: JSON.stringify({
@@ -1073,22 +949,12 @@ export function Dashboard() {
     }
 
     if (source === "supabase") {
-      if (!(await ensureSheetWriteAccess())) {
-        pendingPatchRef.current = patch;
-        toast("Enter owner PIN to save edits", "info");
-        return false;
-      }
       const res = await apiFetch("/api/holdings", {
         method: "PATCH",
         body: JSON.stringify({ id, ...fields }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (res.status === 401 || res.status === 429) {
-          pendingPatchRef.current = patch;
-          toast("Unlock this sheet to save", "info");
-          return false;
-        }
         toast(
           typeof data.error === "string" ? data.error : "Failed to update holding",
           "error"
@@ -1310,11 +1176,6 @@ export function Dashboard() {
 
       // Supabase path — await mutations + dedicated import endpoint
       void (async () => {
-        if (!(await ensureSheetWriteAccess())) {
-          toast("Unlock this sheet before Margus can apply changes", "error");
-          return;
-        }
-
         let working = [...holdings];
         const findH = (ticker: string) =>
           working.find(
@@ -1565,7 +1426,6 @@ export function Dashboard() {
   async function deleteHoldingById(id: string): Promise<boolean> {
     const removed = holdings.find((h) => h.id === id);
     if (source === "supabase") {
-      if (!(await ensureSheetWriteAccess())) return false;
       const res = await apiFetch(`/api/holdings?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
         toast("Failed to delete holding", "error");
@@ -1598,10 +1458,6 @@ export function Dashboard() {
       setPortfolios((prev) => [...prev, data.portfolio]);
       seedNewSheetPanelDefaults(data.portfolio);
       setActiveId(data.portfolio.id);
-      setLockOnboarding({
-        id: data.portfolio.id,
-        name: data.portfolio.name ?? name,
-      });
     } else {
       const next = addPortfolio(loadDemoStore(), name);
       setPortfolios(next.portfolios);
@@ -1614,7 +1470,6 @@ export function Dashboard() {
 
   async function handleRenameSheet(id: string, name: string) {
     if (source === "supabase") {
-      if (!(await ensureSheetWriteAccess(id))) return;
       const res = await apiFetch("/api/portfolios", {
         method: "PATCH",
         body: JSON.stringify({ id, name }),
@@ -1633,20 +1488,10 @@ export function Dashboard() {
     toast("Sheet renamed", "success");
   }
 
-  async function deleteSheetById(id: string, pin?: string): Promise<boolean> {
-    const sheet = portfolios.find((p) => p.id === id);
-    const locked = Boolean(sheet?.has_access_secret);
-    const ownerPin = (pin?.trim() || getSessionPin()).trim();
-    if (locked && !ownerPin) {
-      toast("This sheet’s PIN/password is required to delete it", "error");
-      return false;
-    }
-
+  async function deleteSheetById(id: string): Promise<boolean> {
     if (source === "supabase") {
-      if (locked && !(await ensureSheetWriteAccess(id))) return false;
       const res = await apiFetch(`/api/portfolios?id=${id}`, {
         method: "DELETE",
-        headers: ownerPinHeaders(ownerPin || undefined, undefined, id),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -1656,11 +1501,6 @@ export function Dashboard() {
         );
         return false;
       }
-      if (ownerPin) {
-        setSessionPin(ownerPin);
-        markSheetSessionUnlocked(id, ownerPin);
-      }
-      setUnlockEpoch((n) => n + 1);
       clearChatHistory(id);
       await loadPortfolios({ silent: true });
       setActiveId((prev) => (prev === id ? OVERVIEW_TAB_ID : prev));
@@ -1682,7 +1522,6 @@ export function Dashboard() {
       const next = updateCash(loadDemoStore(), activePortfolio.id, cash);
       setPortfolios(next.portfolios);
     } else {
-      if (!(await ensureSheetWriteAccess())) return;
       const res = await apiFetch("/api/portfolios", {
         method: "PATCH",
         body: JSON.stringify({ id: activePortfolio.id, cash_balance: cash }),
@@ -1730,7 +1569,6 @@ export function Dashboard() {
   }
 
   useEffect(() => {
-    if (shareTokenRef.current) return;
     let cancelled = false;
     void (async () => {
       const local: LabBundle = {
@@ -1771,7 +1609,7 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (!labReady || guestMode || !labDirtyRef.current) return;
+    if (!labReady || !labDirtyRef.current) return;
     const t = window.setTimeout(() => {
       labDirtyRef.current = false;
       void pushLabBundle(labBundle).then((r) => {
@@ -1779,34 +1617,15 @@ export function Dashboard() {
       });
     }, 900);
     return () => window.clearTimeout(t);
-  }, [labBundle, labReady, guestMode, toast, source]);
+  }, [labBundle, labReady, toast, source]);
 
   function patchLab(patch: Partial<LabBundle>) {
-    if (guestMode) return;
     labDirtyRef.current = true;
     setLabBundle((prev) => ({ ...prev, ...patch }));
   }
 
-  async function handleCreateShare() {
-    const result = await createShareLink({
-      scope: "overview",
-      label: "Guest read-only",
-      daysValid: 14,
-    });
-    if (!result.ok || !result.url) {
-      toast(result.error ?? "Couldn’t create share link", "error");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(result.url);
-      toast("Guest link copied (14 days)", "success");
-    } catch {
-      toast(result.url, "info");
-    }
-  }
-
   useEffect(() => {
-    if (!labReady || guestMode) return;
+    if (!labReady) return;
     const nextBadges = deriveBadges({
       greenStreakMax: 0,
       roiPct: overview.totals.roiPct,
@@ -1822,7 +1641,6 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seed badges from totals
   }, [
     labReady,
-    guestMode,
     overview.totals.roiPct,
     overview.totals.uniqueTickers,
   ]);
@@ -1861,7 +1679,6 @@ export function Dashboard() {
   }, [overviewTickerKey]);
 
   useEffect(() => {
-    if (guestMode) return;
     const strike = buildStrikeAlerts(
       (snapshot?.coveredCallRows ?? []).map((r) => ({
         ticker: r.holding.ticker,
@@ -1885,7 +1702,7 @@ export function Dashboard() {
     saveDismissedAlertIds(updated);
     setAlertToastsSent(updated);
     for (const a of fresh) toast(a.title, "info");
-  }, [snapshot?.coveredCallRows, earningsEvents, guestMode, toast]);
+  }, [snapshot?.coveredCallRows, earningsEvents, toast]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -1920,33 +1737,25 @@ export function Dashboard() {
         run: () => setActiveId(PULSE_TAB_ID),
       },
     ];
-    if (!guestMode) {
-      items.push({
-        id: "lab",
-        label: "Lab",
-        group: "Go",
-        hint: "Play layer",
-        run: () => setActiveId(LAB_TAB_ID),
-      });
-      items.push({
-        id: "undo",
-        label: "Undo last Margus write",
-        group: "Edit",
-        run: () => undoLastMargusWrite(),
-      });
-      items.push({
-        id: "unlock",
-        label: "Unlock locked sheet",
-        group: "Edit",
-        run: () => setUnlockOpen(true),
-      });
-      items.push({
-        id: "snapshots",
-        label: "Snapshots",
-        group: "Edit",
-        run: () => setSnapshotsOpen(true),
-      });
-    }
+    items.push({
+      id: "lab",
+      label: "Lab",
+      group: "Go",
+      hint: "Play layer",
+      run: () => setActiveId(LAB_TAB_ID),
+    });
+    items.push({
+      id: "undo",
+      label: "Undo last Margus write",
+      group: "Edit",
+      run: () => undoLastMargusWrite(),
+    });
+    items.push({
+      id: "snapshots",
+      label: "Snapshots",
+      group: "Edit",
+      run: () => setSnapshotsOpen(true),
+    });
     for (const p of portfolios) {
       items.push({
         id: `sheet-${p.id}`,
@@ -1970,11 +1779,11 @@ export function Dashboard() {
     }
     return items;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
-  }, [portfolios, overview.tickers, undoStack.length, guestMode]);
+  }, [portfolios, overview.tickers, undoStack.length]);
 
   const headerMenuItems: HeaderMenuItem[] = useMemo(() => {
     const items: HeaderMenuItem[] = [];
-    if (!guestMode && undoStack.length > 0) {
+    if (undoStack.length > 0) {
       items.push({
         id: "undo",
         label: "Undo Margus write",
@@ -1987,7 +1796,7 @@ export function Dashboard() {
       hint: "⌘K",
       onSelect: () => setCmdOpen(true),
     });
-    if (source === "supabase" && !guestMode) {
+    if (source === "supabase") {
       items.push({
         id: "communities",
         label: "Communities",
@@ -1996,24 +1805,17 @@ export function Dashboard() {
         },
       });
       items.push({
-        id: "share",
-        label: "Copy guest link",
-        onSelect: () => void handleCreateShare(),
+        id: "account",
+        label: "My account",
+        onSelect: () => {
+          router.push("/account");
+        },
       });
       items.push({
         id: "snapshots",
         label: "Snapshots",
         onSelect: () => setSnapshotsOpen(true),
       });
-      if (!isMetaTab && activePortfolio) {
-        items.push({
-          id: "sheet-pin",
-          label: activePortfolio.has_access_secret
-            ? "Change sheet PIN / password"
-            : "Set sheet PIN / password",
-          onSelect: () => setSheetSecretOpen(true),
-        });
-      }
       items.push({
         id: "signout",
         label: profile?.display_name
@@ -2054,7 +1856,6 @@ export function Dashboard() {
     // Handlers are plain functions in this component; rebuild when visible UI state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- menu chrome deps only
   }, [
-    guestMode,
     undoStack.length,
     source,
     isMetaTab,
@@ -2063,7 +1864,6 @@ export function Dashboard() {
     saveFlash,
     locked,
     activePortfolio?.id,
-    activePortfolio?.has_access_secret,
   ]);
 
   const syntheticTickers = useMemo(() => {
@@ -2093,13 +1893,6 @@ export function Dashboard() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
-      {guestMode && (
-        <div className="border-b border-zinc-700 bg-zinc-900 px-4 py-1.5 text-center text-[11px] text-zinc-400">
-          {shareLabel
-            ? `${shareLabel} · View-only · no unlock needed`
-            : "View-only · no unlock needed"}
-        </div>
-      )}
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}
@@ -2146,32 +1939,9 @@ export function Dashboard() {
             </h1>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
-            {source === "supabase" && !guestMode && (
+            {source === "supabase" && (
               <WorkspaceSwitcher className="mr-0.5" />
             )}
-            {source === "supabase" && needsSheetUnlock && !guestMode && (
-              <button
-                type="button"
-                onClick={() => setUnlockOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-brand/60 bg-brand/15 px-2.5 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/25"
-                title="This sheet is locked — unlock to edit"
-                aria-label="Unlock sheet"
-              >
-                <Lock className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Unlock</span>
-              </button>
-            )}
-            {source === "supabase" &&
-              !isMetaTab &&
-              activePortfolio?.has_access_secret &&
-              activeSheetUnlocked && (
-                <span
-                  className="hidden items-center gap-1 rounded-md border border-emerald-500/30 px-2 py-1 text-[10px] font-medium text-emerald-300 sm:inline-flex"
-                  title="Sheet unlocked in this tab"
-                >
-                  <Lock className="h-3 w-3" /> Unlocked
-                </span>
-              )}
             <button
               type="button"
               onClick={() => {
@@ -2236,23 +2006,6 @@ export function Dashboard() {
           </div>
         )}
 
-        {needsSheetUnlock && !guestMode && (
-          <div className="flex flex-col gap-2 rounded-xl border border-brand/30 bg-brand/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-brand-bright">
-              “{activePortfolio?.name}” is locked — unlock with its PIN/password
-              to edit.
-            </p>
-            <button
-              type="button"
-              onClick={() => setUnlockOpen(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
-            >
-              <Lock className="h-3.5 w-3.5" />
-              Unlock to edit
-            </button>
-          </div>
-        )}
-
         {isLab ? (
           <LabSheet
             overview={overview}
@@ -2268,7 +2021,7 @@ export function Dashboard() {
             earnings={earningsEvents}
             lab={labBundle}
             onLabChange={patchLab}
-            guest={guestMode}
+           
             dismissedAlertIds={alertToastsSent}
             onDismissAlert={(id) =>
               setAlertToastsSent((prev) => dismissAlert(id, prev))
@@ -2305,8 +2058,8 @@ export function Dashboard() {
               })}
               cashflows={labBundle.cashflows}
               marketState={marketState}
-              guest={guestMode}
-              showCommunities={source === "supabase" && !guestMode}
+             
+              showCommunities={source === "supabase"}
               onOpenLab={(tab) => {
                 if (tab) setLabIntent(tab);
                 setActiveId(LAB_TAB_ID);
@@ -2498,9 +2251,9 @@ export function Dashboard() {
         activeId={activeId}
         onChange={setActiveId}
         onAdd={handleAddSheet}
-        guest={guestMode}
+       
         onOpenCommunities={
-          source === "supabase" && !guestMode
+          source === "supabase"
             ? () => router.push("/communities")
             : undefined
         }
@@ -2588,27 +2341,16 @@ export function Dashboard() {
         }
         body={
           confirmDelete?.kind === "sheet"
-            ? `Delete “${confirmDelete.label}” and all of its holdings? A safety snapshot is saved first.${
-                portfolios.find((p) => p.id === confirmDelete.id)
-                  ?.has_access_secret
-                  ? " This sheet’s PIN/password is required."
-                  : ""
-              }`
+            ? `Delete “${confirmDelete.label}” and all of its holdings? A safety snapshot is saved first.`
             : `Remove ${confirmDelete?.label ?? "this holding"} from the sheet?`
         }
         confirmLabel="Delete"
         destructive
-        requirePin={Boolean(
-          confirmDelete?.kind === "sheet" &&
-            portfolios.find((p) => p.id === confirmDelete.id)?.has_access_secret
-        )}
-        pinLabel="Sheet PIN / password"
-        initialPin={getSessionPin()}
         onClose={() => setConfirmDelete(null)}
-        onConfirm={async (pin) => {
+        onConfirm={async () => {
           if (!confirmDelete) return false;
           if (confirmDelete.kind === "sheet") {
-            return deleteSheetById(confirmDelete.id, pin);
+            return deleteSheetById(confirmDelete.id);
           }
           return deleteHoldingById(confirmDelete.id);
         }}
@@ -2634,68 +2376,6 @@ export function Dashboard() {
         }}
       />
 
-      <OwnerUnlockModal
-        open={unlockOpen}
-        onClose={() => setUnlockOpen(false)}
-        portfolioId={activePortfolio?.id ?? null}
-        portfolioName={activePortfolio?.name ?? null}
-        hasSheetSecret={Boolean(activePortfolio?.has_access_secret)}
-        onUnlocked={(pin) => {
-          if (activePortfolio?.id) {
-            markSheetSessionUnlocked(activePortfolio.id, pin);
-          }
-          setUnlockEpoch((n) => n + 1);
-          toast("Sheet unlocked for this tab", "success");
-          const pending = pendingPatchRef.current;
-          pendingPatchRef.current = null;
-          if (pending) void handlePatch(pending);
-        }}
-      />
-
-      <SheetLockOnboardingModal
-        open={Boolean(lockOnboarding)}
-        portfolioId={lockOnboarding?.id ?? ""}
-        portfolioName={lockOnboarding?.name ?? ""}
-        onSkip={() => setLockOnboarding(null)}
-        onLocked={() => {
-          if (lockOnboarding) {
-            setPortfolios((prev) =>
-              prev.map((p) =>
-                p.id === lockOnboarding.id
-                  ? { ...p, has_access_secret: true }
-                  : p
-              )
-            );
-            setUnlockEpoch((n) => n + 1);
-            toast("Sheet locked", "success");
-          }
-          setLockOnboarding(null);
-        }}
-      />
-
-      {activePortfolio && (
-        <SheetSecretModal
-          open={sheetSecretOpen}
-          portfolioId={activePortfolio.id}
-          portfolioName={activePortfolio.name}
-          hasSheetSecret={Boolean(activePortfolio.has_access_secret)}
-          onClose={() => setSheetSecretOpen(false)}
-          onChanged={(has) => {
-            setPortfolios((prev) =>
-              prev.map((p) =>
-                p.id === activePortfolio.id
-                  ? { ...p, has_access_secret: has }
-                  : p
-              )
-            );
-            if (has) {
-              markSheetSessionUnlocked(activePortfolio.id);
-            }
-            setUnlockEpoch((n) => n + 1);
-          }}
-        />
-      )}
-
       <CommandPalette
         open={cmdOpen}
         onClose={() => setCmdOpen(false)}
@@ -2703,7 +2383,7 @@ export function Dashboard() {
       />
 
       <CostBasisModal
-        open={costBasisOpen && !guestMode}
+        open={costBasisOpen}
         rows={costBasisRows}
         onChangeRow={(ticker, buyPrice) =>
           setCostBasisRows((prev) =>
@@ -2768,7 +2448,7 @@ export function Dashboard() {
             : null
         }
         onConviction={(level, thesis) => {
-          if (!drawerTicker || guestMode) return;
+          if (!drawerTicker) return;
           patchLab({
             conviction: setConviction(convictionMap, drawerTicker, {
               level,
@@ -2777,13 +2457,9 @@ export function Dashboard() {
           });
         }}
         onClose={() => setDrawerTicker(null)}
-        onAskMargus={
-          guestMode
-            ? undefined
-            : () => {
-                setMargusExpandSignal((n) => n + 1);
-              }
-        }
+        onAskMargus={() => {
+          setMargusExpandSignal((n) => n + 1);
+        }}
       />
     </div>
   );

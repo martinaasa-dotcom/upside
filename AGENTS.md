@@ -15,9 +15,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Call % house baselines** (vol guidance): VST ~7%, BMNR ~15%, RKLB ~16%, CRWV ~18%, NBIS ~22%. Stock-target baselines: CRWV 90, NBIS 205, BMNR 19.50, VST 145, RKLB 77. See `CALL_PCT_BASELINES` / `STOCK_TARGET_BASELINES` in `src/lib/calculations.ts`.
 - Respect `localStorage` key `portfell-locked` and `data/locked-demo.json`. Never delete the lock. Prefer asking Martin to hit **Save** rather than bumping `portfell-demo-v*` to force a reseed.
 - Production data lives on the shared **Upthink Platform** Supabase project in `portfell_portfolios` / `portfell_holdings` (not a separate Supabase project).
-- Auth: Google SSO owns the book; see `docs/AUTH_AND_COMMUNITIES.md`. Sheet PIN is optional on top of ownership.
-- Lab extras (conviction, cashflow, arena, badges) sync via `portfell_lab_state` **per owner**; guest links via `portfell_share_links` (`/?share=TOKEN`).
-- All shared-book mutations for **locked sheets** still require that sheet’s PIN/password (or `UPSIDE_OWNER_PIN` override). Open owned sheets need no PIN — only the owner’s Google session.
+- Auth: Google SSO + co-ownership (`portfell_portfolio_owners`). No sheet PIN/password; no guest share links — invite partners from My account.
+- Lab extras (conviction, cashflow, arena, badges) sync via `portfell_lab_state` **per owner**.
+- Shared-book mutations require a signed-in **co-owner** only (optional demo Save lock `portfell-locked` is separate and local-only).
 - Prefer `SUPABASE_SERVICE_ROLE_KEY` for API writes (with ownership checks in code). Nightly book snapshots: `portfell_book_snapshots` via `/api/cron/snapshot` (02:00 UTC).
 - After every push/prod deploy: verify Vercel production SHA matches `git rev-parse HEAD` before telling Martin it’s live (see `.cursor/rules/vercel-live-matches-push.mdc`).
 - No Milestones sheet in the seed.

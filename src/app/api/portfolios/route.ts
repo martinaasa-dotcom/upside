@@ -5,7 +5,6 @@ import {
   listOwnedPortfolioIds,
   requirePortfolioOwner,
 } from "@/lib/auth/ownership";
-import { requireOwnerAccess } from "@/lib/owner-pin";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
   getSupabaseDataClient,
@@ -26,11 +25,7 @@ function slugify(name: string) {
 }
 
 function mapPortfolio(p: Record<string, unknown>) {
-  const { access_secret_hash: _hash, ...rest } = p;
-  return {
-    ...rest,
-    has_access_secret: Boolean(_hash),
-  };
+  return p;
 }
 
 export async function GET(req: NextRequest) {
@@ -132,7 +127,7 @@ export async function POST(req: NextRequest) {
       owner_id: auth.user.id,
     })
     .select(
-      "id, name, slug, sort_order, cash_balance, created_at, updated_at, access_secret_hash, owner_id"
+      "id, name, slug, sort_order, cash_balance, created_at, updated_at, owner_id"
     )
     .single();
 
@@ -169,9 +164,6 @@ export async function PATCH(req: NextRequest) {
   const notOwner = await requirePortfolioOwner(auth.user.id, id);
   if (notOwner) return notOwner;
 
-  const denied = await requireOwnerAccess(req, id);
-  if (denied) return denied;
-
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -193,7 +185,7 @@ export async function PATCH(req: NextRequest) {
     .update(patch)
     .eq("id", id)
     .select(
-      "id, name, slug, sort_order, cash_balance, created_at, updated_at, access_secret_hash, owner_id"
+      "id, name, slug, sort_order, cash_balance, created_at, updated_at, owner_id"
     )
     .single();
 
@@ -216,9 +208,6 @@ export async function DELETE(req: NextRequest) {
 
   const notOwner = await requirePortfolioOwner(auth.user.id, id);
   if (notOwner) return notOwner;
-
-  const denied = await requireOwnerAccess(req, id);
-  if (denied) return denied;
 
   const supabase = getSupabaseServer();
   if (!supabase) {

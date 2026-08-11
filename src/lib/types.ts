@@ -11,8 +11,6 @@ export type Portfolio = {
   owner_id?: string | null;
   /** Co-owner user ids when API includes them. */
   coOwnerIds?: string[];
-  /** True when this sheet has its own PIN/password lock. */
-  has_access_secret?: boolean;
 };
 
 export type Holding = {

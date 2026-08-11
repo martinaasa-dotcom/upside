@@ -10,16 +10,11 @@ type Props = {
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
-  /** When set, show a PIN field and pass the value to onConfirm. */
-  requirePin?: boolean;
-  pinLabel?: string;
-  /** Prefill PIN (e.g. session unlock). */
-  initialPin?: string;
   /**
    * Return false (or Promise resolving to false) to keep the dialog open
-   * after a failed confirm (e.g. invalid PIN).
+   * after a failed confirm.
    */
-  onConfirm: (pin?: string) => void | boolean | Promise<void | boolean>;
+  onConfirm: () => void | boolean | Promise<void | boolean>;
   onClose: () => void;
 };
 
@@ -30,26 +25,18 @@ export function ConfirmModal({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   destructive = false,
-  requirePin = false,
-  pinLabel = "Owner PIN",
-  initialPin = "",
   onConfirm,
   onClose,
 }: Props) {
-  const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
-      setPin("");
       setBusy(false);
       setError(null);
-      return;
     }
-    setPin(initialPin);
-    setError(null);
-  }, [open, initialPin]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -58,9 +45,9 @@ export function ConfirmModal({
     setBusy(true);
     setError(null);
     try {
-      const result = await onConfirm(requirePin ? pin : undefined);
+      const result = await onConfirm();
       if (result === false) {
-        setError(requirePin ? "Invalid PIN or action failed" : "Action failed");
+        setError("Action failed");
         return;
       }
       onClose();
@@ -93,25 +80,6 @@ export function ConfirmModal({
           </button>
         </div>
         <p className="text-sm leading-relaxed text-zinc-400">{body}</p>
-        {requirePin && (
-          <label className="mt-4 block text-xs font-medium text-zinc-400">
-            {pinLabel}
-            <input
-              type="password"
-              inputMode="numeric"
-              autoComplete="off"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void runConfirm();
-              }}
-              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-              placeholder="••••••"
-              autoFocus
-              disabled={busy}
-            />
-          </label>
-        )}
         {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button
@@ -125,7 +93,7 @@ export function ConfirmModal({
           <button
             type="button"
             onClick={() => void runConfirm()}
-            disabled={busy || (requirePin && !pin.trim())}
+            disabled={busy}
             className={
               destructive
                 ? "rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-40"

@@ -5,7 +5,6 @@ import {
 import { saveArena } from "@/lib/paper-arena";
 import { saveCashflows } from "@/lib/cashflow";
 import { saveConvictionMap } from "@/lib/conviction";
-import { ownerPinHeaders } from "@/lib/owner-pin-client";
 
 export type LabFetchResult = {
   source: "supabase" | "local";
@@ -47,9 +46,7 @@ export async function pushLabBundle(
   try {
     const res = await fetch("/api/lab", {
       method: "PUT",
-      headers: ownerPinHeaders(undefined, {
-        "Content-Type": "application/json",
-      }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         conviction: bundle.conviction,
         journal: [],
@@ -70,43 +67,6 @@ export async function pushLabBundle(
     return {
       ok: false,
       error: e instanceof Error ? e.message : "Lab sync failed",
-    };
-  }
-}
-
-export async function createShareLink(opts?: {
-  label?: string;
-  scope?: "overview" | "sheet" | "lab";
-  portfolioId?: string | null;
-  daysValid?: number;
-}): Promise<{ ok: boolean; url?: string; error?: string }> {
-  try {
-    const res = await fetch("/api/share", {
-      method: "POST",
-      headers: ownerPinHeaders(undefined, {
-        "Content-Type": "application/json",
-      }),
-      body: JSON.stringify(opts ?? { scope: "overview", daysValid: 14 }),
-    });
-    const data = (await res.json().catch(() => ({}))) as {
-      error?: string;
-      path?: string;
-      token?: string;
-    };
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? `Share failed (${res.status})` };
-    }
-    const path = data.path ?? (data.token ? `/?share=${data.token}` : null);
-    if (!path) return { ok: false, error: "No share path returned" };
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${path}`
-        : path;
-    return { ok: true, url };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "Share failed",
     };
   }
 }

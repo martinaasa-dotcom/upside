@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
-import { requireOwnerAccess } from "@/lib/owner-pin";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -46,10 +45,6 @@ export async function POST(req: NextRequest) {
 
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
-
-  // Optional extra sheet PIN on top of ownership.
-  const denied = await requireOwnerAccess(req, portfolioId);
-  if (denied) return denied;
 
   const rows = Array.isArray(body.holdings) ? body.holdings : [];
   if (rows.length === 0 && body.cash == null) {
