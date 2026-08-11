@@ -77,3 +77,44 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   }
   return NextResponse.json({ ok: true, userId: result.userId });
 }
+
+/** Remove a co-owner (self or another owner). Refuses to orphan a portfolio. */
+export async function DELETE(req: NextRequest, ctx: Ctx) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
+  const { id } = await ctx.params;
+  const notOwner = await requirePortfolioOwner(auth.user.id, id);
+  if (notOwner) return notOwner;
+
+  const userId = req.nextUrl.searchParams.get("userId");
+  if (!userId) {
+    return NextResponse.json({ error: "userId required" }, { status: 400 });
+  }
+
+  const supabase = await getSupabaseDataClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
+  const { count } = await supabase
+    .from(PORTFELL_TABLES.portfolioOwners)
+    .select("user_id", { count: "exact", head: true })
+    .eq("portfolio_id", id);
+  if ((count ?? 0) <= 1) {
+    return NextResponse.json(
+      { error: "Can't remove the last owner — a sheet needs at least one." },
+      { status: 400 }
+    );
+  }
+
+  const { error } = await supabase
+    .from(PORTFELL_TABLES.portfolioOwners)
+    .delete()
+    .eq("portfolio_id", id)
+    .eq("user_id", userId);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}

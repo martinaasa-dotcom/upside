@@ -4,11 +4,13 @@ import { useAuth } from "@/components/AuthProvider";
 import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   Check,
   Copy,
   Link2,
   LogOut,
+  UserMinus,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -52,11 +54,17 @@ export function AccountPage() {
   const [busyInvite, setBusyInvite] = useState(false);
   const [owners, setOwners] = useState<OwnerRow[]>([]);
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
+  const [avatarBroken, setAvatarBroken] = useState(false);
+  const [removeOwnerTarget, setRemoveOwnerTarget] = useState<OwnerRow | null>(
+    null
+  );
+  const [removeOwnerErr, setRemoveOwnerErr] = useState<string | null>(null);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
     setBio(profile?.bio ?? "");
     setAvatarUrl(profile?.avatar_url ?? "");
+    setAvatarBroken(false);
   }, [profile]);
 
   const loadPortfolios = useCallback(async () => {
@@ -194,6 +202,26 @@ export function AccountPage() {
     window.setTimeout(() => setCopied(null), 2000);
   }
 
+  async function removeOwner(userId: string) {
+    if (!selectedId) return false;
+    setRemoveOwnerErr(null);
+    try {
+      const res = await fetch(
+        `/api/portfolios/${selectedId}/owners?userId=${encodeURIComponent(userId)}`,
+        { method: "DELETE" }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error ?? "Remove failed");
+      }
+      await loadOwners(selectedId);
+      return true;
+    } catch (err) {
+      setRemoveOwnerErr(err instanceof Error ? err.message : "Remove failed");
+      return false;
+    }
+  }
+
   const selectedName =
     portfolios.find((p) => p.id === selectedId)?.name ?? "sheet";
 
@@ -247,11 +275,12 @@ export function AccountPage() {
             </div>
 
             <div className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-3 py-3">
-              {avatarUrl ? (
+              {avatarUrl && !avatarBroken ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={avatarUrl}
                   alt=""
+                  onError={() => setAvatarBroken(true)}
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
@@ -283,8 +312,13 @@ export function AccountPage() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-[11px] uppercase tracking-wide text-zinc-500">
-                  Bio · communities
+                <span className="flex items-baseline justify-between">
+                  <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    Bio · communities
+                  </span>
+                  <span className="text-[10px] tabular-nums text-zinc-600">
+                    {bio.length}/280
+                  </span>
                 </span>
                 <textarea
                   value={bio}
@@ -301,10 +335,18 @@ export function AccountPage() {
                 </span>
                 <input
                   value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  onChange={(e) => {
+                    setAvatarUrl(e.target.value);
+                    setAvatarBroken(false);
+                  }}
                   placeholder="https://…"
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
                 />
+                {avatarBroken && (
+                  <span className="text-xs text-amber-400/90">
+                    Couldn&apos;t load that image — showing your initial instead.
+                  </span>
+                )}
               </label>
               {profileErr && (
                 <p className="text-sm text-red-400">{profileErr}</p>
@@ -446,13 +488,16 @@ export function AccountPage() {
                     <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                       Co-owners on {selectedName}
                     </p>
+                    {removeOwnerErr && (
+                      <p className="text-sm text-red-400">{removeOwnerErr}</p>
+                    )}
                     <ul className="divide-y divide-zinc-800 overflow-hidden rounded-xl border border-zinc-800">
                       {owners.map((o) => (
                         <li
                           key={o.user_id}
                           className="flex items-center justify-between gap-2 px-3 py-2.5 text-sm"
                         >
-                          <span className="truncate text-zinc-200">
+                          <span className="min-w-0 truncate text-zinc-200">
                             {o.profile?.display_name ||
                               o.profile?.email ||
                               o.user_id.slice(0, 8)}
@@ -462,8 +507,27 @@ export function AccountPage() {
                               </span>
                             )}
                           </span>
-                          <span className="shrink-0 text-xs text-zinc-500">
-                            {o.profile?.email}
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span className="text-xs text-zinc-500">
+                              {o.profile?.email}
+                            </span>
+                            {owners.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRemoveOwnerErr(null);
+                                  setRemoveOwnerTarget(o);
+                                }}
+                                title={
+                                  o.user_id === user?.id
+                                    ? "Leave this sheet"
+                                    : "Remove co-owner"
+                                }
+                                className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300"
+                              >
+                                <UserMinus className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </span>
                         </li>
                       ))}
@@ -484,6 +548,31 @@ export function AccountPage() {
           </p>
         </main>
       </div>
+
+      <ConfirmModal
+        open={Boolean(removeOwnerTarget)}
+        title={
+          removeOwnerTarget?.user_id === user?.id
+            ? "Leave this sheet?"
+            : "Remove co-owner?"
+        }
+        body={
+          removeOwnerTarget?.user_id === user?.id
+            ? `You'll lose edit access to ${selectedName}. Another owner can re-invite you later.`
+            : `${
+                removeOwnerTarget?.profile?.display_name ||
+                removeOwnerTarget?.profile?.email ||
+                "This person"
+              } will lose edit access to ${selectedName} immediately.`
+        }
+        confirmLabel={removeOwnerTarget?.user_id === user?.id ? "Leave" : "Remove"}
+        destructive
+        onClose={() => setRemoveOwnerTarget(null)}
+        onConfirm={async () => {
+          if (!removeOwnerTarget) return false;
+          return removeOwner(removeOwnerTarget.user_id);
+        }}
+      />
     </SignInGate>
   );
 }
