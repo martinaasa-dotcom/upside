@@ -44,29 +44,54 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const ownerId = (link as { created_by?: string | null }).created_by;
 
-  let portfolioQuery = supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .select("*")
-    .order("sort_order");
+  let portfolios: Record<string, unknown>[] = [];
 
-  // Prefer owner-scoped shares; fall back to single portfolio for legacy links
   if (ownerId) {
-    portfolioQuery = portfolioQuery.eq("owner_id", ownerId);
+    const { data: owned } = await supabase
+      .from(PORTFELL_TABLES.portfolioOwners)
+      .select("portfolio_id")
+      .eq("user_id", ownerId);
+    const ids = ((owned ?? []) as { portfolio_id: string }[]).map(
+      (o) => o.portfolio_id
+    );
+    if (ids.length) {
+      const { data: p, error: pErr } = await supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .select("*")
+        .in("id", ids)
+        .order("sort_order");
+      if (pErr) {
+        return NextResponse.json({ error: pErr.message }, { status: 500 });
+      }
+      portfolios = (p ?? []) as Record<string, unknown>[];
+    }
   } else if (link.scope === "sheet" && link.portfolio_id) {
-    portfolioQuery = portfolioQuery.eq("id", link.portfolio_id);
-  }
-
-  const { data: portfolios, error: pErr } = await portfolioQuery;
-  if (pErr) {
-    return NextResponse.json({ error: pErr.message }, { status: 500 });
+    const { data: p, error: pErr } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("*")
+      .eq("id", link.portfolio_id)
+      .order("sort_order");
+    if (pErr) {
+      return NextResponse.json({ error: pErr.message }, { status: 500 });
+    }
+    portfolios = (p ?? []) as Record<string, unknown>[];
+  } else {
+    const { data: p, error: pErr } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("*")
+      .order("sort_order");
+    if (pErr) {
+      return NextResponse.json({ error: pErr.message }, { status: 500 });
+    }
+    portfolios = (p ?? []) as Record<string, unknown>[];
   }
 
   const filteredPortfolios =
     link.scope === "sheet" && link.portfolio_id
-      ? (portfolios ?? []).filter((p) => p.id === link.portfolio_id)
-      : portfolios ?? [];
+      ? portfolios.filter((p) => p.id === link.portfolio_id)
+      : portfolios;
 
-  const portfolioIds = filteredPortfolios.map((p) => p.id);
+  const portfolioIds = filteredPortfolios.map((p) => p.id as string);
   let holdings: unknown[] = [];
   if (portfolioIds.length) {
     const { data: h, error: hErr } = await supabase

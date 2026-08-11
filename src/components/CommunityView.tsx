@@ -50,6 +50,9 @@ export function CommunityView({ communityId }: Props) {
   const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [ownership, setOwnership] = useState<
+    { portfolio_id: string; user_id: string }[]
+  >([]);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +92,7 @@ export function CommunityView({ communityId }: Props) {
       setPortfolios(book.portfolios ?? []);
       setHoldings(book.holdings ?? []);
       setProfiles(book.profiles ?? []);
+      setOwnership(book.ownership ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load community");
     } finally {
@@ -290,9 +294,12 @@ export function CommunityView({ communityId }: Props) {
                 </h2>
                 <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
                   {members.map((m) => {
-                    const sheets = portfolios.filter(
-                      (p) => p.owner_id === m.user_id
+                    const sheetIds = new Set(
+                      ownership
+                        .filter((o) => o.user_id === m.user_id)
+                        .map((o) => o.portfolio_id)
                     );
+                    const sheets = portfolios.filter((p) => sheetIds.has(p.id));
                     const sheetValue = sheets.reduce((sum, p) => {
                       const score = overview.sheets.find(
                         (s) => s.portfolio.id === p.id
@@ -419,7 +426,12 @@ export function CommunityView({ communityId }: Props) {
               </div>
               <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
                 {portfolios
-                  .filter((p) => p.owner_id === selectedOwnerId)
+                  .filter((p) =>
+                    ownership.some(
+                      (o) =>
+                        o.portfolio_id === p.id && o.user_id === selectedOwnerId
+                    )
+                  )
                   .map((p) => {
                     const score = overview.sheets.find(
                       (s) => s.portfolio.id === p.id

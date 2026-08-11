@@ -1,7 +1,10 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { saveBookSnapshot } from "@/lib/book-snapshot";
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
-import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import {
+  listOwnedPortfolioIds,
+  requirePortfolioOwner,
+} from "@/lib/auth/ownership";
 import { requireOwnerAccess } from "@/lib/owner-pin";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
@@ -34,7 +37,6 @@ export async function GET(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  // Claim seed ownership on every book load (idempotent).
   await ensureProfileAndClaims(auth.user);
 
   const supabase = (await getSupabaseDataClient()) ?? getSupabaseServer();
@@ -48,23 +50,28 @@ export async function GET(req: NextRequest) {
   }
 
   const ownerId = req.nextUrl.searchParams.get("ownerId");
-
-  let portfolioQuery = supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .select("*")
-    .order("sort_order");
-
   if (ownerId && ownerId !== auth.user.id) {
-    // Community peer read — verified in /api/communities/[id]/book
     return NextResponse.json(
       { error: "Use community book endpoint for peer portfolios" },
       { status: 400 }
     );
   }
 
-  portfolioQuery = portfolioQuery.eq("owner_id", auth.user.id);
+  const ownedIds = await listOwnedPortfolioIds(auth.user.id);
+  if (!ownedIds.length) {
+    return NextResponse.json({
+      source: "supabase",
+      portfolios: [],
+      holdings: [],
+    });
+  }
 
-  const { data: portfolios, error: pErr } = await portfolioQuery;
+  const { data: portfolios, error: pErr } = await supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .select("*")
+    .in("id", ownedIds)
+    .order("sort_order");
+
   if (pErr) {
     return NextResponse.json({ error: pErr.message }, { status: 500 });
   }
@@ -112,17 +119,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
 
-  const { count } = await supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .select("*", { count: "exact", head: true })
-    .eq("owner_id", auth.user.id);
+  const ownedIds = await listOwnedPortfolioIds(auth.user.id);
+  const sortOrder = ownedIds.length + 1;
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.portfolios)
     .insert({
       name,
       slug: slugify(name),
-      sort_order: (count ?? 0) + 1,
+      sort_order: sortOrder,
       cash_balance: 0,
       owner_id: auth.user.id,
     })
@@ -134,6 +139,18 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const portfolioId = (data as { id: string }).id;
+  const { error: ownErr } = await supabase
+    .from(PORTFELL_TABLES.portfolioOwners)
+    .upsert(
+      { portfolio_id: portfolioId, user_id: auth.user.id },
+      { onConflict: "portfolio_id,user_id" }
+    );
+  if (ownErr) {
+    return NextResponse.json({ error: ownErr.message }, { status: 500 });
+  }
+
   return NextResponse.json({
     portfolio: mapPortfolio(data as Record<string, unknown>),
   });
@@ -175,7 +192,6 @@ export async function PATCH(req: NextRequest) {
     .from(PORTFELL_TABLES.portfolios)
     .update(patch)
     .eq("id", id)
-    .eq("owner_id", auth.user.id)
     .select(
       "id, name, slug, sort_order, cash_balance, created_at, updated_at, access_secret_hash, owner_id"
     )
@@ -230,8 +246,7 @@ export async function DELETE(req: NextRequest) {
     const { error } = await supabase
       .from(PORTFELL_TABLES.portfolios)
       .delete()
-      .eq("id", id)
-      .eq("owner_id", auth.user.id);
+      .eq("id", id);
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

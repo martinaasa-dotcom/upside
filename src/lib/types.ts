@@ -4,8 +4,13 @@ export type Portfolio = {
   slug: string;
   sort_order: number;
   cash_balance: number;
-  /** Owning Google account (profiles.id). */
+  /**
+   * Primary/creator owner (legacy column). Authorization uses
+   * portfell_portfolio_owners — see coOwnerIds when present.
+   */
   owner_id?: string | null;
+  /** Co-owner user ids when API includes them. */
+  coOwnerIds?: string[];
   /** True when this sheet has its own PIN/password lock. */
   has_access_secret?: boolean;
 };

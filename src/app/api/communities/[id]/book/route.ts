@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Full community book: all members' portfolios + holdings (read-only). */
+/** Full community book: all members' co-owned portfolios + holdings (read-only). */
 export async function GET(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
@@ -43,24 +43,39 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       portfolios: [],
       holdings: [],
       profiles: [],
+      ownership: [],
     });
   }
 
-  const [{ data: profiles }, { data: portfolios }] = await Promise.all([
+  const [{ data: profiles }, { data: ownership }] = await Promise.all([
     supabase
       .from(PORTFELL_TABLES.profiles)
       .select("id, email, display_name, avatar_url")
       .in("id", userIds),
     supabase
+      .from(PORTFELL_TABLES.portfolioOwners)
+      .select("portfolio_id, user_id")
+      .in("user_id", userIds),
+  ]);
+
+  const portfolioIds = [
+    ...new Set(
+      ((ownership ?? []) as { portfolio_id: string }[]).map((o) => o.portfolio_id)
+    ),
+  ];
+
+  let portfolios: unknown[] = [];
+  if (portfolioIds.length) {
+    const { data: p } = await supabase
       .from(PORTFELL_TABLES.portfolios)
       .select(
         "id, name, slug, sort_order, cash_balance, owner_id, created_at, updated_at"
       )
-      .in("owner_id", userIds)
-      .order("sort_order"),
-  ]);
+      .in("id", portfolioIds)
+      .order("sort_order");
+    portfolios = p ?? [];
+  }
 
-  const portfolioIds = (portfolios ?? []).map((p) => (p as { id: string }).id);
   let holdings: unknown[] = [];
   if (portfolioIds.length) {
     const { data: h } = await supabase
@@ -74,7 +89,9 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   return NextResponse.json({
     readOnly: true,
     profiles: profiles ?? [],
-    portfolios: portfolios ?? [],
+    portfolios,
     holdings,
+    /** Co-owner rows so UI can attribute sheets to members. */
+    ownership: ownership ?? [],
   });
 }

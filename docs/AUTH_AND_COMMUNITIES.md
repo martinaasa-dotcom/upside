@@ -2,10 +2,11 @@
 
 ## Product model
 
-- **My book**: Google-signed-in users own their portfolios (`portfell_portfolios.owner_id`).
-- **Communities**: members see each other’s **entire book** live, **read-only**.
-- Sheet PIN/password remains an **optional extra lock** on top of ownership (not primary auth).
-- Guest `/?share=TOKEN` links stay time-limited external read-only views of the **creator’s** book.
+- **My book**: Google-signed-in users co-own portfolios via `portfell_portfolio_owners` (many users ↔ many portfolios). Full live read **and** write for every co-owner.
+- `portfell_portfolios.owner_id` remains as optional primary/creator hint; **authorization uses the junction table**.
+- **Communities**: members see each co-owner’s book live, **read-only**.
+- Sheet PIN/password remains an **optional extra lock** on top of co-ownership.
+- Guest `/?share=TOKEN` links stay time-limited external read-only views of the creator’s co-owned book.
 
 ## Seed ownership (test circle)
 
@@ -15,29 +16,24 @@
 | Seed row / `UPSIDE_SEED_KARUD_EMAIL` | Karud |
 | Seed row / `UPSIDE_SEED_LAP_EMAIL` | Lap |
 
-Claims run on `/auth/callback` and on `GET /api/portfolios` via `ensureProfileAndClaims`.
+Multiple emails can map to the **same** `portfolio_slug` in `portfell_seed_claims` for co-ownership.
 
-- Preferred: `SUPABASE_SERVICE_ROLE_KEY` on Vercel (API writes + env-based Karud/Lap).
-- Fallback: RPC `portfell_claim_seed_for_me()` (migration `010`) using the user session — covers DB `portfell_seed_claims` without a service key.
+Claims: `/auth/callback` + `GET /api/portfolios` via `ensureProfileAndClaims` → junction insert.
 
-One-shot SQL: `scripts/seed-ownership.sql`.
+- Preferred: `SUPABASE_SERVICE_ROLE_KEY` on Vercel.
+- Fallback: RPC `portfell_claim_seed_for_me()`.
 
-Seed members are auto-added to **Upside Circle**. Martin is admin.
+Ops SQL: `scripts/seed-ownership.sql`.
 
-## Enable Google Auth (Supabase)
-
-1. Supabase → **Upthink Platform** → Authentication → Providers → **Google** → enable.
-2. Create OAuth credentials in Google Cloud Console (Web application).
-3. Authorized redirect URI: `https://jwjezdgggrgdgfsovgtx.supabase.co/auth/v1/callback`
-4. Redirects: production `/auth/callback` + `http://localhost:3000/auth/callback`
-5. Vercel env: `NEXT_PUBLIC_SUPABASE_*`, strongly recommend `SUPABASE_SERVICE_ROLE_KEY`; optional `UPSIDE_SEED_KARUD_EMAIL` / `UPSIDE_SEED_LAP_EMAIL`
+Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email": "…" }` (caller must already co-own).
 
 ## Migrations
 
-- `008` profiles + ownership + communities + RLS
-- `009` share links `created_by`
-- `010` `portfell_claim_seed_for_me()` RPC
+- `008` profiles + ownership + communities + RLS  
+- `009` share links `created_by`  
+- `010` claim RPC (superseded claim body in `011`)  
+- `011` `portfell_portfolio_owners` + co-owner RLS  
 
 ## PIN notes
 
-Writes require signed-in owner, then optional sheet PIN. Legacy global lab row `id = 'book'` remains; personal lab uses owner uuid.
+Writes require a signed-in **co-owner**, then optional sheet PIN.

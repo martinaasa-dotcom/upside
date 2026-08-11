@@ -55,11 +55,24 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     ((profiles ?? []) as { id: string }[]).map((p) => [p.id, p])
   );
 
-  const { data: portfolios } = userIds.length
+  const { data: ownership } = userIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id, user_id")
+        .in("user_id", userIds)
+    : { data: [] };
+
+  const portfolioIds = [
+    ...new Set(
+      ((ownership ?? []) as { portfolio_id: string }[]).map((o) => o.portfolio_id)
+    ),
+  ];
+
+  const { data: portfolios } = portfolioIds.length
     ? await supabase
         .from(PORTFELL_TABLES.portfolios)
         .select("id, name, slug, sort_order, cash_balance, owner_id")
-        .in("owner_id", userIds)
+        .in("id", portfolioIds)
         .order("sort_order")
     : { data: [] };
 
@@ -75,5 +88,6 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       })
     ),
     portfolios: portfolios ?? [],
+    ownership: ownership ?? [],
   });
 }

@@ -10,6 +10,7 @@ export const PORTFELL_TABLES = {
   communities: "portfell_communities",
   communityMembers: "portfell_community_members",
   communityInvites: "portfell_community_invites",
+  portfolioOwners: "portfell_portfolio_owners",
 } as const;
 
 /** Fixed id for the seed test community (Aasad/MaryAnn/Anu/Karud/Lap circle). */

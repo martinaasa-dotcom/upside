@@ -39,11 +39,11 @@ export async function POST(req: NextRequest) {
     const denied = await requireOwnerAccess(req, body.portfolioId ?? null);
     if (denied) return denied;
   } else {
-    // Book-wide share: confirm caller owns at least one portfolio
+    // Book-wide share: confirm caller co-owns at least one portfolio
     const { count } = await supabase
-      .from(PORTFELL_TABLES.portfolios)
+      .from(PORTFELL_TABLES.portfolioOwners)
       .select("*", { count: "exact", head: true })
-      .eq("owner_id", auth.user.id);
+      .eq("user_id", auth.user.id);
     if (!count) {
       return NextResponse.json(
         { error: "No owned portfolios to share" },

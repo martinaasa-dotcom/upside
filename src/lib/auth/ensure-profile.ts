@@ -21,8 +21,8 @@ function envSeedSlugs(email: string): string[] {
 }
 
 /**
- * Upsert profile, claim seed portfolios by email, ensure Upside Circle membership.
- * Prefers service-role path; falls back to security-definer RPC (no service key needed).
+ * Upsert profile, claim seed portfolios by email (co-owner rows),
+ * ensure Upside Circle membership.
  */
 export async function ensureProfileAndClaims(user: User): Promise<{
   claimedSlugs: string[];
@@ -37,7 +37,6 @@ async function claimWithRpc(user: User): Promise<{ claimedSlugs: string[] }> {
   const authClient = await createSupabaseServerAuth();
   if (!authClient) return { claimedSlugs: [] };
 
-  // Env-only Karud/Lap slugs still need a service-role path; RPC uses seed_claims table.
   const { data, error } = await authClient.rpc("portfell_claim_seed_for_me");
   if (error) {
     console.error("portfell_claim_seed_for_me failed", error.message);
@@ -46,8 +45,6 @@ async function claimWithRpc(user: User): Promise<{ claimedSlugs: string[] }> {
   const claimed = Array.isArray((data as { claimed?: unknown })?.claimed)
     ? ((data as { claimed: string[] }).claimed ?? [])
     : [];
-
-  // Best-effort env seed rows if somehow writable (usually no-op without service role)
   void user;
   return { claimedSlugs: claimed };
 }
@@ -98,32 +95,31 @@ async function claimWithServiceRole(user: User): Promise<{
     ]);
 
     for (const slug of slugs) {
-      const { data: rows } = await admin
+      const { data: sheet } = await admin
         .from(PORTFELL_TABLES.portfolios)
-        .update({
-          owner_id: user.id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("slug", slug)
-        .is("owner_id", null)
-        .select("slug");
-      if (rows?.length) claimedSlugs.push(slug);
-
-      const { data: owned } = await admin
-        .from(PORTFELL_TABLES.portfolios)
-        .select("slug, owner_id")
+        .select("id, owner_id")
         .eq("slug", slug)
         .maybeSingle();
-      if (owned && !(owned as { owner_id?: string | null }).owner_id) {
+      if (!sheet) continue;
+
+      const portfolioId = (sheet as { id: string; owner_id?: string | null }).id;
+
+      // Keep first claimant as primary owner_id; always add junction row.
+      if (!(sheet as { owner_id?: string | null }).owner_id) {
         await admin
           .from(PORTFELL_TABLES.portfolios)
           .update({
             owner_id: user.id,
             updated_at: new Date().toISOString(),
           })
-          .eq("slug", slug);
-        if (!claimedSlugs.includes(slug)) claimedSlugs.push(slug);
+          .eq("id", portfolioId);
       }
+
+      const { error } = await admin.from(PORTFELL_TABLES.portfolioOwners).upsert(
+        { portfolio_id: portfolioId, user_id: user.id },
+        { onConflict: "portfolio_id,user_id" }
+      );
+      if (!error && !claimedSlugs.includes(slug)) claimedSlugs.push(slug);
     }
   }
 
