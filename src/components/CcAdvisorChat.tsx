@@ -17,6 +17,8 @@ import {
   BookOpen,
   ImagePlus,
   Loader2,
+  Maximize2,
+  Minimize2,
   Send,
   Sparkles,
   Square,
@@ -333,6 +335,26 @@ function ChatMarkdown({ children }: { children: string }) {
   );
 }
 
+const WIDE_KEY = "upside-margus-wide";
+
+function loadWidePref(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(WIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveWidePref(wide: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(WIDE_KEY, wide ? "1" : "0");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 const ACTION_TYPES = new Set([
   "tool-setCallPct",
   "tool-setCallPctBulk",
@@ -404,6 +426,19 @@ export function CcAdvisorChat({
   const [pendingImages, setPendingImages] = useState<FileUIPart[]>([]);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [open, setOpen] = useState(false);
+  const [wide, setWide] = useState(false);
+
+  useEffect(() => {
+    setWide(loadWidePref());
+  }, []);
+
+  function toggleWide() {
+    setWide((prev) => {
+      const next = !prev;
+      saveWidePref(next);
+      return next;
+    });
+  }
   const initialMessages = useMemo(
     () => loadChatHistory(portfolioId),
     [portfolioId]
@@ -575,8 +610,16 @@ export function CcAdvisorChat({
       {open && (
         <section
           ref={panelRef}
-          className="pointer-events-auto flex w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-[#161618] shadow-2xl shadow-black/60"
-          style={{ height: "min(36rem, calc(100dvh - 6.5rem))" }}
+          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-[#161618] shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
+            wide
+              ? "w-[min(56rem,calc(100vw-1.5rem))]"
+              : "w-[min(26rem,calc(100vw-1.5rem))]"
+          }`}
+          style={{
+            height: wide
+              ? "min(46rem, calc(100dvh - 6.5rem))"
+              : "min(38rem, calc(100dvh - 6.5rem))",
+          }}
           role="dialog"
           aria-label="Assistant Margus"
         >
@@ -594,6 +637,19 @@ export function CcAdvisorChat({
                   : `Chat for ${context.portfolioName}`}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={toggleWide}
+              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300"
+              aria-label={wide ? "Shrink Margus" : "Widen Margus"}
+              title={wide ? "Shrink panel" : "Widen panel — more room for tables"}
+            >
+              {wide ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </button>
             <div className="relative" ref={rulesRef}>
               <button
                 type="button"
