@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -14,10 +14,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#121214",
+  colorScheme: "dark",
 };
 
 export const metadata: Metadata = {
@@ -25,10 +27,16 @@ export const metadata: Metadata = {
   description:
     "Live portfolio book with covered-call targets and Assistant Margus.",
   applicationName: "Upside",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Upside",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: [{ url: "/upside-icon.svg", type: "image/svg+xml" }],
     shortcut: "/upside-icon.svg",
-    apple: "/upside-icon.svg",
+    apple: "/apple-icon.png",
   },
   openGraph: {
     title: "Upside - Portfolio Tracker",

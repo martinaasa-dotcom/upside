@@ -405,19 +405,3 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     verdict: "Hold and reassess on new catalysts, earnings, or thesis-changing news.",
   };
 }
-
-/** @deprecated use buildPulseCandidates */
-export function pickPulseCandidates(
-  overview: OverviewModel,
-  opts?: { moveThreshold?: number; minBookPct?: number; topByValue?: number }
-): PulseCandidate[] {
-  return buildPulseCandidates(overview, {}, {
-    topN: opts?.topByValue ?? PULSE_DEFAULT_TOP_N,
-  }).filter(
-    (c) =>
-      c.needsAttention ||
-      Math.abs(c.effectivePct ?? 0) >= (opts?.moveThreshold ?? PULSE_DOWN_THRESHOLD)
-  );
-}
-
-export const PULSE_MOVE_THRESHOLD = PULSE_DOWN_THRESHOLD;

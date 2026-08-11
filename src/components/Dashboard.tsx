@@ -1675,15 +1675,12 @@ export function Dashboard() {
   }
 
   function resetDemo() {
-    localStorage.removeItem("portfell-demo-v1");
-    localStorage.removeItem("portfell-demo-v2");
-    localStorage.removeItem("portfell-demo-v3");
-    localStorage.removeItem("portfell-demo-v4");
-    localStorage.removeItem("portfell-demo-v5");
-    localStorage.removeItem("portfell-demo-v6");
-    localStorage.removeItem("portfell-demo-v7");
-    localStorage.removeItem("portfell-demo-v8");
-    // Do NOT remove portfell-locked — Reset restores the last Save
+    // v1–v7 are legacy schema versions; v8 is today's STORAGE_KEY in
+    // demo-store.ts — included here on purpose so Reset fully reseeds it.
+    // Do NOT remove portfell-locked — Reset restores the last Save.
+    for (let v = 1; v <= 8; v++) {
+      localStorage.removeItem(`portfell-demo-v${v}`);
+    }
     const demo = resetDemoStore();
     setPortfolios(demo.portfolios);
     setHoldings(demo.holdings);
@@ -2107,6 +2104,7 @@ export function Dashboard() {
                 onClick={() => setUnlockOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-md border border-brand/60 bg-brand/15 px-2.5 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/25"
                 title="This sheet is locked — unlock to edit"
+                aria-label="Unlock sheet"
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Unlock</span>
@@ -2139,6 +2137,7 @@ export function Dashboard() {
               disabled={refreshing}
               className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
               title={isLab ? "Refresh prices & option premiums" : "Refresh prices"}
+              aria-label="Refresh prices"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
