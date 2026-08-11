@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Swords } from "lucide-react";
 import { cn, percent } from "@/lib/format";
 import {
+  duelCanSettle,
   duelResultLine,
   duelStats,
   getOrCreateTodaysDuel,
@@ -19,7 +20,7 @@ type Props = {
   tickers: Array<{ ticker: string; todayPct: number | null }>;
 };
 
-/** "Which of your holdings is greener today?" — one matchup per day, pick before you'd naturally know. */
+/** Pick who finishes the US cash session higher — reveal only after the close. */
 export function DailyDuelCard({ tickers }: Props) {
   const dayKey = todayKeyInTz();
   const tickerList = useMemo(() => tickers.map((t) => t.ticker), [tickers]);
@@ -31,22 +32,29 @@ export function DailyDuelCard({ tickers }: Props) {
 
   const [record, setRecord] = useState<DuelRecord | null>(null);
   const [stats, setStats] = useState(() => duelStats(loadDuelHistory()));
+  const [canSettle, setCanSettle] = useState(() => duelCanSettle());
 
   useEffect(() => {
     setRecord(getOrCreateTodaysDuel(tickerList, dayKey));
-    // Re-run only when the day rolls over or the ticker set actually changes
-    // (not on every parent re-render — `tickers` is rebuilt fresh each time).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayKey, tickerList.join("|")]);
 
   useEffect(() => {
+    const tick = () => setCanSettle(duelCanSettle());
+    tick();
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     if (!record || record.pick == null || record.outcome !== "pending") return;
+    if (!canSettle) return;
     const updated = resolvePendingOutcome(dayKey, pctByTicker);
     if (updated && updated.outcome !== "pending") {
       setRecord(updated);
       setStats(duelStats(loadDuelHistory()));
     }
-  }, [record, pctByTicker, dayKey]);
+  }, [record, pctByTicker, dayKey, canSettle]);
 
   if (!record) return null;
 
@@ -60,6 +68,7 @@ export function DailyDuelCard({ tickers }: Props) {
 
   const decided = record.pick != null && record.outcome !== "pending";
   const resultLine = decided ? duelResultLine(record) : null;
+  const waitingOnClose = record.pick != null && record.outcome === "pending";
 
   return (
     <section className="overview-fade rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
@@ -71,7 +80,7 @@ export function DailyDuelCard({ tickers }: Props) {
           <div>
             <h3 className="text-xl font-semibold text-white">Daily Duel</h3>
             <p className="mt-1 text-base text-zinc-400">
-              Pick the greener ticker — new matchup every day
+              Who ends the day higher — settles after the US close
             </p>
           </div>
         </div>
@@ -98,7 +107,11 @@ export function DailyDuelCard({ tickers }: Props) {
       <div className="grid grid-cols-2 gap-3">
         {(["a", "b"] as const).map((side) => {
           const ticker = side === "a" ? record.tickerA : record.tickerB;
-          const pct = side === "a" ? record.revealedPctA : record.revealedPctB;
+          const pct = decided
+            ? side === "a"
+              ? record.revealedPctA
+              : record.revealedPctB
+            : null;
           const isPick = record.pick === side;
           const isWinner =
             decided &&
@@ -119,7 +132,9 @@ export function DailyDuelCard({ tickers }: Props) {
                   ? "border-zinc-700 bg-zinc-900/40 hover:border-sky-400/60 hover:bg-sky-500/10 active:scale-[0.98]"
                   : isWinner
                     ? "border-emerald-500/50 bg-emerald-500/10"
-                    : "border-zinc-800 bg-zinc-950/40 opacity-70",
+                    : waitingOnClose && isPick
+                      ? "border-sky-500/40 bg-sky-500/10"
+                      : "border-zinc-800 bg-zinc-950/40 opacity-70",
                 isPick && "ring-2 ring-sky-400/60"
               )}
             >
@@ -131,11 +146,21 @@ export function DailyDuelCard({ tickers }: Props) {
                   Your pick
                 </p>
               )}
+              {waitingOnClose && isPick && (
+                <p className="mt-2 text-sm text-zinc-500">Locked · no peek</p>
+              )}
+              {waitingOnClose && !isPick && (
+                <p className="mt-2 text-sm text-zinc-600">—</p>
+              )}
               {pct != null && (
                 <p
                   className={cn(
                     "mt-2 text-lg font-semibold tabular-nums",
-                    pct > 0 ? "text-gain" : pct < 0 ? "text-loss" : "text-zinc-400"
+                    pct > 0
+                      ? "text-gain"
+                      : pct < 0
+                        ? "text-loss"
+                        : "text-zinc-400"
                   )}
                 >
                   {percent(pct)}
@@ -148,9 +173,11 @@ export function DailyDuelCard({ tickers }: Props) {
 
       <p className="mt-4 text-center text-sm leading-relaxed text-zinc-400">
         {record.pick == null
-          ? "Which one's greener today? Tap to lock it in — no take-backs."
-          : record.outcome === "pending"
-            ? "Locked in — waiting on live quotes to settle this…"
+          ? "Predict the closer — tap to lock it. No take-backs, no live % until 4pm ET."
+          : waitingOnClose
+            ? canSettle
+              ? "Locked in — waiting on session quotes to settle…"
+              : "Locked in. Results unlock after the US close (4pm ET)."
             : resultLine}
       </p>
     </section>

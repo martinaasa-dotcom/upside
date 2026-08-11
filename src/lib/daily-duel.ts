@@ -1,14 +1,14 @@
 /**
- * Daily Duel — "which of your holdings is greener today?" prediction game.
- * One deterministic matchup per Tallinn day (same for anyone on this
- * device), guess before you'd naturally know, immediate reveal off live
- * quotes already in the book. Local to this browser — see visit-streak.ts
- * for why personal-engagement state doesn't live in the synced LabBundle.
+ * Daily Duel — pick which holding finishes the US cash session higher.
+ * One deterministic matchup per Tallinn day. Pick anytime; results only
+ * after the US regular close (4pm America/New_York) so live quotes can’t
+ * spoil the game. Local to this browser.
  */
 import { todayKeyInTz } from "@/lib/timezone";
 
-const KEY = "upside-daily-duel-v1";
+const KEY = "upside-daily-duel-v2";
 const MAX_HISTORY = 60;
+const US_TZ = "America/New_York";
 
 export type DuelPick = "a" | "b";
 export type DuelOutcome = "pending" | "win" | "loss" | "push";
@@ -77,6 +77,23 @@ function saveStorage(s: DuelStorage) {
   }
 }
 
+/**
+ * True once the US regular equity session is done for “today” in New York
+ * (weekday after 16:00 ET, or any weekend — use last available session %).
+ */
+export function duelCanSettle(now: Date = new Date()): boolean {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: US_TZ,
+    weekday: "short",
+    hour: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  if (weekday === "Sat" || weekday === "Sun") return true;
+  return hour >= 16;
+}
+
 /** Deterministic pair for the day — same matchup all day, changes tomorrow. */
 export function pickTodaysDuel(
   tickers: string[],
@@ -119,10 +136,8 @@ export function getOrCreateTodaysDuel(
 }
 
 /**
- * Lock in a pick and resolve it immediately against live today-% data
- * (already visible elsewhere in the app — the game is the daily habit of
- * predicting first, not information secrecy). If live data isn't ready yet
- * the record stays "pending" until `resolvePendingOutcome` catches it up.
+ * Lock in a pick. Does not reveal session % until after the US close —
+ * otherwise live quotes spoil the prediction.
  */
 export function makeDuelPick(
   dayKey: string,
@@ -133,16 +148,25 @@ export function makeDuelPick(
   const idx = storage.history.findIndex((r) => r.dayKey === dayKey);
   if (idx < 0) return null;
   const rec = storage.history[idx]!;
-  if (rec.pick != null) return rec; // no take-backs — commitment is the game
+  if (rec.pick != null) return rec; // no take-backs
 
-  const updated = resolveOutcome({ ...rec, pick }, todayPctByTicker);
+  const locked: DuelRecord = {
+    ...rec,
+    pick,
+    revealedPctA: null,
+    revealedPctB: null,
+    outcome: "pending",
+  };
+  const updated = duelCanSettle()
+    ? resolveOutcome(locked, todayPctByTicker)
+    : locked;
   const nextHistory = [...storage.history];
   nextHistory[idx] = updated;
   saveStorage({ history: nextHistory });
   return updated;
 }
 
-/** Backfill an outcome once live quotes arrive for a pick made too early. */
+/** Settle a locked pick once the US cash session is done and quotes exist. */
 export function resolvePendingOutcome(
   dayKey: string,
   todayPctByTicker: Record<string, number | null | undefined>
@@ -152,9 +176,10 @@ export function resolvePendingOutcome(
   if (idx < 0) return null;
   const rec = storage.history[idx]!;
   if (rec.pick == null || rec.outcome !== "pending") return rec;
+  if (!duelCanSettle()) return rec;
 
   const updated = resolveOutcome(rec, todayPctByTicker);
-  if (updated.outcome === "pending") return rec; // still no data — no-op
+  if (updated.outcome === "pending") return rec;
   const nextHistory = [...storage.history];
   nextHistory[idx] = updated;
   saveStorage({ history: nextHistory });
@@ -165,10 +190,23 @@ function resolveOutcome(
   rec: DuelRecord,
   todayPctByTicker: Record<string, number | null | undefined>
 ): DuelRecord {
+  if (rec.pick == null || !duelCanSettle()) {
+    return {
+      ...rec,
+      revealedPctA: null,
+      revealedPctB: null,
+      outcome: "pending",
+    };
+  }
   const pctA = todayPctByTicker[rec.tickerA] ?? null;
   const pctB = todayPctByTicker[rec.tickerB] ?? null;
-  if (pctA == null || pctB == null || rec.pick == null) {
-    return { ...rec, revealedPctA: pctA, revealedPctB: pctB };
+  if (pctA == null || pctB == null) {
+    return {
+      ...rec,
+      revealedPctA: null,
+      revealedPctB: null,
+      outcome: "pending",
+    };
   }
   let outcome: DuelOutcome;
   if (pctA === pctB) outcome = "push";
