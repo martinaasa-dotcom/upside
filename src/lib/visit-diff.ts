@@ -1,7 +1,10 @@
 import type { OverviewModel } from "@/lib/overview";
 import { todayKeyInTz } from "@/lib/timezone";
 
-const KEY = "upside-last-visit-v1";
+const KEY = "upside-last-visit-v2";
+/** Ignore tiny gaps — refresh / tab switch isn't "away". */
+const MIN_AWAY_MS = 3 * 60 * 60 * 1000; // 3 hours
+/** Or a new Tallinn calendar day always counts as away. */
 
 export type VisitSnapshot = {
   at: string;
@@ -9,16 +12,14 @@ export type VisitSnapshot = {
   totalValue: number;
   equityValue: number;
   cash: number;
+  buyValue: number;
   todayDollar: number;
-  roiPct: number;
+  quotedShare: number;
   byTicker: Record<
     string,
-    { price: number; value: number; roiPct: number; todayPct: number | null }
+    { price: number; value: number; todayPct: number | null }
   >;
-  bySheet: Record<
-    string,
-    { name: string; value: number; roiPct: number; todayDollar: number }
-  >;
+  bySheet: Record<string, { name: string; value: number }>;
 };
 
 export type VisitDiffLine = {
@@ -33,13 +34,21 @@ export type VisitDiff = {
 };
 
 function money(n: number): string {
-  const sign = n > 0 ? "+" : "";
-  return `${sign}${Math.round(n).toLocaleString("en-US")}`;
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${sign}$${Math.round(Math.abs(n)).toLocaleString("en-US")}`;
 }
 
 function pct1(n: number): string {
-  const sign = n > 0 ? "+" : "";
-  return `${sign}${Math.round(n * 1000) / 10}%`;
+  const sign = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${sign}${Math.round(Math.abs(n) * 1000) / 10}%`;
+}
+
+/** Fraction of tickers that look live-quoted (have a today %). */
+export function quoteCoverage(model: OverviewModel): number {
+  const n = model.tickers.length;
+  if (n === 0) return 0;
+  const live = model.tickers.filter((t) => t.todayPct != null).length;
+  return live / n;
 }
 
 export function captureVisitSnapshot(model: OverviewModel): VisitSnapshot {
@@ -48,7 +57,6 @@ export function captureVisitSnapshot(model: OverviewModel): VisitSnapshot {
     byTicker[t.ticker] = {
       price: t.price,
       value: t.currentValue,
-      roiPct: t.roiPct,
       todayPct: t.todayPct,
     };
   }
@@ -57,8 +65,6 @@ export function captureVisitSnapshot(model: OverviewModel): VisitSnapshot {
     bySheet[s.portfolio.id] = {
       name: s.portfolio.name,
       value: s.totalValue,
-      roiPct: s.roiPct,
-      todayDollar: s.todayDollar,
     };
   }
   return {
@@ -67,8 +73,9 @@ export function captureVisitSnapshot(model: OverviewModel): VisitSnapshot {
     totalValue: model.totals.totalValue,
     equityValue: model.totals.equityValue,
     cash: model.totals.cash,
+    buyValue: model.totals.buyValue,
     todayDollar: model.totals.todayDollar,
-    roiPct: model.totals.roiPct,
+    quotedShare: quoteCoverage(model),
     byTicker,
     bySheet,
   };
@@ -78,8 +85,14 @@ export function loadVisitSnapshot(): VisitSnapshot | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as VisitSnapshot;
+    if (!raw) {
+      // One-time migrate / drop broken v1 snapshots (often cost-basis garbage)
+      localStorage.removeItem("upside-last-visit-v1");
+      return null;
+    }
+    const parsed = JSON.parse(raw) as VisitSnapshot;
+    if (!(parsed?.totalValue > 0) || !parsed.at) return null;
+    return parsed;
   } catch {
     return null;
   }
@@ -87,6 +100,9 @@ export function loadVisitSnapshot(): VisitSnapshot | null {
 
 export function saveVisitSnapshot(snap: VisitSnapshot) {
   if (typeof window === "undefined") return;
+  // Don't persist half-loaded books — next open would invent fake "gains"
+  if (snap.quotedShare < 0.5) return;
+  if (!(snap.totalValue > 0)) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(snap));
   } catch {
@@ -94,17 +110,56 @@ export function saveVisitSnapshot(snap: VisitSnapshot) {
   }
 }
 
+function isTrustedSnapshot(prev: VisitSnapshot): boolean {
+  if (!(prev.totalValue > 0) || !prev.at) return false;
+  if (typeof prev.quotedShare === "number" && prev.quotedShare < 0.5)
+    return false;
+  // Cost-basis shaped book: NAV ≈ buy (±3%) with almost no day move stored
+  if (
+    prev.buyValue > 0 &&
+    Math.abs(prev.totalValue - prev.buyValue) / prev.buyValue < 0.03
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function wasAwayLongEnough(prev: VisitSnapshot, nowMs = Date.now()): boolean {
+  const age = nowMs - new Date(prev.at).getTime();
+  if (!Number.isFinite(age) || age < 0) return false;
+  if (prev.dayKey !== todayKeyInTz()) return age >= 15 * 60 * 1000;
+  return age >= MIN_AWAY_MS;
+}
+
+/**
+ * What actually moved while you were away — not lifetime P&L.
+ * Returns null when the prior snapshot is too fresh or untrustworthy.
+ */
 export function diffSinceLastVisit(
   prev: VisitSnapshot,
   model: OverviewModel
-): VisitDiff {
+): VisitDiff | null {
+  if (!isTrustedSnapshot(prev)) return null;
+  if (!wasAwayLongEnough(prev)) return null;
+  if (quoteCoverage(model) < 0.5) return null;
+
   const lines: VisitDiffLine[] = [];
   const navDelta = model.totals.totalValue - prev.totalValue;
-  if (Math.abs(navDelta) >= 50) {
+
+  // Guard: delta ≈ lifetime unrealized P&L → almost certainly a bad baseline
+  const lifetimePnl = model.totals.roiDollar;
+  if (
+    Math.abs(lifetimePnl) > 1000 &&
+    Math.abs(navDelta - lifetimePnl) / Math.max(Math.abs(lifetimePnl), 1) < 0.08
+  ) {
+    return null;
+  }
+
+  if (Math.abs(navDelta) >= 100) {
     lines.push({
       id: "nav",
-      text: `Combined NAV ${money(navDelta)} since last open`,
-      tone: navDelta >= 0 ? "up" : "down",
+      text: `Book ${money(navDelta)} while you were away`,
+      tone: navDelta > 0 ? "up" : navDelta < 0 ? "down" : "neutral",
     });
   }
 
@@ -112,8 +167,8 @@ export function diffSinceLastVisit(
   if (Math.abs(cashDelta) >= 100) {
     lines.push({
       id: "cash",
-      text: `Cash moved ${money(cashDelta)}`,
-      tone: cashDelta >= 0 ? "up" : "down",
+      text: `Cash ${money(cashDelta)}`,
+      tone: cashDelta > 0 ? "up" : "down",
     });
   }
 
@@ -124,12 +179,12 @@ export function diffSinceLastVisit(
     if (!p || !(p.price > 0)) continue;
     const deltaPct = (t.price - p.price) / p.price;
     const deltaValue = t.currentValue - p.value;
-    if (Math.abs(deltaPct) >= 0.015 || Math.abs(deltaValue) >= 250) {
+    if (Math.abs(deltaPct) >= 0.02 || Math.abs(deltaValue) >= 500) {
       moves.push({ ticker: t.ticker, deltaPct, deltaValue });
     }
   }
   moves.sort((a, b) => Math.abs(b.deltaValue) - Math.abs(a.deltaValue));
-  for (const m of moves.slice(0, 4)) {
+  for (const m of moves.slice(0, 3)) {
     lines.push({
       id: `t-${m.ticker}`,
       text: `${m.ticker} ${pct1(m.deltaPct)} (${money(m.deltaValue)})`,
@@ -137,14 +192,13 @@ export function diffSinceLastVisit(
     });
   }
 
-  // New / gone tickers
   const prevSet = new Set(Object.keys(prev.byTicker));
   const nowSet = new Set(model.tickers.map((t) => t.ticker));
   for (const t of nowSet) {
     if (!prevSet.has(t)) {
       lines.push({
         id: `new-${t}`,
-        text: `${t} showed up since last open`,
+        text: `New name: ${t}`,
         tone: "neutral",
       });
     }
@@ -153,39 +207,19 @@ export function diffSinceLastVisit(
     if (!nowSet.has(t)) {
       lines.push({
         id: `gone-${t}`,
-        text: `${t} left the book since last open`,
+        text: `Gone: ${t}`,
         tone: "neutral",
       });
     }
   }
 
-  const sheetDeltas = model.sheets
-    .map((s) => {
-      const p = prev.bySheet[s.portfolio.id];
-      if (!p) return null;
-      return {
-        name: s.portfolio.name,
-        delta: s.totalValue - p.value,
-      };
-    })
-    .filter(Boolean) as { name: string; delta: number }[];
-  sheetDeltas.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-  const lead = sheetDeltas[0];
-  if (lead && Math.abs(lead.delta) >= 200) {
-    lines.push({
-      id: `sheet-${lead.name}`,
-      text: `${lead.name} led sheet moves (${money(lead.delta)})`,
-      tone: lead.delta >= 0 ? "up" : "down",
-    });
-  }
-
   if (lines.length === 0) {
     lines.push({
       id: "quiet",
-      text: "Quiet since last open — book barely flinched",
+      text: "Quiet while you were away — barely moved",
       tone: "neutral",
     });
   }
 
-  return { previousAt: prev.at, lines: lines.slice(0, 8) };
+  return { previousAt: prev.at, lines: lines.slice(0, 5) };
 }

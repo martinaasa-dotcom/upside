@@ -261,10 +261,28 @@ export function OverviewDashboard({
   useEffect(() => {
     if (!model.tickers.length) return;
     const prev = loadVisitSnapshot();
-    if (prev) setVisitDiff(diffSinceLastVisit(prev, model));
-    saveVisitSnapshot(captureVisitSnapshot(model));
+    setVisitDiff(prev ? diffSinceLastVisit(prev, model) : null);
+    // Snapshot is written when you leave — not on every Overview paint
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerKey]);
+
+  useEffect(() => {
+    function persist() {
+      if (!model.tickers.length) return;
+      saveVisitSnapshot(captureVisitSnapshot(model));
+    }
+    function onVis() {
+      if (document.visibilityState === "hidden") persist();
+    }
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      persist();
+      window.removeEventListener("pagehide", persist);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickerKey, model.totals.totalValue, model.totals.cash]);
 
   useEffect(() => {
     const c = loadArenaChallenge();
@@ -447,10 +465,18 @@ export function OverviewDashboard({
             ))}
           </ul>
 
-          {visitDiff && (
+          {visitDiff && visitDiff.lines.length > 0 && (
             <div className="relative mt-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/40 px-3.5 py-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                Since last open
+                While you were away
+              </p>
+              <p className="mt-0.5 text-[11px] text-zinc-600">
+                Since{" "}
+                {new Date(visitDiff.previousAt).toLocaleString("en-GB", {
+                  timeZone: "Europe/Tallinn",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
               </p>
               <ul className="mt-2 space-y-1.5">
                 {visitDiff.lines.slice(0, 4).map((line) => (
