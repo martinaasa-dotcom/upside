@@ -1,6 +1,7 @@
 import { resolveAdvisorModel } from "@/lib/ai/model";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
   buildFallbackPulseCheck,
   formatMovePct,
@@ -111,6 +112,9 @@ ${lines.join("\n\n")}`;
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   try {
     resolveAdvisorModel({ reasoning: true });
   } catch (err) {

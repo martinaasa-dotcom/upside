@@ -4,6 +4,7 @@ import {
   type CcChatContext,
 } from "@/lib/ai/cc-advisor";
 import { resolveAdvisorModel } from "@/lib/ai/model";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
   convertToModelMessages,
   stepCountIs,
@@ -26,6 +27,9 @@ function messagesHaveImages(messages: UIMessage[]): boolean {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   try {
     resolveAdvisorModel();
   } catch (err) {

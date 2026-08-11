@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
+import { roundMoney, roundShares } from "@/lib/money";
 import { normalizeYahooTicker, tickerExchangeHint } from "@/lib/ticker";
 
 export type HoldingFormValues = {
@@ -66,8 +67,8 @@ export function HoldingModal({
 
     onSave({
       ticker: normalizeYahooTicker(ticker),
-      shares: Math.round(sharesN * 10000) / 10000,
-      buy_price: Math.round(buyN * 100) / 100,
+      shares: roundShares(sharesN),
+      buy_price: roundMoney(buyN),
       target_call_pct: callN / 100,
     });
   }

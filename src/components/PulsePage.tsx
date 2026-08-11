@@ -511,6 +511,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   useEffect(() => {
     if (candidates.length === 0) return;
     const id = window.setInterval(() => {
+      if (document.hidden) return;
       void runPulse(candidates);
     }, PULSE_REFRESH_MS);
     return () => window.clearInterval(id);

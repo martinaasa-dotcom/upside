@@ -355,8 +355,11 @@ export function OverviewDashboard({
 
     load();
     // Hourly background refresh, no market-session gating — covers
-    // pre-market and after-hours the same as regular trading hours.
-    const id = window.setInterval(load, PULSE_REFRESH_MS);
+    // pre-market and after-hours the same as regular trading hours. Skipped
+    // while the tab is hidden; resumes on the next tick once visible again.
+    const id = window.setInterval(() => {
+      if (!document.hidden) load();
+    }, PULSE_REFRESH_MS);
     return () => {
       cancelled = true;
       window.clearInterval(id);

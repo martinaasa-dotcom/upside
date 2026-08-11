@@ -6,12 +6,16 @@ import {
   HOUSE_STANCE,
 } from "@/lib/forecast-plan";
 import type { ForecastModel } from "@/lib/forecast";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { generateObject } from "ai";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   try {
     resolveAdvisorModel({ reasoning: true });
   } catch (err) {

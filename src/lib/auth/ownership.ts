@@ -106,32 +106,6 @@ export async function addCoOwnerToPortfolio(
   return { ok: true, userId };
 }
 
-/** Member of community can read any member's book. */
-export async function userCanReadOwnerBook(
-  viewerId: string,
-  ownerId: string
-): Promise<boolean> {
-  if (viewerId === ownerId) return true;
-  const supabase = await db();
-  if (!supabase) return false;
-  const { data: myCommunities } = await supabase
-    .from(PORTFELL_TABLES.communityMembers)
-    .select("community_id")
-    .eq("user_id", viewerId);
-  const ids = ((myCommunities ?? []) as { community_id: string }[]).map(
-    (r) => r.community_id
-  );
-  if (!ids.length) return false;
-  const { data: peer } = await supabase
-    .from(PORTFELL_TABLES.communityMembers)
-    .select("user_id")
-    .eq("user_id", ownerId)
-    .in("community_id", ids)
-    .limit(1)
-    .maybeSingle();
-  return Boolean(peer);
-}
-
 export async function userIsCommunityAdmin(
   userId: string,
   communityId: string

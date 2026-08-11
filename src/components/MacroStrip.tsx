@@ -67,6 +67,7 @@ export function MacroStrip() {
       if (alive) setFearGreed(fg);
     });
     const id = window.setInterval(() => {
+      if (document.hidden) return;
       void fetchMacro().then((m) => {
         if (alive) setMacro(m);
       });

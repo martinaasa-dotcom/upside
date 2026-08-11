@@ -154,11 +154,3 @@ export function useAuth(): AuthState {
   }
   return ctx;
 }
-
-/** True when Supabase public env is present (auth expected). */
-export function authConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-}

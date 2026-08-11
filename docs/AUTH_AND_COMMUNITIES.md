@@ -72,5 +72,6 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `014` community members RLS recursion fix  
 - `015` superadmin overview RPC  
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
+- `017` RLS hardening — closed a self co-owner-escalation hole on `portfell_portfolio_owners`, a world-readable `portfell_book_snapshots` policy, a stale shared-row leak on `portfell_lab_state`, and a null-email coalesce bug on invite `SELECT` policies
 
 Writes require a signed-in **co-owner** only.

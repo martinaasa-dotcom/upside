@@ -764,7 +764,10 @@ export function Dashboard() {
 
   useEffect(() => {
     void refreshFx();
-    const id = window.setInterval(() => void refreshFx(), 120_000);
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      void refreshFx();
+    }, 120_000);
     return () => window.clearInterval(id);
   }, [refreshFx]);
 
@@ -1796,8 +1799,11 @@ export function Dashboard() {
 
     load();
     // Hourly background refresh, no market-session gating — pre-market and
-    // after-hours refresh the same as regular trading hours.
-    const id = window.setInterval(load, PULSE_REFRESH_MS);
+    // after-hours refresh the same as regular trading hours. Skipped while
+    // the tab is hidden; resumes on the next tick once visible again.
+    const id = window.setInterval(() => {
+      if (!document.hidden) load();
+    }, PULSE_REFRESH_MS);
     return () => {
       cancelled = true;
       window.clearInterval(id);

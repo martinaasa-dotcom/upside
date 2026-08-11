@@ -26,19 +26,6 @@ export type Holding = {
   sort_order: number;
 };
 
-export type CoveredCallTarget = {
-  id: string;
-  portfolio_id: string;
-  holding_id: string | null;
-  ticker: string;
-  expiration: string;
-  stock_target: number | null;
-  target_strike: number;
-  contracts: number;
-  target_distance_pct: number | null;
-  notes: string | null;
-};
-
 export type Quote = {
   ticker: string;
   /** Regular-session last (or best available when session closed) */

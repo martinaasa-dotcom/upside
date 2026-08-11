@@ -1,4 +1,5 @@
 import { scanCoveredCall } from "@/lib/market/covered-call";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -16,6 +17,9 @@ type ScanBody = {
 };
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const body = (await req.json()) as ScanBody;
   const positions = body.positions ?? [];
 
