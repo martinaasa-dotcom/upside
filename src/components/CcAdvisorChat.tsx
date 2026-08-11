@@ -84,6 +84,8 @@ type Props = {
   onApplyActions: (actions: AdvisorAction[]) => void;
   /** Bump to open the floating Margus panel (empty-state / drawer CTAs). */
   expandSignal?: number;
+  /** Bump to open the panel AND immediately trigger the image file picker. */
+  imagePickSignal?: number;
 };
 
 type ToolPart = {
@@ -421,6 +423,7 @@ export function CcAdvisorChat({
   context,
   onApplyActions,
   expandSignal = 0,
+  imagePickSignal = 0,
 }: Props) {
   const [input, setInput] = useState("");
   const [pendingImages, setPendingImages] = useState<FileUIPart[]>([]);
@@ -455,6 +458,14 @@ export function CcAdvisorChat({
     if (!expandSignal) return;
     setOpen(true);
   }, [expandSignal]);
+
+  useEffect(() => {
+    if (!imagePickSignal) return;
+    setOpen(true);
+    // Panel needs a tick to mount before the hidden input exists in the DOM.
+    const t = window.setTimeout(() => fileInputRef.current?.click(), 60);
+    return () => window.clearTimeout(t);
+  }, [imagePickSignal]);
 
   // Close on Escape when the panel is open (rules popover handles its own Esc).
   useEffect(() => {

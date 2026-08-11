@@ -12,8 +12,8 @@ import {
   parseDecimal,
 } from "@/lib/number-input";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
-import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
 
@@ -40,6 +40,8 @@ type Props = {
   onEditCash: () => void;
   onAddHolding?: () => void;
   onAskMargus?: () => void;
+  /** Opens Margus AND immediately triggers the image file picker. */
+  onImportScreenshot?: () => void;
   onOpenTicker?: (ticker: string) => void;
   /** Sheet display currency for totals/values (spot & buy stay USD). */
   displayCurrency?: DisplayCurrency;
@@ -140,20 +142,57 @@ function InlineNumber({
   );
 }
 
-const HEADERS = [
-  "Ticker",
-  "% Total",
-  "Shares",
-  "Buy",
-  "Price",
-  "ROI %",
-  "Cost",
-  "Value",
-  "ROI $",
-  "90d",
-  "Today",
-  "",
-] as const;
+type SortKey =
+  | "ticker"
+  | "pct"
+  | "shares"
+  | "buy"
+  | "price"
+  | "roiPct"
+  | "cost"
+  | "value"
+  | "roiDollar"
+  | "today";
+
+const COLUMNS: { label: string; key?: SortKey }[] = [
+  { label: "Ticker", key: "ticker" },
+  { label: "% Total", key: "pct" },
+  { label: "Shares", key: "shares" },
+  { label: "Buy", key: "buy" },
+  { label: "Price", key: "price" },
+  { label: "ROI %", key: "roiPct" },
+  { label: "Cost", key: "cost" },
+  { label: "Value", key: "value" },
+  { label: "ROI $", key: "roiDollar" },
+  { label: "90d" },
+  { label: "Today", key: "today" },
+  { label: "" },
+];
+
+function sortValue(h: EnrichedHolding, key: SortKey): number | string {
+  switch (key) {
+    case "ticker":
+      return h.ticker;
+    case "pct":
+      return h.pctOfTotal;
+    case "shares":
+      return h.shares;
+    case "buy":
+      return h.buy_price;
+    case "price":
+      return h.quote?.price ?? h.buy_price;
+    case "roiPct":
+      return h.roiPct;
+    case "cost":
+      return h.buyValue;
+    case "value":
+      return h.currentValue;
+    case "roiDollar":
+      return h.roiDollar;
+    case "today":
+      return h.quote?.changePercent ?? Number.NEGATIVE_INFINITY;
+  }
+}
 
 const TEMPLATE =
   "repeat(11, minmax(max-content, 1fr)) minmax(2.25rem, 2.25rem)";
@@ -167,6 +206,7 @@ export function PortfolioTable({
   onEditCash,
   onAddHolding,
   onAskMargus,
+  onImportScreenshot,
   onOpenTicker,
   displayCurrency = "USD",
   eurUsd = null,
@@ -176,36 +216,62 @@ export function PortfolioTable({
     currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
   const usd = (value: number, digits = 2) => currency(value, digits, "USD");
 
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+
+  function toggleSort(key: SortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      // Numbers default to biggest-first (more useful at a glance); ticker A-Z.
+      setSortDir(key === "ticker" ? 1 : -1);
+      return;
+    }
+    setSortDir((d) => (d === 1 ? -1 : 1) as 1 | -1);
+  }
+
+  const sortedHoldings = useMemo(() => {
+    if (!sortKey) return holdings;
+    const rows = [...holdings];
+    rows.sort((a, b) => {
+      const va = sortValue(a, sortKey);
+      const vb = sortValue(b, sortKey);
+      const cmp =
+        typeof va === "string" && typeof vb === "string"
+          ? va.localeCompare(vb)
+          : (va as number) - (vb as number);
+      return cmp * sortDir;
+    });
+    return rows;
+  }, [holdings, sortKey, sortDir]);
+
   const emptyCta = (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-      {onAskMargus && (
-        <button
-          type="button"
-          onClick={onAskMargus}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
-        >
-          Import screenshot
-        </button>
-      )}
-      {onAddHolding && (
-        <button
-          type="button"
-          onClick={onAddHolding}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
-        >
-          <Plus className="h-4 w-4" />
-          Add holding
-        </button>
-      )}
-      {onAskMargus && (
-        <button
-          type="button"
-          onClick={onAskMargus}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
-        >
-          Ask Margus
-        </button>
-      )}
+    <div className="mt-4 flex flex-col items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {(onImportScreenshot || onAskMargus) && (
+          <button
+            type="button"
+            onClick={onImportScreenshot ?? onAskMargus}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
+          >
+            <ImagePlus className="h-4 w-4" />
+            Import screenshot
+          </button>
+        )}
+        {onAddHolding && (
+          <button
+            type="button"
+            onClick={onAddHolding}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+          >
+            <Plus className="h-4 w-4" />
+            Add holding manually
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-zinc-500">
+        Screenshot drops every row in at once — Margus reads ticker, shares, and
+        buy price straight off the image.
+      </p>
     </div>
   );
 
@@ -392,14 +458,37 @@ export function PortfolioTable({
         ) : (
           <FluidTable template={TEMPLATE}>
             <FluidRow className="border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-              {HEADERS.map((label) => (
-                <div key={label || "actions"} className={cellBase}>
-                  {label}
+              {COLUMNS.map((col) => (
+                <div key={col.label || "actions"} className={cellBase}>
+                  {col.key ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(col.key!)}
+                      className={cn(
+                        "group inline-flex items-center gap-1 transition hover:text-zinc-300",
+                        sortKey === col.key && "text-brand-bright"
+                      )}
+                      title={`Sort by ${col.label}`}
+                    >
+                      {col.label}
+                      {sortKey === col.key ? (
+                        sortDir === 1 ? (
+                          <ArrowUp className="h-3 w-3" />
+                        ) : (
+                          <ArrowDown className="h-3 w-3" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3 w-3 opacity-30 transition group-hover:opacity-70" />
+                      )}
+                    </button>
+                  ) : (
+                    col.label
+                  )}
                 </div>
               ))}
             </FluidRow>
 
-            {holdings.map((h) => (
+            {sortedHoldings.map((h) => (
               <FluidRow key={h.id} className="group hover:bg-zinc-900/40">
                 <div
                   className={cn(

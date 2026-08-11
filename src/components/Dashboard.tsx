@@ -302,6 +302,7 @@ export function Dashboard() {
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
+  const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
@@ -2263,6 +2264,9 @@ export function Dashboard() {
               onAskMargus={() =>
                 setMargusExpandSignal((n) => n + 1)
               }
+              onImportScreenshot={() =>
+                setMargusImagePickSignal((n) => n + 1)
+              }
               onOpenTicker={(t) => setDrawerTicker(t)}
               displayCurrency={getDisplayCurrency(
                 displayCurrencyByPortfolio,
@@ -2537,6 +2541,7 @@ export function Dashboard() {
             : OVERVIEW_TAB_ID
         }
         expandSignal={margusExpandSignal}
+        imagePickSignal={margusImagePickSignal}
         onApplyActions={
           !isMetaTab && activePortfolio && snapshot
             ? applyAdvisorActions

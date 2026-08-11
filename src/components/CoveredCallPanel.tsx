@@ -1,6 +1,7 @@
 "use client";
 
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
+import { callPctBaseline, STOCK_TARGET_BASELINES } from "@/lib/calculations";
 import { cn, currency, percent } from "@/lib/format";
 import {
   blockWheelChange,
@@ -10,6 +11,20 @@ import {
 import type { CoveredCallRow } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { useEffect, useRef, useState } from "react";
+
+/** Spot within 2% of the write level — matches the Overview briefing trigger. */
+function isNearWriteLevel(r: CoveredCallRow): boolean {
+  const spot = r.spot;
+  if (spot == null || !(spot > 0)) return false;
+  const atTarget = r.stockTarget != null && spot >= r.stockTarget * 0.98;
+  const atStrike =
+    r.nextStrike != null && r.nextStrike > 0 && spot / r.nextStrike >= 0.98;
+  return atTarget || atStrike;
+}
+
+function stockTargetBaseline(ticker: string): number | null {
+  return STOCK_TARGET_BASELINES[ticker.toUpperCase()] ?? null;
+}
 
 type Props = {
   rows: CoveredCallRow[];
@@ -28,98 +43,131 @@ function signedTone(value: number) {
 
 function InlineTargetCall({
   value,
+  baseline,
   onCommit,
 }: {
   value: number;
+  baseline?: number | null;
   onCommit: (pct: number) => void;
 }) {
   const display = formatDecimal(Math.round(value * 100), 0);
   const [draft, setDraft] = useState(display);
   const focused = useRef(false);
+  const offBaseline =
+    baseline != null && Math.round(baseline * 100) !== Math.round(value * 100);
 
   useEffect(() => {
     if (!focused.current) setDraft(display);
   }, [display]);
 
   return (
-    <div className="inline-flex items-center justify-center gap-0.5">
-      <input
-        type="text"
-        inputMode="numeric"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
-        onFocus={() => {
-          focused.current = true;
-        }}
-        onWheel={blockWheelChange}
-        onBlur={() => {
-          focused.current = false;
-          const n = parseDecimal(draft);
-          if (!Number.isNaN(n) && Math.round(n) / 100 !== value) {
-            onCommit(Math.round(n) / 100);
-          } else setDraft(display);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-          if (e.key === "Escape") {
-            setDraft(display);
-            (e.target as HTMLInputElement).blur();
+    <div className="inline-flex flex-col items-center gap-0.5">
+      <div className="inline-flex items-center justify-center gap-0.5">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+          onFocus={() => {
+            focused.current = true;
+          }}
+          onWheel={blockWheelChange}
+          onBlur={() => {
+            focused.current = false;
+            const n = parseDecimal(draft);
+            if (!Number.isNaN(n) && Math.round(n) / 100 !== value) {
+              onCommit(Math.round(n) / 100);
+            } else setDraft(display);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") {
+              setDraft(display);
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          title={
+            baseline != null
+              ? `House baseline ~${Math.round(baseline * 100)}%`
+              : undefined
           }
-        }}
-        className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
-      />
-      <span className="text-xs text-zinc-500">%</span>
+          className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
+        />
+        <span className="text-xs text-zinc-500">%</span>
+      </div>
+      {offBaseline && (
+        <span className="text-[10px] leading-none text-zinc-600">
+          house {Math.round(baseline! * 100)}%
+        </span>
+      )}
     </div>
   );
 }
 
 function InlineStockTarget({
   value,
+  baseline,
   onCommit,
 }: {
   value: number | null;
+  baseline?: number | null;
   onCommit: (price: number) => void;
 }) {
   const display =
     value != null && value > 0 ? formatDecimal(value, 2) : "";
   const [draft, setDraft] = useState(display);
   const focused = useRef(false);
+  const offBaseline =
+    baseline != null &&
+    (value == null || Math.abs(value - baseline) >= 0.5);
 
   useEffect(() => {
     if (!focused.current) setDraft(display);
   }, [display]);
 
   return (
-    <div className="inline-flex items-center justify-center gap-0.5">
-      <span className="text-xs text-zinc-500">$</span>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={draft}
-        placeholder="—"
-        onChange={(e) =>
-          setDraft(e.target.value.replace(/,/g, ".").replace(/[^\d.]/g, ""))
-        }
-        onFocus={() => {
-          focused.current = true;
-        }}
-        onWheel={blockWheelChange}
-        onBlur={() => {
-          focused.current = false;
-          const n = parseDecimal(draft);
-          if (!Number.isNaN(n) && n > 0 && n !== value) {
-            onCommit(Math.round(n * 100) / 100);
-          } else setDraft(display);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-          if (e.key === "Escape") {
-            setDraft(display);
-            (e.target as HTMLInputElement).blur();
+    <div className="inline-flex flex-col items-center gap-0.5">
+      <div className="inline-flex items-center justify-center gap-0.5">
+        <span className="text-xs text-zinc-500">$</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={draft}
+          placeholder="—"
+          onChange={(e) =>
+            setDraft(e.target.value.replace(/,/g, ".").replace(/[^\d.]/g, ""))
           }
-        }}
-        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
-      />
+          onFocus={() => {
+            focused.current = true;
+          }}
+          onWheel={blockWheelChange}
+          onBlur={() => {
+            focused.current = false;
+            const n = parseDecimal(draft);
+            if (!Number.isNaN(n) && n > 0 && n !== value) {
+              onCommit(Math.round(n * 100) / 100);
+            } else setDraft(display);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") {
+              setDraft(display);
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          title={
+            baseline != null
+              ? `House baseline ~$${formatDecimal(baseline, 2)}`
+              : undefined
+          }
+          className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
+        />
+      </div>
+      {offBaseline && (
+        <span className="text-[10px] leading-none text-zinc-600">
+          house ${formatDecimal(baseline!, 0)}
+        </span>
+      )}
     </div>
   );
 }
@@ -138,6 +186,14 @@ const HEADERS = [
   "CC yield",
   "Premium",
 ] as const;
+
+const HEADER_HINTS: Partial<Record<(typeof HEADERS)[number], string>> = {
+  "Call %": "OTM % used to pick the strike — higher = further out, less premium",
+  "Stock target": "Price where the house plan says it's worth writing/rolling a call",
+  Distance: "(Stock target − spot) / spot — negative means spot is at/past target",
+  "Next strike": "Stock target × (1 + Call %), rounded to a tradable strike",
+  "CC yield": "Modeled 2-week premium yield if you wrote at the next strike today",
+};
 
 export function CoveredCallPanel({
   rows,
@@ -191,6 +247,7 @@ export function CoveredCallPanel({
                   <p className="mb-1 text-zinc-500">Call %</p>
                   <InlineTargetCall
                     value={r.targetCall}
+                    baseline={callPctBaseline(r.holding.ticker)}
                     onCommit={(pct) => onPatchTargetCall(r.holding.id, pct)}
                   />
                 </div>
@@ -198,6 +255,7 @@ export function CoveredCallPanel({
                   <p className="mb-1 text-zinc-500">Stock target</p>
                   <InlineStockTarget
                     value={r.stockTarget}
+                    baseline={stockTargetBaseline(r.holding.ticker)}
                     onCommit={(price) =>
                       onPatchStockTarget(r.holding.id, price)
                     }
@@ -217,6 +275,11 @@ export function CoveredCallPanel({
                       ? percent(r.targetDistance)
                       : "—"}
                   </p>
+                  {isNearWriteLevel(r) && (
+                    <span className="mt-1 inline-block rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-200">
+                      At write level
+                    </span>
+                  )}
                 </div>
                 <div>
                   <p className="text-zinc-500">Next strike</p>
@@ -266,7 +329,11 @@ export function CoveredCallPanel({
         <FluidTable template={TEMPLATE}>
           <FluidRow className="border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
             {HEADERS.map((label) => (
-              <div key={label} className={cellBase}>
+              <div
+                key={label}
+                className={cellBase}
+                title={HEADER_HINTS[label]}
+              >
                 {label}
               </div>
             ))}
@@ -305,12 +372,14 @@ export function CoveredCallPanel({
               <div className={cn(cellBase, "py-1")}>
                 <InlineTargetCall
                   value={r.targetCall}
+                  baseline={callPctBaseline(r.holding.ticker)}
                   onCommit={(pct) => onPatchTargetCall(r.holding.id, pct)}
                 />
               </div>
               <div className={cn(cellBase, "py-1")}>
                 <InlineStockTarget
                   value={r.stockTarget}
+                  baseline={stockTargetBaseline(r.holding.ticker)}
                   onCommit={(price) => onPatchStockTarget(r.holding.id, price)}
                 />
               </div>
@@ -323,7 +392,18 @@ export function CoveredCallPanel({
                     : "text-zinc-600"
                 )}
               >
-                {r.targetDistance != null ? percent(r.targetDistance) : "—"}
+                <span className="flex flex-col items-center gap-0.5">
+                  <span>
+                    {r.targetDistance != null
+                      ? percent(r.targetDistance)
+                      : "—"}
+                  </span>
+                  {isNearWriteLevel(r) && (
+                    <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium normal-case text-amber-200">
+                      At write level
+                    </span>
+                  )}
+                </span>
               </div>
               <div
                 className={cn(
