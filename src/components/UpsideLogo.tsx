@@ -76,7 +76,11 @@ export function UpsideLogo({
     >
       {/* Optical pad: wide-tracked caps sit slightly high; nudge mark up 1px vs text. */}
       <UpsideMark className="relative top-[-0.5px] h-[1.15em] w-[1.15em] shrink-0" />
-      <span className="pt-[0.08em] text-[1em] font-semibold uppercase tracking-[0.22em]">
+      {/* letter-spacing also pads *after* the last glyph — cancel that trailing
+          sliver with a matching negative margin so whatever sits to the right
+          (the header's divider + tab name) gets the same gap as everything
+          else, instead of looking pushed further away. */}
+      <span className="-mr-[0.22em] pt-[0.08em] text-[1em] font-semibold uppercase tracking-[0.22em]">
         Upside
       </span>
     </span>
