@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { SignInGate } from "@/components/SignInGate";
-import { UpsideLogo } from "@/components/UpsideLogo";
+import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
 import { buildOverview } from "@/lib/overview";
@@ -14,7 +14,6 @@ import {
   UserMinus,
   Users,
 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Profile = {
@@ -227,12 +226,7 @@ export function CommunityView({ communityId }: Props) {
       <div className="min-h-dvh bg-[#121214] text-zinc-100">
         <header className="sticky top-0 z-40 border-b border-brand-deep/25 bg-[#121214]/95 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-            <Link href="/" className="shrink-0" aria-label="Upside home">
-              <UpsideLogo
-                variant="wordmark"
-                className="text-[15px] leading-none text-white"
-              />
-            </Link>
+            <HeaderBrand />
             <WorkspaceSwitcher className="hidden sm:inline-flex" />
             <div className="mx-auto flex min-w-0 items-center gap-2 sm:mx-0 sm:ml-auto">
               <Users className="hidden h-4 w-4 shrink-0 text-brand-bright/80 sm:block" />

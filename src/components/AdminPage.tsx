@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { SignInGate } from "@/components/SignInGate";
-import { UpsideLogo } from "@/components/UpsideLogo";
+import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { Shield } from "lucide-react";
@@ -95,12 +95,7 @@ export function AdminPage() {
         <header className="border-b border-brand-deep/25 bg-[#121214]/90 backdrop-blur">
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
-              <Link href="/" className="shrink-0" aria-label="Upside home">
-                <UpsideLogo
-                  variant="wordmark"
-                  className="text-[15px] leading-none text-white"
-                />
-              </Link>
+              <HeaderBrand />
               <WorkspaceSwitcher />
             </div>
           </div>

@@ -9,6 +9,10 @@ type Props = {
   title?: string;
 };
 
+/** Canonical header chrome size — keep every app bar on the same lockup. */
+export const UPSIDE_HEADER_WORDMARK_CLASS =
+  "text-[15px] leading-none text-white";
+
 /** Faceted geometric A — champagne → bronze, light from upper-right. */
 function UpsideMark({ className }: { className?: string }) {
   return (
@@ -51,7 +55,7 @@ export function UpsideLogo({
         aria-label={title}
       >
         <UpsideMark className="h-[4.5rem] w-[4.5rem]" />
-        <span className="-mr-[0.35em] text-center text-[0.95rem] font-semibold uppercase tracking-[0.35em] text-white">
+        <span className="-mr-[0.35em] text-center text-[0.95rem] font-semibold uppercase leading-none tracking-[0.35em] text-white">
           Upside
         </span>
       </span>
@@ -66,18 +70,19 @@ export function UpsideLogo({
     );
   }
 
+  // Wordmark: true vertical center — mark midline = UPSIDE cap midline.
+  // Do not use items-baseline / positive top offsets (those drop the mark).
   return (
     <span
       className={cn(
-        "inline-flex items-baseline gap-1.5 leading-none text-white",
+        "inline-flex items-center gap-1.5 leading-none text-white",
         className
       )}
       role="img"
       aria-label={title}
     >
-      {/* Cap-height mark, shifted onto the text baseline */}
-      <UpsideMark className="relative top-[0.15em] h-[0.82em] w-[0.82em]" />
-      <span className="-mr-[0.22em] font-semibold uppercase tracking-[0.22em]">
+      <UpsideMark className="h-[1em] w-[1em]" />
+      <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
         Upside
       </span>
     </span>

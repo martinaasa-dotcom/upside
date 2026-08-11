@@ -21,6 +21,7 @@ import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
+import { HeaderBrand } from "@/components/HeaderBrand";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useAuth } from "@/components/AuthProvider";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -2018,10 +2019,7 @@ export function Dashboard() {
       <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
         <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
-            <UpsideLogo
-              variant="wordmark"
-              className="text-[15px] leading-none text-white"
-            />
+            <HeaderBrand />
             <WorkspaceSwitcher />
           </div>
         </header>
@@ -2074,22 +2072,17 @@ export function Dashboard() {
       />
       <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
-          <div className="flex min-w-0 items-baseline gap-3 text-[15px] leading-none">
-            <button
-              type="button"
+          <div className="flex min-w-0 items-center gap-3 text-[15px] leading-none">
+            <HeaderBrand
               onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-              className="inline-flex shrink-0 items-baseline border-0 bg-transparent p-0 outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-brand/50"
-              title="Go to Overview"
-              aria-label="Upside — go to Overview"
-            >
-              <UpsideLogo variant="wordmark" className="text-white" />
-            </button>
+              title="Upside — go to Overview"
+            />
             <span
-              className="relative top-[0.12em] hidden h-[0.85em] w-px shrink-0 bg-zinc-700 sm:block"
+              className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
               aria-hidden
             />
             <h1
-              className="min-w-0 truncate font-medium tracking-tight text-zinc-300"
+              className="min-w-0 truncate font-medium leading-none tracking-tight text-zinc-300"
               title={
                 source === "supabase"
                   ? "My book"
