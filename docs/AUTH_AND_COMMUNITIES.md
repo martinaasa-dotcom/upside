@@ -73,5 +73,10 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `015` superadmin overview RPC  
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
 - `017` RLS hardening — closed a self co-owner-escalation hole on `portfell_portfolio_owners`, a world-readable `portfell_book_snapshots` policy, a stale shared-row leak on `portfell_lab_state`, and a null-email coalesce bug on invite `SELECT` policies
+- `018` fixed `portfell_claim_seed_for_me()` — a PL/pgSQL loop variable named `slug` collided with the `portfell_portfolios.slug` column, so every first-time seed claim raised "column reference is ambiguous" and rolled back (profile included). Silently broken since `010`; only worked for people seeded directly via `scripts/seed-ownership.sql` (Martin/Martina/Amanda). Rasmus was backfilled manually after the fix; Karoliine and Liina will claim normally on their first sign-in now
 
 Writes require a signed-in **co-owner** only.
+
+## Known gap
+
+`SUPABASE_SERVICE_ROLE_KEY` is not set on Vercel production, so `ensureProfileAndClaims` always takes the RPC path (`claimWithRpc`), never the service-role path. That's fine now that `018` is fixed, but it means the RPC is the *only* claim path in production — any future regression there will silently strand new sign-ins the same way `010`–`017` did. Consider setting the service-role key as a fallback, or adding a smoke test that calls `portfell_claim_seed_for_me` end-to-end.
