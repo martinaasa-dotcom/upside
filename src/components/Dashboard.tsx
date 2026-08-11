@@ -17,6 +17,7 @@ import {
   type HoldingPatch,
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
+import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
@@ -105,6 +106,7 @@ import {
   COMPOUND_TAB_ID,
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
+  PULSE_TAB_ID,
   buildOverview,
 } from "@/lib/overview";
 import type {
@@ -263,7 +265,8 @@ export function Dashboard() {
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
-  const isMetaTab = isOverview || isCompound || isLab;
+  const isPulse = activeId === PULSE_TAB_ID;
+  const isMetaTab = isOverview || isCompound || isLab || isPulse;
 
   useEffect(() => {
     if (guestMode && isLab) setActiveId(OVERVIEW_TAB_ID);
@@ -427,6 +430,9 @@ export function Dashboard() {
           if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) {
             return LAB_TAB_ID;
           }
+          if (sheetParam === "pulse" || sheetParam === PULSE_TAB_ID) {
+            return PULSE_TAB_ID;
+          }
           if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
             return OVERVIEW_TAB_ID;
           }
@@ -444,6 +450,7 @@ export function Dashboard() {
         (prev === OVERVIEW_TAB_ID ||
           prev === COMPOUND_TAB_ID ||
           prev === LAB_TAB_ID ||
+          prev === PULSE_TAB_ID ||
           list.some((p) => p.id === prev))
       ) {
         return prev;
@@ -454,6 +461,7 @@ export function Dashboard() {
         (saved === OVERVIEW_TAB_ID ||
           saved === COMPOUND_TAB_ID ||
           saved === LAB_TAB_ID ||
+          saved === PULSE_TAB_ID ||
           list.some((p) => p.id === saved))
       ) {
         return saved;
@@ -683,6 +691,8 @@ export function Dashboard() {
       url.searchParams.set("sheet", "compound");
     } else if (activeId === LAB_TAB_ID) {
       url.searchParams.set("sheet", "lab");
+    } else if (activeId === PULSE_TAB_ID) {
+      url.searchParams.set("sheet", "pulse");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
       if (p?.slug) url.searchParams.set("sheet", p.slug);
@@ -737,6 +747,7 @@ export function Dashboard() {
           fromState === OVERVIEW_TAB_ID ||
           fromState === COMPOUND_TAB_ID ||
           fromState === LAB_TAB_ID ||
+          fromState === PULSE_TAB_ID ||
           portfolios.some((p) => p.id === fromState)
         ) {
           setActiveId(fromState);
@@ -1807,6 +1818,13 @@ export function Dashboard() {
         group: "Go",
         run: () => setActiveId(COMPOUND_TAB_ID),
       },
+      {
+        id: "pulse",
+        label: "Pulse — thesis check",
+        group: "Go",
+        hint: "Big movers",
+        run: () => setActiveId(PULSE_TAB_ID),
+      },
     ];
     if (!guestMode) {
       items.push({
@@ -2008,9 +2026,11 @@ export function Dashboard() {
                 ? "Overview"
                 : isCompound
                   ? "Compound"
-                  : isLab
-                    ? "Lab"
-                    : activePortfolio!.name}
+                  : isPulse
+                    ? "Pulse"
+                    : isLab
+                      ? "Lab"
+                      : activePortfolio!.name}
             </h1>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
@@ -2159,6 +2179,8 @@ export function Dashboard() {
             eurUsd={eurUsd}
             eurUsdDetail={eurUsdDetail}
           />
+        ) : isPulse ? (
+          <PulsePage model={overview} convictions={convictionMap} />
         ) : isOverview ? (
           <>
             <OverviewDashboard

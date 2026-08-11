@@ -5,6 +5,7 @@ import type { Holding, Portfolio, Quote } from "@/lib/types";
 export const OVERVIEW_TAB_ID = "__overview__";
 export const COMPOUND_TAB_ID = "__compound__";
 export const LAB_TAB_ID = "__lab__";
+export const PULSE_TAB_ID = "__pulse__";
 
 export type SheetScore = {
   portfolio: Portfolio;

@@ -1,11 +1,16 @@
 "use client";
 
-import { cn } from "@/lib/format";
-import { COMPOUND_TAB_ID, LAB_TAB_ID, OVERVIEW_TAB_ID } from "@/lib/overview";
-import type { Portfolio } from "@/lib/types";
-import { Calculator, FlaskConical, LayoutDashboard, Plus } from "lucide-react";
+import { Calculator, FlaskConical, LayoutDashboard, Plus, Activity } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { cn } from "@/lib/format";
+import {
+  COMPOUND_TAB_ID,
+  LAB_TAB_ID,
+  OVERVIEW_TAB_ID,
+  PULSE_TAB_ID,
+} from "@/lib/overview";
+import type { Portfolio } from "@/lib/types";
 
 type Props = {
   portfolios: Portfolio[];
@@ -37,6 +42,11 @@ const MODES = [
     Icon: Calculator,
   },
   {
+    id: PULSE_TAB_ID,
+    label: "Pulse",
+    Icon: Activity,
+  },
+  {
     id: LAB_TAB_ID,
     label: "Lab",
     Icon: FlaskConical,
@@ -60,6 +70,7 @@ export function PortfolioTabs({
   const modes = guest
     ? MODES.filter((m) => m.id !== LAB_TAB_ID)
     : MODES;
+  const modeCols = modes.length;
 
   useEffect(() => {
     setMounted(true);
@@ -131,7 +142,9 @@ export function PortfolioTabs({
             aria-label="Workspace"
             className={cn(
               "grid h-10 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
-              modes.length === 2 ? "grid-cols-2 sm:w-[14rem]" : "grid-cols-3 sm:w-[21rem]"
+              modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
+              modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
+              modeCols >= 4 && "grid-cols-4 sm:w-[28rem]"
             )}
           >
             {modes.map(({ id, label, Icon }) => {
