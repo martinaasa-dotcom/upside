@@ -103,7 +103,7 @@ const GROUPS: { id: LabGroup; label: string }[] = [
   { id: "book", label: "Book" },
   { id: "income", label: "Income" },
   { id: "trade", label: "Trade" },
-  { id: "digest", label: "Digest" },
+  { id: "digest", label: "Review" },
   { id: "advanced", label: "Advanced" },
 ];
 
@@ -1457,11 +1457,11 @@ export function LabSheet({
       {tab === "alerts" && (
         <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-white">
-            <Target className="h-4 w-4 text-brand" /> Digest · dismissible queue
+            <Target className="h-4 w-4 text-brand" /> Alerts
           </div>
           <p className="mb-3 text-xs text-zinc-500">
-            Action cards you can clear. Overview briefing is the daily narrative
-            — same signals aren’t rewritten there.
+            Things that may need a decision. Tap Dismiss when you’ve handled it
+            (or decided to ignore it).
           </p>
           {alerts.length === 0 ? (
             <p className="text-sm text-zinc-500">

@@ -27,9 +27,8 @@ function dayMoney(n: number): string {
 }
 
 /**
- * Daily investor briefing — narrative habit loop.
- * Per-ticker strike/earnings alerts live in Lab → Digest (dismissible queue).
- * Briefing stays high-level so the same signal isn’t written twice.
+ * Daily investor briefing — what to know when you open Upside.
+ * Speaks in plain English. Per-ticker to-dos live under Alerts (Lab).
  */
 export function buildInvestorBriefing(input: {
   model: OverviewModel;
@@ -50,7 +49,7 @@ export function buildInvestorBriefing(input: {
     title: `Book is ${dayMoney(today$)} on the day`,
     detail:
       todayPct != null
-        ? `${pct1(todayPct)} combined · skim Digest if anything’s loud, otherwise wait.`
+        ? `${pct1(todayPct)} across the book. If nothing needs a write-plan tweak, waiting is the job.`
         : "Quotes still settling — open, skim, close.",
   });
 
@@ -62,9 +61,9 @@ export function buildInvestorBriefing(input: {
       id: `earn-week-${dayKey}`,
       kind: "action",
       title: todayPrint
-        ? `Earnings day — ${names.join(", ")}`
+        ? `Earnings today — ${names.join(", ")}`
         : `${soonEarn.length} earnings in the next week`,
-      detail: `${names.join(", ")}${soonEarn.length > names.length ? "…" : ""}. Queue lives in Lab → Digest — prefer expire-before if writing.`,
+      detail: `${names.join(", ")}${soonEarn.length > names.length ? "…" : ""}. If you’re writing calls, prefer expiries that finish before the print.`,
     });
   }
 
@@ -87,9 +86,9 @@ export function buildInvestorBriefing(input: {
       kind: "action",
       title:
         hotStrikes.length === 1
-          ? `${names[0]} needs a write-plan look`
-          : `${hotStrikes.length} names near strike / through target`,
-      detail: `${names.join(", ")}. Dismissible cards are in Digest — Margus is for the roll/widen call.`,
+          ? `${names[0]} is hugging the call strike`
+          : `${hotStrikes.length} names near strike or through target`,
+      detail: `${names.join(", ")}. Decide: roll, widen, or take assignment — ask Margus if you want a write plan.`,
     });
   }
 
@@ -115,9 +114,9 @@ export function buildInvestorBriefing(input: {
           ? `$${money(monthPrem)} premium booked this month`
           : `~$${money(openPrem)} open CC premium modeled`,
       detail:
-        openPrem > 0 && monthPrem > 0
-          ? `~$${money(openPrem)} still open on the calendar — log fills from CC calendar to close the season loop.`
-          : "One-tap Log premium on the CC calendar when you fill — season meter moves.",
+        openPrem > 0
+          ? "When you actually fill a call, tap Log premium on the CC calendar so the season meter counts it."
+          : "Premium already logged in Cashflow — season meter is current.",
     });
   }
 
@@ -126,14 +125,14 @@ export function buildInvestorBriefing(input: {
       id: "margin",
       kind: "watch",
       title: "Margin is live",
-      detail: `Combined cash $${money(model.totals.cash)}. Keep utilization intentional — hard ceiling ~30%.`,
+      detail: `Combined cash $${money(model.totals.cash)}. Keep it intentional — soft ceiling ~30% of the book.`,
     });
   } else if (model.totals.cash > 5_000) {
     items.push({
       id: "dry-powder",
       kind: "watch",
-      title: "Dry powder sitting",
-      detail: `$${money(model.totals.cash)} idle. Only deploy on thesis dips — boredom is not a signal.`,
+      title: `$${money(model.totals.cash)} sitting in cash`,
+      detail: "Fine as powder. Only deploy on a real thesis dip — boredom isn’t a buy signal.",
     });
   }
 
@@ -147,8 +146,7 @@ export function buildInvestorBriefing(input: {
         id: `conc-${top.ticker}`,
         kind: "watch",
         title: `${top.ticker} is ${pct1(share)} of equity`,
-        detail:
-          "Fine when the thesis is — know the blast radius. Detail cards stay in Digest.",
+        detail: "Concentration is fine when the thesis is — just know the blast radius if it hiccups.",
         ticker: top.ticker,
       });
     }
@@ -159,22 +157,19 @@ export function buildInvestorBriefing(input: {
       id: `play-wait-${dayKey}`,
       kind: "play",
       title: "The job today is waiting",
-      detail:
-        "Own + write calls + wait. Skim this briefing, maybe poke Arena — leave the real book alone.",
+      detail: "Own the names, write calls when it’s fat, otherwise close the laptop.",
     },
     {
       id: `play-arena-${dayKey}`,
       kind: "play",
-      title: "Boredom mode: Daily Arena",
-      detail:
-        "Sandbox only, live-book tickers. Overview card deep-links — trash-talk Versus if you must.",
+      title: "Bored? Paper Arena",
+      detail: "Sandbox money only — trade the itch without touching the real book.",
     },
     {
       id: `play-versus-${dayKey}`,
       kind: "play",
-      title: "Who’s house leader?",
-      detail:
-        "One Overview card ranks the family board. Versus is for the full roast.",
+      title: "House leader is on the board",
+      detail: "Glance Versus if you want the family scoreboard roast.",
     },
   ];
   const play = plays[Math.abs(hash(dayKey)) % plays.length]!;

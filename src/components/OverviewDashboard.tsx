@@ -329,7 +329,7 @@ export function OverviewDashboard({
                     Today’s briefing
                   </h2>
                   <p className="mt-0.5 text-sm text-zinc-500">
-                    Own · write · wait · Tallinn day
+                    What matters today · Tallinn
                   </p>
                 </div>
               </div>
@@ -357,7 +357,7 @@ export function OverviewDashboard({
                   onClick={() => onOpenLab("alerts")}
                   className="rounded-lg border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-400 hover:border-brand/40 hover:text-brand-bright"
                 >
-                  Digest
+                  Alerts
                 </button>
               )}
             </div>
