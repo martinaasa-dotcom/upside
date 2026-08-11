@@ -60,7 +60,41 @@ export function buildSheetRivalry(model: OverviewModel): RivalRow[] {
   return rows.sort((a, b) => b.score - a.score || b.todayDollar - a.todayDollar);
 }
 
+function ordinal(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  const mod10 = n % 10;
+  if (mod10 === 1) return `${n}st`;
+  if (mod10 === 2) return `${n}nd`;
+  if (mod10 === 3) return `${n}rd`;
+  return `${n}th`;
+}
+
+/** Plain-English copy for Overview card — not “house board / NAV medals”. */
+export function rivalryOverviewCopy(
+  leader: RivalRow | undefined,
+  sheetCount: number
+): { eyebrow: string; name: string; detail: string; ranks: string } {
+  if (!leader || sheetCount === 0) {
+    return {
+      eyebrow: "Family scoreboard",
+      name: "—",
+      detail: "Compare your portfolios — who's up today, lifetime, and by book size.",
+      ranks: "",
+    };
+  }
+  const { today, roi, nav } = leader.medals;
+  return {
+    eyebrow: "Family scoreboard",
+    name: leader.name,
+    detail: `Ranks your sheets against each other (${sheetCount} total). ${leader.name} is ahead on the blended score — not always #1 in every column.`,
+    ranks: `Today ${ordinal(today)} · Lifetime ${ordinal(roi)} · Book size ${ordinal(nav)}`,
+  };
+}
+
+/** Lab Versus header — still short. */
 export function rivalryTagline(leader: RivalRow | undefined): string {
   if (!leader) return "No sheets to rank yet.";
-  return `${leader.name} leads the house board — today #${leader.medals.today}, ROI #${leader.medals.roi}, NAV #${leader.medals.nav}.`;
+  const { today, roi, nav } = leader.medals;
+  return `${leader.name} leads — today ${ordinal(today)}, lifetime ${ordinal(roi)}, size ${ordinal(nav)}.`;
 }

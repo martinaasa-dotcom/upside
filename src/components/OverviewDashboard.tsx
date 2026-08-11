@@ -18,7 +18,7 @@ import type { CashflowEntry } from "@/lib/cashflow";
 import type { CoveredCallRow } from "@/lib/types";
 import {
   buildSheetRivalry,
-  rivalryTagline,
+  rivalryOverviewCopy,
 } from "@/lib/sheet-rivalry";
 import {
   loadArenaChallenge,
@@ -318,7 +318,10 @@ export function OverviewDashboard({
   );
 
   const rivalry = useMemo(() => buildSheetRivalry(model), [model]);
-  const houseLeader = rivalry[0];
+  const scoreboard = useMemo(
+    () => rivalryOverviewCopy(rivalry[0], model.sheets.length),
+    [rivalry, model.sheets.length]
+  );
   const kind = sessionKind(marketState);
 
   function openFirstPortfolio(t: TickerScore) {
@@ -511,17 +514,24 @@ export function OverviewDashboard({
           <div className="flex items-center gap-2 text-brand-bright">
             <Trophy className="h-4 w-4" />
             <span className="text-[11px] font-semibold uppercase tracking-wide">
-              House leader
+              {scoreboard.eyebrow}
             </span>
           </div>
           <p className="mt-2 text-lg font-semibold text-white">
-            {houseLeader?.name ?? "—"}
+            {scoreboard.name}
           </p>
-          <p className="mt-1 text-sm text-zinc-400">
-            {rivalryTagline(houseLeader)}
+          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            {scoreboard.detail}
           </p>
+          {scoreboard.ranks && (
+            <p className="mt-2 text-xs tabular-nums text-zinc-500">
+              {scoreboard.ranks}
+            </p>
+          )}
           {!guest && (
-            <p className="mt-2 text-[11px] text-brand/80">Open Versus →</p>
+            <p className="mt-2 text-[11px] text-brand/80">
+              See all rankings →
+            </p>
           )}
         </button>
         <button

@@ -505,7 +505,8 @@ export function LabSheet({
                 <Trophy className="h-4 w-4 text-brand" /> Family scoreboard
               </div>
               <p className="mt-1 text-xs text-zinc-500">
-                {rivalryTagline(rivalry[0])} Points = today×3 + ROI×2 + NAV.
+                {rivalryTagline(rivalry[0])} Score weights today&apos;s P&amp;L
+                most, then lifetime return, then book size.
               </p>
             </div>
           </div>
