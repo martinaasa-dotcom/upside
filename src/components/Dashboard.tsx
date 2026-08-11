@@ -2021,24 +2021,16 @@ export function Dashboard() {
 
   if (loading || portfolios.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#121214] px-6">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
         <UpsideLogo variant="icon" className="animate-pulse" />
-        <div className="w-full max-w-sm space-y-2" aria-hidden="true">
-          <div className="h-2.5 animate-pulse rounded-full bg-zinc-800" />
-          <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-zinc-800" />
-        </div>
       </div>
     );
   }
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#121214] px-6">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
         <UpsideLogo variant="icon" className="animate-pulse" />
-        <div className="w-full max-w-sm space-y-2" aria-hidden="true">
-          <div className="h-2.5 animate-pulse rounded-full bg-zinc-800" />
-          <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-zinc-800" />
-        </div>
       </div>
     );
   }
