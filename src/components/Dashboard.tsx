@@ -509,8 +509,13 @@ export function Dashboard() {
       setLoading(true);
       setLoadError(null);
     }
+    const ctrl = new AbortController();
+    const timeout = window.setTimeout(() => ctrl.abort(), 20_000);
     try {
-      const res = await fetch("/api/portfolios", { cache: "no-store" });
+      const res = await fetch("/api/portfolios", {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error("Sign in required to load your book");
@@ -535,19 +540,31 @@ export function Dashboard() {
     } catch (err) {
       console.error(err);
       if (!opts?.silent) {
+        const aborted =
+          err instanceof DOMException && err.name === "AbortError";
         setLoadError(
-          err instanceof Error
-            ? err.message
-            : "Couldn’t load the shared book. Showing local demo — retry when ready."
+          aborted
+            ? "Timed out loading your book — check the connection and retry."
+            : err instanceof Error
+              ? err.message
+              : "Couldn’t load the shared book. Showing local demo — retry when ready."
         );
-        const demo = loadDemoStore();
-        setSource("demo");
-        setPortfolios(demo.portfolios);
-        setHoldings(demo.holdings);
-        setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
-        setLocked(hasLockedSave());
+        // Don't fall back to demo for signed-in empty/timeout — empty UI is clearer.
+        if (!aborted && !(err instanceof Error && /Sign in/i.test(err.message))) {
+          const demo = loadDemoStore();
+          setSource("demo");
+          setPortfolios(demo.portfolios);
+          setHoldings(demo.holdings);
+          setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
+          setLocked(hasLockedSave());
+        } else if (aborted) {
+          setSource("supabase");
+          setPortfolios([]);
+          setHoldings([]);
+        }
       }
     } finally {
+      window.clearTimeout(timeout);
       if (!opts?.silent) setLoading(false);
     }
   }, [pickInitialSheet]);
@@ -1875,10 +1892,55 @@ export function Dashboard() {
     });
   }, [quotes, quotesDelayed]);
 
-  if (loading || portfolios.length === 0) {
+  if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
         <UpsideLogo variant="icon" className="animate-pulse" />
+        <p className="mt-6 text-sm text-zinc-500">Opening your book…</p>
+      </div>
+    );
+  }
+
+  if (source === "supabase" && portfolios.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
+        <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
+          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
+            <UpsideLogo
+              variant="wordmark"
+              className="translate-y-[3px] text-[15px] leading-none text-white"
+            />
+            <WorkspaceSwitcher />
+          </div>
+        </header>
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+          <UpsideLogo variant="icon" />
+          <h1 className="text-lg font-semibold">No sheets in My book yet</h1>
+          <p className="text-sm text-zinc-400">
+            {loadError
+              ? loadError
+              : "If you were invited, open the invite link again after signing in — or create a new sheet."}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => void loadPortfolios()}
+              className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:border-zinc-500"
+            >
+              Retry
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const name = window.prompt("New sheet name");
+                if (name?.trim()) void handleAddSheet(name.trim());
+              }}
+              className="rounded-lg bg-brand-bright px-4 py-2 text-sm font-semibold text-[#1a1510]"
+            >
+              Create sheet
+            </button>
+          </div>
+        </main>
       </div>
     );
   }

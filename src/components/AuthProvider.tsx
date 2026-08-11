@@ -73,10 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
-    const { data } = await supabase.auth.getUser();
-    setUser(data.user ?? null);
-    await loadProfile(data.user ?? null);
-    setReady(true);
+    try {
+      // Session check only — don't block the sign-in gate on profile/claims.
+      const result = await Promise.race([
+        supabase.auth.getUser(),
+        new Promise<never>((_, reject) =>
+          window.setTimeout(() => reject(new Error("auth timeout")), 8000)
+        ),
+      ]);
+      setUser(result.data.user ?? null);
+      setReady(true);
+      void loadProfile(result.data.user ?? null);
+    } catch {
+      setUser(null);
+      setProfile(null);
+      setReady(true);
+    }
   }, [loadProfile]);
 
   useEffect(() => {
@@ -91,8 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const next = session?.user ?? null;
       setUser(next);
-      void loadProfile(next);
       setReady(true);
+      void loadProfile(next);
     });
     return () => subscription.unsubscribe();
   }, [loadProfile, refresh]);
