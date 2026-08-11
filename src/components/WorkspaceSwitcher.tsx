@@ -1,18 +1,23 @@
 "use client";
 
+import { useAuth } from "@/components/AuthProvider";
+import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { cn } from "@/lib/format";
-import { BookOpen, UserRound, Users } from "lucide-react";
+import { BookOpen, Shield, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Primary workspace switcher: My book · Communities · Account.
+ * Primary workspace switcher: My book · Communities · Account · (Admin).
  */
 export function WorkspaceSwitcher({ className }: { className?: string }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const showAdmin = isSuperadminEmail(user?.email);
   const onCommunities = pathname.startsWith("/communities");
   const onAccount = pathname.startsWith("/account");
-  const onBook = !onCommunities && !onAccount;
+  const onAdmin = pathname.startsWith("/admin");
+  const onBook = !onCommunities && !onAccount && !onAdmin;
 
   const item = (
     active: boolean,
@@ -45,6 +50,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       {item(onBook, "/", "My book", BookOpen)}
       {item(onCommunities, "/communities", "Communities", Users)}
       {item(onAccount, "/account", "Account", UserRound)}
+      {showAdmin ? item(onAdmin, "/admin", "Admin", Shield) : null}
     </nav>
   );
 }

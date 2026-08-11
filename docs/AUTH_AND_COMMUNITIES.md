@@ -34,6 +34,19 @@ Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email
 - **Community profile**: `display_name`, `bio`, `avatar_url` via `PATCH /api/auth/me` — shown on community member lists.
 - **Portfolio invites**: mint shareable codes/links (`POST /api/portfolios/:id/invites`). Partner accepts at `/account/join?code=…` (`POST /api/portfolios/join`). Optional email locks the invite; if they already have a profile, Account tries direct co-owner add first.
 
+## Superadmin
+
+Hard-coded emails (`src/lib/auth/superadmin.ts`):
+
+- `martin.aasa@upthink.ee`
+- `aasamartinaasa@gmail.com`
+
+UI: `/admin` (also in the workspace switcher). API: `GET /api/admin/overview` (403 otherwise).
+
+Data via `portfell_superadmin_overview()` (migration `015`) when no service role; service-role path if `SUPABASE_SERVICE_ROLE_KEY` is set.
+
+Shows every Upside profile (Google sign-ins), every community, and each community’s members/roles.
+
 ## Migrations
 
 - `008` profiles + ownership + communities + RLS  
@@ -42,5 +55,7 @@ Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email
 - `011` `portfell_portfolio_owners` + co-owner RLS  
 - `012` profile `bio` + `portfell_portfolio_invites`  
 - `013` drop sheet `access_secret_hash` + `portfell_share_links`  
+- `014` community members RLS recursion fix  
+- `015` superadmin overview RPC  
 
 Writes require a signed-in **co-owner** only.
