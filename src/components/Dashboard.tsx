@@ -234,6 +234,11 @@ export function Dashboard() {
   const [labReady, setLabReady] = useState(false);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
   const labDirtyRef = useRef(false);
+  /** Browser Back/Forward: sync sheet from history without pushing again. */
+  const historyFromPopRef = useRef(false);
+  /** Until first book load settles, only replaceState (no fake history stack). */
+  const historyBootstrappingRef = useRef(true);
+  const lastHistorySheetRef = useRef<string | null>(null);
   const [costBasisOpen, setCostBasisOpen] = useState(false);
   const [costBasisRows, setCostBasisRows] = useState<CostBasisRow[]>([]);
   const [drawerTicker, setDrawerTicker] = useState<string | null>(null);
@@ -656,6 +661,18 @@ export function Dashboard() {
     void loadPortfolios();
   }, [loadPortfolios]);
 
+  // After initial load, sheet switches push history so Back stays in-app.
+  useEffect(() => {
+    if (loading) {
+      historyBootstrappingRef.current = true;
+      return;
+    }
+    const t = window.setTimeout(() => {
+      historyBootstrappingRef.current = false;
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, [loading]);
+
   useEffect(() => {
     saveActiveSheetId(activeId);
     if (typeof window === "undefined") return;
@@ -679,8 +696,59 @@ export function Dashboard() {
         url.searchParams.set("view", "guest");
       }
     }
-    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+    const href = `${url.pathname}${url.search}`;
+    const state = { upsideSheet: activeId };
+
+    if (historyFromPopRef.current) {
+      historyFromPopRef.current = false;
+      lastHistorySheetRef.current = activeId;
+      window.history.replaceState(state, "", href);
+      return;
+    }
+
+    const prev = lastHistorySheetRef.current;
+    lastHistorySheetRef.current = activeId;
+
+    if (
+      historyBootstrappingRef.current ||
+      prev === null ||
+      prev === activeId
+    ) {
+      window.history.replaceState(state, "", href);
+      return;
+    }
+
+    window.history.pushState(state, "", href);
   }, [activeId, portfolios, guestMode]);
+
+  useEffect(() => {
+    function onPopState(e: PopStateEvent) {
+      historyFromPopRef.current = true;
+      const fromState =
+        e.state &&
+        typeof e.state === "object" &&
+        "upsideSheet" in e.state &&
+        typeof (e.state as { upsideSheet?: unknown }).upsideSheet === "string"
+          ? (e.state as { upsideSheet: string }).upsideSheet
+          : null;
+
+      if (fromState) {
+        if (
+          fromState === OVERVIEW_TAB_ID ||
+          fromState === COMPOUND_TAB_ID ||
+          fromState === LAB_TAB_ID ||
+          portfolios.some((p) => p.id === fromState)
+        ) {
+          setActiveId(fromState);
+          return;
+        }
+      }
+
+      setActiveId((prev) => pickInitialSheet(portfolios, prev));
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [portfolios, pickInitialSheet]);
 
   useEffect(() => {
     if (source !== "supabase") return;
