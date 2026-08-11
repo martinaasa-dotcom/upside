@@ -142,15 +142,21 @@ import {
 
 type DataSource = "demo" | "supabase";
 
-function formatPricesAge(updatedAt: number | null, now: number): string {
-  if (updatedAt == null) return "Prices · —";
-  const sec = Math.max(0, Math.floor((now - updatedAt) / 1000));
-  if (sec < 5) return "Prices · just now";
-  if (sec < 60) return `Prices · ${sec}s ago`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `Prices · ${min}m ago`;
-  return `Prices · ${Math.floor(min / 60)}h ago`;
+function ageSeconds(updatedAt: number | null, now: number): number | null {
+  if (updatedAt == null) return null;
+  return Math.max(0, Math.floor((now - updatedAt) / 1000));
 }
+
+function formatAge(sec: number): string {
+  if (sec < 5) return "just now";
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  return `${Math.floor(min / 60)}h ago`;
+}
+
+/** Book sync falling this far behind prices is worth calling out on its own. */
+const BOOK_LAG_CALLOUT_SEC = 20;
 
 /**
  * Ticks its own clock so the "Prices · Xs ago" status doesn't force a
@@ -174,6 +180,20 @@ function PricesAgeStatus({
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
+
+  const pricesSec = ageSeconds(quotesUpdatedAt, now);
+  const bookSec = ageSeconds(bookSyncedAt, now);
+  // Quotes and the shared-book poll both run on their own ~45s interval, so
+  // under normal operation they're within a couple seconds of each other —
+  // showing "book Xs ago" right next to an identical "Prices Xs ago" was
+  // just the same fact twice. Only surface it once book sync has actually
+  // fallen behind (a real signal something's off — e.g. Supabase hiccup
+  // while quotes keep flowing fine), not as a second clock for its own sake.
+  const bookLagging =
+    source === "supabase" &&
+    bookSec != null &&
+    (pricesSec == null || bookSec - pricesSec > BOOK_LAG_CALLOUT_SEC);
+
   return (
     <span
       className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-500"
@@ -185,11 +205,9 @@ function PricesAgeStatus({
             : "Local demo"
       }
     >
-      {formatPricesAge(quotesUpdatedAt, now)}
+      {pricesSec == null ? "Prices · —" : `Prices · ${formatAge(pricesSec)}`}
       {quotesDelayed ? " · delayed" : ""}
-      {source === "supabase" && bookSyncedAt
-        ? ` · book ${formatPricesAge(bookSyncedAt, now).replace("Prices · ", "")}`
-        : ""}
+      {bookLagging ? ` · book sync ${formatAge(bookSec)}` : ""}
     </span>
   );
 }
