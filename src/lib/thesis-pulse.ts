@@ -1,7 +1,6 @@
 import { TICKER_SECTORS } from "@/lib/forecast-plan";
 import type { OverviewModel, TickerScore } from "@/lib/overview";
 import type { Quote } from "@/lib/types";
-import { todayKeyInTz } from "@/lib/timezone";
 import { z } from "zod";
 
 /** Fraction — 0.05 = 5% */
@@ -63,9 +62,15 @@ export type PulseReport = {
   checks: PulseCheck[];
 };
 
-export type PulseCacheEntry = {
-  report: PulseReport;
-  headlines: Record<string, PulseHeadline[]>;
+/** Per-ticker cache — the unit every Pulse check is retained under. */
+export type PulseTickerCacheEntry = {
+  check: PulseCheck;
+  headlines: PulseHeadline[];
+  cachedAt: string;
+};
+
+export type PulseSummaryCacheEntry = {
+  summary: string;
   cachedAt: string;
 };
 
@@ -122,8 +127,9 @@ export const pulseReportSchema = z.object({
   ),
 });
 
-const PULSE_CACHE_KEY = "upside-pulse-v3";
 export const PULSE_REFRESH_MS = 60 * 60 * 1000;
+const PULSE_TICKER_CACHE_PREFIX = "upside-pulse-ticker-v1:";
+const PULSE_SUMMARY_CACHE_KEY = "upside-pulse-summary-v1";
 
 export function effectiveMove(quote: Quote | null | undefined): {
   pct: number | null;
@@ -259,64 +265,73 @@ export function buildPulseCandidate(
   return toCandidate(key, row, quotes[key] ?? null, overview.totals.equityValue);
 }
 
-export function pulseCacheKey(tickers: string[]): string {
-  const day = todayKeyInTz();
-  const list = [...tickers].sort().join(",");
-  return `${PULSE_CACHE_KEY}:${day}:${list}`;
+/**
+ * Per-ticker cache — deliberately NOT scoped to a calendar day. Keying by
+ * day meant every result became unreachable at midnight Tallinn time, so
+ * the very first Pulse view each day showed "Pulling news & checking
+ * thesis…" for every single position even though nothing had actually
+ * changed. Freshness is judged purely by `cachedAt` age (isPulseCacheFresh)
+ * — a result is retained and shown indefinitely until a newer one replaces
+ * it, whatever day that happens to be.
+ */
+export function pulseTickerCacheKey(ticker: string): string {
+  return `${PULSE_TICKER_CACHE_PREFIX}${ticker.trim().toUpperCase()}`;
 }
 
-export function pulseSingleCacheKey(ticker: string): string {
-  const day = todayKeyInTz();
-  return `${PULSE_CACHE_KEY}:${day}:single:${ticker.trim().toUpperCase()}`;
-}
-
-export function loadPulseCache(key: string): PulseCacheEntry | null {
+export function loadPulseTickerCache(
+  ticker: string
+): PulseTickerCacheEntry | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(pulseTickerCacheKey(ticker));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as
-      | PulseCacheEntry
-      | PulseReport
-      | null;
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      "report" in parsed &&
-      "headlines" in parsed &&
-      "cachedAt" in parsed
-    ) {
-      return parsed as PulseCacheEntry;
-    }
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      "generatedAt" in parsed &&
-      "checks" in parsed
-    ) {
-      return {
-        report: parsed as PulseReport,
-        headlines: {},
-        cachedAt: (parsed as PulseReport).generatedAt,
-      };
-    }
-    return null;
+    const parsed = JSON.parse(raw) as PulseTickerCacheEntry | null;
+    if (!parsed?.check || !parsed?.cachedAt) return null;
+    return parsed;
   } catch {
     return null;
   }
 }
 
-export function savePulseCache(key: string, entry: PulseCacheEntry) {
+export function savePulseTickerCache(
+  ticker: string,
+  entry: PulseTickerCacheEntry
+) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(key, JSON.stringify(entry));
+    localStorage.setItem(pulseTickerCacheKey(ticker), JSON.stringify(entry));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadPulseSummary(): PulseSummaryCacheEntry | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(PULSE_SUMMARY_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PulseSummaryCacheEntry | null;
+    if (!parsed?.summary) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function savePulseSummary(summary: string) {
+  if (typeof window === "undefined" || !summary.trim()) return;
+  try {
+    localStorage.setItem(
+      PULSE_SUMMARY_CACHE_KEY,
+      JSON.stringify({ summary, cachedAt: new Date().toISOString() })
+    );
   } catch {
     /* ignore */
   }
 }
 
 export function isPulseCacheFresh(
-  entry: PulseCacheEntry | null,
+  entry: { cachedAt: string } | null,
   maxAgeMs = PULSE_REFRESH_MS
 ): boolean {
   if (!entry?.cachedAt) return false;

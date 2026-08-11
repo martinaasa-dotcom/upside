@@ -18,13 +18,12 @@ import {
   buildPulseCandidates,
   formatMovePct,
   isPulseCacheFresh,
-  loadPulseCache,
-  pulseCacheKey,
-  pulseSingleCacheKey,
-  savePulseCache,
+  loadPulseSummary,
+  loadPulseTickerCache,
+  savePulseSummary,
+  savePulseTickerCache,
   statusLabel,
   actionLabel,
-  type PulseCacheEntry,
   type PulseAction,
   type PulseCheck,
   type PulseHeadline,
@@ -155,6 +154,15 @@ function PulseCard({
               {formatMovePct(c.effectivePct)}
             </span>
             <span className="text-xs text-zinc-500">{c.moveLabel}</span>
+            {loading && check && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500"
+                title="Refreshing in the background — this result stays on screen until the new one lands"
+              >
+                <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                Updating
+              </span>
+            )}
           </div>
           {c.inBook ? (
             <p className="mt-0.5 text-xs text-zinc-500">
@@ -250,7 +258,6 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   const [searchInput, setSearchInput] = useState("");
   const [pinnedTicker, setPinnedTicker] = useState<string | null>(null);
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
-  const [checkingTicker, setCheckingTicker] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const mergedQuotes = useMemo(
@@ -274,22 +281,40 @@ export function PulsePage({ model, quotes, convictions }: Props) {
     [model, mergedQuotes]
   );
 
-  const cacheKey = useMemo(
-    () => pulseCacheKey(candidates.map((c) => c.ticker)),
-    [candidates]
-  );
-
-  const [report, setReport] = useState<PulseReport | null>(null);
+  // Every check + its headlines, retained per ticker for good — never
+  // cleared just because a background refresh is running or a new
+  // calendar day started. Hydrated instantly from localStorage (no
+  // network) then kept current by incremental background refreshes.
+  const [checksByTicker, setChecksByTicker] = useState<
+    Record<string, PulseCheck>
+  >({});
   const [headlinesByTicker, setHeadlinesByTicker] = useState<
     Record<string, PulseHeadline[]>
   >({});
-  const [loading, setLoading] = useState(false);
+  const [checkedAtByTicker, setCheckedAtByTicker] = useState<
+    Record<string, string>
+  >({});
+  const [checkingTickers, setCheckingTickers] = useState<Set<string>>(
+    new Set()
+  );
+  const [summary, setSummary] = useState("");
+  const [lastGeneratedAt, setLastGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);
 
-  const applyCacheEntry = useCallback((entry: PulseCacheEntry) => {
-    setReport(entry.report);
-    setHeadlinesByTicker(entry.headlines ?? {});
+  const hydrateTicker = useCallback((ticker: string) => {
+    const key = ticker.trim().toUpperCase();
+    const cached = loadPulseTickerCache(key);
+    if (!cached) return;
+    setChecksByTicker((prev) =>
+      prev[key] ? prev : { ...prev, [key]: cached.check }
+    );
+    setHeadlinesByTicker((prev) =>
+      prev[key] ? prev : { ...prev, [key]: cached.headlines }
+    );
+    setCheckedAtByTicker((prev) =>
+      prev[key] ? prev : { ...prev, [key]: cached.cachedAt }
+    );
   }, []);
 
   const pinnedCandidate = useMemo(() => {
@@ -314,13 +339,13 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   );
 
   useEffect(() => {
-    const cached = loadPulseCache(cacheKey);
-    if (cached) applyCacheEntry(cached);
-    else {
-      setReport(null);
-      setHeadlinesByTicker({});
-    }
-  }, [applyCacheEntry, cacheKey]);
+    for (const c of candidates) hydrateTicker(c.ticker);
+  }, [candidates, hydrateTicker]);
+
+  useEffect(() => {
+    const cached = loadPulseSummary();
+    if (cached) setSummary(cached.summary);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -343,30 +368,55 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
     return () => window.clearTimeout(t);
-  }, [pinnedTicker, checkingTicker]);
+  }, [pinnedTicker, checkingTickers]);
 
+  // Synchronous in-flight guard — a Pulse LLM call can take 40+ seconds,
+  // and `candidates` gets a new array reference every time quotes refresh
+  // (~45s) or fear-greed loads, which was re-firing the mount effect mid-
+  // request and launching duplicate overlapping batch calls for the same
+  // tickers (visible server-side as concurrent 40–46s POSTs, one of which
+  // then gets its response aborted). `checkingTickers` state is async/
+  // batched and not safe to read-then-write inside the same tick for this;
+  // a ref updates immediately so a near-simultaneous second call always
+  // sees the first call's claim.
+  const inFlightRef = useRef<Set<string>>(new Set());
+
+  /**
+   * Checks a set of tickers in one request. By default only re-checks
+   * whichever are missing or stale (>1h, PULSE_REFRESH_MS) — everything
+   * else keeps showing its last result untouched. Tickers being refreshed
+   * ALSO keep showing their old result (checkingTickers only adds the
+   * small "Updating" tag in PulseCard, it never blanks the card) — that's
+   * the whole point: analysis happens in the background, the previous
+   * result stays viewable the entire time.
+   */
   const runPulse = useCallback(
-    async (opts?: { force?: boolean; background?: boolean }) => {
-      if (candidates.length === 0) return;
+    async (targets: PulseCandidate[], opts?: { force?: boolean }) => {
+      if (targets.length === 0) return;
       const force = opts?.force ?? false;
-      const background = opts?.background ?? false;
-      const cached = loadPulseCache(cacheKey);
-      if (cached) {
-        applyCacheEntry(cached);
-        if (!force && isPulseCacheFresh(cached)) {
-          return;
-        }
-      }
-      if (!background || !cached) {
-        setLoading(true);
-      }
-      if (!background) setError(null);
+      const notInFlight = targets.filter(
+        (c) => !inFlightRef.current.has(c.ticker.toUpperCase())
+      );
+      const stale = force
+        ? notInFlight
+        : notInFlight.filter(
+            (c) =>
+              !isPulseCacheFresh({
+                cachedAt: checkedAtByTicker[c.ticker.toUpperCase()] ?? "",
+              })
+          );
+      if (stale.length === 0) return;
+
+      const staleKeys = stale.map((c) => c.ticker.toUpperCase());
+      for (const key of staleKeys) inFlightRef.current.add(key);
+      setCheckingTickers((prev) => new Set([...prev, ...staleKeys]));
+      setError(null);
       try {
         const convictionPayload: Record<
           string,
           { thesis?: string; level?: number }
         > = {};
-        for (const c of candidates) {
+        for (const c of stale) {
           const entry = convictions[c.ticker.toUpperCase()];
           if (entry) {
             convictionPayload[c.ticker.toUpperCase()] = {
@@ -380,7 +430,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            candidates,
+            candidates: stale,
             convictions: convictionPayload,
             fearGreed,
             force,
@@ -390,115 +440,82 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         if (!res.ok) {
           throw new Error(data.error ?? "Pulse check failed");
         }
-        const entry: PulseCacheEntry = {
-          report: data.report as PulseReport,
-          headlines:
-            (data.headlines as Record<string, PulseHeadline[]>) ?? {},
-          cachedAt: new Date().toISOString(),
-        };
-        applyCacheEntry(entry);
-        savePulseCache(cacheKey, entry);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Pulse check failed");
-      } finally {
-        if (!background || !cached) {
-          setLoading(false);
-        }
-      }
-    },
-    [applyCacheEntry, cacheKey, candidates, convictions, fearGreed]
-  );
-
-  const runSingleCheck = useCallback(
-    async (ticker: string, quoteMap: Record<string, Quote>) => {
-      const key = ticker.toUpperCase();
-      const candidate = buildPulseCandidate(key, model, quoteMap);
-      const singleCacheKey = pulseSingleCacheKey(key);
-      const cached = loadPulseCache(singleCacheKey);
-      setCheckingTicker(key);
-      setError(null);
-      if (cached) {
-        setReport((prev) => {
-          const checks = [...(prev?.checks ?? [])].filter(
-            (c) => c.ticker.toUpperCase() !== key
-          );
-          checks.push(...(cached.report.checks ?? []));
-          return {
-            summary: cached.report.summary || prev?.summary || "",
-            checks,
-            generatedAt: cached.report.generatedAt,
-          };
-        });
-        setHeadlinesByTicker((prev) => ({ ...prev, ...cached.headlines }));
-        if (isPulseCacheFresh(cached)) {
-          setCheckingTicker(null);
-          return;
-        }
-      } else {
-        setLoading(true);
-      }
-      try {
-        const entry = convictions[key];
-        const res = await fetch("/api/thesis/pulse", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            candidates: [candidate],
-            convictions: entry
-              ? { [key]: { thesis: entry.thesis, level: entry.level } }
-              : {},
-            fearGreed,
-            force: true,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error ?? "Pulse check failed");
-        }
-        const single = data.report as PulseReport;
+        const newReport = data.report as PulseReport;
         const newHeadlines =
           (data.headlines as Record<string, PulseHeadline[]>) ?? {};
-        const nextCacheEntry: PulseCacheEntry = {
-          report: single,
-          headlines: newHeadlines,
-          cachedAt: new Date().toISOString(),
-        };
+        const now = new Date().toISOString();
 
-        setReport((prev) => {
-          const checks = [...(prev?.checks ?? [])].filter(
-            (c) => c.ticker.toUpperCase() !== key
-          );
-          checks.push(...(single.checks ?? []));
-          return {
-            summary: single.summary || prev?.summary || "",
-            checks,
-            generatedAt: new Date().toISOString(),
-          };
+        setChecksByTicker((prev) => {
+          const next = { ...prev };
+          for (const check of newReport.checks ?? []) {
+            next[check.ticker.toUpperCase()] = check;
+          }
+          return next;
         });
         setHeadlinesByTicker((prev) => ({ ...prev, ...newHeadlines }));
-        savePulseCache(singleCacheKey, nextCacheEntry);
+        setCheckedAtByTicker((prev) => {
+          const next = { ...prev };
+          for (const key of staleKeys) next[key] = now;
+          return next;
+        });
+        for (const check of newReport.checks ?? []) {
+          const key = check.ticker.toUpperCase();
+          savePulseTickerCache(key, {
+            check,
+            headlines: newHeadlines[key] ?? [],
+            cachedAt: now,
+          });
+        }
+        if (newReport.summary?.trim()) {
+          setSummary(newReport.summary);
+          savePulseSummary(newReport.summary);
+        }
+        setLastGeneratedAt(now);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Pulse check failed");
       } finally {
-        setLoading(false);
-        setCheckingTicker(null);
+        for (const key of staleKeys) inFlightRef.current.delete(key);
+        setCheckingTickers((prev) => {
+          const next = new Set(prev);
+          for (const key of staleKeys) next.delete(key);
+          return next;
+        });
       }
     },
-    [convictions, fearGreed, model]
+    [checkedAtByTicker, convictions, fearGreed]
   );
 
+  // Keyed off the ticker SET, not the `candidates` array's object identity
+  // — quotes refresh every ~45s and rebuild `candidates` fresh each time,
+  // which would otherwise re-fire this effect (and reset the interval
+  // below) constantly even though the underlying tickers never changed.
+  const candidateSetKey = candidates
+    .map((c) => c.ticker.toUpperCase())
+    .sort()
+    .join(",");
+
+  // First paint + whenever the candidate SET actually changes: fill in
+  // anything missing/stale in the background. Cached results already
+  // render from hydrateTicker above, so this never blocks or blanks the
+  // page. runPulse's own in-flight guard makes it safe to call again with
+  // an overlapping ticker list.
   useEffect(() => {
     if (candidates.length === 0) return;
-    void runPulse({ background: true });
-  }, [candidates, runPulse]);
+    void runPulse(candidates);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the stable ticker-set signature, not candidates/runPulse identity churn
+  }, [candidateSetKey]);
 
+  // Hourly background sweep, no market-session gating at all — this runs
+  // the same in pre-market, after-hours, and while the market's closed, not
+  // just during regular hours.
   useEffect(() => {
     if (candidates.length === 0) return;
     const id = window.setInterval(() => {
-      void runPulse({ force: true, background: true });
+      void runPulse(candidates);
     }, PULSE_REFRESH_MS);
     return () => window.clearInterval(id);
-  }, [candidates.length, runPulse]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the stable ticker-set signature so the hourly timer survives quote-refresh churn
+  }, [candidateSetKey]);
 
   async function checkTicker(tickerRaw: string) {
     const ticker = tickerRaw.trim().toUpperCase();
@@ -506,6 +523,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
     setSearchInput("");
     setPinnedTicker(ticker);
     setError(null);
+    hydrateTicker(ticker);
 
     let quoteMap = mergedQuotes;
     if (!quoteMap[ticker]) {
@@ -519,7 +537,8 @@ export function PulsePage({ model, quotes, convictions }: Props) {
       }
     }
 
-    await runSingleCheck(ticker, quoteMap);
+    const candidate = buildPulseCandidate(ticker, model, quoteMap);
+    await runPulse([candidate], { force: true });
   }
 
   async function submitSearch(e: React.FormEvent) {
@@ -527,15 +546,10 @@ export function PulsePage({ model, quotes, convictions }: Props) {
     await checkTicker(searchInput);
   }
 
-  const checksByTicker = useMemo(() => {
-    const map = new Map<string, PulseCheck>();
-    for (const check of report?.checks ?? []) {
-      map.set(check.ticker.toUpperCase(), check);
-    }
-    return map;
-  }, [report]);
-
-  const pinnedLoading = checkingTicker === pinnedTicker || (loading && !checksByTicker.get(pinnedTicker ?? ""));
+  const anyChecking = checkingTickers.size > 0;
+  const pinnedLoading = Boolean(
+    pinnedTicker && checkingTickers.has(pinnedTicker)
+  );
 
   return (
     <div className="space-y-5">
@@ -557,11 +571,11 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           </div>
           <button
             type="button"
-            onClick={() => void runPulse({ force: true })}
-            disabled={loading || candidates.length === 0}
+            onClick={() => void runPulse(candidates, { force: true })}
+            disabled={anyChecking || candidates.length === 0}
             className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+            <RefreshCw className={cn("h-3.5 w-3.5", anyChecking && "animate-spin")} />
             Refresh all
           </button>
         </div>
@@ -601,10 +615,10 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           </div>
           <button
             type="submit"
-            disabled={!searchInput.trim() || loading}
+            disabled={!searchInput.trim() || pinnedLoading}
             className="shrink-0 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40 sm:py-2"
           >
-            {checkingTicker ? "Checking…" : "Check"}
+            {pinnedLoading ? "Checking…" : "Check"}
           </button>
         </form>
 
@@ -638,9 +652,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           </p>
         )}
 
-        {report?.summary && !pinnedTicker && (
+        {summary && !pinnedTicker && (
           <p className="mt-3 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-3 py-2 text-sm text-zinc-200">
-            {report.summary}
+            {summary}
           </p>
         )}
 
@@ -660,7 +674,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           <ul className="space-y-3">
             <PulseCard
               candidate={pinnedCandidate}
-              check={checksByTicker.get(pinnedCandidate.ticker.toUpperCase())}
+              check={checksByTicker[pinnedCandidate.ticker.toUpperCase()]}
               headlines={
                 headlinesByTicker[pinnedCandidate.ticker.toUpperCase()] ?? []
               }
@@ -693,9 +707,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                   <PulseCard
                     key={c.ticker}
                     candidate={c}
-                    check={checksByTicker.get(c.ticker.toUpperCase())}
+                    check={checksByTicker[c.ticker.toUpperCase()]}
                     headlines={headlinesByTicker[c.ticker.toUpperCase()] ?? []}
-                    loading={loading && checkingTicker !== c.ticker}
+                    loading={checkingTickers.has(c.ticker.toUpperCase())}
                     convictionThesis={
                       convictions[c.ticker.toUpperCase()]?.thesis
                     }
@@ -717,9 +731,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                   <PulseCard
                     key={c.ticker}
                     candidate={c}
-                    check={checksByTicker.get(c.ticker.toUpperCase())}
+                    check={checksByTicker[c.ticker.toUpperCase()]}
                     headlines={headlinesByTicker[c.ticker.toUpperCase()] ?? []}
-                    loading={loading && checkingTicker !== c.ticker}
+                    loading={checkingTickers.has(c.ticker.toUpperCase())}
                     convictionThesis={
                       convictions[c.ticker.toUpperCase()]?.thesis
                     }
@@ -731,10 +745,10 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         </div>
       )}
 
-      {report?.generatedAt && (
+      {lastGeneratedAt && (
         <p className="text-center text-[11px] text-zinc-600">
           Last checked{" "}
-          {new Date(report.generatedAt).toLocaleString(undefined, {
+          {new Date(lastGeneratedAt).toLocaleString(undefined, {
             dateStyle: "medium",
             timeStyle: "short",
           })}

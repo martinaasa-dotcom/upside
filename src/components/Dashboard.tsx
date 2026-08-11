@@ -61,6 +61,7 @@ import {
   loadConvictionMap,
   setConviction,
 } from "@/lib/conviction";
+import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
 import {
   milestoneToast,
   recordVisitToday,
@@ -1807,18 +1808,29 @@ export function Dashboard() {
   useEffect(() => {
     if (!overviewTickerKey) return;
     let cancelled = false;
-    void fetch(
-      `/api/market/events?tickers=${encodeURIComponent(overviewTickerKey)}`
-    )
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        const events = Array.isArray(data.earnings) ? data.earnings : [];
-        setEarningsEvents(events);
-      })
-      .catch(() => {});
+
+    const load = () => {
+      void fetch(
+        `/api/market/events?tickers=${encodeURIComponent(overviewTickerKey)}`
+      )
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (cancelled || !data) return;
+          const events = Array.isArray(data.earnings) ? data.earnings : [];
+          setEarningsEvents(events);
+        })
+        .catch(() => {
+          /* keep whatever was already loaded */
+        });
+    };
+
+    load();
+    // Hourly background refresh, no market-session gating — pre-market and
+    // after-hours refresh the same as regular trading hours.
+    const id = window.setInterval(load, PULSE_REFRESH_MS);
     return () => {
       cancelled = true;
+      window.clearInterval(id);
     };
   }, [overviewTickerKey]);
 

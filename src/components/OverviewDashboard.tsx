@@ -9,6 +9,7 @@ import {
   cn,
 } from "@/lib/format";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
+import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
 import {
   last7DaysStrip,
   streakFlavor,
@@ -317,18 +318,26 @@ export function OverviewDashboard({
     const list = tickerKey ? tickerKey.split(",") : [];
     if (!list.length) return;
     let cancelled = false;
-    void fetch(
-      `/api/market/events?tickers=${encodeURIComponent(tickerKey)}`
-    )
-      .then((r) => r.json())
-      .then((data: { earnings?: EarningsEvent[] }) => {
-        if (!cancelled) setEarnings(data.earnings ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setEarnings([]);
-      });
+
+    const load = () => {
+      void fetch(`/api/market/events?tickers=${encodeURIComponent(tickerKey)}`)
+        .then((r) => r.json())
+        .then((data: { earnings?: EarningsEvent[] }) => {
+          if (!cancelled) setEarnings(data.earnings ?? []);
+        })
+        .catch(() => {
+          // Keep whatever was already loaded — a blip shouldn't blank the
+          // upcoming-earnings list that's already on screen.
+        });
+    };
+
+    load();
+    // Hourly background refresh, no market-session gating — covers
+    // pre-market and after-hours the same as regular trading hours.
+    const id = window.setInterval(load, PULSE_REFRESH_MS);
     return () => {
       cancelled = true;
+      window.clearInterval(id);
     };
   }, [tickerKey]);
 
