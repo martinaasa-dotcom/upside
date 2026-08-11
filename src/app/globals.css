@@ -171,3 +171,37 @@ body {
     animation: none;
   }
 }
+
+/* Sign-in gate — staggered entrance */
+@keyframes signin-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signin-rise-1 {
+  animation: signin-rise 0.65s ease-out both;
+}
+.signin-rise-2 {
+  animation: signin-rise 0.65s ease-out 0.1s both;
+}
+.signin-rise-3 {
+  animation: signin-rise 0.65s ease-out 0.2s both;
+}
+.signin-rise-4 {
+  animation: signin-rise 0.65s ease-out 0.3s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signin-rise-1,
+  .signin-rise-2,
+  .signin-rise-3,
+  .signin-rise-4 {
+    animation: none;
+  }
+}
