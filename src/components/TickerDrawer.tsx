@@ -4,6 +4,15 @@ import { currency, percent, cn } from "@/lib/format";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
 import { X } from "lucide-react";
+import { useEffect } from "react";
+
+const CONVICTION_LABELS: Record<ConvictionLevel, string> = {
+  1: "Weak — watching for an exit",
+  2: "Below average — trimming candidate",
+  3: "Neutral — holding as-is",
+  4: "Strong — comfortable adding",
+  5: "Max — highest-confidence thesis",
+};
 
 type Props = {
   open: boolean;
@@ -30,6 +39,15 @@ export function TickerDrawer({
   onClose,
   onAskMargus,
 }: Props) {
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open || !ticker) return null;
   const streak = estimateGreenStreak(sparkline);
   const roi =
@@ -83,6 +101,7 @@ export function TickerDrawer({
                   key={n}
                   type="button"
                   onClick={() => onConviction(n, thesis)}
+                  title={CONVICTION_LABELS[n]}
                   className={cn(
                     "h-9 w-9 rounded-lg text-sm font-semibold",
                     level === n
@@ -93,6 +112,11 @@ export function TickerDrawer({
                   {n}
                 </button>
               ))}
+            </div>
+            <div className="mt-1 flex justify-between text-[10px] text-zinc-600">
+              <span>Low conviction</span>
+              <span>{CONVICTION_LABELS[level]}</span>
+              <span>High conviction</span>
             </div>
           </div>
           <div>

@@ -433,6 +433,17 @@ export function Dashboard() {
     [portfolios, holdings, quotes]
   );
 
+  // Glanceable up/down dot per sheet tab — null while today's move is 0/unknown
+  // so the tab stays neutral rather than defaulting to a misleading color.
+  const sheetTodayTone = useMemo(() => {
+    const map: Record<string, "up" | "down" | null> = {};
+    for (const s of overview.sheets) {
+      map[s.portfolio.id] =
+        s.todayDollar > 0 ? "up" : s.todayDollar < 0 ? "down" : null;
+    }
+    return map;
+  }, [overview.sheets]);
+
   const forecast = useMemo(() => {
     if (!activePortfolio) return null;
     return buildForecast(
@@ -2319,7 +2330,7 @@ export function Dashboard() {
         activeId={activeId}
         onChange={setActiveId}
         onAdd={handleAddSheet}
-       
+        sheetTodayTone={sheetTodayTone}
         onOpenCommunities={
           source === "supabase"
             ? () => router.push("/communities")

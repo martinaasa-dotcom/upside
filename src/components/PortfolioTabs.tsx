@@ -31,6 +31,8 @@ type Props = {
     todayPct: string | null;
     todayPositive: boolean;
   };
+  /** Today's $ direction per portfolio id — glanceable dot per sheet tab. */
+  sheetTodayTone?: Record<string, "up" | "down" | null>;
 };
 
 type OpenMenu = {
@@ -73,6 +75,7 @@ export function PortfolioTabs({
   guest = false,
   onOpenCommunities,
   mobileSummary,
+  sheetTodayTone,
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
@@ -286,6 +289,7 @@ export function PortfolioTabs({
           >
             {portfolios.map((p) => {
               const active = p.id === activeId;
+              const tone = sheetTodayTone?.[p.id];
               return (
                 <button
                   key={p.id}
@@ -310,7 +314,19 @@ export function PortfolioTabs({
                       : "text-zinc-500 hover:text-zinc-200"
                   )}
                 >
-                  <span className="flex h-full items-center whitespace-nowrap">
+                  <span className="flex h-full items-center gap-1.5 whitespace-nowrap">
+                    {tone && (
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "h-1.5 w-1.5 shrink-0 rounded-full",
+                          tone === "up" ? "bg-gain" : "bg-loss"
+                        )}
+                        title={
+                          tone === "up" ? "Up today" : "Down today"
+                        }
+                      />
+                    )}
                     {p.name}
                   </span>
                   {active && (

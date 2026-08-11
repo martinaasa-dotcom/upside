@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { History, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -42,6 +43,11 @@ export function SnapshotsModal({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<SnapMeta[]>([]);
+  const [pendingRestore, setPendingRestore] = useState<{
+    kind: "book" | "sheet";
+    id: string;
+    label: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,14 +74,7 @@ export function SnapshotsModal({
     void load();
   }, [open, load]);
 
-  async function restoreBook(id: string, label: string) {
-    if (
-      !window.confirm(
-        `Restore full book “${label}”? This replaces every sheet. A safety snapshot is taken first.`
-      )
-    ) {
-      return;
-    }
+  async function restoreBook(id: string) {
     setBusyId(id);
     setError(null);
     try {
@@ -88,22 +87,17 @@ export function SnapshotsModal({
       if (!res.ok) throw new Error(data.error ?? "Restore failed");
       onRestored("book");
       onClose();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Restore failed");
+      return false;
     } finally {
       setBusyId(null);
     }
   }
 
-  async function restoreSheet(id: string, label: string) {
-    if (!activePortfolioId) return;
-    if (
-      !window.confirm(
-        `Restore “${label}” into ${activePortfolioName ?? "this sheet"} only?`
-      )
-    ) {
-      return;
-    }
+  async function restoreSheet(id: string) {
+    if (!activePortfolioId) return false;
     setBusyId(`${id}:sheet`);
     setError(null);
     try {
@@ -120,8 +114,10 @@ export function SnapshotsModal({
       if (!res.ok) throw new Error(data.error ?? "Sheet restore failed");
       onRestored("sheet");
       onClose();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sheet restore failed");
+      return false;
     } finally {
       setBusyId(null);
     }
@@ -209,7 +205,9 @@ export function SnapshotsModal({
                       <button
                         type="button"
                         disabled={busyId !== null}
-                        onClick={() => void restoreBook(s.id, s.label)}
+                        onClick={() =>
+                          setPendingRestore({ kind: "book", id: s.id, label: s.label })
+                        }
                         className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
                       >
                         {busyId === s.id ? "…" : "Full book"}
@@ -218,7 +216,13 @@ export function SnapshotsModal({
                         <button
                           type="button"
                           disabled={busyId !== null}
-                          onClick={() => void restoreSheet(s.id, s.label)}
+                          onClick={() =>
+                            setPendingRestore({
+                              kind: "sheet",
+                              id: s.id,
+                              label: s.label,
+                            })
+                          }
                           className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
                         >
                           {busyId === `${s.id}:sheet` ? "…" : "This sheet"}
@@ -232,6 +236,31 @@ export function SnapshotsModal({
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={Boolean(pendingRestore)}
+        title={
+          pendingRestore?.kind === "book"
+            ? "Restore full book?"
+            : "Restore this sheet?"
+        }
+        body={
+          pendingRestore?.kind === "book"
+            ? `Restore full book "${pendingRestore.label}"? This replaces every sheet. A safety snapshot of the current state is taken first.`
+            : `Restore "${pendingRestore?.label}" into ${
+                activePortfolioName ?? "this sheet"
+              } only? Other sheets are untouched.`
+        }
+        confirmLabel="Restore"
+        destructive
+        onClose={() => setPendingRestore(null)}
+        onConfirm={async () => {
+          if (!pendingRestore) return false;
+          return pendingRestore.kind === "book"
+            ? restoreBook(pendingRestore.id)
+            : restoreSheet(pendingRestore.id);
+        }}
+      />
     </div>
   );
 }
