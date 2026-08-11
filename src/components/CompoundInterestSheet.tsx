@@ -11,11 +11,14 @@ import {
 } from "@/lib/compound-interest";
 import {
   buildCompareScenarios,
+  buildCompareTakeaway,
   buildCompoundMilestones,
+  buildMilestoneTakeaway,
   buildNarrative,
   buildYearStories,
   calculateWithShock,
   findTippingYear,
+  formatMilestoneDate,
   loadMilestoneActuals,
   saveMilestoneActuals,
   stayTheCourseInputs,
@@ -96,14 +99,6 @@ function money(
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(shown);
-}
-
-function formatMilestoneDate(d: Date): string {
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function SegButton({
@@ -282,6 +277,7 @@ export function CompoundInterestSheet({
     () => buildCompareScenarios(liveInputs, 6),
     [liveInputs]
   );
+  const compareTakeaway = useMemo(() => buildCompareTakeaway(compare), [compare]);
 
   const narrative = useMemo(() => buildNarrative(result), [result]);
 
@@ -313,6 +309,10 @@ export function CompoundInterestSheet({
         actuals: milestoneActuals,
       }),
     [liveInputs, annualRatePct, milestoneActuals]
+  );
+  const milestoneTakeaway = useMemo(
+    () => buildMilestoneTakeaway(milestones),
+    [milestones]
   );
 
   function setMilestoneActual(goal: number, iso: string) {
@@ -745,6 +745,11 @@ export function CompoundInterestSheet({
             Target dates and years-until recompute from your dialed principal,
             rate, deposits, and compounding — same path as Calculate.
           </p>
+          {milestoneTakeaway && (
+            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-brand-bright">
+              {milestoneTakeaway}
+            </p>
+          )}
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
               <thead>
@@ -831,6 +836,13 @@ export function CompoundInterestSheet({
                 onClick={() => setStoryIdx(i)}
               >
                 Year {y}
+                {tipping === y && (
+                  <span
+                    className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-gain align-middle"
+                    title="The flip — interest first beats deposits this year"
+                    aria-hidden
+                  />
+                )}
               </SegButton>
             ))}
           </div>
@@ -861,6 +873,11 @@ export function CompoundInterestSheet({
           <p className="mt-1 text-xs text-zinc-500">
             Same principal & horizon — not advice, just contrast.
           </p>
+          {compareTakeaway && (
+            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-brand-bright">
+              {compareTakeaway}
+            </p>
+          )}
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {compare.map((s) => (
               <div

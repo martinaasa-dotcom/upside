@@ -181,6 +181,43 @@ export function calculateWithShock(
   };
 }
 
+/** One-line takeaway quantifying the Upside path's edge over the baselines. */
+export function buildCompareTakeaway(scenarios: CompareScenario[]): string | null {
+  const upside = scenarios.find((s) => s.id === "upside");
+  const mattress = scenarios.find((s) => s.id === "mattress");
+  const spy = scenarios.find((s) => s.id === "spy");
+  if (!upside) return null;
+
+  const vsMattress = mattress
+    ? upside.result.futureValue - mattress.result.futureValue
+    : null;
+  const vsSpy = spy ? upside.result.futureValue - spy.result.futureValue : null;
+  if (vsMattress == null && vsSpy == null) return null;
+
+  const seed = hashSeed(
+    `upside-compare|${upside.result.futureValue.toFixed(0)}|${vsMattress?.toFixed(0)}|${vsSpy?.toFixed(0)}`
+  );
+  const rng = mulberry32(seed);
+
+  if (vsMattress != null && vsSpy != null) {
+    return pick(rng, [
+      `Upside path clears the mattress by ${fmt(vsMattress)} and the index by ${fmt(vsSpy)} over the same stretch.`,
+      `Same principal, same years — Upside beats doing nothing by ${fmt(vsMattress)}, and beats index-ish beta by ${fmt(vsSpy)}.`,
+      `The gap: +${fmt(vsMattress)} over cash-under-the-mattress, +${fmt(vsSpy)} over a plain index bet.`,
+    ]);
+  }
+  if (vsSpy != null) {
+    return pick(rng, [
+      `Upside path clears index-ish beta by ${fmt(vsSpy)} over the same stretch.`,
+      `+${fmt(vsSpy)} ahead of a plain index bet, same principal and years.`,
+    ]);
+  }
+  return pick(rng, [
+    `Upside path clears the mattress by ${fmt(vsMattress!)} over the same stretch.`,
+    `+${fmt(vsMattress!)} ahead of cash under the mattress. Doing nothing has a real cost.`,
+  ]);
+}
+
 export function buildCompareScenarios(
   inputs: CompoundInputs,
   /** Extra annual % from covered-call premiums (e.g. 6). */
@@ -268,35 +305,113 @@ export function storyYears(horizon: number): number[] {
   return picked.slice(0, 6);
 }
 
+type NarrativeAngle = (ctx: {
+  result: CompoundResult;
+  tip: number | null;
+  rng: () => number;
+}) => string | null;
+
+const NARRATIVE_ANGLES: NarrativeAngle[] = [
+  // Contributions vs the S-curve.
+  ({ result, tip, rng }) => {
+    if (!(result.totalContributions > 0)) return null;
+    const tipSuffix = tip ? ` (tips past deposits by year ${tip})` : "";
+    return pick(rng, [
+      `You add ${fmt(result.totalContributions)} along the way — deposits are the fuel; compounding is the S-curve${tipSuffix}.`,
+      `${fmt(result.totalContributions)} of that final number is your own deposits. The rest is the multiplier doing its job${tipSuffix}.`,
+      `Fuel in: ${fmt(result.totalContributions)} deposited over the horizon. Everything past that is the curve bending${tipSuffix}.`,
+    ]);
+  },
+  // No deposits at all.
+  ({ result, tip, rng }) => {
+    if (result.totalContributions > 0 || tip != null) return null;
+    return pick(rng, [
+      `No fresh deposits — pure compounding. Rough double pace: ~${result.doubleYears}y ${result.doubleMonths}m at this rate. Stay the course through the breathers.`,
+      `Zero new cash added. ${fmt(result.totalInterest)} of growth came purely from letting it sit.`,
+      `This path never sees another deposit. Doubling every ~${result.doubleYears}y ${result.doubleMonths}m does the rest.`,
+    ]);
+  },
+  // Tipping point.
+  ({ tip, rng }) => {
+    if (tip == null) return null;
+    return pick(rng, [
+      `Tipping point: year ${tip} — yearly interest first beats what you put in. Money working harder than you; that’s the multi-year edge.`,
+      `By year ${tip}, a single year of interest outearns a full year of your deposits. That's the moment compounding takes the wheel.`,
+      `Year ${tip} is the flip — interest starts out-earning your own contributions from here on.`,
+    ]);
+  },
+  // Halfway checkpoint.
+  ({ result, rng }) => {
+    const mid = result.yearly.find(
+      (y) => y.index === Math.floor(result.durationYears / 2)
+    );
+    if (!mid || mid.index <= 0) return null;
+    return pick(rng, [
+      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already on the books — pullbacks along the way are resets, not thesis breaks.`,
+      `By the midpoint (year ${mid.index}) you're already sitting on ${fmt(mid.balance)}. The back half does the heavier lifting.`,
+    ]);
+  },
+  // Doubling count across the full horizon.
+  ({ result, rng }) => {
+    if (!Number.isFinite(result.doubleYears) || result.durationYears <= 0) return null;
+    const doubleYearsExact = result.doubleYears + result.doubleMonths / 12;
+    if (!(doubleYearsExact > 0)) return null;
+    const doublings = result.durationYears / doubleYearsExact;
+    if (!(doublings >= 0.4)) return null;
+    return pick(rng, [
+      `At this rate, money doubles every ~${result.doubleYears}y ${result.doubleMonths}m — that's roughly ${doublings.toFixed(1)} doublings over the full horizon.`,
+      `Doubling clock: ~${result.doubleYears}y ${result.doubleMonths}m per double. This horizon fits about ${doublings.toFixed(1)} of them.`,
+    ]);
+  },
+  // First-year vs last-year interest growth.
+  ({ result, rng }) => {
+    const first = result.yearly.find((y) => y.index === 1);
+    const last = result.yearly[result.yearly.length - 1];
+    if (!first || !last || first.interest <= 0 || last.index <= 1) return null;
+    const growthMult = last.interest / first.interest;
+    if (!(growthMult >= 1.4)) return null;
+    return pick(rng, [
+      `Year 1 earned ${fmt(first.interest)} in interest; the final year earns ${fmt(last.interest)} — ${growthMult.toFixed(1)}x more, same discipline.`,
+      `Interest per year grew ${growthMult.toFixed(1)}x from year 1 (${fmt(first.interest)}) to year ${last.index} (${fmt(last.interest)}). That's the curve, not you, working harder.`,
+    ]);
+  },
+  // Nominal vs effective rate from compounding frequency.
+  ({ result, rng }) => {
+    if (!(result.effectiveAnnualRate > result.nominalAnnualRate + 0.001)) return null;
+    return pick(rng, [
+      `Compounding monthly turns your ${(result.nominalAnnualRate * 100).toFixed(1)}% nominal rate into ${(result.effectiveAnnualRate * 100).toFixed(1)}% effective. Free lunch, technically.`,
+      `The nominal rate reads ${(result.nominalAnnualRate * 100).toFixed(1)}%, but compounding frequency bumps the effective rate to ${(result.effectiveAnnualRate * 100).toFixed(1)}%.`,
+    ]);
+  },
+];
+
 export function buildNarrative(result: CompoundResult): string[] {
-  const lines: string[] = [];
   const tip = findTippingYear(result.yearly);
-  lines.push(
-    `Path: ${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)} — structural compounding, not a straight line.`
+  const seed = hashSeed(
+    `upside-narrative|${result.principal}|${result.totalInterest.toFixed(0)}|${result.durationYears.toFixed(2)}|${result.totalContributions.toFixed(0)}`
   );
-  lines.push(
-    `Interest does ${fmt(result.totalInterest)} of the heavy lifting (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR). That’s the thesis validation in the math.`
-  );
-  if (result.totalContributions > 0) {
-    lines.push(
-      `You add ${fmt(result.totalContributions)} along the way — deposits are the fuel; compounding is the S-curve${tip ? ` (tips past deposits by year ${tip})` : ""}.`
-    );
-  } else if (tip == null) {
-    lines.push(
-      `No fresh deposits — pure compounding. Rough double pace: ~${result.doubleYears}y ${result.doubleMonths}m at this rate. Stay the course through the breathers.`
-    );
+  const rng = mulberry32(seed);
+
+  const lines: string[] = [
+    pick(rng, [
+      `Path: ${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)} — structural compounding, not a straight line.`,
+      `${fmt(result.principal)} becomes ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Slow at first, then not slow at all.`,
+      `Over ${formatHorizon(result.durationYears)}, ${fmt(result.principal)} compounds into ${fmt(result.futureValue)}. The curve is the point, not the line.`,
+    ]),
+    pick(rng, [
+      `Interest does ${fmt(result.totalInterest)} of the heavy lifting (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR). That’s the thesis validation in the math.`,
+      `${fmt(result.totalInterest)} of the final number is interest, not principal — compounding earned its keep (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR).`,
+      `Of what you end up with, ${fmt(result.totalInterest)} came from the math, not your wallet (${(result.allTimeRoR * 100).toFixed(0)}% RoR).`,
+    ]),
+  ];
+
+  const angleOrder = shuffleInPlace(rng, NARRATIVE_ANGLES.map((_, i) => i));
+  for (const idx of angleOrder) {
+    if (lines.length >= 5) break;
+    const candidate = NARRATIVE_ANGLES[idx]!({ result, tip, rng });
+    if (candidate) lines.push(candidate);
   }
-  if (tip != null) {
-    lines.push(
-      `Tipping point: year ${tip} — yearly interest first beats what you put in. Money working harder than you; that’s the multi-year edge.`
-    );
-  }
-  const mid = result.yearly.find((y) => y.index === Math.floor(result.durationYears / 2));
-  if (mid && mid.index > 0) {
-    lines.push(
-      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already on the books — pullbacks along the way are resets, not thesis breaks.`
-    );
-  }
+
   return lines.slice(0, 5);
 }
 
@@ -554,6 +669,44 @@ export type CompoundMilestone = {
    */
   cagrPct: number | null;
 };
+
+/** One-line summary of milestone progress for the top of the tracker. */
+export function buildMilestoneTakeaway(
+  milestones: CompoundMilestone[]
+): string | null {
+  if (!milestones.length) return null;
+  const hit = milestones.filter((m) => m.hit || m.actualDate).length;
+  const next = milestones.find((m) => !m.hit && !m.actualDate);
+  const seed = hashSeed(`upside-milestones|${hit}|${next?.goal ?? 0}`);
+  const rng = mulberry32(seed);
+
+  if (!next) {
+    return pick(rng, [
+      `All ${milestones.length} milestones on this ladder are already hit. Time for a bigger ladder.`,
+      `Every goal on this list is cleared (${milestones.length}/${milestones.length}). Dial in a new one.`,
+    ]);
+  }
+  const dateText =
+    next.yearsUntil != null
+      ? next.targetDate
+        ? `around ${formatMilestoneDate(next.targetDate)} (~${next.yearsUntil.toFixed(1)}y out)`
+        : `in ~${next.yearsUntil.toFixed(1)} years`
+      : "beyond the 50-year window at this pace";
+
+  return pick(rng, [
+    `${hit} of ${milestones.length} milestones hit. Next up: ${fmt(next.goal)}, ${dateText}.`,
+    `Scoreboard: ${hit}/${milestones.length} cleared. ${fmt(next.goal)} is next, ${dateText}.`,
+    `${fmt(next.goal)} is the next line to cross, ${dateText} — ${hit} down, ${milestones.length - hit} to go.`,
+  ]);
+}
+
+export function formatMilestoneDate(d: Date): string {
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 export function loadMilestoneActuals(): MilestoneActuals {
   if (typeof window === "undefined") return {};
