@@ -1,4 +1,4 @@
-import { resolveAdvisorModel } from "@/lib/ai/model";
+import { describeAdvisorError, resolveAdvisorModel } from "@/lib/ai/model";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -118,34 +118,27 @@ export async function POST(req: Request) {
   try {
     resolveAdvisorModel({ reasoning: true });
   } catch (err) {
+    const { message } = describeAdvisorError(err);
+    return Response.json({ error: message }, { status: 503 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as Body;
+  const candidates = body.candidates ?? [];
+  if (candidates.length === 0) {
     return Response.json(
-      {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Missing LLM API key. Add OPENROUTER_API_KEY to .env.local.",
-      },
-      { status: 503 }
+      { error: "No pulse candidates supplied" },
+      { status: 400 }
     );
   }
 
+  const tickers = candidates.map((c) => c.ticker);
+  const contexts = await fetchPulseContexts(tickers, { force: body.force });
+  const headlines: Record<string, PulseHeadline[]> = {};
+  for (const t of tickers) {
+    headlines[t.toUpperCase()] = contexts[t.toUpperCase()]?.news ?? [];
+  }
+
   try {
-    const body = (await req.json()) as Body;
-    const candidates = body.candidates ?? [];
-    if (candidates.length === 0) {
-      return Response.json(
-        { error: "No pulse candidates supplied" },
-        { status: 400 }
-      );
-    }
-
-    const tickers = candidates.map((c) => c.ticker);
-    const contexts = await fetchPulseContexts(tickers, { force: body.force });
-    const headlines: Record<string, PulseHeadline[]> = {};
-    for (const t of tickers) {
-      headlines[t.toUpperCase()] = contexts[t.toUpperCase()]?.news ?? [];
-    }
-
     const prompt = buildPrompt(
       candidates,
       contexts,
@@ -197,12 +190,21 @@ export async function POST(req: Request) {
     return Response.json({ report, headlines });
   } catch (err) {
     console.error("Pulse report failed", err);
-    return Response.json(
-      {
-        error:
-          err instanceof Error ? err.message : "Failed to build thesis pulse",
-      },
-      { status: 500 }
-    );
+    const { message, status } = describeAdvisorError(err);
+
+    // Free-tier daily quota / transient rate-limit: degrade to the
+    // deterministic per-ticker read instead of blanking the whole page —
+    // Pulse still shows something useful, clearly labeled as rule-based.
+    if (status === 429) {
+      const checks = candidates.map((c) => buildFallbackPulseCheck(c));
+      const report: PulseReport = {
+        summary: `${message} Showing rule-based reads below meanwhile.`,
+        checks,
+        generatedAt: new Date().toISOString(),
+      };
+      return Response.json({ report, headlines, degraded: true });
+    }
+
+    return Response.json({ error: message }, { status });
   }
 }

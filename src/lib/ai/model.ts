@@ -156,6 +156,56 @@ export function resolveAdvisorModel(options?: {
   );
 }
 
+/**
+ * Classify a thrown LLM/provider error into a user-facing message + HTTP
+ * status. OpenRouter's free-models-per-day cap is account-wide (shared
+ * across every `:free` model), so falling back to a different free model
+ * can't help there — that needs its own message instead of the generic
+ * "wait a few seconds" advice, which is actively misleading for a quota
+ * that resets roughly daily.
+ */
+export function describeAdvisorError(err: unknown): {
+  message: string;
+  status: number;
+} {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+
+  if (/free-models-per-day|models-per-day/i.test(msg)) {
+    return {
+      message:
+        "OpenRouter's free daily AI quota is used up for today — this is shared across every free model, so switching models won't help. It resets ~daily, or add credits at openrouter.ai/credits to raise the cap to 1000/day.",
+      status: 429,
+    };
+  }
+  if (/rate.?limit|429|temporar/i.test(msg)) {
+    return {
+      message:
+        "Model is busy / rate-limited. Wait a few seconds and try again — Margus will auto-fallback to another model when possible.",
+      status: 429,
+    };
+  }
+  if (/timeout|504|timed out/i.test(msg)) {
+    return {
+      message: "Model timed out. Try again — free models are flaky under load.",
+      status: 504,
+    };
+  }
+  if (/OPENROUTER|GROQ|API key|503|LLM/i.test(msg)) {
+    return {
+      message:
+        "Missing LLM API key. Add OPENROUTER_API_KEY to .env.local, then restart the dev server.",
+      status: 503,
+    };
+  }
+  if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(msg)) {
+    return {
+      message: "Connection dropped. Refresh the page and try again.",
+      status: 502,
+    };
+  }
+  return { message: msg || "AI request failed", status: 500 };
+}
+
 export function advisorProviderLabel(): string {
   if (
     process.env.OPENROUTER_API_KEY &&

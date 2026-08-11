@@ -1,4 +1,4 @@
-import { resolveAdvisorModel } from "@/lib/ai/model";
+import { describeAdvisorError, resolveAdvisorModel } from "@/lib/ai/model";
 import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
@@ -19,15 +19,8 @@ export async function POST(req: Request) {
   try {
     resolveAdvisorModel({ reasoning: true });
   } catch (err) {
-    return Response.json(
-      {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Missing LLM API key. Add OPENROUTER_API_KEY to .env.local.",
-      },
-      { status: 503 }
-    );
+    const { message } = describeAdvisorError(err);
+    return Response.json({ error: message }, { status: 503 });
   }
 
   try {
@@ -83,19 +76,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("[forecast/plan]", err);
-    const msg =
-      err instanceof Error
-        ? err.message
-        : "Failed to generate forecast plan";
-    if (/rate.?limit|429|temporar/i.test(msg)) {
-      return Response.json(
-        {
-          error:
-            "Model is busy / rate-limited. Wait a few seconds and try again.",
-        },
-        { status: 429 }
-      );
-    }
-    return Response.json({ error: msg }, { status: 500 });
+    const { message, status } = describeAdvisorError(err);
+    return Response.json({ error: message }, { status });
   }
 }

@@ -3,7 +3,7 @@ import {
   buildCcAdvisorTools,
   type CcChatContext,
 } from "@/lib/ai/cc-advisor";
-import { resolveAdvisorModel } from "@/lib/ai/model";
+import { describeAdvisorError, resolveAdvisorModel } from "@/lib/ai/model";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
   convertToModelMessages,
@@ -33,15 +33,8 @@ export async function POST(req: Request) {
   try {
     resolveAdvisorModel();
   } catch (err) {
-    return Response.json(
-      {
-        error:
-          err instanceof Error
-            ? err.message
-            : "Missing LLM API key. Add OPENROUTER_API_KEY to .env.local.",
-      },
-      { status: 503 }
-    );
+    const { message } = describeAdvisorError(err);
+    return Response.json({ error: message }, { status: 503 });
   }
 
   try {
@@ -102,33 +95,11 @@ export async function POST(req: Request) {
     });
 
     return result.toUIMessageStreamResponse({
-      onError: (error) => {
-        const msg =
-          error instanceof Error ? error.message : "Chat request failed";
-        if (/rate.?limit|429|temporar/i.test(msg)) {
-          return "Model is busy / rate-limited. Wait a few seconds and try again — Margus will auto-fallback to another model when possible.";
-        }
-        if (/timeout|504|timed out/i.test(msg)) {
-          return "Model timed out. Try again — free models are flaky under load.";
-        }
-        return msg;
-      },
+      onError: (error) => describeAdvisorError(error).message,
     });
   } catch (err) {
     console.error("[chat]", err);
-    const msg =
-      err instanceof Error
-        ? err.message
-        : "Chat failed — try again in a moment";
-    if (/rate.?limit|429|temporar/i.test(msg)) {
-      return Response.json(
-        {
-          error:
-            "Model is busy / rate-limited. Wait a few seconds and try again.",
-        },
-        { status: 429 }
-      );
-    }
-    return Response.json({ error: msg }, { status: 500 });
+    const { message, status } = describeAdvisorError(err);
+    return Response.json({ error: message }, { status });
   }
 }
