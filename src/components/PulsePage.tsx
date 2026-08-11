@@ -10,6 +10,7 @@ import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import type { OverviewModel } from "@/lib/overview";
+import { formatRelativeTime } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
   PULSE_DOWN_THRESHOLD,
@@ -93,6 +94,8 @@ function PulseCard({
   headlines,
   loading,
   convictionThesis,
+  checkedAt,
+  onRefresh,
   pinned = false,
 }: {
   candidate: PulseCandidate;
@@ -100,6 +103,8 @@ function PulseCard({
   headlines: PulseHeadline[];
   loading: boolean;
   convictionThesis?: string;
+  checkedAt?: string;
+  onRefresh?: () => void;
   pinned?: boolean;
 }) {
   const pct = c.effectivePct ?? 0;
@@ -183,9 +188,27 @@ function PulseCard({
               <StatusIcon status={status} />
               {statusLabel(status)}
             </span>
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={loading}
+                title="Re-check just this ticker now"
+                aria-label={`Re-check ${c.ticker}`}
+                className="rounded-full border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+              >
+                <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {check && checkedAt && (
+        <p className="mt-1.5 text-[10px] text-zinc-600">
+          Checked {formatRelativeTime(checkedAt)}
+        </p>
+      )}
 
       {headlines.length > 0 && (
         <ul className="mt-3 space-y-1 border-t border-zinc-800/60 pt-3">
@@ -683,6 +706,8 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               convictionThesis={
                 convictions[pinnedCandidate.ticker.toUpperCase()]?.thesis
               }
+              checkedAt={checkedAtByTicker[pinnedCandidate.ticker.toUpperCase()]}
+              onRefresh={() => void runPulse([pinnedCandidate], { force: true })}
               pinned
             />
           </ul>
@@ -714,6 +739,8 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                     convictionThesis={
                       convictions[c.ticker.toUpperCase()]?.thesis
                     }
+                    checkedAt={checkedAtByTicker[c.ticker.toUpperCase()]}
+                    onRefresh={() => void runPulse([c], { force: true })}
                   />
                 ))}
               </ul>
@@ -738,6 +765,8 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                     convictionThesis={
                       convictions[c.ticker.toUpperCase()]?.thesis
                     }
+                    checkedAt={checkedAtByTicker[c.ticker.toUpperCase()]}
+                    onRefresh={() => void runPulse([c], { force: true })}
                   />
                 ))}
               </ul>

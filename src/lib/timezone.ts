@@ -46,3 +46,22 @@ export function formatRelativeDays(days: number): string {
   if (days > 1) return `In ${days} days`;
   return `${Math.abs(days)} days ago`;
 }
+
+/** Sub-day relative time — "just now", "12m ago", "3h ago", falling back to a date. */
+export function formatRelativeTime(
+  input: Date | string | number,
+  now: number = Date.now()
+): string {
+  const d = input instanceof Date ? input : new Date(input);
+  const ms = now - d.getTime();
+  if (!Number.isFinite(ms) || Number.isNaN(d.getTime())) return "";
+  if (ms < 0) return "just now";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
