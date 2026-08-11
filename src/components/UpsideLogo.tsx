@@ -74,13 +74,12 @@ export function UpsideLogo({
       )}
       aria-label={title}
     >
+      <UpsideMark className="h-[1em] w-[1em] shrink-0" />
       {/*
-        Cap-height sized mark (1em) + leading-none text so the lockup shares
-        the same line box as nearby 15px titles (e.g. header “Overview”).
-        translate-y nudges the SVG’s optical center down to match Latin caps.
+        Caps sit optically high in the em box vs the geometric A — drop the
+        word so midlines match (mark stays put).
       */}
-      <UpsideMark className="relative top-[0.06em] h-[0.95em] w-[0.95em] shrink-0" />
-      <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
+      <span className="-mr-[0.22em] translate-y-[0.12em] font-semibold uppercase leading-none tracking-[0.22em]">
         Upside
       </span>
     </span>
