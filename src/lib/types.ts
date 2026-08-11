@@ -4,6 +4,8 @@ export type Portfolio = {
   slug: string;
   sort_order: number;
   cash_balance: number;
+  /** Owning Google account (profiles.id). */
+  owner_id?: string | null;
   /** True when this sheet has its own PIN/password lock. */
   has_access_secret?: boolean;
 };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
-import { requireOwnerPin } from "@/lib/owner-pin";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { defaultArena } from "@/lib/paper-arena";
@@ -31,10 +31,13 @@ export async function GET() {
     });
   }
 
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.labState)
     .select("*")
-    .eq("id", "book")
+    .eq("owner_id", auth.user.id)
     .maybeSingle();
 
   if (error) {
@@ -48,8 +51,8 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const denied = requireOwnerPin(req);
-  if (denied) return denied;
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
 
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -61,7 +64,8 @@ export async function PUT(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as Partial<LabBundle>;
   const payload = {
-    id: "book",
+    id: auth.user.id,
+    owner_id: auth.user.id,
     conviction: body.conviction ?? {},
     journal: [],
     cashflows: body.cashflows ?? [],

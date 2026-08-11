@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import { requireOwnerAccess } from "@/lib/owner-pin";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker, resolveImportTicker } from "@/lib/ticker";
@@ -19,6 +21,9 @@ type ImportRow = {
  * Optional replace removes holdings not present in the payload.
  */
 export async function POST(req: NextRequest) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -39,8 +44,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "portfolio_id required" }, { status: 400 });
   }
 
-  // Bulk import can overwrite/delete every holding on the sheet — must honor
-  // that sheet's PIN/password lock just like the single-holding routes do.
+  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
+  if (notOwner) return notOwner;
+
+  // Optional extra sheet PIN on top of ownership.
   const denied = await requireOwnerAccess(req, portfolioId);
   if (denied) return denied;
 

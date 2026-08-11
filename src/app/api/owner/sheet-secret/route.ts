@@ -1,10 +1,12 @@
 import { hashAccessSecret, verifyAccessSecret } from "@/lib/access-secret";
+import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import {
   isMasterSecret,
   readProvidedSecret,
   requireOwnerAccess,
   sheetIsLocked,
 } from "@/lib/owner-pin";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
@@ -18,6 +20,9 @@ export const dynamic = "force-dynamic";
  *   (or optional UPSIDE_OWNER_PIN admin override).
  */
 export async function POST(req: Request) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -35,6 +40,9 @@ export async function POST(req: Request) {
   if (!portfolioId) {
     return NextResponse.json({ error: "portfolioId required" }, { status: 400 });
   }
+
+  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
+  if (notOwner) return notOwner;
 
   const locked = await sheetIsLocked(portfolioId);
   if (locked) {

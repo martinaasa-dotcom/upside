@@ -1,4 +1,6 @@
+import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import { requireOwnerAccess } from "@/lib/owner-pin";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker } from "@/lib/ticker";
@@ -7,6 +9,9 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const body = await req.json();
   const portfolioId = body.portfolio_id as string;
   const ticker = normalizeYahooTicker(String(body.ticker ?? ""));
@@ -16,6 +21,9 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
+  if (notOwner) return notOwner;
 
   const denied = await requireOwnerAccess(req, portfolioId);
   if (denied) return denied;
@@ -56,6 +64,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const body = await req.json();
   const id = body.id as string;
   if (!id) {
@@ -76,12 +87,15 @@ export async function PATCH(req: NextRequest) {
     .eq("id", id)
     .maybeSingle();
 
-  const denied = await requireOwnerAccess(
-    req,
+  const portfolioId =
     (existing as { portfolio_id?: string } | null)?.portfolio_id ??
-      (body.portfolio_id as string | undefined) ??
-      null
-  );
+    (body.portfolio_id as string | undefined) ??
+    null;
+
+  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
+  if (notOwner) return notOwner;
+
+  const denied = await requireOwnerAccess(req, portfolioId);
   if (denied) return denied;
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -119,6 +133,9 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const id = req.nextUrl.searchParams.get("id");
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
@@ -138,10 +155,13 @@ export async function DELETE(req: NextRequest) {
     .eq("id", id)
     .maybeSingle();
 
-  const denied = await requireOwnerAccess(
-    req,
-    (existing as { portfolio_id?: string } | null)?.portfolio_id ?? null
-  );
+  const portfolioId =
+    (existing as { portfolio_id?: string } | null)?.portfolio_id ?? null;
+
+  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
+  if (notOwner) return notOwner;
+
+  const denied = await requireOwnerAccess(req, portfolioId);
   if (denied) return denied;
 
   const { error } = await supabase

@@ -42,30 +42,53 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Link expired" }, { status: 410 });
   }
 
-  const { data: portfolios, error: pErr } = await supabase
+  const ownerId = (link as { created_by?: string | null }).created_by;
+
+  let portfolioQuery = supabase
     .from(PORTFELL_TABLES.portfolios)
     .select("*")
     .order("sort_order");
+
+  // Prefer owner-scoped shares; fall back to single portfolio for legacy links
+  if (ownerId) {
+    portfolioQuery = portfolioQuery.eq("owner_id", ownerId);
+  } else if (link.scope === "sheet" && link.portfolio_id) {
+    portfolioQuery = portfolioQuery.eq("id", link.portfolio_id);
+  }
+
+  const { data: portfolios, error: pErr } = await portfolioQuery;
   if (pErr) {
     return NextResponse.json({ error: pErr.message }, { status: 500 });
   }
 
-  let holdingsQuery = supabase.from(PORTFELL_TABLES.holdings).select("*");
-  if (link.scope === "sheet" && link.portfolio_id) {
-    holdingsQuery = holdingsQuery.eq("portfolio_id", link.portfolio_id);
-  }
-  const { data: holdings, error: hErr } = await holdingsQuery.order("sort_order");
-  if (hErr) {
-    return NextResponse.json({ error: hErr.message }, { status: 500 });
+  const filteredPortfolios =
+    link.scope === "sheet" && link.portfolio_id
+      ? (portfolios ?? []).filter((p) => p.id === link.portfolio_id)
+      : portfolios ?? [];
+
+  const portfolioIds = filteredPortfolios.map((p) => p.id);
+  let holdings: unknown[] = [];
+  if (portfolioIds.length) {
+    const { data: h, error: hErr } = await supabase
+      .from(PORTFELL_TABLES.holdings)
+      .select("*")
+      .in("portfolio_id", portfolioIds)
+      .order("sort_order");
+    if (hErr) {
+      return NextResponse.json({ error: hErr.message }, { status: 500 });
+    }
+    holdings = h ?? [];
   }
 
   let lab = emptyLabBundle();
   if (link.scope === "lab" || link.scope === "overview") {
-    const { data: labRow } = await supabase
-      .from(PORTFELL_TABLES.labState)
-      .select("*")
-      .eq("id", "book")
-      .maybeSingle();
+    let labQuery = supabase.from(PORTFELL_TABLES.labState).select("*");
+    if (ownerId) {
+      labQuery = labQuery.eq("owner_id", ownerId);
+    } else {
+      labQuery = labQuery.eq("id", "book");
+    }
+    const { data: labRow } = await labQuery.maybeSingle();
     if (labRow) {
       lab = {
         conviction: labRow.conviction ?? {},
@@ -81,19 +104,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
     }
   }
 
-  const filteredPortfolios =
-    link.scope === "sheet" && link.portfolio_id
-      ? (portfolios ?? []).filter((p) => p.id === link.portfolio_id)
-      : portfolios ?? [];
-
   return NextResponse.json({
     ok: true,
     guest: true,
     scope: link.scope,
     label: link.label,
     expiresAt: link.expires_at,
-    portfolios: filteredPortfolios,
-    holdings: holdings ?? [],
+    portfolios: filteredPortfolios.map((p) => {
+      const row = p as Record<string, unknown>;
+      const { access_secret_hash: _h, ...rest } = row;
+      return { ...rest, has_access_secret: Boolean(_h) };
+    }),
+    holdings,
     lab,
   });
 }

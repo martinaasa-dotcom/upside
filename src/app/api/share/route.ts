@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireMasterAccess, requireOwnerAccess } from "@/lib/owner-pin";
+import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import { requireOwnerAccess } from "@/lib/owner-pin";
 import { mintShareToken } from "@/lib/share-token";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
 export const dynamic = "force-dynamic";
 
-/** Create a read-only share link (PIN required). */
+/** Create a read-only guest share link for your own book / sheet. */
 export async function POST(req: NextRequest) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -25,14 +30,27 @@ export async function POST(req: NextRequest) {
 
   const scope = body.scope ?? "overview";
 
-  // Sheet-scoped links must honor that sheet's own PIN/password lock.
-  // Book-wide (overview/lab) links can expose every sheet, including locked
-  // ones, so they require the admin override PIN when one is configured.
-  const denied =
-    scope === "sheet"
-      ? await requireOwnerAccess(req, body.portfolioId ?? null)
-      : requireMasterAccess(req);
-  if (denied) return denied;
+  if (scope === "sheet") {
+    const notOwner = await requirePortfolioOwner(
+      auth.user.id,
+      body.portfolioId ?? null
+    );
+    if (notOwner) return notOwner;
+    const denied = await requireOwnerAccess(req, body.portfolioId ?? null);
+    if (denied) return denied;
+  } else {
+    // Book-wide share: confirm caller owns at least one portfolio
+    const { count } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("*", { count: "exact", head: true })
+      .eq("owner_id", auth.user.id);
+    if (!count) {
+      return NextResponse.json(
+        { error: "No owned portfolios to share" },
+        { status: 400 }
+      );
+    }
+  }
   const { token, tokenHash } = mintShareToken();
   const days = Math.min(90, Math.max(1, Number(body.daysValid ?? 14)));
   const expiresAt = new Date(Date.now() + days * 86400000).toISOString();
@@ -45,8 +63,9 @@ export async function POST(req: NextRequest) {
       scope,
       portfolio_id: scope === "sheet" ? body.portfolioId ?? null : null,
       expires_at: expiresAt,
+      created_by: auth.user.id,
     })
-    .select("id, label, scope, portfolio_id, expires_at, created_at")
+    .select("id, label, scope, portfolio_id, expires_at, created_at, created_by")
     .single();
 
   if (error) {

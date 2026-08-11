@@ -22,9 +22,12 @@ import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { useAuth } from "@/components/AuthProvider";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   buildEarningsAlerts,
   buildStrikeAlerts,
@@ -237,6 +240,8 @@ function extendedHoursFromQuote(q: Quote | null | undefined) {
 
 export function Dashboard() {
   const { push: toast } = useToast();
+  const { profile, signOut } = useAuth();
+  const router = useRouter();
   const [source, setSource] = useState<DataSource>("demo");
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -583,15 +588,18 @@ export function Dashboard() {
 
       const res = await fetch("/api/portfolios", { cache: "no-store" });
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Sign in required to load your book");
+        }
         throw new Error(`Portfolios request failed (${res.status})`);
       }
       const data = await res.json();
-      if (data.source === "supabase" && data.portfolios?.length) {
+      if (data.source === "supabase") {
         setSource("supabase");
-        setPortfolios(data.portfolios);
+        setPortfolios(data.portfolios ?? []);
         setHoldings(data.holdings ?? []);
         setBookSyncedAt(Date.now());
-        setActiveId((prev) => pickInitialSheet(data.portfolios, prev));
+        setActiveId((prev) => pickInitialSheet(data.portfolios ?? [], prev));
       } else {
         const demo = loadDemoStore();
         setSource("demo");
@@ -1981,6 +1989,13 @@ export function Dashboard() {
     });
     if (source === "supabase" && !guestMode) {
       items.push({
+        id: "communities",
+        label: "Communities",
+        onSelect: () => {
+          router.push("/communities");
+        },
+      });
+      items.push({
         id: "share",
         label: "Copy guest link",
         onSelect: () => void handleCreateShare(),
@@ -1999,6 +2014,17 @@ export function Dashboard() {
           onSelect: () => setSheetSecretOpen(true),
         });
       }
+      items.push({
+        id: "signout",
+        label: profile?.display_name
+          ? `Sign out (${profile.display_name})`
+          : "Sign out",
+        onSelect: () =>
+          void signOut().then(() => {
+            router.push("/");
+            router.refresh();
+          }),
+      });
     }
     if (!isMetaTab) {
       items.push({
@@ -2102,7 +2128,7 @@ export function Dashboard() {
               className="min-w-0 truncate text-[15px] font-medium leading-none tracking-tight text-zinc-300"
               title={
                 source === "supabase"
-                  ? "Shared live book"
+                  ? "My book"
                   : locked
                     ? "Local demo (saved)"
                     : "Local demo"
@@ -2120,6 +2146,14 @@ export function Dashboard() {
             </h1>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
+            {source === "supabase" && !guestMode && (
+              <Link
+                href="/communities"
+                className="hidden rounded-md border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 sm:inline-flex"
+              >
+                Communities
+              </Link>
+            )}
             {source === "supabase" && needsSheetUnlock && !guestMode && (
               <button
                 type="button"
