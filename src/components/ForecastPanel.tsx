@@ -266,7 +266,7 @@ export function ForecastPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
   }, [portfolioId, holdingsKey, flatCount, plan]);
 
-  // Daily / first-run / new-holdings: Margus re-reasons EOY when thesis may have shifted.
+  // Auto cadence: first run, then monthly. New holdings are filled locally.
   useEffect(() => {
     if (!planHydrated || model.rows.length === 0) return;
     if (askInFlight.current || busy) return;
@@ -293,11 +293,8 @@ export function ForecastPanel({
     if (decision.run && decision.reason === "first-run") {
       return "No Margus plan yet — generating house BASE paths…";
     }
-    if (decision.run && decision.reason === "new-holdings") {
-      return "New holdings detected — Margus is updating EOY paths…";
-    }
-    if (decision.run && decision.reason === "daily") {
-      return "Daily thesis check — Margus is refreshing EOY if anything shifted…";
+    if (decision.run && decision.reason === "monthly") {
+      return "Monthly thesis check — Margus is refreshing EOY if anything shifted…";
     }
     return null;
   }, [planHydrated, model.rows, plan, fullyCovered, busy]);
@@ -309,9 +306,8 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Margus keeps house BASE EOY paths. He rechecks daily (and when
-              holdings change) — only reprices when macro / company / sector
-              thesis shifts; otherwise stays consistent with your rules.
+              Margus keeps house BASE EOY paths. He does a monthly recheck;
+              new holdings are filled without re-scanning the whole sheet.
             </p>
             {statusHint && (
               <p className="mt-1 text-[11px] text-amber-200/80">{statusHint}</p>
