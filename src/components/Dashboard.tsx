@@ -2111,17 +2111,17 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-              className="shrink-0 rounded-md outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-brand/50"
+              className="inline-flex shrink-0 items-center leading-none rounded-md outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-brand/50"
               title="Go to Overview"
               aria-label="Upside — go to Overview"
             >
               <UpsideLogo
                 variant="wordmark"
-                className="text-[15px] text-white"
+                className="translate-y-[3px] text-[15px] leading-none text-white"
               />
             </button>
             <span
-              className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
+              className="hidden h-3.5 w-px shrink-0 self-center bg-zinc-700 sm:block"
               aria-hidden
             />
             <h1

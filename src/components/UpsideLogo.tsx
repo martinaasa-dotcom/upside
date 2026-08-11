@@ -68,22 +68,19 @@ export function UpsideLogo({
 
   return (
     <span
-      className={cn("inline-flex items-center gap-2 text-white", className)}
+      className={cn(
+        "inline-flex items-center gap-1.5 leading-none text-white",
+        className
+      )}
       aria-label={title}
     >
-      <UpsideMark className="h-[1.15em] w-[1.15em] shrink-0" />
       {/*
-       * All-caps text at line-height:1 still reserves invisible descender
-       * space below the glyphs (font metrics), so flex-centering the TEXT
-       * BOX against the mark visually reads as "text sits too high" — the
-       * mark fills its box edge-to-edge, the text doesn't. Giving the text
-       * its own explicit box matched to the mark's height, then centering
-       * the glyphs inside THAT with flex, sidesteps the font-metric offset
-       * entirely instead of guessing at padding/transform nudges.
-       */}
-      <span
-        className="-mr-[0.22em] flex h-[1.15em] items-center text-[1em] font-semibold uppercase leading-none tracking-[0.22em]"
-      >
+        Cap-height sized mark (1em) + leading-none text so the lockup shares
+        the same line box as nearby 15px titles (e.g. header “Overview”).
+        translate-y nudges the SVG’s optical center down to match Latin caps.
+      */}
+      <UpsideMark className="relative top-[0.06em] h-[0.95em] w-[0.95em] shrink-0" />
+      <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
         Upside
       </span>
     </span>
