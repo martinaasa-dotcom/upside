@@ -103,6 +103,13 @@ import {
 } from "@/lib/display-currency";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import {
+  clearBookCache,
+  markSeedClaimed,
+  readBookCache,
+  shouldClaimSeed,
+  writeBookCache,
+} from "@/lib/book-cache";
+import {
   COMPOUND_TAB_ID,
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
@@ -230,19 +237,41 @@ function extendedHoursFromQuote(q: Quote | null | undefined) {
 
 export function Dashboard() {
   const { push: toast } = useToast();
-  const { profile, signOut, refresh } = useAuth();
+  const { profile, signOut, refresh, user } = useAuth();
   const router = useRouter();
-  const [source, setSource] = useState<DataSource>("demo");
-  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const cachedBook = readBookCache(user?.id);
+  const [source, setSource] = useState<DataSource>(
+    cachedBook?.source ?? "demo"
+  );
+  const [portfolios, setPortfolios] = useState<Portfolio[]>(
+    cachedBook?.portfolios ?? []
+  );
+  const [holdings, setHoldings] = useState<Holding[]>(
+    cachedBook?.holdings ?? []
+  );
   const [saveFlash, setSaveFlash] = useState(false);
-  const [locked, setLocked] = useState(false);
-  const [activeId, setActiveId] = useState<string>(OVERVIEW_TAB_ID);
+  const [locked, setLocked] = useState(cachedBook?.locked ?? false);
+  const [activeId, setActiveId] = useState<string>(() => {
+    if (!cachedBook) return OVERVIEW_TAB_ID;
+    const saved = loadActiveSheetId();
+    if (!saved) return OVERVIEW_TAB_ID;
+    if (
+      saved === OVERVIEW_TAB_ID ||
+      saved === COMPOUND_TAB_ID ||
+      saved === LAB_TAB_ID ||
+      saved === PULSE_TAB_ID
+    ) {
+      return saved;
+    }
+    return cachedBook.portfolios.some((p) => p.id === saved)
+      ? saved
+      : OVERVIEW_TAB_ID;
+  });
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [options, setOptions] = useState<Record<string, OptionCandidate | null>>(
     {}
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedBook);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
@@ -505,9 +534,15 @@ export function Dashboard() {
   );
 
   const loadPortfolios = useCallback(async (opts?: { silent?: boolean }) => {
-    if (!opts?.silent) {
+    const userId = user?.id ?? null;
+    const hasCache = Boolean(readBookCache(userId));
+    // Cold start only — remounts (My book from Communities/Account) use cache.
+    const showSplash = !opts?.silent && !hasCache;
+    if (showSplash) {
       setLoading(true);
       setLoadError(null);
+    } else {
+      setLoading(false);
     }
     const ctrl = new AbortController();
     const timeout = window.setTimeout(() => ctrl.abort(), 20_000);
@@ -527,8 +562,10 @@ export function Dashboard() {
     };
 
     try {
-      // Claim seed sheets (Aasad/Karud/Lap/…) before listing My book.
-      await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
+      if (shouldClaimSeed(userId)) {
+        await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
+        if (userId) markSeedClaimed(userId);
+      }
 
       let data: {
         source?: string;
@@ -551,22 +588,45 @@ export function Dashboard() {
       }
 
       if (data.source === "supabase") {
+        const nextPortfolios = data.portfolios ?? [];
+        const nextHoldings = data.holdings ?? [];
         setSource("supabase");
-        setPortfolios(data.portfolios ?? []);
-        setHoldings(data.holdings ?? []);
+        setPortfolios(nextPortfolios);
+        setHoldings(nextHoldings);
         setBookSyncedAt(Date.now());
-        setActiveId((prev) => pickInitialSheet(data.portfolios ?? [], prev));
+        setActiveId((prev) => pickInitialSheet(nextPortfolios, prev));
+        if (userId) {
+          writeBookCache({
+            userId,
+            source: "supabase",
+            portfolios: nextPortfolios,
+            holdings: nextHoldings,
+            locked: false,
+            fetchedAt: Date.now(),
+          });
+        }
       } else {
         const demo = loadDemoStore();
         setSource("demo");
         setPortfolios(demo.portfolios);
         setHoldings(demo.holdings);
         setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
-        setLocked(hasLockedSave());
+        const isLocked = hasLockedSave();
+        setLocked(isLocked);
+        if (userId) {
+          writeBookCache({
+            userId,
+            source: "demo",
+            portfolios: demo.portfolios,
+            holdings: demo.holdings,
+            locked: isLocked,
+            fetchedAt: Date.now(),
+          });
+        }
       }
     } catch (err) {
       console.error(err);
-      if (!opts?.silent) {
+      if (showSplash) {
         const aborted =
           err instanceof DOMException && err.name === "AbortError";
         setLoadError(
@@ -576,7 +636,6 @@ export function Dashboard() {
               ? err.message
               : "Couldn’t load the shared book. Showing local demo — retry when ready."
         );
-        // Don't fall back to demo for signed-in empty/timeout — empty UI is clearer.
         if (!aborted && !(err instanceof Error && /Sign in/i.test(err.message))) {
           const demo = loadDemoStore();
           setSource("demo");
@@ -584,7 +643,7 @@ export function Dashboard() {
           setHoldings(demo.holdings);
           setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
           setLocked(hasLockedSave());
-        } else {
+        } else if (!hasCache) {
           setSource("supabase");
           setPortfolios([]);
           setHoldings([]);
@@ -592,9 +651,9 @@ export function Dashboard() {
       }
     } finally {
       window.clearTimeout(timeout);
-      if (!opts?.silent) setLoading(false);
+      setLoading(false);
     }
-  }, [pickInitialSheet, refresh]);
+  }, [pickInitialSheet, refresh, user?.id]);
 
   const applyFxPayload = useCallback((fx: {
     eurUsd?: number | null;
@@ -712,8 +771,23 @@ export function Dashboard() {
   }, [refreshFx]);
 
   useEffect(() => {
-    void loadPortfolios();
-  }, [loadPortfolios]);
+    const cached = readBookCache(user?.id);
+    void loadPortfolios({ silent: Boolean(cached) });
+  }, [loadPortfolios, user?.id]);
+
+  // Keep session cache warm so My book remounts paint instantly.
+  useEffect(() => {
+    if (loading || !user?.id) return;
+    if (source === "supabase" && portfolios.length === 0) return;
+    writeBookCache({
+      userId: user.id,
+      source,
+      portfolios,
+      holdings,
+      locked,
+      fetchedAt: Date.now(),
+    });
+  }, [portfolios, holdings, source, locked, user?.id, loading]);
 
   // Personal daily-visit streak — device-local, counts once per Tallinn day
   // regardless of which tab loads first.
@@ -845,6 +919,16 @@ export function Dashboard() {
         setPortfolios(nextP);
         setHoldings(nextH);
         setBookSyncedAt(Date.now());
+        if (user?.id) {
+          writeBookCache({
+            userId: user.id,
+            source: "supabase",
+            portfolios: nextP,
+            holdings: nextH,
+            locked: false,
+            fetchedAt: Date.now(),
+          });
+        }
         toast("Book updated elsewhere — synced", "info");
       } catch {
         /* ignore */
@@ -1867,6 +1951,7 @@ export function Dashboard() {
           : "Sign out",
         onSelect: () =>
           void signOut().then(() => {
+            clearBookCache();
             router.push("/");
             router.refresh();
           }),

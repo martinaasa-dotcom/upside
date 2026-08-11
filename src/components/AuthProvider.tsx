@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
+import { clearBookCache } from "@/lib/book-cache";
 
 export type AuthProfile = {
   id: string;
@@ -128,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    clearBookCache();
   }, []);
 
   const value = useMemo(
