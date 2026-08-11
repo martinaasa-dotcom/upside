@@ -2,8 +2,10 @@ import { resolveAdvisorModel } from "@/lib/ai/model";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import {
+  buildFallbackPulseCheck,
   formatMovePct,
   pulseReportSchema,
+  type PulseCheck,
   type PulseCandidate,
   type PulseHeadline,
   type PulseReport,
@@ -17,6 +19,7 @@ type Body = {
   candidates?: PulseCandidate[];
   convictions?: Record<string, { thesis?: string; level?: number }>;
   fearGreed?: { score?: number; rating?: string } | null;
+  force?: boolean;
 };
 
 function newsBlock(headlines: PulseHeadline[]): string {
@@ -80,6 +83,7 @@ ${fg}
 ### Action rules (Martin buys intact dips — do NOT default everything to hold)
 - **action** = \`add\` | \`hold\` | \`trim\` | \`watch\`
 - **intact thesis + red day** on house compounders (**NBIS, CRWV, RKLB, VST, BMNR**, AI infra / space): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal.
+- If a line is in **rapid euphoria** (parabolic move / crowd chase), prefer **trim** with explicit take-profit sizing.
 - **addLevel** — always give a concrete price plan when thesis is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
   - Or \`Add now ~$X · stagger below ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy).
@@ -93,9 +97,10 @@ For **each** ticker:
 2. **moveReason** — one sentence (cite headline when possible).
 3. **thesisStatus** — intact / watch / broken.
 4. **action** — add / hold / trim / watch per rules above.
-5. **addLevel** — price trigger string (required for add; required for intact+down; empty for trim).
-6. **earningsNote** — if relevant; else empty string.
-7. **verdict** — one sentence tying **action + addLevel** to the thesis.
+5. **trimPct** — only when action=trim: choose 10, 15, 20, 25, 30 (% of position).
+6. **addLevel** — price trigger string (required for add; required for intact+down; empty for trim).
+7. **earningsNote** — if relevant; else empty string.
+8. **verdict** — one sentence tying **action + addLevel/trimPct** to the thesis.
 
 **summary**: one sentence — lead with dips that are add opportunities vs real thesis breaks.
 
@@ -131,7 +136,7 @@ export async function POST(req: Request) {
     }
 
     const tickers = candidates.map((c) => c.ticker);
-    const contexts = await fetchPulseContexts(tickers);
+    const contexts = await fetchPulseContexts(tickers, { force: body.force });
     const headlines: Record<string, PulseHeadline[]> = {};
     for (const t of tickers) {
       headlines[t.toUpperCase()] = contexts[t.toUpperCase()]?.news ?? [];
@@ -157,9 +162,31 @@ export async function POST(req: Request) {
       },
     });
 
+    const modelChecks = (object.checks ?? []) as PulseCheck[];
+    const byTicker = new Map<string, PulseCheck>();
+    for (const check of modelChecks) {
+      byTicker.set(check.ticker.toUpperCase(), check);
+    }
+
+    const checks: PulseCheck[] = candidates.map((candidate) => {
+      const key = candidate.ticker.toUpperCase();
+      const fromModel = byTicker.get(key);
+      if (fromModel) {
+        return {
+          ...fromModel,
+          ticker: key,
+          trimPct:
+            fromModel.action === "trim"
+              ? (fromModel.trimPct ?? null)
+              : null,
+        };
+      }
+      return buildFallbackPulseCheck(candidate);
+    });
+
     const report: PulseReport = {
       summary: object.summary,
-      checks: object.checks,
+      checks,
       generatedAt: new Date().toISOString(),
     };
 

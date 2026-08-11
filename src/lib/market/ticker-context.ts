@@ -1,5 +1,6 @@
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import { sectorForTicker, type PulseHeadline } from "@/lib/thesis-pulse";
+import { unstable_cache } from "next/cache";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -37,7 +38,7 @@ function daysSince(date: Date): number {
   return Math.floor(ms / (24 * 60 * 60 * 1000));
 }
 
-export async function fetchTickerNews(
+async function fetchTickerNewsUncached(
   ticker: string,
   count = 5
 ): Promise<PulseHeadline[]> {
@@ -62,7 +63,7 @@ export async function fetchTickerNews(
   }
 }
 
-export async function fetchTickerPulseContext(
+async function fetchTickerPulseContextUncached(
   ticker: string
 ): Promise<TickerPulseContext> {
   const base: TickerPulseContext = {
@@ -90,7 +91,7 @@ export async function fetchTickerPulseContext(
         return null;
       }
     })(),
-    fetchTickerNews(ticker),
+    fetchTickerNewsUncached(ticker),
   ]);
 
   base.news = news;
@@ -148,12 +149,44 @@ export async function fetchTickerPulseContext(
   return base;
 }
 
+const fetchTickerPulseContextCached = unstable_cache(
+  async (ticker: string) => fetchTickerPulseContextUncached(ticker),
+  ["pulse-ticker-context-v1"],
+  { revalidate: 60 * 60 }
+);
+
+export async function fetchTickerNews(
+  ticker: string,
+  count = 5
+): Promise<PulseHeadline[]> {
+  const context = await fetchTickerPulseContext(ticker);
+  return context.news.slice(0, count);
+}
+
+export async function fetchTickerPulseContext(
+  ticker: string,
+  opts?: { force?: boolean }
+): Promise<TickerPulseContext> {
+  const key = ticker.trim().toUpperCase();
+  if (!key) {
+    return fetchTickerPulseContextUncached(key);
+  }
+  if (opts?.force) {
+    return fetchTickerPulseContextUncached(key);
+  }
+  return fetchTickerPulseContextCached(key);
+}
+
 export async function fetchPulseContexts(
-  tickers: string[]
+  tickers: string[],
+  opts?: { force?: boolean }
 ): Promise<Record<string, TickerPulseContext>> {
   const unique = [...new Set(tickers.map((t) => t.toUpperCase()))];
   const entries = await Promise.all(
-    unique.map(async (ticker) => [ticker, await fetchTickerPulseContext(ticker)] as const)
+    unique.map(
+      async (ticker) =>
+        [ticker, await fetchTickerPulseContext(ticker, opts)] as const
+    )
   );
   return Object.fromEntries(entries);
 }

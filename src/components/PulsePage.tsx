@@ -13,14 +13,18 @@ import type { OverviewModel } from "@/lib/overview";
 import type { Quote } from "@/lib/types";
 import {
   PULSE_DOWN_THRESHOLD,
+  PULSE_REFRESH_MS,
   buildPulseCandidate,
   buildPulseCandidates,
   formatMovePct,
-  pulseCacheKey,
+  isPulseCacheFresh,
   loadPulseCache,
+  pulseCacheKey,
+  pulseSingleCacheKey,
   savePulseCache,
   statusLabel,
   actionLabel,
+  type PulseCacheEntry,
   type PulseAction,
   type PulseCheck,
   type PulseHeadline,
@@ -208,6 +212,11 @@ function PulseCard({
               {check.earningsNote}
             </p>
           ) : null}
+          {check.action === "trim" && check.trimPct ? (
+            <p className="font-medium text-amber-300">
+              Take profit: trim ~{check.trimPct}% of position.
+            </p>
+          ) : null}
           {check.addLevel ? (
             <p className="font-medium text-brand-bright">{check.addLevel}</p>
           ) : null}
@@ -278,6 +287,11 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);
 
+  const applyCacheEntry = useCallback((entry: PulseCacheEntry) => {
+    setReport(entry.report);
+    setHeadlinesByTicker(entry.headlines ?? {});
+  }, []);
+
   const pinnedCandidate = useMemo(() => {
     if (!pinnedTicker) return null;
     return buildPulseCandidate(pinnedTicker, model, mergedQuotes);
@@ -301,9 +315,12 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
   useEffect(() => {
     const cached = loadPulseCache(cacheKey);
-    if (cached) setReport(cached);
-    else setReport(null);
-  }, [cacheKey]);
+    if (cached) applyCacheEntry(cached);
+    else {
+      setReport(null);
+      setHeadlinesByTicker({});
+    }
+  }, [applyCacheEntry, cacheKey]);
 
   useEffect(() => {
     let alive = true;
@@ -329,17 +346,21 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   }, [pinnedTicker, checkingTicker]);
 
   const runPulse = useCallback(
-    async (force = false) => {
+    async (opts?: { force?: boolean; background?: boolean }) => {
       if (candidates.length === 0) return;
-      if (!force) {
-        const cached = loadPulseCache(cacheKey);
-        if (cached) {
-          setReport(cached);
+      const force = opts?.force ?? false;
+      const background = opts?.background ?? false;
+      const cached = loadPulseCache(cacheKey);
+      if (cached) {
+        applyCacheEntry(cached);
+        if (!force && isPulseCacheFresh(cached)) {
           return;
         }
       }
-      setLoading(true);
-      setError(null);
+      if (!background || !cached) {
+        setLoading(true);
+      }
+      if (!background) setError(null);
       try {
         const convictionPayload: Record<
           string,
@@ -362,34 +383,60 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             candidates,
             convictions: convictionPayload,
             fearGreed,
+            force,
           }),
         });
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data.error ?? "Pulse check failed");
         }
-        const next = data.report as PulseReport;
-        setReport(next);
-        setHeadlinesByTicker(
-          (data.headlines as Record<string, PulseHeadline[]>) ?? {}
-        );
-        savePulseCache(cacheKey, next);
+        const entry: PulseCacheEntry = {
+          report: data.report as PulseReport,
+          headlines:
+            (data.headlines as Record<string, PulseHeadline[]>) ?? {},
+          cachedAt: new Date().toISOString(),
+        };
+        applyCacheEntry(entry);
+        savePulseCache(cacheKey, entry);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Pulse check failed");
       } finally {
-        setLoading(false);
+        if (!background || !cached) {
+          setLoading(false);
+        }
       }
     },
-    [cacheKey, candidates, convictions, fearGreed]
+    [applyCacheEntry, cacheKey, candidates, convictions, fearGreed]
   );
 
   const runSingleCheck = useCallback(
     async (ticker: string, quoteMap: Record<string, Quote>) => {
       const key = ticker.toUpperCase();
       const candidate = buildPulseCandidate(key, model, quoteMap);
+      const singleCacheKey = pulseSingleCacheKey(key);
+      const cached = loadPulseCache(singleCacheKey);
       setCheckingTicker(key);
-      setLoading(true);
       setError(null);
+      if (cached) {
+        setReport((prev) => {
+          const checks = [...(prev?.checks ?? [])].filter(
+            (c) => c.ticker.toUpperCase() !== key
+          );
+          checks.push(...(cached.report.checks ?? []));
+          return {
+            summary: cached.report.summary || prev?.summary || "",
+            checks,
+            generatedAt: cached.report.generatedAt,
+          };
+        });
+        setHeadlinesByTicker((prev) => ({ ...prev, ...cached.headlines }));
+        if (isPulseCacheFresh(cached)) {
+          setCheckingTicker(null);
+          return;
+        }
+      } else {
+        setLoading(true);
+      }
       try {
         const entry = convictions[key];
         const res = await fetch("/api/thesis/pulse", {
@@ -401,6 +448,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               ? { [key]: { thesis: entry.thesis, level: entry.level } }
               : {},
             fearGreed,
+            force: true,
           }),
         });
         const data = await res.json();
@@ -410,6 +458,11 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         const single = data.report as PulseReport;
         const newHeadlines =
           (data.headlines as Record<string, PulseHeadline[]>) ?? {};
+        const nextCacheEntry: PulseCacheEntry = {
+          report: single,
+          headlines: newHeadlines,
+          cachedAt: new Date().toISOString(),
+        };
 
         setReport((prev) => {
           const checks = [...(prev?.checks ?? [])].filter(
@@ -423,6 +476,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           };
         });
         setHeadlinesByTicker((prev) => ({ ...prev, ...newHeadlines }));
+        savePulseCache(singleCacheKey, nextCacheEntry);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Pulse check failed");
       } finally {
@@ -435,8 +489,16 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
   useEffect(() => {
     if (candidates.length === 0) return;
-    void runPulse(false);
+    void runPulse({ background: true });
   }, [candidates, runPulse]);
+
+  useEffect(() => {
+    if (candidates.length === 0) return;
+    const id = window.setInterval(() => {
+      void runPulse({ force: true, background: true });
+    }, PULSE_REFRESH_MS);
+    return () => window.clearInterval(id);
+  }, [candidates.length, runPulse]);
 
   async function checkTicker(tickerRaw: string) {
     const ticker = tickerRaw.trim().toUpperCase();
@@ -488,13 +550,14 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
               Type any ticker and hit Check — even if it&apos;s already in your
-              book. Big book loads below; your check pins to the top with fresh
-              news.
+              book. Big book loads from cache instantly, refreshes hourly in the
+              background, and your check pins to the top with a ticker-only
+              update when needed.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => void runPulse(true)}
+            onClick={() => void runPulse({ force: true })}
             disabled={loading || candidates.length === 0}
             className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
           >

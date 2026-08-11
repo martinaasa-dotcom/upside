@@ -50,6 +50,8 @@ export type PulseCheck = {
   thesisStatus: ThesisStatus;
   earningsNote: string;
   action: PulseAction;
+  /** Suggested trim size when action=trim, e.g. 15 means trim 15% of position. */
+  trimPct?: number | null;
   /** When to add — "Add now ~$X" or "Add now · more below ~$Y". Empty if trim. */
   addLevel: string;
   verdict: string;
@@ -59,6 +61,12 @@ export type PulseReport = {
   generatedAt: string;
   summary: string;
   checks: PulseCheck[];
+};
+
+export type PulseCacheEntry = {
+  report: PulseReport;
+  headlines: Record<string, PulseHeadline[]>;
+  cachedAt: string;
 };
 
 export const pulseReportSchema = z.object({
@@ -86,6 +94,15 @@ export const pulseReportSchema = z.object({
         .describe(
           "add = deploy on intact thesis dip; hold = no change; trim = reduce; watch = wait for clarity."
         ),
+      trimPct: z
+        .number()
+        .min(5)
+        .max(50)
+        .nullable()
+        .optional()
+        .describe(
+          "Only when action=trim: percent of position to trim as take-profit (e.g. 10, 15, 20). Null otherwise."
+        ),
       addLevel: z
         .string()
         .describe(
@@ -106,6 +123,7 @@ export const pulseReportSchema = z.object({
 });
 
 const PULSE_CACHE_KEY = "upside-pulse-v3";
+export const PULSE_REFRESH_MS = 60 * 60 * 1000;
 
 export function effectiveMove(quote: Quote | null | undefined): {
   pct: number | null;
@@ -247,24 +265,64 @@ export function pulseCacheKey(tickers: string[]): string {
   return `${PULSE_CACHE_KEY}:${day}:${list}`;
 }
 
-export function loadPulseCache(key: string): PulseReport | null {
+export function pulseSingleCacheKey(ticker: string): string {
+  const day = todayKeyInTz();
+  return `${PULSE_CACHE_KEY}:${day}:single:${ticker.trim().toUpperCase()}`;
+}
+
+export function loadPulseCache(key: string): PulseCacheEntry | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
-    return JSON.parse(raw) as PulseReport;
+    const parsed = JSON.parse(raw) as
+      | PulseCacheEntry
+      | PulseReport
+      | null;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "report" in parsed &&
+      "headlines" in parsed &&
+      "cachedAt" in parsed
+    ) {
+      return parsed as PulseCacheEntry;
+    }
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "generatedAt" in parsed &&
+      "checks" in parsed
+    ) {
+      return {
+        report: parsed as PulseReport,
+        headlines: {},
+        cachedAt: (parsed as PulseReport).generatedAt,
+      };
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
-export function savePulseCache(key: string, report: PulseReport) {
+export function savePulseCache(key: string, entry: PulseCacheEntry) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(key, JSON.stringify(report));
+    localStorage.setItem(key, JSON.stringify(entry));
   } catch {
     /* ignore */
   }
+}
+
+export function isPulseCacheFresh(
+  entry: PulseCacheEntry | null,
+  maxAgeMs = PULSE_REFRESH_MS
+): boolean {
+  if (!entry?.cachedAt) return false;
+  const ts = new Date(entry.cachedAt).getTime();
+  if (!Number.isFinite(ts)) return false;
+  return Date.now() - ts < maxAgeMs;
 }
 
 export function statusLabel(status: ThesisStatus): string {
@@ -287,6 +345,65 @@ export function sectorForTicker(ticker: string): string | null {
 export function formatMovePct(pct: number | null): string {
   if (pct == null || Number.isNaN(pct)) return "—";
   return `${pct >= 0 ? "+" : ""}${(pct * 100).toFixed(1)}%`;
+}
+
+/**
+ * Deterministic fallback so every visible card gets a colored action/status
+ * even if the model misses a ticker in its response.
+ */
+export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
+  const move = candidate.effectivePct ?? 0;
+  const movePct = formatMovePct(candidate.effectivePct);
+  const euphoric =
+    move >= 0.12 || (move >= 0.08 && candidate.roiPct >= 0.5);
+  if (euphoric) {
+    const trimPct = candidate.bookPct >= 0.08 ? 20 : 10;
+    return {
+      ticker: candidate.ticker,
+      situation:
+        "Momentum is running hot and price action looks stretched versus a normal day range.",
+      moveReason:
+        "Likely momentum/euphoria extension rather than a thesis reset.",
+      thesisStatus: "watch",
+      earningsNote: "",
+      action: "trim",
+      trimPct,
+      addLevel: "",
+      verdict: `Take profit discipline: trim ${trimPct}% into strength and keep the core position for the long thesis.`,
+    };
+  }
+
+  if (candidate.needsAttention) {
+    const price = candidate.price > 0 ? candidate.price.toFixed(2) : "spot";
+    return {
+      ticker: candidate.ticker,
+      situation:
+        "This is a sharp down move that needs a thesis check, but no hard break is confirmed from market move alone.",
+      moveReason: `${candidate.moveLabel} move is ${movePct}.`,
+      thesisStatus: "intact",
+      earningsNote: "",
+      action: "add",
+      trimPct: null,
+      addLevel: `Add now ~$${price} · stagger below ~${(
+        candidate.price * 0.92
+      ).toFixed(2)}`,
+      verdict:
+        "If the thesis is intact, treat this as a buyable dip instead of an auto-sell signal.",
+    };
+  }
+
+  return {
+    ticker: candidate.ticker,
+    situation:
+      "No stress signal from today’s move. Position remains in normal monitoring mode.",
+    moveReason: `${candidate.moveLabel} move is ${movePct}.`,
+    thesisStatus: "intact",
+    earningsNote: "",
+    action: "hold",
+    trimPct: null,
+    addLevel: "",
+    verdict: "Hold and reassess on new catalysts, earnings, or thesis-changing news.",
+  };
 }
 
 /** @deprecated use buildPulseCandidates */
