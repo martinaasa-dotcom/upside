@@ -1307,7 +1307,7 @@ export function LabSheet({
                     <button
                       type="button"
                       aria-label="Delete cashflow"
-                      className="rounded p-1 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300"
+                      className="rounded p-3.5 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300 sm:p-1"
                       onClick={() =>
                         onLabChange({
                           cashflows: removeCashflow(cashflows, e.id),

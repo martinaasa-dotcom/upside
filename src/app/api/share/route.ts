@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireOwnerPin } from "@/lib/owner-pin";
+import { requireMasterAccess, requireOwnerAccess } from "@/lib/owner-pin";
 import { mintShareToken } from "@/lib/share-token";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -8,9 +8,6 @@ export const dynamic = "force-dynamic";
 
 /** Create a read-only share link (PIN required). */
 export async function POST(req: NextRequest) {
-  const denied = requireOwnerPin(req);
-  if (denied) return denied;
-
   const supabase = getSupabaseServer();
   if (!supabase) {
     return NextResponse.json(
@@ -27,6 +24,15 @@ export async function POST(req: NextRequest) {
   };
 
   const scope = body.scope ?? "overview";
+
+  // Sheet-scoped links must honor that sheet's own PIN/password lock.
+  // Book-wide (overview/lab) links can expose every sheet, including locked
+  // ones, so they require the admin override PIN when one is configured.
+  const denied =
+    scope === "sheet"
+      ? await requireOwnerAccess(req, body.portfolioId ?? null)
+      : requireMasterAccess(req);
+  if (denied) return denied;
   const { token, tokenHash } = mintShareToken();
   const days = Math.min(90, Math.max(1, Number(body.daysValid ?? 14)));
   const expiresAt = new Date(Date.now() + days * 86400000).toISOString();

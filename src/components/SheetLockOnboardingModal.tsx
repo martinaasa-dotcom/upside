@@ -89,7 +89,7 @@ export function SheetLockOnboardingModal({
           <button
             type="button"
             onClick={onSkip}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
             aria-label="Skip"
           >
             <X className="h-4 w-4" />

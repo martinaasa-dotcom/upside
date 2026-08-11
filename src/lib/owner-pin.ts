@@ -167,6 +167,36 @@ export function requireOwnerPin(req?: Request): NextResponse | null {
   return null;
 }
 
+/**
+ * Gate for book-wide/destructive actions (full-book restore, book-wide share
+ * links) that aren't tied to a single sheet's lock.
+ * - No UPSIDE_OWNER_PIN configured → open (matches "no global PIN" default).
+ * - Configured → require it (rate-limited, timing-safe compare).
+ */
+export function requireMasterAccess(req: Request): NextResponse | null {
+  const expected = getOwnerPin();
+  if (!expected) return null;
+
+  if (isRateLimited(req)) {
+    return NextResponse.json(
+      { error: "Too many invalid PIN attempts. Try again later." },
+      { status: 429 }
+    );
+  }
+
+  const provided = readProvidedSecret(req);
+  if (provided && masterOk(provided)) {
+    clearPinFailures(req);
+    return null;
+  }
+
+  notePinFailure(req);
+  return NextResponse.json(
+    { error: "Owner PIN required for this action" },
+    { status: 401 }
+  );
+}
+
 /** True when provided secret matches optional admin override. */
 export function isMasterSecret(provided: string): boolean {
   return masterOk(provided.trim());

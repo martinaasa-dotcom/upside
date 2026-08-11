@@ -5,7 +5,7 @@ import {
   restoreSheetFromSnapshot,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
-import { requireOwnerPin } from "@/lib/owner-pin";
+import { requireMasterAccess } from "@/lib/owner-pin";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 /** List recent snapshots (metadata only). Requires owner PIN. */
 export async function GET(req: NextRequest) {
-  const denied = requireOwnerPin(req);
+  const denied = requireMasterAccess(req);
   if (denied) return denied;
 
   const supabase = getSupabaseServer();
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
 /** Create a manual snapshot, or restore one. Requires owner PIN. */
 export async function POST(req: NextRequest) {
-  const denied = requireOwnerPin(req);
+  const denied = requireMasterAccess(req);
   if (denied) return denied;
 
   const supabase = getSupabaseServer();

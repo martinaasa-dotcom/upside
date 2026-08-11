@@ -583,7 +583,7 @@ export function CcAdvisorChat({
                 <button
                   type="button"
                   onClick={() => setRulesOpen(false)}
-                  className="rounded p-0.5 text-zinc-500 hover:text-zinc-300"
+                  className="rounded p-3 text-zinc-500 hover:text-zinc-300 sm:p-0.5"
                   aria-label="Close rules"
                 >
                   <X className="h-3.5 w-3.5" />

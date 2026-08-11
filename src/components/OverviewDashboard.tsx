@@ -815,7 +815,19 @@ export function OverviewDashboard({
         </div>
         <div className="space-y-3">
           {upcomingEarnings === null ? (
-            <p className="text-base text-zinc-500">Loading…</p>
+            <div className="space-y-3" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse rounded-2xl border border-zinc-800/80 bg-zinc-900/30 px-4 py-3.5"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="h-4 w-24 rounded bg-zinc-800" />
+                    <div className="h-4 w-16 rounded bg-zinc-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : upcomingEarnings.length === 0 ? (
             <p className="text-base text-zinc-500">
               No earnings dates in the next 90 days.

@@ -297,7 +297,7 @@ export function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-rose-400"
+                  className="rounded p-3.5 text-zinc-500 hover:bg-zinc-800 hover:text-rose-400"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />

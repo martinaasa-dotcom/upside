@@ -245,11 +245,8 @@ function isTimidVsBase(
 ): boolean {
   if (stance === "bearish") return false;
   const y2026 = FORECAST_YEARS[0]!;
-  const y2030 = FORECAST_YEARS[FORECAST_YEARS.length - 1]!;
   const p26 = prices[y2026];
   const s26 = shaped[y2026];
-  const p30 = prices[y2030];
-  const s30 = shaped[y2030];
 
   // Classic bug: AI infra / crypto opening year below spot on base/bullish
   if (
