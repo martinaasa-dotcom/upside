@@ -12,8 +12,8 @@
 | Email | Portfolios |
 |-------|------------|
 | `martin.aasa@upthink.ee` | Aasad, Anu, MaryAnn |
-| `aasamartinaasa@gmail.com` | Aasad |
-| `amandalucas400@gmail.com` | Aasad |
+| `aasamartinaasa@gmail.com` | Aasad, Anu, MaryAnn |
+| `amandalucas400@gmail.com` | Aasad, Anu, MaryAnn |
 | `rasmusmarjapuu@gmail.com` | Karud |
 | `karukaroliine99@gmail.com` | Karud |
 | `liinaanette@gmail.com` | Lap |
