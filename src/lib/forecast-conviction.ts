@@ -21,43 +21,55 @@ export type ForecastTheme =
 
 export type ForecastStance = "bearish" | "base" | "bullish";
 
+/** Tickers with explicit BASE CASE rows on Martin's white sheet. */
+export const HOUSE_SHEET_TICKERS = [
+  "NBIS",
+  "CRWV",
+  "RKLB",
+  "BMNR",
+  "SOFI",
+  "HOOD",
+  "PLTR",
+  "NOW",
+  "VST",
+] as const;
+
 /**
  * BASE path as multiples of today's spot for EOY 2026…2030.
- * Sourced from Martin's sheet (white) — this is BASE, not bearish.
+ * Sheet-listed tickers use exact white-sheet ratios; themes use the same bullish mix.
  */
 const THEME_BASE_MULTS: Record<ForecastTheme, number[]> = {
-  // NBIS/CRWV sheet shape: strong 2026 print, then S-curve (no winter)
-  ai_infra: [1.3, 2.0, 2.85, 4.3, 6.0],
-  // Datacenter power compounder (VST/PWR) — always above spot in 2026
-  ai_power: [1.18, 1.55, 2.2, 3.1, 4.2],
-  // BMNR sheet: rip → rip → winter → recover → expand
-  crypto: [1.85, 2.9, 1.25, 2.0, 4.0],
-  // RKLB sheet: grind up → digestion → re-accelerate
-  space: [1.08, 1.57, 1.33, 1.99, 2.89],
-  // HOOD/SOFI sheet-ish
-  fintech: [1.35, 1.85, 1.2, 1.8, 2.7],
-  software: [1.12, 1.4, 1.2, 1.75, 2.5],
-  healthcare: [1.1, 1.35, 1.25, 1.7, 2.2],
+  // NBIS + CRWV sheet average — high-conviction AI infra
+  ai_infra: [1.347, 2.084, 2.947, 4.449, 6.231],
+  ai_power: [1.316, 1.785, 2.379, 2.974, 3.569],
+  crypto: [1.944, 3.056, 1.333, 2.111, 4.167],
+  space: [1.125, 1.625, 1.375, 2.063, 3.0],
+  fintech: [1.353, 1.81, 1.164, 1.762, 2.708],
+  software: [1.128, 1.375, 1.191, 1.713, 2.331],
+  healthcare: [1.12, 1.4, 1.22, 1.75, 2.35],
   drones: [1.2, 1.7, 1.4, 2.1, 3.0],
-  semi: [1.2, 1.7, 1.45, 2.4, 3.4],
+  semi: [1.25, 1.85, 1.5, 2.45, 3.5],
   index: [1.08, 1.18, 1.12, 1.3, 1.45],
-  other: [1.15, 1.5, 1.35, 1.9, 2.6],
+  other: [1.25, 1.75, 1.4, 2.05, 2.9],
 };
 
-/** Optional per-ticker BASE overrides (multiples of spot). */
+/**
+ * Exact BASE CASE TARGETS from Martin's sheet (multiples of spot).
+ * Reference spots when sheet was authored: NBIS ~184, CRWV ~88, RKLB ~80, BMNR ~18, etc.
+ */
 const TICKER_BASE_MULTS: Record<string, number[]> = {
-  NBIS: [1.33, 1.98, 2.71, 4.06, 5.63],
-  CRWV: [1.26, 2.03, 2.97, 4.51, 6.37],
-  RKLB: [1.08, 1.57, 1.33, 1.99, 2.89],
-  BMNR: [1.84, 2.89, 1.26, 2.0, 3.95],
-  VST: [1.2, 1.6, 2.3, 3.2, 4.3],
-  PWR: [1.18, 1.55, 2.15, 3.0, 4.0],
-  SOFI: [1.39, 1.78, 1.22, 1.94, 2.89],
-  HOOD: [1.34, 1.88, 1.13, 1.61, 2.58],
-  PLTR: [1.09, 1.34, 1.17, 1.73, 2.4],
-  NOW: [1.16, 1.4, 1.2, 1.68, 2.24],
-  NVDA: [1.22, 1.75, 1.5, 2.5, 3.6],
-  AVGO: [1.18, 1.65, 1.4, 2.3, 3.3],
+  NBIS: [1.386, 2.065, 2.826, 4.239, 5.87],
+  CRWV: [1.307, 2.102, 3.068, 4.659, 6.591],
+  RKLB: [1.125, 1.625, 1.375, 2.063, 3.0],
+  BMNR: [1.944, 3.056, 1.333, 2.111, 4.167],
+  VST: [1.316, 1.785, 2.379, 2.974, 3.569],
+  SOFI: [1.389, 1.778, 1.222, 1.944, 2.889],
+  HOOD: [1.316, 1.842, 1.105, 1.579, 2.526],
+  PLTR: [1.114, 1.371, 1.2, 1.771, 2.457],
+  NOW: [1.142, 1.378, 1.181, 1.654, 2.205],
+  PWR: [1.316, 1.785, 2.379, 2.974, 3.569],
+  NVDA: [1.25, 1.85, 1.5, 2.45, 3.5],
+  AVGO: [1.22, 1.75, 1.45, 2.35, 3.35],
 };
 
 /** Scale whole path vs BASE (bullish above, bearish below). */
@@ -103,6 +115,11 @@ function roundPx(n: number) {
   return Math.round(n * 100) / 100;
 }
 
+export function isHouseSheetTicker(ticker: string): boolean {
+  const key = ticker.split(".")[0]!.toUpperCase();
+  return (HOUSE_SHEET_TICKERS as readonly string[]).includes(key);
+}
+
 /**
  * Build a stance-scaled path from the BASE spreadsheet calibration.
  * Bullish > base > bearish. Keeps relative shape (including crypto winter).
@@ -119,11 +136,27 @@ export function shapedFallbackPath(
   for (let i = 0; i < FORECAST_YEARS.length; i++) {
     const year = FORECAST_YEARS[i]!;
     const baseMult = mults[i] ?? mults[mults.length - 1]!;
-    // Scale upside vs 1.0x spot so winters stay winters but magnitude shifts
     const scaledMult = 1 + (baseMult - 1) * scale;
     out[year] = roundPx(Math.max(0.01, spot * scaledMult));
   }
   return enforcePathRules(out, spot, theme, stance);
+}
+
+/** Margus/LLM prices can exceed sheet BASE — never fall below it on base stance. */
+export function mergeWithHouseBaseFloors(
+  prices: Partial<Record<ForecastYear, number>> | undefined,
+  floor: Record<ForecastYear, number>,
+  stance: ForecastStance = "base"
+): Record<ForecastYear, number> {
+  const out = { ...floor };
+  if (stance === "bearish") return out;
+  for (const year of FORECAST_YEARS) {
+    const p = prices?.[year];
+    if (typeof p === "number" && p > 0) {
+      out[year] = roundPx(Math.max(p, floor[year]!));
+    }
+  }
+  return out;
 }
 
 /** Hard rules so BASE/BULLISH never open with nonsense dips on AI infra. */
@@ -139,7 +172,7 @@ export function enforcePathRules(
   if (stance === "base" || stance === "bullish") {
     const min2026 =
       theme === "ai_infra"
-        ? spot * (stance === "bullish" ? 1.28 : 1.2)
+        ? spot * (stance === "bullish" ? 1.28 : 1.25)
         : theme === "ai_power"
           ? spot * (stance === "bullish" ? 1.18 : 1.12)
           : theme === "crypto"
@@ -165,20 +198,21 @@ export const FORECAST_CONVICTION_PROMPT = `## Forecast conviction (MANDATORY)
 
 Macro backdrop: Tom Lee–style (liquidity + AI spend + crypto institutionalization) — structurally supportive for risk assets. Use that environment; do **not** copy Lee’s permabull extremes on every ticker/year. Paths stay non-linear.
 
-Martin's spreadsheet is the **BASE** case (always — house path, no stance toggle). You MUST align paths to that magnitude. Consistency: if macro / company / sector thesis is unchanged, keep EOY magnitudes near prior house bands; only reprice when thesis meaningfully changes.
+Martin's white spreadsheet **BASE CASE TARGETS** are the floor (always — house path, no stance toggle). You MUST align paths to that magnitude. **Never print an EOY below the sheet BASE for a listed ticker.** Other names use the same bullish theme assumptions.
 
-### Canonical BASE anchors (scale to today's spot; keep the shape)
-These are BASE — not "optimistic stretch":
-- **NBIS**: ~1.33× / 2.0× / 2.7× / 4.1× / 5.6× spot by EOY 2026→2030 (e.g. ~192 → ~255 → ~380 → ~520 → ~780 → ~1080). NEVER print EOY 2026 below spot.
-- **CRWV**: ~1.26× / 2.0× / 3.0× / 4.5× / 6.4× (e.g. ~91 → ~115 → ~185 → ~270 → ~410 → ~580).
-- **RKLB**: ~1.08× / 1.57× / 1.33× / 2.0× / 2.9× with a 2028 digestion dip after 2027.
-- **BMNR**: ~1.85× / 2.9× / 1.25× / 2.0× / 4.0× — 2026 UP hard, 2028 winter, then recover.
-- **VST / PWR (AI power)**: treat like datacenter electricity compounders — 2026 above spot, ~3–4.5× by 2030 on base.
-- **HOOD / SOFI / PLTR / NOW / SaaS**: follow the same sheet style (up years + one mid-path washout).
-- **Healthcare / drones / defense**: non-linear compounders — classify and use theme multiples; do not force AI-infra shapes.
+### Canonical BASE floors (scale to today's spot; keep the shape)
+These are minimums — Margus may go higher, never lower:
+- **NBIS** @ ~$184: **255 / 380 / 520 / 780 / 1080** by EOY 2026→2030 (587% gain path). NEVER below spot in 2026.
+- **CRWV** @ ~$88: **115 / 185 / 270 / 410 / 580**.
+- **RKLB** @ ~$80: **90 / 130 / 110 / 165 / 240** (2028 digestion).
+- **BMNR** @ ~$18: **35 / 55 / 24 / 38 / 75** (2028 winter).
+- **VST** (AI power): same compounder spirit — **~1.32× / 1.79× / 2.38× / 2.97× / 3.57×** spot by 2030.
+- **SOFI / HOOD / PLTR / NOW**: sheet-listed — match their non-linear shapes when present.
+- **New tickers**: classify to nearest theme (AI infra, crypto, space, fintech, SaaS…) and use that theme's BASE multiples — same overall bullish sentiment.
 
 ### Forbidden
-- EOY 2026 **below spot** for NBIS, CRWV, VST, PWR, BMNR. That is a failure (your 182-on-NBIS bug).
+- Any EOY **below** the spreadsheet BASE for sheet-listed tickers (CRWV 2030 at 410 when BASE is ~580 is a failure).
+- EOY 2026 **below spot** for NBIS, CRWV, VST, PWR, BMNR.
 - Near-linear ramps (same $ or YoY for 3+ years).
 - Timid mid-single-digit paths on AI infra / crypto.
 - Making paths quieter than the spreadsheet.
@@ -188,7 +222,6 @@ These are BASE — not "optimistic stretch":
 - Non-linear paths: bull runs and/or consolidation years.
 - Crypto: violent mid-path winter, then recovery.
 - AI infra: digestion = slower UP year, not a collapse below spot early.
-- New tickers / sectors (SaaS, healthcare, drones…): classify to nearest theme and use that theme's BASE multiples.
 - Trim/add lines may list multiple names or sector sleeves — not one ticker only.
 
 ### Rationale

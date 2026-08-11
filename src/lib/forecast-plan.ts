@@ -6,6 +6,7 @@ import {
   FORECAST_CONVICTION_PROMPT,
   enforcePathRules,
   forecastThemeForTicker,
+  mergeWithHouseBaseFloors,
   shapedFallbackPath,
 } from "@/lib/forecast-conviction";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -134,7 +135,7 @@ export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
 
 export type StoredForecastPlans = Record<string, ForecastPlan>;
 
-export const FORECAST_AUTO_REFRESH_MS = 24 * 60 * 60 * 1000; // daily thesis check
+export const FORECAST_AUTO_REFRESH_MS = 30 * 24 * 60 * 60 * 1000; // monthly thesis check
 
 export function forecastHoldingsKey(tickers: string[]): string {
   return [...new Set(tickers.map((t) => t.toUpperCase()))].sort().join("|");
@@ -144,10 +145,10 @@ export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "new-holdings" | "daily";
+      reason: "first-run" | "monthly";
     };
 
-/** Auto API refresh for first run, new tickers, or daily thesis check. */
+/** Auto API refresh for first run, then monthly (not daily). */
 export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
@@ -177,13 +178,14 @@ export function shouldAutoRefreshForecast(input: {
       : (plan.eoyTargets ?? []).map((t) => t.ticker.toUpperCase())
   );
   const hasNew = tickers.some((t) => !planSet.has(t));
-  if (hasNew) return { run: true, reason: "new-holdings" };
+  // New holdings are filled via local calibration merge; skip full-model rerun.
+  if (hasNew) return { run: false, reason: "ok" };
 
   if (plan.generatedAt) {
     const age =
       (input.nowMs ?? Date.now()) - new Date(plan.generatedAt).getTime();
     if (Number.isFinite(age) && age >= FORECAST_AUTO_REFRESH_MS) {
-      return { run: true, reason: "daily" };
+      return { run: true, reason: "monthly" };
     }
   } else if (!input.fullyCovered) {
     return { run: true, reason: "first-run" };
@@ -261,23 +263,22 @@ function isTimidVsBase(
     return true;
   }
 
-  // 2026 far below spreadsheet-shaped floor
+  // 2026 below spreadsheet-shaped floor
   if (
     typeof p26 === "number" &&
     typeof s26 === "number" &&
-    p26 < s26 * 0.85
+    p26 < s26 * 0.98
   ) {
     return true;
   }
 
-  // Terminal massively under base calibration
-  if (
-    typeof p30 === "number" &&
-    typeof s30 === "number" &&
-    theme !== "index" &&
-    p30 < s30 * 0.7
-  ) {
-    return true;
+  // Any year materially under sheet BASE
+  for (const year of FORECAST_YEARS) {
+    const p = prices[year];
+    const s = shaped[year];
+    if (typeof p === "number" && typeof s === "number" && p < s * 0.98) {
+      return true;
+    }
   }
 
   return false;
@@ -361,10 +362,11 @@ export function ensureCompleteEoyTargets(
     const spot = row.currentPrice > 0 ? row.currentPrice : 1;
     const theme = forecastThemeForTicker(row.ticker);
     const shaped = shapedFallbackPath(spot, theme, stance, row.ticker);
-    let prices = {
-      ...shaped,
-      ...(existing?.prices ?? {}),
-    } as Record<ForecastYear, number>;
+    let prices = mergeWithHouseBaseFloors(
+      existing?.prices,
+      shaped,
+      stance
+    );
 
     for (const year of FORECAST_YEARS) {
       const p = prices[year];
@@ -378,9 +380,14 @@ export function ensureCompleteEoyTargets(
       isTimidVsBase(prices, shaped, spot, theme, stance);
 
     if (reshape) {
-      prices = { ...shaped };
+      prices = mergeWithHouseBaseFloors(shaped, shaped, stance);
     } else {
-      prices = enforcePathRules(prices, spot, theme, stance);
+      prices = enforcePathRules(
+        mergeWithHouseBaseFloors(prices, shaped, stance),
+        spot,
+        theme,
+        stance
+      );
     }
 
     out.push({
