@@ -311,7 +311,7 @@ export function PortfolioTable({
                     digits={4}
                     displayDigits={0}
                     onCommit={(shares) => onPatch({ id: h.id, shares })}
-                    className="w-full text-left"
+                    className="w-full"
                   />
                 </label>
                 <label className="grid gap-1 text-zinc-500">
@@ -320,7 +320,7 @@ export function PortfolioTable({
                     value={h.buy_price}
                     digits={2}
                     onCommit={(buy_price) => onPatch({ id: h.id, buy_price })}
-                    className="w-full text-left"
+                    className="w-full"
                   />
                 </label>
                 <div>

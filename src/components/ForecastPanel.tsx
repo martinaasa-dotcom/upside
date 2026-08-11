@@ -71,14 +71,10 @@ function formatGeneratedAt(iso: string) {
 function EoyPriceInput({
   value,
   targeted,
-  align = "right",
   onCommit,
 }: {
   value: number;
   targeted: boolean;
-  /** Mobile cards read left-to-right with static labels (left-aligned);
-   *  the desktop grid keeps numbers right-aligned like every other table. */
-  align?: "left" | "right";
   onCommit: (n: number) => void;
 }) {
   const display = value.toFixed(2);
@@ -119,18 +115,21 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "inline-edit no-spinner w-[5.5rem] max-w-full rounded-t px-1 py-0.5 tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
-        align === "right" ? "ml-auto text-right" : "text-left",
+        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
         targeted ? "text-zinc-100" : "text-zinc-500"
       )}
     />
   );
 }
 
+// Centered throughout, matching the shared `cellBase` convention every
+// other table (PortfolioTable, CoveredCallPanel) already uses — this used
+// to be right-aligned here specifically, which read as an inconsistent
+// one-off next to its siblings.
 const cellLabel =
-  "flex min-w-0 w-full flex-col items-start justify-center whitespace-nowrap px-3 py-2 text-left";
+  "flex min-w-0 w-full flex-col items-center justify-center whitespace-nowrap px-3 py-2 text-center";
 const cellNum =
-  "flex min-w-0 w-full items-center justify-end whitespace-nowrap px-3 py-2 text-right tabular-nums";
+  "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-3 py-2 text-center tabular-nums";
 
 export function ForecastPanel({
   model,
@@ -381,19 +380,18 @@ export function ForecastPanel({
                   </p>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                  <div>
+                  <div className="text-center">
                     <p className="text-zinc-500">Current SP</p>
                     <p className="tabular-nums text-zinc-100">
                       {currency(r.currentPrice)}
                     </p>
                   </div>
                   {yearCols.map((y) => (
-                    <div key={y}>
+                    <div key={y} className="text-center">
                       <p className="text-zinc-500">{yearLabel(y)}</p>
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
                         targeted={r.targetedYears[y]}
-                        align="left"
                         onCommit={(n) => onSetEoyPrice(r.ticker, y, n)}
                       />
                     </div>
