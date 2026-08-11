@@ -2180,7 +2180,11 @@ export function Dashboard() {
             eurUsdDetail={eurUsdDetail}
           />
         ) : isPulse ? (
-          <PulsePage model={overview} convictions={convictionMap} />
+          <PulsePage
+            model={overview}
+            quotes={quotes}
+            convictions={convictionMap}
+          />
         ) : isOverview ? (
           <>
             <OverviewDashboard

@@ -2,8 +2,10 @@ import { resolveAdvisorModel } from "@/lib/ai/model";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import {
+  formatMovePct,
   pulseReportSchema,
   type PulseCandidate,
+  type PulseHeadline,
   type PulseReport,
 } from "@/lib/thesis-pulse";
 import { generateObject } from "ai";
@@ -16,6 +18,16 @@ type Body = {
   convictions?: Record<string, { thesis?: string; level?: number }>;
   fearGreed?: { score?: number; rating?: string } | null;
 };
+
+function newsBlock(headlines: PulseHeadline[]): string {
+  if (headlines.length === 0) return "  (no recent headlines fetched)";
+  return headlines
+    .map(
+      (h) =>
+        `  · ${h.title} (${h.publisher}, ${h.publishedAt.slice(0, 10)})`
+    )
+    .join("\n");
+}
 
 function buildPrompt(
   candidates: PulseCandidate[],
@@ -31,14 +43,17 @@ function buildPrompt(
   const lines = candidates.map((c) => {
     const ctx = contexts[c.ticker.toUpperCase()];
     const conv = convictions?.[c.ticker.toUpperCase()];
-    const todayPct = ((c.todayPct ?? 0) * 100).toFixed(1);
+    const move = formatMovePct(c.effectivePct);
     const bookPct = (c.bookPct * 100).toFixed(1);
     const roiPct = (c.roiPct * 100).toFixed(0);
+    const flag = c.needsAttention ? " **NEEDS ATTENTION — down ≥5%**" : "";
     const parts = [
-      `- **${c.ticker}** · today ${todayPct}% · ${bookPct}% of book · lifetime ROI ${roiPct}% · $${c.currentValue.toFixed(0)} value`,
-      conv?.thesis ? `  Owner thesis: ${conv.thesis}` : "  Owner thesis: (none saved)",
+      `- **${c.ticker}** · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup — not in book)"}`,
+      conv?.thesis ? `  Owner thesis: ${conv.thesis}` : "",
       conv?.level ? `  Conviction: ${conv.level}/5` : "",
       ctx?.sector ? `  Sector: ${ctx.sector}` : "",
+      "  Recent headlines:",
+      newsBlock(ctx?.news ?? []),
     ];
     if (ctx?.lastEarningsDate) {
       parts.push(
@@ -55,20 +70,23 @@ function buildPrompt(
 
   return `${MARGUS_PERSONA}
 
-## Task — Thesis Pulse (simple)
-Martin wants a **plain-English thesis check** on big book positions that moved **±5% or more today**.
+## Task — Thesis Pulse
+Martin uses this when a **big line drops hard** and he asks: *should I sell?*
+
+Primary job: **down ≥5% moves** (including pre-market / after-hours). Also covers other big book lines for context.
 
 ${fg}
 
-For each ticker below:
-1. **moveReason** — one short sentence on why it moved (news, sector beta, earnings reaction, macro). No jargon soup.
-2. **thesisStatus** — \`intact\` if the long-term thesis still holds; \`watch\` if something needs monitoring; \`broken\` only if fundamentals/narrative clearly broke (not just a red day).
-3. **earningsNote** — if last print was within ~45 days or next is within ~14 days, say whether it was clean or had a nasty surprise; else empty string.
-4. **verdict** — one sentence: hold, add on dip, trim, or watchlist — thesis-first.
+For **each** ticker:
+1. **situation** — 2–3 short sentences explaining what's going on **right now**, grounded in the supplied headlines. No filler.
+2. **moveReason** — one sentence on what drove the move (cite headline when possible).
+3. **thesisStatus** — \`intact\` if the long-term thesis still holds; \`watch\` if something needs monitoring; \`broken\` only if fundamentals/narrative clearly broke (not just a red day or earnings vol).
+4. **earningsNote** — if last print was within ~45 days or next is within ~14 days, say clean vs nasty surprise; else empty string.
+5. **verdict** — one sentence for a holder debating a sale: **hold**, add on dip, trim, or watch. Be direct on down days — don't reflexively say hold.
 
-Also write **summary**: one sentence on how the book's big movers feel today.
+**summary**: one sentence — lead with sharp drops and whether they're noise or real thesis risk.
 
-Keep every field short. No tables. No permabull fluff — honest and simple.
+Keep fields short. Use the headlines — don't invent news.
 
 ## Positions
 ${lines.join("\n\n")}`;
@@ -101,6 +119,11 @@ export async function POST(req: Request) {
 
     const tickers = candidates.map((c) => c.ticker);
     const contexts = await fetchPulseContexts(tickers);
+    const headlines: Record<string, PulseHeadline[]> = {};
+    for (const t of tickers) {
+      headlines[t.toUpperCase()] = contexts[t.toUpperCase()]?.news ?? [];
+    }
+
     const prompt = buildPrompt(
       candidates,
       contexts,
@@ -116,7 +139,7 @@ export async function POST(req: Request) {
       abortSignal: req.signal,
       providerOptions: {
         openrouter: {
-          reasoning: { effort: "medium", max_tokens: 4000 },
+          reasoning: { effort: "medium", max_tokens: 6000 },
         },
       },
     });
@@ -127,7 +150,7 @@ export async function POST(req: Request) {
       generatedAt: new Date().toISOString(),
     };
 
-    return Response.json({ report });
+    return Response.json({ report, headlines });
   } catch (err) {
     console.error("Pulse report failed", err);
     return Response.json(

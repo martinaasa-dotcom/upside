@@ -1,5 +1,5 @@
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
-import { sectorForTicker } from "@/lib/thesis-pulse";
+import { sectorForTicker, type PulseHeadline } from "@/lib/thesis-pulse";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -24,6 +24,7 @@ export type TickerPulseContext = {
   lastSurprisePct: number | null;
   lastEpsActual: number | null;
   lastEpsEstimate: number | null;
+  news: PulseHeadline[];
 };
 
 function toDateKey(d: Date): string {
@@ -34,6 +35,31 @@ function daysSince(date: Date): number {
   const today = new Date();
   const ms = today.getTime() - date.getTime();
   return Math.floor(ms / (24 * 60 * 60 * 1000));
+}
+
+export async function fetchTickerNews(
+  ticker: string,
+  count = 5
+): Promise<PulseHeadline[]> {
+  try {
+    const yf = await getYahoo();
+    const result = await yf.search(ticker, { newsCount: count });
+    const items = result.news ?? [];
+    return items.slice(0, count).map((n) => ({
+      title: String(n.title ?? "").trim(),
+      publisher: String(n.publisher ?? "News").trim(),
+      link: String(n.link ?? "").trim(),
+      publishedAt:
+        n.providerPublishTime instanceof Date
+          ? n.providerPublishTime.toISOString()
+          : typeof n.providerPublishTime === "string"
+            ? n.providerPublishTime
+            : new Date().toISOString(),
+    }));
+  } catch (err) {
+    console.error(`News fetch failed for ${ticker}`, err);
+    return [];
+  }
 }
 
 export async function fetchTickerPulseContext(
@@ -49,13 +75,30 @@ export async function fetchTickerPulseContext(
     lastSurprisePct: null,
     lastEpsActual: null,
     lastEpsEstimate: null,
+    news: [],
   };
 
+  const [summaryResult, news] = await Promise.all([
+    (async () => {
+      try {
+        const yf = await getYahoo();
+        return await yf.quoteSummary(ticker, {
+          modules: ["earningsHistory", "calendarEvents"],
+        });
+      } catch (err) {
+        console.error(`Pulse context failed for ${ticker}`, err);
+        return null;
+      }
+    })(),
+    fetchTickerNews(ticker),
+  ]);
+
+  base.news = news;
+
+  if (!summaryResult) return base;
+
   try {
-    const yf = await getYahoo();
-    const summary = await yf.quoteSummary(ticker, {
-      modules: ["earningsHistory", "calendarEvents"],
-    });
+    const summary = summaryResult;
 
     const history = summary.earningsHistory?.history ?? [];
     const latest = history[0];
@@ -99,7 +142,7 @@ export async function fetchTickerPulseContext(
       }
     }
   } catch (err) {
-    console.error(`Pulse context failed for ${ticker}`, err);
+    console.error(`Pulse earnings parse failed for ${ticker}`, err);
   }
 
   return base;
