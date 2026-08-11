@@ -151,6 +151,48 @@ function formatPricesAge(updatedAt: number | null, now: number): string {
   return `Prices · ${Math.floor(min / 60)}h ago`;
 }
 
+/**
+ * Ticks its own clock so the "Prices · Xs ago" status doesn't force a
+ * re-render of the entire Dashboard tree once a second.
+ */
+function PricesAgeStatus({
+  quotesUpdatedAt,
+  quotesDelayed,
+  bookSyncedAt,
+  source,
+  locked,
+}: {
+  quotesUpdatedAt: number | null;
+  quotesDelayed: boolean;
+  bookSyncedAt: number | null;
+  source: DataSource;
+  locked: boolean;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <span
+      className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-500"
+      title={
+        source === "supabase"
+          ? "Shared live book"
+          : locked
+            ? "Local demo (saved)"
+            : "Local demo"
+      }
+    >
+      {formatPricesAge(quotesUpdatedAt, now)}
+      {quotesDelayed ? " · delayed" : ""}
+      {source === "supabase" && bookSyncedAt
+        ? ` · book ${formatPricesAge(bookSyncedAt, now).replace("Prices · ", "")}`
+        : ""}
+    </span>
+  );
+}
+
 function extendedHoursFromQuote(q: Quote | null | undefined) {
   if (!q) {
     return {
@@ -202,7 +244,6 @@ export function Dashboard() {
   const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState(
     () => loadDisplayCurrencyMap()
   );
-  const [nowTick, setNowTick] = useState(() => Date.now());
   const [modalOpen, setModalOpen] = useState(false);
   const [cashModalOpen, setCashModalOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{
@@ -826,11 +867,6 @@ export function Dashboard() {
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
 
   const ccSignature = portfolioHoldings
     .map(
@@ -2124,22 +2160,13 @@ export function Dashboard() {
           </div>
         </div>
         <div className="mx-auto flex max-w-[1400px] flex-col gap-1 border-t border-zinc-800/60 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
-          <span
-            className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-500"
-            title={
-              source === "supabase"
-                ? "Shared live book"
-                : locked
-                  ? "Local demo (saved)"
-                  : "Local demo"
-            }
-          >
-            {formatPricesAge(quotesUpdatedAt, nowTick)}
-            {quotesDelayed ? " · delayed" : ""}
-            {source === "supabase" && bookSyncedAt
-              ? ` · book ${formatPricesAge(bookSyncedAt, nowTick).replace("Prices · ", "")}`
-              : ""}
-          </span>
+          <PricesAgeStatus
+            quotesUpdatedAt={quotesUpdatedAt}
+            quotesDelayed={quotesDelayed}
+            bookSyncedAt={bookSyncedAt}
+            source={source}
+            locked={locked}
+          />
           <MacroStrip />
         </div>
       </header>

@@ -65,6 +65,20 @@ body {
 }
 
 /*
+ * iOS Safari auto-zooms the page when a focused form field's font-size is
+ * below 16px. Every inline-edit cell, PIN field, and modal input in this
+ * app is 12–14px, so tapping any of them used to snap-zoom the viewport.
+ * Force 16px on mobile only — desktop keeps its tighter finance-table type.
+ */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/*
  * Inline-editable numeric cells (holdings shares/buy, covered-call targets,
  * forecast EOY prices). Without this they're visually identical to static
  * text — fine with a mouse hover, but on touch there's no way to tell a
