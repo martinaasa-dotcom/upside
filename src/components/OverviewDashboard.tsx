@@ -535,20 +535,20 @@ export function OverviewDashboard({
                 </p>
                 <p
                   className={cn(
-                    "mt-0.5 text-base font-semibold tabular-nums text-white sm:text-lg",
+                    "mt-0.5 text-base font-semibold tabular-nums sm:text-lg",
                     "tone" in s && typeof s.tone === "number"
                       ? tone(s.tone)
-                      : undefined
+                      : "text-white"
                   )}
                 >
                   {s.value}
                 </p>
                 <p
                   className={cn(
-                    "text-[11px] text-zinc-500",
+                    "text-[11px]",
                     "tone" in s && typeof s.tone === "number"
                       ? tone(s.tone)
-                      : undefined
+                      : "text-zinc-500"
                   )}
                 >
                   {s.sub}
