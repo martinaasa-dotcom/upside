@@ -133,7 +133,7 @@ function InlineNumber({
         }
       }}
       className={cn(
-        "inline-edit no-spinner rounded px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
+        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
         className ?? "mx-auto w-[5.25rem]"
       )}
     />

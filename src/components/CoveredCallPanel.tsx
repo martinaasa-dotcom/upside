@@ -66,7 +66,7 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-12 rounded py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
+        className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
       />
       <span className="text-xs text-zinc-500">%</span>
     </div>
@@ -118,7 +118,7 @@ function InlineStockTarget({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-[4.5rem] rounded py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
+        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
       />
     </div>
   );
