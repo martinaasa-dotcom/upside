@@ -9,6 +9,7 @@ import {
   signedCurrency,
   cn,
 } from "@/lib/format";
+import { buildDailyFunFacts } from "@/lib/fun-facts";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
 import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
 import {
@@ -49,6 +50,7 @@ import {
   Flame,
   Lightbulb,
   Radar,
+  Shuffle,
   Snowflake,
   Swords,
   TrendingDown,
@@ -334,6 +336,12 @@ export function OverviewDashboard({
   const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
   const [arenaNote, setArenaNote] = useState<string | null>(null);
+  const [factsShuffle, setFactsShuffle] = useState(0);
+
+  const displayedFunFacts = useMemo(() => {
+    if (factsShuffle === 0 || !sheets.length || !tickers.length) return funFacts;
+    return buildDailyFunFacts(sheets, tickers, totals, `shuffle-${factsShuffle}`);
+  }, [factsShuffle, funFacts, sheets, tickers, totals]);
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
   useEffect(() => {
@@ -960,22 +968,35 @@ export function OverviewDashboard({
       {!guest && <DailyDuelCard tickers={tickers} />}
 
       <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
-        <div className="mb-5 flex items-center gap-2.5">
-          <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
-            <Lightbulb className="h-4 w-4" />
+        <div className="mb-5 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
+              <Lightbulb className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Fun facts</h3>
+              <p className="mt-1 text-base text-zinc-400">
+                {factsShuffle > 0
+                  ? "Shuffled — reload for the daily batch"
+                  : "10 new ones every Tallinn day"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-semibold text-white">Fun facts</h3>
-            <p className="mt-1 text-base text-zinc-400">
-              10 new ones every Tallinn day
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setFactsShuffle((n) => n + 1)}
+            className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:border-amber-400/60 hover:bg-amber-500/10 active:scale-95"
+            title="Get a fresh random batch"
+          >
+            <Shuffle className="h-3.5 w-3.5" />
+            Shuffle
+          </button>
         </div>
         <ul className="space-y-3">
-          {funFacts.length === 0 ? (
+          {displayedFunFacts.length === 0 ? (
             <li className="text-base text-zinc-500">Waiting on quotes…</li>
           ) : (
-            funFacts.map((fact, i) => (
+            displayedFunFacts.map((fact, i) => (
               <li
                 key={`${i}-${fact.slice(0, 24)}`}
                 className="rounded-2xl border border-zinc-800/70 bg-zinc-950/50 px-4 py-3.5 text-base leading-relaxed text-zinc-200"

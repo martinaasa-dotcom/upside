@@ -1,4 +1,5 @@
 import type { OverviewModel, SheetScore } from "@/lib/overview";
+import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
 
 export type RivalRow = {
   id: string;
@@ -84,10 +85,24 @@ export function rivalryOverviewCopy(
     };
   }
   const { today, roi, nav } = leader.medals;
+  const rng = mulberry32(
+    hashSeed(`upside-rivalry|${leader.id}|${leader.score}|${sheetCount}`)
+  );
+  const detail =
+    today === 1 && roi === 1 && nav === 1
+      ? pick(rng, [
+          `${leader.name} is sweeping all three columns (${sheetCount} sheets ranked) — today, lifetime, and size.`,
+          `Clean sweep: ${leader.name} leads today, lifetime ROI, and book size out of ${sheetCount} sheets.`,
+        ])
+      : pick(rng, [
+          `Ranks your sheets against each other (${sheetCount} total). ${leader.name} is ahead on the blended score — not always #1 in every column.`,
+          `${leader.name} takes the blended lead across ${sheetCount} sheets — a mix of today, lifetime, and size, not a single stat.`,
+          `Out of ${sheetCount} sheets, ${leader.name} has the best combined score. Check the columns below for where it's winning (or not).`,
+        ]);
   return {
     eyebrow: "Family scoreboard",
     name: leader.name,
-    detail: `Ranks your sheets against each other (${sheetCount} total). ${leader.name} is ahead on the blended score — not always #1 in every column.`,
+    detail,
     ranks: `Today ${ordinal(today)} · Lifetime ${ordinal(roi)} · Book size ${ordinal(nav)}`,
   };
 }

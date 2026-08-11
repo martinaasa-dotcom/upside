@@ -2,6 +2,7 @@ import type { CoveredCallRow } from "@/lib/types";
 import type { OverviewModel } from "@/lib/overview";
 import type { CashflowEntry } from "@/lib/cashflow";
 import { todayKeyInTz } from "@/lib/timezone";
+import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
 
 export type BriefingLink =
   | { type: "lab"; tab: "calendar" | "alerts" | "arena" | "versus" | "season" }
@@ -87,10 +88,17 @@ function earningsBriefDetail(
       )
   );
   const base = names.join(", ");
+  const rng = mulberry32(hashSeed(`upside-briefing-earn|${names.join(",")}`));
   if (withCc.length > 0) {
-    return `${base}. ${withCc.join(", ")} — you have CC on the book; earnings vol can help or hurt depending on gap vs strike.`;
+    return pick(rng, [
+      `${base}. ${withCc.join(", ")} — you have CC on the book; earnings vol can help or hurt depending on gap vs strike.`,
+      `${base}. Live calls on ${withCc.join(", ")} ride into the print — a gap past strike means an early assignment call, not a surprise.`,
+    ]);
   }
-  return `${base}. Vol often expands into the print — writing CC into earnings can be the play if you want premium and accept gap risk. Check each sheet’s CC table for strikes.`;
+  return pick(rng, [
+    `${base}. Vol often expands into the print — writing CC into earnings can be the play if you want premium and accept gap risk. Check each sheet’s CC table for strikes.`,
+    `${base}. No open calls riding into this one. Premium runs rich pre-print if you want to write; otherwise just watch the gap.`,
+  ]);
 }
 
 /**
@@ -110,13 +118,18 @@ export function buildInvestorBriefing(input: {
 
   const today$ = model.totals.todayDollar;
   const todayPct = model.totals.todayPct;
+  const dayRng = mulberry32(hashSeed(`upside-briefing-day|${dayKey}|${Math.round(today$)}`));
   items.push({
     id: `day-${dayKey}`,
     kind: "watch",
     title: `Book is ${dayMoney(today$)} on the day`,
     detail:
       todayPct != null
-        ? `${pct1(todayPct)} across the book. If nothing needs a write-plan tweak, waiting is the job.`
+        ? pick(dayRng, [
+            `${pct1(todayPct)} across the book. If nothing needs a write-plan tweak, waiting is the job.`,
+            `${pct1(todayPct)} on the session. Nothing to do unless a write plan actually needs one.`,
+            `${pct1(todayPct)} today. Check Thesis Pulse if anything moved enough to matter; otherwise it's a nothing-burger day.`,
+          ])
         : "Quotes still settling — open, skim, close.",
     link: { type: "pulse" },
     cta: "Thesis pulse →",
@@ -215,6 +228,9 @@ export function buildInvestorBriefing(input: {
     .reduce((s, c) => s + c.amount, 0);
 
   if (openPrem > 0 || monthPrem > 0) {
+    const rng = mulberry32(
+      hashSeed(`upside-briefing-cc|${Math.round(openPrem)}|${Math.round(monthPrem)}`)
+    );
     items.push({
       id: `cc-season-${dayKey}`,
       kind: "watch",
@@ -224,30 +240,45 @@ export function buildInvestorBriefing(input: {
           : `~$${money(openPrem)} open CC premium modeled`,
       detail:
         openPrem > 0
-          ? "When you actually fill a call, tap Log premium on the CC calendar so the season meter counts it."
-          : "Premium already logged in Cashflow — season meter is current.",
+          ? pick(rng, [
+              "When you actually fill a call, tap Log premium on the CC calendar so the season meter counts it.",
+              "Modeled, not banked yet — log the fill when it actually happens so the season meter matches reality.",
+            ])
+          : pick(rng, [
+              "Premium already logged in Cashflow — season meter is current.",
+              "That's real, logged premium — the season meter already reflects it.",
+            ]),
       link: { type: "lab", tab: "calendar" },
       cta: openPrem > 0 ? "Log premium →" : "CC calendar →",
     });
   }
 
   if (model.totals.cash < -500) {
+    const rng = mulberry32(hashSeed(`upside-briefing-margin|${Math.round(model.totals.cash)}`));
     items.push({
       id: "margin",
       kind: "watch",
       title: "Margin is live",
-      detail: `Combined cash $${money(model.totals.cash)}. Keep it intentional — soft ceiling ~30% of the book.`,
+      detail: pick(rng, [
+        `Combined cash $${money(model.totals.cash)}. Keep it intentional — soft ceiling ~30% of the book.`,
+        `You're borrowing $${money(Math.abs(model.totals.cash))} from the broker right now. Fine on purpose, risky by accident.`,
+      ]),
       link: sheetMostNegativeCash(model)
         ? { type: "sheet", portfolioId: sheetMostNegativeCash(model)! }
         : undefined,
       cta: "Open sheet →",
     });
   } else if (model.totals.cash > 5_000) {
+    const rng = mulberry32(hashSeed(`upside-briefing-cash|${Math.round(model.totals.cash)}`));
     items.push({
       id: "dry-powder",
       kind: "watch",
       title: `$${money(model.totals.cash)} sitting in cash`,
-      detail: "Fine as powder. Only deploy on a real thesis dip — boredom isn’t a buy signal.",
+      detail: pick(rng, [
+        "Fine as powder. Only deploy on a real thesis dip — boredom isn’t a buy signal.",
+        "Dry powder, not dead money — it's doing its job just by being ready.",
+        "Sitting idle on purpose beats forcing a mediocre entry. Wait for the dip you actually want.",
+      ]),
       link: sheetMostCash(model)
         ? { type: "sheet", portfolioId: sheetMostCash(model)! }
         : { type: "compound" },
@@ -261,11 +292,15 @@ export function buildInvestorBriefing(input: {
   if (top && model.totals.equityValue > 0) {
     const share = top.currentValue / model.totals.equityValue;
     if (share >= 0.35) {
+      const rng = mulberry32(hashSeed(`upside-briefing-conc|${top.ticker}`));
       items.push({
         id: `conc-${top.ticker}`,
         kind: "watch",
         title: `${top.ticker} is ${pct1(share)} of equity`,
-        detail: "Concentration is fine when the thesis is — just know the blast radius if it hiccups.",
+        detail: pick(rng, [
+          "Concentration is fine when the thesis is — just know the blast radius if it hiccups.",
+          `A big move in ${top.ticker} alone moves the whole book. That's the deal you signed up for.`,
+        ]),
         ticker: top.ticker,
         link: sheetForTicker(model, top.ticker)
           ? { type: "sheet", portfolioId: sheetForTicker(model, top.ticker)! }
