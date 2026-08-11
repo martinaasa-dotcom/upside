@@ -119,8 +119,8 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "inline-edit no-spinner w-full min-w-0 rounded px-1 py-0.5 tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
-        align === "right" ? "text-right" : "text-left",
+        "inline-edit no-spinner w-[5.5rem] max-w-full rounded px-1 py-0.5 tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
+        align === "right" ? "ml-auto text-right" : "text-left",
         targeted ? "text-zinc-100" : "text-zinc-500"
       )}
     />
