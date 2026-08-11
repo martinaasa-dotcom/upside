@@ -5,9 +5,9 @@ import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
-import { Shield } from "lucide-react";
+import { AlertTriangle, RefreshCw, Search, Shield } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type AdminUser = {
   id: string;
@@ -17,6 +17,7 @@ type AdminUser = {
   bio: string | null;
   profile_created_at: string | null;
   last_sign_in_at: string | null;
+  portfolios?: { id: string; name: string }[];
 };
 
 type AdminMember = {
@@ -53,16 +54,14 @@ export function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [communities, setCommunities] = useState<AdminCommunity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    if (!allowed) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
+  const load = useCallback(
+    async (isRefresh: boolean) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
       setError(null);
       try {
         const res = await fetch("/api/admin/overview", { cache: "no-store" });
@@ -72,22 +71,35 @@ export function AdminPage() {
             typeof data.error === "string" ? data.error : "Failed to load"
           );
         }
-        if (cancelled) return;
         setUsers(data.users ?? []);
         setCommunities(data.communities ?? []);
       } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load");
-        }
+        setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
+        setRefreshing(false);
       }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!allowed) {
+      setLoading(false);
+      return;
     }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [allowed]);
+    void load(false);
+  }, [allowed, load]);
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) =>
+      [u.display_name, u.email, ...(u.portfolios?.map((p) => p.name) ?? [])]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(q))
+    );
+  }, [users, search]);
 
   return (
     <SignInGate>
@@ -127,44 +139,95 @@ export function AdminPage() {
           ) : (
             <>
               <section className="space-y-3">
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
                     Users signed in
                   </h2>
-                  <span className="text-xs text-zinc-500">
-                    {users.length} profile{users.length === 1 ? "" : "s"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">
+                      {filteredUsers.length}
+                      {search ? ` of ${users.length}` : ""} profile
+                      {users.length === 1 ? "" : "s"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void load(true)}
+                      disabled={refreshing}
+                      title="Refresh"
+                      className="rounded-md border border-zinc-700 p-1.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                      />
+                    </button>
+                  </div>
                 </div>
+                {users.length > 3 && (
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search name, email, or sheet…"
+                      className="w-full rounded-lg border border-zinc-700 bg-zinc-900 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+                    />
+                  </div>
+                )}
                 <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
-                  {users.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <li className="px-4 py-6 text-center text-sm text-zinc-500">
-                      No profiles yet.
+                      {users.length === 0
+                        ? "No profiles yet."
+                        : "No profiles match that search."}
                     </li>
                   ) : (
-                    users.map((u) => (
-                      <li
-                        key={u.id}
-                        className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-white">
-                            {u.display_name || "—"}
-                          </p>
-                          <p className="truncate text-xs text-zinc-500">
-                            {u.email || u.id}
-                          </p>
-                          {u.bio ? (
-                            <p className="mt-0.5 line-clamp-2 text-xs text-zinc-600">
-                              {u.bio}
+                    filteredUsers.map((u) => {
+                      const noPortfolios = (u.portfolios?.length ?? 0) === 0;
+                      return (
+                        <li
+                          key={u.id}
+                          className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-white">
+                              {u.display_name || "—"}
                             </p>
-                          ) : null}
-                        </div>
-                        <div className="shrink-0 text-left text-xs text-zinc-500 sm:text-right">
-                          <p>Last sign-in · {fmtDate(u.last_sign_in_at)}</p>
-                          <p>Profile · {fmtDate(u.profile_created_at)}</p>
-                        </div>
-                      </li>
-                    ))
+                            <p className="truncate text-xs text-zinc-500">
+                              {u.email || u.id}
+                            </p>
+                            {u.bio ? (
+                              <p className="mt-0.5 line-clamp-2 text-xs text-zinc-600">
+                                {u.bio}
+                              </p>
+                            ) : null}
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              {noPortfolios ? (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300"
+                                  title="Signed in but owns/co-owns no sheet — possible broken seed claim or invite redemption"
+                                >
+                                  <AlertTriangle className="h-3 w-3" />
+                                  0 portfolios
+                                </span>
+                              ) : (
+                                u.portfolios!.map((p) => (
+                                  <span
+                                    key={p.id}
+                                    className="rounded-md bg-zinc-800/90 px-1.5 py-0.5 text-[10px] text-zinc-300"
+                                  >
+                                    {p.name}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-left text-xs text-zinc-500 sm:text-right">
+                            <p>Last sign-in · {fmtDate(u.last_sign_in_at)}</p>
+                            <p>Profile · {fmtDate(u.profile_created_at)}</p>
+                          </div>
+                        </li>
+                      );
+                    })
                   )}
                 </ul>
               </section>

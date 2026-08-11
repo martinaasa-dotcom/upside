@@ -22,6 +22,7 @@ type OverviewUser = {
   profile_updated_at: string | null;
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
+  portfolios: { id: string; name: string }[];
 };
 
 type OverviewMember = {
@@ -69,6 +70,40 @@ async function loadViaServiceRole(): Promise<{
     .select("community_id, user_id, role, joined_at");
   if (mErr) throw new Error(mErr.message);
 
+  // Portfolio ownership — surfaced per-user so a "0 portfolios" profile
+  // (like the Rasmus seed-claim bug) is visible here instead of requiring
+  // a manual SQL query every time someone reports a login issue.
+  const { data: ownerRows, error: oErr } = await supabase
+    .from(PORTFELL_TABLES.portfolioOwners)
+    .select("user_id, portfolio_id");
+  if (oErr) throw new Error(oErr.message);
+
+  const { data: portfolioRows, error: pfErr } = await supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .select("id, name");
+  if (pfErr) throw new Error(pfErr.message);
+
+  const portfolioNameById = new Map(
+    ((portfolioRows ?? []) as { id: string; name: string }[]).map((p) => [
+      p.id,
+      p.name,
+    ])
+  );
+  const portfoliosByUser = new Map<string, { id: string; name: string }[]>();
+  for (const row of (ownerRows ?? []) as {
+    user_id: string;
+    portfolio_id: string;
+  }[]) {
+    const name = portfolioNameById.get(row.portfolio_id);
+    if (!name) continue;
+    const list = portfoliosByUser.get(row.user_id) ?? [];
+    list.push({ id: row.portfolio_id, name });
+    portfoliosByUser.set(row.user_id, list);
+  }
+  for (const list of portfoliosByUser.values()) {
+    list.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   const profileById = new Map(
     ((profiles ?? []) as {
       id: string;
@@ -109,6 +144,7 @@ async function loadViaServiceRole(): Promise<{
     profile_updated_at: p.updated_at,
     last_sign_in_at: signInById.get(p.id) ?? null,
     email_confirmed_at: null,
+    portfolios: portfoliosByUser.get(p.id) ?? [],
   }));
 
   users.sort((a, b) => {
