@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseServerAuth } from "@/lib/supabase/server-auth";
 
 /**
  * Server Supabase client. Prefer service role so RLS can deny anon writes;
@@ -17,4 +18,13 @@ export function getSupabaseServer(): SupabaseClient | null {
 
 export function supabaseUsesServiceRole(): boolean {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}
+
+/**
+ * Data client for API routes: service role when configured, otherwise the
+ * signed-in user's cookie session (so RLS + owner_id filters both work).
+ */
+export async function getSupabaseDataClient(): Promise<SupabaseClient | null> {
+  if (supabaseUsesServiceRole()) return getSupabaseServer();
+  return createSupabaseServerAuth();
 }

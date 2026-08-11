@@ -1,9 +1,13 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { saveBookSnapshot } from "@/lib/book-snapshot";
+import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import { requireOwnerAccess } from "@/lib/owner-pin";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import {
+  getSupabaseDataClient,
+  getSupabaseServer,
+} from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -27,7 +31,13 @@ function mapPortfolio(p: Record<string, unknown>) {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = getSupabaseServer();
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
+  // Claim seed ownership on every book load (idempotent).
+  await ensureProfileAndClaims(auth.user);
+
+  const supabase = (await getSupabaseDataClient()) ?? getSupabaseServer();
 
   if (!supabase) {
     return NextResponse.json({
@@ -38,8 +48,6 @@ export async function GET(req: NextRequest) {
   }
 
   const ownerId = req.nextUrl.searchParams.get("ownerId");
-  const auth = await requireAuthUser();
-  if ("error" in auth) return auth.error;
 
   let portfolioQuery = supabase
     .from(PORTFELL_TABLES.portfolios)

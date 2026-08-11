@@ -1,13 +1,20 @@
-import { getSupabaseServer } from "@/lib/supabase/server";
+import {
+  getSupabaseDataClient,
+  getSupabaseServer,
+} from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
+
+async function db() {
+  return (await getSupabaseDataClient()) ?? getSupabaseServer();
+}
 
 /** True when portfolio.owner_id matches the signed-in user. */
 export async function userOwnsPortfolio(
   userId: string,
   portfolioId: string
 ): Promise<boolean> {
-  const supabase = getSupabaseServer();
+  const supabase = await db();
   if (!supabase) return false;
   const { data } = await supabase
     .from(PORTFELL_TABLES.portfolios)
@@ -42,7 +49,7 @@ export async function userCanReadOwnerBook(
   ownerId: string
 ): Promise<boolean> {
   if (viewerId === ownerId) return true;
-  const supabase = getSupabaseServer();
+  const supabase = await db();
   if (!supabase) return false;
   const { data: myCommunities } = await supabase
     .from(PORTFELL_TABLES.communityMembers)
@@ -66,7 +73,7 @@ export async function userIsCommunityAdmin(
   userId: string,
   communityId: string
 ): Promise<boolean> {
-  const supabase = getSupabaseServer();
+  const supabase = await db();
   if (!supabase) return false;
   const { data } = await supabase
     .from(PORTFELL_TABLES.communityMembers)
@@ -81,7 +88,7 @@ export async function userIsCommunityMember(
   userId: string,
   communityId: string
 ): Promise<boolean> {
-  const supabase = getSupabaseServer();
+  const supabase = await db();
   if (!supabase) return false;
   const { data } = await supabase
     .from(PORTFELL_TABLES.communityMembers)

@@ -12,52 +12,32 @@
 | Email | Portfolios |
 |-------|------------|
 | `martin.aasa@upthink.ee` | Aasad, Anu, MaryAnn |
-| `UPSIDE_SEED_KARUD_EMAIL` | Karud |
-| `UPSIDE_SEED_LAP_EMAIL` | Lap |
+| Seed row / `UPSIDE_SEED_KARUD_EMAIL` | Karud |
+| Seed row / `UPSIDE_SEED_LAP_EMAIL` | Lap |
 
-Claims run on `/auth/callback` via `ensureProfileAndClaims`. Unclaimed rows (`owner_id IS NULL`) are assigned on first matching sign-in.
+Claims run on `/auth/callback` and on `GET /api/portfolios` via `ensureProfileAndClaims`.
 
-Seed members are auto-added to **Upside Circle** (`a0000000-0000-4000-8000-000000000001`). Martin is admin.
+- Preferred: `SUPABASE_SERVICE_ROLE_KEY` on Vercel (API writes + env-based Karud/Lap).
+- Fallback: RPC `portfell_claim_seed_for_me()` (migration `010`) using the user session — covers DB `portfell_seed_claims` without a service key.
+
+One-shot SQL: `scripts/seed-ownership.sql`.
+
+Seed members are auto-added to **Upside Circle**. Martin is admin.
 
 ## Enable Google Auth (Supabase)
 
 1. Supabase → **Upthink Platform** → Authentication → Providers → **Google** → enable.
 2. Create OAuth credentials in Google Cloud Console (Web application).
-3. Authorized redirect URI:
-
-   `https://jwjezdgggrgdgfsovgtx.supabase.co/auth/v1/callback`
-
-4. Site URL / additional redirects in Supabase Auth settings:
-
-   - `https://upside-upthink-solutions.vercel.app`
-   - `https://upside-upthink-solutions.vercel.app/auth/callback`
-   - `http://localhost:3000/auth/callback`
-
-5. Vercel env (already used):
-
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (API writes + claim script)
-   - Optional: `UPSIDE_SEED_KARUD_EMAIL`, `UPSIDE_SEED_LAP_EMAIL`
-   - `UPSIDE_OWNER_PIN` — admin override for locked sheets only
+3. Authorized redirect URI: `https://jwjezdgggrgdgfsovgtx.supabase.co/auth/v1/callback`
+4. Redirects: production `/auth/callback` + `http://localhost:3000/auth/callback`
+5. Vercel env: `NEXT_PUBLIC_SUPABASE_*`, strongly recommend `SUPABASE_SERVICE_ROLE_KEY`; optional `UPSIDE_SEED_KARUD_EMAIL` / `UPSIDE_SEED_LAP_EMAIL`
 
 ## Migrations
 
-- `008_auth_ownership_and_communities.sql` — profiles, `owner_id`, lab per user, communities/members/invites, RLS
-- `009_share_links_created_by.sql` — guest links scoped to creator
+- `008` profiles + ownership + communities + RLS
+- `009` share links `created_by`
+- `010` `portfell_claim_seed_for_me()` RPC
 
-## App routes
+## PIN notes
 
-| Path | Purpose |
-|------|---------|
-| `/` | My book (SSO gate unless `?share=`) |
-| `/auth/callback` | OAuth code exchange + seed claim |
-| `/communities` | List / create |
-| `/communities/[id]` | Aggregate overview + drill-down + admin invites |
-| `/communities/join?token=` | Accept invite |
-
-## PIN deprecation notes
-
-- Writes require a signed-in **owner**, then optional sheet PIN via `requireOwnerAccess`.
-- Book-wide master PIN is no longer required to mint guest links (ownership is enough).
-- Global `portfell_lab_state` row `id = 'book'` is legacy; personal lab uses `id = owner uuid` + `owner_id`.
+Writes require signed-in owner, then optional sheet PIN. Legacy global lab row `id = 'book'` remains; personal lab uses owner uuid.

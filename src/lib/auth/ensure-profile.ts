@@ -1,4 +1,8 @@
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServerAuth } from "@/lib/supabase/server-auth";
+import {
+  getSupabaseServer,
+  supabaseUsesServiceRole,
+} from "@/lib/supabase/server";
 import {
   PORTFELL_TABLES,
   UPSIDE_CIRCLE_ID,
@@ -18,9 +22,37 @@ function envSeedSlugs(email: string): string[] {
 
 /**
  * Upsert profile, claim seed portfolios by email, ensure Upside Circle membership.
- * Safe to call on every auth callback / session bootstrap.
+ * Prefers service-role path; falls back to security-definer RPC (no service key needed).
  */
 export async function ensureProfileAndClaims(user: User): Promise<{
+  claimedSlugs: string[];
+}> {
+  if (supabaseUsesServiceRole()) {
+    return claimWithServiceRole(user);
+  }
+  return claimWithRpc(user);
+}
+
+async function claimWithRpc(user: User): Promise<{ claimedSlugs: string[] }> {
+  const authClient = await createSupabaseServerAuth();
+  if (!authClient) return { claimedSlugs: [] };
+
+  // Env-only Karud/Lap slugs still need a service-role path; RPC uses seed_claims table.
+  const { data, error } = await authClient.rpc("portfell_claim_seed_for_me");
+  if (error) {
+    console.error("portfell_claim_seed_for_me failed", error.message);
+    return { claimedSlugs: [] };
+  }
+  const claimed = Array.isArray((data as { claimed?: unknown })?.claimed)
+    ? ((data as { claimed: string[] }).claimed ?? [])
+    : [];
+
+  // Best-effort env seed rows if somehow writable (usually no-op without service role)
+  void user;
+  return { claimedSlugs: claimed };
+}
+
+async function claimWithServiceRole(user: User): Promise<{
   claimedSlugs: string[];
 }> {
   const admin = getSupabaseServer();
@@ -77,17 +109,12 @@ export async function ensureProfileAndClaims(user: User): Promise<{
         .select("slug");
       if (rows?.length) claimedSlugs.push(slug);
 
-      // Also reclaim if already owned by this user (no-op) — and allow
-      // reassignment when still unclaimed after partial runs.
       const { data: owned } = await admin
         .from(PORTFELL_TABLES.portfolios)
         .select("slug, owner_id")
         .eq("slug", slug)
         .maybeSingle();
-      if (
-        owned &&
-        !(owned as { owner_id?: string | null }).owner_id
-      ) {
+      if (owned && !(owned as { owner_id?: string | null }).owner_id) {
         await admin
           .from(PORTFELL_TABLES.portfolios)
           .update({
@@ -100,7 +127,6 @@ export async function ensureProfileAndClaims(user: User): Promise<{
     }
   }
 
-  // Seed personal lab row if missing
   const { data: lab } = await admin
     .from(PORTFELL_TABLES.labState)
     .select("id")
@@ -122,7 +148,6 @@ export async function ensureProfileAndClaims(user: User): Promise<{
     );
   }
 
-  // Upside Circle membership
   const { data: circle } = await admin
     .from(PORTFELL_TABLES.communities)
     .select("id")
