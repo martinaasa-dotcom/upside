@@ -1,6 +1,7 @@
 "use client";
 
 import { Sparkline } from "@/components/Sparkline";
+import { DailyDuelCard } from "@/components/DailyDuelCard";
 import {
   currency,
   percent,
@@ -8,6 +9,11 @@ import {
   cn,
 } from "@/lib/format";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
+import {
+  last7DaysStrip,
+  streakFlavor,
+  type VisitStreakState,
+} from "@/lib/visit-streak";
 import {
   sessionLabel,
   sessionShort,
@@ -69,6 +75,8 @@ type Props = {
   onOpenCompound?: () => void;
   marketState?: string | null;
   guest?: boolean;
+  /** Personal daily-visit streak — null for guests / before it loads. */
+  visitStreak?: VisitStreakState | null;
 };
 
 function BriefingCard({
@@ -286,6 +294,7 @@ export function OverviewDashboard({
   onOpenCompound,
   marketState = null,
   guest = false,
+  visitStreak = null,
 }: Props) {
   const {
     totals,
@@ -436,6 +445,14 @@ export function OverviewDashboard({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {!guest && visitStreak && visitStreak.currentStreak > 0 && (
+                <span
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium tabular-nums text-amber-200"
+                  title={streakFlavor(visitStreak.currentStreak)}
+                >
+                  🔥 {visitStreak.currentStreak}d streak
+                </span>
+              )}
               <span
                 className={cn(
                   "rounded-lg border px-2.5 py-1 text-[11px] font-medium tabular-nums",
@@ -463,6 +480,25 @@ export function OverviewDashboard({
               )}
             </div>
           </div>
+
+          {!guest && visitStreak && visitStreak.totalVisits > 0 && (
+            <div className="relative mt-3 flex items-center gap-2">
+              <div className="flex gap-1" title="Last 7 Tallinn days">
+                {last7DaysStrip(visitStreak).map((visited, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-1.5 w-4 rounded-full sm:w-5",
+                      visited ? "bg-amber-400" : "bg-zinc-800"
+                    )}
+                  />
+                ))}
+              </div>
+              <p className="text-[11px] text-zinc-500">
+                {streakFlavor(visitStreak.currentStreak)}
+              </p>
+            </div>
+          )}
 
           {/* Scoreboard strip */}
           <div className="relative mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -879,6 +915,8 @@ export function OverviewDashboard({
           )}
         </div>
       </section>
+
+      {!guest && <DailyDuelCard tickers={tickers} />}
 
       <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
         <div className="mb-5 flex items-center gap-2.5">

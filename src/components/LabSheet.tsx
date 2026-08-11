@@ -37,6 +37,9 @@ import {
 } from "@/lib/correlation";
 import { currency, percent, cn } from "@/lib/format";
 import type { LabBundle } from "@/lib/lab-bundle";
+import { loadDuelHistory, duelStats } from "@/lib/daily-duel";
+import { loadVisitStreak } from "@/lib/visit-streak";
+import { personalBadges } from "@/lib/personal-badges";
 import {
   arenaChallengeProgress,
   loadArenaChallenge,
@@ -153,6 +156,13 @@ export function LabSheet({
   const arena = lab.arena;
   const cashflows = lab.cashflows;
   const badges = lab.badges ?? [];
+  // Personal engagement badges (visit streak, Daily Duel) — local to this
+  // device. Cheap synchronous localStorage reads, so just compute fresh on
+  // every render rather than risk a stale memo when the streak/duel state
+  // changes in a sibling tab (Overview) without this component re-mounting.
+  const myBadges = guest
+    ? []
+    : personalBadges(loadVisitStreak(), duelStats(loadDuelHistory()));
   const [copied, setCopied] = useState(false);
   const [cfAmount, setCfAmount] = useState(0);
   const [cfNote, setCfNote] = useState("");
@@ -1436,10 +1446,10 @@ export function LabSheet({
           <pre className="whitespace-pre-wrap rounded-lg bg-zinc-950/80 px-3 py-3 text-sm leading-relaxed text-zinc-300">
             {recap}
           </pre>
-          {badges.length > 0 && (
+          {(badges.length > 0 || myBadges.length > 0) && (
             <div className="mt-4">
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Season badges
+                Badges
               </p>
               <ul className="flex flex-wrap gap-2">
                 {badges.map((b) => (
@@ -1447,6 +1457,15 @@ export function LabSheet({
                     key={b.id}
                     className="rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1 text-xs text-brand-bright"
                     title={b.earnedAt}
+                  >
+                    {b.label}
+                  </li>
+                ))}
+                {myBadges.map((b) => (
+                  <li
+                    key={b.id}
+                    className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200"
+                    title={b.detail}
                   >
                     {b.label}
                   </li>

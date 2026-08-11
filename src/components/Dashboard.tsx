@@ -61,6 +61,11 @@ import {
   loadConvictionMap,
   setConviction,
 } from "@/lib/conviction";
+import {
+  milestoneToast,
+  recordVisitToday,
+  type VisitStreakState,
+} from "@/lib/visit-streak";
 import { OwnerUnlockModal } from "@/components/OwnerUnlockModal";
 import { SheetLockOnboardingModal } from "@/components/SheetLockOnboardingModal";
 import { SheetSecretModal } from "@/components/SheetSecretModal";
@@ -231,6 +236,7 @@ export function Dashboard() {
     const sp = new URLSearchParams(window.location.search);
     return sp.get("view") === "guest" || Boolean(sp.get("share")?.trim());
   });
+  const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
   const [shareLabel, setShareLabel] = useState<string | null>(null);
   const [labBundle, setLabBundle] = useState<LabBundle>(() => emptyLabBundle());
   const [labReady, setLabReady] = useState(false);
@@ -668,6 +674,16 @@ export function Dashboard() {
   useEffect(() => {
     void loadPortfolios();
   }, [loadPortfolios]);
+
+  // Personal daily-visit streak — device-local, counts once per Tallinn day
+  // regardless of which tab loads first. Skipped for guest/share-link views.
+  useEffect(() => {
+    if (guestMode) return;
+    const { state, justHitMilestone } = recordVisitToday();
+    setVisitStreak(state);
+    if (justHitMilestone) toast(milestoneToast(justHitMilestone), "success");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per app load
+  }, []);
 
   // After initial load, sheet switches push history so Back stays in-app.
   useEffect(() => {
@@ -2197,6 +2213,7 @@ export function Dashboard() {
           <>
             <OverviewDashboard
               model={overview}
+              visitStreak={visitStreak}
               onOpenSheet={(id) => setActiveId(id)}
               coveredCallRows={portfolios.flatMap((p) => {
                 const rows = holdings.filter((h) => h.portfolio_id === p.id);
