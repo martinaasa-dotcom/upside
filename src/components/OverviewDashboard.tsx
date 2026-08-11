@@ -181,6 +181,8 @@ function RankCard({
     mode === "win" || mode === "loss" ? ticker.roiPct : (ticker.todayPct ?? 0);
   const dollar =
     mode === "win" || mode === "loss" ? ticker.roiDollar : ticker.todayDollar;
+  const dollarLabel =
+    mode === "win" || mode === "loss" ? "lifetime" : "session";
 
   return (
     <button
@@ -205,7 +207,9 @@ function RankCard({
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className="text-base font-semibold text-white sm:text-lg">{ticker.ticker}</span>
+          <span className="text-base font-semibold text-white sm:text-lg">
+            {ticker.ticker}
+          </span>
           <span className="text-xs text-zinc-400 sm:text-sm">
             {currency(ticker.currentValue, 0)}
           </span>
@@ -217,10 +221,24 @@ function RankCard({
         </div>
       </div>
       <div className="shrink-0 text-right">
-        <div className={cn("text-lg font-bold tabular-nums sm:text-xl", tone(metric))}>
+        <div
+          className={cn(
+            "text-lg font-bold tabular-nums sm:text-xl",
+            tone(metric)
+          )}
+        >
           {percent(metric)}
         </div>
-        <div className={cn("text-sm tabular-nums", tone(dollar))}>
+        <div className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100 sm:text-base">
+          {currency(ticker.price)}
+        </div>
+        <div
+          className={cn(
+            "mt-0.5 text-[11px] tabular-nums text-zinc-500",
+            Math.abs(dollar) > 0.005 && tone(dollar)
+          )}
+          title={`${dollarLabel} P&L`}
+        >
           {signedCurrency(dollar)}
         </div>
       </div>
@@ -834,17 +852,20 @@ export function OverviewDashboard({
                     {t.ticker}
                   </span>
                   <span className="text-sm text-zinc-400">
-                    {t.shares.toLocaleString("en-US")} sh · {currency(t.price)}
+                    {t.shares.toLocaleString("en-US")} sh
                   </span>
                 </div>
                 <PortfolioChips names={t.portfolios} />
               </div>
               <div className="ml-auto text-right">
                 <p className="text-lg font-semibold tabular-nums text-zinc-100">
+                  {currency(t.price)}
+                </p>
+                <p className="mt-0.5 text-sm tabular-nums text-zinc-400">
                   {currency(t.currentValue, 0)}
                 </p>
                 <p className={cn("mt-0.5 text-sm tabular-nums", tone(t.roiPct))}>
-                  {percent(t.roiPct)}
+                  {percent(t.roiPct)} · {signedCurrency(t.roiDollar)}
                 </p>
               </div>
             </button>

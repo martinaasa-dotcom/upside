@@ -626,7 +626,9 @@ function ReadOnlyHoldings({
                 <td className="px-3 py-2 tabular-nums text-zinc-400">
                   {h.shares}
                 </td>
-                <td className="px-3 py-2 tabular-nums">{currency(price)}</td>
+                <td className="px-3 py-2 font-semibold tabular-nums text-white">
+                  {currency(price)}
+                </td>
                 <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
                 <td
                   className={cn(

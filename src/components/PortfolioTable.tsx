@@ -325,7 +325,7 @@ export function PortfolioTable({
                 </label>
                 <div>
                   <p className="text-zinc-500">Price</p>
-                  <p className="tabular-nums text-zinc-100">
+                  <p className="tabular-nums font-semibold text-white">
                     {usd(h.quote?.price ?? h.buy_price)}
                   </p>
                 </div>
@@ -437,7 +437,7 @@ export function PortfolioTable({
                     onCommit={(buy_price) => onPatch({ id: h.id, buy_price })}
                   />
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
+                <div className={cn(cellBase, "tabular-nums font-semibold text-white")}>
                   {usd(h.quote?.price ?? h.buy_price)}
                 </div>
                 <div

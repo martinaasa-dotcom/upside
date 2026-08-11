@@ -166,9 +166,9 @@ function PulseCard({
           </div>
           {c.inBook ? (
             <p className="mt-0.5 text-xs text-zinc-500">
-              {percent(c.bookPct)} of book · {signedCurrency(c.todayDollar)} ·{" "}
-              {currency(c.currentValue)} · lifetime {percent(c.roiPct)} ·{" "}
-              {c.portfolios.join(", ")}
+              {currency(c.price)} · {percent(c.bookPct)} of book ·{" "}
+              {currency(c.currentValue)} · {signedCurrency(c.todayDollar)} today
+              · lifetime {percent(c.roiPct)} · {c.portfolios.join(", ")}
             </p>
           ) : (
             <p className="mt-0.5 text-xs text-zinc-500">
