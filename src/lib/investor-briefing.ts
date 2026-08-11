@@ -3,12 +3,20 @@ import type { OverviewModel } from "@/lib/overview";
 import type { CashflowEntry } from "@/lib/cashflow";
 import { todayKeyInTz } from "@/lib/timezone";
 
+export type BriefingLink =
+  | { type: "lab"; tab: "calendar" | "alerts" | "arena" | "versus" | "season" }
+  | { type: "pulse" }
+  | { type: "sheet"; portfolioId: string }
+  | { type: "compound" };
+
 export type BriefingItem = {
   id: string;
   kind: "action" | "watch" | "play";
   title: string;
   detail: string;
   ticker?: string;
+  link?: BriefingLink;
+  cta?: string;
 };
 
 type EarningsLike = { ticker: string; date: string; days: number };
@@ -40,6 +48,27 @@ function hasRecentPremiumLog(
       c.ticker?.toUpperCase() === key &&
       new Date(c.at).getTime() >= cut
   );
+}
+
+function sheetForTicker(
+  model: OverviewModel,
+  ticker: string
+): string | undefined {
+  return model.tickers.find((t) => t.ticker === ticker)?.portfolioIds[0];
+}
+
+function sheetMostNegativeCash(model: OverviewModel): string | undefined {
+  const sorted = [...model.sheets].sort(
+    (a, b) => a.portfolio.cash_balance - b.portfolio.cash_balance
+  );
+  return sorted[0]?.portfolio.id;
+}
+
+function sheetMostCash(model: OverviewModel): string | undefined {
+  const sorted = [...model.sheets].sort(
+    (a, b) => b.portfolio.cash_balance - a.portfolio.cash_balance
+  );
+  return sorted[0]?.portfolio.id;
 }
 
 function earningsBriefDetail(
@@ -89,6 +118,8 @@ export function buildInvestorBriefing(input: {
       todayPct != null
         ? `${pct1(todayPct)} across the book. If nothing needs a write-plan tweak, waiting is the job.`
         : "Quotes still settling — open, skim, close.",
+    link: { type: "pulse" },
+    cta: "Thesis pulse →",
   });
 
   const soonEarn = earnings.filter((e) => e.days >= 0 && e.days <= 7);
@@ -102,6 +133,8 @@ export function buildInvestorBriefing(input: {
         ? `Earnings today — ${names.join(", ")}`
         : `${soonEarn.length} earnings in the next week`,
       detail: earningsBriefDetail(names, coveredCallRows, cashflows),
+      link: { type: "lab", tab: "calendar" },
+      cta: "CC calendar →",
     });
   }
 
@@ -141,6 +174,9 @@ export function buildInvestorBriefing(input: {
           ? `${openCcNear[0]!.holding.ticker} near your logged call`
           : `${openCcNear.length} names near logged call strikes`,
       detail: `${lines.join(" · ")}. You logged premium — worth a roll / hold / assignment call on the sheet.`,
+      ticker: openCcNear[0]?.holding.ticker,
+      link: { type: "lab", tab: "calendar" },
+      cta: "Review calls →",
     });
   }
 
@@ -156,6 +192,12 @@ export function buildInvestorBriefing(input: {
           ? `${names[0]} at your sheet write level`
           : `${names.length} names at Stock Target / planned strike`,
       detail: `${names.join(", ")} — spot is at the level your CC table targets, not a confirmed open call. Open the sheet CC row (or ask Margus there) before acting.`,
+      ticker: names[0],
+      link:
+        names[0] && sheetForTicker(model, names[0])
+          ? { type: "sheet", portfolioId: sheetForTicker(model, names[0])! }
+          : { type: "lab", tab: "calendar" },
+      cta: names[0] ? `Open ${names[0]} →` : "CC calendar →",
     });
   }
 
@@ -184,6 +226,8 @@ export function buildInvestorBriefing(input: {
         openPrem > 0
           ? "When you actually fill a call, tap Log premium on the CC calendar so the season meter counts it."
           : "Premium already logged in Cashflow — season meter is current.",
+      link: { type: "lab", tab: "calendar" },
+      cta: openPrem > 0 ? "Log premium →" : "CC calendar →",
     });
   }
 
@@ -193,6 +237,10 @@ export function buildInvestorBriefing(input: {
       kind: "watch",
       title: "Margin is live",
       detail: `Combined cash $${money(model.totals.cash)}. Keep it intentional — soft ceiling ~30% of the book.`,
+      link: sheetMostNegativeCash(model)
+        ? { type: "sheet", portfolioId: sheetMostNegativeCash(model)! }
+        : undefined,
+      cta: "Open sheet →",
     });
   } else if (model.totals.cash > 5_000) {
     items.push({
@@ -200,6 +248,10 @@ export function buildInvestorBriefing(input: {
       kind: "watch",
       title: `$${money(model.totals.cash)} sitting in cash`,
       detail: "Fine as powder. Only deploy on a real thesis dip — boredom isn’t a buy signal.",
+      link: sheetMostCash(model)
+        ? { type: "sheet", portfolioId: sheetMostCash(model)! }
+        : { type: "compound" },
+      cta: sheetMostCash(model) ? "Open sheet →" : "Compound →",
     });
   }
 
@@ -215,6 +267,12 @@ export function buildInvestorBriefing(input: {
         title: `${top.ticker} is ${pct1(share)} of equity`,
         detail: "Concentration is fine when the thesis is — just know the blast radius if it hiccups.",
         ticker: top.ticker,
+        link: sheetForTicker(model, top.ticker)
+          ? { type: "sheet", portfolioId: sheetForTicker(model, top.ticker)! }
+          : { type: "pulse" },
+        cta: sheetForTicker(model, top.ticker)
+          ? `Open ${top.ticker} →`
+          : "Thesis pulse →",
       });
     }
   }
@@ -231,12 +289,16 @@ export function buildInvestorBriefing(input: {
       kind: "play",
       title: "Bored? Paper Arena",
       detail: "Sandbox money only — trade the itch without touching the real book.",
+      link: { type: "lab", tab: "arena" },
+      cta: "Open Arena →",
     },
     {
       id: `play-versus-${dayKey}`,
       kind: "play",
-      title: "House leader is on the board",
-      detail: "Glance Versus if you want the family scoreboard roast.",
+      title: "Family scoreboard is live",
+      detail: "Glance Versus if you want the family sheet rankings.",
+      link: { type: "lab", tab: "versus" },
+      cta: "Scoreboard →",
     },
   ];
   const play = plays[Math.abs(hash(dayKey)) % plays.length]!;

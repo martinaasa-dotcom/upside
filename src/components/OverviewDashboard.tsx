@@ -7,7 +7,7 @@ import {
   signedCurrency,
   cn,
 } from "@/lib/format";
-import { buildInvestorBriefing } from "@/lib/investor-briefing";
+import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
 import {
   sessionLabel,
   sessionShort,
@@ -65,9 +65,72 @@ type Props = {
   coveredCallRows?: CoveredCallRow[];
   cashflows?: CashflowEntry[];
   onOpenLab?: (tab?: LabDeepLink) => void;
+  onOpenPulse?: () => void;
+  onOpenCompound?: () => void;
   marketState?: string | null;
   guest?: boolean;
 };
+
+function BriefingCard({
+  kind,
+  ticker,
+  title,
+  detail,
+  link,
+  cta,
+  navigable,
+  onNavigate,
+}: {
+  kind: "action" | "watch" | "play";
+  ticker?: string;
+  title: string;
+  detail: string;
+  link?: BriefingLink;
+  cta?: string;
+  navigable?: boolean;
+  onNavigate?: (link: BriefingLink) => void;
+}) {
+  const canNavigate = Boolean(link && navigable && onNavigate);
+
+  const shell = cn(
+    "rounded-2xl border px-3.5 py-3 text-left transition",
+    kind === "action"
+      ? "border-amber-500/30 bg-amber-500/[0.07]"
+      : kind === "play"
+        ? "border-brand/30 bg-brand/10"
+        : "border-zinc-800/80 bg-zinc-900/40",
+    canNavigate &&
+      "cursor-pointer hover:border-brand/40 hover:bg-zinc-900/70 active:scale-[0.995]"
+  );
+
+  const body = (
+    <>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+        {kind}
+        {ticker ? ` · ${ticker}` : ""}
+      </p>
+      <p className="mt-0.5 text-[15px] font-medium text-white">{title}</p>
+      <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{detail}</p>
+      {canNavigate && cta && (
+        <p className="mt-2 text-[11px] font-medium text-brand-bright">{cta}</p>
+      )}
+    </>
+  );
+
+  if (canNavigate && link) {
+    return (
+      <button
+        type="button"
+        className={cn(shell, "w-full")}
+        onClick={() => onNavigate!(link)}
+      >
+        {body}
+      </button>
+    );
+  }
+
+  return <div className={shell}>{body}</div>;
+}
 
 function tone(value: number) {
   if (value > 0) return "text-gain";
@@ -219,6 +282,8 @@ export function OverviewDashboard({
   coveredCallRows = [],
   cashflows = [],
   onOpenLab,
+  onOpenPulse,
+  onOpenCompound,
   marketState = null,
   guest = false,
 }: Props) {
@@ -327,6 +392,21 @@ export function OverviewDashboard({
   function openFirstPortfolio(t: TickerScore) {
     const id = t.portfolioIds[0];
     if (id) onOpenSheet(id);
+  }
+
+  function handleBriefingNavigate(link: BriefingLink) {
+    if (link.type === "lab") onOpenLab?.(link.tab);
+    else if (link.type === "pulse") onOpenPulse?.();
+    else if (link.type === "compound") onOpenCompound?.();
+    else if (link.type === "sheet") onOpenSheet(link.portfolioId);
+  }
+
+  function canFollowBriefingLink(link?: BriefingLink): boolean {
+    if (!link) return false;
+    if (link.type === "lab") return !guest && Boolean(onOpenLab);
+    if (link.type === "pulse") return Boolean(onOpenPulse);
+    if (link.type === "compound") return Boolean(onOpenCompound);
+    return Boolean(link.portfolioId);
   }
 
   return (
@@ -443,27 +523,17 @@ export function OverviewDashboard({
 
           <ul className="relative mt-4 space-y-2">
             {briefing.map((b) => (
-              <li
-                key={b.id}
-                className={cn(
-                  "rounded-2xl border px-3.5 py-3",
-                  b.kind === "action"
-                    ? "border-amber-500/30 bg-amber-500/[0.07]"
-                    : b.kind === "play"
-                      ? "border-brand/30 bg-brand/10"
-                      : "border-zinc-800/80 bg-zinc-900/40"
-                )}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                  {b.kind}
-                  {b.ticker ? ` · ${b.ticker}` : ""}
-                </p>
-                <p className="mt-0.5 text-[15px] font-medium text-white">
-                  {b.title}
-                </p>
-                <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">
-                  {b.detail}
-                </p>
+              <li key={b.id}>
+                <BriefingCard
+                  kind={b.kind}
+                  ticker={b.ticker}
+                  title={b.title}
+                  detail={b.detail}
+                  link={b.link}
+                  cta={b.cta}
+                  navigable={canFollowBriefingLink(b.link)}
+                  onNavigate={handleBriefingNavigate}
+                />
               </li>
             ))}
           </ul>

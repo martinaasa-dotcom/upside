@@ -2197,6 +2197,8 @@ export function Dashboard() {
                 if (tab) setLabIntent(tab);
                 setActiveId(LAB_TAB_ID);
               }}
+              onOpenPulse={() => setActiveId(PULSE_TAB_ID)}
+              onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
             />
             <CcAdvisorChat
               key={OVERVIEW_TAB_ID}
