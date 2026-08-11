@@ -257,6 +257,10 @@ export function Dashboard() {
   const [alertToastsSent, setAlertToastsSent] = useState<Set<string>>(
     () => loadDismissedAlertIds()
   );
+  // Read inside effects without adding alertToastsSent as a dependency
+  // (that would re-trigger the alert effect on every toast it fires).
+  const alertToastsSentRef = useRef(alertToastsSent);
+  alertToastsSentRef.current = alertToastsSent;
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
   const pendingPatchRef = useRef<HoldingPatch | null>(null);
@@ -1797,16 +1801,19 @@ export function Dashboard() {
     );
     const earn = buildEarningsAlerts(earningsEvents);
     const next = [...earn, ...strike];
-    setAlertToastsSent((prev) => {
-      const updated = new Set(prev);
-      for (const a of next) {
-        if (updated.has(a.id)) continue;
-        updated.add(a.id);
-        toast(a.title, "info");
-      }
-      saveDismissedAlertIds(updated);
-      return updated;
-    });
+    const prev = alertToastsSentRef.current;
+    const fresh = next.filter((a) => !prev.has(a.id));
+    if (fresh.length === 0) return;
+    // Compute the new Set as a plain value (not a functional updater) so the
+    // toast() side effects below never run inside React's state-update path
+    // — doing that was tripping "Cannot update a component while rendering
+    // a different component" (setAlertToastsSent's updater was calling
+    // toast(), which itself calls setState on ToastProvider).
+    const updated = new Set(prev);
+    for (const a of fresh) updated.add(a.id);
+    saveDismissedAlertIds(updated);
+    setAlertToastsSent(updated);
+    for (const a of fresh) toast(a.title, "info");
   }, [snapshot?.coveredCallRows, earningsEvents, guestMode, toast]);
 
   useEffect(() => {
