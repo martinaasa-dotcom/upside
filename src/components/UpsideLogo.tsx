@@ -74,12 +74,13 @@ export function UpsideLogo({
       )}
       aria-label={title}
     >
-      <UpsideMark className="h-[1em] w-[1em] shrink-0" />
       {/*
-        Caps sit optically high in the em box vs the geometric A — drop the
-        word so midlines match (mark stays put).
+        Raise the mark slightly so it optically centers with the caps —
+        keep the word untranslated so the whole lockup shares a midline
+        with sibling header text (e.g. Overview).
       */}
-      <span className="-mr-[0.22em] translate-y-[0.12em] font-semibold uppercase leading-none tracking-[0.22em]">
+      <UpsideMark className="-translate-y-[0.04em] h-[1em] w-[1em] shrink-0" />
+      <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
         Upside
       </span>
     </span>

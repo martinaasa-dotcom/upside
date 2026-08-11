@@ -230,7 +230,7 @@ export function CommunityView({ communityId }: Props) {
             <Link href="/" className="shrink-0" aria-label="Upside home">
               <UpsideLogo
                 variant="wordmark"
-                className="translate-y-[3px] text-[15px] leading-none text-white"
+                className="text-[15px] leading-none text-white"
               />
             </Link>
             <WorkspaceSwitcher className="hidden sm:inline-flex" />

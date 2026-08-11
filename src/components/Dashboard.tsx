@@ -1935,7 +1935,7 @@ export function Dashboard() {
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
             <UpsideLogo
               variant="wordmark"
-              className="translate-y-[3px] text-[15px] leading-none text-white"
+              className="text-[15px] leading-none text-white"
             />
             <WorkspaceSwitcher />
           </div>
@@ -1999,7 +1999,7 @@ export function Dashboard() {
             >
               <UpsideLogo
                 variant="wordmark"
-                className="translate-y-[3px] text-[15px] leading-none text-white"
+                className="text-[15px] leading-none text-white"
               />
             </button>
             <span
