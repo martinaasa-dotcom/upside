@@ -167,7 +167,9 @@ async function claimWithServiceRole(user: User): Promise<{
     .maybeSingle();
 
   if (circle) {
-    const isMartin = email === "martin.aasa@upthink.ee";
+    const isMartin =
+      email === "martin.aasa@upthink.ee" ||
+      email === "aasamartinaasa@gmail.com";
     const { data: existing } = await admin
       .from(PORTFELL_TABLES.communityMembers)
       .select("user_id, role")
@@ -191,6 +193,12 @@ async function claimWithServiceRole(user: User): Promise<{
           .eq("id", UPSIDE_CIRCLE_ID)
           .is("created_by", null);
       }
+    } else if (isMartin && (existing as { role?: string }).role !== "admin") {
+      await admin
+        .from(PORTFELL_TABLES.communityMembers)
+        .update({ role: "admin" })
+        .eq("community_id", UPSIDE_CIRCLE_ID)
+        .eq("user_id", user.id);
     }
   }
 

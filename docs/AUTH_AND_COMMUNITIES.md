@@ -7,12 +7,26 @@
 - **Communities**: members see each co-owner’s book live, **read-only**.
 - Sheet PIN/password and guest share links are **removed** — Google session + co-ownership is the only gate.
 
+## Identity aliases
+
+Multiple Google emails can map to **one person** in communities (`portfell_account_aliases`):
+
+| Alias | Primary |
+|-------|---------|
+| `aasamartinaasa@gmail.com` | `martin.aasa@upthink.ee` |
+
+Both logins stay separate in Auth (Google), but Upside Circle shows **one** Martin with both emails listed. Co-ownership of Aasad/Anu/MaryAnn is unchanged.
+
+## Community-pinned sheets
+
+`portfell_community_portfolios` pins sheets into a community even before owners sign in. Upside Circle includes **Karud** and **Lap** (shown as “awaiting sign-in” until their seed emails claim).
+
 ## Seed ownership (test circle)
 
 | Email | Portfolios |
 |-------|------------|
 | `martin.aasa@upthink.ee` | Aasad, Anu, MaryAnn |
-| `aasamartinaasa@gmail.com` | Aasad, Anu, MaryAnn |
+| `aasamartinaasa@gmail.com` | Aasad, Anu, MaryAnn (alias of Martin) |
 | `amandalucas400@gmail.com` | Aasad, Anu, MaryAnn |
 | `rasmusmarjapuu@gmail.com` | Karud |
 | `karukaroliine99@gmail.com` | Karud |
@@ -57,5 +71,6 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `013` drop sheet `access_secret_hash` + `portfell_share_links`  
 - `014` community members RLS recursion fix  
 - `015` superadmin overview RPC  
+- `016` account aliases + community-pinned sheets (Karud/Lap)  
 
 Writes require a signed-in **co-owner** only.

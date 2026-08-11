@@ -1,4 +1,10 @@
 import {
+  collapseMembersByAlias,
+  loadAliasMap,
+  type PendingHousehold,
+  type RawMember,
+} from "@/lib/auth/identity";
+import {
   userIsCommunityAdmin,
   userIsCommunityMember,
 } from "@/lib/auth/ownership";
@@ -25,17 +31,24 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const [{ data: community }, { data: members }] = await Promise.all([
-    supabase
-      .from(PORTFELL_TABLES.communities)
-      .select("id, name, created_by, created_at, updated_at")
-      .eq("id", id)
-      .single(),
-    supabase
-      .from(PORTFELL_TABLES.communityMembers)
-      .select("user_id, role, joined_at")
-      .eq("community_id", id),
-  ]);
+  const aliasMap = await loadAliasMap(supabase);
+
+  const [{ data: community }, { data: members }, { data: pinned }] =
+    await Promise.all([
+      supabase
+        .from(PORTFELL_TABLES.communities)
+        .select("id, name, created_by, created_at, updated_at")
+        .eq("id", id)
+        .single(),
+      supabase
+        .from(PORTFELL_TABLES.communityMembers)
+        .select("user_id, role, joined_at")
+        .eq("community_id", id),
+      supabase
+        .from(PORTFELL_TABLES.communityPortfolios)
+        .select("portfolio_id, label")
+        .eq("community_id", id),
+    ]);
 
   if (!community) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -55,6 +68,19 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     ((profiles ?? []) as { id: string }[]).map((p) => [p.id, p])
   );
 
+  const rawMembers: RawMember[] = (
+    (members ?? []) as { user_id: string; role: string; joined_at: string }[]
+  ).map((m) => ({
+    ...m,
+    profile: (profileById.get(m.user_id) as RawMember["profile"]) ?? null,
+  }));
+
+  const people = collapseMembersByAlias(
+    rawMembers,
+    auth.user.id,
+    aliasMap
+  );
+
   const { data: ownership } = userIds.length
     ? await supabase
         .from(PORTFELL_TABLES.portfolioOwners)
@@ -62,11 +88,18 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
         .in("user_id", userIds)
     : { data: [] };
 
-  const portfolioIds = [
+  const pinnedRows = (pinned ?? []) as {
+    portfolio_id: string;
+    label: string | null;
+  }[];
+  const pinnedIds = pinnedRows.map((p) => p.portfolio_id);
+
+  const ownedIds = [
     ...new Set(
       ((ownership ?? []) as { portfolio_id: string }[]).map((o) => o.portfolio_id)
     ),
   ];
+  const portfolioIds = [...new Set([...ownedIds, ...pinnedIds])];
 
   const { data: portfolios } = portfolioIds.length
     ? await supabase
@@ -76,18 +109,94 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
         .order("sort_order")
     : { data: [] };
 
+  // Pending households: pinned sheets not yet owned by any signed-in member.
+  const ownedSet = new Set(ownedIds);
+  const pendingPortfolioIds = pinnedIds.filter((pid) => !ownedSet.has(pid));
+  let pending_members: PendingHousehold[] = [];
+
+  if (pendingPortfolioIds.length) {
+    const pendingPortfolios = (
+      (portfolios ?? []) as { id: string; name: string; slug: string }[]
+    ).filter((p) => pendingPortfolioIds.includes(p.id));
+
+    const slugs = pendingPortfolios.map((p) => p.slug);
+    const { data: claims } = slugs.length
+      ? await supabase
+          .from(PORTFELL_TABLES.seedClaims)
+          .select("email, portfolio_slug")
+          .in("portfolio_slug", slugs)
+      : { data: [] };
+
+    const emailsBySlug = new Map<string, string[]>(
+      Object.entries({
+        karud: ["rasmusmarjapuu@gmail.com", "karukaroliine99@gmail.com"],
+        lap: ["liinaanette@gmail.com"],
+      })
+    );
+    for (const c of (claims ?? []) as {
+      email: string;
+      portfolio_slug: string;
+    }[]) {
+      const list = emailsBySlug.get(c.portfolio_slug) ?? [];
+      const em = c.email.toLowerCase();
+      if (!list.includes(em)) list.push(em);
+      emailsBySlug.set(c.portfolio_slug, list);
+    }
+
+    pending_members = pendingPortfolios.map((p) => {
+      const pin = pinnedRows.find((r) => r.portfolio_id === p.id);
+      return {
+        key: p.slug,
+        label: pin?.label || p.name,
+        portfolio_ids: [p.id],
+        emails: emailsBySlug.get(p.slug) ?? [],
+      };
+    });
+  }
+
   const isAdmin = await userIsCommunityAdmin(auth.user.id, id);
+
+  // Remap ownership to person_id for client attribution
+  const userToPerson = new Map<string, string>();
+  for (const person of people) {
+    for (const uid of person.user_ids) {
+      userToPerson.set(uid, person.person_id);
+    }
+  }
+
+  const ownershipForClient = (
+    (ownership ?? []) as { portfolio_id: string; user_id: string }[]
+  ).map((o) => ({
+    portfolio_id: o.portfolio_id,
+    user_id: userToPerson.get(o.user_id) ?? o.user_id,
+    raw_user_id: o.user_id,
+  }));
+
+  // Synthetic ownership for pending pinned sheets (household key as user_id)
+  for (const pending of pending_members) {
+    for (const pid of pending.portfolio_ids) {
+      ownershipForClient.push({
+        portfolio_id: pid,
+        user_id: `pending:${pending.key}`,
+        raw_user_id: `pending:${pending.key}`,
+      });
+    }
+  }
 
   return NextResponse.json({
     community,
     isAdmin,
-    members: ((members ?? []) as { user_id: string; role: string; joined_at: string }[]).map(
-      (m) => ({
-        ...m,
-        profile: profileById.get(m.user_id) ?? null,
-      })
-    ),
+    members: people.map((p) => ({
+      user_id: p.person_id,
+      user_ids: p.user_ids,
+      emails: p.emails,
+      role: p.role,
+      joined_at: p.joined_at,
+      profile: p.profile,
+      is_you: p.is_you,
+    })),
+    pending_members,
     portfolios: portfolios ?? [],
-    ownership: ownership ?? [],
+    ownership: ownershipForClient,
   });
 }

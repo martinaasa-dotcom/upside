@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@/components/AuthProvider";
 import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -26,9 +25,19 @@ type Profile = {
 
 type Member = {
   user_id: string;
+  user_ids?: string[];
+  emails?: string[];
   role: string;
   joined_at: string;
   profile: Profile | null;
+  is_you?: boolean;
+};
+
+type PendingMember = {
+  key: string;
+  label: string;
+  portfolio_ids: string[];
+  emails: string[];
 };
 
 type CommunityMeta = {
@@ -44,9 +53,9 @@ type Props = {
 };
 
 export function CommunityView({ communityId }: Props) {
-  const { profile: me } = useAuth();
   const [community, setCommunity] = useState<CommunityMeta | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -89,6 +98,7 @@ export function CommunityView({ communityId }: Props) {
       const book = await bookRes.json();
       setCommunity(meta.community);
       setMembers(meta.members ?? []);
+      setPendingMembers(meta.pending_members ?? []);
       setIsAdmin(Boolean(meta.isAdmin));
       setPortfolios(book.portfolios ?? []);
       setHoldings(book.holdings ?? []);
@@ -131,12 +141,32 @@ export function CommunityView({ communityId }: Props) {
 
   const profileName = useCallback(
     (id: string) => {
+      if (id.startsWith("pending:")) {
+        const key = id.slice("pending:".length);
+        return (
+          pendingMembers.find((p) => p.key === key)?.label ??
+          key.charAt(0).toUpperCase() + key.slice(1)
+        );
+      }
       const p =
         profiles.find((x) => x.id === id) ??
         members.find((m) => m.user_id === id)?.profile;
       return p?.display_name || p?.email || "Member";
     },
-    [profiles, members]
+    [profiles, members, pendingMembers]
+  );
+
+  const memberEmails = useCallback(
+    (m: Member) => {
+      const emails =
+        m.emails?.length
+          ? m.emails
+          : m.profile?.email
+            ? [m.profile.email]
+            : [];
+      return emails;
+    },
+    []
   );
 
   const overview = useMemo(
@@ -296,6 +326,7 @@ export function CommunityView({ communityId }: Props) {
                       );
                       return sum + (score?.totalValue ?? 0);
                     }, 0);
+                    const emails = memberEmails(m);
                     return (
                       <li
                         key={m.user_id}
@@ -311,7 +342,7 @@ export function CommunityView({ communityId }: Props) {
                         >
                           <div className="text-sm font-medium text-zinc-100">
                             {profileName(m.user_id)}
-                            {m.user_id === me?.id && (
+                            {m.is_you && (
                               <span className="ml-2 text-xs text-zinc-500">
                                 (you)
                               </span>
@@ -320,6 +351,11 @@ export function CommunityView({ communityId }: Props) {
                           {m.profile?.bio ? (
                             <div className="text-xs text-zinc-400">
                               {m.profile.bio}
+                            </div>
+                          ) : null}
+                          {emails.length > 1 ? (
+                            <div className="text-xs text-zinc-500">
+                              {emails.join(" · ")}
                             </div>
                           ) : null}
                           <div className="text-xs text-zinc-500">
@@ -331,7 +367,7 @@ export function CommunityView({ communityId }: Props) {
                             {currency(sheetValue)}
                           </div>
                         </button>
-                        {isAdmin && m.user_id !== me?.id && (
+                        {isAdmin && !m.is_you && (
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
@@ -358,6 +394,51 @@ export function CommunityView({ communityId }: Props) {
                             </button>
                           </div>
                         )}
+                      </li>
+                    );
+                  })}
+                  {pendingMembers.map((p) => {
+                    const sheets = portfolios.filter((x) =>
+                      p.portfolio_ids.includes(x.id)
+                    );
+                    const sheetValue = sheets.reduce((sum, sheet) => {
+                      const score = overview.sheets.find(
+                        (s) => s.portfolio.id === sheet.id
+                      );
+                      return sum + (score?.totalValue ?? 0);
+                    }, 0);
+                    const ownerKey = `pending:${p.key}`;
+                    return (
+                      <li
+                        key={ownerKey}
+                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOwnerId(ownerKey);
+                            setSelectedPortfolioId(null);
+                          }}
+                          className="text-left"
+                        >
+                          <div className="text-sm font-medium text-zinc-100">
+                            {p.label}
+                            <span className="ml-2 text-xs font-normal text-amber-500/90">
+                              awaiting sign-in
+                            </span>
+                          </div>
+                          {p.emails.length ? (
+                            <div className="text-xs text-zinc-500">
+                              {p.emails.join(" · ")}
+                            </div>
+                          ) : null}
+                          <div className="text-xs text-zinc-500">
+                            {sheets.length} portfolio
+                            {sheets.length === 1 ? "" : "s"}
+                            {" · "}
+                            {currency(sheetValue)}
+                          </div>
+                        </button>
                       </li>
                     );
                   })}
