@@ -2116,9 +2116,9 @@ export function Dashboard() {
             <HeaderOverflowMenu items={headerMenuItems} />
           </div>
         </div>
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-1.5 border-t border-zinc-800/60 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 border-t border-zinc-800/60 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
           <span
-            className="truncate text-[11px] tabular-nums text-zinc-500"
+            className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-500"
             title={
               source === "supabase"
                 ? "Shared live book"
