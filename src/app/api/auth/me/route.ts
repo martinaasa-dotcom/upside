@@ -1,6 +1,6 @@
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -15,7 +15,7 @@ export async function GET() {
 
   await ensureProfileAndClaims(auth.user);
 
-  const admin = getSupabaseServer();
+  const admin = await getSupabaseDataClient();
   let profile = null;
   if (admin) {
     const { data } = await admin
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const admin = getSupabaseServer();
+  const admin = await getSupabaseDataClient();
   if (!admin) {
     return NextResponse.json(
       { error: "Supabase not configured" },

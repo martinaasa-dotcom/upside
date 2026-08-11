@@ -4,7 +4,7 @@ import {
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
 import { requireCronAuth } from "@/lib/cron-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { todayKeyInTz } from "@/lib/timezone";
 import { NextResponse } from "next/server";
 
@@ -15,6 +15,20 @@ export const maxDuration = 60;
 export async function GET(req: Request) {
   const denied = requireCronAuth(req);
   if (denied) return denied;
+
+  // Cron has no user session at all, so this can only ever see/write across
+  // every user's portfolios via service role. Without it, RLS would silently
+  // limit the capture to nothing (anon has no auth.uid()), producing an
+  // empty-but-"successful"-looking nightly snapshot — worse than skipping.
+  if (!supabaseUsesServiceRole()) {
+    return NextResponse.json(
+      {
+        error:
+          "Nightly snapshot skipped — SUPABASE_SERVICE_ROLE_KEY is not configured, so a cron request (no user session) cannot read any portfolios under RLS.",
+      },
+      { status: 503 }
+    );
+  }
 
   const supabase = getSupabaseServer();
   if (!supabase) {

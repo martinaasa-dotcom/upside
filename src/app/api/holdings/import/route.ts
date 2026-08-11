@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker, resolveImportTicker } from "@/lib/ticker";
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured — use local demo store" },

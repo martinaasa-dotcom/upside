@@ -1,7 +1,6 @@
 import { createHash } from "crypto";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +9,14 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-/** Accept a community invite token. */
+/**
+ * Accept a community invite token.
+ *
+ * Redemption goes through a security-definer RPC: the redeemer is by
+ * definition not a member yet, so membership-based RLS can never authorize
+ * this lookup directly — possessing the valid token is what should grant
+ * access to that one invite row, not an existing relationship.
+ */
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
@@ -26,65 +32,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const { data: invite, error } = await supabase
-    .from(PORTFELL_TABLES.communityInvites)
-    .select("*")
-    .eq("token_hash", hashToken(token))
-    .maybeSingle();
+  const { data, error } = await supabase.rpc(
+    "portfell_redeem_community_invite",
+    { p_token_hash: hashToken(token) }
+  );
 
-  if (error || !invite) {
-    return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const row = invite as {
-    community_id: string;
-    email: string | null;
-    role: string;
-    expires_at: string | null;
-    accepted_at: string | null;
-    revoked_at: string | null;
-    id: string;
-  };
-
-  if (row.revoked_at || row.accepted_at) {
-    return NextResponse.json({ error: "Invite no longer valid" }, { status: 410 });
-  }
-  if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
-    return NextResponse.json({ error: "Invite expired" }, { status: 410 });
-  }
-  if (
-    row.email &&
-    auth.user.email &&
-    row.email.toLowerCase() !== auth.user.email.toLowerCase()
-  ) {
+  const result = data as { ok: boolean; error?: string; community_id?: string };
+  if (!result?.ok) {
     return NextResponse.json(
-      { error: "Invite is for a different email" },
-      { status: 403 }
+      { error: result?.error ?? "Invalid invite" },
+      { status: 404 }
     );
   }
-
-  const { error: mErr } = await supabase
-    .from(PORTFELL_TABLES.communityMembers)
-    .upsert(
-      {
-        community_id: row.community_id,
-        user_id: auth.user.id,
-        role: row.role === "admin" ? "admin" : "member",
-      },
-      { onConflict: "community_id,user_id" }
-    );
-
-  if (mErr) {
-    return NextResponse.json({ error: mErr.message }, { status: 500 });
-  }
-
-  await supabase
-    .from(PORTFELL_TABLES.communityInvites)
-    .update({ accepted_at: new Date().toISOString() })
-    .eq("id", row.id);
 
   return NextResponse.json({
     ok: true,
-    communityId: row.community_id,
+    communityId: result.community_id,
   });
 }

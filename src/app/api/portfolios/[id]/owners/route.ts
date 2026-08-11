@@ -3,7 +3,7 @@ import {
   requirePortfolioOwner,
 } from "@/lib/auth/ownership";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,7 +20,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   const notOwner = await requirePortfolioOwner(auth.user.id, id);
   if (notOwner) return notOwner;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json({ owners: [] });
   }

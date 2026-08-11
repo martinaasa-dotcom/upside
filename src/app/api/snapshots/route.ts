@@ -6,7 +6,10 @@ import {
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import {
+  getSupabaseDataClient,
+  supabaseUsesServiceRole,
+} from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,7 +20,7 @@ export async function GET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured" },
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured" },
@@ -59,6 +62,23 @@ export async function POST(req: NextRequest) {
   };
 
   const snapshotId = body.snapshotId ?? body.id;
+
+  // "create" / "restore" cover the WHOLE book across every user, not just
+  // the caller's own portfolios — under the caller's own session, RLS only
+  // exposes portfolios they can see, so a full-book capture/restore here
+  // would silently be partial rather than a real backup. Require service
+  // role for those two; "restore_sheet" only ever touches the caller's own
+  // sheet, which their session already has legitimate rights to.
+  const wholeBookAction = body.action === "restore" || body.action === "create" || !body.action;
+  if (wholeBookAction && !supabaseUsesServiceRole()) {
+    return NextResponse.json(
+      {
+        error:
+          "Whole-book snapshot/restore needs SUPABASE_SERVICE_ROLE_KEY configured — without it, a signed-in session only sees its own portfolios, so this would silently save/restore a partial book. Use restore_sheet for a single sheet instead.",
+      },
+      { status: 503 }
+    );
+  }
 
   try {
     if (body.action === "restore") {

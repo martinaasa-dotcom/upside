@@ -1,6 +1,6 @@
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { NextRequest, NextResponse } from "next/server";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured — use local demo store" },
@@ -69,7 +69,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured — use local demo store" },
@@ -134,7 +134,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured — use local demo store" },

@@ -6,10 +6,7 @@ import {
   requirePortfolioOwner,
 } from "@/lib/auth/ownership";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import {
-  getSupabaseDataClient,
-  getSupabaseServer,
-} from "@/lib/supabase/server";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -34,7 +31,7 @@ export async function GET(req: NextRequest) {
 
   await ensureProfileAndClaims(auth.user);
 
-  const supabase = (await getSupabaseDataClient()) ?? getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
 
   if (!supabase) {
     return NextResponse.json({
@@ -100,7 +97,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured — use local demo store" },
@@ -164,7 +161,7 @@ export async function PATCH(req: NextRequest) {
   const notOwner = await requirePortfolioOwner(auth.user.id, id);
   if (notOwner) return notOwner;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured" },
@@ -209,7 +206,7 @@ export async function DELETE(req: NextRequest) {
   const notOwner = await requirePortfolioOwner(auth.user.id, id);
   if (notOwner) return notOwner;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured" },

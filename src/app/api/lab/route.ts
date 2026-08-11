@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseServer } from "@/lib/supabase/server";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { defaultArena } from "@/lib/paper-arena";
 
@@ -23,7 +23,7 @@ function rowToBundle(row: Record<string, unknown> | null): LabBundle {
 }
 
 export async function GET() {
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json({
       source: "local",
@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const supabase = getSupabaseServer();
+  const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured — Lab stays local" },
