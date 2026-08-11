@@ -20,10 +20,15 @@ export function CommunitiesList() {
 
   async function load() {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/communities", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Failed to load"
+        );
+      }
       setCommunities(data.communities ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
