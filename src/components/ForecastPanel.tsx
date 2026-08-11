@@ -71,10 +71,14 @@ function formatGeneratedAt(iso: string) {
 function EoyPriceInput({
   value,
   targeted,
+  align = "right",
   onCommit,
 }: {
   value: number;
   targeted: boolean;
+  /** Mobile cards read left-to-right with static labels (left-aligned);
+   *  the desktop grid keeps numbers right-aligned like every other table. */
+  align?: "left" | "right";
   onCommit: (n: number) => void;
 }) {
   const display = value.toFixed(2);
@@ -115,7 +119,8 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "no-spinner w-full min-w-0 rounded px-1 py-0.5 text-right tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
+        "inline-edit no-spinner w-full min-w-0 rounded px-1 py-0.5 tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
+        align === "right" ? "text-right" : "text-left",
         targeted ? "text-zinc-100" : "text-zinc-500"
       )}
     />
@@ -138,8 +143,12 @@ export function ForecastPanel({
   onClearOverrides,
 }: Props) {
   const yearCols = model.years;
-  // Ticker | Current SP | EOY×N | Gain — numeric cols share width evenly
-  const template = `minmax(5.5rem, 0.85fr) repeat(${yearCols.length + 1}, minmax(6.5rem, 1fr)) minmax(4.5rem, 0.7fr)`;
+  // Ticker | Current SP | EOY×N | Gain — numeric cols share width evenly.
+  // Kept as tight as the content allows (not PortfolioTable-style max-content)
+  // since 5 EOY-year columns + Current SP + Gain is the widest grid in the
+  // app; a looser floor here overflows well before the shared `md:` table
+  // breakpoint, forcing an early horizontal scrollbar on tablets/laptops.
+  const template = `minmax(4rem, 0.7fr) repeat(${yearCols.length + 1}, minmax(5rem, 1fr)) minmax(4rem, 0.6fr)`;
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -384,6 +393,7 @@ export function ForecastPanel({
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
                         targeted={r.targetedYears[y]}
+                        align="left"
                         onCommit={(n) => onSetEoyPrice(r.ticker, y, n)}
                       />
                     </div>
@@ -425,7 +435,7 @@ export function ForecastPanel({
           {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
-              <FluidRow className="justify-items-stretch border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <FluidRow className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                 <div className={cellLabel}>Ticker</div>
                 <div className={cellNum}>Current SP</div>
                 {yearCols.map((y) => (
@@ -437,10 +447,8 @@ export function ForecastPanel({
               </FluidRow>
 
               {model.rows.map((r) => (
-                <FluidRow
-                  key={r.ticker}
-                  className="justify-items-stretch hover:bg-zinc-900/40"
-                >                  <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
+                <FluidRow key={r.ticker} className="hover:bg-zinc-900/40">
+                  <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
                     {r.ticker}
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-[10px] font-normal tracking-normal text-zinc-600">
@@ -474,7 +482,7 @@ export function ForecastPanel({
                 </FluidRow>
               ))}
 
-              <FluidRow className="justify-items-stretch border-t border-zinc-700 bg-zinc-900/60 font-semibold">
+              <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
                 <div className={cn(cellLabel, "py-2.5 text-white")}>
                   Portfolio
                 </div>

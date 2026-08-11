@@ -64,6 +64,25 @@ body {
   }
 }
 
+/*
+ * Inline-editable numeric cells (holdings shares/buy, covered-call targets,
+ * forecast EOY prices). Without this they're visually identical to static
+ * text — fine with a mouse hover, but on touch there's no way to tell a
+ * value is tappable. A quiet dashed underline signals "editable" at rest;
+ * it solidifies + brightens on hover/focus.
+ */
+.inline-edit {
+  border-bottom: 1px dashed rgba(161, 161, 170, 0.35);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+.inline-edit:hover {
+  border-bottom-color: rgba(197, 160, 89, 0.55);
+}
+.inline-edit:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--brand);
+}
+
 * {
   box-sizing: border-box;
 }

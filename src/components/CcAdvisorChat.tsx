@@ -121,10 +121,18 @@ function isMdSepCell(cell: string): boolean {
 /**
  * Rebuild a single jammed pipe line into a real GFM table.
  * Avoids half-matching `| --- |` out of `| --- | --- | --- |` (that left a tiny 1-col box).
+ *
+ * Small tables (2–3 columns, 1 data row) were previously missed because the
+ * old gate required 8+ pipes — a jammed 2-column table (`| h1 | h2 | --- |
+ * --- | r1 | r2 |`) only has 7. The gate is now just a cheap "could this
+ * possibly be one" pre-check; the real safety net is requiring at least one
+ * non-empty data cell after the separator, so a lone data row that happens
+ * to use literal `---` placeholder cells is never mistaken for a jammed
+ * header+separator (which would otherwise swallow that row with no body).
  */
 function expandJammedTableLine(line: string): string {
   const pipeCount = (line.match(/\|/g) ?? []).length;
-  if (pipeCount < 8 || !/-{3,}/.test(line)) return line;
+  if (pipeCount < 6 || !/-{3,}/.test(line)) return line;
 
   const raw = line.split("|").map((s) => s.trim());
   if (raw[0] === "") raw.shift();
@@ -142,6 +150,8 @@ function expandJammedTableLine(line: string): string {
 
   const header = parts.slice(0, sepStart);
   const body = parts.slice(sepStart + sepCount);
+  if (!body.some((c) => c.length > 0)) return line;
+
   const cols = Math.max(sepCount, header.length, 2);
 
   const pad = (row: string[]) => {
@@ -163,17 +173,45 @@ function expandJammedTableLine(line: string): string {
   return rows.map((r) => `| ${r.join(" | ")} |`).join("\n");
 }
 
-/** Fix jammed GFM tables (model often emits one long |…|…| line). */
+/** Fix jammed GFM tables + other common free-model markdown breakage. */
 function normalizeMargusMarkdown(src: string): string {
   let text = src.replace(/\r\n/g, "\n");
+
+  // Some models escape line breaks as literal backslash-n instead of real
+  // newlines, producing an unreadable wall of text. Only fire when there
+  // are barely any real newlines but several literal ones, so we never
+  // touch normal prose that happens to mention "\n".
+  const realNewlines = (text.match(/\n/g) ?? []).length;
+  const literalNewlines = (text.match(/\\n/g) ?? []).length;
+  if (literalNewlines >= 2 && realNewlines <= 1) {
+    text = text.replace(/\\n/g, "\n");
+  }
 
   text = text
     .split("\n")
     .map((line) => expandJammedTableLine(line))
     .join("\n");
 
-  // Lone separator crumbs from bad model output / old normalizer
-  text = text.replace(/^\|(?:\s*:?-{3,}:?\s*\|)+\s*$/gm, "");
+  // Drop truly orphaned separator crumbs (bad model output / old normalizer)
+  // — but NOT a separator row that legitimately follows a header row, which
+  // is required GFM syntax. A blanket regex here was deleting the separator
+  // line `expandJammedTableLine` had just generated, leaving a header +
+  // data rows with no delimiter in between — remark-gfm then refuses to
+  // parse it as a table at all, so it fell back to showing raw `| a | b |`
+  // text. Only strip a separator-only line when the line above it has no
+  // pipes at all (i.e. it can't be a header row).
+  const lines = text.split("\n");
+  text = lines
+    .filter((line, i) => {
+      const sepOnly = /^\|(?:\s*:?-{3,}:?\s*\|)+\s*$/.test(line.trim());
+      if (!sepOnly) return true;
+      const prev = lines[i - 1] ?? "";
+      return prev.includes("|");
+    })
+    .join("\n");
+
+  // Headers jammed mid-paragraph instead of starting their own line.
+  text = text.replace(/([^\n])\n?(#{1,6} [A-Za-z])/g, "$1\n\n$2");
 
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
@@ -202,7 +240,7 @@ function ChatMarkdown({ children }: { children: string }) {
             </h4>
           ),
           p: ({ children: c }) => (
-            <p className="mb-2.5 last:mb-0 text-[13px] leading-relaxed text-zinc-300">
+            <p className="mb-2.5 break-words last:mb-0 text-[13px] leading-relaxed text-zinc-300">
               {c}
             </p>
           ),
@@ -217,7 +255,7 @@ function ChatMarkdown({ children }: { children: string }) {
             </ol>
           ),
           li: ({ children: c }) => (
-            <li className="leading-relaxed marker:text-zinc-600">{c}</li>
+            <li className="break-words leading-relaxed marker:text-zinc-600">{c}</li>
           ),
           strong: ({ children: c }) => (
             <strong className="font-semibold text-white">{c}</strong>
@@ -279,13 +317,13 @@ function ChatMarkdown({ children }: { children: string }) {
             </th>
           ),
           td: ({ children: c }) => (
-            <td className="py-2 pr-3 align-top tabular-nums text-zinc-300 first:pl-0">
+            <td className="break-words py-2 pr-3 align-top tabular-nums text-zinc-300 first:pl-0">
               {c}
             </td>
           ),
           hr: () => <hr className="my-3 border-zinc-800" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 border-l-2 border-brand/40 pl-3 text-[13px] text-zinc-400 last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-brand/40 pl-3 text-[13px] text-zinc-400 last:mb-0">
               {c}
             </blockquote>
           ),
@@ -698,7 +736,7 @@ export function CcAdvisorChat({
                   {message.role === "assistant" ? (
                     <ChatMarkdown>{text}</ChatMarkdown>
                   ) : (
-                    <p className="whitespace-pre-wrap">{text}</p>
+                    <p className="whitespace-pre-wrap break-words">{text}</p>
                   )}
                 </div>
               ) : null}
@@ -708,7 +746,7 @@ export function CcAdvisorChat({
               {toolNotes.map((note, i) => (
                 <p
                   key={i}
-                  className="mt-1.5 whitespace-pre-wrap text-xs font-medium text-brand"
+                  className="mt-1.5 whitespace-pre-wrap break-words text-xs font-medium text-brand"
                 >
                   {note}
                 </p>
