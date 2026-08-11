@@ -230,7 +230,7 @@ function extendedHoursFromQuote(q: Quote | null | undefined) {
 
 export function Dashboard() {
   const { push: toast } = useToast();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, refresh } = useAuth();
   const router = useRouter();
   const [source, setSource] = useState<DataSource>("demo");
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -511,7 +511,8 @@ export function Dashboard() {
     }
     const ctrl = new AbortController();
     const timeout = window.setTimeout(() => ctrl.abort(), 20_000);
-    try {
+
+    const fetchBook = async () => {
       const res = await fetch("/api/portfolios", {
         cache: "no-store",
         signal: ctrl.signal,
@@ -522,7 +523,33 @@ export function Dashboard() {
         }
         throw new Error(`Portfolios request failed (${res.status})`);
       }
-      const data = await res.json();
+      return res.json();
+    };
+
+    try {
+      // Claim seed sheets (Aasad/Karud/Lap/…) before listing My book.
+      await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
+
+      let data: {
+        source?: string;
+        portfolios?: Portfolio[];
+        holdings?: Holding[];
+      };
+      try {
+        data = await fetchBook();
+      } catch (first) {
+        if (
+          first instanceof Error &&
+          /Sign in required/i.test(first.message)
+        ) {
+          await refresh();
+          await new Promise((r) => window.setTimeout(r, 400));
+          data = await fetchBook();
+        } else {
+          throw first;
+        }
+      }
+
       if (data.source === "supabase") {
         setSource("supabase");
         setPortfolios(data.portfolios ?? []);
@@ -557,7 +584,7 @@ export function Dashboard() {
           setHoldings(demo.holdings);
           setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
           setLocked(hasLockedSave());
-        } else if (aborted) {
+        } else {
           setSource("supabase");
           setPortfolios([]);
           setHoldings([]);
@@ -567,7 +594,7 @@ export function Dashboard() {
       window.clearTimeout(timeout);
       if (!opts?.silent) setLoading(false);
     }
-  }, [pickInitialSheet]);
+  }, [pickInitialSheet, refresh]);
 
   const applyFxPayload = useCallback((fx: {
     eurUsd?: number | null;

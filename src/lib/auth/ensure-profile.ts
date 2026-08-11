@@ -37,6 +37,14 @@ async function claimWithRpc(user: User): Promise<{ claimedSlugs: string[] }> {
   const authClient = await createSupabaseServerAuth();
   if (!authClient) return { claimedSlugs: [] };
 
+  // Prefer an explicit session on this client (post-OAuth exchange) so
+  // auth.uid() is present inside the security-definer claim RPC.
+  const { data: sessionData } = await authClient.auth.getSession();
+  if (!sessionData.session) {
+    console.error("portfell_claim_seed_for_me skipped — no server session");
+    return { claimedSlugs: [] };
+  }
+
   const { data, error } = await authClient.rpc("portfell_claim_seed_for_me");
   if (error) {
     console.error("portfell_claim_seed_for_me failed", error.message);
@@ -82,10 +90,14 @@ async function claimWithServiceRole(user: User): Promise<{
 
   const claimedSlugs: string[] = [];
   if (email) {
-    const { data: claims } = await admin
+    const { data: claims, error: claimsErr } = await admin
       .from(PORTFELL_TABLES.seedClaims)
       .select("portfolio_slug")
       .eq("email", email);
+
+    if (claimsErr) {
+      console.error("seed claims lookup failed", claimsErr.message);
+    }
 
     const slugs = new Set<string>([
       ...((claims ?? []) as { portfolio_slug: string }[]).map(
@@ -119,7 +131,11 @@ async function claimWithServiceRole(user: User): Promise<{
         { portfolio_id: portfolioId, user_id: user.id },
         { onConflict: "portfolio_id,user_id" }
       );
-      if (!error && !claimedSlugs.includes(slug)) claimedSlugs.push(slug);
+      if (error) {
+        console.error("portfolio owner upsert failed", slug, error.message);
+      } else if (!claimedSlugs.includes(slug)) {
+        claimedSlugs.push(slug);
+      }
     }
   }
 
