@@ -115,6 +115,17 @@ export function CommunityView({ communityId }: Props) {
     void load();
   }, [load]);
 
+  // Ownership/membership can change server-side (e.g. someone else's first
+  // sign-in claims a pending sheet) while this tab sits in the background —
+  // refetch on return so "awaiting sign-in" / portfolio counts don't go stale.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") void load();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [load]);
+
   useEffect(() => {
     const tickers = [
       ...new Set(holdings.map((h) => h.ticker).filter(Boolean)),
