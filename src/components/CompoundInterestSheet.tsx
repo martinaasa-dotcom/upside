@@ -11,14 +11,15 @@ import {
 } from "@/lib/compound-interest";
 import {
   buildCompareScenarios,
+  buildCompoundMilestones,
   buildNarrative,
   calculateWithShock,
-  estimateYearsToGoal,
   findTippingYear,
-  goalProgress,
+  loadMilestoneActuals,
+  saveMilestoneActuals,
   stayTheCourseInputs,
   storyYears,
-  yearsToGoal,
+  type MilestoneActuals,
   type ShockKind,
 } from "@/lib/compound-play";
 import { cn } from "@/lib/format";
@@ -94,6 +95,14 @@ function money(
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(shown);
+}
+
+function formatMilestoneDate(d: Date): string {
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function SegButton({
@@ -193,7 +202,9 @@ export function CompoundInterestSheet({
   const [principalSource, setPrincipalSource] = useState<string>("custom");
   const [hydrated, setHydrated] = useState(false);
   const [shock, setShock] = useState<ShockKind>("none");
-  const [goal, setGoal] = useState(100_000);
+  const [milestoneActuals, setMilestoneActuals] = useState<MilestoneActuals>(
+    {}
+  );
   const [storyIdx, setStoryIdx] = useState(0);
   const [tipFlash, setTipFlash] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -202,6 +213,7 @@ export function CompoundInterestSheet({
     const stored = loadStored();
     setDraft(stored);
     setCurrency(loadCompoundCurrency());
+    setMilestoneActuals(loadMilestoneActuals());
     setHydrated(true);
   }, []);
 
@@ -282,21 +294,30 @@ export function CompoundInterestSheet({
     result.yearly.find((y) => y.index === storyYear) ??
     result.yearly[result.yearly.length - 1];
 
-  const goalYear = yearsToGoal(result.yearly, goal);
-  const progress = goalProgress(result.futureValue, goal);
-  const etaYears = estimateYearsToGoal({
-    principal: liveInputs.principal,
-    goal,
-    annualRatePct:
-      liveInputs.ratePeriod === "annual"
-        ? liveInputs.ratePercent
-        : liveInputs.ratePercent * 12,
-    monthlyDeposit:
-      liveInputs.contributionMode === "deposits" ||
-      liveInputs.contributionMode === "both"
-        ? liveInputs.depositAmount
-        : 0,
-  });
+  const annualRatePct =
+    liveInputs.ratePeriod === "annual"
+      ? liveInputs.ratePercent
+      : liveInputs.ratePercent * 12;
+
+  const milestones = useMemo(
+    () =>
+      buildCompoundMilestones({
+        inputs: liveInputs,
+        annualRatePct,
+        actuals: milestoneActuals,
+      }),
+    [liveInputs, annualRatePct, milestoneActuals]
+  );
+
+  function setMilestoneActual(goal: number, iso: string) {
+    setMilestoneActuals((prev) => {
+      const next = { ...prev };
+      if (!iso) delete next[String(goal)];
+      else next[String(goal)] = iso;
+      saveMilestoneActuals(next);
+      return next;
+    });
+  }
 
   function patchDraft<K extends keyof CompoundInputs>(
     key: K,
@@ -706,65 +727,90 @@ export function CompoundInterestSheet({
           </div>
         </div>
 
-        {/* 2 — Milestone race */}
+        {/* 2 — Milestone tracker (driven by compounder dial) */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
           <div className="flex flex-wrap items-center gap-2">
             <Target className="h-4 w-4 text-brand" />
-            <h4 className="text-sm font-semibold text-white">Milestone race</h4>
+            <h4 className="text-sm font-semibold text-white">
+              Milestone tracker
+            </h4>
           </div>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {[50_000, 100_000, 250_000, 500_000, 1_000_000].map((g) => (
-              <SegButton
-                key={g}
-                active={goal === g}
-                onClick={() => setGoal(g)}
-              >
-                {show(g)}
-              </SegButton>
-            ))}
-          </div>
-          <label className="mt-3 block text-[11px] text-zinc-500">
-            Custom goal
-            <FormattedNumberInput
-              kind="money"
-              currency={currency}
-              value={usdToDisplay(goal, currency, eurUsd)}
-              onChange={(n) =>
-                onMoneyUsdChange(n, (usd) => setGoal(Math.round(usd)))
-              }
-              className="mt-1 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            />
-          </label>
-          <div className="mt-4 flex flex-wrap items-center gap-5">
-            <div
-              className="relative grid h-24 w-24 place-items-center rounded-full"
-              style={{
-                background: `conic-gradient(var(--gain) ${Math.min(progress, 1) * 360}deg, #27272a 0)`,
-              }}
-            >
-              <div className="grid h-[4.5rem] w-[4.5rem] place-items-center rounded-full bg-[#161618] text-center">
-                <span className="text-sm font-semibold tabular-nums text-white">
-                  {Math.min(progress * 100, 999).toFixed(0)}%
-                </span>
-              </div>
-            </div>
-            <div className="text-sm text-zinc-300">
-              <p>
-                End of horizon:{" "}
-                <span className="font-semibold text-white">
-                  {show(result.futureValue)}
-                </span>
-                {" / "}
-                {show(goal)}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                {goalYear != null
-                  ? `Hits goal in year ${goalYear} on this path.`
-                  : etaYears != null
-                    ? `At this pace, roughly ${etaYears} years to the goal.`
-                    : "Won’t reach this goal in the current horizon — extend years or dial deposits."}
-              </p>
-            </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            Target dates and years-until recompute from your dialed principal,
+            rate, deposits, and compounding — same path as Calculate.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
+                  <th className="pb-2 pr-3 font-medium">Goal</th>
+                  <th className="pb-2 pr-3 font-medium">Target</th>
+                  <th className="pb-2 pr-3 font-medium">Actual</th>
+                  <th className="pb-2 pr-3 font-medium">Years until</th>
+                  <th className="pb-2 pr-3 font-medium">CAGR</th>
+                  <th className="pb-2 font-medium">Est. growth</th>
+                </tr>
+              </thead>
+              <tbody>
+                {milestones.map((row) => {
+                  const done = row.hit || Boolean(row.actualDate);
+                  return (
+                    <tr
+                      key={row.goal}
+                      className={cn(
+                        "border-b border-zinc-800/80",
+                        done && "text-zinc-500"
+                      )}
+                    >
+                      <td className="py-2.5 pr-3">
+                        <span className="inline-flex items-center gap-2 tabular-nums text-zinc-200">
+                          <span
+                            className={cn(
+                              "inline-block h-3.5 w-3.5 shrink-0 rounded border",
+                              done
+                                ? "border-zinc-600 bg-zinc-700"
+                                : "border-zinc-600 bg-transparent"
+                            )}
+                            aria-hidden
+                          />
+                          {show(row.goal)}
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                        {row.hit
+                          ? "—"
+                          : row.targetDate
+                            ? formatMilestoneDate(row.targetDate)
+                            : "Beyond 50y"}
+                      </td>
+                      <td className="py-2.5 pr-3">
+                        <input
+                          type="date"
+                          value={row.actualDate ?? ""}
+                          onChange={(e) =>
+                            setMilestoneActual(row.goal, e.target.value)
+                          }
+                          className="max-w-[9.5rem] rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-xs tabular-nums text-zinc-300 outline-none focus:border-brand"
+                        />
+                      </td>
+                      <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                        {row.hit
+                          ? "—"
+                          : row.yearsUntil != null
+                            ? row.yearsUntil.toFixed(1)
+                            : "—"}
+                      </td>
+                      <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                        {row.cagrPct != null ? `${row.cagrPct}%` : "—"}
+                      </td>
+                      <td className="py-2.5 tabular-nums text-zinc-300">
+                        {row.hit ? "—" : `${row.estGrowthPct}%`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 

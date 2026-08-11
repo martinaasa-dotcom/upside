@@ -335,3 +335,166 @@ export function estimateYearsToGoal(opts: {
   }
   return null;
 }
+
+/** Classic net-worth ladder — matches Martin’s sheet shape. */
+export const COMPOUND_MILESTONE_GOALS = [
+  0, 100_000, 200_000, 300_000, 500_000, 1_000_000, 2_000_000, 5_000_000,
+] as const;
+
+export const MILESTONE_ACTUALS_KEY = "upside-compound-milestone-actuals-v1";
+
+export type MilestoneActuals = Record<string, string>; // goal → YYYY-MM-DD
+
+export type CompoundMilestone = {
+  goal: number;
+  /** Already at/above this goal from current principal. */
+  hit: boolean;
+  /** Fractional years from now until balance crosses goal (0 if hit). */
+  yearsUntil: number | null;
+  /** Calendar target if yearsUntil is known. */
+  targetDate: Date | null;
+  /** Stored hit date (local), if any. */
+  actualDate: string | null;
+  /** Annual % used for this projection (from compounder dial). */
+  estGrowthPct: number;
+  /**
+   * CAGR between this hit goal and the previous hit goal, when both have
+   * actual dates. Null for projections / incomplete history.
+   */
+  cagrPct: number | null;
+};
+
+export function loadMilestoneActuals(): MilestoneActuals {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(MILESTONE_ACTUALS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as MilestoneActuals;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveMilestoneActuals(actuals: MilestoneActuals) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MILESTONE_ACTUALS_KEY, JSON.stringify(actuals));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Months until balance >= goal under the live compounder path (extends horizon). */
+export function monthsToGoal(
+  inputs: CompoundInputs,
+  goal: number,
+  maxYears = 50
+): number | null {
+  if (!(goal >= 0)) return null;
+  if (goal <= inputs.principal) return 0;
+  const sim = calculateCompound({
+    ...inputs,
+    years: maxYears,
+    months: 0,
+  });
+  for (const row of sim.monthly) {
+    if (row.index > 0 && row.balance >= goal) return row.index;
+  }
+  return null;
+}
+
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date.getTime());
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+function yearsBetweenKeys(fromIso: string, toIso: string): number | null {
+  const a = Date.parse(fromIso);
+  const b = Date.parse(toIso);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return null;
+  return (b - a) / (365.25 * 24 * 3600 * 1000);
+}
+
+/**
+ * Build the milestone ladder from the live compounder dial.
+ * Est. growth = the dialed annual rate (same path for every future goal).
+ * Target / Years until recompute whenever principal, rate, or deposits change.
+ */
+export function buildCompoundMilestones(opts: {
+  inputs: CompoundInputs;
+  annualRatePct: number;
+  actuals?: MilestoneActuals;
+  asOf?: Date;
+  goals?: readonly number[];
+  maxYears?: number;
+}): CompoundMilestone[] {
+  const {
+    inputs,
+    annualRatePct,
+    actuals = {},
+    asOf = new Date(),
+    goals = COMPOUND_MILESTONE_GOALS,
+    maxYears = 50,
+  } = opts;
+
+  const pending = goals.filter((g) => g > inputs.principal);
+  const sim =
+    pending.length > 0
+      ? calculateCompound({ ...inputs, years: maxYears, months: 0 })
+      : null;
+
+  const monthHits = new Map<number, number>();
+  if (sim) {
+    for (const goal of pending) {
+      for (const row of sim.monthly) {
+        if (row.index > 0 && row.balance >= goal) {
+          monthHits.set(goal, row.index);
+          break;
+        }
+      }
+    }
+  }
+
+  const rows: CompoundMilestone[] = goals.map((goal) => {
+    const hit = inputs.principal >= goal;
+    if (hit) {
+      return {
+        goal,
+        hit: true,
+        yearsUntil: 0,
+        targetDate: null,
+        actualDate: actuals[String(goal)] ?? null,
+        estGrowthPct: annualRatePct,
+        cagrPct: null,
+      };
+    }
+    const months = monthHits.get(goal) ?? null;
+    const yearsUntil =
+      months == null ? null : Math.round((months / 12) * 10) / 10;
+    return {
+      goal,
+      hit: false,
+      yearsUntil,
+      targetDate: months == null ? null : addMonths(asOf, months),
+      actualDate: actuals[String(goal)] ?? null,
+      estGrowthPct: annualRatePct,
+      cagrPct: null,
+    };
+  });
+
+  // CAGR between consecutive goals that both have actual dates
+  for (let i = 1; i < rows.length; i++) {
+    const prev = rows[i - 1]!;
+    const cur = rows[i]!;
+    if (!prev.actualDate || !cur.actualDate || prev.goal <= 0) continue;
+    const yrs = yearsBetweenKeys(prev.actualDate, cur.actualDate);
+    if (yrs == null || yrs <= 0) continue;
+    cur.cagrPct =
+      Math.round((Math.pow(cur.goal / prev.goal, 1 / yrs) - 1) * 1000) / 10;
+  }
+
+  return rows;
+}
+
