@@ -33,8 +33,8 @@ export function buildStrikeAlerts(
       out.push({
         id: `strike-near-${r.ticker}`,
         kind: "strike",
-        title: `${r.ticker} near Next Strike`,
-        detail: `Spot within ~2% of strike ${r.nextStrike.toFixed(2)}.`,
+        title: `${r.ticker} near planned Next Strike`,
+        detail: `Spot within ~2% of sheet strike ${r.nextStrike.toFixed(2)} — plan level, not a confirmed open call unless you logged premium.`,
         ticker: r.ticker,
         at: Date.now(),
       });
@@ -52,7 +52,7 @@ export function buildEarningsAlerts(
       id: `earn-${e.ticker}-${e.date}`,
       kind: "earnings" as const,
       title: `${e.ticker} earnings in ${e.days}d`,
-      detail: `Dated ${e.date} — prefer expire before if writing calls.`,
+      detail: `Dated ${e.date} — vol often expands into the print; CC writes into earnings can be attractive if you accept gap/assignment risk.`,
       ticker: e.ticker,
       at: Date.now(),
     }));

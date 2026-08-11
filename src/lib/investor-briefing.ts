@@ -26,6 +26,44 @@ function dayMoney(n: number): string {
   return `${sign}$${money(Math.abs(n))}`;
 }
 
+/** User logged a fill — only then talk roll / assignment. */
+function hasRecentPremiumLog(
+  cashflows: CashflowEntry[],
+  ticker: string,
+  withinDays = 60
+): boolean {
+  const cut = Date.now() - withinDays * 86400000;
+  const key = ticker.toUpperCase();
+  return cashflows.some(
+    (c) =>
+      c.kind === "premium" &&
+      c.ticker?.toUpperCase() === key &&
+      new Date(c.at).getTime() >= cut
+  );
+}
+
+function earningsBriefDetail(
+  names: string[],
+  coveredCallRows: CoveredCallRow[],
+  cashflows: CashflowEntry[]
+): string {
+  const withCc = names.filter(
+    (t) =>
+      coveredCallRows.some(
+        (r) =>
+          r.holding.ticker === t &&
+          r.contracts > 0 &&
+          (hasRecentPremiumLog(cashflows, t) ||
+            (r.premium != null && r.expiration))
+      )
+  );
+  const base = names.join(", ");
+  if (withCc.length > 0) {
+    return `${base}. ${withCc.join(", ")} — you have CC on the book; earnings vol can help or hurt depending on gap vs strike.`;
+  }
+  return `${base}. Vol often expands into the print — writing CC into earnings can be the play if you want premium and accept gap risk. Check each sheet’s CC table for strikes.`;
+}
+
 /**
  * Daily investor briefing — what to know when you open Upside.
  * Speaks in plain English. Per-ticker to-dos live under Alerts (Lab).
@@ -59,36 +97,65 @@ export function buildInvestorBriefing(input: {
     const todayPrint = soonEarn.some((e) => e.days === 0);
     items.push({
       id: `earn-week-${dayKey}`,
-      kind: "action",
+      kind: "watch",
       title: todayPrint
         ? `Earnings today — ${names.join(", ")}`
         : `${soonEarn.length} earnings in the next week`,
-      detail: `${names.join(", ")}${soonEarn.length > names.length ? "…" : ""}. If you’re writing calls, prefer expiries that finish before the print.`,
+      detail: earningsBriefDetail(names, coveredCallRows, cashflows),
     });
   }
 
-  const hotStrikes = coveredCallRows.filter((r) => {
+  // Spot vs write plan — only treat as an open CC if premium was logged
+  const nearWritePlan = coveredCallRows.filter((r) => {
     const spot = r.spot;
-    const strike = r.nextStrike;
-    if (spot == null || !(spot > 0) || strike == null || !(strike > 0))
-      return false;
-    return (
-      spot / strike >= 0.98 ||
-      (r.stockTarget != null && spot >= r.stockTarget)
-    );
+    if (spot == null || !(spot > 0)) return false;
+    const atTarget =
+      r.stockTarget != null && spot >= r.stockTarget * 0.98;
+    const atStrike =
+      r.nextStrike != null &&
+      r.nextStrike > 0 &&
+      spot / r.nextStrike >= 0.98;
+    return atTarget || atStrike;
   });
-  if (hotStrikes.length > 0) {
-    const names = [
-      ...new Set(hotStrikes.map((r) => r.holding.ticker)),
-    ].slice(0, 4);
+
+  const openCcNear = nearWritePlan.filter((r) =>
+    hasRecentPremiumLog(cashflows, r.holding.ticker)
+  );
+  const planOnlyNear = nearWritePlan.filter(
+    (r) => !hasRecentPremiumLog(cashflows, r.holding.ticker)
+  );
+
+  if (openCcNear.length > 0) {
+    const lines = openCcNear.slice(0, 3).map((r) => {
+      const strike = r.nextStrike;
+      const exp = r.expiration ? ` · exp ${r.expiration}` : "";
+      return strike != null
+        ? `${r.holding.ticker} ~$${Math.round(strike)}${exp}`
+        : r.holding.ticker;
+    });
     items.push({
-      id: `strikes-${dayKey}`,
+      id: `strikes-open-${dayKey}`,
       kind: "action",
       title:
-        hotStrikes.length === 1
-          ? `${names[0]} is hugging the call strike`
-          : `${hotStrikes.length} names near strike or through target`,
-      detail: `${names.join(", ")}. Decide: roll, widen, or take assignment — ask Margus if you want a write plan.`,
+        openCcNear.length === 1
+          ? `${openCcNear[0]!.holding.ticker} near your logged call`
+          : `${openCcNear.length} names near logged call strikes`,
+      detail: `${lines.join(" · ")}. You logged premium — worth a roll / hold / assignment call on the sheet.`,
+    });
+  }
+
+  if (planOnlyNear.length > 0 && openCcNear.length === 0) {
+    const names = [
+      ...new Set(planOnlyNear.map((r) => r.holding.ticker)),
+    ].slice(0, 3);
+    items.push({
+      id: `write-level-${dayKey}`,
+      kind: "watch",
+      title:
+        planOnlyNear.length === 1
+          ? `${names[0]} at your sheet write level`
+          : `${names.length} names at Stock Target / planned strike`,
+      detail: `${names.join(", ")} — spot is at the level your CC table targets, not a confirmed open call. Open the sheet CC row (or ask Margus there) before acting.`,
     });
   }
 
