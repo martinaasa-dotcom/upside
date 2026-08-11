@@ -66,3 +66,9 @@ on conflict (community_id, user_id) do update set role = 'admin';
 -- join portfell_profiles pr on lower(pr.email) = 'partner@example.com'
 -- where p.slug = 'aasad'
 -- on conflict do nothing;
+
+-- Karud co-owners (claim on first Google sign-in)
+insert into public.portfell_seed_claims (email, portfolio_slug) values
+  ('rasmusmarjapuu@gmail.com', 'karud'),
+  ('karukaroliine99@gmail.com', 'karud')
+on conflict do nothing;
