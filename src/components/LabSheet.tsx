@@ -65,6 +65,7 @@ import {
   CalendarDays,
   Copy,
   FlaskConical,
+  Info,
   Target,
   Trophy,
   Trash2,
@@ -176,11 +177,36 @@ export function LabSheet({
   const [challenge, setChallenge] = useState<ArenaChallenge | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchDraft, setWatchDraft] = useState("");
+  const [watchQuotes, setWatchQuotes] = useState<Record<string, Quote>>({});
   const [logFlash, setLogFlash] = useState<string | null>(null);
 
   useEffect(() => {
     setWatchlist(loadWatchlist());
   }, []);
+
+  // Watchlist exists to track names OUTSIDE the book, so `quotes` (book-scoped)
+  // rarely covers them — fetch live price/move for whichever aren't already
+  // known, on add/mount and hourly while the tab is visible.
+  const watchKey = watchlist.join(",");
+  useEffect(() => {
+    if (!watchKey) return;
+    const need = watchlist.filter((t) => !quotes[t] && !watchQuotes[t]);
+    if (need.length === 0) return;
+    let cancelled = false;
+    void fetch(`/api/quotes?tickers=${encodeURIComponent(need.join(","))}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { quotes?: Record<string, Quote> } | null) => {
+        if (cancelled || !data?.quotes) return;
+        setWatchQuotes((prev) => ({ ...prev, ...data.quotes }));
+      })
+      .catch(() => {
+        // Watchlist prices are a nice-to-have — a blip just leaves the "—" placeholder.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the ticker-list string, not quotes/watchQuotes identity churn
+  }, [watchKey]);
 
   useEffect(() => {
     if (!cloneSheetId && portfolios[0]) setCloneSheetId(portfolios[0].id);
@@ -634,27 +660,56 @@ export function LabSheet({
               </button>
             </form>
           )}
-          <ul className="flex flex-wrap gap-2">
-            {watchlist.map((t) => (
-              <li
-                key={t}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-950/50 px-2.5 py-1 text-sm text-zinc-200"
-              >
-                {t}
-                {!guest && (
-                  <button
-                    type="button"
-                    className="text-[10px] text-zinc-500 hover:text-rose-300"
-                    onClick={() =>
-                      setWatchlist((prev) => removeWatchlistTicker(prev, t))
-                    }
-                    aria-label={`Remove ${t}`}
-                  >
-                    ×
-                  </button>
-                )}
-              </li>
-            ))}
+          <ul className="space-y-1.5">
+            {watchlist.map((t) => {
+              const q = quotes[t] ?? watchQuotes[t];
+              const move = q?.changePercent ?? null;
+              return (
+                <li
+                  key={t}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-sm text-zinc-200"
+                >
+                  <span className="font-medium text-white">{t}</span>
+                  <span className="flex items-center gap-2.5">
+                    {q ? (
+                      <>
+                        <span className="tabular-nums text-zinc-300">
+                          {currency(q.price)}
+                        </span>
+                        <span
+                          className={cn(
+                            "tabular-nums text-xs font-medium",
+                            move == null
+                              ? "text-zinc-600"
+                              : move > 0
+                                ? "text-gain"
+                                : move < 0
+                                  ? "text-loss"
+                                  : "text-zinc-500"
+                          )}
+                        >
+                          {move != null ? percent(move) : "—"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-zinc-600">loading…</span>
+                    )}
+                    {!guest && (
+                      <button
+                        type="button"
+                        className="text-zinc-500 hover:text-rose-300"
+                        onClick={() =>
+                          setWatchlist((prev) => removeWatchlistTicker(prev, t))
+                        }
+                        aria-label={`Remove ${t}`}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
             {watchlist.length === 0 && (
               <li className="text-sm text-zinc-500">
                 Empty — add tickers you’re curious about.
@@ -1498,10 +1553,13 @@ export function LabSheet({
                   className="flex items-start justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-950/20 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm font-medium text-amber-100">
-                      {a.title}
-                    </p>
-                    <p className="text-xs text-amber-200/70">{a.detail}</p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <AlertKindBadge kind={a.kind} />
+                      <p className="text-sm font-medium text-amber-100">
+                        {a.title}
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-xs text-amber-200/70">{a.detail}</p>
                   </div>
                   {onDismissAlert && !guest && (
                     <button
@@ -1519,6 +1577,27 @@ export function LabSheet({
         </div>
       )}
     </div>
+  );
+}
+
+function AlertKindBadge({ kind }: { kind: UpsideAlert["kind"] }) {
+  const meta = {
+    earnings: { label: "Earnings", icon: CalendarDays, cls: "text-violet-300" },
+    strike: { label: "Strike", icon: Target, cls: "text-sky-300" },
+    goal: { label: "Milestone", icon: Trophy, cls: "text-amber-300" },
+    info: { label: "Decision", icon: Info, cls: "text-zinc-300" },
+  }[kind];
+  const Icon = meta.icon;
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-md bg-black/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        meta.cls
+      )}
+    >
+      <Icon className="h-3 w-3" />
+      {meta.label}
+    </span>
   );
 }
 

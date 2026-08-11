@@ -1,4 +1,22 @@
 import type { OverviewModel } from "@/lib/overview";
+import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
+
+/** ISO-ish week key (Mon-start) so the sign-off rotates weekly, not per render. */
+function weekKey(d: Date): string {
+  const copy = new Date(d.getTime());
+  const day = (copy.getDay() + 6) % 7; // Mon=0..Sun=6
+  copy.setDate(copy.getDate() - day);
+  return `${copy.getFullYear()}-${copy.getMonth()}-${copy.getDate()}`;
+}
+
+const SIGN_OFFS = [
+  "Margus: stay thesis-first — breathers are resets, not broken narratives. Write CCs on green rebounds.",
+  "Margus: the thesis didn't change just because the ticker did. Sell the news, not the vibes.",
+  "Margus: green weeks feel earned, red weeks feel personal — neither one is. Same plan either way.",
+  "Margus: boredom isn't a signal. If nothing broke the thesis, nothing needs to change.",
+  "Margus: premium is for the patient. Write calls on strength, not out of anxiety.",
+  "Margus: the book doesn't know what day it is. Judge the thesis on quarters, not candles.",
+];
 
 export function buildWeeklyRecap(model: OverviewModel): string {
   const lines: string[] = [];
@@ -33,9 +51,10 @@ export function buildWeeklyRecap(model: OverviewModel): string {
     );
   }
   lines.push("");
-  lines.push(
-    "Margus: stay thesis-first — breathers are resets, not broken narratives. Write CCs on green rebounds."
+  const rng = mulberry32(
+    hashSeed(`upside-recap-signoff|${weekKey(d)}|${Math.round(model.totals.totalValue)}`)
   );
+  lines.push(pick(rng, SIGN_OFFS));
   return lines.join("\n");
 }
 
