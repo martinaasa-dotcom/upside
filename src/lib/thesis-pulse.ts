@@ -229,6 +229,18 @@ export function buildPulseCandidates(
   });
 }
 
+/** Build one pulse row — for search / single-ticker check. */
+export function buildPulseCandidate(
+  ticker: string,
+  overview: OverviewModel,
+  quotes: Record<string, Quote>
+): PulseCandidate {
+  const key = ticker.trim().toUpperCase();
+  const row =
+    overview.tickers.find((t) => t.ticker.toUpperCase() === key) ?? null;
+  return toCandidate(key, row, quotes[key] ?? null, overview.totals.equityValue);
+}
+
 export function pulseCacheKey(tickers: string[]): string {
   const day = todayKeyInTz();
   const list = [...tickers].sort().join(",");

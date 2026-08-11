@@ -13,6 +13,7 @@ import type { OverviewModel } from "@/lib/overview";
 import type { Quote } from "@/lib/types";
 import {
   PULSE_DOWN_THRESHOLD,
+  buildPulseCandidate,
   buildPulseCandidates,
   formatMovePct,
   pulseCacheKey,
@@ -35,9 +36,10 @@ import {
   Search,
   TrendingDown,
   TrendingUp,
+  X,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   model: OverviewModel;
@@ -72,7 +74,8 @@ function ActionBadge({ action }: { action: PulseAction }) {
   );
 }
 
-function statusBorder(status: ThesisStatus, urgent: boolean) {
+function statusBorder(status: ThesisStatus, urgent: boolean, pinned: boolean) {
+  if (pinned) return "border-brand/50 bg-brand/10 ring-1 ring-brand/30";
   if (urgent && status !== "intact") {
     return "border-rose-500/40 bg-rose-950/25";
   }
@@ -87,32 +90,43 @@ function PulseCard({
   headlines,
   loading,
   convictionThesis,
+  pinned = false,
 }: {
   candidate: PulseCandidate;
   check?: PulseCheck;
   headlines: PulseHeadline[];
   loading: boolean;
   convictionThesis?: string;
+  pinned?: boolean;
 }) {
   const pct = c.effectivePct ?? 0;
   const up = pct >= 0;
   const status = check?.thesisStatus ?? (c.needsAttention ? "watch" : "intact");
+  const action = check?.action;
 
   return (
     <li
+      id={`pulse-card-${c.ticker}`}
       className={cn(
-        "rounded-xl border px-4 py-4",
+        "rounded-xl border px-4 py-4 scroll-mt-28",
         check
-          ? statusBorder(status, c.needsAttention)
-          : c.needsAttention
-            ? "border-rose-500/30 bg-rose-950/15"
-            : "border-zinc-800 bg-[#161618]/60"
+          ? statusBorder(status, c.needsAttention, pinned)
+          : pinned
+            ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30"
+            : c.needsAttention
+              ? "border-rose-500/30 bg-rose-950/15"
+              : "border-zinc-800 bg-[#161618]/60"
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-white">{c.ticker}</span>
+            {pinned && (
+              <span className="rounded bg-brand/20 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright">
+                Your check
+              </span>
+            )}
             {!c.inBook && (
               <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">
                 Lookup
@@ -152,7 +166,7 @@ function PulseCard({
         </div>
         {check && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <ActionBadge action={check.action} />
+            {action && <ActionBadge action={action} />}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-[11px] font-medium text-zinc-200">
               <StatusIcon status={status} />
               {statusLabel(status)}
@@ -210,22 +224,45 @@ function PulseCard({
   );
 }
 
+async function fetchQuote(ticker: string): Promise<Quote | null> {
+  try {
+    const res = await fetch(
+      `/api/quotes?tickers=${encodeURIComponent(ticker)}`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.quotes?.[ticker] as Quote | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function PulsePage({ model, quotes, convictions }: Props) {
   const [searchInput, setSearchInput] = useState("");
-  const [extraTickers, setExtraTickers] = useState<string[]>([]);
+  const [pinnedTicker, setPinnedTicker] = useState<string | null>(null);
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
+  const [checkingTicker, setCheckingTicker] = useState<string | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const mergedQuotes = useMemo(
     () => ({ ...quotes, ...lookupQuotes }),
     [quotes, lookupQuotes]
   );
 
+  const bookTickers = useMemo(
+    () => model.tickers.map((t) => t.ticker.toUpperCase()),
+    [model.tickers]
+  );
+
+  const suggestions = useMemo(() => {
+    const q = searchInput.trim().toUpperCase();
+    if (!q) return [];
+    return bookTickers.filter((t) => t.includes(q)).slice(0, 8);
+  }, [bookTickers, searchInput]);
+
   const candidates = useMemo(
-    () =>
-      buildPulseCandidates(model, mergedQuotes, {
-        extraTickers,
-      }),
-    [model, mergedQuotes, extraTickers]
+    () => buildPulseCandidates(model, mergedQuotes),
+    [model, mergedQuotes]
   );
 
   const cacheKey = useMemo(
@@ -241,13 +278,25 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);
 
+  const pinnedCandidate = useMemo(() => {
+    if (!pinnedTicker) return null;
+    return buildPulseCandidate(pinnedTicker, model, mergedQuotes);
+  }, [pinnedTicker, model, mergedQuotes]);
+
   const attention = useMemo(
-    () => candidates.filter((c) => c.needsAttention),
-    [candidates]
+    () =>
+      candidates.filter(
+        (c) => c.needsAttention && c.ticker.toUpperCase() !== pinnedTicker
+      ),
+    [candidates, pinnedTicker]
   );
   const rest = useMemo(
-    () => candidates.filter((c) => !c.needsAttention),
-    [candidates]
+    () =>
+      candidates.filter(
+        (c) =>
+          !c.needsAttention && c.ticker.toUpperCase() !== pinnedTicker
+      ),
+    [candidates, pinnedTicker]
   );
 
   useEffect(() => {
@@ -268,6 +317,16 @@ export function PulsePage({ model, quotes, convictions }: Props) {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!pinnedTicker) return;
+    const t = window.setTimeout(() => {
+      document
+        .getElementById(`pulse-card-${pinnedTicker}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [pinnedTicker, checkingTicker]);
 
   const runPulse = useCallback(
     async (force = false) => {
@@ -324,35 +383,86 @@ export function PulsePage({ model, quotes, convictions }: Props) {
     [cacheKey, candidates, convictions, fearGreed]
   );
 
+  const runSingleCheck = useCallback(
+    async (ticker: string, quoteMap: Record<string, Quote>) => {
+      const key = ticker.toUpperCase();
+      const candidate = buildPulseCandidate(key, model, quoteMap);
+      setCheckingTicker(key);
+      setLoading(true);
+      setError(null);
+      try {
+        const entry = convictions[key];
+        const res = await fetch("/api/thesis/pulse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidates: [candidate],
+            convictions: entry
+              ? { [key]: { thesis: entry.thesis, level: entry.level } }
+              : {},
+            fearGreed,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error ?? "Pulse check failed");
+        }
+        const single = data.report as PulseReport;
+        const newHeadlines =
+          (data.headlines as Record<string, PulseHeadline[]>) ?? {};
+
+        setReport((prev) => {
+          const checks = [...(prev?.checks ?? [])].filter(
+            (c) => c.ticker.toUpperCase() !== key
+          );
+          checks.push(...(single.checks ?? []));
+          return {
+            summary: single.summary || prev?.summary || "",
+            checks,
+            generatedAt: new Date().toISOString(),
+          };
+        });
+        setHeadlinesByTicker((prev) => ({ ...prev, ...newHeadlines }));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Pulse check failed");
+      } finally {
+        setLoading(false);
+        setCheckingTicker(null);
+      }
+    },
+    [convictions, fearGreed, model]
+  );
+
   useEffect(() => {
     if (candidates.length === 0) return;
     void runPulse(false);
   }, [candidates, runPulse]);
 
-  async function submitSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const ticker = searchInput.trim().toUpperCase();
+  async function checkTicker(tickerRaw: string) {
+    const ticker = tickerRaw.trim().toUpperCase();
     if (!ticker) return;
     setSearchInput("");
+    setPinnedTicker(ticker);
+    setError(null);
 
-    if (!mergedQuotes[ticker]) {
-      try {
-        const res = await fetch(
-          `/api/quotes?tickers=${encodeURIComponent(ticker)}`
-        );
-        const data = await res.json();
-        const q = data.quotes?.[ticker] as Quote | undefined;
-        if (q) {
-          setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
-        }
-      } catch {
-        /* still add ticker — API will fetch news */
+    let quoteMap = mergedQuotes;
+    if (!quoteMap[ticker]) {
+      const q = await fetchQuote(ticker);
+      if (q) {
+        setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
+        quoteMap = { ...quoteMap, [ticker]: q };
+      } else {
+        setError(`Could not fetch a quote for ${ticker} — check the symbol.`);
+        return;
       }
     }
 
-    setExtraTickers((prev) =>
-      prev.includes(ticker) ? prev : [...prev, ticker]
-    );
+    await runSingleCheck(ticker, quoteMap);
+  }
+
+  async function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    await checkTicker(searchInput);
   }
 
   const checksByTicker = useMemo(() => {
@@ -363,6 +473,8 @@ export function PulsePage({ model, quotes, convictions }: Props) {
     return map;
   }, [report]);
 
+  const pinnedLoading = checkingTicker === pinnedTicker || (loading && !checksByTicker.get(pinnedTicker ?? ""));
+
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
@@ -372,14 +484,12 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               Thesis Pulse
             </p>
             <h2 className="mt-1 text-lg font-semibold text-white">
-              Should you sell — or is the thesis intact?
+              Should you sell — or add the dip?
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-              Built for red days: should you sell — or add the dip? Flags big
-              lines down {formatMovePct(-PULSE_DOWN_THRESHOLD)}+ (incl.
-              pre/after-hours), pulls news, and gives an action + price level.
-              Intact thesis dips on house names should read as adds, not
-              automatic holds.
+              Type any ticker and hit Check — even if it&apos;s already in your
+              book. Big book loads below; your check pins to the top with fresh
+              news.
             </p>
           </div>
           <button
@@ -389,28 +499,64 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            Refresh
+            Refresh all
           </button>
         </div>
 
         <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex gap-2">
-          <div className="relative min-w-0 flex-1">
+          <div ref={searchRef} className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
-              placeholder="Check any ticker — e.g. RKLB"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && suggestions[0]) {
+                  e.preventDefault();
+                  void checkTicker(suggestions[0]!);
+                }
+              }}
+              placeholder="Type ticker — BMNR, RKLB, NVDA…"
               className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+              autoComplete="off"
             />
+            {suggestions.length > 0 && searchInput.trim().length > 0 && (
+              <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-xl">
+                {suggestions.map((t) => (
+                  <li key={t}>
+                    <button
+                      type="button"
+                      className="block w-full px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-900"
+                      onClick={() => void checkTicker(t)}
+                    >
+                      {t}
+                      <span className="ml-2 text-xs text-zinc-500">in book</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <button
             type="submit"
-            disabled={!searchInput.trim()}
+            disabled={!searchInput.trim() || loading}
             className="shrink-0 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
           >
-            Check
+            {checkingTicker ? "Checking…" : "Check"}
           </button>
         </form>
+
+        {pinnedTicker && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-brand-bright">
+            <span>Pinned: {pinnedTicker}</span>
+            <button
+              type="button"
+              onClick={() => setPinnedTicker(null)}
+              className="inline-flex items-center gap-0.5 text-zinc-500 hover:text-zinc-300"
+            >
+              <X className="h-3 w-3" /> Clear
+            </button>
+          </div>
+        )}
 
         {fearGreed && (
           <p className="mt-3 text-xs text-zinc-500">
@@ -429,7 +575,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           </p>
         )}
 
-        {report?.summary && (
+        {report?.summary && !pinnedTicker && (
           <p className="mt-3 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-3 py-2 text-sm text-zinc-200">
             {report.summary}
           </p>
@@ -443,7 +589,29 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         )}
       </section>
 
-      {candidates.length === 0 ? (
+      {pinnedCandidate && (
+        <section>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-bright">
+            Your check
+          </h3>
+          <ul className="space-y-3">
+            <PulseCard
+              candidate={pinnedCandidate}
+              check={checksByTicker.get(pinnedCandidate.ticker.toUpperCase())}
+              headlines={
+                headlinesByTicker[pinnedCandidate.ticker.toUpperCase()] ?? []
+              }
+              loading={pinnedLoading}
+              convictionThesis={
+                convictions[pinnedCandidate.ticker.toUpperCase()]?.thesis
+              }
+              pinned
+            />
+          </ul>
+        </section>
+      )}
+
+      {candidates.length === 0 && !pinnedCandidate ? (
         <section className="rounded-xl border border-zinc-800 bg-zinc-950/30 px-4 py-8 text-center">
           <p className="text-sm text-zinc-300">No positions in the book yet.</p>
           <p className="mt-1 text-xs text-zinc-500">
@@ -464,7 +632,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                     candidate={c}
                     check={checksByTicker.get(c.ticker.toUpperCase())}
                     headlines={headlinesByTicker[c.ticker.toUpperCase()] ?? []}
-                    loading={loading}
+                    loading={loading && checkingTicker !== c.ticker}
                     convictionThesis={
                       convictions[c.ticker.toUpperCase()]?.thesis
                     }
@@ -488,7 +656,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                     candidate={c}
                     check={checksByTicker.get(c.ticker.toUpperCase())}
                     headlines={headlinesByTicker[c.ticker.toUpperCase()] ?? []}
-                    loading={loading}
+                    loading={loading && checkingTicker !== c.ticker}
                     convictionThesis={
                       convictions[c.ticker.toUpperCase()]?.thesis
                     }
@@ -507,8 +675,6 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             dateStyle: "medium",
             timeStyle: "short",
           })}
-          {" · "}
-          cached for today
         </p>
       )}
     </div>
