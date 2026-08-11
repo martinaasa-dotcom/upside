@@ -47,7 +47,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   const { data: profiles } = userIds.length
     ? await supabase
         .from(PORTFELL_TABLES.profiles)
-        .select("id, email, display_name, avatar_url")
+        .select("id, email, display_name, avatar_url, bio")
         .in("id", userIds)
     : { data: [] };
 

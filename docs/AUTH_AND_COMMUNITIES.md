@@ -27,12 +27,18 @@ Ops SQL: `scripts/seed-ownership.sql`.
 
 Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email": "…" }` (caller must already co-own).
 
+## My Account (`/account`)
+
+- **Community profile**: `display_name`, `bio`, `avatar_url` via `PATCH /api/auth/me` — shown on community member lists.
+- **Portfolio invites**: mint shareable codes/links (`POST /api/portfolios/:id/invites`). Partner accepts at `/account/join?code=…` (`POST /api/portfolios/join`). Optional email locks the invite; if they already have a profile, Account tries direct co-owner add first.
+
 ## Migrations
 
 - `008` profiles + ownership + communities + RLS  
 - `009` share links `created_by`  
 - `010` claim RPC (superseded claim body in `011`)  
 - `011` `portfell_portfolio_owners` + co-owner RLS  
+- `012` profile `bio` + `portfell_portfolio_invites`  
 
 ## PIN notes
 

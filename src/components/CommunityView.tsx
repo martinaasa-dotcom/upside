@@ -22,6 +22,7 @@ type Profile = {
   email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  bio?: string | null;
 };
 
 type Member = {
@@ -322,6 +323,11 @@ export function CommunityView({ communityId }: Props) {
                               </span>
                             )}
                           </div>
+                          {m.profile?.bio ? (
+                            <div className="text-xs text-zinc-400">
+                              {m.profile.bio}
+                            </div>
+                          ) : null}
                           <div className="text-xs text-zinc-500">
                             {m.role}
                             {" · "}

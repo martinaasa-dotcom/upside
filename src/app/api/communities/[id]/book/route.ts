@@ -50,7 +50,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
   const [{ data: profiles }, { data: ownership }] = await Promise.all([
     supabase
       .from(PORTFELL_TABLES.profiles)
-      .select("id, email, display_name, avatar_url")
+      .select("id, email, display_name, avatar_url, bio")
       .in("id", userIds),
     supabase
       .from(PORTFELL_TABLES.portfolioOwners)
