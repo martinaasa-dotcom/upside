@@ -23,10 +23,10 @@ import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useAuth } from "@/components/AuthProvider";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   buildEarningsAlerts,
@@ -2147,12 +2147,7 @@ export function Dashboard() {
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
             {source === "supabase" && !guestMode && (
-              <Link
-                href="/communities"
-                className="hidden rounded-md border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 sm:inline-flex"
-              >
-                Communities
-              </Link>
+              <WorkspaceSwitcher className="mr-0.5" />
             )}
             {source === "supabase" && needsSheetUnlock && !guestMode && (
               <button
@@ -2311,6 +2306,7 @@ export function Dashboard() {
               cashflows={labBundle.cashflows}
               marketState={marketState}
               guest={guestMode}
+              showCommunities={source === "supabase" && !guestMode}
               onOpenLab={(tab) => {
                 if (tab) setLabIntent(tab);
                 setActiveId(LAB_TAB_ID);
@@ -2503,6 +2499,11 @@ export function Dashboard() {
         onChange={setActiveId}
         onAdd={handleAddSheet}
         guest={guestMode}
+        onOpenCommunities={
+          source === "supabase" && !guestMode
+            ? () => router.push("/communities")
+            : undefined
+        }
         onRenameRequest={(id, name) => setRenameTarget({ id, name })}
         onDeleteRequest={(id, name) =>
           setConfirmDelete({ kind: "sheet", id, label: name })

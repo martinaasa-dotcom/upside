@@ -2,6 +2,7 @@
 
 import { Sparkline } from "@/components/Sparkline";
 import { DailyDuelCard } from "@/components/DailyDuelCard";
+import { CommunitiesSpotlight } from "@/components/CommunitiesSpotlight";
 import {
   currency,
   percent,
@@ -78,6 +79,8 @@ type Props = {
   guest?: boolean;
   /** Personal daily-visit streak — null for guests / before it loads. */
   visitStreak?: VisitStreakState | null;
+  /** Show communities spotlight (signed-in My book Overview). */
+  showCommunities?: boolean;
 };
 
 function BriefingCard({
@@ -296,6 +299,7 @@ export function OverviewDashboard({
   marketState = null,
   guest = false,
   visitStreak = null,
+  showCommunities = false,
 }: Props) {
   const {
     totals,
@@ -429,6 +433,10 @@ export function OverviewDashboard({
 
   return (
     <div className="space-y-8">
+      {showCommunities && !guest && (
+        <CommunitiesSpotlight />
+      )}
+
       {/* Hero habit loop — sticky on phone */}
       <section className="overview-fade space-y-3 max-sm:static max-sm:z-0 sm:space-y-3">
         <div className="relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/95 p-4 shadow-lg shadow-black/40 backdrop-blur-md sm:bg-[#161618]/80 sm:p-7 sm:shadow-none sm:backdrop-blur-none">

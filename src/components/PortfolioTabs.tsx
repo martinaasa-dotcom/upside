@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, FlaskConical, LayoutDashboard, Plus, Activity } from "lucide-react";
+import { Calculator, FlaskConical, LayoutDashboard, Plus, Activity, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
@@ -21,6 +21,8 @@ type Props = {
   onDeleteRequest?: (id: string, name: string) => void;
   /** Guests: Overview + Compound only — no Lab / sheet mutations. */
   guest?: boolean;
+  /** Opens Communities workspace (signed-in). */
+  onOpenCommunities?: () => void;
   /** Compact book/sheet totals shown above tabs on phone. */
   mobileSummary?: {
     title: string;
@@ -69,6 +71,7 @@ export function PortfolioTabs({
   onRenameRequest,
   onDeleteRequest,
   guest = false,
+  onOpenCommunities,
   mobileSummary,
 }: Props) {
   const [adding, setAdding] = useState(false);
@@ -210,46 +213,62 @@ export function PortfolioTabs({
         )}
 
         {/* App modes — one segmented control, equal cells (Lab isn't tiny) */}
-        <div className="shrink-0 md:min-w-0">
-          <p className="mb-1 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:block">
-            Workspace
-          </p>
-          <div
-            role="tablist"
-            aria-label="Workspace"
-            className={cn(
-              "grid h-11 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
-              modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
-              modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
-              modeCols >= 4 && "grid-cols-4 sm:w-[28rem]"
-            )}
-          >
-            {modes.map(({ id, label, Icon }) => {
-              const active = activeId === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => {
-                    setMenu(null);
-                    onChange(id);
-                  }}
-                  className={cn(
-                    "touch-target inline-flex min-w-0 items-center justify-center gap-1 px-1.5 text-[11px] font-medium transition sm:gap-1.5 sm:px-2 sm:text-[13px]",
-                    active
-                      ? "bg-brand text-[#121214] shadow-sm"
-                      : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                  <span className="hidden truncate sm:inline">{label}</span>
-                  <span className="sr-only sm:hidden">{label}</span>
-                </button>
-              );
-            })}
+        <div className="flex shrink-0 items-end gap-2 md:min-w-0">
+          <div className="min-w-0 flex-1 sm:flex-none">
+            <p className="mb-1 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:block">
+              Workspace
+            </p>
+            <div
+              role="tablist"
+              aria-label="Workspace"
+              className={cn(
+                "grid h-11 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
+                modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
+                modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
+                modeCols >= 4 && "grid-cols-4 sm:w-[28rem]"
+              )}
+            >
+              {modes.map(({ id, label, Icon }) => {
+                const active = activeId === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      setMenu(null);
+                      onChange(id);
+                    }}
+                    className={cn(
+                      "touch-target inline-flex min-w-0 items-center justify-center gap-1 px-1.5 text-[11px] font-medium transition sm:gap-1.5 sm:px-2 sm:text-[13px]",
+                      active
+                        ? "bg-brand text-[#121214] shadow-sm"
+                        : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                    <span className="hidden truncate sm:inline">{label}</span>
+                    <span className="sr-only sm:hidden">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          {onOpenCommunities && (
+            <button
+              type="button"
+              onClick={() => {
+                setMenu(null);
+                onOpenCommunities();
+              }}
+              className="touch-target inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg border border-brand-mid/45 bg-brand/15 px-2.5 text-[11px] font-semibold text-brand-bright transition hover:bg-brand/25 sm:px-3 sm:text-[13px]"
+              aria-label="Communities"
+            >
+              <Users className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="hidden sm:inline">Communities</span>
+            </button>
+          )}
         </div>
 
         {/* Sheets — different language: text rail, not twin chips */}
