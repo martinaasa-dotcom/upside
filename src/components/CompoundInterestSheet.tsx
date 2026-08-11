@@ -13,6 +13,7 @@ import {
   buildCompareScenarios,
   buildCompoundMilestones,
   buildNarrative,
+  buildYearStories,
   calculateWithShock,
   findTippingYear,
   loadMilestoneActuals,
@@ -293,6 +294,11 @@ export function CompoundInterestSheet({
   const storyRow =
     result.yearly.find((y) => y.index === storyYear) ??
     result.yearly[result.yearly.length - 1];
+
+  const yearStories = useMemo(
+    () => buildYearStories(result, storyOpts, tipping),
+    [result, storyOpts, tipping]
+  );
 
   const annualRatePct =
     liveInputs.ratePeriod === "annual"
@@ -837,12 +843,8 @@ export function CompoundInterestSheet({
                 {show(storyRow.balance)}
               </p>
               <p className="mt-2 text-sm text-zinc-400">
-                {storyRow.index === 0
-                  ? "Starting line — nothing compounded yet."
-                  : storyRow.interest > storyRow.contributions &&
-                      storyRow.contributions > 0
-                    ? `Interest this year (${show(storyRow.interest)}) beats deposits (${show(storyRow.contributions)}). Money is working harder than you.`
-                    : `Interest earned this year: ${show(storyRow.interest)}. Accrued interest: ${show(storyRow.accruedInterest)}.`}
+                {yearStories.get(storyRow.index) ??
+                  `Interest earned this year: ${show(storyRow.interest)}. Accrued interest: ${show(storyRow.accruedInterest)}.`}
               </p>
             </div>
           )}

@@ -4,6 +4,7 @@ import {
   type CompoundResult,
   type PeriodRow,
 } from "@/lib/compound-interest";
+import { hashSeed, mulberry32, pick, shuffleInPlace } from "@/lib/seeded-rng";
 
 export type ShockKind = "none" | "drawdown30" | "flat2y";
 
@@ -312,6 +313,196 @@ function formatHorizon(years: number): string {
   const m = Math.round((years - y) * 12);
   if (m <= 0) return `${y} year${y === 1 ? "" : "s"}`;
   return `${y}y ${m}m`;
+}
+
+const MILESTONE_ROUNDS = [
+  50_000, 100_000, 250_000, 500_000, 1_000_000, 2_000_000, 5_000_000,
+  10_000_000,
+];
+
+type YearStoryAngle = (ctx: {
+  row: PeriodRow;
+  prevRow: PeriodRow | null;
+  result: CompoundResult;
+  rng: () => number;
+}) => string | null;
+
+/** Different lenses on the same year so the story never feels canned. */
+const YEAR_STORY_ANGLES: YearStoryAngle[] = [
+  // Flip framing — interest out-earning fresh deposits.
+  ({ row, rng }) => {
+    if (!(row.contributions > 0 && row.interest > row.contributions)) return null;
+    return pick(rng, [
+      `Interest this year (${fmt(row.interest)}) beat your deposits (${fmt(row.contributions)}) — the money's outworking you now.`,
+      `${fmt(row.interest)} in interest vs ${fmt(row.contributions)} deposited. Compounding just clocked more hours than you did.`,
+      `You put in ${fmt(row.contributions)}; the math added ${fmt(row.interest)} on top of it. That's the flip.`,
+      `${fmt(row.interest)} of "free" money this year — more than the ${fmt(row.contributions)} you actually deposited.`,
+    ]);
+  },
+  // Still deposit-led — pre-flip years.
+  ({ row, rng }) => {
+    if (!(row.contributions > 0 && row.interest <= row.contributions)) return null;
+    return pick(rng, [
+      `Still deposit-led this year: ${fmt(row.contributions)} in from you, ${fmt(row.interest)} from compounding. The flip is coming.`,
+      `${fmt(row.contributions)} of your own cash vs ${fmt(row.interest)} of interest — the ratio's about to swap.`,
+      `Interest (${fmt(row.interest)}) hasn't caught your deposits (${fmt(row.contributions)}) yet. Patience is the whole strategy.`,
+    ]);
+  },
+  // Pure compounding — no deposits this year at all.
+  ({ row, rng }) => {
+    if (row.contributions !== 0 || row.index <= 0) return null;
+    return pick(rng, [
+      `Pure compounding: zero fresh cash added, and the balance still grew by ${fmt(row.interest)} this year.`,
+      `No deposits, ${fmt(row.interest)} of growth anyway — this is compounding doing its one job.`,
+      `You didn't add a cent this year. Math added ${fmt(row.interest)} on your behalf.`,
+    ]);
+  },
+  // Year-over-year acceleration.
+  ({ row, prevRow, rng }) => {
+    if (!prevRow || prevRow.interest <= 0 || row.interest <= prevRow.interest) return null;
+    const delta = row.interest - prevRow.interest;
+    return pick(rng, [
+      `Interest went from ${fmt(prevRow.interest)} last year to ${fmt(row.interest)} this year — the snowball's picking up speed.`,
+      `+${fmt(delta)} more interest than last year, same habits. That's the S-curve talking.`,
+      `Year-over-year interest is up ${fmt(delta)}. The balance is starting to do the work for you.`,
+    ]);
+  },
+  // Growth multiple vs starting principal.
+  ({ row, result, rng }) => {
+    if (!(result.principal > 0) || row.index <= 0) return null;
+    const mult = row.balance / result.principal;
+    if (!(mult > 1.05)) return null;
+    return pick(rng, [
+      `Started at ${fmt(result.principal)}, now at ${fmt(row.balance)} — a ${mult.toFixed(1)}x multiple.`,
+      `${mult.toFixed(1)}x your starting stake, and it's not done climbing.`,
+      `Your original ${fmt(result.principal)} has turned into ${fmt(row.balance)} — ${mult.toFixed(1)}x and counting.`,
+    ]);
+  },
+  // Share of balance that's pure interest.
+  ({ row, rng }) => {
+    if (!(row.balance > 0 && row.accruedInterest > 0)) return null;
+    const sharePct = Math.round((row.accruedInterest / row.balance) * 100);
+    if (sharePct < 5) return null;
+    return pick(rng, [
+      `${sharePct}% of this balance is interest you never had to lift a finger for.`,
+      `Roughly ${sharePct}% of the pile is compounding's contribution, not yours.`,
+      `${sharePct}% math, ${100 - sharePct}% deposits — and the math side only grows.`,
+    ]);
+  },
+  // Round-number milestone crossed this specific year.
+  ({ row, prevRow, rng }) => {
+    const prevBalance = prevRow?.balance ?? 0;
+    const crossed = [...MILESTONE_ROUNDS]
+      .filter((m) => prevBalance < m && row.balance >= m)
+      .pop();
+    if (crossed == null) return null;
+    return pick(rng, [
+      `This is the year you crossed ${fmt(crossed)} — new bragging-rights tier unlocked.`,
+      `${fmt(crossed)}, crossed. Onward.`,
+      `Somewhere in year ${row.index}, the balance quietly stepped past ${fmt(crossed)}.`,
+    ]);
+  },
+  // Fun real-world equivalent for this year's interest alone.
+  ({ row, rng }) => {
+    if (!(row.interest > 0)) return null;
+    const rentMonths = row.interest / 1800;
+    const flights = Math.round(row.interest / 450);
+    const downPayments = row.interest / 5000;
+    return pick(rng, [
+      `${fmt(row.interest)} of interest this year ≈ ${rentMonths.toFixed(1)} months of rent. Math pays better than a raise.`,
+      `${fmt(row.interest)} in interest could cover ~${flights.toLocaleString("en-US")} round-trip flights. Compounding, your unofficial travel agent.`,
+      `This year's interest alone (${fmt(row.interest)}) is about ${downPayments.toFixed(1)} car down payments.`,
+    ]);
+  },
+  // Doubling pace.
+  ({ row, result, rng }) => {
+    if (!(result.doubleYears < 60) || row.index <= 0) return null;
+    const doubleYearsExact = result.doubleYears + result.doubleMonths / 12;
+    if (!(doubleYearsExact > 0)) return null;
+    const doublings = row.index / doubleYearsExact;
+    if (!(doublings >= 0.4)) return null;
+    return pick(rng, [
+      `At this pace your money doubles roughly every ${result.doubleYears}y ${result.doubleMonths}m — you're about ${doublings.toFixed(1)} doublings in.`,
+      `Doubling clock: every ~${result.doubleYears}y ${result.doubleMonths}m. Year ${row.index} puts you ${doublings.toFixed(1)} doublings deep.`,
+    ]);
+  },
+  // Cumulative return on every dollar deposited, through this year.
+  ({ row, result, rng }) => {
+    const deposited = result.principal + Math.max(0, row.accruedContributions);
+    if (!(deposited > 0 && row.accruedInterest > 0)) return null;
+    const roiSoFar = row.accruedInterest / deposited;
+    if (!(roiSoFar > 0.05)) return null;
+    return pick(rng, [
+      `Cumulative return through year ${row.index}: ${(roiSoFar * 100).toFixed(0)}% on every dollar you've put in.`,
+      `Every dollar deposited has earned back ${(roiSoFar * 100).toFixed(0)}% so far — and it keeps compounding.`,
+    ]);
+  },
+];
+
+/**
+ * One story per requested year, deterministic for a given result + year set,
+ * round-robined across different angles so tabs don't repeat the same
+ * template — that repetition was the whole complaint with the old version.
+ */
+export function buildYearStories(
+  result: CompoundResult,
+  years: number[],
+  tippingYear: number | null
+): Map<number, string> {
+  const out = new Map<number, string>();
+  const seed = hashSeed(
+    `upside-year-story|${result.principal}|${result.totalInterest.toFixed(0)}|${years.join(",")}`
+  );
+  const rng = mulberry32(seed);
+  const angleOrder = shuffleInPlace(rng, YEAR_STORY_ANGLES.map((_, i) => i));
+
+  let rotation = 0;
+  for (const year of years) {
+    const row = result.yearly.find((y) => y.index === year);
+    if (!row) continue;
+    const prevRow = result.yearly.find((y) => y.index === year - 1) ?? null;
+
+    if (row.index === 0) {
+      out.set(
+        year,
+        pick(rng, [
+          "Starting line — nothing compounded yet.",
+          "Day one. Every doubling starts here.",
+          "The before picture. Check back next year.",
+        ])
+      );
+      continue;
+    }
+
+    if (tippingYear != null && year === tippingYear) {
+      out.set(
+        year,
+        pick(rng, [
+          `The flip: year ${year} is the first time interest (${fmt(row.interest)}) outran your deposits (${fmt(row.contributions)}). From here, the money mostly carries itself.`,
+          `Tipping point unlocked — year ${year}, ${fmt(row.interest)} of interest beats ${fmt(row.contributions)} deposited for the first time.`,
+        ])
+      );
+      continue;
+    }
+
+    let picked: string | null = null;
+    for (let i = 0; i < angleOrder.length; i++) {
+      const angle = YEAR_STORY_ANGLES[angleOrder[(rotation + i) % angleOrder.length]!]!;
+      const candidate = angle({ row, prevRow, result, rng });
+      if (candidate) {
+        picked = candidate;
+        rotation += i + 1;
+        break;
+      }
+    }
+    out.set(
+      year,
+      picked ??
+        `Interest earned this year: ${fmt(row.interest)}. Accrued interest: ${fmt(row.accruedInterest)}.`
+    );
+  }
+
+  return out;
 }
 
 /** Solve roughly how many years to hit goal at rate + optional monthly deposit. */
