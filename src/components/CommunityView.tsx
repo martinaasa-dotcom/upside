@@ -1,6 +1,7 @@
 "use client";
 
 import { SignInGate } from "@/components/SignInGate";
+import { track } from "@vercel/analytics";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -287,6 +288,7 @@ export function CommunityView({ communityId }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Invite failed");
+      track("community_invite_created");
       const url = `${window.location.origin}${data.path}`;
       setInviteUrl(url);
       await navigator.clipboard.writeText(url).catch(() => undefined);

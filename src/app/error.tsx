@@ -13,6 +13,18 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error("Unhandled Upside render error", error);
+    void fetch("/api/internal/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        digest: error.digest,
+        path: window.location.pathname,
+      }),
+    }).catch(() => {
+      /* reporting is best-effort */
+    });
   }, [error]);
 
   return (

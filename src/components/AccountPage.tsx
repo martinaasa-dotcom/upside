@@ -5,6 +5,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { track } from "@vercel/analytics";
 import {
   AlertTriangle,
   Check,
@@ -165,6 +166,7 @@ export function AccountPage() {
         });
         const data = await res.json();
         if (res.ok) {
+          track("portfolio_invite_created", { direct_add: true });
           setInviteMsg(`Added ${email} as co-owner.`);
           setInviteEmail("");
           await loadOwners(selectedId);
@@ -187,6 +189,7 @@ export function AccountPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not create invite");
 
+      track("portfolio_invite_created");
       const url = `${window.location.origin}${data.path}`;
       setInviteLink(url);
       setInviteCode(data.code ?? data.token);

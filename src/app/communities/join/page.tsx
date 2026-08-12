@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { AuthProvider } from "@/components/AuthProvider";
 import { SignInGate } from "@/components/SignInGate";
 import { UpsideLogo } from "@/components/UpsideLogo";
@@ -29,6 +30,7 @@ function JoinInner() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Join failed");
         if (cancelled) return;
+        track("community_invite_redeemed");
         setDone(true);
         router.replace(`/communities/${data.communityId}`);
       } catch (e) {

@@ -1,14 +1,33 @@
 "use client";
 
+import { useEffect } from "react";
+
 // global-error replaces the root layout when the layout itself throws, so
 // it can't rely on globals.css/Tailwind or the app's providers — it must
 // bring its own <html>/<body> and inline styles.
 export default function GlobalError({
+  error,
   retry,
 }: {
   error: Error & { digest?: string };
   retry: () => void;
 }) {
+  useEffect(() => {
+    console.error("Unhandled Upside layout error", error);
+    void fetch("/api/internal/log-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        digest: error.digest,
+        path: window.location.pathname,
+      }),
+    }).catch(() => {
+      /* reporting is best-effort */
+    });
+  }, [error]);
+
   return (
     <html lang="en">
       <body

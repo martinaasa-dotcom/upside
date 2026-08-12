@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
 import { STRATEGY } from "@/lib/calculations";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
@@ -593,6 +594,10 @@ export function CcAdvisorChat({
     const files = pendingImages;
     setPendingImages([]);
     clearError();
+    track("margus_message", {
+      has_image: files.length > 0,
+      guest: context.adviseOnly,
+    });
     await sendMessage({
       text:
         text ||

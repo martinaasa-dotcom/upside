@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import {
   currency,
   percent,
@@ -431,6 +432,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               })
           );
       if (stale.length === 0) return;
+      if (force) track("thesis_pulse_refresh", { tickers: stale.length });
 
       const staleKeys = stale.map((c) => c.ticker.toUpperCase());
       for (const key of staleKeys) inFlightRef.current.add(key);

@@ -5,7 +5,15 @@ import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
-import { AlertTriangle, RefreshCw, Search, Shield } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import {
+  AlertTriangle,
+  Bug,
+  RefreshCw,
+  Search,
+  Shield,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -36,6 +44,18 @@ type AdminCommunity = {
   members: AdminMember[];
 };
 
+type AdminErrorLog = {
+  id: string;
+  source: "client" | "server";
+  message: string;
+  stack: string | null;
+  digest: string | null;
+  path: string | null;
+  route_type: string | null;
+  user_email: string | null;
+  created_at: string;
+};
+
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   try {
@@ -57,6 +77,30 @@ export function AdminPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [errorLog, setErrorLog] = useState<AdminErrorLog[]>([]);
+  const [errorLogLoading, setErrorLogLoading] = useState(true);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
+  const [confirmClearErrors, setConfirmClearErrors] = useState(false);
+
+  const loadErrorLog = useCallback(async () => {
+    setErrorLogLoading(true);
+    try {
+      const res = await fetch("/api/admin/errors", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) setErrorLog(data.errors ?? []);
+    } catch {
+      /* non-critical secondary panel */
+    } finally {
+      setErrorLogLoading(false);
+    }
+  }, []);
+
+  async function clearErrorLog() {
+    const res = await fetch("/api/admin/errors", { method: "DELETE" });
+    if (!res.ok) return false;
+    setErrorLog([]);
+    return true;
+  }
 
   const load = useCallback(
     async (isRefresh: boolean) => {
@@ -86,10 +130,12 @@ export function AdminPage() {
   useEffect(() => {
     if (!allowed) {
       setLoading(false);
+      setErrorLogLoading(false);
       return;
     }
     void load(false);
-  }, [allowed, load]);
+    void loadErrorLog();
+  }, [allowed, load, loadErrorLog]);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -138,6 +184,98 @@ export function AdminPage() {
             <p className="text-sm text-red-400">{error}</p>
           ) : (
             <>
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                    <Bug className="h-3.5 w-3.5" />
+                    Errors
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">
+                      {errorLog.length >= 150 ? "150+" : errorLog.length} recent
+                    </span>
+                    {errorLog.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmClearErrors(true)}
+                        title="Clear log"
+                        className="rounded-md border border-zinc-700 p-1.5 text-zinc-400 hover:border-rose-700 hover:text-rose-300"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => void loadErrorLog()}
+                      disabled={errorLogLoading}
+                      title="Refresh"
+                      className="rounded-md border border-zinc-700 p-1.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${errorLogLoading ? "animate-spin" : ""}`}
+                      />
+                    </button>
+                  </div>
+                </div>
+                {errorLogLoading && errorLog.length === 0 ? (
+                  <p className="text-sm text-zinc-500">Loading…</p>
+                ) : errorLog.length === 0 ? (
+                  <p className="rounded-2xl border border-emerald-900/40 bg-emerald-950/15 px-4 py-4 text-center text-sm text-emerald-300/90">
+                    Nothing logged — all clear.
+                  </p>
+                ) : (
+                  <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+                    {errorLog.map((e) => {
+                      const open = expandedError === e.id;
+                      return (
+                        <li key={e.id} className="px-4 py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedError(open ? null : e.id)}
+                            className="flex w-full items-start justify-between gap-2 text-left"
+                          >
+                            <div className="min-w-0">
+                              <p className="flex items-center gap-1.5 text-xs">
+                                <span
+                                  className={
+                                    e.source === "server"
+                                      ? "rounded bg-rose-500/15 px-1.5 py-0.5 font-medium text-rose-300"
+                                      : "rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-300"
+                                  }
+                                >
+                                  {e.source}
+                                </span>
+                                <span className="truncate text-zinc-500">
+                                  {e.path || "—"}
+                                </span>
+                              </p>
+                              <p className="mt-1 truncate text-sm text-zinc-200">
+                                {e.message}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-[11px] text-zinc-500">
+                              {fmtDate(e.created_at)}
+                            </span>
+                          </button>
+                          {open && (
+                            <div className="mt-2 space-y-1 rounded-lg bg-zinc-950/60 p-2.5 text-[11px] text-zinc-500">
+                              {e.user_email && <p>User: {e.user_email}</p>}
+                              {e.route_type && <p>Route type: {e.route_type}</p>}
+                              {e.digest && <p>Digest: {e.digest}</p>}
+                              {e.stack && (
+                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-[10px] text-zinc-600">
+                                  {e.stack}
+                                </pre>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+
               <section className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
@@ -308,6 +446,16 @@ export function AdminPage() {
           )}
         </main>
       </div>
+
+      <ConfirmModal
+        open={confirmClearErrors}
+        title="Clear error log?"
+        body="Removes all logged errors. This doesn't fix anything — it just clears the list once you've triaged it."
+        confirmLabel="Clear"
+        destructive
+        onClose={() => setConfirmClearErrors(false)}
+        onConfirm={clearErrorLog}
+      />
     </SignInGate>
   );
 }

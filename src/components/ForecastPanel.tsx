@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { cn, currency, percent } from "@/lib/format";
@@ -188,6 +189,7 @@ export function ForecastPanel({
   async function askMargus(opts?: { auto?: boolean }) {
     if (askInFlight.current) return;
     askInFlight.current = true;
+    if (!opts?.auto) track("forecast_plan_requested");
     setBusy(true);
     setError(null);
     setAppliedFlash(false);

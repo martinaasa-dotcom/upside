@@ -13,6 +13,7 @@ export const PORTFELL_TABLES = {
   portfolioInvites: "portfell_portfolio_invites",
   accountAliases: "portfell_account_aliases",
   communityPortfolios: "portfell_community_portfolios",
+  errorLog: "portfell_error_log",
 } as const;
 
 /** Fixed id for the seed test community (Aasad/MaryAnn/Anu/Karud/Lap circle). */

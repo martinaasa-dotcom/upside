@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { CashModal } from "@/components/CashModal";
 import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
 import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
@@ -1177,6 +1178,7 @@ export function Dashboard() {
       setPortfolios(next.portfolios);
       setHoldings(next.holdings);
     }
+    track("holding_added", { ticker: normalizeYahooTicker(values.ticker) });
     setModalOpen(false);
     toast("Holding saved", "success");
   }
@@ -1643,6 +1645,7 @@ export function Dashboard() {
   const handleCsvImport = useCallback(
     (input: { rows: CsvHoldingRow[]; cash: number | null; replace: boolean }) => {
       if (input.rows.length === 0 && input.cash == null) return;
+      track("csv_import", { rows: input.rows.length, replace: input.replace });
       applyAdvisorActions([
         {
           action: "import_sheet",
@@ -1737,6 +1740,7 @@ export function Dashboard() {
   }
 
   async function handleAddSheet(name: string) {
+    const isFirstSheet = portfolios.length === 0;
     if (source === "supabase") {
       const res = await fetch("/api/portfolios", {
         method: "POST",
@@ -1761,6 +1765,7 @@ export function Dashboard() {
       seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
     }
+    track("sheet_created", { first_sheet: isFirstSheet });
     toast("Sheet added", "success");
   }
 
