@@ -490,7 +490,7 @@ export function UpsidePortfolioPage() {
                   void refreshBenchmarkValue();
                 }}
                 disabled={refreshing}
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                className="touch-target inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
               >
                 <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
                 Refresh
@@ -609,7 +609,7 @@ export function UpsidePortfolioPage() {
                             <select
                               value={pickerSelection}
                               onChange={(e) => setPickerSelection(e.target.value)}
-                              className="appearance-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pr-8 text-xs text-zinc-200 focus:border-brand-mid focus:outline-none"
+                              className="touch-target appearance-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pr-8 text-xs text-zinc-200 focus:border-brand-mid focus:outline-none"
                             >
                               <option value="">Choose a sheet…</option>
                               {myPortfolios.map((p) => (
@@ -624,14 +624,14 @@ export function UpsidePortfolioPage() {
                             type="button"
                             onClick={() => void handleSetBenchmark()}
                             disabled={!pickerSelection || benchmarkBusy}
-                            className="rounded-md bg-brand/20 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/30 disabled:opacity-50"
+                            className="touch-target rounded-md bg-brand/20 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/30 disabled:opacity-50"
                           >
                             {benchmarkBusy ? "Setting…" : "Set as benchmark"}
                           </button>
                           <button
                             type="button"
                             onClick={() => setPickerOpen(false)}
-                            className="rounded-md px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
+                            className="touch-target rounded-md px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
                           >
                             Cancel
                           </button>
@@ -645,7 +645,7 @@ export function UpsidePortfolioPage() {
                     <button
                       type="button"
                       onClick={() => void handleOpenPicker()}
-                      className="text-xs font-semibold text-brand-bright hover:underline"
+                      className="touch-target flex items-center text-xs font-semibold text-brand-bright hover:underline"
                     >
                       + Compare against your own portfolio
                     </button>
@@ -662,7 +662,7 @@ export function UpsidePortfolioPage() {
                       <button
                         type="button"
                         onClick={handleClearBenchmark}
-                        className="text-zinc-500 hover:text-zinc-300"
+                        className="touch-target flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:text-zinc-300"
                         aria-label="Remove benchmark"
                       >
                         <X className="h-3.5 w-3.5" />

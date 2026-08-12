@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Primary workspace switcher: My book · Communities · Upside Portfolio · Account · (Admin).
+ * Primary workspace switcher: My book · Upside Portfolio · Communities · Account · (Admin).
  */
 export function WorkspaceSwitcher({ className }: { className?: string }) {
   const pathname = usePathname();
@@ -49,7 +49,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       )}
     >
       {item(onBook, "/", "My book", BookOpen)}
-      {item(onFund, "/upside-portfolio", "Upside Portfolio", Bot)}
+      {item(onFund, "/upside-portfolio", "Fund", Bot)}
       {item(onCommunities, "/communities", "Communities", Users)}
       {item(onAccount, "/account", "Account", UserRound)}
       {showAdmin ? item(onAdmin, "/admin", "Admin", Shield) : null}

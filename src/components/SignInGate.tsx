@@ -94,7 +94,10 @@ export function SignInGate({ children }: Props) {
             </p>
           )}
 
-          <p className="signin-rise-2 max-w-[15.5rem] text-[15px] leading-relaxed text-zinc-400">
+          <p className="signin-rise-2 max-w-[17rem] text-[15px] font-medium leading-snug text-zinc-200">
+            Track your portfolio — and watch an AI manage its own $50k, in the open.
+          </p>
+          <p className="signin-rise-2 mt-2.5 max-w-[15.5rem] text-[13px] leading-relaxed text-zinc-500">
             Sign in to open the portfolios you own.
           </p>
 

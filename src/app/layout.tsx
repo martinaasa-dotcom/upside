@@ -22,10 +22,12 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const SITE_DESCRIPTION =
+  "Track your portfolio with covered-call targets and Assistant Margus — plus Upside Portfolio, an AI-managed $50k paper fund with every trade reasoned out loud, live in the open.";
+
 export const metadata: Metadata = {
-  title: "Upside - Portfolio Tracker",
-  description:
-    "Live portfolio book with covered-call targets and Assistant Margus.",
+  title: "Upside - Portfolio Tracker & AI-Managed Fund",
+  description: SITE_DESCRIPTION,
   applicationName: "Upside",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -39,9 +41,8 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "Upside - Portfolio Tracker",
-    description:
-      "Live portfolio book with covered-call targets and Assistant Margus.",
+    title: "Upside - Portfolio Tracker & AI-Managed Fund",
+    description: SITE_DESCRIPTION,
     siteName: "Upside",
     type: "website",
     url: "https://upside-upthink-solutions.vercel.app",
@@ -49,9 +50,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Upside - Portfolio Tracker",
-    description:
-      "Live portfolio book with covered-call targets and Assistant Margus.",
+    title: "Upside - Portfolio Tracker & AI-Managed Fund",
+    description: SITE_DESCRIPTION,
     images: ["/upside-icon.svg"],
   },
   metadataBase: new URL("https://upside-upthink-solutions.vercel.app"),
