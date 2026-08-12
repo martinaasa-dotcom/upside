@@ -111,7 +111,21 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   // Pending households: pinned sheets not yet owned by any signed-in member.
   const ownedSet = new Set(ownedIds);
-  const pendingPortfolioIds = pinnedIds.filter((pid) => !ownedSet.has(pid));
+  const memberUserIds = new Set(userIds);
+  const portfolioRows = (portfolios ?? []) as {
+    id: string;
+    name: string;
+    slug: string;
+    owner_id?: string | null;
+  }[];
+
+  const isOwnedByMember = (portfolioId: string) => {
+    if (ownedSet.has(portfolioId)) return true;
+    const row = portfolioRows.find((p) => p.id === portfolioId);
+    return Boolean(row?.owner_id && memberUserIds.has(row.owner_id));
+  };
+
+  const pendingPortfolioIds = pinnedIds.filter((pid) => !isOwnedByMember(pid));
   let pending_members: PendingHousehold[] = [];
 
   if (pendingPortfolioIds.length) {
@@ -171,6 +185,24 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     user_id: userToPerson.get(o.user_id) ?? o.user_id,
     raw_user_id: o.user_id,
   }));
+
+  const attributedPortfolioIds = new Set(
+    ownershipForClient.map((o) => o.portfolio_id)
+  );
+  for (const p of portfolioRows) {
+    if (
+      p.owner_id &&
+      memberUserIds.has(p.owner_id) &&
+      !attributedPortfolioIds.has(p.id)
+    ) {
+      ownershipForClient.push({
+        portfolio_id: p.id,
+        user_id: userToPerson.get(p.owner_id) ?? p.owner_id,
+        raw_user_id: p.owner_id,
+      });
+      attributedPortfolioIds.add(p.id);
+    }
+  }
 
   // Synthetic ownership for pending pinned sheets (household key as user_id)
   for (const pending of pending_members) {
