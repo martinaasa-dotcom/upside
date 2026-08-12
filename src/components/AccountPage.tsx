@@ -5,12 +5,20 @@ import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { cn } from "@/lib/format";
+import {
+  EXPERIENCE_TIERS,
+  loadStoredTier,
+  saveStoredTier,
+  type ExperienceTier,
+} from "@/lib/experience-tier";
 import { track } from "@vercel/analytics";
 import {
   AlertTriangle,
   Check,
   Copy,
   Download,
+  Gauge,
   Link2,
   LogOut,
   ShieldCheck,
@@ -69,6 +77,8 @@ export function AccountPage() {
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const [tier, setTier] = useState<ExperienceTier | null>(loadStoredTier);
+  const [tierSaved, setTierSaved] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
@@ -76,6 +86,37 @@ export function AccountPage() {
     setAvatarUrl(profile?.avatar_url ?? "");
     setAvatarBroken(false);
   }, [profile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/account/experience-tier")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { tier?: ExperienceTier | null } | null) => {
+        if (!cancelled && data?.tier) setTier(data.tier);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleTierChange = useCallback(async (next: ExperienceTier) => {
+    setTier(next);
+    saveStoredTier(next);
+    setTierSaved(false);
+    try {
+      await fetch("/api/account/experience-tier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier: next }),
+      });
+      setTierSaved(true);
+      track("experience_tier_set", { tier: next, source: "account" });
+      setTimeout(() => setTierSaved(false), 2000);
+    } catch {
+      /* localStorage already has it */
+    }
+  }, []);
 
   const loadPortfolios = useCallback(async () => {
     try {
@@ -414,6 +455,43 @@ export function AccountPage() {
                 {savingProfile ? "Saving…" : "Save profile"}
               </button>
             </form>
+          </section>
+
+          {/* Experience level */}
+          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
+                <Gauge className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-white">Experience level</h2>
+                <p className="text-xs text-zinc-500">
+                  Simplifies what&apos;s shown — nothing is locked, change it anytime.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {EXPERIENCE_TIERS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => void handleTierChange(t.id)}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
+                    tier === t.id
+                      ? "border-brand-mid bg-brand/15 text-white"
+                      : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
+                  )}
+                >
+                  <span>
+                    <span className="font-medium">{t.label}</span>
+                    <span className="mt-0.5 block text-xs text-zinc-500">{t.blurb}</span>
+                  </span>
+                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-brand-bright" />}
+                </button>
+              ))}
+            </div>
+            {tierSaved && <p className="text-xs text-gain">Saved.</p>}
           </section>
 
           {/* Portfolio invites */}

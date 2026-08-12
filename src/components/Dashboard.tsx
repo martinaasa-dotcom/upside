@@ -7,6 +7,7 @@ import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
+import { ExperienceOnboardingModal } from "@/components/ExperienceOnboardingModal";
 import { ForecastPanel } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
@@ -147,6 +148,14 @@ import {
   setPanelVisible,
   toggleVisibilityMap,
 } from "@/lib/panel-visibility";
+import {
+  defaultForecastVisible,
+  loadStoredTier,
+  saveStoredTier,
+  TIER_HIDDEN_LAB_GROUPS,
+  TIER_HIDDEN_META_TABS,
+  type ExperienceTier,
+} from "@/lib/experience-tier";
 
 type DataSource = "demo" | "supabase";
 
@@ -394,6 +403,53 @@ export function Dashboard() {
     () => loadVisibilityMap(FORECAST_VISIBLE_KEY)
   );
   const [eoyOverrides, setEoyOverrides] = useState<PortfolioEoyOverrides>({});
+  const [experienceTier, setExperienceTier] = useState<ExperienceTier | null>(
+    loadStoredTier
+  );
+  const [tierChecked, setTierChecked] = useState(false);
+
+  // Confirm/sync against the server once — localStorage is read
+  // synchronously above for an instant first paint, but the DB value is
+  // the source of truth across devices (e.g. answered on phone, opens on
+  // desktop next). Only real signed-in accounts get asked; demo/guest
+  // preview stays exactly as-is.
+  useEffect(() => {
+    if (source !== "supabase" || !user) {
+      setTierChecked(true);
+      return;
+    }
+    setTierChecked(false);
+    let cancelled = false;
+    void fetch("/api/account/experience-tier")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { tier?: ExperienceTier | null } | null) => {
+        if (cancelled) return;
+        if (data?.tier) {
+          setExperienceTier(data.tier);
+          saveStoredTier(data.tier);
+        }
+      })
+      .catch(() => {
+        /* keep whatever localStorage already had */
+      })
+      .finally(() => {
+        if (!cancelled) setTierChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [source, user]);
+
+  // If the tier changes (questionnaire just answered, or changed later in
+  // Account) and it hides whatever meta-tab is currently open, don't leave
+  // the viewer stranded on a tab with no button back to it.
+  useEffect(() => {
+    if (!experienceTier) return;
+    if (TIER_HIDDEN_META_TABS[experienceTier].includes(activeId)) {
+      setActiveId(OVERVIEW_TAB_ID);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [experienceTier]);
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const isCompound = activeId === COMPOUND_TAB_ID;
@@ -408,13 +464,13 @@ export function Dashboard() {
       : (portfolios.find((p) => p.id === activeId) ?? null);
 
   const ccVisible = activePortfolio
-    ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, true)
+    ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, experienceTier !== "novice")
     : true;
   const forecastVisible = activePortfolio
     ? isPanelVisible(
         forecastVisibleByPortfolio,
         activePortfolio,
-        FORECAST_DEFAULT_VISIBLE
+        experienceTier ? defaultForecastVisible(experienceTier) : FORECAST_DEFAULT_VISIBLE
       )
     : true;
 
@@ -2430,6 +2486,9 @@ export function Dashboard() {
             }
             intentTab={labIntent}
             onIntentConsumed={() => setLabIntent(null)}
+            hiddenGroups={
+              experienceTier ? TIER_HIDDEN_LAB_GROUPS[experienceTier] : []
+            }
           />
         ) : isCompound ? (
           <CompoundInterestSheet
@@ -2540,6 +2599,7 @@ export function Dashboard() {
         onChange={setActiveId}
         onAdd={handleAddSheet}
         sheetTodayTone={sheetTodayTone}
+        hiddenModeIds={experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : []}
         onOpenCommunities={
           source === "supabase"
             ? () => router.push("/communities")
@@ -2684,6 +2744,15 @@ export function Dashboard() {
           void loadPortfolios({ silent: true });
         }}
       />
+
+      {tierChecked && !experienceTier && source === "supabase" && user && (
+        <ExperienceOnboardingModal
+          onDone={(tier) => {
+            setExperienceTier(tier);
+            track("experience_tier_set", { tier });
+          }}
+        />
+      )}
 
       <CommandPalette
         open={cmdOpen}

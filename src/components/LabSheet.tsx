@@ -85,6 +85,8 @@ type Props = {
   /** Deep-link from Overview (versus / arena / …). */
   intentTab?: LabDeepLink | null;
   onIntentConsumed?: () => void;
+  /** Group ids to hide, driven by the viewer's experience tier. */
+  hiddenGroups?: string[];
 };
 
 type LabGroup = "book" | "income" | "trade" | "digest" | "advanced";
@@ -154,11 +156,20 @@ export function LabSheet({
   onDismissAlert,
   intentTab,
   onIntentConsumed,
+  hiddenGroups = [],
 }: Props) {
-  const [group, setGroup] = useState<LabGroup>(
-    () => TABS.find((t) => t.id === initialLabTab())?.group ?? "book"
-  );
-  const [tab, setTab] = useState<LabTab>(initialLabTab);
+  const visibleGroups = GROUPS.filter((g) => !hiddenGroups.includes(g.id));
+  const visibleTabs = TABS.filter((t) => !hiddenGroups.includes(t.group));
+  const [group, setGroup] = useState<LabGroup>(() => {
+    const fromUrl = visibleTabs.find((t) => t.id === initialLabTab())?.group;
+    return fromUrl ?? visibleGroups[0]?.id ?? "book";
+  });
+  const [tab, setTab] = useState<LabTab>(() => {
+    const fromUrl = initialLabTab();
+    return visibleTabs.some((t) => t.id === fromUrl)
+      ? fromUrl
+      : visibleTabs[0]?.id ?? "alloc";
+  });
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
@@ -228,16 +239,16 @@ export function LabSheet({
     setChallenge(loadArenaChallenge());
   }, [arena.updatedAt]);
 
-  const groupTabs = TABS.filter((t) => t.group === group);
+  const groupTabs = visibleTabs.filter((t) => t.group === group);
 
   function selectGroup(g: LabGroup) {
     setGroup(g);
-    const first = TABS.find((t) => t.group === g);
+    const first = visibleTabs.find((t) => t.group === g);
     if (first) setTab(first.id);
   }
 
   function selectTab(id: LabTab) {
-    const meta = TABS.find((t) => t.id === id);
+    const meta = visibleTabs.find((t) => t.id === id);
     if (meta) setGroup(meta.group);
     setTab(id);
   }
@@ -499,7 +510,7 @@ export function LabSheet({
           </span>
         </div>
         <div className="scrollbar-none mt-3 flex min-h-[2.25rem] gap-1 overflow-x-auto border-b border-zinc-800 pb-2 snap-x snap-mandatory">
-          {GROUPS.map((g) => (
+          {visibleGroups.map((g) => (
             <button
               key={g.id}
               type="button"

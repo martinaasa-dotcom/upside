@@ -47,6 +47,8 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import {
+  ArrowRight,
+  Bot,
   CalendarDays,
   Flame,
   Info,
@@ -59,7 +61,15 @@ import {
   TrendingUp,
   Trophy,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+
+type FundTeaser = {
+  totalValue: number;
+  totalReturnPct: number;
+  todayDollar: number;
+  headline: string | null;
+};
 
 export type LabDeepLink =
   | "versus"
@@ -378,6 +388,41 @@ export function OverviewDashboard({
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
   const [arenaNote, setArenaNote] = useState<string | null>(null);
   const [factsShuffle, setFactsShuffle] = useState(0);
+  const [fundTeaser, setFundTeaser] = useState<FundTeaser | null>(null);
+
+  useEffect(() => {
+    if (guest) return;
+    let cancelled = false;
+    void fetch("/api/upside-portfolio", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (data: {
+          fund?: { starting_capital?: number } | null;
+          reports?: {
+            portfolio_value: number;
+            total_return_pct: number | null;
+            day_change_dollar: number | null;
+            headline: string;
+          }[];
+        } | null) => {
+          if (cancelled || !data) return;
+          const latest = data.reports?.[0];
+          const startingCapital = data.fund?.starting_capital ?? 50000;
+          setFundTeaser({
+            totalValue: latest?.portfolio_value ?? startingCapital,
+            totalReturnPct: latest?.total_return_pct ?? 0,
+            todayDollar: latest?.day_change_dollar ?? 0,
+            headline: latest?.headline ?? null,
+          });
+        }
+      )
+      .catch(() => {
+        // Teaser is a nice-to-have — skip silently, the full page still works.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [guest]);
 
   const displayedFunFacts = useMemo(() => {
     if (factsShuffle === 0 || !sheets.length || !tickers.length) return funFacts;
@@ -503,6 +548,50 @@ export function OverviewDashboard({
 
   return (
     <div className="space-y-8">
+      {/* Upside Portfolio — the flagship AI-managed feed, always front and
+       * center rather than one nav item among several. */}
+      <Link
+        href="/upside-portfolio"
+        className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-[#161618]/90 to-[#161618]/90 p-4 shadow-lg shadow-black/30 transition hover:border-amber-400/50 sm:p-5"
+      >
+        <div
+          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl"
+          aria-hidden
+        />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-400/15 text-amber-300">
+          <Bot className="h-5 w-5" />
+        </div>
+        <div className="relative min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-white">Upside Portfolio</p>
+            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+              Live
+            </span>
+          </div>
+          <p className="truncate text-xs text-zinc-400">
+            {fundTeaser?.headline
+              ? fundTeaser.headline
+              : "Margus manages his own $50k paper portfolio — one decision a day, reasoning included."}
+          </p>
+        </div>
+        {fundTeaser && (
+          <div className="relative shrink-0 text-right">
+            <p className="text-sm font-semibold tabular-nums text-white">
+              {currency(fundTeaser.totalValue, 0)}
+            </p>
+            <p
+              className={cn(
+                "text-xs font-semibold tabular-nums",
+                fundTeaser.totalReturnPct >= 0 ? "text-gain" : "text-loss"
+              )}
+            >
+              {percent(fundTeaser.totalReturnPct)}
+            </p>
+          </div>
+        )}
+        <ArrowRight className="relative h-4 w-4 shrink-0 text-amber-300/70 transition group-hover:translate-x-0.5" />
+      </Link>
+
       {showCommunities && !guest && (
         <CommunitiesSpotlight />
       )}

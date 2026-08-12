@@ -22,6 +22,8 @@ type Props = {
   onDeleteRequest?: (id: string, name: string) => void;
   /** Guests: Overview + Compound only — no Lab / sheet mutations. */
   guest?: boolean;
+  /** Meta-tab ids to hide, driven by the viewer's experience tier. */
+  hiddenModeIds?: string[];
   /** Opens Communities workspace (signed-in). */
   onOpenCommunities?: () => void;
   /** Compact book/sheet totals shown above tabs on phone. */
@@ -84,6 +86,7 @@ export function PortfolioTabs({
   onRenameRequest,
   onDeleteRequest,
   guest = false,
+  hiddenModeIds = [],
   onOpenCommunities,
   mobileSummary,
   sheetTodayTone,
@@ -94,9 +97,11 @@ export function PortfolioTabs({
   const [mounted, setMounted] = useState(false);
   const longPressRef = useRef<number | null>(null);
   const sheetActive = portfolios.some((p) => p.id === activeId);
-  const modes = guest
-    ? MODES.filter((m) => m.id !== LAB_TAB_ID)
-    : MODES;
+  const modes = MODES.filter((m) => {
+    if (guest && m.id === LAB_TAB_ID) return false;
+    if (hiddenModeIds.includes(m.id)) return false;
+    return true;
+  });
   const modeCols = modes.length;
 
   useEffect(() => {
