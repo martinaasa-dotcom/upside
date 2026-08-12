@@ -1,7 +1,6 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { AuthProvider } from "@/components/AuthProvider";
 import { SignInGate } from "@/components/SignInGate";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -62,16 +61,14 @@ function JoinInner() {
 
 export default function JoinCommunityPage() {
   return (
-    <AuthProvider>
-      <Suspense
-        fallback={
-          <div className="flex min-h-dvh items-center justify-center bg-[#121214] text-zinc-400">
-            Loading…
-          </div>
-        }
-      >
-        <JoinInner />
-      </Suspense>
-    </AuthProvider>
+    <Suspense
+      fallback={
+        <div className="flex min-h-dvh items-center justify-center bg-[#121214] text-zinc-400">
+          Loading…
+        </div>
+      }
+    >
+      <JoinInner />
+    </Suspense>
   );
 }

@@ -3,6 +3,7 @@
 import { SignInGate } from "@/components/SignInGate";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { prefetchCommunity } from "@/lib/community-cache";
 import { ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -13,14 +14,43 @@ type CommunityRow = {
   role: string;
 };
 
+const LIST_CACHE_KEY = "upside-communities-list-v1";
+
+function loadListCache(): CommunityRow[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LIST_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CommunityRow[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveListCache(rows: CommunityRow[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LIST_CACHE_KEY, JSON.stringify(rows));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 export function CommunitiesList() {
-  const [communities, setCommunities] = useState<CommunityRow[]>([]);
+  const [communities, setCommunities] = useState<CommunityRow[]>(
+    () => loadListCache() ?? []
+  );
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Only blocks on a spinner when there's truly nothing cached to show —
+  // same instant-first-paint pattern as Thesis Pulse and the community
+  // detail view.
+  const [loading, setLoading] = useState(() => loadListCache() === null);
 
   async function load() {
-    setLoading(true);
+    const hadCache = communities.length > 0;
+    if (!hadCache) setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/communities", { cache: "no-store" });
@@ -30,9 +60,15 @@ export function CommunitiesList() {
           typeof data.error === "string" ? data.error : "Failed to load"
         );
       }
-      setCommunities(data.communities ?? []);
+      const rows = (data.communities ?? []) as CommunityRow[];
+      setCommunities(rows);
+      saveListCache(rows);
+      // Warm each community's own cache in the background so clicking in
+      // right after the list loads is instant too, not just the list
+      // itself.
+      for (const c of rows) void prefetchCommunity(c.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      if (!hadCache) setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -40,6 +76,7 @@ export function CommunitiesList() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
   }, []);
 
   async function createCommunity(e: React.FormEvent) {

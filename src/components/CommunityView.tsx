@@ -7,6 +7,11 @@ import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
 import { buildOverview } from "@/lib/overview";
+import {
+  loadCommunityCache,
+  saveCommunityCache,
+} from "@/lib/community-cache";
+import { buildPortfolioPersonality } from "@/lib/portfolio-personality";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import {
   ArrowLeft,
@@ -56,19 +61,68 @@ type Props = {
   communityId: string;
 };
 
+/** Shape of the two API responses this view combines — matches what
+ * /api/communities/[id] and /api/communities/[id]/book return. */
+type CommunityMetaResponse = {
+  community: CommunityMeta;
+  members?: Member[];
+  pending_members?: PendingMember[];
+  isAdmin?: boolean;
+};
+type CommunityBookResponse = {
+  portfolios?: OwnedPortfolio[];
+  holdings?: Holding[];
+  profiles?: Profile[];
+  ownership?: { portfolio_id: string; user_id: string }[];
+};
+
+/** Synchronous cache read shared by every piece of state below, so they
+ * all hydrate from the exact same snapshot instead of some fields lagging
+ * a render behind others. */
+function readCommunityCache(communityId: string): {
+  meta: CommunityMetaResponse | null;
+  book: CommunityBookResponse | null;
+} {
+  const cached = loadCommunityCache(communityId);
+  if (!cached) return { meta: null, book: null };
+  return {
+    meta: (cached.meta as CommunityMetaResponse) ?? null,
+    book: (cached.book as CommunityBookResponse) ?? null,
+  };
+}
+
 export function CommunityView({ communityId }: Props) {
-  const [community, setCommunity] = useState<CommunityMeta | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>([]);
-  const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const initialCacheRef = useRef(readCommunityCache(communityId));
+  const [community, setCommunity] = useState<CommunityMeta | null>(
+    () => initialCacheRef.current.meta?.community ?? null
+  );
+  const [members, setMembers] = useState<Member[]>(
+    () => initialCacheRef.current.meta?.members ?? []
+  );
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>(
+    () => initialCacheRef.current.meta?.pending_members ?? []
+  );
+  const [isAdmin, setIsAdmin] = useState(
+    () => initialCacheRef.current.meta?.isAdmin ?? false
+  );
+  const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>(
+    () => initialCacheRef.current.book?.portfolios ?? []
+  );
+  const [holdings, setHoldings] = useState<Holding[]>(
+    () => initialCacheRef.current.book?.holdings ?? []
+  );
+  const [profiles, setProfiles] = useState<Profile[]>(
+    () => initialCacheRef.current.book?.profiles ?? []
+  );
   const [ownership, setOwnership] = useState<
     { portfolio_id: string; user_id: string }[]
-  >([]);
+  >(() => initialCacheRef.current.book?.ownership ?? []);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
-  const [loading, setLoading] = useState(true);
+  // Only true when we have nothing at all to show yet — a cache hit
+  // (even a stale one) renders immediately while load() quietly confirms
+  // it's current in the background, instead of blanking the page on
+  // every single visit the way an unconditional loading flag would.
+  const [loading, setLoading] = useState(() => !initialCacheRef.current.meta);
   const [error, setError] = useState<string | null>(null);
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(() =>
     typeof window === "undefined"
@@ -91,9 +145,15 @@ export function CommunityView({ communityId }: Props) {
     name: string;
   } | null>(null);
 
+  // Tracks whether we have SOME data already (from cache or a prior
+  // successful load) — a ref so `load` doesn't need `community` etc. in
+  // its own dependency array just to decide whether to show a spinner.
+  const hasDataRef = useRef(Boolean(initialCacheRef.current.meta));
+
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    const isBackgroundRefresh = hasDataRef.current;
+    if (!isBackgroundRefresh) setLoading(true);
+    if (!isBackgroundRefresh) setError(null);
     try {
       const [metaRes, bookRes] = await Promise.all([
         fetch(`/api/communities/${communityId}`, { cache: "no-store" }),
@@ -121,8 +181,15 @@ export function CommunityView({ communityId }: Props) {
       setHoldings(book.holdings ?? []);
       setProfiles(book.profiles ?? []);
       setOwnership(book.ownership ?? []);
+      hasDataRef.current = true;
+      saveCommunityCache(communityId, { meta, book });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load community");
+      // A background refresh failing behind already-visible cached
+      // content shouldn't slap an error over it — only surface the error
+      // when there was nothing on screen to begin with.
+      if (!isBackgroundRefresh) {
+        setError(e instanceof Error ? e.message : "Failed to load community");
+      }
     } finally {
       setLoading(false);
     }
@@ -401,6 +468,47 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               </section>
 
+              {overview.topHoldings.length > 0 && (
+                <section className="space-y-3">
+                  <h2 className="text-sm font-medium text-zinc-200">
+                    What the community is holding
+                  </h2>
+                  <div className="flex flex-wrap gap-2">
+                    {overview.topHoldings.slice(0, 10).map((t) => (
+                      <div
+                        key={t.ticker}
+                        className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2"
+                      >
+                        <span className="text-sm font-semibold text-white">
+                          {t.ticker}
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          {currency(t.currentValue, 0)}
+                        </span>
+                        {t.todayPct != null && (
+                          <span
+                            className={cn(
+                              "text-xs tabular-nums",
+                              t.todayPct >= 0 ? "text-emerald-400" : "text-red-400"
+                            )}
+                          >
+                            {percent(t.todayPct)}
+                          </span>
+                        )}
+                        {t.portfolios.length > 1 && (
+                          <span
+                            className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright"
+                            title={`Held in ${t.portfolios.join(", ")}`}
+                          >
+                            ×{t.portfolios.length} books
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="space-y-3">
                 <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
                   <Users className="h-4 w-4 text-zinc-500" />
@@ -426,6 +534,16 @@ export function CommunityView({ communityId }: Props) {
                       );
                       return sum + (score?.todayDollar ?? 0);
                     }, 0);
+                    const memberTickerValues = holdings
+                      .filter((h) => sheetIds.has(h.portfolio_id))
+                      .map((h) => ({
+                        ticker: h.ticker,
+                        value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
+                      }));
+                    const personality =
+                      memberTickerValues.length > 0
+                        ? buildPortfolioPersonality(memberTickerValues)
+                        : null;
                     const emails = memberEmails(m);
                     return (
                       <li
@@ -440,11 +558,18 @@ export function CommunityView({ communityId }: Props) {
                           }}
                           className="text-left"
                         >
-                          <div className="text-sm font-medium text-zinc-100">
+                          <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
                             {profileName(m.user_id)}
                             {m.is_you && (
-                              <span className="ml-2 text-xs text-zinc-500">
-                                (you)
+                              <span className="text-xs text-zinc-500">(you)</span>
+                            )}
+                            {personality && (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
+                                title={`${personality.tagline} Diversification ${personality.diversificationScore}/100 · Risk ${personality.riskScore}/100.`}
+                              >
+                                <span aria-hidden>{personality.animalEmoji}</span>
+                                {personality.animal}
                               </span>
                             )}
                           </div>
@@ -671,15 +796,36 @@ export function CommunityView({ communityId }: Props) {
                     const score = overview.sheets.find(
                       (s) => s.portfolio.id === p.id
                     );
+                    const tickerValues = holdings
+                      .filter((h) => h.portfolio_id === p.id)
+                      .map((h) => ({
+                        ticker: h.ticker,
+                        value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
+                      }));
+                    const personality =
+                      tickerValues.length > 0
+                        ? buildPortfolioPersonality(tickerValues)
+                        : null;
                     return (
                       <li key={p.id}>
                         <button
                           type="button"
                           onClick={() => setSelectedPortfolioId(p.id)}
-                          className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-zinc-900/50"
+                          className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left hover:bg-zinc-900/50"
                         >
-                          <span className="text-sm font-medium">{p.name}</span>
-                          <span className="text-xs text-zinc-400">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="text-sm font-medium">{p.name}</span>
+                            {personality && (
+                              <span
+                                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
+                                title={`${personality.tagline} Diversification ${personality.diversificationScore}/100 · Risk ${personality.riskScore}/100.`}
+                              >
+                                <span aria-hidden>{personality.animalEmoji}</span>
+                                {personality.animal}
+                              </span>
+                            )}
+                          </span>
+                          <span className="shrink-0 text-xs text-zinc-400">
                             {currency(score?.totalValue ?? 0)}
                           </span>
                         </button>
