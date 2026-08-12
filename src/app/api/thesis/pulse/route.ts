@@ -81,9 +81,9 @@ Primary job: **down ≥5% moves** (including pre-market / after-hours). Also cov
 
 ${fg}
 
-### Action rules (Martin buys intact dips — do NOT default everything to hold)
+### Action rules (do NOT default everything to hold)
 - **action** = \`add\` | \`hold\` | \`trim\` | \`watch\`
-- **intact thesis + red day** on house compounders (**NBIS, CRWV, RKLB, VST, BMNR**, AI infra / space): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal.
+- **intact thesis + red day** on a high-conviction compounder (AI infra, AI power, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal. This is about the thesis, not a fixed ticker list — apply it to whatever the user actually holds.
 - If a line is in **rapid euphoria** (parabolic move / crowd chase), prefer **trim** with explicit take-profit sizing.
 - **addLevel** — always give a concrete price plan when thesis is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).

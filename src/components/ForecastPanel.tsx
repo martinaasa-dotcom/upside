@@ -5,7 +5,7 @@ import { cn, currency, percent } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   ensureCompleteEoyTargets,
-  HOUSE_STANCE,
+  DEFAULT_FORECAST_STANCE,
   loadForecastPlan,
   planEoyPaths,
   saveForecastPlan,
@@ -37,11 +37,11 @@ function calibratedPaths(plan: ForecastPlan, model: ForecastModel) {
   const eoyTargets = ensureCompleteEoyTargets(
     model,
     plan.eoyTargets ?? [],
-    HOUSE_STANCE
+    DEFAULT_FORECAST_STANCE
   );
   return {
     eoyTargets,
-    paths: planEoyPaths({ ...plan, eoyTargets, stance: HOUSE_STANCE }),
+    paths: planEoyPaths({ ...plan, eoyTargets, stance: DEFAULT_FORECAST_STANCE }),
   };
 }
 
@@ -199,7 +199,7 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
-          stance: HOUSE_STANCE,
+          stance: DEFAULT_FORECAST_STANCE,
         }),
       });
       const data = await res.json();
@@ -209,14 +209,14 @@ export function ForecastPanel({
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,
-        stance: HOUSE_STANCE,
+        stance: DEFAULT_FORECAST_STANCE,
       };
       // Belt-and-suspenders: re-calibrate to spreadsheet BASE floors client-side
       const { eoyTargets, paths } = calibratedPaths(next, model);
       const calibrated: ForecastPlan = {
         ...next,
         eoyTargets,
-        stance: HOUSE_STANCE,
+        stance: DEFAULT_FORECAST_STANCE,
       };
       saveForecastPlan(calibrated);
       setPlan(calibrated);

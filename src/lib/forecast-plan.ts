@@ -4,9 +4,8 @@ import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
 import {
   FORECAST_CONVICTION_PROMPT,
-  enforcePathRules,
+  fillMissingForecastYears,
   forecastThemeForTicker,
-  mergeWithHouseBaseFloors,
   shapedFallbackPath,
 } from "@/lib/forecast-conviction";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -15,8 +14,8 @@ export const FORECAST_PLAN_STORAGE_KEY = "portfell-forecast-plan-by-portfolio";
 
 export type ForecastStance = "bearish" | "base" | "bullish";
 
-/** House path = Martin's spreadsheet BASE. No user stance toggle. */
-export const HOUSE_STANCE: ForecastStance = "base";
+/** Default stance — reasonable base case. No user stance toggle yet. */
+export const DEFAULT_FORECAST_STANCE: ForecastStance = "base";
 
 /** Rough sector tags so Margus can talk rotation without inventing holdings. */
 export const TICKER_SECTORS: Record<string, string> = {
@@ -227,63 +226,17 @@ export function saveForecastPlan(plan: ForecastPlan) {
 function stanceGuidance(stance: ForecastStance): string {
   switch (stance) {
     case "bearish":
-      return `STANCE = BEARISH. Soften the spreadsheet BASE (~55% of base upside), deeper winters OK — still non-linear. Do not invent a timid "everything dips in 2026" book.`;
+      return `STANCE = BEARISH. Softer paths, deeper winters OK — still non-linear and reasoned per-ticker. Do not invent a uniform "everything dips" book — some names hold up better than others.`;
     case "bullish":
-      return `STANCE = BULLISH. Same shapes as Martin's BASE spreadsheet, but materially HIGHER (~+25–40% vs base on terminals; 2026 still above base 2026). NBIS/CRWV must clear spot hard in 2026.`;
+      return `STANCE = BULLISH. More optimistic paths than the base case, but still grounded in each ticker's own fundamentals — not an across-the-board multiplier.`;
     default:
-      return `HOUSE PATH = BASE (Martin's spreadsheet rules). Match sheet magnitude (NBIS ~1.33× spot by EOY 2026 → ~5.6× by 2030; CRWV ~1.26× → ~6.4×; BMNR rip then 2028 winter). Consistency: if macro / company / sector thesis is unchanged, keep EOY magnitudes in the same neighborhood — only reprice when thesis meaningfully changes. Forbidden: EOY 2026 below spot on NBIS/CRWV/BMNR/VST.`;
+      return `STANCE = BASE CASE. Reason each ticker's path from its own fundamentals, sector cycle, and volatility — no fixed target to match. Consistency: if macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood — only reprice when the thesis meaningfully changes.`;
   }
-}
-
-/** Model path is too timid vs calibrated BASE (e.g. NBIS 182 when sheet says ~255). */
-function isTimidVsBase(
-  prices: Record<ForecastYear, number>,
-  shaped: Record<ForecastYear, number>,
-  spot: number,
-  theme: ReturnType<typeof forecastThemeForTicker>,
-  stance: ForecastStance
-): boolean {
-  if (stance === "bearish") return false;
-  const y2026 = FORECAST_YEARS[0]!;
-  const p26 = prices[y2026];
-  const s26 = shaped[y2026];
-
-  // Classic bug: AI infra / crypto opening year below spot on base/bullish
-  if (
-    (theme === "ai_infra" ||
-      theme === "ai_power" ||
-      theme === "crypto" ||
-      theme === "space") &&
-    typeof p26 === "number" &&
-    p26 < spot * 1.05
-  ) {
-    return true;
-  }
-
-  // 2026 below spreadsheet-shaped floor
-  if (
-    typeof p26 === "number" &&
-    typeof s26 === "number" &&
-    p26 < s26 * 0.98
-  ) {
-    return true;
-  }
-
-  // Any year materially under sheet BASE
-  for (const year of FORECAST_YEARS) {
-    const p = prices[year];
-    const s = shaped[year];
-    if (typeof p === "number" && typeof s === "number" && p < s * 0.98) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 function isJunkRationale(text: string | undefined): boolean {
   if (!text?.trim()) return true;
-  return /too timid|sheet-aligned|overridden|rejected as|Calibrated \w+ \w+ path|Thesis \w+ \w+ path from spot/i.test(
+  return /too timid|sheet-aligned|overridden|rejected as|house baseline|calibrated \w+ \w+ path|thesis \w+ \w+ path from spot/i.test(
     text
   );
 }
@@ -317,7 +270,7 @@ function themeDynamicsLabel(
   }
 }
 
-function houseRationale(input: {
+function fallbackRationale(input: {
   ticker: string;
   theme: ReturnType<typeof forecastThemeForTicker>;
   spot: number;
@@ -330,18 +283,18 @@ function houseRationale(input: {
   }
   const y26 = input.prices[FORECAST_YEARS[0]!];
   const y30 = input.prices[FORECAST_YEARS[FORECAST_YEARS.length - 1]!];
-  return `${input.ticker} — ${themeDynamicsLabel(input.theme)}; EOY’26 ~$${Math.round(y26)} → ’30 ~$${Math.round(y30)} (spot $${input.spot.toFixed(0)}).`;
+  return `${input.ticker} — ${themeDynamicsLabel(input.theme)}; illustrative path EOY’26 ~$${Math.round(y26)} → ’30 ~$${Math.round(y30)} (spot $${input.spot.toFixed(0)}). Modeled scenario, not a target.`;
 }
 
 /**
- * Guarantee every holding has every FORECAST_YEAR filled.
- * Prefer model prices only when they clear conviction floors; otherwise use
- * spreadsheet-calibrated shaped paths (Martin's BASE sheet).
+ * Guarantee every holding has every FORECAST_YEAR filled. The model's own
+ * numbers are always respected when present and reasonable; the generic
+ * theme-shaped path only fills gaps or replaces a boringly-linear ramp.
  */
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
   eoyTargets: ForecastPlan["eoyTargets"],
-  stance: ForecastStance = HOUSE_STANCE
+  stance: ForecastStance = DEFAULT_FORECAST_STANCE
 ): ForecastPlan["eoyTargets"] {
   const byTicker = new Map<string, ForecastPlan["eoyTargets"][number]>();
   for (const t of eoyTargets ?? []) {
@@ -358,39 +311,20 @@ export function ensureCompleteEoyTargets(
     const existing = byTicker.get(key);
     const spot = row.currentPrice > 0 ? row.currentPrice : 1;
     const theme = forecastThemeForTicker(row.ticker);
-    const shaped = shapedFallbackPath(spot, theme, stance, row.ticker);
-    let prices = mergeWithHouseBaseFloors(
-      existing?.prices,
-      shaped,
-      stance
-    );
+    const shaped = shapedFallbackPath(spot, theme, stance);
+    let prices = fillMissingForecastYears(existing?.prices, shaped);
 
-    for (const year of FORECAST_YEARS) {
-      const p = prices[year];
-      if (!(typeof p === "number" && p > 0)) {
-        prices[year] = shaped[year];
-      }
-    }
-
-    const reshape =
-      (isNearLinear(prices, spot) && theme !== "index") ||
-      isTimidVsBase(prices, shaped, spot, theme, stance);
-
+    // Only reshape when the model's path is a boring straight line —
+    // never because it's "too timid" vs some target.
+    const reshape = isNearLinear(prices, spot) && theme !== "index";
     if (reshape) {
-      prices = mergeWithHouseBaseFloors(shaped, shaped, stance);
-    } else {
-      prices = enforcePathRules(
-        mergeWithHouseBaseFloors(prices, shaped, stance),
-        spot,
-        theme,
-        stance
-      );
+      prices = { ...shaped };
     }
 
     out.push({
       ticker: row.ticker,
       prices: prices as ForecastPlan["eoyTargets"][number]["prices"],
-      rationale: houseRationale({
+      rationale: fallbackRationale({
         ticker: row.ticker,
         theme,
         spot,
@@ -458,7 +392,7 @@ export function buildForecastPlanPrompt(input: {
   });
 
   const yearsList = FORECAST_YEARS.join(", ");
-  const stance = input.stance ?? HOUSE_STANCE;
+  const stance = input.stance ?? DEFAULT_FORECAST_STANCE;
 
   return `${MARGUS_PERSONA}
 

@@ -12,7 +12,7 @@ import {
   parseDecimal,
 } from "@/lib/number-input";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
-import { ArrowDown, ArrowUp, ArrowUpDown, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
@@ -42,6 +42,8 @@ type Props = {
   onAskMargus?: () => void;
   /** Opens Margus AND immediately triggers the image file picker. */
   onImportScreenshot?: () => void;
+  /** Opens the CSV import modal. */
+  onImportCsv?: () => void;
   onOpenTicker?: (ticker: string) => void;
   /** Sheet display currency for totals/values (spot & buy stay USD). */
   displayCurrency?: DisplayCurrency;
@@ -207,6 +209,7 @@ export function PortfolioTable({
   onAddHolding,
   onAskMargus,
   onImportScreenshot,
+  onImportCsv,
   onOpenTicker,
   displayCurrency = "USD",
   eurUsd = null,
@@ -257,6 +260,16 @@ export function PortfolioTable({
             Import screenshot
           </button>
         )}
+        {onImportCsv && (
+          <button
+            type="button"
+            onClick={onImportCsv}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
+          >
+            <FileUp className="h-4 w-4" />
+            Import CSV
+          </button>
+        )}
         {onAddHolding && (
           <button
             type="button"
@@ -269,8 +282,8 @@ export function PortfolioTable({
         )}
       </div>
       <p className="text-xs text-zinc-500">
-        Screenshot drops every row in at once — Margus reads ticker, shares, and
-        buy price straight off the image.
+        Screenshot or CSV drops every row in at once — pick whichever&apos;s
+        easier to get your hands on.
       </p>
     </div>
   );
@@ -307,24 +320,37 @@ export function PortfolioTable({
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onEditCash}
-          className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-zinc-900"
-          title="Edit cash (stored in USD)"
-        >
-          <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-            Cash
-          </span>
-          <span
-            className={cn(
-              "text-sm font-semibold tabular-nums",
-              signedTone(portfolio.cash_balance)
-            )}
+        <div className="flex items-center gap-1">
+          {onImportCsv && holdings.length > 0 && (
+            <button
+              type="button"
+              onClick={onImportCsv}
+              title="Import / update holdings from a CSV file"
+              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
+              aria-label="Import CSV"
+            >
+              <FileUp className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onEditCash}
+            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-zinc-900"
+            title="Edit cash (stored in USD)"
           >
-            {money(portfolio.cash_balance)}
-          </span>
-        </button>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              Cash
+            </span>
+            <span
+              className={cn(
+                "text-sm font-semibold tabular-nums",
+                signedTone(portfolio.cash_balance)
+              )}
+            >
+              {money(portfolio.cash_balance)}
+            </span>
+          </button>
+        </div>
       </header>
 
       {/* Mobile cards */}

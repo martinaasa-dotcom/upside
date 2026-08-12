@@ -3,7 +3,7 @@ import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
   forecastPlanSchema,
-  HOUSE_STANCE,
+  DEFAULT_FORECAST_STANCE,
 } from "@/lib/forecast-plan";
 import type { ForecastModel } from "@/lib/forecast";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const portfolioName = String(body.portfolioName ?? "Portfolio");
     const cashBalance = Number(body.cashBalance ?? 0);
     const forecast = body.forecast as ForecastModel | undefined;
-    const stance = HOUSE_STANCE;
+    const stance = DEFAULT_FORECAST_STANCE;
 
     if (!portfolioId || !forecast?.rows) {
       return Response.json(
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         generatedAt: new Date().toISOString(),
         portfolioId,
         portfolioName,
-        stance: HOUSE_STANCE,
+        stance: DEFAULT_FORECAST_STANCE,
       },
     });
   } catch (err) {

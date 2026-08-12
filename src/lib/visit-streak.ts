@@ -114,7 +114,7 @@ export function last7DaysStrip(
   return out;
 }
 
-/** Snarky, house-voice copy for the current streak length. */
+/** Snarky, in-app-voice copy for the current streak length. */
 export function streakFlavor(streak: number): string {
   if (streak <= 0) return "No streak yet — today's a great day to start one.";
   if (streak === 1) return "Day 1. Historic. Frame it.";

@@ -185,35 +185,3 @@ export const STRATEGY = {
   executionWindow: "16:45 – 18:00 EEST",
 } as const;
 
-/**
- * House Call % baselines by ticker (Martin-confirmed vol guidance).
- * Prefer these over a flat default; nudge for earnings / setup.
- */
-export const CALL_PCT_BASELINES: Record<string, number> = {
-  VST: 0.07, // lower-vol / utility-ish
-  BMNR: 0.15,
-  RKLB: 0.16,
-  CRWV: 0.18,
-  NBIS: 0.22, // high-beta
-};
-
-/** Optional stock-target baselines paired with the Call % set above */
-export const STOCK_TARGET_BASELINES: Record<string, number> = {
-  CRWV: 90,
-  NBIS: 205,
-  BMNR: 19.5,
-  VST: 145,
-  RKLB: 77,
-};
-
-export function callPctBaseline(ticker: string): number | null {
-  const pct = CALL_PCT_BASELINES[ticker.toUpperCase()];
-  return pct ?? null;
-}
-
-export function formatCallPctBaselines(): string {
-  return Object.entries(CALL_PCT_BASELINES)
-    .sort((a, b) => a[1] - b[1])
-    .map(([t, p]) => `${t} ~${Math.round(p * 100)}%`)
-    .join(", ");
-}

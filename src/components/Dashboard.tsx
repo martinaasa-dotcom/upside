@@ -3,6 +3,7 @@
 import { CashModal } from "@/components/CashModal";
 import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
 import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
+import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
 import { ForecastPanel } from "@/components/ForecastPanel";
@@ -40,7 +41,8 @@ import {
   pushUndoSnapshot,
   type BookUndoSnapshot,
 } from "@/lib/book-undo";
-import { buildSnapshot } from "@/lib/calculations";
+import { buildSnapshot, STRATEGY } from "@/lib/calculations";
+import type { CsvHoldingRow } from "@/lib/csv-import";
 import { clearChatHistory } from "@/lib/chat-history";
 import {
   deriveBadges,
@@ -307,6 +309,7 @@ export function Dashboard() {
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
   const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
@@ -1537,6 +1540,26 @@ export function Dashboard() {
     [activePortfolio, holdings, source, eoyOverrides]
   );
 
+  const handleCsvImport = useCallback(
+    (input: { rows: CsvHoldingRow[]; cash: number | null; replace: boolean }) => {
+      if (input.rows.length === 0 && input.cash == null) return;
+      applyAdvisorActions([
+        {
+          action: "import_sheet",
+          cash: input.cash,
+          replace: input.replace,
+          holdings: input.rows.map((r) => ({
+            ticker: r.ticker,
+            shares: r.shares,
+            buyPrice: r.buyPrice,
+            callPct: r.callPct ?? STRATEGY.defaultCallPct,
+          })),
+        },
+      ]);
+    },
+    [applyAdvisorActions]
+  );
+
   function undoLastMargusWrite() {
     const { stack, snap } = popUndoSnapshot(undoStack);
     if (!snap) {
@@ -2311,6 +2334,7 @@ export function Dashboard() {
               onImportScreenshot={() =>
                 setMargusImagePickSignal((n) => n + 1)
               }
+              onImportCsv={() => setCsvImportOpen(true)}
               onOpenTicker={(t) => setDrawerTicker(t)}
               displayCurrency={getDisplayCurrency(
                 displayCurrencyByPortfolio,
@@ -2423,6 +2447,13 @@ export function Dashboard() {
         portfolioName={activePortfolio?.name ?? ""}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
+      />
+
+      <CsvImportModal
+        open={csvImportOpen}
+        portfolioName={activePortfolio?.name ?? ""}
+        onClose={() => setCsvImportOpen(false)}
+        onImport={handleCsvImport}
       />
 
       <CashModal

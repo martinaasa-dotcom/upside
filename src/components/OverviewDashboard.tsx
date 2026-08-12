@@ -655,7 +655,7 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      {/* House leader + Daily arena */}
+      {/* Family scoreboard leader + Daily arena */}
       <section className="overview-fade grid gap-3 sm:grid-cols-2">
         <button
           type="button"

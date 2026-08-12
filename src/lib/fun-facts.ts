@@ -93,7 +93,7 @@ const MAKERS: FactMaker[] = [
     )[0];
     if (!most || most.portfolios.length < 2) return null;
     return pick(rng, [
-      `${most.ticker} is the house favorite — in ${most.portfolios.length} books (${most.portfolios.join(", ")}).`,
+      `${most.ticker} is the crowd favorite — in ${most.portfolios.length} books (${most.portfolios.join(", ")}).`,
       `Conspiracy board: ${most.ticker} shows up in ${most.portfolios.length} portfolios.`,
       `Family reunion guest of honor: ${most.ticker} (${most.portfolios.join(", ")}).`,
       `${most.ticker} has more group chats than you — ${most.portfolios.length} books deep.`,
@@ -458,7 +458,7 @@ const FILLERS: FactMaker[] = [
     return pick(rng, [
       `Roll call: ${names.join(" · ")}.`,
       `The Avengers assemble: ${names.join(", ")}.`,
-      `House names in the chat: ${names.join(" / ")}.`,
+      `In the chat today: ${names.join(" / ")}.`,
     ]);
   },
 ];

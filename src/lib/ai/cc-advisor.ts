@@ -1,8 +1,4 @@
-import {
-  STRATEGY,
-  callPctBaseline,
-  formatCallPctBaselines,
-} from "@/lib/calculations";
+import { STRATEGY } from "@/lib/calculations";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { resolveImportTicker } from "@/lib/ticker";
 import { tool } from "ai";
@@ -236,10 +232,7 @@ export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null
         ticker: resolved,
         shares,
         buyPrice: buyUsd,
-        callPct:
-          callPct != null
-            ? callPct / 100
-            : (callPctBaseline(resolved) ?? 0.15),
+        callPct: callPct != null ? callPct / 100 : STRATEGY.defaultCallPct,
         message: `Added ${resolved}: ${shares} @ $${buyUsd.toFixed(2)} (from ${cur} ${buyPrice})`,
       };
     },
@@ -313,7 +306,7 @@ export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null
               .min(1)
               .max(40)
               .optional()
-              .describe("Optional Call % whole number; house baseline used if omitted"),
+              .describe("Optional Call % whole number; a volatility-scaled default is used if omitted"),
           })
         )
         .min(1)
@@ -385,10 +378,7 @@ export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null
           ticker,
           shares: h.shares,
           buyPrice,
-          callPct:
-            h.callPct != null
-              ? h.callPct / 100
-              : (callPctBaseline(ticker) ?? 0.15),
+          callPct: h.callPct != null ? h.callPct / 100 : STRATEGY.defaultCallPct,
         });
       }
 
@@ -720,27 +710,27 @@ Example (do not confuse these):
 
 When critiquing, discuss:
 - Is Stock Target still a sensible write level vs Spot / local highs?
-- Is Call % right for this ticker’s vol (house baselines)?
+- Is Call % right for this ticker's realized volatility?
 - Is strikeOtmFromSpot so far that premium/CC yield is junk → maybe tighten Call % or raise realism of target?
 - Earnings vs Expiration.
 - Never “fix” Distance by calling it strike OTM.
 
-House strategy:
+Covered-call strategy:
 - Prefer intraday green rebound to sell.
 - Expiry: ${STRATEGY.minDaysPreferred}–${STRATEGY.maxDaysPreferred} days (~2–3 weeks); up to ~${STRATEGY.maxDaysExtended}d if earnings forces a longer dated.
 - Prefer expire BEFORE earnings when possible; otherwise go past earnings and widen Call %.
-- Call % MUST always reflect volatility / beta of each name — never a flat portfolio-wide default.
-  · House baselines (prefer these): ${formatCallPctBaselines()}.
-  · Low-vol / defensive names: about ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}% (e.g. VST ~7%).
-  · Typical growth names: around 15–18% (e.g. BMNR ~15%, RKLB ~16%, CRWV ~18%).
-  · High-beta / speculative names: around 20–22% (e.g. NBIS ~22%).
-  · "I want safety" means scale UP high-beta names and keep calm names near their baseline — NOT setUniformCallPct to 20%.
-  · Prefer proposeWritePlan or setCallPctBulk with per-ticker values. Explain the vol rationale briefly.
-  · Still nudge Call % for earnings and distance to stock target after the house/vol baseline.
+- Call % MUST always reflect each name's own realized volatility / beta — never a flat portfolio-wide default.
+  · Low-vol / defensive names: about ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}%.
+  · Typical growth names: around ${(STRATEGY.callPctSafeMax * 100).toFixed(0)}–${(STRATEGY.callPctMid * 100).toFixed(0)}%.
+  · High-beta / speculative names: around ${(STRATEGY.callPctMid * 100).toFixed(0)}–${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%.
+  · "I want safety" means scale UP high-beta names and keep calm names near their own vol-implied level — NOT setUniformCallPct to one number for everything.
+  · Prefer proposeWritePlan or setCallPctBulk with per-ticker values, each reasoned from that name's own realized volatility (higher vol → wider Call %). Explain the vol rationale briefly.
+  · Still nudge Call % for earnings and distance to stock target after the vol baseline.
 - Target ~${(STRATEGY.targetYield * 100).toFixed(0)}% period yield (floor ~${(STRATEGY.minYield * 100).toFixed(0)}%).
 - Execution: ${STRATEGY.executionWindow}.
 
 Be concise. Prefer tools over invented numbers. After tools, briefly confirm.
+None of this is personalized investment advice — you're reasoning about the numbers already on the sheet, not recommending trades for the user's specific financial situation.
 
 Market session: ${ctx.marketState ?? "unknown"}
 Watchlist (not owned — discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}

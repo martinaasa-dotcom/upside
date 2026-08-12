@@ -1,4 +1,4 @@
-import { STRATEGY, callPctBaseline } from "@/lib/calculations";
+import { STRATEGY } from "@/lib/calculations";
 import {
   findLocalHighs,
   nextStrikeFromTarget,
@@ -307,31 +307,15 @@ function pickCallPct(params: {
   targetDistance: number;
   priceHistory: number[];
 }): { callPct: number; reason: string } {
-  const { ticker, daysToEarnings, expiryDays, targetDistance, priceHistory } =
-    params;
-  const house = callPctBaseline(ticker);
+  const { daysToEarnings, expiryDays, targetDistance, priceHistory } = params;
   const hv = realizedVolAnnual(priceHistory);
   const fromHv = callPctFromVolatility(hv);
 
-  // Prefer Martin-confirmed ticker baselines; HV is a nudge, not a rewrite.
-  let pct = house ?? fromHv.callPct;
-  const notes: string[] = [];
-  if (house != null) {
-    notes.push(
-      `house baseline ${ticker.toUpperCase()} ${(house * 100).toFixed(0)}%`
-    );
-    if (fromHv.bucket !== "unknown") {
-      const drift = fromHv.callPct - house;
-      if (Math.abs(drift) >= 0.025) {
-        pct = Math.round(((house + drift * 0.35) * 200)) / 200;
-        notes.push(
-          `HV nudge (${fromHv.reason}) → ${(pct * 100).toFixed(0)}%`
-        );
-      }
-    }
-  } else {
-    notes.push(fromHv.reason);
-  }
+  // Purely volatility-driven — scales to whatever ticker the user actually
+  // holds instead of a fixed per-name preference, so it works the same for
+  // every user's book.
+  let pct = fromHv.callPct;
+  const notes: string[] = [fromHv.reason];
 
   // Through-earnings risk → widen Call %
   if (
