@@ -133,17 +133,17 @@ function PulseCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-white">{c.ticker}</span>
             {pinned && (
-              <span className="rounded bg-brand/20 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright">
+              <span className="rounded bg-brand/20 px-1.5 py-0.5 text-[11px] font-medium text-brand-bright">
                 Your check
               </span>
             )}
             {!c.inBook && (
-              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">
+              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] text-zinc-400">
                 Lookup
               </span>
             )}
             {c.needsAttention && (
-              <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-medium text-rose-200">
+              <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[11px] font-medium text-rose-200">
                 Down ≥5%
               </span>
             )}
@@ -163,7 +163,7 @@ function PulseCard({
             <span className="text-xs text-zinc-500">{c.moveLabel}</span>
             {loading && check && (
               <span
-                className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500"
+                className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500"
                 title="Refreshing in the background — this result stays on screen until the new one lands"
               >
                 <RefreshCw className="h-2.5 w-2.5 animate-spin" />
@@ -207,7 +207,7 @@ function PulseCard({
       </div>
 
       {check && checkedAt && (
-        <p className="mt-1.5 text-[10px] text-zinc-600">
+        <p className="mt-1.5 text-[11px] text-zinc-600">
           Checked {formatRelativeTime(checkedAt)}
         </p>
       )}

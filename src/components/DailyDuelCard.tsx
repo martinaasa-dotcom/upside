@@ -86,7 +86,7 @@ export function DailyDuelCard({ tickers }: Props) {
         </div>
         {stats.totalPlayed > 0 && (
           <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-3 py-2 text-right">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+            <p className="text-[11px] uppercase tracking-wide text-zinc-500">
               Record
             </p>
             <p className="text-sm font-semibold tabular-nums text-white">

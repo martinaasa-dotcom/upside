@@ -444,7 +444,7 @@ export function AccountPage() {
                   <span className="text-[11px] uppercase tracking-wide text-zinc-500">
                     Bio · communities
                   </span>
-                  <span className="text-[10px] tabular-nums text-zinc-600">
+                  <span className="text-[11px] tabular-nums text-zinc-600">
                     {bio.length}/280
                   </span>
                 </span>
@@ -650,7 +650,7 @@ export function AccountPage() {
                     {inviteCode && (
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                             Invite code · {selectedName}
                           </p>
                           <p className="mt-0.5 font-mono text-sm text-brand-bright">

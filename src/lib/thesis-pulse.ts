@@ -111,7 +111,7 @@ export const pulseReportSchema = z.object({
       addLevel: z
         .string()
         .describe(
-          'Concrete add trigger: "Add now ~$X" and/or "stagger below ~$Y". Required when action=add or thesis intact on a dip. Empty only for trim. Not greedy — Y within ~5–12% below spot.'
+          'Concrete, self-explanatory add trigger, e.g. "Add now ~$X · then more if it drops to ~$Y" — spell out that Y is a SECOND, lower buy trigger, never just "stagger below" jargon. Required when action=add or thesis intact on a dip. Empty only for trim. Not greedy — Y within ~5–12% below spot.'
         ),
       earningsNote: z
         .string()
@@ -399,7 +399,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       earningsNote: "",
       action: "add",
       trimPct: null,
-      addLevel: `Add now ~$${price} · stagger below ~${(
+      addLevel: `Add now ~$${price} · then more if it drops to ~${(
         candidate.price * 0.92
       ).toFixed(2)}`,
       verdict:

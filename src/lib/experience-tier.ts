@@ -104,4 +104,4 @@ export function saveStoredKnowsOptions(value: boolean) {
 /** Lab sub-tab ids hidden when the viewer has no options experience —
  * purely covered-call mechanics, unlike Cashflow (also tracks dividends,
  * still useful with zero premiums logged) which stays. */
-export const NO_OPTIONS_HIDDEN_LAB_TABS = ["calendar", "season"];
+export const NO_OPTIONS_HIDDEN_LAB_TABS = ["season"];

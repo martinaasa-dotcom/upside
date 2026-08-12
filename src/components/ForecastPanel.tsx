@@ -484,7 +484,7 @@ export function ForecastPanel({
                   <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
                     {r.ticker}
                     {!r.hasTargets && (
-                      <span className="mt-0.5 text-[10px] font-normal tracking-normal text-zinc-600">
+                      <span className="mt-0.5 text-[11px] font-normal tracking-normal text-zinc-600">
                         awaiting Margus
                       </span>
                     )}
@@ -657,7 +657,7 @@ export function ForecastPanel({
                   </p>
                   <div className="mt-3 space-y-2">
                     <div className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-brand-bright">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-bright">
                         Add
                       </p>
                       <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
@@ -665,7 +665,7 @@ export function ForecastPanel({
                       </p>
                     </div>
                     <div className="rounded-lg border border-rose-500/25 bg-rose-950/30 px-2.5 py-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-300">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-300">
                         Trim
                       </p>
                       <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">

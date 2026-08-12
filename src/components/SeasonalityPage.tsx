@@ -107,13 +107,13 @@ function CycleMonthlyChart({
             </div>
             <span
               className={cn(
-                "text-[9px]",
+                "text-[10px]",
                 isCurrent ? "font-semibold text-brand-bright" : "text-zinc-500"
               )}
             >
               {row.label}
             </span>
-            <span className={cn("text-[9px] tabular-nums", retText(v))}>
+            <span className={cn("text-[10px] tabular-nums", retText(v))}>
               {v >= 0 ? "+" : ""}
               {v.toFixed(1)}%
             </span>
@@ -152,7 +152,7 @@ function CycleHistoryBars({
 
   return (
     <div className="space-y-2.5">
-      <div className="flex flex-wrap gap-1.5 text-[10px]">
+      <div className="flex flex-wrap gap-1.5 text-[11px]">
         <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-500">
           Best{" "}
           <span className={cn("font-semibold tabular-nums", retText(best.returnPct))}>
@@ -200,7 +200,7 @@ function CycleHistoryBars({
             >
               <span
                 className={cn(
-                  "text-[10px] tabular-nums",
+                  "text-[11px] tabular-nums",
                   isHighlight
                     ? "font-semibold text-brand-bright"
                     : "text-zinc-500"
@@ -224,7 +224,7 @@ function CycleHistoryBars({
               </div>
               <span
                 className={cn(
-                  "text-right text-[10px] font-medium tabular-nums",
+                  "text-right text-[11px] font-medium tabular-nums",
                   retText(h.returnPct)
                 )}
               >
@@ -320,7 +320,7 @@ function DayOfMonthChart({
               </div>
               <span
                 className={cn(
-                  "text-[9px] tabular-nums",
+                  "text-[10px] tabular-nums",
                   isSelected || isToday
                     ? "font-bold text-brand-bright"
                     : "text-zinc-500"
@@ -347,7 +347,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
   const s = signals[0]!;
   return (
     <div className={cn("rounded-xl border px-4 py-3", stanceStyles(s.stance))}>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
         {stanceLabel(s.stance)} · this month
       </p>
       <p className="mt-1 text-sm font-medium text-white">{s.headline}</p>
@@ -565,12 +565,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 </p>
                 {viewMonth === marketToday.month &&
                 selectedDay === marketToday.day ? (
-                  <p className="text-[10px] text-brand-bright">Today</p>
+                  <p className="text-[11px] text-brand-bright">Today</p>
                 ) : (
                   <button
                     type="button"
                     onClick={goToToday}
-                    className="text-[10px] text-zinc-500 underline-offset-2 hover:text-brand-bright hover:underline"
+                    className="text-[11px] text-zinc-500 underline-offset-2 hover:text-brand-bright hover:underline"
                   >
                     Jump to today
                   </button>

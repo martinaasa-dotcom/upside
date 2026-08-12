@@ -107,7 +107,7 @@ export function MacroStrip() {
   }>;
 
   return (
-    <div className="scrollbar-none flex min-w-0 w-full items-center gap-2 overflow-x-auto text-[10px] tabular-nums text-zinc-500 sm:w-auto sm:max-w-[min(100%,28rem)] sm:justify-end sm:gap-3 sm:text-[11px]">
+    <div className="scrollbar-none flex min-w-0 w-full items-center gap-2 overflow-x-auto text-[11px] tabular-nums text-zinc-500 sm:w-auto sm:max-w-[min(100%,28rem)] sm:justify-end sm:gap-3 sm:text-xs">
       {items.map((i) => (
         <span key={i.label} className="shrink-0" title={i.title}>
           <span className="text-zinc-600">{i.label}</span>{" "}

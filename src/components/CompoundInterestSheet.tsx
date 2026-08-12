@@ -416,7 +416,7 @@ export function CompoundInterestSheet({
           </div>
           <p
             className={cn(
-              "mt-1.5 text-[10px] tabular-nums",
+              "mt-1.5 text-[11px] tabular-nums",
               fxReady ? "text-zinc-500" : "text-amber-300/90"
             )}
             title="Book amounts stay USD; EUR uses Yahoo EURUSD last → close → open"
@@ -519,7 +519,7 @@ export function CompoundInterestSheet({
               Monthly deposit dial
             </p>
             {tipping != null && (
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-gain">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-gain">
                 Tip year {tipping}
               </span>
             )}
@@ -906,7 +906,7 @@ export function CompoundInterestSheet({
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-brand" />
             <h4 className="text-sm font-semibold text-white">
-              Explain like I’m impatient
+              The quick read
             </h4>
           </div>
           <ul className="mt-3 space-y-2">

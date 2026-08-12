@@ -164,7 +164,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
         meta.cls
       )}
     >
@@ -519,7 +519,7 @@ export function UpsidePortfolioPage() {
             <section className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                     Total value
                   </p>
                   <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
@@ -527,7 +527,7 @@ export function UpsidePortfolioPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                     Today
                   </p>
                   <p
@@ -547,7 +547,7 @@ export function UpsidePortfolioPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                     Total return
                   </p>
                   <p
@@ -571,7 +571,7 @@ export function UpsidePortfolioPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                     Cash
                   </p>
                   <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
@@ -751,7 +751,7 @@ export function UpsidePortfolioPage() {
                         <p className="text-xs leading-relaxed text-zinc-400">
                           {h.thesis}
                         </p>
-                        <div className="flex flex-wrap gap-1.5 text-[10px] text-zinc-500">
+                        <div className="flex flex-wrap gap-1.5 text-[11px] text-zinc-500">
                           {h.target_timeframe && (
                             <span className="rounded-md bg-zinc-800/80 px-1.5 py-0.5">
                               Timeline: {h.target_timeframe}

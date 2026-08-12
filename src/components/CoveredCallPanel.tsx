@@ -236,7 +236,7 @@ export function CoveredCallPanel({
                       : "—"}
                   </p>
                   {isNearWriteLevel(r) && (
-                    <span className="mt-1 inline-block rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-200">
+                    <span className="mt-1 inline-block rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[11px] font-medium text-amber-200">
                       At write level
                     </span>
                   )}
@@ -357,7 +357,7 @@ export function CoveredCallPanel({
                       : "—"}
                   </span>
                   {isNearWriteLevel(r) && (
-                    <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium normal-case text-amber-200">
+                    <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[11px] font-medium normal-case text-amber-200">
                       At write level
                     </span>
                   )}

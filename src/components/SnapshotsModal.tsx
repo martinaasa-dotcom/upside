@@ -209,7 +209,7 @@ export function SnapshotsModal({
                         onClick={() =>
                           setPendingRestore({ kind: "book", id: s.id, label: s.label })
                         }
-                        className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                        className="rounded border border-zinc-700 px-2 py-0.5 text-[11px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
                       >
                         {busyId === s.id ? "…" : "Full book"}
                       </button>
@@ -224,7 +224,7 @@ export function SnapshotsModal({
                               label: s.label,
                             })
                           }
-                          className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                          className="rounded border border-zinc-700 px-2 py-0.5 text-[11px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
                         >
                           {busyId === `${s.id}:sheet` ? "…" : "This sheet"}
                         </button>

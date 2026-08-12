@@ -6,7 +6,7 @@ import { todayKeyInTz } from "@/lib/timezone";
 import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
 
 export type BriefingLink =
-  | { type: "lab"; tab: "calendar" | "alerts" | "arena" | "versus" | "season" }
+  | { type: "lab"; tab: "alerts" | "versus" | "season" }
   | { type: "pulse" }
   | { type: "sheet"; portfolioId: string }
   | { type: "compound" };
@@ -132,15 +132,15 @@ export function buildInvestorBriefing(input: {
       detail:
         openPrem > 0
           ? pick(rng, [
-              "When you actually fill a call, tap Log premium on the CC calendar so the season meter counts it.",
+              "When you actually fill a call, tap Log premium on the CC income tab so the season meter counts it.",
               "Modeled, not banked yet — log the fill when it actually happens so the season meter matches reality.",
             ])
           : pick(rng, [
               "Premium already logged in Cashflow — season meter is current.",
               "That's real, logged premium — the season meter already reflects it.",
             ]),
-      link: { type: "lab", tab: "calendar" },
-      cta: openPrem > 0 ? "Log premium →" : "CC calendar →",
+      link: { type: "lab", tab: "season" },
+      cta: openPrem > 0 ? "Log premium →" : "CC income →",
     });
   }
 
@@ -171,14 +171,6 @@ export function buildInvestorBriefing(input: {
       kind: "play",
       title: "The job today is waiting",
       detail: "Own the names, write calls when it’s fat, otherwise close the laptop.",
-    },
-    {
-      id: `play-arena-${dayKey}`,
-      kind: "play",
-      title: "Bored? Paper Arena",
-      detail: "Sandbox money only — trade the itch without touching the real book.",
-      link: { type: "lab", tab: "arena" },
-      cta: "Open Arena →",
     },
     {
       id: `play-versus-${dayKey}`,

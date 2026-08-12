@@ -932,7 +932,7 @@ export function CcAdvisorChat({
             </button>
           </header>
 
-          <p className="shrink-0 border-b border-zinc-800/60 px-3 py-1.5 text-center text-[10px] leading-snug text-zinc-600">
+          <p className="shrink-0 border-b border-zinc-800/60 px-3 py-1.5 text-center text-[11px] leading-snug text-zinc-600">
             {ADVICE_DISCLAIMER_SHORT}
           </p>
 
@@ -1007,7 +1007,7 @@ export function CcAdvisorChat({
                       : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
                   }
                 >
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
                     {message.role === "user" ? "You" : "Margus"}
                   </p>
                   {images.length > 0 && (
@@ -1054,7 +1054,7 @@ export function CcAdvisorChat({
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
                 >
                   <Square className="h-2.5 w-2.5 fill-current" />
                   Stop

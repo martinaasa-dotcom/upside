@@ -113,7 +113,7 @@ export function TickerDrawer({
                 </button>
               ))}
             </div>
-            <div className="mt-1 flex justify-between text-[10px] text-zinc-600">
+            <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
               <span>Low conviction</span>
               <span>{CONVICTION_LABELS[level]}</span>
               <span>High conviction</span>

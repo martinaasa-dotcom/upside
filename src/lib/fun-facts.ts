@@ -296,34 +296,6 @@ const MAKERS: FactMaker[] = [
   },
 
   ({ tickers, rng }) => {
-    const names = [...tickers].map((t) => t.ticker).sort((a, b) => a.length - b.length);
-    if (!names.length) return null;
-    const short = names[0]!;
-    const long = names[names.length - 1]!;
-    if (short === long) {
-      return pick(rng, [
-        `Typography corner: every ticker is exactly ${short.length} letters. Cursed.`,
-        `All tickers are ${short.length} chars. Design system achieved.`,
-      ]);
-    }
-    return pick(rng, [
-      `Shortest ticker: ${short}. Longest: ${long}. Branding department notes taken.`,
-      `${long} wins Scrabble; ${short} wins telegram bills.`,
-      `Alphabet soup length check — ${short} vs ${long}.`,
-    ]);
-  },
-
-  ({ tickers, rng }) => {
-    const alpha = [...tickers].map((t) => t.ticker).sort();
-    if (alpha.length < 2) return null;
-    return pick(rng, [
-      `Dictionary order: ${alpha[0]} leads the parade; ${alpha[alpha.length - 1]} closes it.`,
-      `A–Z roll call starts with ${alpha[0]} and ends on ${alpha[alpha.length - 1]}.`,
-      `If tickers lined up for recess: ${alpha[0]} first, ${alpha[alpha.length - 1]} last.`,
-    ]);
-  },
-
-  ({ tickers, rng }) => {
     const multi = tickers.filter((t) => t.portfolios.length >= 2);
     if (!multi.length) {
       return pick(rng, [
@@ -423,8 +395,8 @@ const MAKERS: FactMaker[] = [
     const b = t.sparkline[t.sparkline.length - 1]!;
     const move = a > 0 ? (b - a) / a : 0;
     return pick(rng, [
-      `Sparkline gossip on ${t.ticker}: roughly ${pct1(move)} over the visible window.`,
-      `${t.ticker}'s little chart went ${move >= 0 ? "up-ish" : "down-ish"} (~${pct1(move)}).`,
+      `${t.ticker}'s recent price trend (the mini-chart on its card): ${move >= 0 ? "up" : "down"} about ${pct1(Math.abs(move))} over that stretch.`,
+      `Zoom into ${t.ticker}'s sparkline and it's ${move >= 0 ? "trending up" : "trending down"} roughly ${pct1(Math.abs(move))} lately.`,
     ]);
   },
 
@@ -432,9 +404,9 @@ const MAKERS: FactMaker[] = [
     const winners = tickers.filter((t) => t.roiPct > 0).length;
     const losers = tickers.filter((t) => t.roiPct < 0).length;
     return pick(rng, [
-      `Lifetime win/loss by ticker: ${winners} ahead · ${losers} behind.`,
-      `Scoreboard (ROI): ${winners} green careers, ${losers} redemption arcs.`,
-      `${winners} tickers are lifetime up; ${losers} are “accumulating character”.`,
+      `Lifetime win/loss by ticker: ${winners} up · ${losers} down.`,
+      `Scoreboard (lifetime ROI): ${winners} in the green, ${losers} in the red.`,
+      `${winners} tickers are up since you bought them; ${losers} are still underwater.`,
     ]);
   },
 ];

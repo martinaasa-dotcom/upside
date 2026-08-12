@@ -90,10 +90,10 @@ ${fg}
 - **action** = \`add\` | \`hold\` | \`trim\` | \`watch\`
 - **intact thesis + red day** on a high-conviction compounder (AI infra, AI power, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal. This is about the thesis, not a fixed ticker list — apply it to whatever the user actually holds.
 - If a line is in **rapid euphoria** (parabolic move / crowd chase), prefer **trim** with explicit take-profit sizing.
-- **addLevel** — always give a concrete price plan when thesis is intact or action is add:
+- **addLevel** — always give a concrete, self-explanatory price plan when thesis is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
-  - Or \`Add now ~$X · stagger below ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy).
-  - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · stagger below ~$72\` — NOT "wait for $50".
+  - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy) — spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
+  - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\` — NOT "wait for $50".
 - Use **hold** only when you would not deploy (max concentration, broken narrative, no cash story).
 - Use **trim** only when thesis is broken or euphorically extended.
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.

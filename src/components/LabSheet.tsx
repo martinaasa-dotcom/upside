@@ -36,20 +36,6 @@ import { loadDuelHistory, duelStats } from "@/lib/daily-duel";
 import { loadVisitStreak } from "@/lib/visit-streak";
 import { personalBadges } from "@/lib/personal-badges";
 import {
-  arenaChallengeProgress,
-  loadArenaChallenge,
-  startDailyArenaChallenge,
-  type ArenaChallenge,
-} from "@/lib/arena-challenge";
-import {
-  arenaBuy,
-  arenaSell,
-  arenaValue,
-  defaultArena,
-  seedArenaFromLive,
-  setArenaCash,
-} from "@/lib/paper-arena";
-import {
   buildSheetRivalry,
   rivalryTagline,
 } from "@/lib/sheet-rivalry";
@@ -82,7 +68,7 @@ type Props = {
   guest?: boolean;
   dismissedAlertIds?: Set<string>;
   onDismissAlert?: (id: string) => void;
-  /** Deep-link from Overview (versus / arena / …). */
+  /** Deep-link from Overview (versus / alerts / …). */
   intentTab?: LabDeepLink | null;
   onIntentConsumed?: () => void;
   /** Group ids to hide, driven by the viewer's experience tier. */
@@ -92,24 +78,20 @@ type Props = {
   hiddenTabs?: string[];
 };
 
-type LabGroup = "book" | "income" | "trade" | "digest" | "advanced";
+type LabGroup = "book" | "income" | "digest" | "advanced";
 type LabTab =
   | "alloc"
   | "versus"
   | "watch"
   | "shock"
   | "corr"
-  | "calendar"
   | "season"
   | "cashflow"
-  | "arena"
-  | "recap"
   | "alerts";
 
 const GROUPS: { id: LabGroup; label: string }[] = [
   { id: "book", label: "Book" },
   { id: "income", label: "Income" },
-  { id: "trade", label: "Trade" },
   { id: "digest", label: "Review" },
   { id: "advanced", label: "Advanced" },
 ];
@@ -118,20 +100,15 @@ const TABS: { id: LabTab; group: LabGroup; label: string }[] = [
   { id: "alloc", group: "book", label: "Allocation" },
   { id: "versus", group: "book", label: "Versus" },
   { id: "watch", group: "book", label: "Watchlist" },
-  { id: "calendar", group: "income", label: "CC calendar" },
-  { id: "season", group: "income", label: "CC season" },
+  { id: "season", group: "income", label: "CC income" },
   { id: "cashflow", group: "income", label: "Cashflow" },
-  { id: "arena", group: "trade", label: "Arena" },
-  { id: "recap", group: "digest", label: "Weekly recap" },
-  { id: "alerts", group: "digest", label: "Alerts" },
+  { id: "alerts", group: "digest", label: "Alerts & recap" },
   { id: "shock", group: "advanced", label: "Shock" },
   { id: "corr", group: "advanced", label: "Correlation" },
 ];
 
 const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
   versus: "versus",
-  arena: "arena",
-  calendar: "calendar",
   alerts: "alerts",
   watch: "watch",
   season: "season",
@@ -179,7 +156,6 @@ export function LabSheet({
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
-  const arena = lab.arena;
   const cashflows = lab.cashflows;
   const badges = lab.badges ?? [];
   // Personal engagement badges (visit streak, Daily Duel) — local to this
@@ -193,13 +169,6 @@ export function LabSheet({
   const [cfAmount, setCfAmount] = useState(0);
   const [cfNote, setCfNote] = useState("");
   const [cfTicker, setCfTicker] = useState("");
-  const [cloneSheetId, setCloneSheetId] = useState(portfolios[0]?.id ?? "");
-  const [aTicker, setATicker] = useState("");
-  const [aShares, setAShares] = useState(0);
-  const [aPrice, setAPrice] = useState(0);
-  const [aCash, setACash] = useState(arena.cash);
-  const [arenaMsg, setArenaMsg] = useState<string | null>(null);
-  const [challenge, setChallenge] = useState<ArenaChallenge | null>(null);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchDraft, setWatchDraft] = useState("");
   const [watchQuotes, setWatchQuotes] = useState<Record<string, Quote>>({});
@@ -232,18 +201,6 @@ export function LabSheet({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the ticker-list string, not quotes/watchQuotes identity churn
   }, [watchKey]);
-
-  useEffect(() => {
-    if (!cloneSheetId && portfolios[0]) setCloneSheetId(portfolios[0].id);
-  }, [portfolios, cloneSheetId]);
-
-  useEffect(() => {
-    setACash(arena.cash);
-  }, [arena.cash, arena.updatedAt]);
-
-  useEffect(() => {
-    setChallenge(loadArenaChallenge());
-  }, [arena.updatedAt]);
 
   const groupTabs = visibleTabs.filter((t) => t.group === group);
 
@@ -354,10 +311,7 @@ export function LabSheet({
       : (portfolios.find((p) => p.id === scopeId)?.name ?? "Sheet");
 
   const scopeApplies =
-    tab === "alloc" ||
-    tab === "shock" ||
-    tab === "corr" ||
-    tab === "calendar";
+    tab === "alloc" || tab === "shock" || tab === "corr" || tab === "season";
 
   const sheetHoldings = useMemo(
     () =>
@@ -457,23 +411,6 @@ export function LabSheet({
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [scopedCcRows]);
 
-  const prices: Record<string, number> = {};
-  for (const [k, q] of Object.entries(quotes)) prices[k] = q.price;
-  const arenaLive = arenaValue(arena, prices);
-  const arenaCost = arena.holdings.reduce(
-    (s, h) => s + h.shares * h.buyPrice,
-    0
-  );
-  const arenaPnl = arenaLive - arena.cash - arenaCost;
-  const challengeProg =
-    challenge != null
-      ? arenaChallengeProgress(
-          challenge,
-          arenaLive,
-          overview.totals.todayPct
-        )
-      : null;
-
   const maxRivalNav = Math.max(...rivalry.map((r) => r.value), 1);
 
   return (
@@ -484,12 +421,13 @@ export function LabSheet({
           <h2 className="text-sm font-semibold text-white">Lab</h2>
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Sandbox tools — income, Versus, Arena. Shock & Correlation live under
-          Advanced. Edits sync when a locked sheet is unlocked.
+          Allocation, Versus &amp; Watchlist live under Book; income tracking
+          under Income; Shock &amp; Correlation under Advanced. Edits sync
+          when a locked sheet is unlocked.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex min-h-8 items-center gap-2">
-            <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+            <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
               Scope
             </span>
             <select
@@ -742,268 +680,6 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "arena" && (
-        <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="rounded-lg border border-brand/25 bg-brand/10 px-3 py-3">
-            <p className="text-sm font-semibold text-white">
-              Daily boredom challenge
-            </p>
-            <p className="mt-1 text-xs text-zinc-400">
-              {!challenge || !challengeProg?.sameDay
-                ? "Reset the sandbox with today’s cash + live-book tickers only. Beat the live book’s day % — without touching real sheets."
-                : challenge.note}
-            </p>
-            {challengeProg && challenge?.dayKey && (
-              <p
-                className={cn(
-                  "mt-2 text-xs tabular-nums",
-                  challengeProg.arenaReturn >= 0 ? "text-gain" : "text-loss"
-                )}
-              >
-                Arena {percent(challengeProg.arenaReturn)}
-                {challengeProg.vsLive != null && (
-                  <span className="text-zinc-500">
-                    {" "}
-                    · vs live day{" "}
-                    <span
-                      className={
-                        challengeProg.vsLive >= 0 ? "text-gain" : "text-loss"
-                      }
-                    >
-                      {percent(challengeProg.vsLive)}
-                    </span>
-                  </span>
-                )}
-              </p>
-            )}
-            {!guest && (
-              <button
-                type="button"
-                className="mt-3 rounded-lg bg-brand/25 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/35"
-                onClick={() => {
-                  const { arena: next, challenge: ch } =
-                    startDailyArenaChallenge({
-                      tickers: overview.tickers.map((t) => t.ticker),
-                      liveDayPct: overview.totals.todayPct,
-                    });
-                  onLabChange({ arena: next });
-                  setChallenge(ch);
-                  setArenaMsg("Daily challenge started");
-                  setACash(next.cash);
-                }}
-              >
-                Start today’s challenge
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-sm text-zinc-300">
-                Paper Arena ·{" "}
-                <span className="font-semibold text-white">
-                  {currency(arenaLive)}
-                </span>
-                <span className="text-zinc-500">
-                  {" "}
-                  · cash {currency(arena.cash)}
-                </span>
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500">{arena.note}</p>
-              <p
-                className={cn(
-                  "mt-1 text-xs tabular-nums",
-                  arenaPnl >= 0 ? "text-gain" : "text-loss"
-                )}
-              >
-                Unrealized vs cost {currency(arenaPnl)}
-              </p>
-            </div>
-          </div>
-
-          {!guest && (
-            <>
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={cloneSheetId}
-                  onChange={(e) => setCloneSheetId(e.target.value)}
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-white"
-                >
-                  {portfolios.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
-                  onClick={() => {
-                    const sheet = overview.sheets.find(
-                      (s) => s.portfolio.id === cloneSheetId
-                    );
-                    if (!sheet) return;
-                    const hs = holdings.filter(
-                      (h) => h.portfolio_id === sheet.portfolio.id
-                    );
-                    onLabChange({
-                      arena: seedArenaFromLive(
-                        sheet.portfolio.cash_balance,
-                        hs,
-                        sheet.portfolio.name
-                      ),
-                    });
-                    setArenaMsg(`Cloned ${sheet.portfolio.name}`);
-                  }}
-                >
-                  Clone sheet
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
-                  onClick={() => {
-                    onLabChange({ arena: defaultArena() });
-                    setArenaMsg("Sandbox reset");
-                  }}
-                >
-                  Reset
-                </button>
-              </div>
-
-              <div className="grid gap-2 rounded-lg border border-zinc-800 p-3 sm:grid-cols-5">
-                <input
-                  value={aTicker}
-                  onChange={(e) => {
-                    setATicker(e.target.value.toUpperCase());
-                    const q = quotes[e.target.value.toUpperCase()]?.price;
-                    if (q) setAPrice(q);
-                  }}
-                  placeholder="Ticker"
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-                />
-                <FormattedNumberInput
-                  kind="money"
-                  currency="USD"
-                  digits={0}
-                  value={aShares}
-                  onChange={setAShares}
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-                />
-                <FormattedNumberInput
-                  kind="money"
-                  currency="USD"
-                  digits={2}
-                  value={aPrice}
-                  onChange={setAPrice}
-                  className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-                />
-                <button
-                  type="button"
-                  className="rounded-lg bg-brand/20 text-xs font-medium text-brand-bright"
-                  onClick={() => {
-                    const next = arenaBuy(arena, aTicker, aShares, aPrice);
-                    if (!next) {
-                      setArenaMsg("Buy failed — check cash / inputs");
-                      return;
-                    }
-                    onLabChange({ arena: next });
-                    setArenaMsg(`Bought ${aShares} ${aTicker}`);
-                    setAShares(0);
-                  }}
-                >
-                  Buy
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-zinc-700 text-xs text-zinc-300"
-                  onClick={() => {
-                    const next = arenaSell(arena, aTicker, aShares, aPrice);
-                    if (!next) {
-                      setArenaMsg("Sell failed — check shares / inputs");
-                      return;
-                    }
-                    onLabChange({ arena: next });
-                    setArenaMsg(`Sold ${aShares} ${aTicker}`);
-                    setAShares(0);
-                  }}
-                >
-                  Sell
-                </button>
-                <div className="flex gap-2 sm:col-span-5">
-                  <FormattedNumberInput
-                    kind="money"
-                    currency="USD"
-                    digits={0}
-                    value={aCash}
-                    onChange={setACash}
-                    className="w-40 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-                  />
-                  <button
-                    type="button"
-                    className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300"
-                    onClick={() => {
-                      onLabChange({ arena: setArenaCash(arena, aCash) });
-                      setArenaMsg("Cash updated");
-                    }}
-                  >
-                    Set cash
-                  </button>
-                  {arenaMsg && (
-                    <p className="self-center text-xs text-zinc-500">
-                      {arenaMsg}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-
-          <ul className="space-y-1 text-sm">
-            {arena.holdings.map((h) => {
-              const mark = prices[h.ticker] ?? h.buyPrice;
-              const pnl = h.shares * (mark - h.buyPrice);
-              return (
-                <li
-                  key={h.ticker}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-800/80 px-3 py-2 text-zinc-300"
-                >
-                  <span>
-                    <button
-                      type="button"
-                      className="font-medium text-white hover:text-brand-bright"
-                      onClick={() => {
-                        setATicker(h.ticker);
-                        setAPrice(mark);
-                        setAShares(h.shares);
-                      }}
-                    >
-                      {h.ticker}
-                    </button>{" "}
-                    · {h.shares} @ {currency(h.buyPrice)}
-                  </span>
-                  <span className="tabular-nums">
-                    {currency(h.shares * mark)}{" "}
-                    <span
-                      className={cn(
-                        "text-xs",
-                        pnl >= 0 ? "text-gain" : "text-loss"
-                      )}
-                    >
-                      ({currency(pnl)})
-                    </span>
-                  </span>
-                </li>
-              );
-            })}
-            {arena.holdings.length === 0 && (
-              <li className="text-zinc-500">
-                Empty — clone a sheet or buy a ticker.
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-
       {tab === "shock" && (
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1125,11 +801,11 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "calendar" && (
-        <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-white">
+      {tab === "season" && (
+        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-white">
             <span className="inline-flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-brand" /> CC income calendar
+              <CalendarDays className="h-4 w-4 text-brand" /> CC income
             </span>
             {scopedCcRows.some((r) => r.premium == null && r.contracts > 0) && (
               <span className="text-[11px] font-normal text-zinc-500">
@@ -1137,12 +813,56 @@ export function LabSheet({
               </span>
             )}
           </div>
-          <p className="mb-3 text-xs text-zinc-500">
-            One-tap Log premium books the modeled fill into Cashflow — closes the
-            CC season loop.
+          <p className="text-xs text-zinc-500">
+            {ccSeason.label} · soft target ~1% of equity (booked premium + 35% of
+            open modeled prem). One-tap Log premium below books the fill into
+            Cashflow.
           </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                Booked
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-white">
+                {currency(ccSeason.bookedPremium)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                Open modeled
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-brand-bright">
+                {currency(ccSeason.openPremium)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-800 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                Target
+              </p>
+              <p className="text-lg font-semibold tabular-nums text-zinc-100">
+                {currency(ccSeason.target)}
+              </p>
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 flex justify-between text-xs text-zinc-500">
+              <span>Season meter</span>
+              <span className="tabular-nums">
+                {Math.round(ccSeason.progress * 100)}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
+              <div
+                className="h-full rounded-full bg-brand"
+                style={{
+                  width: `${Math.min(100, ccSeason.progress * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+
           {logFlash && (
-            <p className="mb-2 text-xs text-brand-bright">{logFlash}</p>
+            <p className="text-xs text-brand-bright">{logFlash}</p>
           )}
           {ccByExpiry.length === 0 ? (
             <p className="text-sm text-zinc-500">
@@ -1210,7 +930,7 @@ export function LabSheet({
                                     type="button"
                                     disabled={logged}
                                     onClick={() => logRowPremium(r, exp)}
-                                    className="rounded border border-brand/40 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright hover:bg-brand/15 disabled:cursor-default disabled:border-zinc-700 disabled:text-zinc-600"
+                                    className="rounded border border-brand/40 px-1.5 py-0.5 text-[11px] font-medium text-brand-bright hover:bg-brand/15 disabled:cursor-default disabled:border-zinc-700 disabled:text-zinc-600"
                                   >
                                     {logged ? "Logged" : "Log premium"}
                                   </button>
@@ -1225,83 +945,6 @@ export function LabSheet({
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {tab === "season" && (
-        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-white">
-            <CalendarDays className="h-4 w-4 text-brand" /> CC income season
-          </div>
-          <p className="text-xs text-zinc-500">
-            {ccSeason.label} · soft target ~1% of equity (booked premium + 35% of
-            open modeled prem). Log fills in Cashflow.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-zinc-800 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                Booked
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-white">
-                {currency(ccSeason.bookedPremium)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-zinc-800 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                Open modeled
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-brand-bright">
-                {currency(ccSeason.openPremium)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-zinc-800 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                Target
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-zinc-100">
-                {currency(ccSeason.target)}
-              </p>
-            </div>
-          </div>
-          <div>
-            <div className="mb-1 flex justify-between text-xs text-zinc-500">
-              <span>Season meter</span>
-              <span className="tabular-nums">
-                {Math.round(ccSeason.progress * 100)}%
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                className="h-full rounded-full bg-brand"
-                style={{
-                  width: `${Math.min(100, ccSeason.progress * 100)}%`,
-                }}
-              />
-            </div>
-          </div>
-          <p className="text-xs text-zinc-500">
-            {ccSeason.contractsOpen} contracts with modeled premium
-            {ccSeason.nextExpiry ? ` · next expiry ${ccSeason.nextExpiry}` : ""}.
-          </p>
-          <ul className="space-y-1.5 text-xs text-zinc-400">
-            {ccSeason.premiumByExpiry.map((e) => (
-              <li
-                key={e.expiry}
-                className="flex justify-between rounded-lg border border-zinc-800/80 px-3 py-2"
-              >
-                <span>
-                  {e.expiry === "—" ? "Awaiting scan" : e.expiry}
-                  {e.contracts > 0 ? ` · ${e.contracts} ct` : ""}
-                </span>
-                <span className="tabular-nums text-zinc-200">
-                  {currency(e.premium)}
-                </span>
-              </li>
-            ))}
-            {ccSeason.premiumByExpiry.length === 0 && (
-              <li className="text-zinc-500">No CC rows in scope yet.</li>
-            )}
-          </ul>
         </div>
       )}
 
@@ -1383,7 +1026,7 @@ export function LabSheet({
                 <span>
                   {e.kind}
                   {e.ticker ? ` · ${e.ticker}` : ""} · {e.note}
-                  <span className="ml-2 text-[10px] text-zinc-600">
+                  <span className="ml-2 text-[11px] text-zinc-600">
                     {new Date(e.at).toLocaleDateString()}
                   </span>
                 </span>
@@ -1427,7 +1070,7 @@ export function LabSheet({
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="border-collapse text-[10px]">
+                <table className="border-collapse text-[11px]">
                   <thead>
                     <tr>
                       <th className="p-1" />
@@ -1456,7 +1099,7 @@ export function LabSheet({
                             className="p-0.5"
                           >
                             <div
-                              className="flex h-7 w-7 items-center justify-center rounded tabular-nums text-[9px] text-zinc-100"
+                              className="flex h-7 w-7 items-center justify-center rounded tabular-nums text-[10px] text-zinc-100"
                               style={{
                                 background:
                                   c == null
@@ -1504,99 +1147,99 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "recap" && (
-        <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-sm font-semibold text-white">Weekly postcard</p>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300"
-              onClick={async () => {
-                await navigator.clipboard.writeText(recap);
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1500);
-              }}
-            >
-              <Copy className="h-3 w-3" />
-              {copied ? "Copied" : "Copy"}
-            </button>
-          </div>
-          <pre className="whitespace-pre-wrap rounded-lg bg-zinc-950/80 px-3 py-3 text-sm leading-relaxed text-zinc-300">
-            {recap}
-          </pre>
-          {(badges.length > 0 || myBadges.length > 0) && (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Badges
+      {tab === "alerts" && (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-white">
+              <Target className="h-4 w-4 text-brand" /> Alerts
+            </div>
+            <p className="mb-3 text-xs text-zinc-500">
+              Things that may need a decision. Tap Dismiss when you’ve handled it
+              (or decided to ignore it).
+            </p>
+            {alerts.length === 0 ? (
+              <p className="text-sm text-zinc-500">
+                Quiet — no earnings ≤7d or strikes under pressure
+                {dismissedAlertIds?.size ? " (some dismissed)" : ""}.
               </p>
-              <ul className="flex flex-wrap gap-2">
-                {badges.map((b) => (
+            ) : (
+              <ul className="space-y-2">
+                {alerts.map((a) => (
                   <li
-                    key={b.id}
-                    className="rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1 text-xs text-brand-bright"
-                    title={b.earnedAt}
+                    key={a.id}
+                    className="flex items-start justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-950/20 px-3 py-2"
                   >
-                    {b.label}
-                  </li>
-                ))}
-                {myBadges.map((b) => (
-                  <li
-                    key={b.id}
-                    className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200"
-                    title={b.detail}
-                  >
-                    {b.label}
+                    <div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <AlertKindBadge kind={a.kind} />
+                        <p className="text-sm font-medium text-amber-100">
+                          {a.title}
+                        </p>
+                      </div>
+                      <p className="mt-0.5 text-xs text-amber-200/70">{a.detail}</p>
+                    </div>
+                    {onDismissAlert && !guest && (
+                      <button
+                        type="button"
+                        className="shrink-0 rounded px-2 py-1 text-[11px] text-amber-200/60 hover:bg-amber-900/40 hover:text-amber-100"
+                        onClick={() => onDismissAlert(a.id)}
+                      >
+                        Dismiss
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "alerts" && (
-        <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-white">
-            <Target className="h-4 w-4 text-brand" /> Alerts
+            )}
           </div>
-          <p className="mb-3 text-xs text-zinc-500">
-            Things that may need a decision. Tap Dismiss when you’ve handled it
-            (or decided to ignore it).
-          </p>
-          {alerts.length === 0 ? (
-            <p className="text-sm text-zinc-500">
-              Quiet — no earnings ≤7d or strikes under pressure
-              {dismissedAlertIds?.size ? " (some dismissed)" : ""}.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {alerts.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex items-start justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-950/20 px-3 py-2"
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <AlertKindBadge kind={a.kind} />
-                      <p className="text-sm font-medium text-amber-100">
-                        {a.title}
-                      </p>
-                    </div>
-                    <p className="mt-0.5 text-xs text-amber-200/70">{a.detail}</p>
-                  </div>
-                  {onDismissAlert && !guest && (
-                    <button
-                      type="button"
-                      className="shrink-0 rounded px-2 py-1 text-[10px] text-amber-200/60 hover:bg-amber-900/40 hover:text-amber-100"
-                      onClick={() => onDismissAlert(a.id)}
+
+          <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-white">Weekly postcard</p>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(recap);
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1500);
+                }}
+              >
+                <Copy className="h-3 w-3" />
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <pre className="whitespace-pre-wrap rounded-lg bg-zinc-950/80 px-3 py-3 text-sm leading-relaxed text-zinc-300">
+              {recap}
+            </pre>
+            {(badges.length > 0 || myBadges.length > 0) && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Badges
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {badges.map((b) => (
+                    <li
+                      key={b.id}
+                      className="rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1 text-xs text-brand-bright"
+                      title={b.earnedAt}
                     >
-                      Dismiss
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                      {b.label}
+                    </li>
+                  ))}
+                  {myBadges.map((b) => (
+                    <li
+                      key={b.id}
+                      className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200"
+                      title={b.detail}
+                    >
+                      {b.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -1614,7 +1257,7 @@ function AlertKindBadge({ kind }: { kind: UpsideAlert["kind"] }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1 rounded-md bg-black/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        "inline-flex shrink-0 items-center gap-1 rounded-md bg-black/20 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
         meta.cls
       )}
     >

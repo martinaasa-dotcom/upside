@@ -31,10 +31,6 @@ import {
   rivalryOverviewCopy,
 } from "@/lib/sheet-rivalry";
 import {
-  loadArenaChallenge,
-  todaysChallengeBrief,
-} from "@/lib/arena-challenge";
-import {
   calendarDaysBetweenKeys,
   formatRelativeDays,
   todayKeyInTz,
@@ -56,7 +52,6 @@ import {
   Radar,
   Shuffle,
   Snowflake,
-  Swords,
   TrendingDown,
   TrendingUp,
   Trophy,
@@ -71,13 +66,7 @@ type FundTeaser = {
   headline: string | null;
 };
 
-export type LabDeepLink =
-  | "versus"
-  | "arena"
-  | "calendar"
-  | "alerts"
-  | "watch"
-  | "season";
+export type LabDeepLink = "versus" | "alerts" | "watch" | "season";
 
 type EarningsEvent = { ticker: string; date: string; days: number };
 
@@ -137,7 +126,7 @@ function BriefingCard({
 
   const body = (
     <>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
         {kind}
         {ticker ? ` · ${ticker}` : ""}
       </p>
@@ -389,7 +378,6 @@ export function OverviewDashboard({
   const maxSheet = Math.max(...sheets.map((s) => s.totalValue), 1);
   const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
-  const [arenaNote, setArenaNote] = useState<string | null>(null);
   const [factsShuffle, setFactsShuffle] = useState(0);
   const [fundTeaser, setFundTeaser] = useState<FundTeaser | null>(null);
 
@@ -502,16 +490,6 @@ export function OverviewDashboard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerKey, model.totals.totalValue, model.totals.cash]);
 
-  useEffect(() => {
-    const c = loadArenaChallenge();
-    if (c?.dayKey === todayKeyInTz()) {
-      setArenaNote(c.note);
-      return;
-    }
-    const brief = todaysChallengeBrief(tickers.map((t) => t.ticker));
-    setArenaNote(brief.note);
-  }, [tickerKey, tickers]);
-
   const upcomingEarnings = useMemo(() => {
     if (!earnings) return null;
     const today = todayKeyInTz();
@@ -580,7 +558,7 @@ export function OverviewDashboard({
         <div className="relative min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-white">Upside Portfolio</p>
-            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
               Live
             </span>
           </div>
@@ -732,7 +710,7 @@ export function OverviewDashboard({
                 key={s.label}
                 className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-3 py-2.5"
               >
-                <p className="flex items-center gap-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
+                <p className="flex items-center gap-0.5 text-[11px] uppercase tracking-wide text-zinc-500">
                   {s.label}
                   <InfoTip text={s.explain} />
                 </p>
@@ -779,7 +757,7 @@ export function OverviewDashboard({
 
           {visitDiff && visitDiff.lines.length > 0 && (
             <div className="relative mt-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/40 px-3.5 py-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
                 While you were away
               </p>
               <p className="mt-0.5 text-[11px] text-zinc-600">
@@ -810,59 +788,6 @@ export function OverviewDashboard({
             </div>
           )}
         </div>
-      </section>
-
-      {/* Family scoreboard leader + Daily arena */}
-      <section className="overview-fade grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          disabled={guest || !onOpenLab}
-          onClick={() => onOpenLab?.("versus")}
-          className="rounded-2xl border border-brand/25 bg-brand/10 px-4 py-4 text-left transition hover:border-brand/50 disabled:cursor-default disabled:opacity-80"
-        >
-          <div className="flex items-center gap-2 text-brand-bright">
-            <Trophy className="h-4 w-4" />
-            <span className="text-[11px] font-semibold uppercase tracking-wide">
-              {scoreboard.eyebrow}
-            </span>
-          </div>
-          <p className="mt-2 text-lg font-semibold text-white">
-            {scoreboard.name}
-          </p>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-            {scoreboard.detail}
-          </p>
-          {scoreboard.ranks && (
-            <p className="mt-2 text-xs tabular-nums text-zinc-500">
-              {scoreboard.ranks}
-            </p>
-          )}
-          {!guest && (
-            <p className="mt-2 text-[11px] text-brand/80">
-              See all rankings →
-            </p>
-          )}
-        </button>
-        <button
-          type="button"
-          disabled={guest || !onOpenLab}
-          onClick={() => onOpenLab?.("arena")}
-          className="rounded-2xl border border-zinc-700 bg-zinc-900/50 px-4 py-4 text-left transition hover:border-zinc-500 disabled:cursor-default disabled:opacity-80"
-        >
-          <div className="flex items-center gap-2 text-zinc-300">
-            <Swords className="h-4 w-4" />
-            <span className="text-[11px] font-semibold uppercase tracking-wide">
-              Daily arena
-            </span>
-          </div>
-          <p className="mt-2 text-lg font-semibold text-white">Paper sandbox</p>
-          <p className="mt-1 text-sm text-zinc-400">
-            {arenaNote ?? "Beat the live book without touching real sheets."}
-          </p>
-          {!guest && (
-            <p className="mt-2 text-[11px] text-zinc-500">Open Arena →</p>
-          )}
-        </button>
       </section>
 
       <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
@@ -1123,6 +1048,37 @@ export function OverviewDashboard({
       </section>
 
       {!guest && <DailyDuelCard tickers={tickers} />}
+
+      {/* Family scoreboard — social/gamification, deliberately kept down
+       * here with the other personal-engagement cards rather than in the
+       * primary above-the-fold path. */}
+      <button
+        type="button"
+        disabled={guest || !onOpenLab}
+        onClick={() => onOpenLab?.("versus")}
+        className="overview-fade w-full rounded-2xl border border-brand/25 bg-brand/10 px-4 py-4 text-left transition hover:border-brand/50 disabled:cursor-default disabled:opacity-80"
+      >
+        <div className="flex items-center gap-2 text-brand-bright">
+          <Trophy className="h-4 w-4" />
+          <span className="text-[11px] font-semibold uppercase tracking-wide">
+            {scoreboard.eyebrow}
+          </span>
+        </div>
+        <p className="mt-2 text-lg font-semibold text-white">
+          {scoreboard.name}
+        </p>
+        <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+          {scoreboard.detail}
+        </p>
+        {scoreboard.ranks && (
+          <p className="mt-2 text-xs tabular-nums text-zinc-500">
+            {scoreboard.ranks}
+          </p>
+        )}
+        {!guest && (
+          <p className="mt-2 text-[11px] text-brand/80">See all rankings →</p>
+        )}
+      </button>
 
       <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-2.5">
