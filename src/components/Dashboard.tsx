@@ -2268,7 +2268,10 @@ export function Dashboard() {
           />
         ) : isStatistics ? (
           <StatisticsPage
+            overview={overview}
             bookTickers={overview.tickers.map((t) => t.ticker)}
+            cashflows={labBundle.cashflows}
+            visitStreak={visitStreak}
           />
         ) : isOverview ? (
           <>
