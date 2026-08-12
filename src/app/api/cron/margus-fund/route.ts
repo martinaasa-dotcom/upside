@@ -371,6 +371,7 @@ export async function GET(req: Request) {
         day_change_dollar: dayChangeDollar,
         day_change_pct: dayChangePct,
         total_return_pct: totalReturnPct,
+        spy_price: spyQuote?.price ?? null,
       })
       .select()
       .single();

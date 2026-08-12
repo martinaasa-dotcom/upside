@@ -38,7 +38,9 @@ export async function GET() {
     (h: { status: string }) => h.status === "open"
   );
   const tickers = openHoldings.map((h: { ticker: string }) => h.ticker);
-  const { quotes } = await fetchQuotesWithFallback(tickers);
+  // SPY always included — it's the always-on benchmark line, fetched here
+  // so the client gets its live price for free in this same response.
+  const { quotes } = await fetchQuotesWithFallback([...tickers, "SPY"]);
 
   return NextResponse.json({
     fund: fund ?? null,
