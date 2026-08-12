@@ -9,11 +9,15 @@ import { buildAdvisorProviderChain, withAdvisorFallback } from "@/lib/ai/model";
 import {
   buildFundSystemPrompt,
   buildFundUserPrompt,
+  buildWeeklyRecapSystemPrompt,
+  buildWeeklyRecapUserPrompt,
   fundDecisionSchema,
+  weeklyRecapSchema,
   type FundAction,
   type FundHolding,
   type PricedHolding,
 } from "@/lib/margus-fund";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/error-log";
 import { todayKeyInTz } from "@/lib/timezone";
 import { generateObject } from "ai";
@@ -27,6 +31,110 @@ function daysBetween(fromIso: string, toIso: string): number {
   const from = new Date(`${fromIso}T00:00:00Z`).getTime();
   const to = new Date(`${toIso}T00:00:00Z`).getTime();
   return Math.max(0, Math.round((to - from) / 86_400_000));
+}
+
+/**
+ * Best-effort weekly recap, appended after a normal Friday run. Checked
+ * against UTC day-of-week (not todayKeyInTz's report_date), since the
+ * 21:30 UTC run time rolls the Tallinn calendar date to Saturday before
+ * the report_date is even computed -- getUTCDay() still correctly reads
+ * as Friday because the run happens *within* Friday in UTC, which is the
+ * timezone that actually matches the US trading day being wrapped up.
+ * Never throws -- a recap failure shouldn't fail the whole cron run.
+ */
+async function maybeGenerateWeeklyRecap(
+  supabase: SupabaseClient,
+  weekEnding: string,
+  fundStartingCapital: number,
+  pricedHoldings: PricedHolding[]
+): Promise<void> {
+  if (new Date().getUTCDay() !== 5) return;
+
+  try {
+    const { data: existing } = await supabase
+      .from(PORTFELL_TABLES.margusFundWeeklyRecaps)
+      .select("id")
+      .eq("week_ending", weekEnding)
+      .maybeSingle();
+    if (existing) return;
+
+    const { data: recentReports } = await supabase
+      .from(PORTFELL_TABLES.margusFundReports)
+      .select("report_date, portfolio_value, spy_price, actions")
+      .order("report_date", { ascending: false })
+      .limit(7);
+    const reports = (recentReports ?? []) as {
+      report_date: string;
+      portfolio_value: number;
+      spy_price: number | null;
+      actions: FundAction[];
+    }[];
+    if (reports.length === 0) return;
+
+    const chronological = [...reports].reverse();
+    const latest = chronological[chronological.length - 1]!;
+    const oldest = chronological[0]!;
+
+    const portfolioValueStart =
+      chronological.length > 1 ? oldest.portfolio_value : fundStartingCapital;
+    const portfolioValueEnd = latest.portfolio_value;
+    const weekReturnPct =
+      portfolioValueStart > 0
+        ? (portfolioValueEnd - portfolioValueStart) / portfolioValueStart
+        : 0;
+    const spyWeekReturnPct =
+      oldest.spy_price && latest.spy_price
+        ? (latest.spy_price - oldest.spy_price) / oldest.spy_price
+        : null;
+
+    const weekActions = chronological.flatMap((r) =>
+      (r.actions ?? [])
+        .filter((a) => a.type !== "hold")
+        .map((a) => ({
+          date: r.report_date,
+          type: a.type,
+          ticker: a.ticker,
+          reasoning: a.reasoning,
+        }))
+    );
+
+    const chain = buildAdvisorProviderChain({ reasoning: true });
+    if (chain.length === 0) return;
+
+    const { object: recap } = await withAdvisorFallback(chain, (model) =>
+      generateObject({
+        model,
+        schema: weeklyRecapSchema,
+        system: buildWeeklyRecapSystemPrompt(),
+        prompt: buildWeeklyRecapUserPrompt({
+          weekEnding,
+          portfolioValueStart,
+          portfolioValueEnd,
+          weekReturnPct,
+          spyWeekReturnPct,
+          currentHoldings: pricedHoldings,
+          weekActions,
+        }),
+      })
+    );
+
+    await supabase.from(PORTFELL_TABLES.margusFundWeeklyRecaps).insert({
+      week_ending: weekEnding,
+      headline: recap.headline,
+      body: recap.body,
+      week_return_pct: weekReturnPct,
+      spy_week_return_pct: spyWeekReturnPct,
+      portfolio_value_start: portfolioValueStart,
+      portfolio_value_end: portfolioValueEnd,
+    });
+  } catch (err) {
+    await logError({
+      source: "server",
+      message: `Upside Portfolio weekly recap failed: ${err instanceof Error ? err.message : String(err)}`,
+      stack: err instanceof Error ? err.stack : undefined,
+      path: "/api/cron/margus-fund",
+    });
+  }
 }
 
 /** Vercel Cron (Bearer CRON_SECRET) OR a signed-in superadmin manually
@@ -376,6 +484,20 @@ export async function GET(req: Request) {
       .select()
       .single();
     if (reportErr) throw new Error(reportErr.message);
+
+    // Fire-and-forget-ish: still awaited so logs/errors are captured in
+    // this invocation, but wrapped so a recap issue never fails the
+    // (already-committed) daily decision above. Uses the start-of-run
+    // holdings snapshot (share counts from today's trims/adds aren't
+    // reflected) since this is narrative color for the reflection, not
+    // the ledger -- but exits ARE filtered out so a position closed
+    // today doesn't show up as "still held" in the same recap.
+    await maybeGenerateWeeklyRecap(
+      supabase,
+      today,
+      Number(fundRow.starting_capital),
+      pricedHoldings.filter((h) => currentShares.has(h.id))
+    );
 
     return NextResponse.json({
       ok: true,

@@ -110,6 +110,17 @@ type FundActionRow = {
   dollarAmount?: number;
 };
 
+type WeeklyRecapRow = {
+  id: string;
+  week_ending: string;
+  headline: string;
+  body: string;
+  week_return_pct: number | null;
+  spy_week_return_pct: number | null;
+  portfolio_value_start: number;
+  portfolio_value_end: number;
+};
+
 type ReportRow = {
   id: string;
   report_date: string;
@@ -165,6 +176,7 @@ export function UpsidePortfolioPage() {
   const [fund, setFund] = useState<FundRow | null>(null);
   const [holdings, setHoldings] = useState<HoldingRow[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
+  const [weeklyRecaps, setWeeklyRecaps] = useState<WeeklyRecapRow[]>([]);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -193,6 +205,7 @@ export function UpsidePortfolioPage() {
       setFund(data.fund);
       setHoldings(data.holdings ?? []);
       setReports(data.reports ?? []);
+      setWeeklyRecaps(data.weeklyRecaps ?? []);
       setQuotes(data.quotes ?? {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -716,6 +729,44 @@ export function UpsidePortfolioPage() {
                       </div>
                     );
                   })}
+                </div>
+              </section>
+            )}
+
+            {weeklyRecaps.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                  Weekly recap
+                </h2>
+                <div className="space-y-3">
+                  {weeklyRecaps.map((r) => (
+                    <article
+                      key={r.id}
+                      className="space-y-2 rounded-2xl border border-brand-mid/30 bg-gradient-to-br from-brand/10 via-[#161618]/70 to-[#161618]/70 p-4 sm:p-5"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-[11px] uppercase tracking-wide text-brand-bright">
+                          Week of {fmtDate(r.week_ending)}
+                        </p>
+                        {r.week_return_pct != null && (
+                          <p className="text-xs font-semibold tabular-nums">
+                            <span className={r.week_return_pct >= 0 ? "text-gain" : "text-loss"}>
+                              {percent(r.week_return_pct)}
+                            </span>
+                            {r.spy_week_return_pct != null && (
+                              <span className="ml-2 text-zinc-500">
+                                SPY {percent(r.spy_week_return_pct)}
+                              </span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <h3 className="text-base font-semibold text-white">{r.headline}</h3>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">
+                        {r.body}
+                      </p>
+                    </article>
+                  ))}
                 </div>
               </section>
             )}

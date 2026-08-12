@@ -17,6 +17,7 @@ export const PORTFELL_TABLES = {
   margusFund: "portfell_margus_fund",
   margusFundHoldings: "portfell_margus_fund_holdings",
   margusFundReports: "portfell_margus_fund_reports",
+  margusFundWeeklyRecaps: "portfell_margus_fund_weekly_recaps",
 } as const;
 
 /** Fixed id for the seed test community (Aasad/MaryAnn/Anu/Karud/Lap circle). */

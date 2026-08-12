@@ -148,6 +148,76 @@ You run a single, fully simulated (paper money) portfolio that started at ${mone
 - Keep every field SHORT. This report gets read daily — nobody wants a wall of text. 1-3 sentences per field, always.`;
 }
 
+const weeklyRecapSchema = z.object({
+  headline: z
+    .string()
+    .describe("One punchy sentence capturing the week — the story, not the stat line."),
+  body: z
+    .string()
+    .describe(
+      "4-8 sentences: a genuine step back on how the week went — your biggest win, your biggest miss or lesson, how the numbers below shaped your thinking, and what you're specifically watching next week. This is the reflection, not a re-listing of each day's actions."
+    ),
+});
+
+export type WeeklyRecapDecision = z.infer<typeof weeklyRecapSchema>;
+
+export { weeklyRecapSchema };
+
+/** Reuses the same persona for voice consistency, with a distinct framing:
+ * this is the reflective step-back, not another daily decision. */
+export function buildWeeklyRecapSystemPrompt(): string {
+  return `${MARGUS_PERSONA}
+
+## This specific job: your weekly step-back
+Once a week (Friday's close) you write a short, honest recap of your own paper portfolio's week — not a re-listing of each day's trades, but a genuine reflection: what you got right, what you got wrong or would do differently, how you stack up against SPY, and what specifically you're watching next week. The numbers below are already computed and correct — don't recompute or contradict them, just make sense of them in your own voice. Keep it short: this gets read once a week, not once a day, but it should still feel like a real strategist thinking out loud, not a template.`;
+}
+
+export function buildWeeklyRecapUserPrompt(input: {
+  weekEnding: string;
+  portfolioValueStart: number;
+  portfolioValueEnd: number;
+  weekReturnPct: number;
+  spyWeekReturnPct: number | null;
+  currentHoldings: PricedHolding[];
+  weekActions: { date: string; type: string; ticker: string; reasoning: string }[];
+}): string {
+  const {
+    weekEnding,
+    portfolioValueStart,
+    portfolioValueEnd,
+    weekReturnPct,
+    spyWeekReturnPct,
+    currentHoldings,
+    weekActions,
+  } = input;
+
+  const actionsBlock = weekActions.length
+    ? weekActions
+        .map((a) => `- ${a.date}: ${a.type.toUpperCase()} ${a.ticker} — ${a.reasoning}`)
+        .join("\n")
+    : "No trades this week — held the book as-is.";
+
+  const holdingsBlock = currentHoldings
+    .map(
+      (h) =>
+        `- ${h.ticker}: ${h.unrealizedPnlPct >= 0 ? "+" : ""}${(h.unrealizedPnlPct * 100).toFixed(1)}% since entry`
+    )
+    .join("\n");
+
+  return `Week ending: ${weekEnding}
+
+Portfolio value: ${money(portfolioValueStart)} -> ${money(portfolioValueEnd)} (${weekReturnPct >= 0 ? "+" : ""}${(weekReturnPct * 100).toFixed(1)}%)
+${spyWeekReturnPct != null ? `SPY this week: ${spyWeekReturnPct >= 0 ? "+" : ""}${(spyWeekReturnPct * 100).toFixed(1)}%` : "SPY comparison not available yet"}
+
+## This week's actions
+${actionsBlock}
+
+## Current holdings, unrealized
+${holdingsBlock}
+
+Write this week's recap.`;
+}
+
 export function buildFundUserPrompt(input: {
   today: string;
   cash: number;
