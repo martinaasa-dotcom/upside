@@ -131,14 +131,16 @@ export default function PrivacyPage() {
             My account
           </Link>{" "}
           you can download a complete export of your data as JSON, or
-          permanently delete your profile and any sheet you solely own (sheets
-          you share with a co-owner stay with them). One limitation: deleting
-          your Upside data does not delete the underlying Google sign-in
-          connection itself — if you also want that severed, remove
-          Upside&apos;s access from your Google account permissions.
-          EU/EEA residents have rights under GDPR (access, rectification,
-          erasure, portability, objection) — the export/delete tools cover
-          most of these directly; email us for anything else.
+          permanently delete your account: your profile, any sheet you solely
+          own, and your sign-in credential itself (sheets you share with a
+          co-owner stay with them). If for any reason the sign-in credential
+          can&apos;t be removed at the same time, your Upside data is still
+          fully wiped immediately — you&apos;d just want to also revoke
+          Upside&apos;s access from your Google account if you want that
+          connection severed too. EU/EEA residents have rights under GDPR
+          (access, rectification, erasure, portability, objection) — the
+          export/delete tools cover most of these directly; email us for
+          anything else.
         </Section>
 
         <Section title="8. Security">
@@ -163,10 +165,10 @@ export default function PrivacyPage() {
         <Section title="11. Contact">
           Questions, data requests, or concerns:{" "}
           <a
-            href="mailto:martin.aasa@upthink.ee"
+            href="mailto:privacy@upthink.ee"
             className="underline hover:text-white"
           >
-            martin.aasa@upthink.ee
+            privacy@upthink.ee
           </a>
           .
         </Section>

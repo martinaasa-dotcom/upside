@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   children: React.ReactNode;
@@ -17,10 +17,26 @@ export function SignInGate({ children }: Props) {
   const { ready, user, signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Plain browser API instead of useSearchParams() — this page is statically
+  // rendered, and useSearchParams() would force a Suspense boundary / opt it
+  // into dynamic rendering just to show a one-time post-deletion notice.
+  const [deletedNotice, setDeletedNotice] = useState<"full" | "data" | null>(
+    null
+  );
   const needsAuth = Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
+
+  useEffect(() => {
+    const kind = new URLSearchParams(window.location.search).get(
+      "accountDeleted"
+    );
+    if (kind === "full" || kind === "data") {
+      setDeletedNotice(kind);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   if (!needsAuth) return <>{children}</>;
   if (!ready) {
@@ -69,6 +85,14 @@ export function SignInGate({ children }: Props) {
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-[max(4rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
         <div className="signin-rise flex w-full max-w-[18.5rem] -translate-y-4 flex-col items-center text-center sm:-translate-y-6">
           <UpsideLogo variant="icon" className="signin-rise-1 mb-9" />
+
+          {deletedNotice && (
+            <p className="signin-rise-2 mb-4 max-w-[16rem] rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[13px] leading-relaxed text-emerald-200">
+              {deletedNotice === "full"
+                ? "Account deleted — your data and sign-in are both gone."
+                : "Your Upside data has been deleted. Signing in again starts a brand-new account."}
+            </p>
+          )}
 
           <p className="signin-rise-2 max-w-[15.5rem] text-[15px] leading-relaxed text-zinc-400">
             Sign in to open the portfolios you own.

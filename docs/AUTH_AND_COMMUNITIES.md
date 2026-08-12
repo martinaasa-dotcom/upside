@@ -77,6 +77,8 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 
 Writes require a signed-in **co-owner** only.
 
-## Known gap
+## Service role on production (added 2026-08-12)
 
-`SUPABASE_SERVICE_ROLE_KEY` is not set on Vercel production, so `ensureProfileAndClaims` always takes the RPC path (`claimWithRpc`), never the service-role path. That's fine now that `018` is fixed, but it means the RPC is the *only* claim path in production — any future regression there will silently strand new sign-ins the same way `010`–`017` did. Consider setting the service-role key as a fallback, or adding a smoke test that calls `portfell_claim_seed_for_me` end-to-end.
+`SUPABASE_SERVICE_ROLE_KEY` is now set on Vercel production. Before this, `ensureProfileAndClaims` always took the RPC path (`claimWithRpc`) since the service-role path was unavailable — that's why `018`'s ambiguous-column bug was able to silently strand new sign-ins for as long as it did (the RPC was the *only* claim path, with no fallback). With the key set, `ensureProfileAndClaims`/`getSupabaseDataClient()` now prefer the service-role path; the RPC path still exists as a fallback if the key is ever unset in a given environment (preview deploys, local dev).
+
+This also unlocks full self-service account deletion (`/api/account/delete`) — with service role configured, deleting an account now removes the actual `auth.users` row via the admin API, not just the app-level data. Still worth a smoke test that calls `portfell_claim_seed_for_me` end-to-end occasionally, since a future regression there would still degrade (not strand) new sign-ins on any environment without the key.

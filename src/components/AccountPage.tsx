@@ -264,7 +264,7 @@ export function AccountPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Delete failed");
       await signOut();
-      router.push("/");
+      router.push(data.authDeleted ? "/?accountDeleted=full" : "/?accountDeleted=data");
     } catch (err) {
       setDeleteErr(err instanceof Error ? err.message : "Delete failed");
       setDeleting(false);
@@ -684,10 +684,11 @@ export function AccountPage() {
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
               This permanently deletes your profile and any sheet you&apos;re
-              the sole owner of (holdings included). Shared sheets stay for
-              your co-owner. Your Google sign-in itself can&apos;t be removed
-              from here — you can sign back in later, but you&apos;ll start
-              fresh with no data.
+              the sole owner of (holdings included) — shared sheets stay for
+              your co-owner. Where possible this also removes your sign-in
+              itself, so the account can&apos;t be used again; if it can&apos;t
+              be removed from here, revoke Upside&apos;s access from your
+              Google account separately if you want that severed too.
             </p>
             <label className="mt-4 block space-y-1">
               <span className="text-[11px] uppercase tracking-wide text-zinc-500">

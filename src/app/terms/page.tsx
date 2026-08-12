@@ -113,10 +113,10 @@ export default function TermsPage() {
         <Section title="9. Contact">
           Questions about these terms:{" "}
           <a
-            href="mailto:martin.aasa@upthink.ee"
+            href="mailto:privacy@upthink.ee"
             className="underline hover:text-white"
           >
-            martin.aasa@upthink.ee
+            privacy@upthink.ee
           </a>
           .
         </Section>
