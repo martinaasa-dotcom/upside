@@ -43,11 +43,11 @@ export type CycleDayRow = {
   samples: number;
 };
 
-export type IntradayBucketRow = {
+export type HourlyReturnRow = {
   hourEt: number;
   label: string;
-  highSharePct: number;
-  lowSharePct: number;
+  /** Average open→close return within this hour bucket. */
+  avgReturnPct: number;
   samples: number;
 };
 
@@ -71,8 +71,8 @@ export type SeasonalityModel = {
   cycleMonthly: CycleMonthlyRow[];
   /** Calendar days 1–31 per month (1–12), filtered to current cycle years. */
   cycleDaysByMonth: Record<string, CycleDayRow[]>;
-  intradayHighLow: IntradayBucketRow[];
-  intradaySampleDays: number;
+  /** Average hourly return per calendar day — key `${month}-${day}`. */
+  hourlyByCalendarDay: Record<string, HourlyReturnRow[]>;
   signals: ActionSignal[];
 };
 
@@ -224,61 +224,53 @@ export function computeCycleDaysByMonth(
   return out;
 }
 
-/** Session high/low hour — regular trading hours only. */
-export function computeIntradayHighLow(
-  hourBars: HourBar[]
-): { buckets: IntradayBucketRow[]; sampleDays: number } {
-  const byDay = new Map<string, HourBar[]>();
+/** Average hourly return for a specific calendar day (cycle-filtered, RTH only). */
+export function computeHourlyReturnsByCalendarDay(
+  hourBars: HourBar[],
+  phase: PresidentialCyclePhase
+): Record<string, HourlyReturnRow[]> {
+  const buckets = new Map<string, number[]>();
+
   for (const bar of hourBars) {
-    if (
-      bar.hourEt < RTH_HOUR_ET_MIN ||
-      bar.hourEt > RTH_HOUR_ET_MAX
-    ) {
+    if (bar.hourEt < RTH_HOUR_ET_MIN || bar.hourEt > RTH_HOUR_ET_MAX) {
       continue;
     }
-    const list = byDay.get(bar.date) ?? [];
-    list.push(bar);
-    byDay.set(bar.date, list);
+    const year = Number(bar.date.slice(0, 4));
+    if (cyclePhaseForYear(year) !== phase) continue;
+    const month = Number(bar.date.slice(5, 7));
+    const day = Number(bar.date.slice(8, 10));
+    if (bar.open <= 0) continue;
+    const ret = (bar.close / bar.open - 1) * 100;
+    const key = `${month}-${day}-${bar.hourEt}`;
+    const list = buckets.get(key) ?? [];
+    list.push(ret);
+    buckets.set(key, list);
   }
 
-  const highCounts = new Map<number, number>();
-  const lowCounts = new Map<number, number>();
-  let sampleDays = 0;
-
-  for (const dayBars of byDay.values()) {
-    if (dayBars.length < 2) continue;
-    let highBar = dayBars[0]!;
-    let lowBar = dayBars[0]!;
-    for (const bar of dayBars) {
-      if (bar.high >= highBar.high) highBar = bar;
-      if (bar.low <= lowBar.low) lowBar = bar;
+  const out: Record<string, HourlyReturnRow[]> = {};
+  for (let month = 1; month <= 12; month++) {
+    const daysInMonth =
+      month === 2 ? 29 : [4, 6, 9, 11].includes(month) ? 30 : 31;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayKey = `${month}-${day}`;
+      const rows: HourlyReturnRow[] = [];
+      for (let hourEt = RTH_HOUR_ET_MIN; hourEt <= RTH_HOUR_ET_MAX; hourEt++) {
+        const vals = buckets.get(`${dayKey}-${hourEt}`) ?? [];
+        const avg =
+          vals.length > 0
+            ? vals.reduce((s, v) => s + v, 0) / vals.length
+            : 0;
+        rows.push({
+          hourEt,
+          label: formatHourEt(hourEt),
+          avgReturnPct: round(avg, 3),
+          samples: vals.length,
+        });
+      }
+      out[dayKey] = rows;
     }
-    highCounts.set(
-      highBar.hourEt,
-      (highCounts.get(highBar.hourEt) ?? 0) + 1
-    );
-    lowCounts.set(lowBar.hourEt, (lowCounts.get(lowBar.hourEt) ?? 0) + 1);
-    sampleDays++;
   }
-
-  const hours: number[] = [];
-  for (let h = RTH_HOUR_ET_MIN; h <= RTH_HOUR_ET_MAX; h++) hours.push(h);
-
-  const buckets: IntradayBucketRow[] = hours.map((hourEt) => {
-    const highs = highCounts.get(hourEt) ?? 0;
-    const lows = lowCounts.get(hourEt) ?? 0;
-    return {
-      hourEt,
-      label: formatHourEt(hourEt),
-      highSharePct:
-        sampleDays > 0 ? round((highs / sampleDays) * 100, 1) : 0,
-      lowSharePct:
-        sampleDays > 0 ? round((lows / sampleDays) * 100, 1) : 0,
-      samples: sampleDays,
-    };
-  });
-
-  return { buckets, sampleDays };
+  return out;
 }
 
 function formatHourEt(hour: number): string {
@@ -300,80 +292,36 @@ function marketNow(): { year: number; month: number } {
 
 export function buildActionSignals(input: {
   cycleMonthly: CycleMonthlyRow[];
-  cycleDays: CycleDayRow[];
   asOfMonth: number;
-  intraday: IntradayBucketRow[];
 }): ActionSignal[] {
-  const signals: ActionSignal[] = [];
   const curMonth = input.cycleMonthly[input.asOfMonth - 1];
-  if (!curMonth || curMonth.samples === 0) return signals;
-
-  const sortedMonths = [...input.cycleMonthly].sort(
-    (a, b) => b.avgMonthReturnPct - a.avgMonthReturnPct
-  );
-  const rank =
-    sortedMonths.findIndex((m) => m.month === input.asOfMonth) + 1;
+  if (!curMonth || curMonth.samples === 0) return [];
 
   if (curMonth.avgMonthReturnPct >= 1.5 && curMonth.winRate >= 55) {
-    signals.push({
-      stance: "deploy",
-      headline: `${curMonth.label} tends to run in ${rank <= 4 ? "strong" : "decent"} ${curMonth.label}s this cycle`,
-      detail: `Across ${curMonth.samples} prior ${curMonth.label}s in the same presidential-cycle year, the month averaged ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% with ${curMonth.winRate}% positive. Lean fully invested early in the month.`,
-    });
-  } else if (curMonth.avgMonthReturnPct <= -0.5 || curMonth.winRate < 45) {
-    signals.push({
-      stance: "raise_cash",
-      headline: `${curMonth.label} is historically soft in this cycle phase`,
-      detail: `Average month return ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (${curMonth.winRate}% win rate, n=${curMonth.samples}). Consider trimming into strength and holding extra cash for better entries.`,
-    });
-  } else {
-    signals.push({
+    return [
+      {
+        stance: "deploy",
+        headline: `${curMonth.label} tends to run in this cycle phase`,
+        detail: `Across ${curMonth.samples} prior ${curMonth.label}s in the same presidential-cycle year, the month averaged ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% with ${curMonth.winRate}% positive.`,
+      },
+    ];
+  }
+  if (curMonth.avgMonthReturnPct <= -0.5 || curMonth.winRate < 45) {
+    return [
+      {
+        stance: "raise_cash",
+        headline: `${curMonth.label} is historically soft in this cycle phase`,
+        detail: `Average month return ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (${curMonth.winRate}% win rate, n=${curMonth.samples}).`,
+      },
+    ];
+  }
+  return [
+    {
       stance: "hold",
       headline: `${curMonth.label} is mixed — no strong seasonal edge`,
-      detail: `Cycle-phase ${curMonth.label}s average ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (n=${curMonth.samples}). Size normally; let price action lead.`,
-    });
-  }
-
-  const weakDays = input.cycleDays.filter(
-    (d) => d.samples >= 3 && d.avgReturnPct < -0.08
-  );
-  const strongDays = input.cycleDays.filter(
-    (d) => d.samples >= 3 && d.avgReturnPct > 0.08
-  );
-  if (weakDays.length > 0) {
-    const days = weakDays.map((d) => d.day).join(", ");
-    signals.push({
-      stance: "raise_cash",
-      headline: `Watch for dip days (${days})`,
-      detail: `These calendar days in ${MONTH_NAMES[input.asOfMonth - 1]} often print red in this cycle phase — avoid chasing; add on weakness if thesis intact.`,
-    });
-  }
-  if (strongDays.length > 0) {
-    const days = strongDays.map((d) => d.day).join(", ");
-    signals.push({
-      stance: "deploy",
-      headline: `Seasonal tailwind days (${days})`,
-      detail: `Historically stronger session-days this month in the same cycle — good window to deploy idle cash.`,
-    });
-  }
-
-  if (input.intraday.length > 0) {
-    const topLow = [...input.intraday].sort(
-      (a, b) => b.lowSharePct - a.lowSharePct
-    )[0];
-    const topHigh = [...input.intraday].sort(
-      (a, b) => b.highSharePct - a.highSharePct
-    )[0];
-    if (topLow && topHigh) {
-      signals.push({
-        stance: topLow.hourEt < topHigh.hourEt ? "deploy" : "hold",
-        headline: `Lows cluster ~${topLow.label}, highs ~${topHigh.label} ET`,
-        detail: `In regular hours, session lows hit ${topLow.label} on ${topLow.lowSharePct}% of days vs highs at ${topHigh.label} (${topHigh.highSharePct}%). ${topLow.hourEt <= 11 ? "Morning dips are common — stagger buys before lunch." : "Afternoon reversals dominate — patience on entries."}`,
-      });
-    }
-  }
-
-  return signals.slice(0, 4);
+      detail: `Cycle-phase ${curMonth.label}s average ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (n=${curMonth.samples}).`,
+    },
+  ];
 }
 
 export function buildSeasonalityModel(input: {
@@ -386,8 +334,10 @@ export function buildSeasonalityModel(input: {
   const phase = cyclePhaseForYear(asOfYear);
   const cycleMonthly = computeCycleMonthlyReturns(daily, phase);
   const cycleDaysByMonth = computeCycleDaysByMonth(daily, phase);
-  const { buckets, sampleDays } = computeIntradayHighLow(input.hourly);
-  const cycleDays = cycleDaysByMonth[String(asOfMonth)] ?? [];
+  const hourlyByCalendarDay = computeHourlyReturnsByCalendarDay(
+    input.hourly,
+    phase
+  );
 
   return {
     ticker: input.ticker,
@@ -400,13 +350,10 @@ export function buildSeasonalityModel(input: {
     currentCycleLabel: cyclePhaseLabel(phase),
     cycleMonthly,
     cycleDaysByMonth,
-    intradayHighLow: buckets,
-    intradaySampleDays: sampleDays,
+    hourlyByCalendarDay,
     signals: buildActionSignals({
       cycleMonthly,
-      cycleDays,
       asOfMonth,
-      intraday: buckets,
     }),
   };
 }

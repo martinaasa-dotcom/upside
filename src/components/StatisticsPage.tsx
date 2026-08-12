@@ -8,7 +8,7 @@ import {
   type ActionStance,
   type CycleDayRow,
   type CycleMonthlyRow,
-  type IntradayBucketRow,
+  type HourlyReturnRow,
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
@@ -162,111 +162,138 @@ function MonthHistoryTable({ row }: { row: CycleMonthlyRow }) {
 function DayOfMonthChart({
   rows,
   monthLabel,
+  selectedDay,
   todayDay,
+  onSelectDay,
 }: {
   rows: CycleDayRow[];
   monthLabel: string;
+  selectedDay: number;
   todayDay: number | null;
+  onSelectDay: (day: number) => void;
 }) {
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.avgReturnPct)), 0.05);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-end gap-0.5 overflow-x-auto pb-1">
+      <div className="relative flex items-center gap-0.5 overflow-x-auto rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-2 py-3">
+        <div className="pointer-events-none absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-zinc-700/80" />
         {rows.map((row) => {
           const v = row.avgReturnPct;
-          const h = Math.max(4, (Math.abs(v) / maxAbs) * 100);
+          const h = Math.max(8, (Math.abs(v) / maxAbs) * 46);
+          const isSelected = selectedDay === row.day;
           const isToday = todayDay === row.day;
           return (
-            <div
+            <button
               key={row.day}
+              type="button"
+              onClick={() => onSelectDay(row.day)}
               className={cn(
-                "flex min-w-[1.35rem] flex-col items-center gap-0.5",
-                isToday && "rounded bg-brand/15 px-0.5 ring-1 ring-brand/35"
+                "relative flex min-w-[1.5rem] flex-col items-center gap-1 rounded px-0.5 py-1 transition hover:bg-zinc-800/50",
+                isSelected && "bg-brand/15 ring-1 ring-brand/40",
+                isToday && !isSelected && "ring-1 ring-brand/25"
               )}
               title={`Day ${row.day}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · ${row.winRate}% up · n=${row.samples}`}
             >
-              <div className="flex h-24 w-full items-end">
+              <div className="relative flex h-48 w-full items-center justify-center">
                 <div
-                  className={cn("w-full rounded-t", retBarColor(v))}
-                  style={{ height: `${h}%`, minHeight: row.samples > 0 ? 3 : 0 }}
+                  className={cn(
+                    "absolute w-full max-w-[1.1rem] rounded-sm",
+                    retBarColor(v)
+                  )}
+                  style={{
+                    height: `${h}%`,
+                    ...(v >= 0
+                      ? { bottom: "50%" }
+                      : { top: "50%" }),
+                  }}
                 />
               </div>
               <span
                 className={cn(
-                  "text-[8px] tabular-nums",
-                  isToday ? "font-bold text-brand-bright" : "text-zinc-600"
+                  "text-[9px] tabular-nums",
+                  isSelected || isToday
+                    ? "font-bold text-brand-bright"
+                    : "text-zinc-500"
                 )}
               >
                 {row.day}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
       <p className="text-[11px] text-zinc-600">
-        Each bar = average session return on that calendar day in {monthLabel},
-        using only years in the current presidential-cycle phase.
+        Click a day to see its hourly pattern below. Each bar = average full-session
+        return on that calendar day in {monthLabel} (cycle-filtered).
       </p>
     </div>
   );
 }
 
-function IntradayHighLowChart({
+function HourlyReturnChart({
   rows,
-  sampleDays,
+  dayLabel,
 }: {
-  rows: IntradayBucketRow[];
-  sampleDays: number;
+  rows: HourlyReturnRow[];
+  dayLabel: string;
 }) {
-  const maxShare = Math.max(
-    ...rows.flatMap((r) => [r.highSharePct, r.lowSharePct]),
-    1
+  const withData = rows.filter((r) => r.samples > 0);
+  if (withData.length === 0) {
+    return (
+      <p className="text-sm text-zinc-500">
+        Not enough hourly history for {dayLabel} in this cycle phase.
+      </p>
+    );
+  }
+
+  const maxAbs = Math.max(
+    ...withData.map((r) => Math.abs(r.avgReturnPct)),
+    0.01
   );
+  const totalSamples = Math.max(...rows.map((r) => r.samples));
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-4 text-[10px] text-zinc-500">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-emerald-500" />
-          Session high
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm bg-rose-500" />
-          Session low
-        </span>
-      </div>
-      <div className="flex items-end gap-2">
-        {rows.map((row) => (
-          <div
-            key={row.hourEt}
-            className="flex min-w-0 flex-1 flex-col items-center gap-1"
-          >
-            <div className="flex h-28 w-full items-end justify-center gap-0.5">
-              <div
-                className="w-[42%] rounded-t bg-emerald-500/85"
-                style={{
-                  height: `${(row.highSharePct / maxShare) * 100}%`,
-                  minHeight: row.highSharePct > 0 ? 4 : 0,
-                }}
-                title={`High at ${row.label}: ${row.highSharePct}%`}
-              />
-              <div
-                className="w-[42%] rounded-t bg-rose-500/85"
-                style={{
-                  height: `${(row.lowSharePct / maxShare) * 100}%`,
-                  minHeight: row.lowSharePct > 0 ? 4 : 0,
-                }}
-                title={`Low at ${row.label}: ${row.lowSharePct}%`}
-              />
+      <div className="relative flex items-center gap-2">
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-zinc-700/80" />
+        {rows.map((row) => {
+          const v = row.avgReturnPct;
+          const h = Math.max(6, (Math.abs(v) / maxAbs) * 48);
+          return (
+            <div
+              key={row.hourEt}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1"
+              title={`${row.label}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · n=${row.samples}`}
+            >
+              <div className="relative flex h-40 w-full items-center justify-center">
+                {row.samples > 0 ? (
+                  <div
+                    className={cn(
+                      "absolute w-[70%] rounded-sm",
+                      retBarColor(v)
+                    )}
+                    style={{
+                      height: `${h}%`,
+                      ...(v >= 0 ? { bottom: "50%" } : { top: "50%" }),
+                    }}
+                  />
+                ) : null}
+              </div>
+              <span className="text-[9px] text-zinc-500">{row.label}</span>
+              {row.samples > 0 && (
+                <span className={cn("text-[9px] tabular-nums", retText(v))}>
+                  {v >= 0 ? "+" : ""}
+                  {v.toFixed(2)}%
+                </span>
+              )}
             </div>
-            <span className="text-[9px] text-zinc-500">{row.label}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <p className="text-[11px] text-zinc-600">
-        Regular session only (10am–3pm ET buckets) · {sampleDays.toLocaleString()}{" "}
-        sessions (~2y)
+        Average hourly return on {dayLabel} across {totalSamples} prior sessions
+        in this cycle phase (10am–3pm ET).
       </p>
     </div>
   );
@@ -274,22 +301,14 @@ function IntradayHighLowChart({
 
 function ActionCards({ signals }: { signals: ActionSignal[] }) {
   if (signals.length === 0) return null;
+  const s = signals[0]!;
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {signals.map((s, i) => (
-        <div
-          key={i}
-          className={cn("rounded-xl border px-4 py-3", stanceStyles(s.stance))}
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-            {stanceLabel(s.stance)}
-          </p>
-          <p className="mt-1 text-sm font-medium text-white">{s.headline}</p>
-          <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-            {s.detail}
-          </p>
-        </div>
-      ))}
+    <div className={cn("rounded-xl border px-4 py-3", stanceStyles(s.stance))}>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+        {stanceLabel(s.stance)} · this month
+      </p>
+      <p className="mt-1 text-sm font-medium text-white">{s.headline}</p>
+      <p className="mt-1 text-xs leading-relaxed text-zinc-400">{s.detail}</p>
     </div>
   );
 }
@@ -322,7 +341,11 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
   const [model, setModel] = useState<SeasonalityModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(marketToday.month);
+  /** Monthly history panel — independent from day drill-down. */
+  const [playbookMonth, setPlaybookMonth] = useState(marketToday.month);
+  /** Day drill-down defaults to today and stays put unless you navigate. */
+  const [viewMonth, setViewMonth] = useState(marketToday.month);
+  const [selectedDay, setSelectedDay] = useState(marketToday.day);
 
   const load = useCallback(async (sym: string) => {
     setLoading(true);
@@ -336,9 +359,7 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(body.error ?? "Failed to load seasonality");
       }
-      const data = (await res.json()) as SeasonalityModel;
-      setModel(data);
-      setSelectedMonth(data.asOfMonth);
+      setModel((await res.json()) as SeasonalityModel);
     } catch (e) {
       setModel(null);
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -351,17 +372,25 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
     void load(ticker);
   }, [ticker, load]);
 
-  const selectedMonthRow = model?.cycleMonthly[selectedMonth - 1];
-  const dayRows = model?.cycleDaysByMonth[String(selectedMonth)] ?? [];
-  const selectedMonthName = MONTH_NAMES[selectedMonth - 1] ?? "Month";
+  const playbookMonthRow = model?.cycleMonthly[playbookMonth - 1];
+  const dayRows = model?.cycleDaysByMonth[String(viewMonth)] ?? [];
+  const viewMonthName = MONTH_NAMES[viewMonth - 1] ?? "Month";
+  const hourlyRows =
+    model?.hourlyByCalendarDay[`${viewMonth}-${selectedDay}`] ?? [];
+  const selectedDayLabel = `${viewMonthName} ${selectedDay}`;
 
-  function shiftMonth(delta: number) {
-    setSelectedMonth((m) => {
+  function shiftViewMonth(delta: number) {
+    setViewMonth((m) => {
       let next = m + delta;
       if (next < 1) next = 12;
       if (next > 12) next = 1;
       return next;
     });
+  }
+
+  function goToToday() {
+    setViewMonth(marketToday.month);
+    setSelectedDay(marketToday.day);
   }
 
   return (
@@ -439,22 +468,22 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
             <CycleMonthlyChart
               rows={model.cycleMonthly}
               currentMonth={model.asOfMonth}
-              onSelectMonth={setSelectedMonth}
+              onSelectMonth={setPlaybookMonth}
             />
-            {selectedMonthRow && (
+            {playbookMonthRow && (
               <div className="mt-5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-sm font-medium text-zinc-200">
-                    {MONTH_NAMES[selectedMonth - 1]} history
+                    {MONTH_NAMES[playbookMonth - 1]} history
                   </p>
-                  <p className={cn("text-sm tabular-nums font-semibold", retText(selectedMonthRow.avgMonthReturnPct))}>
-                    avg {selectedMonthRow.avgMonthReturnPct >= 0 ? "+" : ""}
-                    {selectedMonthRow.avgMonthReturnPct}% ·{" "}
-                    {selectedMonthRow.winRate}% win · n={selectedMonthRow.samples}
+                  <p className={cn("text-sm tabular-nums font-semibold", retText(playbookMonthRow.avgMonthReturnPct))}>
+                    avg {playbookMonthRow.avgMonthReturnPct >= 0 ? "+" : ""}
+                    {playbookMonthRow.avgMonthReturnPct}% ·{" "}
+                    {playbookMonthRow.winRate}% win · n={playbookMonthRow.samples}
                   </p>
                 </div>
                 <div className="mt-3">
-                  <MonthHistoryTable row={selectedMonthRow} />
+                  <MonthHistoryTable row={playbookMonthRow} />
                 </div>
               </div>
             )}
@@ -462,12 +491,12 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
 
           <Section
             title="Daily rhythm within the month"
-            subtitle="How each calendar day tends to trade — cycle-filtered, one month at a time."
+            subtitle="Defaults to today. Click a day for its hourly pattern — independent from the monthly chart above."
           >
             <div className="mb-4 flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => shiftMonth(-1)}
+                onClick={() => shiftViewMonth(-1)}
                 className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -475,15 +504,24 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
               </button>
               <div className="text-center">
                 <p className="text-sm font-semibold text-white">
-                  {selectedMonthName}
+                  {viewMonthName} {selectedDay}
                 </p>
-                {selectedMonth === model.asOfMonth && (
-                  <p className="text-[10px] text-brand-bright">Current month</p>
+                {viewMonth === marketToday.month &&
+                selectedDay === marketToday.day ? (
+                  <p className="text-[10px] text-brand-bright">Today</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={goToToday}
+                    className="text-[10px] text-zinc-500 underline-offset-2 hover:text-brand-bright hover:underline"
+                  >
+                    Jump to today
+                  </button>
                 )}
               </div>
               <button
                 type="button"
-                onClick={() => shiftMonth(1)}
+                onClick={() => shiftViewMonth(1)}
                 className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
               >
                 Next
@@ -497,12 +535,12 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setSelectedMonth(m)}
+                    onClick={() => setViewMonth(m)}
                     className={cn(
                       "rounded-md px-2 py-1 text-[11px] font-medium transition",
-                      selectedMonth === m
+                      viewMonth === m
                         ? "bg-brand text-[#121214]"
-                        : m === model.asOfMonth
+                        : m === marketToday.month
                           ? "text-brand-bright ring-1 ring-brand/40 hover:bg-brand/15"
                           : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
                     )}
@@ -514,21 +552,20 @@ export function StatisticsPage({ bookTickers = [] }: Props) {
             </div>
             <DayOfMonthChart
               rows={dayRows}
-              monthLabel={selectedMonthName}
+              monthLabel={viewMonthName}
+              selectedDay={selectedDay}
               todayDay={
-                selectedMonth === marketToday.month ? marketToday.day : null
+                viewMonth === marketToday.month ? marketToday.day : null
               }
+              onSelectDay={setSelectedDay}
             />
           </Section>
 
           <Section
-            title="When highs & lows print (regular hours)"
-            subtitle="Single view — green = hour that tends to mark the session high, red = session low. Use for entry timing."
+            title={`Hourly pattern · ${selectedDayLabel}`}
+            subtitle="Single average return per hour on this calendar day (cycle-filtered, regular session)."
           >
-            <IntradayHighLowChart
-              rows={model.intradayHighLow}
-              sampleDays={model.intradaySampleDays}
-            />
+            <HourlyReturnChart rows={hourlyRows} dayLabel={selectedDayLabel} />
           </Section>
         </>
       )}
