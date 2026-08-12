@@ -1,14 +1,14 @@
 "use client";
 
 import { AuthProvider } from "@/components/AuthProvider";
-import { MargusFundPage } from "@/components/MargusFundPage";
+import { UpsidePortfolioPage } from "@/components/UpsidePortfolioPage";
 import { SignInGate } from "@/components/SignInGate";
 
-export default function MargusFundRoute() {
+export default function UpsidePortfolioRoute() {
   return (
     <AuthProvider>
       <SignInGate>
-        <MargusFundPage />
+        <UpsidePortfolioPage />
       </SignInGate>
     </AuthProvider>
   );

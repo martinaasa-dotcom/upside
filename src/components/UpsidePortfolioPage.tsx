@@ -4,7 +4,7 @@ import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { Sparkline } from "@/components/Sparkline";
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
-import { MARGUS_FUND_DISCLAIMER } from "@/lib/disclaimer";
+import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import type { Quote } from "@/lib/types";
 import {
   Bot,
@@ -96,7 +96,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   );
 }
 
-export function MargusFundPage() {
+export function UpsidePortfolioPage() {
   const [fund, setFund] = useState<FundRow | null>(null);
   const [holdings, setHoldings] = useState<HoldingRow[]>([]);
   const [reports, setReports] = useState<ReportRow[]>([]);
@@ -110,7 +110,7 @@ export function MargusFundPage() {
     else setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/margus-fund", { cache: "no-store" });
+      const res = await fetch("/api/upside-portfolio", { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
       setFund(data.fund);
@@ -174,7 +174,7 @@ export function MargusFundPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Margus Fund
+                Upside Portfolio
               </h1>
               <button
                 type="button"
@@ -187,14 +187,14 @@ export function MargusFundPage() {
               </button>
             </div>
             <p className="mt-1 text-sm text-zinc-400">
-              Margus runs his own paper portfolio — one decision a day, every
-              trade with a stated thesis, timeline, and exit plan.
+              One decision a day, every trade with a stated thesis, timeline,
+              and exit plan.
             </p>
           </div>
         </div>
 
         <p className="rounded-xl border border-amber-500/25 bg-amber-950/15 px-3.5 py-2.5 text-xs leading-relaxed text-amber-200/90">
-          {MARGUS_FUND_DISCLAIMER}
+          {UPSIDE_PORTFOLIO_DISCLAIMER}
         </p>
 
         {loading ? (

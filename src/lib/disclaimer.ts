@@ -17,8 +17,9 @@ export const ADVICE_DISCLAIMER_LONG =
 export const FORECAST_DISCLAIMER =
   "Modeled scenarios for your own thinking, not personalized investment advice or a guarantee of future performance.";
 
-/** Margus Fund — a fully simulated, paper-money portfolio. Extra emphasis
- * that this is not a real fund and not a signal to copy, since it's
- * explicitly designed to be a followable daily feed. */
-export const MARGUS_FUND_DISCLAIMER =
-  "100% simulated with paper money — not a real fund, not a track record, and not a signal to copy trade-for-trade. Margus doesn't know your situation, risk tolerance, or timeline. Educational entertainment only.";
+/** Upside Portfolio — a fully simulated, paper-money portfolio managed
+ * autonomously by Margus. Leads with WHO runs it (a common question for a
+ * followable daily feed like this), then the same "not real, not advice"
+ * emphasis used everywhere else. */
+export const UPSIDE_PORTFOLIO_DISCLAIMER =
+  "Managed autonomously by Margus, Upside's AI strategist — 100% simulated with paper money. Not a real fund, not a track record, and not a signal to copy trade-for-trade. Margus doesn't know your situation, risk tolerance, or timeline. Educational entertainment only.";

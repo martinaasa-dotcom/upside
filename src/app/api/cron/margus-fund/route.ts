@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Margus Fund needs SUPABASE_SERVICE_ROLE_KEY -- this runs with no user session and writes a shared, global record.",
+          "Upside Portfolio needs SUPABASE_SERVICE_ROLE_KEY -- this runs with no user session and writes a shared, global record.",
       },
       { status: 503 }
     );
@@ -127,7 +127,7 @@ export async function GET(req: Request) {
 
     const chain = buildAdvisorProviderChain({ reasoning: true });
     if (chain.length === 0) {
-      throw new Error("No LLM provider configured for Margus Fund");
+      throw new Error("No LLM provider configured for Upside Portfolio");
     }
 
     const { object: decision } = await withAdvisorFallback(chain, (model) =>
@@ -294,7 +294,7 @@ export async function GET(req: Request) {
       if (insertErr) {
         await logError({
           source: "server",
-          message: `Margus Fund: failed to insert new holding ${ticker}: ${insertErr.message}`,
+          message: `Upside Portfolio: failed to insert new holding ${ticker}: ${insertErr.message}`,
           path: "/api/cron/margus-fund",
         });
         continue;
@@ -387,12 +387,12 @@ export async function GET(req: Request) {
   } catch (err) {
     await logError({
       source: "server",
-      message: `Margus Fund cron failed: ${err instanceof Error ? err.message : String(err)}`,
+      message: `Upside Portfolio cron failed: ${err instanceof Error ? err.message : String(err)}`,
       stack: err instanceof Error ? err.stack : undefined,
       path: "/api/cron/margus-fund",
     });
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Margus Fund run failed" },
+      { error: err instanceof Error ? err.message : "Upside Portfolio run failed" },
       { status: 500 }
     );
   }
