@@ -5,6 +5,7 @@ import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
+import { pickLoadingMessage } from "@/lib/loading-messages";
 import type { Quote } from "@/lib/types";
 import {
   Bot,
@@ -193,6 +194,7 @@ export function UpsidePortfolioPage() {
   const [pickerSelection, setPickerSelection] = useState("");
   const [benchmarkBusy, setBenchmarkBusy] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  const [loadingMessage] = useState(pickLoadingMessage);
 
   const load = useCallback(async (isRefresh: boolean) => {
     if (isRefresh) setRefreshing(true);
@@ -474,7 +476,7 @@ export function UpsidePortfolioPage() {
         </p>
 
         {loading ? (
-          <p className="text-sm text-zinc-500">Loading…</p>
+          <p className="text-sm text-zinc-500">{loadingMessage}</p>
         ) : error ? (
           <p className="text-sm text-red-400">{error}</p>
         ) : (

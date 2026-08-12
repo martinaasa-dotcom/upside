@@ -156,6 +156,7 @@ import {
   TIER_HIDDEN_META_TABS,
   type ExperienceTier,
 } from "@/lib/experience-tier";
+import { pickLoadingMessage } from "@/lib/loading-messages";
 
 type DataSource = "demo" | "supabase";
 
@@ -295,6 +296,8 @@ export function Dashboard() {
   const { profile, signOut, refresh, user } = useAuth();
   const router = useRouter();
   const cachedBook = readBookCache(user?.id);
+  // Picked once per mount, not per render, so it doesn't shuffle mid-load.
+  const [loadingMessage] = useState(pickLoadingMessage);
   const [source, setSource] = useState<DataSource>(
     cachedBook?.source ?? "demo"
   );
@@ -2266,7 +2269,7 @@ export function Dashboard() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
         <UpsideLogo variant="icon" className="animate-pulse" />
-        <p className="mt-6 text-sm text-zinc-500">Opening your book…</p>
+        <p className="mt-6 text-sm text-zinc-500">{loadingMessage}</p>
       </div>
     );
   }
