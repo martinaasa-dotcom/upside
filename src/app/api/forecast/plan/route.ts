@@ -11,6 +11,7 @@ import {
 } from "@/lib/forecast-plan";
 import type { ForecastModel } from "@/lib/forecast";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { generateObject } from "ai";
 
 export const maxDuration = 120;
@@ -19,6 +20,14 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
+
+  const limit = checkRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Forecast requests are limited — try again in a bit." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
+    );
+  }
 
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {

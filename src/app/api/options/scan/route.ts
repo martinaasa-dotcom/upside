@@ -1,5 +1,6 @@
 import { scanCoveredCall } from "@/lib/market/covered-call";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -19,6 +20,14 @@ type ScanBody = {
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
+
+  const limit = checkRateLimit(`options-scan:${auth.user.id}`, 30, 5 * 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Options scan is rate-limited — try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
+    );
+  }
 
   const body = (await req.json()) as ScanBody;
   const positions = body.positions ?? [];

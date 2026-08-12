@@ -6,6 +6,7 @@ import {
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   buildFallbackPulseCheck,
   formatMovePct,
@@ -118,6 +119,14 @@ ${lines.join("\n\n")}`;
 export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
+
+  const limit = checkRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
+  if (!limit.ok) {
+    return Response.json(
+      { error: "Thesis Pulse is limited — try again in a bit." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
+    );
+  }
 
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {

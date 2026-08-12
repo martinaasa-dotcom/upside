@@ -10,12 +10,14 @@ import {
   pickStreamingProvider,
 } from "@/lib/ai/model";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   convertToModelMessages,
   stepCountIs,
   streamText,
   type UIMessage,
 } from "ai";
+import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
 
@@ -34,6 +36,14 @@ function messagesHaveImages(messages: UIMessage[]): boolean {
 export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
+
+  const limit = checkRateLimit(`chat:${auth.user.id}`, 30, 5 * 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "You're sending messages faster than Margus can keep up — give it a few seconds." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
+    );
+  }
 
   try {
     const body = await req.json();

@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { UpsideLogo } from "@/components/UpsideLogo";
+import Link from "next/link";
 import { useState } from "react";
 
 type Props = {
@@ -91,6 +92,18 @@ export function SignInGate({ children }: Props) {
 
           <p className="signin-rise-4 mt-8 text-[11px] leading-relaxed text-zinc-600">
             Communities stay read-only for everyone else.
+          </p>
+
+          <p className="signin-rise-4 mt-3 text-[11px] leading-relaxed text-zinc-600">
+            By continuing you agree to the{" "}
+            <Link href="/terms" className="underline hover:text-zinc-400">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline hover:text-zinc-400">
+              Privacy policy
+            </Link>
+            . Not financial advice.
           </p>
         </div>
       </main>
