@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, FlaskConical, LayoutDashboard, Plus, Activity, Users } from "lucide-react";
+import { Calculator, FlaskConical, LayoutDashboard, Plus, Activity, Users, BarChart3 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
@@ -9,6 +9,7 @@ import {
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
   PULSE_TAB_ID,
+  STATISTICS_TAB_ID,
 } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
 
@@ -57,6 +58,11 @@ const MODES = [
     id: PULSE_TAB_ID,
     label: "Pulse",
     Icon: Activity,
+  },
+  {
+    id: STATISTICS_TAB_ID,
+    label: "Stats",
+    Icon: BarChart3,
   },
   {
     id: LAB_TAB_ID,
@@ -228,7 +234,8 @@ export function PortfolioTabs({
                 "grid h-11 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
                 modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
                 modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
-                modeCols >= 4 && "grid-cols-4 sm:w-[28rem]"
+                modeCols === 4 && "grid-cols-4 sm:w-[28rem]",
+                modeCols >= 5 && "grid-cols-5 sm:w-[35rem]"
               )}
             >
               {modes.map(({ id, label, Icon }) => {
