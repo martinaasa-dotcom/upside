@@ -9,7 +9,7 @@ import {
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
   PULSE_TAB_ID,
-  STATISTICS_TAB_ID,
+  SEASONALITY_TAB_ID,
 } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
 
@@ -60,8 +60,8 @@ const MODES = [
     Icon: Activity,
   },
   {
-    id: STATISTICS_TAB_ID,
-    label: "Stats",
+    id: SEASONALITY_TAB_ID,
+    label: "Seasonality",
     Icon: BarChart3,
   },
   {

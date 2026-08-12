@@ -6,7 +6,7 @@ export const OVERVIEW_TAB_ID = "__overview__";
 export const COMPOUND_TAB_ID = "__compound__";
 export const LAB_TAB_ID = "__lab__";
 export const PULSE_TAB_ID = "__pulse__";
-export const STATISTICS_TAB_ID = "__statistics__";
+export const SEASONALITY_TAB_ID = "__seasonality__";
 
 export type SheetScore = {
   portfolio: Portfolio;

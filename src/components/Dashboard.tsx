@@ -19,7 +19,7 @@ import {
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { PulsePage } from "@/components/PulsePage";
-import { StatisticsPage } from "@/components/StatisticsPage";
+import { SeasonalityPage } from "@/components/SeasonalityPage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
@@ -118,7 +118,7 @@ import {
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
   PULSE_TAB_ID,
-  STATISTICS_TAB_ID,
+  SEASONALITY_TAB_ID,
   buildOverview,
 } from "@/lib/overview";
 import type {
@@ -265,7 +265,7 @@ export function Dashboard() {
       saved === COMPOUND_TAB_ID ||
       saved === LAB_TAB_ID ||
       saved === PULSE_TAB_ID ||
-      saved === STATISTICS_TAB_ID
+      saved === SEASONALITY_TAB_ID
     ) {
       return saved;
     }
@@ -351,8 +351,8 @@ export function Dashboard() {
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
   const isPulse = activeId === PULSE_TAB_ID;
-  const isStatistics = activeId === STATISTICS_TAB_ID;
-  const isMetaTab = isOverview || isCompound || isLab || isPulse || isStatistics;
+  const isSeasonality = activeId === SEASONALITY_TAB_ID;
+  const isMetaTab = isOverview || isCompound || isLab || isPulse || isSeasonality;
 
   const activePortfolio =
     isMetaTab
@@ -517,9 +517,9 @@ export function Dashboard() {
           if (
             sheetParam === "statistics" ||
             sheetParam === "stats" ||
-            sheetParam === STATISTICS_TAB_ID
+            sheetParam === SEASONALITY_TAB_ID
           ) {
-            return STATISTICS_TAB_ID;
+            return SEASONALITY_TAB_ID;
           }
           if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
             return OVERVIEW_TAB_ID;
@@ -539,7 +539,7 @@ export function Dashboard() {
           prev === COMPOUND_TAB_ID ||
           prev === LAB_TAB_ID ||
           prev === PULSE_TAB_ID ||
-          prev === STATISTICS_TAB_ID ||
+          prev === SEASONALITY_TAB_ID ||
           list.some((p) => p.id === prev))
       ) {
         return prev;
@@ -551,7 +551,7 @@ export function Dashboard() {
           saved === COMPOUND_TAB_ID ||
           saved === LAB_TAB_ID ||
           saved === PULSE_TAB_ID ||
-          saved === STATISTICS_TAB_ID ||
+          saved === SEASONALITY_TAB_ID ||
           list.some((p) => p.id === saved))
       ) {
         return saved;
@@ -854,7 +854,7 @@ export function Dashboard() {
       url.searchParams.set("sheet", "lab");
     } else if (activeId === PULSE_TAB_ID) {
       url.searchParams.set("sheet", "pulse");
-    } else if (activeId === STATISTICS_TAB_ID) {
+    } else if (activeId === SEASONALITY_TAB_ID) {
       url.searchParams.set("sheet", "statistics");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
@@ -906,7 +906,7 @@ export function Dashboard() {
           fromState === COMPOUND_TAB_ID ||
           fromState === LAB_TAB_ID ||
           fromState === PULSE_TAB_ID ||
-          fromState === STATISTICS_TAB_ID ||
+          fromState === SEASONALITY_TAB_ID ||
           portfolios.some((p) => p.id === fromState)
         ) {
           setActiveId(fromState);
@@ -1942,7 +1942,7 @@ export function Dashboard() {
         label: "Statistics — seasonality",
         group: "Go",
         hint: "Year & calendar patterns",
-        run: () => setActiveId(STATISTICS_TAB_ID),
+        run: () => setActiveId(SEASONALITY_TAB_ID),
       },
     ];
     items.push({
@@ -2174,8 +2174,8 @@ export function Dashboard() {
                   ? "Compound"
                 : isPulse
                   ? "Pulse"
-                  : isStatistics
-                    ? "Statistics"
+                  : isSeasonality
+                    ? "Seasonality"
                     : isLab
                       ? "Lab"
                       : activePortfolio!.name}
@@ -2289,12 +2289,9 @@ export function Dashboard() {
             quotes={quotes}
             convictions={convictionMap}
           />
-        ) : isStatistics ? (
-          <StatisticsPage
-            overview={overview}
+        ) : isSeasonality ? (
+          <SeasonalityPage
             bookTickers={overview.tickers.map((t) => t.ticker)}
-            cashflows={labBundle.cashflows}
-            visitStreak={visitStreak}
           />
         ) : isOverview ? (
           <>
@@ -2398,7 +2395,7 @@ export function Dashboard() {
         }
         mobileSummary={{
           title:
-            isOverview || isLab || isCompound || isStatistics
+            isOverview || isLab || isCompound || isSeasonality
               ? "Book"
               : (activePortfolio?.name ?? "Sheet"),
           totalValue: (() => {
