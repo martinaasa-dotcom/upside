@@ -5,7 +5,7 @@ import {
   listOwnedPortfolioIds,
   requirePortfolioOwner,
 } from "@/lib/auth/ownership";
-import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -88,14 +88,6 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const supabase = await getSupabaseDataClient();
-  if (!supabase) {
-    return NextResponse.json(
-      { error: "Supabase not configured — use local demo store" },
-      { status: 400 }
-    );
-  }
-
   const body = await req.json();
   const name = String(body.name ?? "").trim();
   if (!name) {
@@ -111,7 +103,23 @@ export async function POST(req: NextRequest) {
   // Also atomic (no risk of an orphaned, owner-less portfolio if a second
   // write failed) and handles slug collisions instead of 500ing when two
   // people separately name a sheet the same thing.
-  const { data, error } = await supabase.rpc(
+  //
+  // Deliberately the cookie-session client, NOT getSupabaseDataClient() —
+  // that prefers the service-role client whenever SUPABASE_SERVICE_ROLE_KEY
+  // is set (true in production), and a service-role connection carries no
+  // per-request end-user JWT, so auth.uid() inside this function resolves
+  // to null and the RPC always raises "not authenticated". The function
+  // itself is still SECURITY DEFINER, so its internal writes bypass RLS
+  // regardless of which client invokes it — this only affects whether
+  // auth.uid() correctly identifies who's calling.
+  const authedSupabase = await createSupabaseServerAuth();
+  if (!authedSupabase) {
+    return NextResponse.json(
+      { error: "Supabase not configured — use local demo store" },
+      { status: 400 }
+    );
+  }
+  const { data, error } = await authedSupabase.rpc(
     "portfell_create_portfolio_for_me",
     { p_name: name }
   );

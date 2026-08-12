@@ -1,7 +1,6 @@
 import { createHash } from "crypto";
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
-import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { getSupabaseDataClient } from "@/lib/supabase/server";
+import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -34,7 +33,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invite code required" }, { status: 400 });
   }
 
-  const supabase = await getSupabaseDataClient();
+  // Cookie-session client, not getSupabaseDataClient() -- this RPC is
+  // self-scoped to auth.uid(), which resolves to null (and the RPC just
+  // raises "not authenticated") over the service-role client that
+  // getSupabaseDataClient() prefers whenever SUPABASE_SERVICE_ROLE_KEY is
+  // set, since a service-role connection carries no per-request end-user
+  // JWT. The function is still SECURITY DEFINER, so its writes bypass RLS
+  // regardless of which client invokes it. The follow-up select below
+  // stays on this same client too -- by then the RPC has already
+  // committed the ownership row, so normal RLS correctly allows it.
+  const supabase = await createSupabaseServerAuth();
   if (!supabase) {
     return NextResponse.json(
       { error: "Supabase not configured" },
