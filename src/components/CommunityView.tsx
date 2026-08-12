@@ -777,91 +777,122 @@ function ReadOnlyHoldings({
   const totalValue =
     holdings.reduce((s, h) => s + (quotes[h.ticker]?.price ?? 0) * h.shares, 0) +
     cash;
+  const totalCost = holdings.reduce((s, h) => s + h.buy_price * h.shares, 0);
+  const totalPnl = holdings.reduce((s, h) => {
+    const price = quotes[h.ticker]?.price ?? 0;
+    return s + (price - h.buy_price) * h.shares;
+  }, 0);
+  const totalRoiPct = totalCost > 0 ? totalPnl / totalCost : 0;
+  const previousCloseValue =
+    holdings.reduce(
+      (s, h) => s + (quotes[h.ticker]?.previousClose ?? quotes[h.ticker]?.price ?? 0) * h.shares,
+      0
+    ) + cash;
+  const todayDollar = totalValue - previousCloseValue;
+  const todayPct = previousCloseValue > 0 ? todayDollar / previousCloseValue : null;
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-800">
-      <table className="w-full min-w-[36rem] text-left text-sm">
-        <thead className="border-b border-zinc-800 text-xs text-zinc-500">
-          <tr>
-            <th className="px-3 py-2 font-medium">Ticker</th>
-            <th className="px-3 py-2 font-medium">% Book</th>
-            <th className="px-3 py-2 font-medium">Shares</th>
-            <th className="px-3 py-2 font-medium">Price</th>
-            <th className="px-3 py-2 font-medium">Today</th>
-            <th className="px-3 py-2 font-medium">Value</th>
-            <th className="px-3 py-2 font-medium">ROI %</th>
-            <th className="px-3 py-2 font-medium">P&amp;L</th>
-          </tr>
-        </thead>
-        <tbody>
-          {holdings.map((h) => {
-            const price = quotes[h.ticker]?.price ?? 0;
-            const value = price * h.shares;
-            const cost = h.buy_price * h.shares;
-            const pnl = value - cost;
-            const roiPct = cost > 0 ? pnl / cost : 0;
-            const todayPct = quotes[h.ticker]?.changePercent ?? null;
-            const pctBook = totalValue > 0 ? value / totalValue : 0;
-            return (
-              <tr key={h.id} className="border-b border-zinc-800/60">
-                <td className="px-3 py-2 font-medium">{h.ticker}</td>
-                <td className="px-3 py-2 tabular-nums text-zinc-500">
-                  {percent(pctBook)}
-                </td>
-                <td className="px-3 py-2 tabular-nums text-zinc-400">
-                  {h.shares}
-                </td>
-                <td className="px-3 py-2 font-semibold tabular-nums text-white">
-                  {currency(price)}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 py-2 tabular-nums",
-                    todayPct == null
-                      ? "text-zinc-600"
-                      : todayPct >= 0
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                  )}
-                >
-                  {todayPct != null ? percent(todayPct) : "—"}
-                </td>
-                <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
-                <td
-                  className={cn(
-                    "px-3 py-2 tabular-nums",
-                    roiPct >= 0 ? "text-emerald-400" : "text-red-400"
-                  )}
-                >
-                  {percent(roiPct)}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 py-2 tabular-nums",
-                    pnl >= 0 ? "text-emerald-400" : "text-red-400"
-                  )}
-                >
-                  {signedCurrency(pnl)}
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat label="Total value" value={currency(totalValue)} />
+        <Stat
+          label="Today"
+          value={signedCurrency(todayDollar)}
+          sub={todayPct != null ? percent(todayPct) : undefined}
+          tone={todayDollar >= 0 ? "up" : "down"}
+        />
+        <Stat
+          label="Unrealized P&L"
+          value={signedCurrency(totalPnl)}
+          sub={percent(totalRoiPct)}
+          tone={totalPnl >= 0 ? "up" : "down"}
+        />
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-zinc-800">
+        <table className="w-full min-w-[36rem] text-left text-sm">
+          <thead className="border-b border-zinc-800 text-xs text-zinc-500">
+            <tr>
+              <th className="px-3 py-2 font-medium">Ticker</th>
+              <th className="px-3 py-2 font-medium">% Book</th>
+              <th className="px-3 py-2 font-medium">Shares</th>
+              <th className="px-3 py-2 font-medium">Price</th>
+              <th className="px-3 py-2 font-medium">Today</th>
+              <th className="px-3 py-2 font-medium">Value</th>
+              <th className="px-3 py-2 font-medium">ROI %</th>
+              <th className="px-3 py-2 font-medium">P&amp;L</th>
+            </tr>
+          </thead>
+          <tbody>
+            {holdings.map((h) => {
+              const price = quotes[h.ticker]?.price ?? 0;
+              const value = price * h.shares;
+              const cost = h.buy_price * h.shares;
+              const pnl = value - cost;
+              const roiPct = cost > 0 ? pnl / cost : 0;
+              const todayPct = quotes[h.ticker]?.changePercent ?? null;
+              const pctBook = totalValue > 0 ? value / totalValue : 0;
+              return (
+                <tr key={h.id} className="border-b border-zinc-800/60">
+                  <td className="px-3 py-2 font-medium">{h.ticker}</td>
+                  <td className="px-3 py-2 tabular-nums text-zinc-500">
+                    {percent(pctBook)}
+                  </td>
+                  <td className="px-3 py-2 tabular-nums text-zinc-400">
+                    {h.shares}
+                  </td>
+                  <td className="px-3 py-2 font-semibold tabular-nums text-white">
+                    {currency(price)}
+                  </td>
+                  <td
+                    className={cn(
+                      "px-3 py-2 tabular-nums",
+                      todayPct == null
+                        ? "text-zinc-600"
+                        : todayPct >= 0
+                          ? "text-emerald-400"
+                          : "text-red-400"
+                    )}
+                  >
+                    {todayPct != null ? percent(todayPct) : "—"}
+                  </td>
+                  <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
+                  <td
+                    className={cn(
+                      "px-3 py-2 tabular-nums",
+                      roiPct >= 0 ? "text-emerald-400" : "text-red-400"
+                    )}
+                  >
+                    {percent(roiPct)}
+                  </td>
+                  <td
+                    className={cn(
+                      "px-3 py-2 tabular-nums",
+                      pnl >= 0 ? "text-emerald-400" : "text-red-400"
+                    )}
+                  >
+                    {signedCurrency(pnl)}
+                  </td>
+                </tr>
+              );
+            })}
+            {holdings.length === 0 && (
+              <tr>
+                <td className="px-3 py-6 text-center text-zinc-500" colSpan={8}>
+                  No holdings on this sheet.
                 </td>
               </tr>
-            );
-          })}
-          {holdings.length === 0 && (
+            )}
             <tr>
-              <td className="px-3 py-6 text-center text-zinc-500" colSpan={8}>
-                No holdings on this sheet.
+              <td className="px-3 py-2 text-zinc-500" colSpan={6}>
+                Cash
+              </td>
+              <td className="px-3 py-2 tabular-nums" colSpan={2}>
+                {currency(cash)}
               </td>
             </tr>
-          )}
-          <tr>
-            <td className="px-3 py-2 text-zinc-500" colSpan={6}>
-              Cash
-            </td>
-            <td className="px-3 py-2 tabular-nums" colSpan={2}>
-              {currency(cash)}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
