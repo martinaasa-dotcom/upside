@@ -57,12 +57,17 @@ export type CcChatContext = {
       ticker: string;
       shares: number;
       buyPrice: number;
-      callPct: number;
-      stockTarget: number | null;
+      callPct?: number;
+      stockTarget?: number | null;
     }>;
   }>;
   /** Overview chat: advise only — no mutating tools */
   adviseOnly?: boolean;
+  /** Viewer told onboarding they have no options experience — Margus
+   * should never bring up covered calls, Call %, strikes, or targets
+   * unprompted for this person. Callers already omit `rows` in this
+   * case; this also softens the system prompt itself. */
+  hideOptions?: boolean;
   /** Yahoo marketState snapshot (PRE / REGULAR / POST / …) */
   marketState?: string | null;
   /** USD per 1 EUR (Yahoo EURUSD=X) — for broker EUR→USD imports */
@@ -90,8 +95,25 @@ function toUsd(
   return amount;
 }
 
-export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null }) {
-  return {
+/** Tool names that only exist to plan/adjust covered calls — omitted
+ * entirely (not just discouraged in the prompt) when the viewer told
+ * onboarding they have no options experience. */
+const OPTIONS_ONLY_TOOLS = [
+  "setCallPct",
+  "setCallPctBulk",
+  "setUniformCallPct",
+  "setStockTarget",
+  "setStockTargetBulk",
+  "clearStockTarget",
+  "proposeWritePlan",
+  "applyWritePlan",
+] as const;
+
+export function buildCcAdvisorTools(
+  fx: AdvisorFx = { eurUsd: null, gbpUsd: null },
+  opts: { hideOptions?: boolean } = {}
+) {
+  const allTools = {
   setCallPct: tool({
     description:
       "Set the Call % for one ticker. Call % is how far the Next Strike sits above the Stock Target (resistance). Example: stock target $100 and callPct 15 → next strike ~$115.",
@@ -549,7 +571,13 @@ export function buildCcAdvisorTools(fx: AdvisorFx = { eurUsd: null, gbpUsd: null
       message: `Applied write plan to ${updates.length} ticker(s)`,
     }),
   }),
-};
+  };
+
+  if (!opts.hideOptions) return allTools;
+
+  const filtered = { ...allTools };
+  for (const key of OPTIONS_ONLY_TOOLS) delete filtered[key];
+  return filtered;
 }
 
 export const ccAdvisorTools = buildCcAdvisorTools();
@@ -596,8 +624,11 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
           })
           .join("\n");
 
-  const ccTable =
-    ctx.rows.length === 0
+  const hideOptions = Boolean(ctx.hideOptions);
+
+  const ccTable = hideOptions
+    ? "(not applicable — viewer has no options experience, covered calls are hidden for them)"
+    : ctx.rows.length === 0
       ? "(no CC rows)"
       : ctx.rows
           .map((r) => {
@@ -618,10 +649,13 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
               p.holdings.length === 0
                 ? "  (no holdings)"
                 : p.holdings
-                    .map(
-                      (h) =>
-                        `  ${h.ticker}: shares=${h.shares}, buy=${h.buyPrice}, call%=${(h.callPct * 100).toFixed(0)}%, stockTarget=${h.stockTarget ?? "—"}`
-                    )
+                    .map((h) => {
+                      const ccBits =
+                        !hideOptions && h.callPct != null
+                          ? `, call%=${(h.callPct * 100).toFixed(0)}%, stockTarget=${h.stockTarget ?? "—"}`
+                          : "";
+                      return `  ${h.ticker}: shares=${h.shares}, buy=${h.buyPrice}${ccBits}`;
+                    })
                     .join("\n");
             return `${p.name} (cash=${p.cashBalance}):\n${lines}`;
           })
@@ -629,21 +663,29 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
 
   const adviseOnly = Boolean(ctx.adviseOnly);
 
+  const optionsGuard = hideOptions
+    ? `\n\nThis viewer told onboarding they have NO options experience. Covered calls are hidden everywhere in their UI. NEVER mention covered calls, Call %, strikes, premiums, "stock target", or options strategies — not even to suggest learning about them. Talk about their holdings in plain buy/hold/sell/allocation terms only. If they explicitly ask about options, briefly answer their question but note this isn't your focus for their account and don't proactively bring it up again.`
+    : "";
+
   const writeBlock = adviseOnly
     ? `This is OVERVIEW mode (advise-only).
-You can READ all portfolios below and discuss winners, losers, concentration, Call %, and strategy.
+You can READ all portfolios below and discuss winners, losers, concentration${hideOptions ? "" : ", Call %"}, and strategy.
 You MUST NOT claim to change any sheet. There are NO write tools in this mode.
-If the user asks to edit holdings, cash, Call %, or targets: tell them to open that portfolio tab and ask again there.`
-    : `You can READ holdings + covered-call data below, and WRITE via tools:
-- Holdings: importSheet (preferred for screenshots / multi-ticker imports), updateHolding, addHolding, removeHolding, setCash
+If the user asks to edit holdings, cash${hideOptions ? "" : ", Call %, or targets"}: tell them to open that portfolio tab and ask again there.`
+    : `You can READ holdings${hideOptions ? "" : " + covered-call data"} below, and WRITE via tools:
+- Holdings: importSheet (preferred for screenshots / multi-ticker imports), updateHolding, addHolding, removeHolding, setCash${
+        hideOptions
+          ? ""
+          : `
 - Covered calls: setCallPct, setCallPctBulk, setUniformCallPct
 - Stock targets: setStockTarget, setStockTargetBulk, clearStockTarget
-- Write planning: proposeWritePlan (analyze), applyWritePlan (commit targets + Call %)
+- Write planning: proposeWritePlan (analyze), applyWritePlan (commit targets + Call %)`
+      }
 
 Tools ALWAYS apply to the ACTIVE portfolio (${ctx.portfolioName}) only.
 You can READ other sheets listed under "Other portfolios" (e.g. Aasad while chatting on MaryAnn) when the user asks about them or wants to copy.
 When the user asks to copy / mirror / adapt strategy from another sheet:
-1. Pull Call %, stock targets, and/or structure from that sheet.
+1. Pull${hideOptions ? "" : " Call %, stock targets, and/or"} structure from that sheet.
 2. Apply to matching tickers on ${ctx.portfolioName} via tools — keep THIS sheet's share counts and cash unless they explicitly ask to copy size too.
 3. Skip tickers that don't exist here unless they ask to add them.
 4. Briefly summarize what you copied vs skipped.
@@ -669,13 +711,9 @@ After ANY import tool: reply in 2–4 sentences confirming ticker, shares, USD c
 
 FX for imports (USD per 1 unit): EURUSD=${ctx.eurUsd != null ? ctx.eurUsd.toFixed(4) : "unknown"} · GBPUSD=${ctx.gbpUsd != null ? ctx.gbpUsd.toFixed(4) : "unknown"}.`;
 
-  return `${MARGUS_PERSONA}
-
-This chat thread is for Upside portfolio "${ctx.portfolioName}" only.
-Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
-
-${writeBlock}
-
+  const ccGuidanceBlock = hideOptions
+    ? ""
+    : `
 When the user asks to critique / review / advise on the CURRENT plan (or “current targets”):
 1. Use the Covered-call rows snapshot as ground truth (and/or proposeWritePlan WITH stockTarget+callPct passed through).
 2. Critique those exact levels — do NOT invent new Stock Targets or Call %.
@@ -728,20 +766,36 @@ Covered-call strategy:
   · Still nudge Call % for earnings and distance to stock target after the vol baseline.
 - Target ~${(STRATEGY.targetYield * 100).toFixed(0)}% period yield (floor ~${(STRATEGY.minYield * 100).toFixed(0)}%).
 - Execution: ${STRATEGY.executionWindow}.
+`;
 
+  const totalsLine = hideOptions
+    ? `Portfolio totals: cost=${ctx.totals.cost.toFixed(0)}, value=${ctx.totals.value.toFixed(0)}, roi%=${(ctx.totals.roiPct * 100).toFixed(1)}%, roi$=${ctx.totals.roiDollar.toFixed(0)}`
+    : `Portfolio totals: cost=${ctx.totals.cost.toFixed(0)}, value=${ctx.totals.value.toFixed(0)}, roi%=${(ctx.totals.roiPct * 100).toFixed(1)}%, roi$=${ctx.totals.roiDollar.toFixed(0)}, ccYieldAvg=${(ctx.totals.yield2wAvg * 100).toFixed(2)}%, premiumTotal=${ctx.totals.premiumTotal.toFixed(2)}`;
+
+  const ccRowsSection = hideOptions
+    ? ""
+    : `
+
+Covered-call rows:
+${ccTable}`;
+
+  return `${MARGUS_PERSONA}
+
+This chat thread is for Upside portfolio "${ctx.portfolioName}" only.
+Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
+
+${writeBlock}
+${ccGuidanceBlock}
 Be concise. Prefer tools over invented numbers. After tools, briefly confirm.
-None of this is personalized investment advice — you're reasoning about the numbers already on the sheet, not recommending trades for the user's specific financial situation.
+None of this is personalized investment advice — you're reasoning about the numbers already on the sheet, not recommending trades for the user's specific financial situation.${optionsGuard}
 
 Market session: ${ctx.marketState ?? "unknown"}
 Watchlist (not owned — discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}
 Cash: ${ctx.cashBalance}
-Portfolio totals: cost=${ctx.totals.cost.toFixed(0)}, value=${ctx.totals.value.toFixed(0)}, roi%=${(ctx.totals.roiPct * 100).toFixed(1)}%, roi$=${ctx.totals.roiDollar.toFixed(0)}, ccYieldAvg=${(ctx.totals.yield2wAvg * 100).toFixed(2)}%, premiumTotal=${ctx.totals.premiumTotal.toFixed(2)}
+${totalsLine}
 
 Holdings (includes preMarket / afterHours when available):
-${holdingsTable}
-
-Covered-call rows:
-${ccTable}
+${holdingsTable}${ccRowsSection}
 
 Other portfolios (read-only — copy source):
 ${otherSheets}`;

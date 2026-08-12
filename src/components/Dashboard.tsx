@@ -150,7 +150,10 @@ import {
 } from "@/lib/panel-visibility";
 import {
   defaultForecastVisible,
+  loadStoredKnowsOptions,
   loadStoredTier,
+  NO_OPTIONS_HIDDEN_LAB_TABS,
+  saveStoredKnowsOptions,
   saveStoredTier,
   TIER_HIDDEN_LAB_GROUPS,
   TIER_HIDDEN_META_TABS,
@@ -410,6 +413,14 @@ export function Dashboard() {
     loadStoredTier
   );
   const [tierChecked, setTierChecked] = useState(false);
+  // Tri-state and deliberately separate from experienceTier: null = hasn't
+  // answered, true/false = explicit answer to "have you used options
+  // before". A "very experienced" tier and "no options experience" are a
+  // real, valid combination -- this can't be derived from the tier.
+  const [knowsOptions, setKnowsOptions] = useState<boolean | null>(
+    loadStoredKnowsOptions
+  );
+  const hideOptionsUI = knowsOptions === false;
 
   // Confirm/sync against the server once — localStorage is read
   // synchronously above for an instant first paint, but the DB value is
@@ -425,13 +436,24 @@ export function Dashboard() {
     let cancelled = false;
     void fetch("/api/account/experience-tier")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { tier?: ExperienceTier | null } | null) => {
-        if (cancelled) return;
-        if (data?.tier) {
-          setExperienceTier(data.tier);
-          saveStoredTier(data.tier);
+      .then(
+        (
+          data: {
+            tier?: ExperienceTier | null;
+            knowsOptions?: boolean | null;
+          } | null
+        ) => {
+          if (cancelled) return;
+          if (data?.tier) {
+            setExperienceTier(data.tier);
+            saveStoredTier(data.tier);
+          }
+          if (typeof data?.knowsOptions === "boolean") {
+            setKnowsOptions(data.knowsOptions);
+            saveStoredKnowsOptions(data.knowsOptions);
+          }
         }
-      })
+      )
       .catch(() => {
         /* keep whatever localStorage already had */
       })
@@ -466,9 +488,12 @@ export function Dashboard() {
       ? null
       : (portfolios.find((p) => p.id === activeId) ?? null);
 
-  const ccVisible = activePortfolio
-    ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, experienceTier !== "novice")
-    : true;
+  const ccVisible =
+    hideOptionsUI
+      ? false
+      : activePortfolio
+        ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, experienceTier !== "novice")
+        : true;
   const forecastVisible = activePortfolio
     ? isPanelVisible(
         forecastVisibleByPortfolio,
@@ -565,14 +590,18 @@ export function Dashboard() {
   // briefing both read from this one list (and its one shared dismissal
   // state) instead of each re-deriving their own copy of these conditions.
   const bookAlerts = useMemo<UpsideAlert[]>(() => {
-    const strike = buildStrikeAlerts(
-      bookCoveredCallRows.map((r) => ({
-        ticker: r.holding.ticker,
-        spot: r.spot,
-        stockTarget: r.stockTarget,
-        nextStrike: r.nextStrike,
-      }))
-    );
+    // No options experience -> no strike-planning alerts at all, not just
+    // a de-emphasized card. These are pure covered-call mechanics.
+    const strike = hideOptionsUI
+      ? []
+      : buildStrikeAlerts(
+          bookCoveredCallRows.map((r) => ({
+            ticker: r.holding.ticker,
+            spot: r.spot,
+            stockTarget: r.stockTarget,
+            nextStrike: r.nextStrike,
+          }))
+        );
     const earn = buildEarningsAlerts(earningsEvents);
     const top = [...overview.tickers].sort(
       (a, b) => b.currentValue - a.currentValue
@@ -583,7 +612,7 @@ export function Dashboard() {
       topTicker: top ? { ticker: top.ticker, value: top.currentValue } : null,
     });
     return [...earn, ...strike, ...decisions];
-  }, [bookCoveredCallRows, earningsEvents, overview]);
+  }, [bookCoveredCallRows, earningsEvents, overview, hideOptionsUI]);
 
   const activeAlerts = useMemo(
     () => bookAlerts.filter((a) => !alertToastsSent.has(a.id)),
@@ -877,7 +906,12 @@ export function Dashboard() {
           applyFxPayload(quotesJson.fx);
         }
 
-        if (opts?.quotesOnly) return;
+        // No options experience -> don't even fetch options-chain data;
+        // the panel that would show it never renders for these viewers.
+        if (opts?.quotesOnly || hideOptionsUI) {
+          if (hideOptionsUI) setOptions({});
+          return;
+        }
 
         const positions = rows.map((h) => {
           const q = nextQuotes![h.ticker];
@@ -909,7 +943,7 @@ export function Dashboard() {
         if (!opts?.silent) setRefreshing(false);
       }
     },
-    [applyFxPayload, refreshFx]
+    [applyFxPayload, refreshFx, hideOptionsUI]
   );
 
   useEffect(() => {
@@ -2221,11 +2255,13 @@ export function Dashboard() {
       });
     }
     if (!isMetaTab) {
-      items.push({
-        id: "cc",
-        label: ccVisible ? "Hide covered calls" : "Show covered calls",
-        onSelect: () => toggleCcVisible(),
-      });
+      if (!hideOptionsUI) {
+        items.push({
+          id: "cc",
+          label: ccVisible ? "Hide covered calls" : "Show covered calls",
+          onSelect: () => toggleCcVisible(),
+        });
+      }
       items.push({
         id: "forecast",
         label: forecastVisible ? "Hide forecast" : "Show forecast",
@@ -2252,6 +2288,7 @@ export function Dashboard() {
     source,
     isMetaTab,
     ccVisible,
+    hideOptionsUI,
     forecastVisible,
     saveFlash,
     locked,
@@ -2492,6 +2529,7 @@ export function Dashboard() {
             hiddenGroups={
               experienceTier ? TIER_HIDDEN_LAB_GROUPS[experienceTier] : []
             }
+            hiddenTabs={hideOptionsUI ? NO_OPTIONS_HIDDEN_LAB_TABS : []}
           />
         ) : isCompound ? (
           <CompoundInterestSheet
@@ -2525,6 +2563,7 @@ export function Dashboard() {
               cashflows={labBundle.cashflows}
               marketState={marketState}
               showCommunities={source === "supabase"}
+              hideOptions={hideOptionsUI}
               onOpenLab={(tab) => {
                 if (tab) setLabIntent(tab);
                 setActiveId(LAB_TAB_ID);
@@ -2663,6 +2702,7 @@ export function Dashboard() {
         portfolioName={activePortfolio?.name ?? ""}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
+        hideCallPct={hideOptionsUI}
       />
 
       <CsvImportModal
@@ -2670,6 +2710,7 @@ export function Dashboard() {
         portfolioName={activePortfolio?.name ?? ""}
         onClose={() => setCsvImportOpen(false)}
         onImport={handleCsvImport}
+        hideCallPct={hideOptionsUI}
       />
 
       <CashModal
@@ -2750,9 +2791,10 @@ export function Dashboard() {
 
       {tierChecked && !experienceTier && source === "supabase" && user && (
         <ExperienceOnboardingModal
-          onDone={(tier) => {
+          onDone={(tier, knows) => {
             setExperienceTier(tier);
-            track("experience_tier_set", { tier });
+            setKnowsOptions(knows);
+            track("experience_tier_set", { tier, knowsOptions: knows });
           }}
         />
       )}
@@ -2868,6 +2910,7 @@ export function Dashboard() {
             ? {
                 portfolioName: activePortfolio.name,
                 cashBalance: activePortfolio.cash_balance,
+                hideOptions: hideOptionsUI,
                 eurUsd,
                 gbpUsd,
                 watchlist: loadWatchlist(),
@@ -2884,18 +2927,20 @@ export function Dashboard() {
                   todayPct: h.quote?.changePercent ?? null,
                   ...extendedHoursFromQuote(h.quote),
                 })),
-                rows: snapshot.coveredCallRows.map((r) => ({
-                  ticker: r.holding.ticker,
-                  spot: r.spot,
-                  callPct: r.targetCall,
-                  stockTarget: r.stockTarget,
-                  distance: r.targetDistance,
-                  nextStrike: r.nextStrike,
-                  contracts: r.contracts,
-                  yield2w: r.yield2w,
-                  premium: r.premium,
-                  expiration: r.expiration,
-                })),
+                rows: hideOptionsUI
+                  ? []
+                  : snapshot.coveredCallRows.map((r) => ({
+                      ticker: r.holding.ticker,
+                      spot: r.spot,
+                      callPct: r.targetCall,
+                      stockTarget: r.stockTarget,
+                      distance: r.targetDistance,
+                      nextStrike: r.nextStrike,
+                      contracts: r.contracts,
+                      yield2w: r.yield2w,
+                      premium: r.premium,
+                      expiration: r.expiration,
+                    })),
                 marketState,
                 totals: {
                   cost: snapshot.totals.buyValue,
@@ -2916,8 +2961,10 @@ export function Dashboard() {
                         ticker: h.ticker,
                         shares: h.shares,
                         buyPrice: h.buy_price,
-                        callPct: h.target_call_pct,
-                        stockTarget: h.stock_target_override,
+                        callPct: hideOptionsUI ? undefined : h.target_call_pct,
+                        stockTarget: hideOptionsUI
+                          ? undefined
+                          : h.stock_target_override,
                       })),
                   })),
               }
@@ -2925,6 +2972,7 @@ export function Dashboard() {
                 portfolioName: "Overview",
                 cashBalance: overview.totals.cash,
                 adviseOnly: true,
+                hideOptions: hideOptionsUI,
                 eurUsd,
                 gbpUsd,
                 watchlist: loadWatchlist(),
@@ -2964,8 +3012,10 @@ export function Dashboard() {
                       ticker: h.ticker,
                       shares: h.shares,
                       buyPrice: h.buy_price,
-                      callPct: h.target_call_pct,
-                      stockTarget: h.stock_target_override,
+                      callPct: hideOptionsUI ? undefined : h.target_call_pct,
+                      stockTarget: hideOptionsUI
+                        ? undefined
+                        : h.stock_target_override,
                     })),
                 })),
               }

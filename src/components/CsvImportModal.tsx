@@ -19,6 +19,8 @@ type Props = {
     cash: number | null;
     replace: boolean;
   }) => void;
+  /** Hide the Call % column/copy for viewers with no options experience. */
+  hideCallPct?: boolean;
 };
 
 export function CsvImportModal({
@@ -26,6 +28,7 @@ export function CsvImportModal({
   portfolioName,
   onClose,
   onImport,
+  hideCallPct = false,
 }: Props) {
   const [rows, setRows] = useState<CsvHoldingRow[]>([]);
   const [cash, setCash] = useState<number | null>(null);
@@ -111,9 +114,10 @@ export function CsvImportModal({
           <p className="text-sm text-zinc-400">
             Columns: <span className="text-zinc-200">Ticker</span>,{" "}
             <span className="text-zinc-200">Shares</span>,{" "}
-            <span className="text-zinc-200">Buy Price</span>. Call % and Cash
-            columns are optional — a row named CASH is read as your cash
-            balance.
+            <span className="text-zinc-200">Buy Price</span>.{" "}
+            {hideCallPct ? "Cash" : "Call % and Cash"} column
+            {hideCallPct ? " is" : "s are"} optional — a row named CASH is
+            read as your cash balance.
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -173,7 +177,9 @@ export function CsvImportModal({
                       <th className="px-3 py-1.5 font-medium">Ticker</th>
                       <th className="px-3 py-1.5 font-medium">Shares</th>
                       <th className="px-3 py-1.5 font-medium">Buy price</th>
-                      <th className="px-3 py-1.5 font-medium">Call %</th>
+                      {!hideCallPct && (
+                        <th className="px-3 py-1.5 font-medium">Call %</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -188,11 +194,13 @@ export function CsvImportModal({
                         <td className="px-3 py-1.5 tabular-nums text-zinc-300">
                           ${r.buyPrice.toFixed(2)}
                         </td>
-                        <td className="px-3 py-1.5 tabular-nums text-zinc-500">
-                          {r.callPct != null
-                            ? `${Math.round(r.callPct * 100)}%`
-                            : "default"}
-                        </td>
+                        {!hideCallPct && (
+                          <td className="px-3 py-1.5 tabular-nums text-zinc-500">
+                            {r.callPct != null
+                              ? `${Math.round(r.callPct * 100)}%`
+                              : "default"}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

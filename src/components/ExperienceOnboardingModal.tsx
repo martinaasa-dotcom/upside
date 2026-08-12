@@ -2,6 +2,7 @@
 
 import {
   EXPERIENCE_TIERS,
+  saveStoredKnowsOptions,
   saveStoredTier,
   type ExperienceTier,
 } from "@/lib/experience-tier";
@@ -10,7 +11,7 @@ import { Check, GraduationCap, Settings, Sparkles, TrendingUp } from "lucide-rea
 import { useState } from "react";
 
 type Props = {
-  onDone: (tier: ExperienceTier) => void;
+  onDone: (tier: ExperienceTier, knowsOptions: boolean) => void;
 };
 
 type Q1Answer = "new" | "comfortable" | "active";
@@ -44,6 +45,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
   const [q1, setQ1] = useState<Q1Answer | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [result, setResult] = useState<ExperienceTier | null>(null);
+  const [resultKnowsOptions, setResultKnowsOptions] = useState(true);
   const [saving, setSaving] = useState(false);
 
   async function finish(q2: Q2Answer) {
@@ -54,18 +56,25 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
     // one we under-guessed.
     const tier: ExperienceTier =
       TIER_RANK[Q2_TIER[q2]] > TIER_RANK[Q1_TIER[q1]] ? Q2_TIER[q2] : Q1_TIER[q1];
+    // Options familiarity is answered directly by Q2, not blended with
+    // Q1 the way the overall tier is -- someone can be "very experienced"
+    // overall (Q1) and still have zero options experience (Q2), and that
+    // combination should hide every options surface, not show them.
+    const knowsOptions = q2 !== "never";
     saveStoredTier(tier);
+    saveStoredKnowsOptions(knowsOptions);
     try {
       await fetch("/api/account/experience-tier", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, knowsOptions }),
       });
     } catch {
       /* localStorage already has it; sync will retry next visit */
     }
     setSaving(false);
     setResult(tier);
+    setResultKnowsOptions(knowsOptions);
     setStep(3);
   }
 
@@ -156,7 +165,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
             </div>
             <button
               type="button"
-              onClick={() => result && onDone(result)}
+              onClick={() => result && onDone(result, resultKnowsOptions)}
               className="w-full rounded-xl bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8]"
             >
               Got it

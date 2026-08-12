@@ -99,6 +99,8 @@ type Props = {
   visitStreak?: VisitStreakState | null;
   /** Show communities spotlight (signed-in My book Overview). */
   showCommunities?: boolean;
+  /** Viewer has no options experience — keep fun facts / copy options-free. */
+  hideOptions?: boolean;
 };
 
 function BriefingCard({
@@ -371,6 +373,7 @@ export function OverviewDashboard({
   guest = false,
   visitStreak = null,
   showCommunities = false,
+  hideOptions = false,
 }: Props) {
   const {
     totals,
@@ -425,9 +428,22 @@ export function OverviewDashboard({
   }, [guest]);
 
   const displayedFunFacts = useMemo(() => {
-    if (factsShuffle === 0 || !sheets.length || !tickers.length) return funFacts;
-    return buildDailyFunFacts(sheets, tickers, totals, `shuffle-${factsShuffle}`);
-  }, [factsShuffle, funFacts, sheets, tickers, totals]);
+    const base =
+      factsShuffle === 0 || !sheets.length || !tickers.length
+        ? funFacts
+        : buildDailyFunFacts(
+            sheets,
+            tickers,
+            totals,
+            `shuffle-${factsShuffle}`,
+            hideOptions
+          );
+    // model.funFacts (day-0) is computed upstream without the tier in
+    // scope — belt-and-suspenders filter for the one options-flavored joke.
+    return hideOptions
+      ? base.filter((f) => !/covered call/i.test(f))
+      : base;
+  }, [factsShuffle, funFacts, sheets, tickers, totals, hideOptions]);
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
   useEffect(() => {

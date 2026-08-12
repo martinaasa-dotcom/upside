@@ -87,6 +87,9 @@ type Props = {
   onIntentConsumed?: () => void;
   /** Group ids to hide, driven by the viewer's experience tier. */
   hiddenGroups?: string[];
+  /** Specific tab ids to hide (independent of group), e.g. covered-call
+   * mechanics for a viewer with no options experience. */
+  hiddenTabs?: string[];
 };
 
 type LabGroup = "book" | "income" | "trade" | "digest" | "advanced";
@@ -157,9 +160,12 @@ export function LabSheet({
   intentTab,
   onIntentConsumed,
   hiddenGroups = [],
+  hiddenTabs = [],
 }: Props) {
   const visibleGroups = GROUPS.filter((g) => !hiddenGroups.includes(g.id));
-  const visibleTabs = TABS.filter((t) => !hiddenGroups.includes(t.group));
+  const visibleTabs = TABS.filter(
+    (t) => !hiddenGroups.includes(t.group) && !hiddenTabs.includes(t.id)
+  );
   const [group, setGroup] = useState<LabGroup>(() => {
     const fromUrl = visibleTabs.find((t) => t.id === initialLabTab())?.group;
     return fromUrl ?? visibleGroups[0]?.id ?? "book";

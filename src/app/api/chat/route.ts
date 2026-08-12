@@ -68,10 +68,13 @@ export async function POST(req: Request) {
     const adviseOnly = Boolean(ccContext.adviseOnly);
     const tools = adviseOnly
       ? undefined
-      : buildCcAdvisorTools({
-          eurUsd: ccContext.eurUsd ?? null,
-          gbpUsd: ccContext.gbpUsd ?? null,
-        });
+      : buildCcAdvisorTools(
+          {
+            eurUsd: ccContext.eurUsd ?? null,
+            gbpUsd: ccContext.gbpUsd ?? null,
+          },
+          { hideOptions: Boolean(ccContext.hideOptions) }
+        );
 
     const providerChain = buildAdvisorProviderChain({ vision });
     if (providerChain.length === 0) {

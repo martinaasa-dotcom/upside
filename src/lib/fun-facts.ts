@@ -8,6 +8,7 @@ type FactCtx = {
   totals: OverviewModel["totals"];
   dayKey: string;
   rng: () => number;
+  hideOptions: boolean;
 };
 
 type FactMaker = (ctx: FactCtx) => string | null;
@@ -445,12 +446,14 @@ const FILLERS: FactMaker[] = [
       `New batch unlocked for ${dayKey}. Yesterday’s jokes have left the building.`,
       `${dayKey} edition — same books, different nonsense.`,
     ]),
-  ({ rng }) =>
+  ({ rng, hideOptions }) =>
     pick(rng, [
       "Reminder: past performance is not indicative of future vibes.",
       "This message sponsored by nobody. Especially not the drama tickers.",
       "If you’re reading this, you scrolled. Respect.",
-      "Covered calls don’t write themselves. (Margus might try.)",
+      ...(hideOptions
+        ? []
+        : ["Covered calls don’t write themselves. (Margus might try.)"]),
     ]),
   ({ sheets, rng }) => {
     const names = sheets.map((s) => s.portfolio.name);
@@ -470,12 +473,13 @@ export function buildDailyFunFacts(
   sheets: SheetScore[],
   tickers: TickerScore[],
   totals: OverviewModel["totals"],
-  dayKey: string = todayKeyInTz()
+  dayKey: string = todayKeyInTz(),
+  hideOptions: boolean = false
 ): string[] {
   if (!sheets.length || !tickers.length) return [];
 
   const rng = mulberry32(hashSeed(`upside-fun|${dayKey}`));
-  const ctx: FactCtx = { sheets, tickers, totals, dayKey, rng };
+  const ctx: FactCtx = { sheets, tickers, totals, dayKey, rng, hideOptions };
 
   const makers = shuffleInPlace(rng, [...MAKERS]);
   const out: string[] = [];

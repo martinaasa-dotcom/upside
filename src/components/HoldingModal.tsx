@@ -18,6 +18,10 @@ type Props = {
   portfolioName: string;
   onClose: () => void;
   onSave: (values: HoldingFormValues) => void;
+  /** Hide the Target call % field for viewers with no options experience
+   * — still submits with the same default, they just never see or think
+   * about it. */
+  hideCallPct?: boolean;
 };
 
 export function HoldingModal({
@@ -25,6 +29,7 @@ export function HoldingModal({
   portfolioName,
   onClose,
   onSave,
+  hideCallPct = false,
 }: Props) {
   const [ticker, setTicker] = useState("");
   const [shares, setShares] = useState("");
@@ -164,20 +169,22 @@ export function HoldingModal({
               />
             </label>
           </div>
-          <label className="grid gap-1 text-xs text-zinc-400">
-            Target call % (OTM)
-            <input
-              type="text"
-              inputMode="numeric"
-              value={targetCall}
-              onChange={(e) => {
-                setTargetCall(e.target.value.replace(/[^\d]/g, ""));
-                setError(null);
-              }}
-              onWheel={blockWheelChange}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            />
-          </label>
+          {!hideCallPct && (
+            <label className="grid gap-1 text-xs text-zinc-400">
+              Target call % (OTM)
+              <input
+                type="text"
+                inputMode="numeric"
+                value={targetCall}
+                onChange={(e) => {
+                  setTargetCall(e.target.value.replace(/[^\d]/g, ""));
+                  setError(null);
+                }}
+                onWheel={blockWheelChange}
+                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+              />
+            </label>
+          )}
         </div>
 
         {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}

@@ -8,7 +8,9 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { cn } from "@/lib/format";
 import {
   EXPERIENCE_TIERS,
+  loadStoredKnowsOptions,
   loadStoredTier,
+  saveStoredKnowsOptions,
   saveStoredTier,
   type ExperienceTier,
 } from "@/lib/experience-tier";
@@ -79,6 +81,10 @@ export function AccountPage() {
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [tier, setTier] = useState<ExperienceTier | null>(loadStoredTier);
   const [tierSaved, setTierSaved] = useState(false);
+  const [knowsOptions, setKnowsOptions] = useState<boolean | null>(
+    loadStoredKnowsOptions
+  );
+  const [knowsOptionsSaved, setKnowsOptionsSaved] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
@@ -91,9 +97,20 @@ export function AccountPage() {
     let cancelled = false;
     void fetch("/api/account/experience-tier")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { tier?: ExperienceTier | null } | null) => {
-        if (!cancelled && data?.tier) setTier(data.tier);
-      })
+      .then(
+        (
+          data: {
+            tier?: ExperienceTier | null;
+            knowsOptions?: boolean | null;
+          } | null
+        ) => {
+          if (cancelled) return;
+          if (data?.tier) setTier(data.tier);
+          if (typeof data?.knowsOptions === "boolean") {
+            setKnowsOptions(data.knowsOptions);
+          }
+        }
+      )
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -113,6 +130,24 @@ export function AccountPage() {
       setTierSaved(true);
       track("experience_tier_set", { tier: next, source: "account" });
       setTimeout(() => setTierSaved(false), 2000);
+    } catch {
+      /* localStorage already has it */
+    }
+  }, []);
+
+  const handleKnowsOptionsChange = useCallback(async (next: boolean) => {
+    setKnowsOptions(next);
+    saveStoredKnowsOptions(next);
+    setKnowsOptionsSaved(false);
+    try {
+      await fetch("/api/account/experience-tier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ knowsOptions: next }),
+      });
+      setKnowsOptionsSaved(true);
+      track("experience_tier_set", { knowsOptions: next, source: "account" });
+      setTimeout(() => setKnowsOptionsSaved(false), 2000);
     } catch {
       /* localStorage already has it */
     }
@@ -418,7 +453,11 @@ export function AccountPage() {
                   onChange={(e) => setBio(e.target.value)}
                   maxLength={280}
                   rows={3}
-                  placeholder="e.g. Long-term tech · covered calls · Tallinn"
+                  placeholder={
+                    knowsOptions === false
+                      ? "e.g. Long-term tech · growth investor · Tallinn"
+                      : "e.g. Long-term tech · covered calls · Tallinn"
+                  }
                   className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
                 />
               </label>
@@ -492,6 +531,47 @@ export function AccountPage() {
               ))}
             </div>
             {tierSaved && <p className="text-xs text-gain">Saved.</p>}
+
+            <div className="mt-4 border-t border-zinc-800 pt-4">
+              <p className="text-sm font-medium text-white">Options experience</p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                Controls covered calls, strike alerts, and Call % everywhere
+                — separate from the level above.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleKnowsOptionsChange(true)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2.5 text-left text-sm transition",
+                    knowsOptions === true
+                      ? "border-brand-mid bg-brand/15 text-white"
+                      : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
+                  )}
+                >
+                  <span className="font-medium">Yes</span>
+                  <span className="mt-0.5 block text-xs text-zinc-500">
+                    Show covered calls
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleKnowsOptionsChange(false)}
+                  className={cn(
+                    "rounded-xl border px-3 py-2.5 text-left text-sm transition",
+                    knowsOptions === false
+                      ? "border-brand-mid bg-brand/15 text-white"
+                      : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
+                  )}
+                >
+                  <span className="font-medium">No</span>
+                  <span className="mt-0.5 block text-xs text-zinc-500">
+                    Hide options entirely
+                  </span>
+                </button>
+              </div>
+              {knowsOptionsSaved && <p className="mt-2 text-xs text-gain">Saved.</p>}
+            </div>
           </section>
 
           {/* Portfolio invites */}

@@ -69,3 +69,39 @@ export const TIER_HIDDEN_LAB_GROUPS: Record<ExperienceTier, string[]> = {
 export function defaultForecastVisible(tier: ExperienceTier | null): boolean {
   return tier !== "novice";
 }
+
+const KNOWS_OPTIONS_STORAGE_KEY = "portfell-knows-options";
+
+/**
+ * Options familiarity — deliberately separate from ExperienceTier. A
+ * "very experienced" investor who's never touched options should still
+ * get every options surface removed, not just soft-defaulted-off; an
+ * options-savvy novice-tier investor should still see them. Tri-state:
+ * null = hasn't answered yet (show everything, same as today), true =
+ * has some options familiarity, false = explicitly none.
+ */
+export function loadStoredKnowsOptions(): boolean | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(KNOWS_OPTIONS_STORAGE_KEY);
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStoredKnowsOptions(value: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(KNOWS_OPTIONS_STORAGE_KEY, String(value));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+/** Lab sub-tab ids hidden when the viewer has no options experience —
+ * purely covered-call mechanics, unlike Cashflow (also tracks dividends,
+ * still useful with zero premiums logged) which stays. */
+export const NO_OPTIONS_HIDDEN_LAB_TABS = ["calendar", "season"];
