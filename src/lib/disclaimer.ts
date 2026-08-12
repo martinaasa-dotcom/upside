@@ -16,3 +16,9 @@ export const ADVICE_DISCLAIMER_LONG =
 /** For forecast/scenario-modeling surfaces specifically. */
 export const FORECAST_DISCLAIMER =
   "Modeled scenarios for your own thinking, not personalized investment advice or a guarantee of future performance.";
+
+/** Margus Fund — a fully simulated, paper-money portfolio. Extra emphasis
+ * that this is not a real fund and not a signal to copy, since it's
+ * explicitly designed to be a followable daily feed. */
+export const MARGUS_FUND_DISCLAIMER =
+  "100% simulated with paper money — not a real fund, not a track record, and not a signal to copy trade-for-trade. Margus doesn't know your situation, risk tolerance, or timeline. Educational entertainment only.";

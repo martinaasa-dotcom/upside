@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/snapshot",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/margus-fund",
+      "schedule": "30 21 * * 1-5"
     }
   ]
 }

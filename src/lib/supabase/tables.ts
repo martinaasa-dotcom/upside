@@ -14,6 +14,9 @@ export const PORTFELL_TABLES = {
   accountAliases: "portfell_account_aliases",
   communityPortfolios: "portfell_community_portfolios",
   errorLog: "portfell_error_log",
+  margusFund: "portfell_margus_fund",
+  margusFundHoldings: "portfell_margus_fund_holdings",
+  margusFundReports: "portfell_margus_fund_reports",
 } as const;
 
 /** Fixed id for the seed test community (Aasad/MaryAnn/Anu/Karud/Lap circle). */
