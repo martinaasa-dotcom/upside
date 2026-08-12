@@ -157,7 +157,12 @@ export function buildAdvisorProviderChain(options?: {
       apiKey: process.env.GROQ_API_KEY,
       baseURL: "https://api.groq.com/openai/v1",
     });
-    const groqModel = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+    // gpt-oss is Groq's only model family with guaranteed json_schema
+    // support — llama-3.3-70b-versatile 400s on any structured
+    // (generateObject) call, which would silently break this as a
+    // fallback for forecast/thesis-pulse/margus-fund without ever
+    // touching the plain-text chat path (confirmed against the live API).
+    const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
     chain.push({ id: "groq", model: groq.chat(groqModel) });
   }
 
@@ -166,7 +171,11 @@ export function buildAdvisorProviderChain(options?: {
       apiKey: process.env.GEMINI_API_KEY,
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     });
-    const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+    // Rolling alias, not a dated snapshot — Google retires dated model
+    // IDs over time (gemini-2.5-flash 404s on some key tiers already),
+    // -latest keeps pointing at whatever's current without needing a
+    // code change every time Google ships a new generation.
+    const geminiModel = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
     chain.push({ id: "gemini", model: gemini.chat(geminiModel) });
   }
 
@@ -175,7 +184,10 @@ export function buildAdvisorProviderChain(options?: {
       apiKey: process.env.CEREBRAS_API_KEY,
       baseURL: "https://api.cerebras.ai/v1",
     });
-    const cerebrasModel = process.env.CEREBRAS_MODEL ?? "llama-3.3-70b";
+    // llama-3.3-70b no longer exists on Cerebras's catalog (confirmed
+    // 404 against the live API) — gpt-oss-120b is their current
+    // production model and matches Groq's structured-output-safe choice.
+    const cerebrasModel = process.env.CEREBRAS_MODEL ?? "gpt-oss-120b";
     chain.push({ id: "cerebras", model: cerebras.chat(cerebrasModel) });
   }
 
