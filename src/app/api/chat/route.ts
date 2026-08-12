@@ -3,7 +3,12 @@ import {
   buildCcAdvisorTools,
   type CcChatContext,
 } from "@/lib/ai/cc-advisor";
-import { describeAdvisorError, resolveAdvisorModel } from "@/lib/ai/model";
+import {
+  buildAdvisorProviderChain,
+  describeAdvisorError,
+  invalidateStreamingProvider,
+  pickStreamingProvider,
+} from "@/lib/ai/model";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
   convertToModelMessages,
@@ -29,13 +34,6 @@ function messagesHaveImages(messages: UIMessage[]): boolean {
 export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
-
-  try {
-    resolveAdvisorModel();
-  } catch (err) {
-    const { message } = describeAdvisorError(err);
-    return Response.json({ error: message }, { status: 503 });
-  }
 
   try {
     const body = await req.json();
@@ -65,8 +63,18 @@ export async function POST(req: Request) {
           gbpUsd: ccContext.gbpUsd ?? null,
         });
 
+    const providerChain = buildAdvisorProviderChain({ vision });
+    if (providerChain.length === 0) {
+      const { message } = describeAdvisorError(
+        new Error("No LLM key configured")
+      );
+      return Response.json({ error: message }, { status: 503 });
+    }
+    const cacheKey = vision ? "chat:vision" : "chat:text";
+    const provider = await pickStreamingProvider(providerChain, cacheKey);
+
     const result = streamText({
-      model: resolveAdvisorModel({ vision }),
+      model: provider.model,
       system: buildCcSystemPrompt(ccContext),
       messages: await convertToModelMessages(messages, {
         tools,
@@ -90,7 +98,8 @@ export async function POST(req: Request) {
       maxRetries: 3,
       abortSignal: req.signal,
       onError: ({ error }) => {
-        console.error("[chat]", error);
+        console.error(`[chat] provider "${provider.id}" stream error`, error);
+        invalidateStreamingProvider(cacheKey);
       },
     });
 

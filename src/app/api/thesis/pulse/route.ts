@@ -1,4 +1,8 @@
-import { describeAdvisorError, resolveAdvisorModel } from "@/lib/ai/model";
+import {
+  buildAdvisorProviderChain,
+  describeAdvisorError,
+  withAdvisorFallback,
+} from "@/lib/ai/model";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -115,10 +119,11 @@ export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  try {
-    resolveAdvisorModel({ reasoning: true });
-  } catch (err) {
-    const { message } = describeAdvisorError(err);
+  const providerChain = buildAdvisorProviderChain({ reasoning: true });
+  if (providerChain.length === 0) {
+    const { message } = describeAdvisorError(
+      new Error("No LLM key configured")
+    );
     return Response.json({ error: message }, { status: 503 });
   }
 
@@ -146,18 +151,20 @@ export async function POST(req: Request) {
       body.fearGreed ?? null
     );
 
-    const { object } = await generateObject({
-      model: resolveAdvisorModel({ reasoning: true }),
-      schema: pulseReportSchema,
-      prompt,
-      maxRetries: 1,
-      abortSignal: req.signal,
-      providerOptions: {
-        openrouter: {
-          reasoning: { effort: "medium", max_tokens: 6000 },
+    const { object } = await withAdvisorFallback(providerChain, (model) =>
+      generateObject({
+        model,
+        schema: pulseReportSchema,
+        prompt,
+        maxRetries: 1,
+        abortSignal: req.signal,
+        providerOptions: {
+          openrouter: {
+            reasoning: { effort: "medium", max_tokens: 6000 },
+          },
         },
-      },
-    });
+      })
+    );
 
     const modelChecks = (object.checks ?? []) as PulseCheck[];
     const byTicker = new Map<string, PulseCheck>();

@@ -1,4 +1,8 @@
-import { describeAdvisorError, resolveAdvisorModel } from "@/lib/ai/model";
+import {
+  buildAdvisorProviderChain,
+  describeAdvisorError,
+  withAdvisorFallback,
+} from "@/lib/ai/model";
 import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
@@ -16,10 +20,11 @@ export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  try {
-    resolveAdvisorModel({ reasoning: true });
-  } catch (err) {
-    const { message } = describeAdvisorError(err);
+  const providerChain = buildAdvisorProviderChain({ reasoning: true });
+  if (providerChain.length === 0) {
+    const { message } = describeAdvisorError(
+      new Error("No LLM key configured")
+    );
     return Response.json({ error: message }, { status: 503 });
   }
 
@@ -45,18 +50,20 @@ export async function POST(req: Request) {
       stance,
     });
 
-    const { object } = await generateObject({
-      model: resolveAdvisorModel({ reasoning: true }),
-      schema: forecastPlanSchema,
-      prompt,
-      maxRetries: 2,
-      abortSignal: req.signal,
-      providerOptions: {
-        openrouter: {
-          reasoning: { effort: "high", max_tokens: 6000 },
+    const { object } = await withAdvisorFallback(providerChain, (model) =>
+      generateObject({
+        model,
+        schema: forecastPlanSchema,
+        prompt,
+        maxRetries: 2,
+        abortSignal: req.signal,
+        providerOptions: {
+          openrouter: {
+            reasoning: { effort: "high", max_tokens: 6000 },
+          },
         },
-      },
-    });
+      })
+    );
 
     const eoyTargets = ensureCompleteEoyTargets(
       forecast,

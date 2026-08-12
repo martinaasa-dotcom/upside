@@ -1,5 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import type { LanguageModel } from "ai";
+import { generateText, type LanguageModel } from "ai";
 
 const DEFAULT_TEXT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 /**
@@ -38,6 +38,11 @@ function uniq(ids: string[]): string[] {
     out.push(id);
   }
   return out;
+}
+
+function hasKey(name: string): boolean {
+  const v = process.env[name];
+  return Boolean(v && v !== "your_key_here");
 }
 
 export function resolveAdvisorModelId(options?: {
@@ -105,24 +110,35 @@ function openRouterFetchWithFallbacks(
   };
 }
 
+export type AdvisorProviderId = "openrouter" | "groq" | "gemini" | "cerebras";
+
+export type AdvisorProviderCandidate = {
+  id: AdvisorProviderId;
+  model: LanguageModel;
+};
+
 /**
- * CC Advisor model via OpenAI-compatible providers.
+ * Full ordered chain of every CONFIGURED free-tier provider — OpenRouter
+ * (with its own internal free-model list fallback), then Groq, Gemini, and
+ * Cerebras, each only included when its API key is set. Every tier here is
+ * a free tier; add resilience by getting a free key, not by paying anyone.
  *
- * Priority:
- * 1. OpenRouter (OPENROUTER_API_KEY) → https://openrouter.ai/api/v1
- * 2. Groq (GROQ_API_KEY) → https://api.groq.com/openai/v1
+ * Vision requests skip Groq/Cerebras (their hosted OSS models are
+ * text-only) and go OpenRouter -> Gemini, since Gemini is natively
+ * multimodal.
  */
-export function resolveAdvisorModel(options?: {
+export function buildAdvisorProviderChain(options?: {
   vision?: boolean;
   reasoning?: boolean;
-}): LanguageModel {
-  const modelId = resolveAdvisorModelId(options);
-  const fallbacks = resolveAdvisorFallbackIds(options);
+}): AdvisorProviderCandidate[] {
+  const vision = Boolean(options?.vision) && !options?.reasoning;
+  const chain: AdvisorProviderCandidate[] = [];
 
-  const openrouterKey = process.env.OPENROUTER_API_KEY;
-  if (openrouterKey && openrouterKey !== "your_key_here") {
+  if (hasKey("OPENROUTER_API_KEY")) {
+    const modelId = resolveAdvisorModelId(options);
+    const fallbacks = resolveAdvisorFallbackIds(options);
     const openrouter = createOpenAI({
-      apiKey: openrouterKey,
+      apiKey: process.env.OPENROUTER_API_KEY,
       baseURL: "https://openrouter.ai/api/v1",
       headers: {
         "HTTP-Referer":
@@ -133,36 +149,153 @@ export function resolveAdvisorModel(options?: {
       },
       fetch: openRouterFetchWithFallbacks(fallbacks),
     });
-    return openrouter.chat(modelId);
+    chain.push({ id: "openrouter", model: openrouter.chat(modelId) });
   }
 
-  const groqKey = process.env.GROQ_API_KEY;
-  if (groqKey && groqKey !== "your_key_here") {
+  if (hasKey("GROQ_API_KEY") && !vision) {
     const groq = createOpenAI({
-      apiKey: groqKey,
+      apiKey: process.env.GROQ_API_KEY,
       baseURL: "https://api.groq.com/openai/v1",
     });
-    const groqModel =
-      process.env.MODEL?.includes("/")
-        ? (process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile")
-        : (process.env.MODEL ??
-          process.env.GROQ_MODEL ??
-          "llama-3.3-70b-versatile");
-    return groq.chat(groqModel);
+    const groqModel = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+    chain.push({ id: "groq", model: groq.chat(groqModel) });
   }
 
-  throw new Error(
-    "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY) in .env.local."
-  );
+  if (hasKey("GEMINI_API_KEY")) {
+    const gemini = createOpenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+    const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+    chain.push({ id: "gemini", model: gemini.chat(geminiModel) });
+  }
+
+  if (hasKey("CEREBRAS_API_KEY") && !vision) {
+    const cerebras = createOpenAI({
+      apiKey: process.env.CEREBRAS_API_KEY,
+      baseURL: "https://api.cerebras.ai/v1",
+    });
+    const cerebrasModel = process.env.CEREBRAS_MODEL ?? "llama-3.3-70b";
+    chain.push({ id: "cerebras", model: cerebras.chat(cerebrasModel) });
+  }
+
+  return chain;
+}
+
+/**
+ * CC Advisor model via OpenAI-compatible providers — single-model resolve,
+ * kept for callers that just need "the primary model" (e.g. a pre-flight
+ * key check). Prefer `buildAdvisorProviderChain` + `withProviderFallback` /
+ * `pickStreamingProvider` for actual requests so a rate-limited/expired
+ * provider doesn't take Margus down entirely.
+ */
+export function resolveAdvisorModel(options?: {
+  vision?: boolean;
+  reasoning?: boolean;
+}): LanguageModel {
+  const chain = buildAdvisorProviderChain(options);
+  const primary = chain[0];
+  if (!primary) {
+    throw new Error(
+      "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) in .env.local."
+    );
+  }
+  return primary.model;
+}
+
+/**
+ * Try a non-streaming call (generateText / generateObject) against each
+ * configured provider in order, moving to the next on any failure —
+ * OpenRouter's account-wide daily quota running out no longer means Margus
+ * is down if Groq/Gemini/Cerebras are also configured.
+ */
+export async function withAdvisorFallback<T>(
+  chain: AdvisorProviderCandidate[],
+  fn: (model: LanguageModel, providerId: AdvisorProviderId) => Promise<T>
+): Promise<T> {
+  if (chain.length === 0) {
+    throw new Error(
+      "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) in .env.local."
+    );
+  }
+  let lastErr: unknown;
+  for (const candidate of chain) {
+    try {
+      return await fn(candidate.model, candidate.id);
+    } catch (err) {
+      console.error(`[ai] provider "${candidate.id}" failed`, err);
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
+/**
+ * Streaming needs a provider chosen BEFORE `streamText` starts (there's no
+ * clean way to swap providers mid-stream once bytes are flowing to the
+ * client). Runs a cheap, tiny probe request against each candidate in
+ * order and caches the first one that works for a few minutes per cache
+ * key, so most requests pay zero extra latency and only re-probe
+ * occasionally or right after a real failure.
+ */
+const streamingProviderCache = new Map<
+  string,
+  { candidate: AdvisorProviderCandidate; at: number }
+>();
+const STREAMING_PROVIDER_CACHE_TTL_MS = 5 * 60 * 1000;
+
+export async function pickStreamingProvider(
+  chain: AdvisorProviderCandidate[],
+  cacheKey: string
+): Promise<AdvisorProviderCandidate> {
+  if (chain.length === 0) {
+    throw new Error(
+      "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) in .env.local."
+    );
+  }
+  // Nothing to choose between — skip the probe entirely so the common
+  // today (single provider configured) case pays zero extra latency.
+  if (chain.length === 1) return chain[0]!;
+
+  const cached = streamingProviderCache.get(cacheKey);
+  if (
+    cached &&
+    Date.now() - cached.at < STREAMING_PROVIDER_CACHE_TTL_MS &&
+    chain.some((c) => c.id === cached.candidate.id)
+  ) {
+    return cached.candidate;
+  }
+
+  let lastErr: unknown;
+  for (const candidate of chain) {
+    try {
+      await generateText({
+        model: candidate.model,
+        prompt: "ping",
+        maxOutputTokens: 4,
+      });
+      streamingProviderCache.set(cacheKey, { candidate, at: Date.now() });
+      return candidate;
+    } catch (err) {
+      console.error(`[ai] streaming probe for "${candidate.id}" failed`, err);
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
+/** Invalidate a cached streaming provider choice — call after a real request
+ * against it fails, so the next request re-probes instead of repeating it. */
+export function invalidateStreamingProvider(cacheKey: string) {
+  streamingProviderCache.delete(cacheKey);
 }
 
 /**
  * Classify a thrown LLM/provider error into a user-facing message + HTTP
  * status. OpenRouter's free-models-per-day cap is account-wide (shared
- * across every `:free` model), so falling back to a different free model
- * can't help there — that needs its own message instead of the generic
- * "wait a few seconds" advice, which is actively misleading for a quota
- * that resets roughly daily.
+ * across every `:free` model), so falling back to a different free OpenRouter
+ * model can't help there — Margus instead falls through to a different
+ * PROVIDER (Groq/Gemini/Cerebras) when one is configured.
  */
 export function describeAdvisorError(err: unknown): {
   message: string;
@@ -173,14 +306,14 @@ export function describeAdvisorError(err: unknown): {
   if (/free-models-per-day|models-per-day/i.test(msg)) {
     return {
       message:
-        "OpenRouter's free daily AI quota is used up for today — this is shared across every free model, so switching models won't help. It resets ~daily, or add credits at openrouter.ai/credits to raise the cap to 1000/day.",
+        "OpenRouter's free daily AI quota is used up for today — this is shared across every free model, so switching models won't help. It resets ~daily, adding a Groq/Gemini/Cerebras free key gives Margus a fallback for this, or add credits at openrouter.ai/credits to raise the cap to 1000/day.",
       status: 429,
     };
   }
   if (/rate.?limit|429|temporar/i.test(msg)) {
     return {
       message:
-        "Model is busy / rate-limited. Wait a few seconds and try again — Margus will auto-fallback to another model when possible.",
+        "Model is busy / rate-limited. Wait a few seconds and try again — Margus will auto-fallback to another provider when one is configured.",
       status: 429,
     };
   }
@@ -190,10 +323,10 @@ export function describeAdvisorError(err: unknown): {
       status: 504,
     };
   }
-  if (/OPENROUTER|GROQ|API key|503|LLM/i.test(msg)) {
+  if (/OPENROUTER|GROQ|GEMINI|CEREBRAS|API key|503|LLM/i.test(msg)) {
     return {
       message:
-        "Missing LLM API key. Add OPENROUTER_API_KEY to .env.local, then restart the dev server.",
+        "Missing LLM API key. Add OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) to .env.local, then restart the dev server.",
       status: 503,
     };
   }
@@ -207,17 +340,13 @@ export function describeAdvisorError(err: unknown): {
 }
 
 export function advisorProviderLabel(): string {
-  if (
-    process.env.OPENROUTER_API_KEY &&
-    process.env.OPENROUTER_API_KEY !== "your_key_here"
-  ) {
-    return "OpenRouter";
-  }
-  if (
-    process.env.GROQ_API_KEY &&
-    process.env.GROQ_API_KEY !== "your_key_here"
-  ) {
-    return "Groq";
-  }
-  return "none";
+  const chain = buildAdvisorProviderChain();
+  if (chain.length === 0) return "none";
+  const labels: Record<AdvisorProviderId, string> = {
+    openrouter: "OpenRouter",
+    groq: "Groq",
+    gemini: "Gemini",
+    cerebras: "Cerebras",
+  };
+  return chain.map((c) => labels[c.id]).join(" → ");
 }
