@@ -196,9 +196,9 @@ export function UpsidePortfolioPage() {
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [loadingMessage] = useState(pickLoadingMessage);
 
-  const load = useCallback(async (isRefresh: boolean) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  const load = useCallback(async (mode: "initial" | "manual" | "background") => {
+    if (mode === "manual") setRefreshing(true);
+    else if (mode === "initial") setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/upside-portfolio", { cache: "no-store" });
@@ -210,7 +210,11 @@ export function UpsidePortfolioPage() {
       setWeeklyRecaps(data.weeklyRecaps ?? []);
       setQuotes(data.quotes ?? {});
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      // Background polls fail silently rather than blanking an
+      // already-loaded page over one flaky tick.
+      if (mode !== "background") {
+        setError(e instanceof Error ? e.message : "Failed to load");
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -218,7 +222,7 @@ export function UpsidePortfolioPage() {
   }, []);
 
   useEffect(() => {
-    void load(false);
+    void load("initial");
   }, [load]);
 
   useEffect(() => {
@@ -236,12 +240,25 @@ export function UpsidePortfolioPage() {
 
   const latestReport = reports[0] ?? null;
   const oldestReport = reports[reports.length - 1] ?? null;
-  const totalValue = latestReport?.portfolio_value ?? fund?.starting_capital ?? 0;
   const cash = latestReport?.cash ?? fund?.cash ?? 0;
-  const totalReturnPct = latestReport?.total_return_pct ?? 0;
+  // Live, not frozen at the last daily snapshot — sums current cash with
+  // each open holding priced at its just-fetched quote (falling back to
+  // cost basis only if a quote is momentarily missing), so this tracks
+  // the market throughout the day instead of only updating once a day
+  // when the cron writes a new report.
+  const liveHoldingsValue = openHoldings.reduce(
+    (sum, h) => sum + h.shares * (quotes[h.ticker]?.price ?? h.cost_basis),
+    0
+  );
+  const totalValue = cash + liveHoldingsValue;
   const totalReturnDollar = totalValue - (fund?.starting_capital ?? 0);
-  const todayDollar = latestReport?.day_change_dollar ?? 0;
-  const todayPct = latestReport?.day_change_pct ?? null;
+  const totalReturnPct =
+    fund && fund.starting_capital > 0 ? totalReturnDollar / fund.starting_capital : 0;
+  const todayDollar = latestReport ? totalValue - latestReport.portfolio_value : 0;
+  const todayPct =
+    latestReport && latestReport.portfolio_value > 0
+      ? todayDollar / latestReport.portfolio_value
+      : null;
 
   const dayNumber = useMemo(() => {
     if (!fund?.inception_date) return 1;
@@ -260,19 +277,25 @@ export function UpsidePortfolioPage() {
       : 0;
   const alphaVsSpy = totalReturnPct - spyReturnPct;
 
-  const margusReturnSeries = useMemo(
-    () => [...reports].reverse().map((r) => r.total_return_pct ?? 0),
-    [reports]
-  );
+  // Both series end with a live point, not the last daily snapshot — the
+  // chart's rightmost edge moves with the market intraday, then "locks
+  // in" once tomorrow's cron writes the next real report.
+  const margusReturnSeries = useMemo(() => {
+    const historical = [...reports].reverse().map((r) => r.total_return_pct ?? 0);
+    return [...historical, totalReturnPct];
+  }, [reports, totalReturnPct]);
   const spyReturnSeries = useMemo(() => {
     const chronological = [...reports].reverse();
     const firstPrice =
       chronological.find((r) => r.spy_price != null)?.spy_price ?? null;
-    if (firstPrice == null) return [];
-    return chronological.map((r) =>
-      r.spy_price != null ? (r.spy_price - firstPrice) / firstPrice : 0
-    );
-  }, [reports]);
+    const historical =
+      firstPrice == null
+        ? []
+        : chronological.map((r) =>
+            r.spy_price != null ? (r.spy_price - firstPrice) / firstPrice : 0
+          );
+    return [...historical, spyReturnPct];
+  }, [reports, spyReturnPct]);
 
   const comparisonSeries: ComparisonSeries[] = useMemo(
     () => [
@@ -369,6 +392,18 @@ export function UpsidePortfolioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [benchmark?.portfolioId]);
 
+  // Live quotes move all day — re-poll periodically (not just on manual
+  // refresh) so "Total value" actually tracks the market instead of
+  // freezing at whatever the last daily report happened to capture.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.hidden) return;
+      void load("background");
+      void refreshBenchmarkValue();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [load, refreshBenchmarkValue]);
+
   const handleOpenPicker = useCallback(async () => {
     setBenchmarkError(null);
     setPickerOpen(true);
@@ -451,7 +486,7 @@ export function UpsidePortfolioPage() {
               <button
                 type="button"
                 onClick={() => {
-                  void load(true);
+                  void load("manual");
                   void refreshBenchmarkValue();
                 }}
                 disabled={refreshing}
