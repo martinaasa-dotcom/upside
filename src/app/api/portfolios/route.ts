@@ -12,15 +12,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-function slugify(name: string) {
-  return (
-    name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "sheet"
-  );
-}
-
 function mapPortfolio(p: Record<string, unknown>) {
   return p;
 }
@@ -111,36 +102,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
 
-  const ownedIds = await listOwnedPortfolioIds(auth.user.id);
-  const sortOrder = ownedIds.length + 1;
-
-  const { data, error } = await supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .insert({
-      name,
-      slug: slugify(name),
-      sort_order: sortOrder,
-      cash_balance: 0,
-      owner_id: auth.user.id,
-    })
-    .select(
-      "id, name, slug, sort_order, cash_balance, created_at, updated_at, owner_id"
-    )
-    .single();
+  // Security-definer RPC, not a plain insert + upsert: creating a sheet and
+  // adding yourself as its owner is a self-service "do this for auth.uid()"
+  // operation, the same class of thing that's needed a security-definer
+  // path elsewhere in this schema (seed claims, invite redemption, account
+  // deletion) rather than ordinary ownership-based RLS, which can't cleanly
+  // express "this row doesn't have an owner yet, I'm about to become it".
+  // Also atomic (no risk of an orphaned, owner-less portfolio if a second
+  // write failed) and handles slug collisions instead of 500ing when two
+  // people separately name a sheet the same thing.
+  const { data, error } = await supabase.rpc(
+    "portfell_create_portfolio_for_me",
+    { p_name: name }
+  );
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const portfolioId = (data as { id: string }).id;
-  const { error: ownErr } = await supabase
-    .from(PORTFELL_TABLES.portfolioOwners)
-    .upsert(
-      { portfolio_id: portfolioId, user_id: auth.user.id },
-      { onConflict: "portfolio_id,user_id" }
-    );
-  if (ownErr) {
-    return NextResponse.json({ error: ownErr.message }, { status: 500 });
   }
 
   return NextResponse.json({
