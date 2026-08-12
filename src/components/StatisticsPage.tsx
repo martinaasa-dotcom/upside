@@ -16,7 +16,6 @@ import {
   type ActionStance,
   type CycleDayRow,
   type CycleMonthlyRow,
-  type HourlyReturnRow,
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
 import { ChevronLeft, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
@@ -371,6 +370,50 @@ function MonthHistoryTable({ row }: { row: CycleMonthlyRow }) {
   );
 }
 
+function DayHistoryTable({
+  row,
+  dayLabel,
+}: {
+  row: CycleDayRow;
+  dayLabel: string;
+}) {
+  if (row.history.length === 0) {
+    return (
+      <p className="text-xs text-zinc-600">
+        No prior {dayLabel} sessions in this cycle phase.
+      </p>
+    );
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[16rem] border-collapse text-left text-xs">
+        <thead>
+          <tr className="border-b border-zinc-800 text-[10px] uppercase tracking-wide text-zinc-600">
+            <th className="pb-1.5 pr-3 font-medium">Year</th>
+            <th className="pb-1.5 font-medium">Session return</th>
+          </tr>
+        </thead>
+        <tbody>
+          {row.history.map((h) => (
+            <tr key={h.year} className="border-b border-zinc-800/60">
+              <td className="py-1.5 pr-3 tabular-nums text-zinc-400">{h.year}</td>
+              <td
+                className={cn(
+                  "py-1.5 font-medium tabular-nums",
+                  retText(h.returnPct)
+                )}
+              >
+                {h.returnPct >= 0 ? "+" : ""}
+                {h.returnPct.toFixed(2)}%
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function DayOfMonthChart({
   rows,
   monthLabel,
@@ -388,7 +431,12 @@ function DayOfMonthChart({
 
   return (
     <div className="space-y-3">
-      <div className="relative flex items-center gap-0.5 overflow-x-auto rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-2 py-3">
+      <div
+        className="relative grid w-full gap-px rounded-lg border border-zinc-800/80 bg-zinc-950/40 p-2"
+        style={{
+          gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`,
+        }}
+      >
         <div className="pointer-events-none absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-zinc-700/80" />
         {rows.map((row) => {
           const v = row.avgReturnPct;
@@ -401,7 +449,7 @@ function DayOfMonthChart({
               type="button"
               onClick={() => onSelectDay(row.day)}
               className={cn(
-                "relative flex min-w-[1.5rem] flex-col items-center gap-1 rounded px-0.5 py-1 transition hover:bg-zinc-800/50",
+                "relative flex min-w-0 flex-col items-center gap-1 rounded px-0.5 py-1 transition hover:bg-zinc-800/50",
                 isSelected && "bg-brand/15 ring-1 ring-brand/40",
                 isToday && !isSelected && "ring-1 ring-brand/25"
               )}
@@ -410,14 +458,13 @@ function DayOfMonthChart({
               <div className="relative flex h-48 w-full items-center justify-center">
                 <div
                   className={cn(
-                    "absolute w-full max-w-[1.1rem] rounded-sm",
-                    retBarColor(v)
+                    "absolute w-[85%] max-w-full rounded-sm",
+                    retBarColor(v),
+                    row.samples === 0 && "opacity-30"
                   )}
                   style={{
                     height: `${h}%`,
-                    ...(v >= 0
-                      ? { bottom: "50%" }
-                      : { top: "50%" }),
+                    ...(v >= 0 ? { bottom: "50%" } : { top: "50%" }),
                   }}
                 />
               </div>
@@ -436,76 +483,8 @@ function DayOfMonthChart({
         })}
       </div>
       <p className="text-[11px] text-zinc-600">
-        Click a day to see its hourly pattern below. Each bar = average full-session
-        return on that calendar day in {monthLabel} (cycle-filtered).
-      </p>
-    </div>
-  );
-}
-
-function HourlyReturnChart({
-  rows,
-  dayLabel,
-}: {
-  rows: HourlyReturnRow[];
-  dayLabel: string;
-}) {
-  const withData = rows.filter((r) => r.samples > 0);
-  if (withData.length === 0) {
-    return (
-      <p className="text-sm text-zinc-500">
-        Not enough hourly history for {dayLabel} in this cycle phase.
-      </p>
-    );
-  }
-
-  const maxAbs = Math.max(
-    ...withData.map((r) => Math.abs(r.avgReturnPct)),
-    0.01
-  );
-  const totalSamples = Math.max(...rows.map((r) => r.samples));
-
-  return (
-    <div className="space-y-3">
-      <div className="relative flex items-center gap-2">
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-zinc-700/80" />
-        {rows.map((row) => {
-          const v = row.avgReturnPct;
-          const h = Math.max(6, (Math.abs(v) / maxAbs) * 48);
-          return (
-            <div
-              key={row.hourEt}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1"
-              title={`${row.label}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · n=${row.samples}`}
-            >
-              <div className="relative flex h-40 w-full items-center justify-center">
-                {row.samples > 0 ? (
-                  <div
-                    className={cn(
-                      "absolute w-[70%] rounded-sm",
-                      retBarColor(v)
-                    )}
-                    style={{
-                      height: `${h}%`,
-                      ...(v >= 0 ? { bottom: "50%" } : { top: "50%" }),
-                    }}
-                  />
-                ) : null}
-              </div>
-              <span className="text-[9px] text-zinc-500">{row.label}</span>
-              {row.samples > 0 && (
-                <span className={cn("text-[9px] tabular-nums", retText(v))}>
-                  {v >= 0 ? "+" : ""}
-                  {v.toFixed(2)}%
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <p className="text-[11px] text-zinc-600">
-        Average hourly return on {dayLabel} across {totalSamples} prior sessions
-        in this cycle phase (10am–3pm ET).
+        Each bar = average session return on that calendar day in {monthLabel}{" "}
+        (cycle-filtered). Click a day for year-by-year history.
       </p>
     </div>
   );
@@ -602,8 +581,7 @@ export function StatisticsPage({
   const playbookMonthRow = model?.cycleMonthly[playbookMonth - 1];
   const dayRows = model?.cycleDaysByMonth[String(viewMonth)] ?? [];
   const viewMonthName = MONTH_NAMES[viewMonth - 1] ?? "Month";
-  const hourlyRows =
-    model?.hourlyByCalendarDay[`${viewMonth}-${selectedDay}`] ?? [];
+  const selectedDayRow = dayRows.find((r) => r.day === selectedDay);
   const selectedDayLabel = `${viewMonthName} ${selectedDay}`;
 
   function shiftViewMonth(delta: number) {
@@ -796,13 +774,29 @@ export function StatisticsPage({
               }
               onSelectDay={setSelectedDay}
             />
-          </Section>
-
-          <Section
-            title={`Hourly pattern · ${selectedDayLabel}`}
-            subtitle="Single average return per hour on this calendar day (cycle-filtered, regular session)."
-          >
-            <HourlyReturnChart rows={hourlyRows} dayLabel={selectedDayLabel} />
+            {selectedDayRow && (
+              <div className="mt-5 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-3">
+                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-medium text-zinc-200">
+                    {selectedDayLabel} — every prior session
+                  </p>
+                  <p
+                    className={cn(
+                      "text-sm tabular-nums font-semibold",
+                      retText(selectedDayRow.avgReturnPct)
+                    )}
+                  >
+                    avg {selectedDayRow.avgReturnPct >= 0 ? "+" : ""}
+                    {selectedDayRow.avgReturnPct}% · {selectedDayRow.winRate}%
+                    win · n={selectedDayRow.samples}
+                  </p>
+                </div>
+                <DayHistoryTable
+                  row={selectedDayRow}
+                  dayLabel={selectedDayLabel}
+                />
+              </div>
+            )}
           </Section>
         </>
       )}

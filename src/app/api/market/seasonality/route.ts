@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const { daily, hourly } = await fetchSeasonalityBars(ticker);
+    const { daily } = await fetchSeasonalityBars(ticker);
     if (daily.length < 50) {
       return NextResponse.json(
         { error: "Not enough history for seasonality" },
         { status: 502 }
       );
     }
-    const model = buildSeasonalityModel({ ticker, daily, hourly });
+    const model = buildSeasonalityModel({ ticker, daily });
     return NextResponse.json(model, {
       headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=7200" },
     });

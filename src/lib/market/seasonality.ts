@@ -12,20 +12,6 @@ export type DailyBar = {
   close: number;
 };
 
-export type HourBar = {
-  date: string;
-  /** Hour in US/Eastern (0–23). */
-  hourEt: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-};
-
-/** Regular US cash session only (9:30am–4pm ET → hourly buckets 10–15). */
-export const RTH_HOUR_ET_MIN = 10;
-export const RTH_HOUR_ET_MAX = 15;
-
 export type CycleMonthlyRow = {
   month: number;
   label: string;
@@ -41,14 +27,7 @@ export type CycleDayRow = {
   avgReturnPct: number;
   winRate: number;
   samples: number;
-};
-
-export type HourlyReturnRow = {
-  hourEt: number;
-  label: string;
-  /** Average open→close return within this hour bucket. */
-  avgReturnPct: number;
-  samples: number;
+  history: Array<{ year: number; returnPct: number }>;
 };
 
 export type ActionStance = "deploy" | "hold" | "raise_cash";
@@ -71,8 +50,6 @@ export type SeasonalityModel = {
   cycleMonthly: CycleMonthlyRow[];
   /** Calendar days 1–31 per month (1–12), filtered to current cycle years. */
   cycleDaysByMonth: Record<string, CycleDayRow[]>;
-  /** Average hourly return per calendar day — key `${month}-${day}`. */
-  hourlyByCalendarDay: Record<string, HourlyReturnRow[]>;
   signals: ActionSignal[];
 };
 
@@ -184,6 +161,10 @@ export function computeCycleDaysByMonth(
   phase: PresidentialCyclePhase
 ): Record<string, CycleDayRow[]> {
   const buckets = new Map<string, number[]>();
+  const historyBuckets = new Map<
+    string,
+    Array<{ year: number; returnPct: number }>
+  >();
 
   for (let i = 1; i < bars.length; i++) {
     const prev = bars[i - 1]!;
@@ -198,6 +179,9 @@ export function computeCycleDaysByMonth(
     const list = buckets.get(key) ?? [];
     list.push(ret);
     buckets.set(key, list);
+    const hist = historyBuckets.get(key) ?? [];
+    hist.push({ year, returnPct: round(ret, 2) });
+    historyBuckets.set(key, hist);
   }
 
   const out: Record<string, CycleDayRow[]> = {};
@@ -205,7 +189,8 @@ export function computeCycleDaysByMonth(
     const daysInMonth = month === 2 ? 29 : [4, 6, 9, 11].includes(month) ? 30 : 31;
     const rows: CycleDayRow[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
-      const vals = buckets.get(`${month}-${day}`) ?? [];
+      const key = `${month}-${day}`;
+      const vals = buckets.get(key) ?? [];
       const avg =
         vals.length > 0
           ? vals.reduce((s, v) => s + v, 0) / vals.length
@@ -217,66 +202,14 @@ export function computeCycleDaysByMonth(
         winRate:
           vals.length > 0 ? round((wins / vals.length) * 100, 1) : 0,
         samples: vals.length,
+        history: (historyBuckets.get(key) ?? []).sort(
+          (a, b) => a.year - b.year
+        ),
       });
     }
     out[String(month)] = rows;
   }
   return out;
-}
-
-/** Average hourly return for a specific calendar day (cycle-filtered, RTH only). */
-export function computeHourlyReturnsByCalendarDay(
-  hourBars: HourBar[],
-  phase: PresidentialCyclePhase
-): Record<string, HourlyReturnRow[]> {
-  const buckets = new Map<string, number[]>();
-
-  for (const bar of hourBars) {
-    if (bar.hourEt < RTH_HOUR_ET_MIN || bar.hourEt > RTH_HOUR_ET_MAX) {
-      continue;
-    }
-    const year = Number(bar.date.slice(0, 4));
-    if (cyclePhaseForYear(year) !== phase) continue;
-    const month = Number(bar.date.slice(5, 7));
-    const day = Number(bar.date.slice(8, 10));
-    if (bar.open <= 0) continue;
-    const ret = (bar.close / bar.open - 1) * 100;
-    const key = `${month}-${day}-${bar.hourEt}`;
-    const list = buckets.get(key) ?? [];
-    list.push(ret);
-    buckets.set(key, list);
-  }
-
-  const out: Record<string, HourlyReturnRow[]> = {};
-  for (let month = 1; month <= 12; month++) {
-    const daysInMonth =
-      month === 2 ? 29 : [4, 6, 9, 11].includes(month) ? 30 : 31;
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dayKey = `${month}-${day}`;
-      const rows: HourlyReturnRow[] = [];
-      for (let hourEt = RTH_HOUR_ET_MIN; hourEt <= RTH_HOUR_ET_MAX; hourEt++) {
-        const vals = buckets.get(`${dayKey}-${hourEt}`) ?? [];
-        const avg =
-          vals.length > 0
-            ? vals.reduce((s, v) => s + v, 0) / vals.length
-            : 0;
-        rows.push({
-          hourEt,
-          label: formatHourEt(hourEt),
-          avgReturnPct: round(avg, 3),
-          samples: vals.length,
-        });
-      }
-      out[dayKey] = rows;
-    }
-  }
-  return out;
-}
-
-function formatHourEt(hour: number): string {
-  const h = hour % 12 || 12;
-  const suffix = hour < 12 ? "am" : "pm";
-  return `${h}${suffix}`;
 }
 
 function marketNow(): { year: number; month: number } {
@@ -327,17 +260,12 @@ export function buildActionSignals(input: {
 export function buildSeasonalityModel(input: {
   ticker: string;
   daily: DailyBar[];
-  hourly: HourBar[];
 }): SeasonalityModel {
   const daily = [...input.daily].sort((a, b) => a.date.localeCompare(b.date));
   const { year: asOfYear, month: asOfMonth } = marketNow();
   const phase = cyclePhaseForYear(asOfYear);
   const cycleMonthly = computeCycleMonthlyReturns(daily, phase);
   const cycleDaysByMonth = computeCycleDaysByMonth(daily, phase);
-  const hourlyByCalendarDay = computeHourlyReturnsByCalendarDay(
-    input.hourly,
-    phase
-  );
 
   return {
     ticker: input.ticker,
@@ -350,7 +278,6 @@ export function buildSeasonalityModel(input: {
     currentCycleLabel: cyclePhaseLabel(phase),
     cycleMonthly,
     cycleDaysByMonth,
-    hourlyByCalendarDay,
     signals: buildActionSignals({
       cycleMonthly,
       asOfMonth,
