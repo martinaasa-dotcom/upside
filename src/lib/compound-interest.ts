@@ -291,13 +291,17 @@ export function calculateCompound(inputs: CompoundInputs): CompoundResult {
 
 export const DEFAULT_COMPOUND_INPUTS: CompoundInputs = {
   principal: 5000,
-  ratePercent: 5,
+  // Overridden per-person once the sheet loads with a blended rate derived
+  // from what's actually held (see blendedExpectedAnnualReturn) — this is
+  // only the fallback before that computation is ready / for a book with
+  // no holdings at all.
+  ratePercent: 8,
   ratePeriod: "annual",
   compound: "monthly",
-  years: 5,
+  years: 10,
   months: 0,
-  contributionMode: "none",
-  depositAmount: 0,
+  contributionMode: "deposits",
+  depositAmount: 500,
   depositFrequency: "monthly",
   withdrawalAmount: 0,
   withdrawalFrequency: "monthly",

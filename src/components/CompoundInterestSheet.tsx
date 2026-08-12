@@ -17,6 +17,7 @@ import {
   buildNarrative,
   buildYearStories,
   calculateWithShock,
+  COMPOUND_CASH_YIELD_ANNUAL_PCT,
   findTippingYear,
   formatMilestoneDate,
   loadMilestoneActuals,
@@ -26,6 +27,7 @@ import {
   type MilestoneActuals,
   type ShockKind,
 } from "@/lib/compound-play";
+import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
 import { cn } from "@/lib/format";
 import {
   displayToUsd,
@@ -40,13 +42,14 @@ import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import {
   ArrowUpRight,
   Calculator,
+  CheckCircle2,
   Copy,
   Share2,
   Sparkles,
   Target,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CurrencyCode = DisplayCurrency;
 
@@ -66,6 +69,12 @@ type Props = {
   bookValue: number;
   /** Sheet values in USD */
   sheets: CompoundSheetOption[];
+  /** Per-ticker book-wide value in USD — used only to derive a default
+   * interest rate from what's actually held (see blendedExpectedAnnualReturn),
+   * different for every person instead of one fixed number for everyone. */
+  tickerValues?: Array<{ ticker: string; value: number }>;
+  /** Book-wide cash in USD, for the same blended-rate calculation. */
+  bookCash?: number;
   /** USD per 1 EUR (Yahoo EURUSD) */
   eurUsd?: number | null;
   eurUsdDetail?: EurUsdQuote | null;
@@ -131,25 +140,53 @@ function DualPathChart({
   active,
   currency,
   eurUsd,
+  tippingYear,
 }: {
   stay: number[];
   active: number[];
   currency: CurrencyCode;
   eurUsd: number | null;
+  tippingYear: number | null;
 }) {
   const max = Math.max(...stay, ...active, 1);
   const w = 640;
-  const h = 200;
-  const pad = 16;
+  const h = 240;
+  const padL = 52;
+  const padR = 16;
+  const padT = 16;
+  const padB = 24;
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  const lastIdx = Math.max(active.length - 1, 1);
+
+  const xAt = (i: number) => padL + (i / lastIdx) * plotW;
+  const yAt = (v: number) => padT + plotH - (v / max) * plotH;
 
   const toPoints = (series: number[]) =>
-    series
-      .map((v, i) => {
-        const x = pad + (i / Math.max(series.length - 1, 1)) * (w - pad * 2);
-        const y = h - pad - (v / max) * (h - pad * 2);
-        return `${x},${y}`;
-      })
-      .join(" ");
+    series.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
+
+  // Fill the gap between the two lines so the compounding edge is
+  // something you see, not just two lines you have to mentally subtract.
+  const gapArea = (() => {
+    const top = active.map((v, i) => `${xAt(i)},${yAt(v)}`);
+    const bottomRev = [...stay].map((v, i) => `${xAt(i)},${yAt(v)}`).reverse();
+    return [...top, ...bottomRev].join(" ");
+  })();
+
+  const gridSteps = [0, 0.25, 0.5, 0.75, 1];
+  const compact = (n: number) => {
+    const shown = money(n, currency, eurUsd, 0);
+    return shown.length > 9 ? shown.replace(/\.00$/, "") : shown;
+  };
+
+  // A handful of x-axis year labels — every year would collide on a long
+  // horizon, so space them out to roughly 5-6 ticks.
+  const yearTickEvery = Math.max(1, Math.round(lastIdx / 5));
+  const yearTicks = Array.from(
+    { length: Math.floor(lastIdx / yearTickEvery) + 1 },
+    (_, k) => k * yearTickEvery
+  );
+  if (yearTicks[yearTicks.length - 1] !== lastIdx) yearTicks.push(lastIdx);
 
   return (
     <div>
@@ -159,6 +196,79 @@ function DualPathChart({
         role="img"
         aria-label="Stay the course vs active path"
       >
+        <defs>
+          <linearGradient id="dualPathGap" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#34d399" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#34d399" stopOpacity="0.03" />
+          </linearGradient>
+        </defs>
+
+        {gridSteps.map((s) => {
+          const y = padT + plotH - s * plotH;
+          return (
+            <g key={s}>
+              <line
+                x1={padL}
+                x2={w - padR}
+                y1={y}
+                y2={y}
+                stroke="#27272a"
+                strokeWidth="1"
+              />
+              <text
+                x={padL - 6}
+                y={y}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fontSize="9"
+                fill="#71717a"
+              >
+                {compact(max * s)}
+              </text>
+            </g>
+          );
+        })}
+
+        {yearTicks.map((i) => (
+          <text
+            key={i}
+            x={xAt(i)}
+            y={h - 6}
+            textAnchor="middle"
+            fontSize="9"
+            fill="#71717a"
+          >
+            Y{i}
+          </text>
+        ))}
+
+        <polygon points={gapArea} fill="url(#dualPathGap)" />
+
+        {tippingYear != null && tippingYear <= lastIdx && (
+          <g>
+            <line
+              x1={xAt(tippingYear)}
+              x2={xAt(tippingYear)}
+              y1={padT}
+              y2={padT + plotH}
+              stroke="#34d399"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.6"
+            />
+            <text
+              x={xAt(tippingYear)}
+              y={padT - 4}
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="600"
+              fill="#34d399"
+            >
+              Tip Y{tippingYear}
+            </text>
+          </g>
+        )}
+
         <polyline
           points={toPoints(stay)}
           fill="none"
@@ -172,6 +282,22 @@ function DualPathChart({
           stroke="#34d399"
           strokeWidth="2.5"
         />
+
+        {active.map((v, i) => (
+          <circle
+            key={`a-${i}`}
+            cx={xAt(i)}
+            cy={yAt(v)}
+            r="7"
+            fill="transparent"
+          >
+            <title>
+              Year {i} · Active {money(v, currency, eurUsd)} · Stay
+              {" "}
+              {money(stay[i] ?? 0, currency, eurUsd)}
+            </title>
+          </circle>
+        ))}
       </svg>
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
@@ -182,6 +308,14 @@ function DualPathChart({
           <span className="h-0.5 w-4 bg-gain" />
           Active path · {money(active[active.length - 1] ?? 0, currency, eurUsd)}
         </span>
+        <span className="inline-flex items-center gap-1.5 text-emerald-400/80">
+          <span className="h-2 w-4 rounded-sm bg-gain/20" />
+          Gap · {money(
+            (active[active.length - 1] ?? 0) - (stay[stay.length - 1] ?? 0),
+            currency,
+            eurUsd
+          )}
+        </span>
       </div>
     </div>
   );
@@ -190,6 +324,8 @@ function DualPathChart({
 export function CompoundInterestSheet({
   bookValue,
   sheets,
+  tickerValues = [],
+  bookCash = 0,
   eurUsd = null,
   eurUsdDetail = null,
 }: Props) {
@@ -204,6 +340,10 @@ export function CompoundInterestSheet({
   const [storyIdx, setStoryIdx] = useState(0);
   const [tipFlash, setTipFlash] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Only true once we've applied a fresh, never-before-stored default rate
+  // — guards against clobbering a rate the user typed in, or re-rolling it
+  // every time tickerValues re-renders with a new array identity.
+  const appliedDefaultRateRef = useRef(false);
 
   useEffect(() => {
     const stored = loadStored();
@@ -212,6 +352,28 @@ export function CompoundInterestSheet({
     setMilestoneActuals(loadMilestoneActuals());
     setHydrated(true);
   }, []);
+
+  // First-ever visit (nothing in localStorage yet): swap the generic 8%
+  // fallback for a rate derived from what this book actually holds, the
+  // moment ticker data is ready. Runs once — after that, the stored value
+  // (default or user-edited) is respected like any other persisted input.
+  useEffect(() => {
+    if (!hydrated || appliedDefaultRateRef.current) return;
+    if (tickerValues.length === 0 && bookCash === 0) return;
+    const stored = loadStored();
+    const hadExplicitRate = Boolean(
+      window.localStorage.getItem(COMPOUND_STORAGE_KEY)
+    );
+    appliedDefaultRateRef.current = true;
+    if (hadExplicitRate) return;
+    const blended = blendedExpectedAnnualReturn(tickerValues, {
+      balance: bookCash,
+      annualReturnPct: COMPOUND_CASH_YIELD_ANNUAL_PCT,
+    });
+    const pct = Math.round(blended * 1000) / 10;
+    if (!(pct > 0)) return;
+    setDraft({ ...stored, ratePercent: pct });
+  }, [hydrated, tickerValues, bookCash]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -343,21 +505,6 @@ export function CompoundInterestSheet({
     if (sheet) patchDraft("principal", Math.round(sheet.value * 100) / 100);
   }
 
-  function setDepositLive(amount: number) {
-    setDraft((prev) => ({
-      ...prev,
-      depositAmount: amount,
-      contributionMode:
-        amount > 0
-          ? prev.contributionMode === "none"
-            ? "deposits"
-            : prev.contributionMode
-          : prev.contributionMode === "deposits"
-            ? "none"
-            : prev.contributionMode,
-    }));
-  }
-
   async function copyPostcard() {
     const text = [
       `Upside compound postcard`,
@@ -386,8 +533,6 @@ export function CompoundInterestSheet({
 
   const staySeries = stayResult.yearly.map((y) => y.balance);
   const activeSeries = result.yearly.map((y) => y.balance);
-  const chartMax = Math.max(...result.yearly.map((r) => r.balance), 1);
-
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
       {/* —— Inputs —— */}
@@ -505,7 +650,9 @@ export function CompoundInterestSheet({
           </div>
         </div>
 
-        {/* 4 — Contribution drama dial */}
+        {/* 4 — Contributions: one card for mode + amount + frequency, so
+         * the deposit dial isn't a second, disconnected control for the
+         * same thing this section already governs. */}
         <div
           className={cn(
             "rounded-xl border p-3 transition",
@@ -515,45 +662,16 @@ export function CompoundInterestSheet({
           )}
         >
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-medium text-zinc-300">
-              Monthly deposit dial
-            </p>
-            {tipping != null && (
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-gain">
-                Tip year {tipping}
-              </span>
-            )}
+            <p className="text-xs font-medium text-zinc-300">Contributions</p>
+            {tipping != null &&
+              (draft.contributionMode === "deposits" ||
+                draft.contributionMode === "both") && (
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-gain">
+                  Tip year {tipping}
+                </span>
+              )}
           </div>
-          <input
-            type="range"
-            min={0}
-            max={2000}
-            step={50}
-            value={Math.min(2000, draft.depositAmount)}
-            onChange={(e) => setDepositLive(Number(e.target.value))}
-            className="mt-3 w-full accent-[var(--brand)]"
-          />
-          <div className="mt-1 flex justify-between text-[11px] text-zinc-500">
-            <span>{show(0)}</span>
-            <span className="tabular-nums text-brand-bright">
-              {show(draft.depositAmount)}/mo
-            </span>
-            <span>{show(2000)}</span>
-          </div>
-          <label className="mt-3 block text-[11px] text-zinc-500">
-            Annual deposit increase %
-            <FormattedNumberInput
-              kind="percent"
-              value={draft.annualIncrease}
-              onChange={(n) => patchDraft("annualIncrease", n)}
-              className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
-            />
-          </label>
-        </div>
-
-        <div>
-          <p className="mb-1.5 text-xs text-zinc-400">Contributions</p>
-          <div className="flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+          <div className="mt-2 flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
             {(
               [
                 ["none", "None"],
@@ -573,39 +691,91 @@ export function CompoundInterestSheet({
               </SegButton>
             ))}
           </div>
-          {(draft.contributionMode === "withdrawals" ||
-            draft.contributionMode === "both") && (
-            <label className="mt-2 block text-[11px] text-zinc-500">
-              Withdrawal / mo
-              <FormattedNumberInput
-                kind="money"
-                currency={currency}
-                value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
-                onChange={(n) =>
-                  onMoneyUsdChange(n, (usd) => patchDraft("withdrawalAmount", usd))
-                }
-                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
-              />
-            </label>
-          )}
+
           {(draft.contributionMode === "deposits" ||
             draft.contributionMode === "both") && (
-            <label className="mt-2 block text-[11px] text-zinc-500">
-              Deposit frequency
-              <select
-                value={draft.depositFrequency}
+            <div className="mt-3 space-y-2.5 border-t border-zinc-800/60 pt-3">
+              <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                <span>Monthly deposit</span>
+                <span className="tabular-nums text-brand-bright">
+                  {show(draft.depositAmount)}/mo
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={2000}
+                step={50}
+                value={Math.min(2000, draft.depositAmount)}
                 onChange={(e) =>
-                  patchDraft(
-                    "depositFrequency",
-                    e.target.value as ContributionFrequency
-                  )
+                  patchDraft("depositAmount", Number(e.target.value))
                 }
-                className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
-              >
-                <option value="monthly">monthly</option>
-                <option value="annually">annually</option>
-              </select>
-            </label>
+                className="w-full accent-[var(--brand)]"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-[11px] text-zinc-500">
+                  Frequency
+                  <select
+                    value={draft.depositFrequency}
+                    onChange={(e) =>
+                      patchDraft(
+                        "depositFrequency",
+                        e.target.value as ContributionFrequency
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                  >
+                    <option value="monthly">monthly</option>
+                    <option value="annually">annually</option>
+                  </select>
+                </label>
+                <label className="block text-[11px] text-zinc-500">
+                  Annual increase %
+                  <FormattedNumberInput
+                    kind="percent"
+                    value={draft.annualIncrease}
+                    onChange={(n) => patchDraft("annualIncrease", n)}
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {(draft.contributionMode === "withdrawals" ||
+            draft.contributionMode === "both") && (
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-800/60 pt-3">
+              <label className="block text-[11px] text-zinc-500">
+                Withdrawal / mo
+                <FormattedNumberInput
+                  kind="money"
+                  currency={currency}
+                  value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
+                  onChange={(n) =>
+                    onMoneyUsdChange(n, (usd) =>
+                      patchDraft("withdrawalAmount", usd)
+                    )
+                  }
+                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                />
+              </label>
+              <label className="block text-[11px] text-zinc-500">
+                Frequency
+                <select
+                  value={draft.withdrawalFrequency}
+                  onChange={(e) =>
+                    patchDraft(
+                      "withdrawalFrequency",
+                      e.target.value as ContributionFrequency
+                    )
+                  }
+                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                >
+                  <option value="monthly">monthly</option>
+                  <option value="annually">annually</option>
+                </select>
+              </label>
+            </div>
           )}
         </div>
 
@@ -729,6 +899,7 @@ export function CompoundInterestSheet({
               active={activeSeries}
               currency={currency}
               eurUsd={eurUsd}
+              tippingYear={tipping}
             />
           </div>
         </div>
@@ -770,29 +941,38 @@ export function CompoundInterestSheet({
                       key={row.goal}
                       className={cn(
                         "border-b border-zinc-800/80",
-                        done && "text-zinc-500"
+                        done && "bg-emerald-500/[0.06]"
                       )}
                     >
                       <td className="py-2.5 pr-3">
-                        <span className="inline-flex items-center gap-2 tabular-nums text-zinc-200">
-                          <span
-                            className={cn(
-                              "inline-block h-3.5 w-3.5 shrink-0 rounded border",
-                              done
-                                ? "border-zinc-600 bg-zinc-700"
-                                : "border-zinc-600 bg-transparent"
-                            )}
-                            aria-hidden
-                          />
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-2 tabular-nums",
+                            done ? "font-semibold text-gain" : "text-zinc-200"
+                          )}
+                        >
+                          {done ? (
+                            <CheckCircle2
+                              className="h-4 w-4 shrink-0 text-gain"
+                              aria-hidden
+                            />
+                          ) : (
+                            <span
+                              className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-zinc-600 bg-transparent"
+                              aria-hidden
+                            />
+                          )}
                           {show(row.goal)}
                         </span>
                       </td>
                       <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
-                        {row.hit
-                          ? "—"
-                          : row.targetDate
-                            ? formatMilestoneDate(row.targetDate)
-                            : "Beyond 50y"}
+                        {row.hit ? (
+                          <span className="font-medium text-gain">Hit ✓</span>
+                        ) : row.targetDate ? (
+                          formatMilestoneDate(row.targetDate)
+                        ) : (
+                          "Beyond 50y"
+                        )}
                       </td>
                       <td className="py-2.5 pr-3">
                         <input
@@ -801,7 +981,12 @@ export function CompoundInterestSheet({
                           onChange={(e) =>
                             setMilestoneActual(row.goal, e.target.value)
                           }
-                          className="max-w-[9.5rem] rounded border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-xs tabular-nums text-zinc-300 outline-none focus:border-brand"
+                          className={cn(
+                            "max-w-[9.5rem] rounded border bg-zinc-900 px-1.5 py-1 text-xs tabular-nums outline-none focus:border-brand",
+                            done
+                              ? "border-gain/40 text-gain"
+                              : "border-zinc-700 text-zinc-300"
+                          )}
                         />
                       </td>
                       <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
@@ -878,7 +1063,7 @@ export function CompoundInterestSheet({
               {compareTakeaway}
             </p>
           )}
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {compare.map((s) => (
               <div
                 key={s.id}
@@ -985,46 +1170,6 @@ export function CompoundInterestSheet({
                 })}
               </tbody>
             </table>
-          </div>
-          {/* Mini area chart */}
-          <div className="border-t border-zinc-800 px-4 py-4">
-            <svg
-              viewBox="0 0 640 120"
-              className="h-auto w-full"
-              aria-hidden
-            >
-              <defs>
-                <linearGradient id="ciFill2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#34d399" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {(() => {
-                const pts = result.yearly;
-                if (pts.length < 2) return null;
-                const w = 640;
-                const h = 110;
-                const pad = 8;
-                const coords = pts.map((p, i) => {
-                  const x = pad + (i / (pts.length - 1)) * (w - pad * 2);
-                  const y = h - pad - (p.balance / chartMax) * (h - pad * 2);
-                  return `${x},${y}`;
-                });
-                const line = coords.join(" ");
-                const area = `${pad},${h - pad} ${line} ${w - pad},${h - pad}`;
-                return (
-                  <>
-                    <polygon points={area} fill="url(#ciFill2)" />
-                    <polyline
-                      points={line}
-                      fill="none"
-                      stroke="#34d399"
-                      strokeWidth="2"
-                    />
-                  </>
-                );
-              })()}
-            </svg>
           </div>
         </div>
 

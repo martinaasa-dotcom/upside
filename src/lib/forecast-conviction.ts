@@ -53,6 +53,42 @@ const STANCE_PATH_SCALE: Record<ForecastStance, number> = {
   bullish: 1.2,
 };
 
+/** Implied annualized return from the generic fallback shape's final year,
+ * over the ~5y FORECAST_YEARS span — a rough, sector-differentiated stand-in
+ * for "expected return", not a forecast. Used only as a default so the
+ * Compound sheet's starting rate reflects what a person actually holds
+ * instead of one fixed number for every user. */
+export function impliedAnnualReturnForTheme(theme: ForecastTheme): number {
+  const mults = THEME_BASE_MULTS[theme];
+  const finalMult = mults[mults.length - 1]!;
+  return Math.pow(finalMult, 1 / FORECAST_YEARS.length) - 1;
+}
+
+/** Value-weighted blend of impliedAnnualReturnForTheme across whatever a
+ * portfolio actually holds (equity only — pass cash separately via
+ * `cashWeight`/`cashAnnualReturn` since idle cash has no "theme"). Genuinely
+ * different per portfolio: an index-heavy book lands modest, a
+ * crypto/AI-infra-heavy one lands hot. */
+export function blendedExpectedAnnualReturn(
+  holdings: Array<{ ticker: string; value: number }>,
+  cash: { balance: number; annualReturnPct: number } = {
+    balance: 0,
+    annualReturnPct: 0,
+  }
+): number {
+  const equityTotal = holdings.reduce((s, h) => s + Math.max(0, h.value), 0);
+  const total = equityTotal + Math.max(0, cash.balance);
+  if (total <= 0) return impliedAnnualReturnForTheme("other");
+
+  let sum = (Math.max(0, cash.balance) / total) * (cash.annualReturnPct / 100);
+  for (const h of holdings) {
+    if (h.value <= 0) continue;
+    const theme = forecastThemeForTicker(h.ticker);
+    sum += (h.value / total) * impliedAnnualReturnForTheme(theme);
+  }
+  return sum;
+}
+
 export function forecastThemeForTicker(ticker: string): ForecastTheme {
   const base = ticker.split(".")[0]!.toUpperCase();
 

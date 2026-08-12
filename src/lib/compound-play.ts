@@ -185,25 +185,27 @@ export function calculateWithShock(
 export function buildCompareTakeaway(scenarios: CompareScenario[]): string | null {
   const upside = scenarios.find((s) => s.id === "upside");
   const mattress = scenarios.find((s) => s.id === "mattress");
+  const cash = scenarios.find((s) => s.id === "cash");
   const spy = scenarios.find((s) => s.id === "spy");
   if (!upside) return null;
 
   const vsMattress = mattress
     ? upside.result.futureValue - mattress.result.futureValue
     : null;
+  const vsCash = cash ? upside.result.futureValue - cash.result.futureValue : null;
   const vsSpy = spy ? upside.result.futureValue - spy.result.futureValue : null;
-  if (vsMattress == null && vsSpy == null) return null;
+  if (vsMattress == null && vsCash == null && vsSpy == null) return null;
 
   const seed = hashSeed(
-    `upside-compare|${upside.result.futureValue.toFixed(0)}|${vsMattress?.toFixed(0)}|${vsSpy?.toFixed(0)}`
+    `upside-compare|${upside.result.futureValue.toFixed(0)}|${vsMattress?.toFixed(0)}|${vsCash?.toFixed(0)}|${vsSpy?.toFixed(0)}`
   );
   const rng = mulberry32(seed);
 
   if (vsMattress != null && vsSpy != null) {
     return pick(rng, [
-      `Upside path clears the mattress by ${fmt(vsMattress)} and the index by ${fmt(vsSpy)} over the same stretch.`,
-      `Same principal, same years — Upside beats doing nothing by ${fmt(vsMattress)}, and beats index-ish beta by ${fmt(vsSpy)}.`,
-      `The gap: +${fmt(vsMattress)} over cash-under-the-mattress, +${fmt(vsSpy)} over a plain index bet.`,
+      `Upside path clears the inflation-eroded mattress by ${fmt(vsMattress)} and the index by ${fmt(vsSpy)} over the same stretch.`,
+      `Same principal, same years — Upside beats doing nothing by ${fmt(vsMattress)} (mattress loses real value to inflation), and beats index-ish beta by ${fmt(vsSpy)}.`,
+      `The gap: +${fmt(vsMattress)} over letting inflation eat idle cash, +${fmt(vsSpy)} over a plain index bet.`,
     ]);
   }
   if (vsSpy != null) {
@@ -212,10 +214,46 @@ export function buildCompareTakeaway(scenarios: CompareScenario[]): string | nul
       `+${fmt(vsSpy)} ahead of a plain index bet, same principal and years.`,
     ]);
   }
+  if (vsCash != null) {
+    return pick(rng, [
+      `Upside path clears even a ${COMPOUND_CASH_YIELD_ANNUAL_PCT}% savings yield by ${fmt(vsCash)} over the same stretch.`,
+      `+${fmt(vsCash)} ahead of just parking it in a high-yield savings account.`,
+    ]);
+  }
   return pick(rng, [
-    `Upside path clears the mattress by ${fmt(vsMattress!)} over the same stretch.`,
-    `+${fmt(vsMattress!)} ahead of cash under the mattress. Doing nothing has a real cost.`,
+    `Upside path clears the inflation-eroded mattress by ${fmt(vsMattress!)} over the same stretch.`,
+    `+${fmt(vsMattress!)} ahead of cash losing real value under the mattress. Doing nothing has a real cost.`,
   ]);
+}
+
+/** Long-run US CPI-ish assumption — illustrative only, for the "real
+ * value" mattress contrast, not a forecast. */
+export const COMPOUND_INFLATION_ANNUAL_PCT = 3;
+/** Rough high-yield-savings / money-market assumption — a genuine
+ * alternative to a literal 0%-under-the-mattress comparison. */
+export const COMPOUND_CASH_YIELD_ANNUAL_PCT = 4.5;
+
+/** Deflate a nominal result into "today's dollars" at a fixed annual
+ * inflation rate — same principal/deposits, just eroded purchasing power
+ * instead of 0% meaning "no change at all". */
+function applyInflationErosion(
+  result: CompoundResult,
+  annualInflationPct: number
+): CompoundResult {
+  const infl = annualInflationPct / 100;
+  const yearly = result.yearly.map((row) => ({
+    ...row,
+    balance: row.balance / Math.pow(1 + infl, row.index),
+  }));
+  const endFactor = Math.pow(1 + infl, Math.max(result.durationYears, 0));
+  const futureValue = result.futureValue / endFactor;
+  return {
+    ...result,
+    futureValue,
+    totalInterest:
+      futureValue - result.principal - Math.max(0, result.totalContributions),
+    yearly,
+  };
 }
 
 export function buildCompareScenarios(
@@ -226,11 +264,20 @@ export function buildCompareScenarios(
   const years = Math.max(inputs.years, 1);
   const base = { ...inputs, years, compound: "monthly" as const };
 
-  const mattress = calculateCompound({
+  // A literal mattress: 0% nominal, same deposits as everything else so
+  // it's an apples-to-apples "what if this exact cash flow earned
+  // nothing", then shown in today's purchasing power — inflation is the
+  // whole point of this bar, not a footnote.
+  const mattressNominal = calculateCompound({ ...base, ratePercent: 0 });
+  const mattress = applyInflationErosion(
+    mattressNominal,
+    COMPOUND_INFLATION_ANNUAL_PCT
+  );
+
+  const cashYield = calculateCompound({
     ...base,
-    ratePercent: 0,
-    contributionMode: "none",
-    depositAmount: 0,
+    ratePercent: COMPOUND_CASH_YIELD_ANNUAL_PCT,
+    ratePeriod: "annual",
   });
 
   const spy = calculateCompound({
@@ -253,9 +300,16 @@ export function buildCompareScenarios(
     {
       id: "mattress",
       label: "Mattress",
-      tagline: "0% · cash under the bed",
+      tagline: `0% nominal · loses ~${COMPOUND_INFLATION_ANNUAL_PCT}%/yr to inflation`,
       result: mattress,
       color: "#71717a",
+    },
+    {
+      id: "cash",
+      label: "Cash / HYSA",
+      tagline: `~${COMPOUND_CASH_YIELD_ANNUAL_PCT}% · savings / money-market yield`,
+      result: cashYield,
+      color: "#a1a1aa",
     },
     {
       id: "spy",
@@ -642,9 +696,11 @@ export function estimateYearsToGoal(opts: {
   return null;
 }
 
-/** Classic net-worth ladder — matches Martin’s sheet shape. */
+/** Net-worth ladder — more incremental in the early, most-motivating
+ * stretch (every $50-100k) before widening out at the larger milestones. */
 export const COMPOUND_MILESTONE_GOALS = [
-  0, 100_000, 200_000, 300_000, 500_000, 1_000_000, 2_000_000, 5_000_000,
+  0, 50_000, 100_000, 200_000, 300_000, 500_000, 750_000, 1_000_000,
+  2_000_000, 5_000_000,
 ] as const;
 
 export const MILESTONE_ACTUALS_KEY = "upside-compound-milestone-actuals-v1";

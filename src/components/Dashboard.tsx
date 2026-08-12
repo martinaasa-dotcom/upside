@@ -2539,6 +2539,11 @@ export function Dashboard() {
               name: s.portfolio.name,
               value: s.totalValue,
             }))}
+            tickerValues={overview.tickers.map((t) => ({
+              ticker: t.ticker,
+              value: t.currentValue,
+            }))}
+            bookCash={overview.totals.cash}
             eurUsd={eurUsd}
             eurUsdDetail={eurUsdDetail}
           />
