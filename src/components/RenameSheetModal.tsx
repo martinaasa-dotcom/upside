@@ -8,13 +8,28 @@ type Props = {
   initialName: string;
   onClose: () => void;
   onSave: (name: string) => void;
+  /** Defaults to the rename-sheet wording so existing callers are unaffected. */
+  title?: string;
+  label?: string;
+  placeholder?: string;
+  confirmLabel?: string;
 };
 
+/**
+ * Generic "name this thing" modal — used for both renaming an existing
+ * sheet and creating a new one, so the zero-sheets empty state doesn't need
+ * to fall back to a native window.prompt() (which looked broken next to
+ * every other themed modal in the app).
+ */
 export function RenameSheetModal({
   open,
   initialName,
   onClose,
   onSave,
+  title = "Rename portfolio",
+  label = "Name",
+  placeholder,
+  confirmLabel = "Save",
 }: Props) {
   const [name, setName] = useState(initialName);
 
@@ -45,7 +60,7 @@ export function RenameSheetModal({
         className="relative w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h3 className="text-base font-semibold text-white">Rename portfolio</h3>
+          <h3 className="text-base font-semibold text-white">{title}</h3>
           <button
             type="button"
             onClick={onClose}
@@ -57,11 +72,12 @@ export function RenameSheetModal({
         </div>
 
         <label className="grid gap-1 text-xs text-zinc-400">
-          Name
+          {label}
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder={placeholder}
             className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             required
           />
@@ -79,7 +95,7 @@ export function RenameSheetModal({
             type="submit"
             className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
           >
-            Save
+            {confirmLabel}
           </button>
         </div>
       </form>

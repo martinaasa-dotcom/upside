@@ -311,6 +311,7 @@ export function Dashboard() {
   const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
@@ -1068,17 +1069,42 @@ export function Dashboard() {
           ...values,
           ticker: normalizeYahooTicker(values.ticker),
           portfolio_id: activePortfolio.id,
+          sort_order:
+            holdings.filter((h) => h.portfolio_id === activePortfolio.id)
+              .length + 1,
         }),
       });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        holding?: Holding;
+      };
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         toast(
           typeof data.error === "string" ? data.error : "Failed to save holding",
           "error"
         );
         return;
       }
-      await loadPortfolios({ silent: true });
+      // Server upserts on (portfolio_id, ticker), so this may be a new row OR
+      // an edit of an existing one — use the returned row directly instead
+      // of a full reload round-trip either way.
+      const { holding } = data;
+      if (holding) {
+        setHoldings((prev) => {
+          const exists = prev.some((h) => h.id === holding.id);
+          return exists
+            ? prev.map((h) => (h.id === holding.id ? holding : h))
+            : [...prev, holding];
+        });
+        void refreshMarkets(
+          [holding.ticker],
+          holdings
+            .filter((h) => h.portfolio_id === activePortfolio.id)
+            .concat(holding)
+        );
+      } else {
+        await loadPortfolios({ silent: true });
+      }
     } else {
       const store = loadDemoStore();
       const next = upsertHolding(store, {
@@ -1097,36 +1123,50 @@ export function Dashboard() {
     toast("Holding saved", "success");
   }
 
-  async function handlePatch(patch: HoldingPatch): Promise<boolean> {
+  function handlePatch(patch: HoldingPatch): boolean {
     const { id, ...fields } = patch;
+    const previous = holdings.find((h) => h.id === id);
 
     // Clear stale option when strike-driving fields change
     if (
       fields.target_call_pct !== undefined ||
       fields.stock_target_override !== undefined
     ) {
-      const ticker = holdings.find((h) => h.id === id)?.ticker;
+      const ticker = previous?.ticker;
       if (ticker) {
         setOptions((prev) => ({ ...prev, [ticker]: null }));
       }
     }
 
+    // Optimistic: apply immediately so every keystroke commit feels instant,
+    // regardless of Supabase round-trip time. Background request rolls the
+    // field back (via the same setHoldings the UI already reads from) and
+    // toasts on failure instead of making the input wait.
+    setHoldings((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, ...fields } : h))
+    );
+
     if (source === "supabase") {
-      const res = await apiFetch("/api/holdings", {
-        method: "PATCH",
-        body: JSON.stringify({ id, ...fields }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        toast(
-          typeof data.error === "string" ? data.error : "Failed to update holding",
-          "error"
-        );
-        return false;
-      }
-      setHoldings((prev) =>
-        prev.map((h) => (h.id === id ? { ...h, ...fields } : h))
-      );
+      void (async () => {
+        const res = await apiFetch("/api/holdings", {
+          method: "PATCH",
+          body: JSON.stringify({ id, ...fields }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (previous) {
+            setHoldings((prev) =>
+              prev.map((h) => (h.id === id ? previous : h))
+            );
+          }
+          toast(
+            typeof data.error === "string"
+              ? data.error
+              : "Failed to update holding — reverted",
+            "error"
+          );
+        }
+      })();
       return true;
     }
     const next = patchHolding(loadDemoStore(), id, fields);
@@ -1606,27 +1646,35 @@ export function Dashboard() {
     });
   }
 
-  async function deleteHoldingById(id: string): Promise<boolean> {
+  function deleteHoldingById(id: string): boolean {
     const removed = holdings.find((h) => h.id === id);
     if (source === "supabase") {
-      const res = await apiFetch(`/api/holdings?id=${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        toast(
-          typeof data.error === "string" ? data.error : "Failed to delete holding",
-          "error"
-        );
-        return false;
-      }
+      // Optimistic — gone from the table immediately; restored + toasted if
+      // the delete actually fails server-side.
       setHoldings((prev) => prev.filter((h) => h.id !== id));
+      void (async () => {
+        const res = await apiFetch(`/api/holdings?id=${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (removed) {
+            setHoldings((prev) => [...prev, removed]);
+          }
+          toast(
+            typeof data.error === "string"
+              ? data.error
+              : "Failed to delete holding — restored",
+            "error"
+          );
+          return;
+        }
+      })();
     } else {
       const next = deleteHolding(loadDemoStore(), id);
       setHoldings(next.holdings);
     }
     toast("Holding deleted", "success");
-    if (removed && source === "supabase") {
-      // Soft undo window via toast action isn't available — re-add on demand not wired.
-    }
     return true;
   }
 
@@ -1658,28 +1706,38 @@ export function Dashboard() {
     toast("Sheet added", "success");
   }
 
-  async function handleRenameSheet(id: string, name: string) {
-    if (source === "supabase") {
-      const res = await apiFetch("/api/portfolios", {
-        method: "PATCH",
-        body: JSON.stringify({ id, name }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        toast(
-          typeof data.error === "string" ? data.error : "Failed to rename sheet",
-          "error"
-        );
-        return;
-      }
-    } else {
-      renamePortfolio(loadDemoStore(), id, name);
-    }
+  function handleRenameSheet(id: string, name: string) {
+    const previousName = portfolios.find((p) => p.id === id)?.name;
     setPortfolios((prev) =>
       prev.map((p) => (p.id === id ? { ...p, name } : p))
     );
     setRenameTarget(null);
     toast("Sheet renamed", "success");
+
+    if (source === "supabase") {
+      void (async () => {
+        const res = await apiFetch("/api/portfolios", {
+          method: "PATCH",
+          body: JSON.stringify({ id, name }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (previousName != null) {
+            setPortfolios((prev) =>
+              prev.map((p) => (p.id === id ? { ...p, name: previousName } : p))
+            );
+          }
+          toast(
+            typeof data.error === "string"
+              ? data.error
+              : "Failed to rename sheet — reverted",
+            "error"
+          );
+        }
+      })();
+    } else {
+      renamePortfolio(loadDemoStore(), id, name);
+    }
   }
 
   async function deleteSheetById(id: string): Promise<boolean> {
@@ -1696,7 +1754,10 @@ export function Dashboard() {
         return false;
       }
       clearChatHistory(id);
-      await loadPortfolios({ silent: true });
+      // Server already confirmed the delete — drop it locally instead of a
+      // full reload round-trip for data we already know is gone.
+      setPortfolios((prev) => prev.filter((p) => p.id !== id));
+      setHoldings((prev) => prev.filter((h) => h.portfolio_id !== id));
       setActiveId((prev) => (prev === id ? OVERVIEW_TAB_ID : prev));
     } else {
       const next = deletePortfolio(loadDemoStore(), id);
@@ -1709,30 +1770,40 @@ export function Dashboard() {
     return true;
   }
 
-  async function handleSaveCash(cash: number) {
+  function handleSaveCash(cash: number) {
     if (!activePortfolio) return;
+    const portfolioId = activePortfolio.id;
+    const previousCash = activePortfolio.cash_balance;
 
     if (source === "demo") {
-      const next = updateCash(loadDemoStore(), activePortfolio.id, cash);
+      const next = updateCash(loadDemoStore(), portfolioId, cash);
       setPortfolios(next.portfolios);
     } else {
-      const res = await apiFetch("/api/portfolios", {
-        method: "PATCH",
-        body: JSON.stringify({ id: activePortfolio.id, cash_balance: cash }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        toast(
-          typeof data.error === "string" ? data.error : "Failed to update cash",
-          "error"
-        );
-        return;
-      }
+      // Optimistic — close the modal and show the new number immediately;
+      // roll back + toast if the write actually fails in the background.
       setPortfolios((prev) =>
-        prev.map((p) =>
-          p.id === activePortfolio.id ? { ...p, cash_balance: cash } : p
-        )
+        prev.map((p) => (p.id === portfolioId ? { ...p, cash_balance: cash } : p))
       );
+      void (async () => {
+        const res = await apiFetch("/api/portfolios", {
+          method: "PATCH",
+          body: JSON.stringify({ id: portfolioId, cash_balance: cash }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setPortfolios((prev) =>
+            prev.map((p) =>
+              p.id === portfolioId ? { ...p, cash_balance: previousCash } : p
+            )
+          );
+          toast(
+            typeof data.error === "string"
+              ? data.error
+              : "Failed to update cash — reverted",
+            "error"
+          );
+        }
+      })();
     }
     setCashModalOpen(false);
     toast("Cash updated", "success");
@@ -2100,14 +2171,44 @@ export function Dashboard() {
             <WorkspaceSwitcher />
           </div>
         </header>
-        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
           <UpsideLogo variant="icon" />
-          <h1 className="text-lg font-semibold">No sheets in My book yet</h1>
-          <p className="text-sm text-zinc-400">
-            {loadError
-              ? loadError
-              : "If you were invited, open the invite link again after signing in — or create a new sheet."}
-          </p>
+          <div>
+            <h1 className="text-lg font-semibold">Welcome to Upside</h1>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              {loadError
+                ? loadError
+                : "A sheet is one portfolio — holdings, cash, and a covered-call plan. Create your first one to start, or open your invite link again if someone shared a sheet with you."}
+            </p>
+          </div>
+          {!loadError && (
+            <div className="grid w-full gap-2 text-left sm:grid-cols-3">
+              {[
+                {
+                  title: "Track & write calls",
+                  detail: "Holdings, cost basis, and covered-call targets in one table.",
+                },
+                {
+                  title: "Ask Margus",
+                  detail: "An AI copilot that reads your sheet and can make edits for you.",
+                },
+                {
+                  title: "Compete with family",
+                  detail: "Optional communities — a live leaderboard, not a spreadsheet share.",
+                },
+              ].map((f) => (
+                <div
+                  key={f.title}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
+                >
+                  <p className="text-xs font-semibold text-white">{f.title}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+                    {f.detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
@@ -2118,16 +2219,27 @@ export function Dashboard() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                const name = window.prompt("New sheet name");
-                if (name?.trim()) void handleAddSheet(name.trim());
-              }}
-              className="rounded-lg bg-brand-bright px-4 py-2 text-sm font-semibold text-[#1a1510]"
+              onClick={() => setCreateSheetOpen(true)}
+              className="rounded-lg bg-brand-bright px-4 py-2 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8]"
             >
-              Create sheet
+              Create your first sheet
             </button>
           </div>
         </main>
+
+        <RenameSheetModal
+          open={createSheetOpen}
+          initialName=""
+          title="Create a sheet"
+          label="Sheet name"
+          placeholder="e.g. My portfolio"
+          confirmLabel="Create"
+          onClose={() => setCreateSheetOpen(false)}
+          onSave={(name) => {
+            setCreateSheetOpen(false);
+            void handleAddSheet(name);
+          }}
+        />
       </div>
     );
   }
