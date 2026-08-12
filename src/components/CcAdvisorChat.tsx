@@ -86,9 +86,16 @@ type Props = {
   onApplyActions: (actions: AdvisorAction[]) => void;
   /** Bump to open the floating Margus panel (empty-state / drawer CTAs). */
   expandSignal?: number;
-  /** Bump to open the panel AND immediately trigger the image file picker. */
+  /** Bump to trigger the image file picker and import silently — no chat
+   * panel opens; progress shows in a small status card instead. Picking a
+   * screenshot here sends straight away, it never stages in a compose box. */
   imagePickSignal?: number;
 };
+
+/** Default instruction sent with a screenshot import — same for both the
+ * silent (picker) and interactive (typed-in-chat) paths. */
+const DEFAULT_SCREENSHOT_PROMPT =
+  "Read this broker screenshot carefully. If it is a single ticker (Shares + Avg buy), call addHolding with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call importSheet for every row. Then confirm what you saved.";
 
 type ToolPart = {
   type: string;
@@ -116,6 +123,18 @@ function extractImages(
         p.mediaType.startsWith("image/")
     )
     .map((p) => ({ url: p.url!, mediaType: p.mediaType! }));
+}
+
+/** Shared with the silent-import status card so the two surfaces never
+ * disagree on what a given error means. */
+function describeChatUiError(message: string): string {
+  if (/OPENROUTER|GROQ|API key|503|LLM/i.test(message)) {
+    return "Add OPENROUTER_API_KEY to .env.local (https://openrouter.ai/keys), then restart the dev server.";
+  }
+  if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(message)) {
+    return "Connection dropped (dev server restart or a long reply). Refresh the page and try again.";
+  }
+  return message;
 }
 
 function isMdSepCell(cell: string): boolean {
@@ -432,6 +451,19 @@ export function CcAdvisorChat({
   const [rulesOpen, setRulesOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [wide, setWide] = useState(false);
+  // Screenshot imports triggered via imagePickSignal never open the chat
+  // panel — they send immediately and report progress through this small
+  // status card instead. "sending" while in flight, "result" once settled
+  // (kept on screen briefly for ok/info, until dismissed for errors).
+  const [silentPhase, setSilentPhase] = useState<"idle" | "sending" | "result">(
+    "idle"
+  );
+  const [silentSummary, setSilentSummary] = useState<{
+    kind: "ok" | "info" | "empty" | "error";
+    lines: string[];
+  } | null>(null);
+  const silentFileInputRef = useRef<HTMLInputElement>(null);
+  const awaitingSilentSettleRef = useRef(false);
 
   useEffect(() => {
     setWide(loadWidePref());
@@ -463,10 +495,10 @@ export function CcAdvisorChat({
 
   useEffect(() => {
     if (!imagePickSignal) return;
-    setOpen(true);
-    // Panel needs a tick to mount before the hidden input exists in the DOM.
-    const t = window.setTimeout(() => fileInputRef.current?.click(), 60);
-    return () => window.clearTimeout(t);
+    // Deliberately does NOT open the chat panel — this input is always
+    // mounted, so the OS picker opens immediately with no compose-box
+    // detour. Import proceeds silently once a file is chosen.
+    silentFileInputRef.current?.click();
   }, [imagePickSignal]);
 
   // Close on Escape when the panel is open (rules popover handles its own Esc).
@@ -517,6 +549,68 @@ export function CcAdvisorChat({
         p.state === "output-available" &&
         typeof (p.output as { message?: string })?.message === "string"
     );
+
+  // Capture the result of a silent screenshot import for the status card
+  // once the request settles — one-shot per send via the ref guard.
+  useEffect(() => {
+    if (!awaitingSilentSettleRef.current || busy) return;
+    awaitingSilentSettleRef.current = false;
+
+    if (error) {
+      setSilentSummary({ kind: "error", lines: [describeChatUiError(error.message)] });
+      setSilentPhase("result");
+      return;
+    }
+
+    if (!last || last.role !== "assistant") {
+      setSilentSummary({
+        kind: "empty",
+        lines: ["Margus didn't confirm — open chat to check what happened."],
+      });
+      setSilentPhase("result");
+      return;
+    }
+
+    const toolNotes = (last.parts as ToolPart[])
+      .filter(
+        (p) =>
+          p.state === "output-available" &&
+          typeof (p.output as { message?: string })?.message === "string"
+      )
+      .map((p) => (p.output as { message: string }).message);
+    const text = extractText(
+      last.parts as Array<{ type: string; text?: string }>
+    );
+
+    if (toolNotes.length > 0) {
+      setSilentSummary({ kind: "ok", lines: toolNotes });
+    } else if (text) {
+      setSilentSummary({ kind: "info", lines: [text] });
+    } else {
+      setSilentSummary({
+        kind: "empty",
+        lines: [
+          "Margus returned an empty reply — often a free-model rate limit. Open chat and try again.",
+        ],
+      });
+    }
+    setSilentPhase("result");
+  }, [busy, error, last]);
+
+  // Auto-dismiss the status card — success/info clears quickly, errors and
+  // unclear reads stay up longer since the user may not be looking yet.
+  useEffect(() => {
+    if (silentPhase !== "result" || !silentSummary) return;
+    const delay =
+      silentSummary.kind === "error" || silentSummary.kind === "empty"
+        ? 20000
+        : 7000;
+    const t = window.setTimeout(() => {
+      setSilentPhase("idle");
+      setSilentSummary(null);
+    }, delay);
+    return () => window.clearTimeout(t);
+  }, [silentPhase, silentSummary]);
 
   useEffect(() => {
     const actions: AdvisorAction[] = [];
@@ -585,6 +679,31 @@ export function CcAdvisorChat({
     setPendingImages((prev) => [...prev, ...parts].slice(0, 6));
   }
 
+  async function handleSilentFiles(files: FileList | File[]) {
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (!list.length || busy) return;
+    clearError();
+    setSilentSummary(null);
+    setSilentPhase("sending");
+    awaitingSilentSettleRef.current = true;
+    try {
+      const parts = await Promise.all(list.map(fileToImagePart));
+      track("margus_message", {
+        has_image: true,
+        guest: context.adviseOnly,
+        silent: true,
+      });
+      await sendMessage({ text: DEFAULT_SCREENSHOT_PROMPT, files: parts });
+    } catch (err) {
+      awaitingSilentSettleRef.current = false;
+      setSilentSummary({
+        kind: "error",
+        lines: [err instanceof Error ? err.message : "Couldn't read that image."],
+      });
+      setSilentPhase("result");
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const text = input.trim();
@@ -599,9 +718,7 @@ export function CcAdvisorChat({
       guest: context.adviseOnly,
     });
     await sendMessage({
-      text:
-        text ||
-        "Read this broker screenshot carefully. If it is a single ticker (Shares + Avg buy), call addHolding with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call importSheet for every row. Then confirm what you saved.",
+      text: text || DEFAULT_SCREENSHOT_PROMPT,
       files: files.length ? files : undefined,
     });
   }
@@ -621,9 +738,94 @@ export function CcAdvisorChat({
       ];
 
   const canSend = !busy && (Boolean(input.trim()) || pendingImages.length > 0);
+  // Suppressed while the full panel is open — that already shows the same
+  // message live, so the compact card would just be a redundant echo.
+  const showSilentCard = silentPhase !== "idle" && !open;
 
   return (
     <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60] flex flex-col items-end gap-3">
+      <input
+        ref={silentFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length) void handleSilentFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
+
+      {showSilentCard && (
+        <div
+          role="status"
+          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-brand-deep/40 bg-[#161618] shadow-2xl shadow-black/60"
+          onClick={() => setOpen(true)}
+        >
+          <div className="flex items-start gap-2.5 px-3.5 py-3">
+            <div className="mt-0.5 rounded-lg bg-brand/10 p-1.5 text-brand">
+              {silentPhase === "sending" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : silentSummary?.kind === "error" ? (
+                <ImagePlus className="h-3.5 w-3.5 text-rose-400" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-white">
+                {silentPhase === "sending"
+                  ? "Margus is reading your screenshot…"
+                  : silentSummary?.kind === "error"
+                    ? "Import failed"
+                    : silentSummary?.kind === "empty"
+                      ? "Not sure that landed"
+                      : "Margus"}
+              </p>
+              {silentPhase === "sending" ? (
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Usually takes a few seconds.
+                </p>
+              ) : (
+                <div className="mt-0.5 space-y-0.5">
+                  {silentSummary?.lines.map((line, i) => (
+                    <p
+                      key={i}
+                      className={`text-xs leading-relaxed ${
+                        silentSummary.kind === "error"
+                          ? "text-rose-300"
+                          : silentSummary.kind === "empty"
+                            ? "text-amber-200"
+                            : "text-zinc-300"
+                      }`}
+                    >
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {silentPhase === "result" && (
+                <p className="mt-1 text-[11px] text-zinc-600">
+                  Tap to open chat
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSilentPhase("idle");
+                setSilentSummary(null);
+              }}
+              className="shrink-0 rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+              aria-label="Dismiss"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {open && (
         <section
           ref={panelRef}
@@ -870,13 +1072,7 @@ export function CcAdvisorChat({
 
             {error && (
               <div className="rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-xs text-rose-300">
-                {/OPENROUTER|GROQ|API key|503|LLM/i.test(error.message)
-                  ? "Add OPENROUTER_API_KEY to .env.local (https://openrouter.ai/keys), then restart the dev server."
-                  : /network|fetch|Failed to fetch|Load failed|aborted/i.test(
-                        error.message
-                      )
-                    ? "Connection dropped (dev server restart or a long reply). Refresh the page and ask again — critiques can take ~30–60s on the Super model."
-                    : error.message}
+                {describeChatUiError(error.message)}
               </div>
             )}
           </div>
