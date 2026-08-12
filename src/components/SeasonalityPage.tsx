@@ -67,10 +67,14 @@ function Section({
 
 function CycleMonthlyChart({
   rows,
+  selectedMonth,
   currentMonth,
   onSelectMonth,
 }: {
   rows: CycleMonthlyRow[];
+  /** The bar the user actually clicked — this is what should visibly glow. */
+  selectedMonth: number;
+  /** Today's real calendar month — a subtler ring when it isn't selected. */
   currentMonth: number;
   onSelectMonth: (m: number) => void;
 }) {
@@ -84,15 +88,21 @@ function CycleMonthlyChart({
       {rows.map((row) => {
         const v = row.avgMonthReturnPct;
         const h = Math.max(6, (Math.abs(v) / maxAbs) * 100);
+        const isSelected = row.month === selectedMonth;
         const isCurrent = row.month === currentMonth;
         return (
           <button
             key={row.month}
             type="button"
             onClick={() => onSelectMonth(row.month)}
+            aria-pressed={isSelected}
             className={cn(
               "group flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-0.5 py-1 transition",
-              isCurrent && "bg-brand/15 ring-1 ring-brand/40"
+              isSelected
+                ? "bg-brand/25 ring-2 ring-brand shadow-[0_0_12px_0_rgba(197,160,89,0.45)]"
+                : isCurrent
+                  ? "ring-1 ring-brand/35 hover:bg-brand/10"
+                  : "hover:bg-zinc-800/50"
             )}
             title={`${row.label}: avg ${v >= 0 ? "+" : ""}${v}% (${row.samples} prior ${row.label}s)`}
           >
@@ -108,7 +118,11 @@ function CycleMonthlyChart({
             <span
               className={cn(
                 "text-[10px]",
-                isCurrent ? "font-semibold text-brand-bright" : "text-zinc-500"
+                isSelected
+                  ? "font-bold text-brand-bright"
+                  : isCurrent
+                    ? "font-semibold text-brand-bright/80"
+                    : "text-zinc-500"
               )}
             >
               {row.label}
@@ -298,10 +312,12 @@ function DayOfMonthChart({
               key={row.day}
               type="button"
               onClick={() => onSelectDay(row.day)}
+              aria-pressed={isSelected}
               className={cn(
                 "relative flex min-w-0 flex-col items-center gap-1 rounded px-0.5 py-1 transition hover:bg-zinc-800/50",
-                isSelected && "bg-brand/15 ring-1 ring-brand/40",
-                isToday && !isSelected && "ring-1 ring-brand/25"
+                isSelected
+                  ? "bg-brand/25 ring-2 ring-brand shadow-[0_0_10px_0_rgba(197,160,89,0.4)]"
+                  : isToday && "ring-1 ring-brand/30"
               )}
               title={`Day ${row.day}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · ${row.winRate}% up · n=${row.samples}`}
             >
@@ -327,6 +343,14 @@ function DayOfMonthChart({
                 )}
               >
                 {row.day}
+              </span>
+              <span
+                className={cn(
+                  "text-[9px] leading-none tabular-nums",
+                  row.samples === 0 ? "text-zinc-600" : retText(v)
+                )}
+              >
+                {row.samples === 0 ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}`}
               </span>
             </button>
           );
@@ -517,6 +541,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
           >
             <CycleMonthlyChart
               rows={model.cycleMonthly}
+              selectedMonth={playbookMonth}
               currentMonth={model.asOfMonth}
               onSelectMonth={setPlaybookMonth}
             />

@@ -18,7 +18,7 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
 const SERIES_COLOR = {
@@ -70,15 +70,44 @@ type MyHolding = {
   buy_price: number;
 };
 
+function portfolioValueAt(
+  meta: MyPortfolioMeta,
+  holdings: MyHolding[],
+  quotes: Record<string, Quote>,
+  priceOf: (q: Quote | undefined, fallback: number) => number
+): number {
+  const equity = holdings
+    .filter((h) => h.portfolio_id === meta.id)
+    .reduce((sum, h) => sum + h.shares * priceOf(quotes[h.ticker], h.buy_price), 0);
+  return meta.cash_balance + equity;
+}
+
 function portfolioLiveValue(
   meta: MyPortfolioMeta,
   holdings: MyHolding[],
   quotes: Record<string, Quote>
 ): number {
-  const equity = holdings
-    .filter((h) => h.portfolio_id === meta.id)
-    .reduce((sum, h) => sum + h.shares * (quotes[h.ticker]?.price ?? h.buy_price), 0);
-  return meta.cash_balance + equity;
+  return portfolioValueAt(meta, holdings, quotes, (q, fallback) => q?.price ?? fallback);
+}
+
+/** Yesterday's close ≈ today's open — used so a benchmark set up mid-day
+ * still reflects the day's full move instead of reading ~0% just because
+ * you clicked "set benchmark" a few hours after the open. */
+function portfolioValueAtPreviousClose(
+  meta: MyPortfolioMeta,
+  holdings: MyHolding[],
+  quotes: Record<string, Quote>
+): number {
+  return portfolioValueAt(
+    meta,
+    holdings,
+    quotes,
+    (q, fallback) => q?.previousClose ?? fallback
+  );
+}
+
+function todayDateKey(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 type FundRow = {
@@ -239,6 +268,12 @@ export function UpsidePortfolioPage() {
   );
 
   const latestReport = reports[0] ?? null;
+  // Read inside refreshBenchmarkValue without adding `reports` to its
+  // dependency array (that callback is intentionally only keyed off
+  // benchmark identity so the 60s poll effect doesn't get torn down and
+  // rebuilt every time a new report or quote tick comes in).
+  const latestReportRef = useRef(latestReport);
+  latestReportRef.current = latestReport;
   const oldestReport = reports[reports.length - 1] ?? null;
   const cash = latestReport?.cash ?? fund?.cash ?? 0;
   // Live, not frozen at the last daily snapshot — sums current cash with
@@ -342,7 +377,7 @@ export function UpsidePortfolioPage() {
       portfolioId: string,
       portfolios: MyPortfolioMeta[],
       holdingsList: MyHolding[]
-    ) => {
+    ): Promise<{ live: number; atPreviousClose: number }> => {
       const meta = portfolios.find((p) => p.id === portfolioId);
       if (!meta) throw new Error("Sheet not found");
       const tickers = [
@@ -354,13 +389,22 @@ export function UpsidePortfolioPage() {
       ];
       let liveQuotes: Record<string, Quote> = {};
       if (tickers.length > 0) {
-        const res = await fetch(`/api/quotes?tickers=${tickers.join(",")}`, {
-          cache: "no-store",
-        });
-        const data = await res.json().catch(() => ({}));
+        const res = await fetch(
+          `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) throw new Error(`Quotes fetch failed (${res.status})`);
+        const data = await res.json();
         liveQuotes = data.quotes ?? {};
       }
-      return portfolioLiveValue(meta, holdingsList, liveQuotes);
+      return {
+        live: portfolioLiveValue(meta, holdingsList, liveQuotes),
+        atPreviousClose: portfolioValueAtPreviousClose(
+          meta,
+          holdingsList,
+          liveQuotes
+        ),
+      };
     },
     []
   );
@@ -374,17 +418,43 @@ export function UpsidePortfolioPage() {
         saveStoredBenchmark(null);
         return;
       }
-      const value = await valueForPortfolio(
+      const { live, atPreviousClose } = await valueForPortfolio(
         benchmark.portfolioId,
         portfolios,
         holdingsList
       );
-      setBenchmarkLiveValue(value);
+      setBenchmarkLiveValue(live);
+
+      // Self-heal a benchmark set up earlier today: it originally anchored
+      // to "value at the exact moment you clicked set benchmark", which
+      // reads as ~0% dead-even for hours after a real intraday move
+      // (Margus's side has the same issue, anchored to "current totalValue
+      // right then" instead of his own start-of-day report). Re-anchor
+      // both sides to today's open once, so the comparison actually
+      // reflects the day instead of just "since I opened this page".
+      if (benchmark.baselineDate === todayDateKey()) {
+        const healedMargusBaseline =
+          latestReportRef.current?.portfolio_value ??
+          benchmark.margusBaselineValue;
+        const needsHeal =
+          Math.abs(benchmark.userBaselineValue - atPreviousClose) > 0.01 ||
+          Math.abs(benchmark.margusBaselineValue - healedMargusBaseline) >
+            0.01;
+        if (needsHeal) {
+          const healed: MyPortfolioBenchmark = {
+            ...benchmark,
+            userBaselineValue: atPreviousClose,
+            margusBaselineValue: healedMargusBaseline,
+          };
+          saveStoredBenchmark(healed);
+          setBenchmark(healed);
+        }
+      }
     } catch {
       /* keep last-known value on transient failure, non-critical */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [benchmark?.portfolioId]);
+  }, [benchmark]);
 
   // Refresh the live value of an already-set benchmark whenever it loads.
   useEffect(() => {
@@ -423,24 +493,37 @@ export function UpsidePortfolioPage() {
     try {
       const meta = myPortfolios.find((p) => p.id === pickerSelection);
       if (!meta) throw new Error("Sheet not found");
-      const value = await valueForPortfolio(pickerSelection, myPortfolios, myHoldings);
+      const { live, atPreviousClose } = await valueForPortfolio(
+        pickerSelection,
+        myPortfolios,
+        myHoldings
+      );
       const next: MyPortfolioBenchmark = {
         portfolioId: pickerSelection,
         portfolioName: meta.name,
-        baselineDate: new Date().toISOString().slice(0, 10),
-        userBaselineValue: value,
-        margusBaselineValue: totalValue,
+        baselineDate: todayDateKey(),
+        // Anchor to today's open, not "right now" — otherwise a benchmark
+        // set up mid-day reads ~0% for hours even on a big move day.
+        userBaselineValue: atPreviousClose,
+        margusBaselineValue: latestReport?.portfolio_value ?? totalValue,
       };
       saveStoredBenchmark(next);
       setBenchmark(next);
-      setBenchmarkLiveValue(value);
+      setBenchmarkLiveValue(live);
       setPickerOpen(false);
     } catch (e) {
       setBenchmarkError(e instanceof Error ? e.message : "Failed to set benchmark");
     } finally {
       setBenchmarkBusy(false);
     }
-  }, [pickerSelection, myPortfolios, myHoldings, valueForPortfolio, totalValue]);
+  }, [
+    pickerSelection,
+    myPortfolios,
+    myHoldings,
+    valueForPortfolio,
+    totalValue,
+    latestReport,
+  ]);
 
   const handleClearBenchmark = useCallback(() => {
     saveStoredBenchmark(null);

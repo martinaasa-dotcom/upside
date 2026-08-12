@@ -300,6 +300,21 @@ export function ForecastPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
   }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy]);
 
+  // Safety net for the brief window between "you sold this" and the
+  // auto-refresh above actually landing (or if it fails/gets rate
+  // limited) — the add/trim playbook is free text, so a stale plan can
+  // keep naming a ticker that's no longer in the book.
+  const soldTickersInPlan = useMemo(() => {
+    if (!plan) return [];
+    const planKey =
+      plan.holdingsKey ??
+      forecastHoldingsKey((plan.eoyTargets ?? []).map((t) => t.ticker));
+    if (!planKey) return [];
+    const planTickers = planKey.split("|").filter(Boolean);
+    const current = new Set(model.rows.map((r) => r.ticker.toUpperCase()));
+    return planTickers.filter((t) => !current.has(t));
+  }, [plan, model.rows]);
+
   const statusHint = useMemo(() => {
     if (!planHydrated || model.rows.length === 0 || busy) return null;
     const decision = shouldAutoRefreshForecast({
@@ -312,6 +327,9 @@ export function ForecastPanel({
     }
     if (decision.run && decision.reason === "monthly") {
       return "Monthly thesis check — Margus is refreshing EOY if anything shifted…";
+    }
+    if (decision.run && decision.reason === "sold-holding") {
+      return "A holding this plan named has been sold — regenerating the playbook…";
     }
     return null;
   }, [planHydrated, model.rows, plan, fullyCovered, busy]);
@@ -640,6 +658,25 @@ export function ForecastPanel({
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {soldTickersInPlan.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-2.5 text-xs text-amber-100">
+                <span>
+                  This playbook may still name{" "}
+                  {soldTickersInPlan.join(", ")} — no longer in this sheet.
+                  {busy ? " Refreshing…" : ""}
+                </span>
+                {!busy && (
+                  <button
+                    type="button"
+                    onClick={() => void askMargus()}
+                    className="shrink-0 rounded-lg border border-amber-400/40 px-2.5 py-1 font-semibold text-amber-200 hover:bg-amber-500/10"
+                  >
+                    Regenerate now
+                  </button>
+                )}
               </div>
             )}
 

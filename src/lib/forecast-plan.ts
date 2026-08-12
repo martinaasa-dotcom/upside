@@ -144,10 +144,14 @@ export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "monthly";
+      reason: "first-run" | "monthly" | "sold-holding";
     };
 
-/** Auto API refresh for first run, then monthly (not daily). */
+/** Auto API refresh for first run, then monthly (not daily) — plus
+ * immediately whenever a holding the plan referenced has been sold, since
+ * the quarterly add/trim playbook is free text that can (and does) keep
+ * naming a ticker you no longer own until the plan is actually
+ * regenerated. */
 export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
@@ -176,6 +180,14 @@ export function shouldAutoRefreshForecast(input: {
       ? planKey.split("|").filter(Boolean)
       : (plan.eoyTargets ?? []).map((t) => t.ticker.toUpperCase())
   );
+  const tickerSet = new Set(tickers);
+  // A ticker the plan was built around is gone from the book — its EOY
+  // targets/rationale and any add/trim playbook lines that name it are
+  // now describing a position that doesn't exist. Regenerate now rather
+  // than waiting up to 30 days for the monthly cadence.
+  const sold = [...planSet].some((t) => !tickerSet.has(t));
+  if (sold) return { run: true, reason: "sold-holding" };
+
   const hasNew = tickers.some((t) => !planSet.has(t));
   // New holdings are filled via local calibration merge; skip full-model rerun.
   if (hasNew) return { run: false, reason: "ok" };
@@ -388,7 +400,11 @@ export function buildForecastPlanPrompt(input: {
       TICKER_SECTORS[r.ticker.split(".")[0]!] ??
       "unclassified";
     const theme = forecastThemeForTicker(r.ticker);
-    return `${r.ticker} [${sector} · theme=${theme}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}`;
+    const weightPct =
+      input.forecast.currentTotal > 0
+        ? ((r.currentValue / input.forecast.currentTotal) * 100).toFixed(1)
+        : "0";
+    return `${r.ticker} [${sector} · theme=${theme}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, weight=${weightPct}% of book, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}`;
   });
 
   const yearsList = FORECAST_YEARS.join(", ");
@@ -418,9 +434,12 @@ Requirements:
    - Next year (label "${year + 1}" or "Next year (${year + 1})")
    - Then 2–3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful — not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
-3. Add and Trim are SEPARATE action lines — multiple names/sectors allowed:
-   - add: up to ~40 words. "NAME / NAME — why" OR sector sleeves e.g. "SaaS / healthcare / drones — why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
-   - trim: up to ~40 words. Multiple tickers OK ("TICKER / TICKER — digestion") or a sleeve ("fintech sleeve — liquidity fade").
+3. Add and Trim are SEPARATE action lines — multiple names/sectors allowed. Write like a PM sizing a real book, not a headline generator:
+   - Reference each name's CURRENT weight (given above) and state the size of the move — a target weight or a rough trim/add fraction (e.g. "trim RKLB from 14% to ~9%", "add ~3-5% of book into SaaS"), not just a direction with no size.
+   - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing) — never a generic sector vibe that could be pasted onto any ticker in the theme.
+   - Name the trigger/condition when it isn't "do this now" — a level, an earnings date, a macro print — so it reads as a plan, not a headline.
+   - add: up to ~40 words. "NAME (weight → target) — specific why + trigger" OR sector sleeves e.g. "SaaS / healthcare / drones — why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
+   - trim: up to ~40 words. Multiple tickers OK ("TICKER (weight → target) — specific why") or a sleeve ("fintech sleeve — liquidity fade").
    - If nothing to do: "Hold — no add" / "Hold — no trim" (never leave blank)
 4. sectorRotation: talk through plausible rotations — AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc. Do not stay stuck in one box.
 5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.

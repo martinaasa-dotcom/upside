@@ -309,17 +309,43 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
   // Every check + its headlines, retained per ticker for good — never
   // cleared just because a background refresh is running or a new
-  // calendar day started. Hydrated instantly from localStorage (no
-  // network) then kept current by incremental background refreshes.
+  // calendar day started. Hydrated SYNCHRONOUSLY from localStorage in the
+  // lazy initializer (not a useEffect) so the very first render already
+  // has it: runPulse's mount effect fires in the same commit as
+  // hydrateTicker's effect, so if hydration happened one tick later via
+  // useEffect, runPulse would see these maps still empty, treat every
+  // ticker as "never checked", and hit the network on every single mount
+  // regardless of how fresh the cache actually was.
   const [checksByTicker, setChecksByTicker] = useState<
     Record<string, PulseCheck>
-  >({});
+  >(() => {
+    const out: Record<string, PulseCheck> = {};
+    for (const c of candidates) {
+      const cached = loadPulseTickerCache(c.ticker);
+      if (cached) out[c.ticker.toUpperCase()] = cached.check;
+    }
+    return out;
+  });
   const [headlinesByTicker, setHeadlinesByTicker] = useState<
     Record<string, PulseHeadline[]>
-  >({});
+  >(() => {
+    const out: Record<string, PulseHeadline[]> = {};
+    for (const c of candidates) {
+      const cached = loadPulseTickerCache(c.ticker);
+      if (cached) out[c.ticker.toUpperCase()] = cached.headlines;
+    }
+    return out;
+  });
   const [checkedAtByTicker, setCheckedAtByTicker] = useState<
     Record<string, string>
-  >({});
+  >(() => {
+    const out: Record<string, string> = {};
+    for (const c of candidates) {
+      const cached = loadPulseTickerCache(c.ticker);
+      if (cached) out[c.ticker.toUpperCase()] = cached.cachedAt;
+    }
+    return out;
+  });
   const [checkingTickers, setCheckingTickers] = useState<Set<string>>(
     new Set()
   );
@@ -327,6 +353,16 @@ export function PulsePage({ model, quotes, convictions }: Props) {
   const [lastGeneratedAt, setLastGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);
+
+  // Belt-and-suspenders against the same stale-closure class of bug the
+  // lazy initializers above just fixed: if candidates ever go from empty
+  // to populated across a render (data arriving after mount), the
+  // hydrate-cache effect and the runPulse-trigger effect below both fire
+  // in the same commit, in declaration order — a ref always reflects the
+  // latest value regardless of that ordering, a plain state closure
+  // wouldn't.
+  const checkedAtByTickerRef = useRef(checkedAtByTicker);
+  checkedAtByTickerRef.current = checkedAtByTicker;
 
   const hydrateTicker = useCallback((ticker: string) => {
     const key = ticker.trim().toUpperCase();
@@ -428,7 +464,8 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         : notInFlight.filter(
             (c) =>
               !isPulseCacheFresh({
-                cachedAt: checkedAtByTicker[c.ticker.toUpperCase()] ?? "",
+                cachedAt:
+                  checkedAtByTickerRef.current[c.ticker.toUpperCase()] ?? "",
               })
           );
       if (stale.length === 0) return;
@@ -509,7 +546,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         });
       }
     },
-    [checkedAtByTicker, convictions, fearGreed]
+    [convictions, fearGreed]
   );
 
   // Keyed off the ticker SET, not the `candidates` array's object identity
