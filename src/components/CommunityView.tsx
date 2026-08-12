@@ -16,7 +16,7 @@ import {
   UserMinus,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Profile = {
   id: string;
@@ -69,9 +69,17 @@ export function CommunityView({ communityId }: Props) {
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(
-    null
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("member")
+  );
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<
+    string | null
+  >(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("portfolio")
   );
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -133,6 +141,70 @@ export function CommunityView({ communityId }: Props) {
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [load]);
+
+  // Drill-down (member -> their portfolio) mirrors into ?member=&portfolio=
+  // so a hard refresh lands back on the exact view, and Back/Forward step
+  // through the hierarchy naturally (member list -> member -> portfolio)
+  // instead of leaving the page entirely on the first Back press.
+  const fromPopRef = useRef(false);
+  const bootstrappedRef = useRef(false);
+
+  useEffect(() => {
+    function onPopState() {
+      fromPopRef.current = true;
+      const params = new URLSearchParams(window.location.search);
+      setSelectedOwnerId(params.get("member"));
+      setSelectedPortfolioId(params.get("portfolio"));
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (selectedOwnerId) url.searchParams.set("member", selectedOwnerId);
+    else url.searchParams.delete("member");
+    if (selectedPortfolioId) url.searchParams.set("portfolio", selectedPortfolioId);
+    else url.searchParams.delete("portfolio");
+    const href = `${url.pathname}${url.search}`;
+
+    if (!bootstrappedRef.current) {
+      bootstrappedRef.current = true;
+      window.history.replaceState(null, "", href);
+      return;
+    }
+    if (fromPopRef.current) {
+      fromPopRef.current = false;
+      window.history.replaceState(null, "", href);
+      return;
+    }
+    window.history.pushState(null, "", href);
+  }, [selectedOwnerId, selectedPortfolioId]);
+
+  // A ?member=/?portfolio= link can go stale (member left, sheet deleted) or
+  // just be wrong — once real data is in, drop selections that don't
+  // resolve to anything instead of leaving the drill-down view blank.
+  useEffect(() => {
+    if (loading || !selectedOwnerId) return;
+    const valid =
+      members.some(
+        (m) =>
+          m.user_id === selectedOwnerId ||
+          m.user_ids?.includes(selectedOwnerId)
+      ) || pendingMembers.some((p) => `pending:${p.key}` === selectedOwnerId);
+    if (!valid) {
+      setSelectedOwnerId(null);
+      setSelectedPortfolioId(null);
+    }
+  }, [loading, selectedOwnerId, members, pendingMembers]);
+
+  useEffect(() => {
+    if (loading || !selectedPortfolioId) return;
+    if (!portfolios.some((p) => p.id === selectedPortfolioId)) {
+      setSelectedPortfolioId(null);
+    }
+  }, [loading, selectedPortfolioId, portfolios]);
 
   useEffect(() => {
     const tickers = [

@@ -161,7 +161,8 @@ export function SnapshotsModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+            aria-label="Close"
+            className="rounded-lg p-3.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>

@@ -242,6 +242,44 @@ function extendedHoursFromQuote(q: Quote | null | undefined) {
   };
 }
 
+/**
+ * Resolves the `?sheet=` URL param (meta-tab keyword, slug, id, or name) to
+ * an active-sheet id. Pure and synchronous so it can run both in the
+ * `activeId` state initializer (first paint, before any network call) and
+ * later in `pickInitialSheet` (popstate / portfolio-list changes) without
+ * duplicating the matching rules in two places. Returns null when there's
+ * no `sheet` param or it doesn't match anything, so callers can fall
+ * through to their own next-best default (previous tab, localStorage, Overview).
+ */
+function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const sheetParam = params.get("sheet")?.trim().toLowerCase();
+  if (!sheetParam) return null;
+  if (sheetParam === "compound" || sheetParam === COMPOUND_TAB_ID) {
+    return COMPOUND_TAB_ID;
+  }
+  if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) return LAB_TAB_ID;
+  if (sheetParam === "pulse" || sheetParam === PULSE_TAB_ID) return PULSE_TAB_ID;
+  if (
+    sheetParam === "statistics" ||
+    sheetParam === "stats" ||
+    sheetParam === SEASONALITY_TAB_ID
+  ) {
+    return SEASONALITY_TAB_ID;
+  }
+  if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
+    return OVERVIEW_TAB_ID;
+  }
+  const bySlugOrId = list.find(
+    (p) =>
+      p.id === sheetParam ||
+      p.slug?.toLowerCase() === sheetParam ||
+      p.name.toLowerCase() === sheetParam
+  );
+  return bySlugOrId?.id ?? null;
+}
+
 export function Dashboard() {
   const { push: toast } = useToast();
   const { profile, signOut, refresh, user } = useAuth();
@@ -259,6 +297,12 @@ export function Dashboard() {
   const [saveFlash, setSaveFlash] = useState(false);
   const [locked, setLocked] = useState(cachedBook?.locked ?? false);
   const [activeId, setActiveId] = useState<string>(() => {
+    // URL wins on first paint too, not just after popstate/portfolio-load —
+    // otherwise opening a shared "?sheet=lab" link (or any link that differs
+    // from your own last-visited tab) would flash your last tab first, then
+    // snap to the linked one once the async portfolio load corrects it.
+    const fromUrl = resolveSheetIdFromUrl(cachedBook?.portfolios ?? []);
+    if (fromUrl) return fromUrl;
     if (!cachedBook) return OVERVIEW_TAB_ID;
     const saved = loadActiveSheetId();
     if (!saved) return OVERVIEW_TAB_ID;
@@ -546,38 +590,8 @@ export function Dashboard() {
 
   const pickInitialSheet = useCallback(
     (list: Portfolio[], prev: string) => {
-      if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        const sheetParam = params.get("sheet")?.trim().toLowerCase();
-        if (sheetParam) {
-          if (sheetParam === "compound" || sheetParam === COMPOUND_TAB_ID) {
-            return COMPOUND_TAB_ID;
-          }
-          if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) {
-            return LAB_TAB_ID;
-          }
-          if (sheetParam === "pulse" || sheetParam === PULSE_TAB_ID) {
-            return PULSE_TAB_ID;
-          }
-          if (
-            sheetParam === "statistics" ||
-            sheetParam === "stats" ||
-            sheetParam === SEASONALITY_TAB_ID
-          ) {
-            return SEASONALITY_TAB_ID;
-          }
-          if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
-            return OVERVIEW_TAB_ID;
-          }
-          const bySlugOrId = list.find(
-            (p) =>
-              p.id === sheetParam ||
-              p.slug?.toLowerCase() === sheetParam ||
-              p.name.toLowerCase() === sheetParam
-          );
-          if (bySlugOrId) return bySlugOrId.id;
-        }
-      }
+      const fromUrl = resolveSheetIdFromUrl(list);
+      if (fromUrl) return fromUrl;
       if (
         prev &&
         (prev === OVERVIEW_TAB_ID ||

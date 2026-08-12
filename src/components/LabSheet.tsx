@@ -132,6 +132,14 @@ const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
   season: "season",
 };
 
+/** Reads `?labtab=` so a hard refresh (or revisiting Lab after switching
+ * away) lands back on the sub-tab you were on, not always Allocation. */
+function initialLabTab(): LabTab {
+  if (typeof window === "undefined") return "alloc";
+  const param = new URLSearchParams(window.location.search).get("labtab");
+  return TABS.some((t) => t.id === param) ? (param as LabTab) : "alloc";
+}
+
 export function LabSheet({
   overview,
   portfolios,
@@ -147,8 +155,10 @@ export function LabSheet({
   intentTab,
   onIntentConsumed,
 }: Props) {
-  const [group, setGroup] = useState<LabGroup>("book");
-  const [tab, setTab] = useState<LabTab>("alloc");
+  const [group, setGroup] = useState<LabGroup>(
+    () => TABS.find((t) => t.id === initialLabTab())?.group ?? "book"
+  );
+  const [tab, setTab] = useState<LabTab>(initialLabTab);
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
@@ -231,6 +241,23 @@ export function LabSheet({
     if (meta) setGroup(meta.group);
     setTab(id);
   }
+
+  // Mirror the sub-tab into the URL (replaceState only — sub-tab clicks
+  // shouldn't pile onto the back-button stack the way top-level tab
+  // switches do). Left in place when navigating away from Lab on purpose:
+  // harmless when ignored elsewhere, and means coming back to Lab (even a
+  // tab switch away and back, not just a refresh) restores the same
+  // sub-tab instead of always resetting to Allocation.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("labtab", tab);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}`
+    );
+  }, [tab]);
 
   useEffect(() => {
     if (!intentTab) return;

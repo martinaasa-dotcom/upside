@@ -572,7 +572,12 @@ export function AccountPage() {
                                     ? "Leave this sheet"
                                     : "Remove co-owner"
                                 }
-                                className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300"
+                                aria-label={
+                                  o.user_id === user?.id
+                                    ? "Leave this sheet"
+                                    : "Remove co-owner"
+                                }
+                                className="touch-target rounded-md p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300"
                               >
                                 <UserMinus className="h-3.5 w-3.5" />
                               </button>

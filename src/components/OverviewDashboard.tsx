@@ -49,6 +49,7 @@ import {
 import {
   CalendarDays,
   Flame,
+  Info,
   Lightbulb,
   Radar,
   Shuffle,
@@ -149,6 +150,40 @@ function BriefingCard({
   }
 
   return <div className={shell}>{body}</div>;
+}
+
+/**
+ * Tap/click-to-toggle info bubble — not hover-only, since hover doesn't
+ * exist on touch devices and these hero numbers are the very first thing
+ * a brand-new, possibly non-technical user sees.
+ */
+function InfoTip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+        onBlur={() => setOpen(false)}
+        aria-label="What does this mean?"
+        aria-expanded={open}
+        className="inline-flex items-center justify-center p-1.5 text-zinc-600 hover:text-zinc-300"
+      >
+        <Info className="h-3 w-3" />
+      </button>
+      {open && (
+        <span
+          role="tooltip"
+          className="absolute left-1/2 top-full z-20 mt-1 w-44 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-[11px] font-normal leading-relaxed text-zinc-300 shadow-xl"
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
 }
 
 function tone(value: number) {
@@ -559,31 +594,42 @@ export function OverviewDashboard({
                 label: "Book",
                 value: currency(totals.totalValue, 0),
                 sub: `${totals.sheetCount} sheets`,
+                explain:
+                  "Everything in this sheet is worth right now — your holdings plus cash, at today's prices.",
               },
               {
                 label: "Today",
                 value: signedCurrency(totals.todayDollar),
                 sub: totals.todayPct != null ? percent(totals.todayPct) : "—",
                 tone: totals.todayDollar,
+                explain:
+                  "How much this sheet moved just today. Resets to $0 every morning — it's not your total gain.",
               },
               {
                 label: "P&L",
                 value: signedCurrency(totals.roiDollar),
                 sub: percent(totals.roiPct),
                 tone: totals.roiDollar,
+                explain:
+                  "Profit or loss since you started — the gain or loss on everything you've ever put in, not just today.",
               },
               {
                 label: "Cash",
                 value: currency(totals.cash, 0),
                 sub: totals.cash < 0 ? "Margin" : "Powder",
+                explain:
+                  totals.cash < 0
+                    ? "Negative cash means you're on margin — borrowing from your broker against your holdings."
+                    : "Uninvested money sitting ready in this sheet, waiting for you to deploy it.",
               },
             ].map((s) => (
               <div
                 key={s.label}
                 className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-3 py-2.5"
               >
-                <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                <p className="flex items-center gap-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
                   {s.label}
+                  <InfoTip text={s.explain} />
                 </p>
                 <p
                   className={cn(
