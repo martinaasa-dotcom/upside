@@ -420,7 +420,7 @@ Requirements:
 2. Themes should be memorable but practical (not marketing fluff).
 3. Add and Trim are SEPARATE action lines — multiple names/sectors allowed:
    - add: up to ~40 words. "NAME / NAME — why" OR sector sleeves e.g. "SaaS / healthcare / drones — why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
-   - trim: up to ~40 words. Multiple tickers OK ("NBIS / CRWV — digestion") or a sleeve ("fintech sleeve — liquidity fade").
+   - trim: up to ~40 words. Multiple tickers OK ("TICKER / TICKER — digestion") or a sleeve ("fintech sleeve — liquidity fade").
    - If nothing to do: "Hold — no add" / "Hold — no trim" (never leave blank)
 4. sectorRotation: talk through plausible rotations — AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc. Do not stay stuck in one box.
 5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.
@@ -428,9 +428,10 @@ Requirements:
    - Provide a positive price for EACH of years ${yearsList} — all five required, no omissions.
    - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude. Space: digestion year.
    - rationale: one human sentence on micro-thesis + dynamics. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path.
-7. Consistency: if macro / company / sector thesis is unchanged, keep EOY magnitudes in the same neighborhood as the house BASE bands — do not randomly reshuffle.
+7. Consistency: if macro / company / sector thesis is unchanged from a prior run, keep EOY magnitudes in a similar neighborhood — do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.
-9. Be concise.`;
+9. Be concise.
+10. Frame everything as a modeled scenario for the user's own thinking, never as a personalized recommendation or a guarantee.`;
 }
 
 export function planEoyPaths(

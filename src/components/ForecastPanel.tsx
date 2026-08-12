@@ -1,6 +1,7 @@
 "use client";
 
 import { FluidRow, FluidTable } from "@/components/FluidTable";
+import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { cn, currency, percent } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
@@ -305,7 +306,7 @@ export function ForecastPanel({
       fullyCovered,
     });
     if (decision.run && decision.reason === "first-run") {
-      return "No Margus plan yet — generating house BASE paths…";
+      return "No Margus plan yet — generating a base-case path…";
     }
     if (decision.run && decision.reason === "monthly") {
       return "Monthly thesis check — Margus is refreshing EOY if anything shifted…";
@@ -320,9 +321,11 @@ export function ForecastPanel({
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Margus keeps house BASE EOY paths. He does a monthly recheck;
-              new holdings are filled without re-scanning the whole sheet.
+              Margus reasons an EOY price path per holding. He does a monthly
+              recheck; new holdings are filled without re-scanning the whole
+              sheet.
             </p>
+            <p className="mt-1 text-[11px] text-zinc-600">{FORECAST_DISCLAIMER}</p>
             {statusHint && (
               <p className="mt-1 text-[11px] text-amber-200/80">{statusHint}</p>
             )}
@@ -584,7 +587,7 @@ export function ForecastPanel({
         {!plan && !busy && !error && (
           <div className="mt-3 rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
             <p className="text-sm text-zinc-400">
-              Margus will reason house BASE EOY paths for every holding
+              Margus will reason an EOY price path for every holding
               automatically.
             </p>
           </div>

@@ -2,6 +2,7 @@
 
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
 import { STRATEGY } from "@/lib/calculations";
+import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import {
   collectAppliedToolIds,
   loadChatHistory,
@@ -679,7 +680,7 @@ export function CcAdvisorChat({
                 <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                      House rules
+                      Strategy rules
                     </p>
                     <button
                       type="button"
@@ -708,6 +709,9 @@ export function CcAdvisorChat({
                       </li>
                     ))}
                   </ul>
+                  <p className="mt-2.5 border-t border-zinc-800/80 pt-2.5 text-[11px] leading-relaxed text-zinc-600">
+                    {ADVICE_DISCLAIMER_SHORT}
+                  </p>
                 </div>
               )}
             </div>
@@ -721,6 +725,10 @@ export function CcAdvisorChat({
             </button>
           </header>
 
+          <p className="shrink-0 border-b border-zinc-800/60 px-3 py-1.5 text-center text-[10px] leading-snug text-zinc-600">
+            {ADVICE_DISCLAIMER_SHORT}
+          </p>
+
           <div
             ref={scrollerRef}
             className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
@@ -730,7 +738,7 @@ export function CcAdvisorChat({
                 <p className="text-xs leading-relaxed text-zinc-400">
                   I can read holdings and covered calls, and update shares, buy
                   price, cash, Call %, or add/remove tickers. Open the book icon
-                  for house rules.
+                  for the strategy rules.
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestions.map((s) => (

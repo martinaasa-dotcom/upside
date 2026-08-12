@@ -9,6 +9,7 @@ import {
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
+import { ADVICE_DISCLAIMER_LONG } from "@/lib/disclaimer";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
@@ -245,7 +246,8 @@ function PulseCard({
           ) : null}
           {check.action === "trim" && check.trimPct ? (
             <p className="font-medium text-amber-300">
-              Take profit: trim ~{check.trimPct}% of position.
+              One option worth weighing: trimming ~{check.trimPct}% of the
+              position.
             </p>
           ) : null}
           {check.addLevel ? (
@@ -591,6 +593,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               book. Big book loads from cache instantly, refreshes hourly in the
               background, and your check pins to the top with a ticker-only
               update when needed.
+            </p>
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-600">
+              {ADVICE_DISCLAIMER_LONG}
             </p>
           </div>
           <button
