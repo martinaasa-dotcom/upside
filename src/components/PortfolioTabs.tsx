@@ -47,26 +47,31 @@ const MODES = [
   {
     id: OVERVIEW_TAB_ID,
     label: "Overview",
+    shortLabel: "Home",
     Icon: LayoutDashboard,
   },
   {
     id: COMPOUND_TAB_ID,
     label: "Compound",
+    shortLabel: "Growth",
     Icon: Calculator,
   },
   {
     id: PULSE_TAB_ID,
     label: "Pulse",
+    shortLabel: "Pulse",
     Icon: Activity,
   },
   {
     id: SEASONALITY_TAB_ID,
     label: "Seasonality",
+    shortLabel: "Season",
     Icon: BarChart3,
   },
   {
     id: LAB_TAB_ID,
     label: "Lab",
+    shortLabel: "Lab",
     Icon: FlaskConical,
   },
 ] as const;
@@ -238,7 +243,7 @@ export function PortfolioTabs({
                 modeCols >= 5 && "grid-cols-5 sm:w-[35rem]"
               )}
             >
-              {modes.map(({ id, label, Icon }) => {
+              {modes.map(({ id, label, shortLabel, Icon }) => {
                 const active = activeId === id;
                 return (
                   <button
@@ -246,20 +251,25 @@ export function PortfolioTabs({
                     type="button"
                     role="tab"
                     aria-selected={active}
+                    title={label}
                     onClick={() => {
                       setMenu(null);
                       onChange(id);
                     }}
                     className={cn(
-                      "touch-target inline-flex min-w-0 items-center justify-center gap-1 px-1.5 text-[11px] font-medium transition sm:gap-1.5 sm:px-2 sm:text-[13px]",
+                      "touch-target flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition sm:flex-row sm:gap-1.5 sm:px-2",
                       active
                         ? "bg-brand text-[#121214] shadow-sm"
                         : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                    <span className="hidden truncate sm:inline">{label}</span>
-                    <span className="sr-only sm:hidden">{label}</span>
+                    <span className="max-w-full truncate text-[9px] leading-none sm:hidden">
+                      {shortLabel}
+                    </span>
+                    <span className="hidden truncate text-[13px] sm:inline">
+                      {label}
+                    </span>
                   </button>
                 );
               })}

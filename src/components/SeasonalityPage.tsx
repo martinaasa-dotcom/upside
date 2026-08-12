@@ -280,10 +280,11 @@ function DayOfMonthChart({
 
   return (
     <div className="space-y-3">
+      <div className="-mx-1 overflow-x-auto px-1">
       <div
-        className="relative grid w-full gap-px rounded-lg border border-zinc-800/80 bg-zinc-950/40 p-2"
+        className="relative grid gap-px rounded-lg border border-zinc-800/80 bg-zinc-950/40 p-2"
         style={{
-          gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`,
+          gridTemplateColumns: `repeat(${rows.length}, minmax(1.4rem, 1fr))`,
         }}
       >
         <div className="pointer-events-none absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-zinc-700/80" />
@@ -331,9 +332,11 @@ function DayOfMonthChart({
           );
         })}
       </div>
+      </div>
       <p className="text-[11px] text-zinc-600">
         Each bar = average session return on that calendar day in {monthLabel}{" "}
-        (cycle-filtered). Click a day for year-by-year history.
+        (cycle-filtered). Click a day for year-by-year history — swipe
+        sideways on phone if the month has more days than fit.
       </p>
     </div>
   );
