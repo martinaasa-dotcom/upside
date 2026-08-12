@@ -11,6 +11,7 @@ import {
 } from "@/lib/format";
 import { buildDailyFunFacts } from "@/lib/fun-facts";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
+import type { UpsideAlert } from "@/lib/alerts";
 import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
 import {
   last7DaysStrip,
@@ -73,6 +74,10 @@ type Props = {
   model: OverviewModel;
   onOpenSheet: (portfolioId: string) => void;
   coveredCallRows?: CoveredCallRow[];
+  /** Book-wide, not-yet-dismissed alerts (earnings/strike/margin/concentration)
+   * — same list and dismissal state as Lab's Alerts tab, so the briefing
+   * can point at it instead of re-deriving its own copy of these conditions. */
+  activeAlerts?: UpsideAlert[];
   cashflows?: CashflowEntry[];
   onOpenLab?: (tab?: LabDeepLink) => void;
   onOpenPulse?: () => void;
@@ -312,6 +317,7 @@ export function OverviewDashboard({
   model,
   onOpenSheet,
   coveredCallRows = [],
+  activeAlerts = [],
   cashflows = [],
   onOpenLab,
   onOpenPulse,
@@ -426,11 +432,11 @@ export function OverviewDashboard({
     () =>
       buildInvestorBriefing({
         model,
-        earnings: upcomingEarnings ?? [],
+        activeAlerts,
         coveredCallRows,
         cashflows,
       }),
-    [model, upcomingEarnings, coveredCallRows, cashflows]
+    [model, activeAlerts, coveredCallRows, cashflows]
   );
 
   const rivalry = useMemo(() => buildSheetRivalry(model), [model]);

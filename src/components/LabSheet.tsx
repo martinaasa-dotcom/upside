@@ -2,12 +2,7 @@
 
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { allocationBySector, allocationByTicker } from "@/lib/allocation";
-import {
-  buildDecisionAlerts,
-  buildEarningsAlerts,
-  buildStrikeAlerts,
-  type UpsideAlert,
-} from "@/lib/alerts";
+import type { UpsideAlert } from "@/lib/alerts";
 import {
   SHOCKS,
   getShockProfile,
@@ -78,7 +73,10 @@ type Props = {
   holdings: Holding[];
   quotes: Record<string, Quote>;
   coveredCallRows: CoveredCallRow[];
-  earnings: Array<{ ticker: string; date: string; days: number }>;
+  /** Book-wide alert list — computed once in Dashboard and shared with
+   * Overview's briefing so there's exactly one place that decides what
+   * counts as an earnings/strike/margin/concentration alert. */
+  alerts: UpsideAlert[];
   lab: LabBundle;
   onLabChange: (patch: Partial<LabBundle>) => void;
   guest?: boolean;
@@ -140,7 +138,7 @@ export function LabSheet({
   holdings,
   quotes,
   coveredCallRows,
-  earnings,
+  alerts: bookAlerts,
   lab,
   onLabChange,
   guest,
@@ -336,28 +334,9 @@ export function LabSheet({
   );
 
   const alerts: UpsideAlert[] = useMemo(() => {
-    const strike = buildStrikeAlerts(
-      coveredCallRows.map((r) => ({
-        ticker: r.holding.ticker,
-        spot: r.spot,
-        stockTarget: r.stockTarget,
-        nextStrike: r.nextStrike,
-      }))
-    );
-    const top = [...overview.tickers].sort(
-      (a, b) => b.currentValue - a.currentValue
-    )[0];
-    const decisions = buildDecisionAlerts({
-      cash: overview.totals.cash,
-      equityValue: overview.totals.equityValue,
-      topTicker: top
-        ? { ticker: top.ticker, value: top.currentValue }
-        : null,
-    });
-    const all = [...buildEarningsAlerts(earnings), ...strike, ...decisions];
-    if (!dismissedAlertIds?.size) return all;
-    return all.filter((a) => !dismissedAlertIds.has(a.id));
-  }, [coveredCallRows, earnings, dismissedAlertIds, overview]);
+    if (!dismissedAlertIds?.size) return bookAlerts;
+    return bookAlerts.filter((a) => !dismissedAlertIds.has(a.id));
+  }, [bookAlerts, dismissedAlertIds]);
 
   const corrSeries = useMemo(
     () =>

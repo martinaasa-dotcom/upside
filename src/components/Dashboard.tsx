@@ -32,8 +32,10 @@ import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
 import { useRouter } from "next/navigation";
 import {
+  buildDecisionAlerts,
   buildEarningsAlerts,
   buildStrikeAlerts,
+  type UpsideAlert,
 } from "@/lib/alerts";
 import {
   captureSheetSnapshot,
@@ -440,6 +442,48 @@ export function Dashboard() {
   const overview = useMemo(
     () => buildOverview(portfolios, holdings, quotes),
     [portfolios, holdings, quotes]
+  );
+
+  // Book-wide CC rows, computed once and shared by Lab (Alerts/calendar) and
+  // the alert builders below — was previously an inline flatMap recomputed
+  // on every render just for the Lab prop.
+  const bookCoveredCallRows = useMemo(
+    () =>
+      portfolios.flatMap((p) => {
+        const rows = holdings.filter((h) => h.portfolio_id === p.id);
+        return buildSnapshot(p, rows, quotes, options).coveredCallRows;
+      }),
+    [portfolios, holdings, quotes, options]
+  );
+
+  // Single source of truth for "what needs attention" — earnings, near
+  // strike/target, margin, concentration. Lab's Alerts tab and Overview's
+  // briefing both read from this one list (and its one shared dismissal
+  // state) instead of each re-deriving their own copy of these conditions.
+  const bookAlerts = useMemo<UpsideAlert[]>(() => {
+    const strike = buildStrikeAlerts(
+      bookCoveredCallRows.map((r) => ({
+        ticker: r.holding.ticker,
+        spot: r.spot,
+        stockTarget: r.stockTarget,
+        nextStrike: r.nextStrike,
+      }))
+    );
+    const earn = buildEarningsAlerts(earningsEvents);
+    const top = [...overview.tickers].sort(
+      (a, b) => b.currentValue - a.currentValue
+    )[0];
+    const decisions = buildDecisionAlerts({
+      cash: overview.totals.cash,
+      equityValue: overview.totals.equityValue,
+      topTicker: top ? { ticker: top.ticker, value: top.currentValue } : null,
+    });
+    return [...earn, ...strike, ...decisions];
+  }, [bookCoveredCallRows, earningsEvents, overview]);
+
+  const activeAlerts = useMemo(
+    () => bookAlerts.filter((a) => !alertToastsSent.has(a.id)),
+    [bookAlerts, alertToastsSent]
   );
 
   // Glanceable up/down dot per sheet tab — null while today's move is 0/unknown
@@ -1951,18 +1995,8 @@ export function Dashboard() {
   }, [overviewTickerKey]);
 
   useEffect(() => {
-    const strike = buildStrikeAlerts(
-      (snapshot?.coveredCallRows ?? []).map((r) => ({
-        ticker: r.holding.ticker,
-        spot: r.spot,
-        stockTarget: r.stockTarget,
-        nextStrike: r.nextStrike,
-      }))
-    );
-    const earn = buildEarningsAlerts(earningsEvents);
-    const next = [...earn, ...strike];
     const prev = alertToastsSentRef.current;
-    const fresh = next.filter((a) => !prev.has(a.id));
+    const fresh = bookAlerts.filter((a) => !prev.has(a.id));
     if (fresh.length === 0) return;
     // Compute the new Set as a plain value (not a functional updater) so the
     // toast() side effects below never run inside React's state-update path
@@ -1974,7 +2008,7 @@ export function Dashboard() {
     saveDismissedAlertIds(updated);
     setAlertToastsSent(updated);
     for (const a of fresh) toast(a.title, "info");
-  }, [snapshot?.coveredCallRows, earningsEvents, toast]);
+  }, [bookAlerts, toast]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -2367,16 +2401,10 @@ export function Dashboard() {
             portfolios={portfolios}
             holdings={holdings}
             quotes={quotes}
-            coveredCallRows={
-              portfolios.flatMap((p) => {
-                const rows = holdings.filter((h) => h.portfolio_id === p.id);
-                return buildSnapshot(p, rows, quotes, options).coveredCallRows;
-              })
-            }
-            earnings={earningsEvents}
+            coveredCallRows={bookCoveredCallRows}
+            alerts={bookAlerts}
             lab={labBundle}
             onLabChange={patchLab}
-           
             dismissedAlertIds={alertToastsSent}
             onDismissAlert={(id) =>
               setAlertToastsSent((prev) => dismissAlert(id, prev))
@@ -2411,13 +2439,10 @@ export function Dashboard() {
               model={overview}
               visitStreak={visitStreak}
               onOpenSheet={(id) => setActiveId(id)}
-              coveredCallRows={portfolios.flatMap((p) => {
-                const rows = holdings.filter((h) => h.portfolio_id === p.id);
-                return buildSnapshot(p, rows, quotes, options).coveredCallRows;
-              })}
+              coveredCallRows={bookCoveredCallRows}
+              activeAlerts={activeAlerts}
               cashflows={labBundle.cashflows}
               marketState={marketState}
-             
               showCommunities={source === "supabase"}
               onOpenLab={(tab) => {
                 if (tab) setLabIntent(tab);
