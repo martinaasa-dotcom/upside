@@ -282,6 +282,7 @@ export function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
   const [quotesDelayed, setQuotesDelayed] = useState(false);
+  const [quoteSources, setQuoteSources] = useState<Record<string, string>>({});
   const [eurUsd, setEurUsd] = useState<number | null>(null);
   const [eurUsdDetail, setEurUsdDetail] = useState<{
     open: number | null;
@@ -753,6 +754,7 @@ export function Dashboard() {
           setQuotes(nextQuotes);
           setQuotesUpdatedAt(Date.now());
           setQuotesDelayed(Boolean(quotesJson.delayed));
+          setQuoteSources((quotesJson.sources ?? {}) as Record<string, string>);
           applyFxPayload(quotesJson.fx);
         }
 
@@ -2074,13 +2076,11 @@ export function Dashboard() {
   ]);
 
   const syntheticTickers = useMemo(() => {
-    // Heuristic: short sparkline or zero change with delayed flag
-    if (!quotesDelayed) return [] as string[];
-    return Object.keys(quotes).filter((t) => {
-      const q = quotes[t];
-      return !q?.sparkline || q.sparkline.length < 5;
-    });
-  }, [quotes, quotesDelayed]);
+    // Precise now: the API reports which tier actually priced each ticker,
+    // rather than guessing from sparkline shape (which real fallback
+    // providers also populate, unlike true synthetic placeholders).
+    return Object.keys(quotes).filter((t) => quoteSources[t] === "synthetic");
+  }, [quotes, quoteSources]);
 
   if (loading) {
     return (

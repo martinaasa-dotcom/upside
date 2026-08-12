@@ -55,6 +55,16 @@ export type QuotesResult = {
   delayed: boolean;
 };
 
+/** Raw Yahoo attempt — reports which tickers failed instead of silently
+ * papering over them, so a caller can try another provider before falling
+ * back to synthetic placeholder data. */
+export type YahooQuotesAttempt = {
+  quotes: Record<string, Quote>;
+  fx: FxRates;
+  /** Tickers Yahoo could not price at all. */
+  failed: string[];
+};
+
 const EMPTY_FX: FxRates = {
   eurUsd: null,
   eurUsdOpen: null,
@@ -130,14 +140,17 @@ function scaleMoney(
   return value * (usdPrice / nativePrice);
 }
 
-export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
+/** Yahoo-only attempt — no synthetic fallback merged in. */
+export async function fetchQuotesYahoo(
+  tickers: string[]
+): Promise<YahooQuotesAttempt> {
   const unique = [
     ...new Set(
       tickers.map((t) => normalizeYahooTicker(t)).filter(Boolean)
     ),
   ];
   if (unique.length === 0) {
-    return { quotes: {}, fx: { ...EMPTY_FX }, delayed: false };
+    return { quotes: {}, fx: { ...EMPTY_FX }, failed: [] };
   }
 
   try {
@@ -247,25 +260,22 @@ export async function fetchQuotes(tickers: string[]): Promise<QuotesResult> {
       if (row) map[row[0]] = row[1];
     }
 
-    let delayed = false;
-    for (const ticker of unique) {
-      if (!map[ticker]) {
-        delayed = true;
-        Object.assign(map, fallbackQuotes([ticker]));
-      }
-    }
-    return { quotes: map, fx, delayed };
+    const failed = unique.filter((ticker) => !map[ticker]);
+    return { quotes: map, fx, failed };
   } catch (err) {
     console.error("yahoo-finance2 unavailable", err);
     return {
-      quotes: fallbackQuotes(unique),
+      quotes: {},
       fx: { ...EMPTY_FX },
-      delayed: true,
+      failed: unique,
     };
   }
 }
 
-function fallbackQuotes(tickers: string[]): Record<string, Quote> {
+/** Synthetic placeholder prices — absolute last resort when every real
+ * provider (Yahoo, and any configured fallback providers) failed. Not real
+ * market data; callers should surface `delayed`/degraded state to the UI. */
+export function fallbackQuotes(tickers: string[]): Record<string, Quote> {
   const seeds: Record<string, number> = {
     NBIS: 162.4,
     CRWV: 68.2,

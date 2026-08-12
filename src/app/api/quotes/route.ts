@@ -1,4 +1,4 @@
-import { fetchFxOnly, fetchQuotes } from "@/lib/market/yahoo";
+import { fetchFxOnly, fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -30,12 +30,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const { quotes, delayed, fx } = await fetchQuotes(tickers);
+  const { quotes, delayed, fx, sources } = await fetchQuotesWithFallback(tickers);
   return NextResponse.json(
     {
       quotes,
       fx,
       delayed,
+      sources,
       updatedAt: new Date().toISOString(),
     },
     {
