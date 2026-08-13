@@ -219,8 +219,11 @@ export function PortfolioTable({
     currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
   const usd = (value: number, digits = 2) => currency(value, digits, "USD");
 
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<1 | -1>(1);
+  // Default to biggest-position-first (% of book, descending) instead of
+  // raw creation order — the most useful at-a-glance sort, and matches the
+  // default in Community's read-only holdings view.
+  const [sortKey, setSortKey] = useState<SortKey | null>("pct");
+  const [sortDir, setSortDir] = useState<1 | -1>(-1);
 
   function toggleSort(key: SortKey) {
     if (sortKey !== key) {

@@ -1488,6 +1488,14 @@ function ReadOnlyHoldings({
   const todayDollar = totalValue - previousCloseValue;
   const todayPct = previousCloseValue > 0 ? todayDollar / previousCloseValue : null;
 
+  // Biggest position first by default — matches the default sort in My
+  // book, and is far more useful at a glance than raw creation order.
+  const sortedHoldings = [...holdings].sort(
+    (a, b) =>
+      (quotes[b.ticker]?.price ?? 0) * b.shares -
+      (quotes[a.ticker]?.price ?? 0) * a.shares
+  );
+
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -1520,7 +1528,7 @@ function ReadOnlyHoldings({
             </tr>
           </thead>
           <tbody>
-            {holdings.map((h) => {
+            {sortedHoldings.map((h) => {
               const price = quotes[h.ticker]?.price ?? 0;
               const value = price * h.shares;
               const cost = h.buy_price * h.shares;
