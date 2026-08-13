@@ -106,6 +106,27 @@ body {
   box-sizing: border-box;
 }
 
+/*
+ * Every browser's UA stylesheet gives <button> an arrow cursor; only
+ * <a href> gets the hand. This app is almost entirely buttons (tabs,
+ * toggles, menu triggers, table actions), so without this rule none of
+ * them read as clickable on hover. Set once here rather than sprinkling
+ * cursor-pointer across ~160 call sites.
+ *
+ * Disabled controls are excluded so they keep signalling "not right now"
+ * instead of inviting a click.
+ */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 ::selection {
   background: rgba(197, 160, 89, 0.28);
 }

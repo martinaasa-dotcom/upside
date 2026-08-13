@@ -17,6 +17,25 @@ type Props = {
 };
 
 /**
+ * Shared so the wordmark behaves identically whether it renders as a link
+ * (marketing/legal pages) or a button (in-app, navigates to Overview).
+ *
+ * The pointer cursor comes from the global button rule in globals.css
+ * (browsers give <button> an arrow by default, only <a href> gets a hand).
+ *
+ * The hover itself stays deliberately small, a slight lift plus a touch
+ * more brightness so the metallic mark catches light. Movement is behind
+ * motion-safe; the brightness still lands for reduced-motion users.
+ */
+const BRAND_INTERACTION_CLASS = cn(
+  "inline-flex shrink-0 items-center rounded-md border-0 bg-transparent p-0",
+  "outline-none transition duration-200 ease-out",
+  "hover:brightness-110 active:brightness-95",
+  "motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0",
+  "focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121214]"
+);
+
+/**
  * App-chrome brand lockup. Always the same centered mark + UPSIDE wordmark.
  */
 export function HeaderBrand({
@@ -37,10 +56,7 @@ export function HeaderBrand({
       <button
         type="button"
         onClick={onClick}
-        className={cn(
-          "inline-flex shrink-0 items-center border-0 bg-transparent p-0 outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-brand/50",
-          className
-        )}
+        className={cn(BRAND_INTERACTION_CLASS, className)}
         title={title}
         aria-label={title}
       >
@@ -52,7 +68,8 @@ export function HeaderBrand({
   return (
     <Link
       href={href}
-      className={cn("inline-flex shrink-0 items-center", className)}
+      className={cn(BRAND_INTERACTION_CLASS, className)}
+      title={title}
       aria-label={title}
     >
       {logo}
