@@ -13,20 +13,29 @@ import {
 } from "@/lib/community-cache";
 import {
   buildPortfolioPersonality,
+  ANIMAL_BESTIARY,
+  THEME_LABEL,
   type PortfolioPersonality,
 } from "@/lib/portfolio-personality";
+import {
+  forecastThemeForTicker,
+  type ForecastTheme,
+} from "@/lib/forecast-conviction";
 import { buildCommunityFunFacts } from "@/lib/community-fun-facts";
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 import { todayKeyInTz } from "@/lib/timezone";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import {
+  Award,
   ArrowLeft,
   Check,
   Copy,
+  HelpCircle,
   LayoutGrid,
   Lightbulb,
   Link2,
   Medal,
+  PieChart,
   Shield,
   Shuffle,
   Sparkles,
@@ -34,8 +43,25 @@ import {
   Trophy,
   UserMinus,
   Users,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+/** Stable color per forecast theme, reused across the family sector chart
+ * and its legend so the swatch always matches the bar segment. */
+const THEME_COLOR: Record<ForecastTheme, string> = {
+  crypto: "#f59e0b",
+  space: "#a78bfa",
+  ai_infra: "#38bdf8",
+  drones: "#22d3ee",
+  semi: "#818cf8",
+  ai_power: "#e879f9",
+  fintech: "#34d399",
+  software: "#60a5fa",
+  other: "#a1a1aa",
+  healthcare: "#fb7185",
+  index: "#2dd4bf",
+};
 
 type Profile = {
   id: string;
@@ -174,6 +200,10 @@ export function CommunityView({ communityId }: Props) {
         ? "members"
         : "overview"
   );
+  const [leaderboardRange, setLeaderboardRange] = useState<"today" | "lifetime">(
+    "today"
+  );
+  const [bestiaryOpen, setBestiaryOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -531,6 +561,137 @@ export function CommunityView({ communityId }: Props) {
     [memberStats]
   );
 
+  // Fun superlative badges — deliberately don't repeat what the leaderboard
+  // already shows (today's move, lifetime return); these highlight the
+  // axes only Power Animals surfaces, so nothing here is a duplicate view
+  // of another section's data.
+  type Achievement = {
+    id: string;
+    emoji: string;
+    title: string;
+    winner: string;
+    stat: string;
+    description: string;
+  };
+  const achievements = useMemo<Achievement[]>(() => {
+    const withPersonality = membersWithBooks.filter((m) => m.personality);
+    if (withPersonality.length === 0) return [];
+    const out: Achievement[] = [];
+
+    const mostDiversified = [...withPersonality].sort(
+      (a, b) => b.personality!.diversificationScore - a.personality!.diversificationScore
+    )[0]!;
+    out.push({
+      id: "diversifier",
+      emoji: "🌐",
+      title: "The Diversifier",
+      winner: mostDiversified.name,
+      stat: `${mostDiversified.personality!.diversificationScore}/100`,
+      description: "Most spread-out book in the family.",
+    });
+
+    const mostRisk = [...withPersonality].sort(
+      (a, b) => b.personality!.riskScore - a.personality!.riskScore
+    )[0]!;
+    out.push({
+      id: "risk-taker",
+      emoji: "🔥",
+      title: "The Risk Taker",
+      winner: mostRisk.name,
+      stat: `${mostRisk.personality!.riskScore}/100`,
+      description: "Runs the hottest theme mix, hands down.",
+    });
+
+    const steadiest = [...withPersonality].sort(
+      (a, b) => a.personality!.riskScore - b.personality!.riskScore
+    )[0]!;
+    out.push({
+      id: "steady-hand",
+      emoji: "🛡️",
+      title: "The Steady Hand",
+      winner: steadiest.name,
+      stat: `${steadiest.personality!.riskScore}/100`,
+      description: "Calmest, most defensive book in the group.",
+    });
+
+    const bestAlpha = [...withPersonality].sort(
+      (a, b) => b.personality!.modeledAlphaPct - a.personality!.modeledAlphaPct
+    )[0]!;
+    out.push({
+      id: "alpha-hunter",
+      emoji: "🎯",
+      title: "The Alpha Hunter",
+      winner: bestAlpha.name,
+      stat: `${bestAlpha.personality!.modeledAlphaPct >= 0 ? "+" : ""}${bestAlpha.personality!.modeledAlphaPct.toFixed(1)}%`,
+      description: "Biggest modeled edge over a same-risk index bet.",
+    });
+
+    const biggestBook = [...membersWithBooks].sort(
+      (a, b) => b.totalValue - a.totalValue
+    )[0]!;
+    const smallestBook = [...membersWithBooks].sort(
+      (a, b) => a.totalValue - b.totalValue
+    )[0]!;
+    if (biggestBook.id !== smallestBook.id) {
+      out.push({
+        id: "big-book",
+        emoji: "🏦",
+        title: "The Big Book",
+        winner: biggestBook.name,
+        stat: currency(biggestBook.totalValue, 0),
+        description: "Largest total portfolio in the family.",
+      });
+      out.push({
+        id: "small-mighty",
+        emoji: "🐜",
+        title: "Small but Mighty",
+        winner: smallestBook.name,
+        stat: currency(smallestBook.totalValue, 0),
+        description: "Smallest book — every family tree has a sapling.",
+      });
+    }
+
+    const closestToGoal = [...membersWithBooks]
+      .filter((m) => m.milestone.next != null)
+      .sort((a, b) => a.milestone.remaining - b.milestone.remaining)[0];
+    if (closestToGoal) {
+      out.push({
+        id: "closest-milestone",
+        emoji: "🏁",
+        title: "On the Doorstep",
+        winner: closestToGoal.name,
+        stat: `${currency(closestToGoal.milestone.remaining, 0)} away`,
+        description: `Closest to hitting ${currency(closestToGoal.milestone.next ?? 0, 0)}.`,
+      });
+    }
+
+    return out;
+  }, [membersWithBooks]);
+
+  // Combined family sector fingerprint — every member's holdings pooled
+  // into one dollar-weighted theme breakdown, a level up from "What the
+  // community is holding" (which is per-ticker) to "what does the family
+  // collectively believe in."
+  const communityThemeBreakdown = useMemo(() => {
+    const byTheme = new Map<string, number>();
+    let total = 0;
+    for (const t of overview.tickers) {
+      if (t.currentValue <= 0) continue;
+      const theme = forecastThemeForTicker(t.ticker);
+      byTheme.set(theme, (byTheme.get(theme) ?? 0) + t.currentValue);
+      total += t.currentValue;
+    }
+    if (total <= 0) return [];
+    return [...byTheme.entries()]
+      .map(([theme, value]) => ({
+        theme: theme as ForecastTheme,
+        label: THEME_LABEL[theme as ForecastTheme] ?? theme,
+        value,
+        pct: value / total,
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [overview.tickers]);
+
   const [funFactsShuffle, setFunFactsShuffle] = useState(0);
   const communityFunFacts = useMemo(
     () =>
@@ -705,19 +866,29 @@ export function CommunityView({ communityId }: Props) {
                 <>
                   {membersWithBooks.length > 0 && (
                     <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
-                      <div className="mb-5 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
-                          <Sparkles className="h-4 w-4" />
+                      <div className="mb-5 flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
+                            <Sparkles className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">
+                              Power animals
+                            </h3>
+                            <p className="mt-0.5 text-sm text-zinc-400">
+                              Diversification, risk, and a modeled edge for every
+                              book — not advice, just a fun comparison
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">
-                            Power animals
-                          </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
-                            Diversification, risk, and a modeled edge for every
-                            book — not advice, just a fun comparison
-                          </p>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setBestiaryOpen(true)}
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-brand/40 hover:text-white"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Field guide</span>
+                        </button>
                       </div>
                       <div className="grid gap-4 lg:grid-cols-2">
                         {membersWithBooks.map((m) => (
@@ -759,6 +930,9 @@ export function CommunityView({ communityId }: Props) {
 
                             {m.personality && (
                               <div className="mt-4 space-y-4">
+                                <p className="text-xs leading-relaxed text-zinc-400">
+                                  {m.personality.archetype.vibe}
+                                </p>
                                 <div className="grid gap-3 sm:grid-cols-2">
                                   <ScoreBar
                                     label="Diversification"
@@ -823,6 +997,16 @@ export function CommunityView({ communityId }: Props) {
                                     </div>
                                   )}
                                 </div>
+                                <div className="space-y-1.5 rounded-lg border border-zinc-800/60 bg-zinc-950/40 p-2.5 text-[11px] leading-relaxed">
+                                  <p className="flex gap-1.5 text-emerald-300/90">
+                                    <Shield className="mt-0.5 h-3 w-3 shrink-0" />
+                                    <span>{m.personality.archetype.strength}</span>
+                                  </p>
+                                  <p className="flex gap-1.5 text-amber-300/90">
+                                    <span className="shrink-0">⚠️</span>
+                                    <span>{m.personality.archetype.watchFor}</span>
+                                  </p>
+                                </div>
                               </div>
                             )}
                           </button>
@@ -831,65 +1015,145 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {membersWithBooks.length > 0 && (
+                  {achievements.length > 0 && (
                     <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
                       <div className="mb-4 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
-                          <Trophy className="h-4 w-4" />
+                        <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
+                          <Award className="h-4 w-4" />
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-white">
-                            Today&apos;s leaderboard
+                            Community superlatives
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Ranked by today&apos;s move
+                            Fun awards pulled from the numbers above
                           </p>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {achievements.map((a) => (
+                          <div
+                            key={a.id}
+                            className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl" aria-hidden>
+                                {a.emoji}
+                              </span>
+                              <p className="text-sm font-semibold text-white">
+                                {a.title}
+                              </p>
+                            </div>
+                            <p className="mt-1.5 truncate text-sm font-medium text-brand-bright">
+                              {a.winner}{" "}
+                              <span className="font-normal text-zinc-500">
+                                · {a.stat}
+                              </span>
+                            </p>
+                            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+                              {a.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {membersWithBooks.length > 0 && (
+                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
+                            <Trophy className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">
+                              Leaderboard
+                            </h3>
+                            <p className="mt-0.5 text-sm text-zinc-400">
+                              {leaderboardRange === "today"
+                                ? "Ranked by today's move"
+                                : "Ranked by all-time return"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+                          {(
+                            [
+                              ["today", "Today"],
+                              ["lifetime", "All-time"],
+                            ] as const
+                          ).map(([id, label]) => (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => setLeaderboardRange(id)}
+                              className={cn(
+                                "rounded-md px-2.5 py-1 text-xs font-semibold transition",
+                                leaderboardRange === id
+                                  ? "bg-brand/20 text-brand-bright"
+                                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                              )}
+                            >
+                              {label}
+                            </button>
+                          ))}
                         </div>
                       </div>
                       <ul className="space-y-2">
                         {[...membersWithBooks]
-                          .sort((a, b) => (b.todayPct ?? -1) - (a.todayPct ?? -1))
-                          .map((m, i) => (
-                            <li
-                              key={m.id}
-                              className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-2.5"
-                            >
-                              <span className="w-6 shrink-0 text-center">
-                                {i === 0 ? (
-                                  <Medal className="mx-auto h-4 w-4 text-amber-400" />
-                                ) : i === 1 ? (
-                                  <Medal className="mx-auto h-4 w-4 text-zinc-400" />
-                                ) : i === 2 ? (
-                                  <Medal className="mx-auto h-4 w-4 text-amber-700" />
-                                ) : (
-                                  <span className="text-xs text-zinc-600">
-                                    {i + 1}
-                                  </span>
-                                )}
-                              </span>
-                              <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
-                                {m.name}
-                                {m.isYou && (
-                                  <span className="ml-1.5 text-xs text-zinc-500">
-                                    (you)
-                                  </span>
-                                )}
-                              </span>
-                              <span
-                                className={cn(
-                                  "shrink-0 text-sm font-semibold tabular-nums",
-                                  (m.todayDollar ?? 0) >= 0
-                                    ? "text-emerald-400"
-                                    : "text-red-400"
-                                )}
+                          .sort((a, b) =>
+                            leaderboardRange === "today"
+                              ? (b.todayPct ?? -1) - (a.todayPct ?? -1)
+                              : b.roiPct - a.roiPct
+                          )
+                          .map((m, i) => {
+                            const pct =
+                              leaderboardRange === "today" ? m.todayPct : m.roiPct;
+                            return (
+                              <li
+                                key={m.id}
+                                className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-2.5"
                               >
-                                {m.todayPct != null ? percent(m.todayPct) : "—"}
-                              </span>
-                              <span className="hidden shrink-0 text-xs tabular-nums text-zinc-500 sm:inline">
-                                {signedCurrency(m.todayDollar)}
-                              </span>
-                            </li>
-                          ))}
+                                <span className="w-6 shrink-0 text-center">
+                                  {i === 0 ? (
+                                    <Medal className="mx-auto h-4 w-4 text-amber-400" />
+                                  ) : i === 1 ? (
+                                    <Medal className="mx-auto h-4 w-4 text-zinc-400" />
+                                  ) : i === 2 ? (
+                                    <Medal className="mx-auto h-4 w-4 text-amber-700" />
+                                  ) : (
+                                    <span className="text-xs text-zinc-600">
+                                      {i + 1}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
+                                  {m.name}
+                                  {m.isYou && (
+                                    <span className="ml-1.5 text-xs text-zinc-500">
+                                      (you)
+                                    </span>
+                                  )}
+                                </span>
+                                <span
+                                  className={cn(
+                                    "shrink-0 text-sm font-semibold tabular-nums",
+                                    (pct ?? 0) >= 0
+                                      ? "text-emerald-400"
+                                      : "text-red-400"
+                                  )}
+                                >
+                                  {pct != null ? percent(pct) : "—"}
+                                </span>
+                                {leaderboardRange === "today" && (
+                                  <span className="hidden shrink-0 text-xs tabular-nums text-zinc-500 sm:inline">
+                                    {signedCurrency(m.todayDollar)}
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
                       </ul>
                     </section>
                   )}
@@ -931,6 +1195,56 @@ export function CommunityView({ communityId }: Props) {
                                 ×{t.portfolios.length} books
                               </span>
                             )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {communityThemeBreakdown.length > 0 && (
+                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                      <div className="mb-5 flex items-center gap-2.5">
+                        <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
+                          <PieChart className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            Family sector fingerprint
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            Everyone&apos;s holdings pooled by theme — what the
+                            group collectively believes in
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
+                        {communityThemeBreakdown.map((t) => (
+                          <div
+                            key={t.theme}
+                            style={{
+                              width: `${Math.max(1.5, t.pct * 100)}%`,
+                              backgroundColor: THEME_COLOR[t.theme],
+                            }}
+                            title={`${t.label}: ${Math.round(t.pct * 100)}%`}
+                          />
+                        ))}
+                      </div>
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {communityThemeBreakdown.map((t) => (
+                          <div
+                            key={t.theme}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                          >
+                            <span className="flex items-center gap-2 text-xs text-zinc-300">
+                              <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ backgroundColor: THEME_COLOR[t.theme] }}
+                              />
+                              {t.label}
+                            </span>
+                            <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-400">
+                              {Math.round(t.pct * 100)}%
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -1369,6 +1683,71 @@ export function CommunityView({ communityId }: Props) {
           return removeMember(removeTarget.userId);
         }}
       />
+
+      {bestiaryOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-label="Close"
+            onClick={() => setBestiaryOpen(false)}
+          />
+          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:max-w-lg sm:rounded-2xl">
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-white">
+                  The power animal field guide
+                </h3>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Every book gets scored on diversification and risk, then
+                  matched to whichever archetype fits best — a fun lens, not
+                  an investing verdict.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBestiaryOpen(false)}
+                className="shrink-0 rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              {ANIMAL_BESTIARY.map((a) => (
+                <div
+                  key={a.id}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl" aria-hidden>
+                      {a.emoji}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white">
+                        {a.animal}
+                      </p>
+                      <p className="text-[11px] text-zinc-500">{a.criteria}</p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    {a.vibe}
+                  </p>
+                  <div className="mt-2 space-y-1 text-[11px] leading-relaxed">
+                    <p className="flex gap-1.5 text-emerald-300/90">
+                      <Shield className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span>{a.strength}</span>
+                    </p>
+                    <p className="flex gap-1.5 text-amber-300/90">
+                      <span className="shrink-0">⚠️</span>
+                      <span>{a.watchFor}</span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </SignInGate>
   );
 }

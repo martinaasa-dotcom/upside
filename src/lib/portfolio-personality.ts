@@ -75,6 +75,9 @@ export type PortfolioPersonality = {
   animal: string;
   animalEmoji: string;
   tagline: string;
+  /** Full bestiary entry backing `animal` — the whole card, not just the
+   * one-liner, so a UI can show strength/watchFor without a second lookup. */
+  archetype: AnimalArchetype;
   /** Blended forward-looking annual return of the actual picks (equity
    * only), from the same engine Forecast uses — a modeled expectation,
    * not a promise. */
@@ -93,6 +96,122 @@ export type PortfolioPersonality = {
    */
   modeledAlphaPct: number;
 };
+
+/**
+ * The full field guide — every possible archetype a book can land on, in
+ * the same order pickAnimal() checks them (most extreme/specific first,
+ * most general last). Exported so a "what do the animals mean?" UI can
+ * show the whole taxonomy, not just whichever one you got.
+ */
+export type AnimalArchetype = {
+  /** Stable key, independent of the display name. */
+  id: string;
+  animal: string;
+  emoji: string;
+  /** Plain-English trigger — what combination of scores lands here. */
+  criteria: string;
+  /** The one-liner used everywhere the card needs to stay compact. */
+  tagline: string;
+  /** A fuller two-line personality read, for a "learn more" surface. */
+  vibe: string;
+  strength: string;
+  watchFor: string;
+};
+
+export const ANIMAL_BESTIARY: AnimalArchetype[] = [
+  {
+    id: "hatchling",
+    animal: "Hatchling",
+    emoji: "🥚",
+    criteria: "All cash, no positions yet",
+    tagline: "All cash, no positions yet — every book starts here.",
+    vibe: "Pure potential and zero commitments. Every other animal on this list started right here, deciding what to hatch into.",
+    strength: "Nothing to lose, no bad habits to unlearn — a completely clean slate.",
+    watchFor: "Sitting in cash forever isn't a strategy either — hatch when you're ready.",
+  },
+  {
+    id: "dragon",
+    animal: "Dragon",
+    emoji: "🐉",
+    criteria: "Crypto-heavy and high risk",
+    tagline: "Hoards volatile treasure, breathes fire on rallies (and dips).",
+    vibe: "Lives and dies by the crypto cycle, and wouldn't have it any other way. When the hoard is up, nothing moves faster.",
+    strength: "First in line for the biggest, fastest moves in the market.",
+    watchFor: "Dragons sleep on hoards that can lose half their value by morning.",
+  },
+  {
+    id: "shark",
+    animal: "Shark",
+    emoji: "🦈",
+    criteria: "High risk, few names",
+    tagline: "A few high-conviction bets, hunted with total focus.",
+    vibe: "No wasted motion and no hedge — every position earned its spot through conviction, not comfort.",
+    strength: "Maximum upside when the thesis is right, with nothing diluting the payoff.",
+    watchFor: "One bad call and there's no diversification net underneath to catch it.",
+  },
+  {
+    id: "wolf",
+    animal: "Wolf",
+    emoji: "🐺",
+    criteria: "High risk, decent spread",
+    tagline: "Runs with a pack of aggressive names across several fronts.",
+    vibe: "Bold, but never betting the whole den on one hunt — the rare combination of aggressive AND spread out.",
+    strength: "Chases growth on multiple fronts at once instead of picking just one.",
+    watchFor: "A pack of hot names can still all go cold together if they're more correlated than they look.",
+  },
+  {
+    id: "elephant",
+    animal: "Elephant",
+    emoji: "🐘",
+    criteria: "Very diversified",
+    tagline: "Broad, steady, and hard to spook — never one bad day away from trouble.",
+    vibe: "Built to survive any single name's worst day. Slow to startle, and remembers every cycle it's lived through.",
+    strength: "Resilient — no single ticker can sink this book on its own.",
+    watchFor: "Broad can drift into bland — worth checking the spread is on purpose, not just default.",
+  },
+  {
+    id: "turtle",
+    animal: "Turtle",
+    emoji: "🐢",
+    criteria: "Low risk, concentrated",
+    tagline: "A small, well-armored shell — slow and steady on purpose.",
+    vibe: "Concentrated by choice, not by accident, in names calm enough that the shell rarely needs to close.",
+    strength: "Low-drama compounding — calm under pressure, on purpose.",
+    watchFor: "Concentrated-and-calm only works as long as those few picks stay calm too.",
+  },
+  {
+    id: "owl",
+    animal: "Owl",
+    emoji: "🦉",
+    criteria: "Low risk, spread wide",
+    tagline: "Watchful and risk-aware, spread wide across the board.",
+    vibe: "Sees what's coming before it happens, and spreads the bets wide enough that no single surprise really lands.",
+    strength: "Rarely surprised, rarely rattled — a genuinely calm book.",
+    watchFor: "All that watching can turn into missed swoops — calm isn't the same as complacent.",
+  },
+  {
+    id: "falcon",
+    animal: "Falcon",
+    emoji: "🦅",
+    criteria: "Very few positions",
+    tagline: "Small, sharp-eyed, and diving hard on very few targets.",
+    vibe: "Precision over volume — every position was picked, not just added, and there's nowhere for a bad call to hide.",
+    strength: "Laser focus on the highest-conviction ideas, no clutter.",
+    watchFor: "A falcon with a bad target has nowhere else to turn.",
+  },
+  {
+    id: "fox",
+    animal: "Fox",
+    emoji: "🦊",
+    criteria: "The flexible middle ground",
+    tagline: "Clever and adaptable — some offense, some defense, no dogma.",
+    vibe: "Doesn't fit neatly into any single box, and that's rather the point — equal parts opportunistic and careful.",
+    strength: "Adaptable — ready to lean either way as the market shifts.",
+    watchFor: "Jack-of-all-trades can mean master of none — worth knowing what this book is actually FOR.",
+  },
+];
+
+const ARCHETYPE_BY_ID = new Map(ANIMAL_BESTIARY.map((a) => [a.id, a]));
 
 export const THEME_LABEL: Record<ForecastTheme, string> = {
   ai_infra: "AI infra",
@@ -161,75 +280,30 @@ function diversificationScoreFromHoldings(
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+function archetype(id: string): AnimalArchetype {
+  const found = ARCHETYPE_BY_ID.get(id);
+  if (!found) throw new Error(`Unknown animal archetype id: ${id}`);
+  return found;
+}
+
+/** Same decision order as ANIMAL_BESTIARY — keep the two in sync. */
 function pickAnimal(opts: {
   diversification: number;
   risk: number;
   theme: ForecastTheme;
   positionCount: number;
-}): { animal: string; emoji: string; tagline: string } {
+}): AnimalArchetype {
   const { diversification, risk, theme, positionCount } = opts;
 
-  if (positionCount === 0) {
-    return {
-      animal: "Hatchling",
-      emoji: "🥚",
-      tagline: "All cash, no positions yet — every book starts here.",
-    };
-  }
-  if (theme === "crypto" && risk >= 80) {
-    return {
-      animal: "Dragon",
-      emoji: "🐉",
-      tagline: "Hoards volatile treasure, breathes fire on rallies (and dips).",
-    };
-  }
-  if (risk >= 75 && diversification < 30) {
-    return {
-      animal: "Shark",
-      emoji: "🦈",
-      tagline: "A few high-conviction bets, hunted with total focus.",
-    };
-  }
-  if (risk >= 75 && diversification >= 30) {
-    return {
-      animal: "Wolf",
-      emoji: "🐺",
-      tagline: "Runs with a pack of aggressive names across several fronts.",
-    };
-  }
-  if (diversification >= 55) {
-    return {
-      animal: "Elephant",
-      emoji: "🐘",
-      tagline: "Broad, steady, and hard to spook — never one bad day away from trouble.",
-    };
-  }
-  if (risk < 35 && diversification < 30) {
-    return {
-      animal: "Turtle",
-      emoji: "🐢",
-      tagline: "A small, well-armored shell — slow and steady on purpose.",
-    };
-  }
-  if (risk < 40) {
-    return {
-      animal: "Owl",
-      emoji: "🦉",
-      tagline: "Watchful and risk-aware, spread wide across the board.",
-    };
-  }
-  if (positionCount <= 3) {
-    return {
-      animal: "Falcon",
-      emoji: "🦅",
-      tagline: "Small, sharp-eyed, and diving hard on very few targets.",
-    };
-  }
-  return {
-    animal: "Fox",
-    emoji: "🦊",
-    tagline: "Clever and adaptable — some offense, some defense, no dogma.",
-  };
+  if (positionCount === 0) return archetype("hatchling");
+  if (theme === "crypto" && risk >= 80) return archetype("dragon");
+  if (risk >= 75 && diversification < 30) return archetype("shark");
+  if (risk >= 75 && diversification >= 30) return archetype("wolf");
+  if (diversification >= 55) return archetype("elephant");
+  if (risk < 35 && diversification < 30) return archetype("turtle");
+  if (risk < 40) return archetype("owl");
+  if (positionCount <= 3) return archetype("falcon");
+  return archetype("fox");
 }
 
 export function buildPortfolioPersonality(
@@ -277,7 +351,7 @@ export function buildPortfolioPersonality(
       ? Math.round((expectedAnnualReturnPct - capmExpectedPct) * 10) / 10
       : 0;
 
-  const { animal, emoji, tagline } = pickAnimal({
+  const picked = pickAnimal({
     diversification: diversificationScore,
     risk: riskScore,
     theme: dominantTheme,
@@ -290,9 +364,10 @@ export function buildPortfolioPersonality(
     riskScore,
     riskBand: riskBandFor(riskScore),
     dominantTheme,
-    animal,
-    animalEmoji: emoji,
-    tagline: `${tagline} Mostly ${THEME_LABEL[dominantTheme]}.`,
+    animal: picked.animal,
+    animalEmoji: picked.emoji,
+    tagline: `${picked.tagline} Mostly ${THEME_LABEL[dominantTheme]}.`,
+    archetype: picked,
     expectedAnnualReturnPct,
     maxDrawdownPct,
     modeledAlphaPct,
