@@ -887,7 +887,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={toggleWide}
-              className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
               title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >

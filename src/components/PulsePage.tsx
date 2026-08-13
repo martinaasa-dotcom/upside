@@ -198,7 +198,10 @@ function PulseCard({
                 disabled={loading}
                 title="Re-check just this ticker now"
                 aria-label={`Re-check ${c.ticker}`}
-                className="rounded-full border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+                // Pill sits in a dense wrap row, so grow the hit area with
+                // a pseudo-element instead of a 44px box that would break
+                // the badge line's rhythm.
+                className="relative rounded-full border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition after:absolute after:-inset-2 after:content-[''] hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
               >
                 <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
               </button>

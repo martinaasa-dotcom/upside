@@ -166,7 +166,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
             <button
               type="button"
               onClick={() => result && onDone(result, resultKnowsOptions)}
-              className="w-full rounded-xl bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8]"
+              className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
             >
               Got it
             </button>

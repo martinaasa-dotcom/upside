@@ -489,7 +489,7 @@ export function AccountPage() {
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="rounded-lg bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8] disabled:opacity-60"
+                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-60"
               >
                 {savingProfile ? "Saving …" : "Save profile"}
               </button>
@@ -632,7 +632,7 @@ export function AccountPage() {
                     type="button"
                     disabled={busyInvite}
                     onClick={() => void createInvite({ emailOnly: true })}
-                    className="rounded-lg bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8] disabled:opacity-60"
+                    className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-60"
                   >
                     {busyInvite ? "Working …" : "Create invite code"}
                   </button>

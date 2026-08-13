@@ -357,7 +357,7 @@ export function PortfolioTable({
               type="button"
               onClick={onImportCsv}
               title="Import / update holdings from a CSV file"
-              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
               aria-label="Import CSV"
             >
               <FileUp className="h-3.5 w-3.5" />

@@ -658,7 +658,7 @@ export function LabSheet({
                     {!guest && (
                       <button
                         type="button"
-                        className="text-zinc-500 hover:text-rose-300"
+                        className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800/60 hover:text-rose-300"
                         onClick={() =>
                           setWatchlist((prev) => removeWatchlistTicker(prev, t))
                         }

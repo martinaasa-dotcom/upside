@@ -67,7 +67,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <p className="min-w-0 flex-1 leading-snug">{t.message}</p>
             <button
               type="button"
-              className="shrink-0 rounded p-0.5 opacity-70 hover:opacity-100"
+              // Hit area grown via a pseudo-element rather than padding: a
+              // real 44px box would stretch this compact toast taller on
+              // mobile, and the row is items-start so it'd sit oddly too.
+              className="relative shrink-0 rounded p-1 opacity-70 after:absolute after:-inset-2.5 after:content-[''] hover:opacity-100"
               onClick={() =>
                 setItems((prev) => prev.filter((x) => x.id !== t.id))
               }
