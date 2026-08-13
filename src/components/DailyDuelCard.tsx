@@ -86,7 +86,7 @@ export function DailyDuelCard({ tickers, compact = false }: Props) {
           <div>
             <h3 className="text-base font-semibold text-white">Daily Duel</h3>
             <p className="mt-0.5 text-xs text-zinc-400">
-              Who ends the day higher. Settles after the US close.
+              Tap who you think finishes the US session higher. Locks until 4pm ET.
             </p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export function DailyDuelCard({ tickers, compact = false }: Props) {
 
       <p className="mt-4 text-center text-sm leading-relaxed text-zinc-400">
         {record.pick == null
-          ? "Predict the closer, tap to lock it. No take-backs, no live % until 4pm ET."
+          ? "One tap locks it. No take-backs, and no live percent until the US close."
           : waitingOnClose
             ? canSettle
               ? "Locked in, waiting on session quotes to settle …"

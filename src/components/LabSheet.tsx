@@ -289,7 +289,8 @@ export function LabSheet({
           <h2 className="text-sm font-semibold text-white">Lab</h2>
         </div>
         <p className="mt-1 text-xs text-zinc-400">
-          Everything analytical about your book in one place.
+          Allocation, risk, trends, and seasonality. Tools for looking, not
+          trading.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex min-h-8 items-center gap-2">
@@ -316,7 +317,7 @@ export function LabSheet({
           <span className="min-w-0 text-xs text-zinc-400">
             {scopeApplies
               ? `What-ifs run on ${scopeLabel}`
-              : "Scope unused on this tool"}
+              : "This tool always uses the whole book"}
           </span>
         </div>
         <div className="relative mt-3">

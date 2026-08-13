@@ -235,12 +235,12 @@ export function PortfolioTabs({
         {/* App modes — one segmented control, equal cells (Lab isn't tiny) */}
         <div className="flex shrink-0 items-end gap-2 md:min-w-0">
           <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="mb-1 hidden text-xs font-medium uppercase tracking-[0.14em] text-zinc-400 sm:block">
-              Workspace
+            <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-zinc-400 sm:block">
+              In your book
             </p>
             <div
               role="tablist"
-              aria-label="Workspace"
+              aria-label="In your book"
               className={cn(
                 "grid h-11 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
                 modeCols === 2 && "grid-cols-2 sm:w-[14rem]",

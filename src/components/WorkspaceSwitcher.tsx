@@ -8,7 +8,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Primary workspace switcher: My book · Upside Portfolio · Communities · Account · (Admin).
+ * Rooms you leave the book for. Labels stay visible so a first visit
+ * is not a row of mystery icons.
  */
 export function WorkspaceSwitcher({ className }: { className?: string }) {
   const pathname = usePathname();
@@ -24,35 +25,37 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
     active: boolean,
     href: string,
     label: string,
+    title: string,
     Icon: typeof BookOpen
   ) => (
     <Link
       href={href}
+      title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition sm:px-2.5",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition sm:px-2.5",
         active
           ? "bg-brand/20 text-brand-bright shadow-sm shadow-black/20"
           : "text-zinc-400 hover:text-zinc-300"
       )}
     >
       <Icon className="h-3.5 w-3.5" />
-      <span className="hidden xs:inline">{label}</span>
+      <span>{label}</span>
     </Link>
   );
 
   return (
     <nav
-      aria-label="Workspace"
+      aria-label="Upside rooms"
       className={cn(
-        "inline-flex rounded-lg border border-brand-deep/40 bg-zinc-950/60 p-0.5",
+        "inline-flex max-w-[min(100%,22rem)] overflow-x-auto rounded-lg border border-brand-deep/40 bg-zinc-950/60 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
     >
-      {item(onBook, "/", "My book", BookOpen)}
-      {item(onFund, "/upside-portfolio", "Fund", Bot)}
-      {item(onCommunities, "/communities", "Communities", Users)}
-      {item(onAccount, "/account", "Account", UserRound)}
-      {showAdmin ? item(onAdmin, "/admin", "Admin", Shield) : null}
+      {item(onBook, "/", "Book", "Your sheets and daily briefing", BookOpen)}
+      {item(onFund, "/upside-portfolio", "Fund", "Upside Fund, the paper book Margus runs", Bot)}
+      {item(onCommunities, "/communities", "Communities", "Compare books with people you know", Users)}
+      {item(onAccount, "/account", "Account", "Your account and invites", UserRound)}
+      {showAdmin ? item(onAdmin, "/admin", "Admin", "Admin", Shield) : null}
     </nav>
   );
 }

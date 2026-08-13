@@ -148,8 +148,10 @@ export function CommunitiesList() {
             <h1 className="text-2xl font-semibold tracking-tight text-white">
               Communities
             </h1>
-            <p className="mt-1 text-sm text-zinc-400">
-              Live books from every member, read-only. Edits stay in My book.
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+              A private league for books you actually want to compare. Numbers
+              are live. Nobody can edit yours. Start one, or ask to join a
+              public circle.
             </p>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
@@ -167,11 +169,12 @@ export function CommunitiesList() {
               {communities.length === 0 && (
                 <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                   <Users className="h-6 w-6 text-zinc-400" />
-                  <p className="text-sm text-zinc-400">
-                    No communities yet.
+                  <p className="text-sm text-zinc-200">
+                    You are not in a circle yet.
                   </p>
-                  <p className="text-xs text-zinc-400">
-                    Create one below, or ask a member for an invite link.
+                  <p className="text-sm leading-relaxed text-zinc-400">
+                    Create one below for friends or family, or request to join
+                    a public community further down.
                   </p>
                 </li>
               )}

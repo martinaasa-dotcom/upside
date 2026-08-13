@@ -3,7 +3,14 @@
  * Run: npx tsx scripts/test-invariants.ts
  */
 import assert from "node:assert/strict";
-import { buildInvestorBriefing } from "../src/lib/investor-briefing";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import {
+  BRIEFING_KIND_LABEL,
+  BRIEFING_PULSE_CTA,
+  buildInvestorBriefing,
+} from "../src/lib/investor-briefing";
+import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { reconcilePulseCheck, type PulseCheck } from "../src/lib/thesis-pulse";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
 import { TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
@@ -75,7 +82,22 @@ run("Pulse CTA is offered when Pulse is reachable, even if Lab is hidden", () =>
   const day = items.find((i) => i.id.startsWith("day-"));
   assert.ok(day, "day card exists");
   assert.equal(day?.link?.type, "pulse");
-  assert.ok(day?.cta?.toLowerCase().includes("pulse"));
+  assert.equal(day?.cta, BRIEFING_PULSE_CTA);
+});
+
+run("briefing kinds use plain-English labels", () => {
+  assert.equal(BRIEFING_KIND_LABEL.action, "Needs a look");
+  assert.equal(BRIEFING_KIND_LABEL.watch, "Worth knowing");
+  assert.equal(BRIEFING_KIND_LABEL.play, "Something to sit with");
+});
+
+run("fund today move is live NAV minus last snapshot", () => {
+  const move = liveFundTodayMove({ liveTotal: 110, lastReportValue: 100 });
+  assert.equal(move.todayDollar, 10);
+  assert.equal(move.todayPct, 0.1);
+  const missing = liveFundTodayMove({ liveTotal: 110, lastReportValue: null });
+  assert.equal(missing.todayDollar, 0);
+  assert.equal(missing.todayPct, null);
 });
 
 run("Pulse CTA is omitted when Pulse is not reachable", () => {
@@ -139,6 +161,92 @@ run("broken + add becomes watch", () => {
 run("novice hides Lab, not Pulse", () => {
   assert.ok(TIER_HIDDEN_META_TABS.novice.includes(LAB_TAB_ID));
   assert.ok(!TIER_HIDDEN_META_TABS.novice.includes(PULSE_TAB_ID));
+});
+
+run("home keeps Fund and Communities in view", () => {
+  const overview = readFileSync("src/components/OverviewDashboard.tsx", "utf8");
+  const world = readFileSync("src/components/HomeWorld.tsx", "utf8");
+  assert.ok(overview.includes("HomeWorld"));
+  assert.ok(!overview.includes("CommunitiesSpotlight"));
+  assert.ok(world.includes("Around Upside"));
+  assert.ok(world.includes("Upside Fund"));
+  assert.ok(world.includes("Communities"));
+});
+
+/* ---------- design system ---------- */
+
+function componentSources(): { file: string; src: string }[] {
+  const dirs = ["src/components", "src/components/ui", "src/app"];
+  const out: { file: string; src: string }[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.name.endsWith(".tsx")) {
+        out.push({ file: path, src: readFileSync(path, "utf8") });
+      }
+    }
+  };
+  for (const d of dirs) walk(d);
+  return out;
+}
+
+/** Source with comments stripped, so rules about shipped code and rules
+ * about shipped copy never trip over each other's explanations. */
+function code(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+}
+
+const sources = componentSources().map(({ file, src }) => ({
+  file,
+  src: code(src),
+}));
+
+function offendersOf(pattern: RegExp): string[] {
+  return [
+    ...new Set(
+      sources.filter(({ src }) => pattern.test(src)).map(({ file }) => file)
+    ),
+  ];
+}
+
+run("no type below 12px anywhere a person reads", () => {
+  const offenders = offendersOf(/text-\[(?:[0-9]|1[01])(?:\.\d+)?px\]/);
+  assert.deepEqual(
+    offenders,
+    [],
+    `sub-12px type is unreadable on a phone, use text-xs. Offenders: ${offenders.join(", ")}`
+  );
+});
+
+run("one letter-spacing scale on small caps labels", () => {
+  const offenders = offendersOf(/tracking-(?:wider|widest)/);
+  assert.deepEqual(
+    offenders,
+    [],
+    `tracking-wide is the only caps tracking, wider reads as a second design. Offenders: ${offenders.join(", ")}`
+  );
+});
+
+run("rounded-2xl is the panel radius, nothing rounder", () => {
+  const offenders = offendersOf(/rounded-3xl/);
+  assert.deepEqual(
+    offenders,
+    [],
+    `panels are rounded-2xl, cards rounded-xl, controls rounded-lg. Offenders: ${offenders.join(", ")}`
+  );
+});
+
+run("no em dashes in user-facing copy", () => {
+  // A bare "—" standing in for a missing value is allowed and everywhere.
+  // What's banned is the dash used as sentence punctuation, so this only
+  // fires when there's a real word on both sides of it.
+  const offenders = offendersOf(/[\p{L}\d]\s*—\s*[\p{L}\d]/u);
+  assert.deepEqual(
+    offenders,
+    [],
+    `em dashes are the biggest AI tell, use a period or comma. Offenders: ${offenders.join(", ")}`
+  );
 });
 
 if (failed > 0) {

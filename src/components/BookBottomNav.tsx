@@ -20,10 +20,30 @@ import Link from "next/link";
  * them all.
  */
 const ITEMS = [
-  { href: "/?sheet=overview", label: "Overview", Icon: LayoutDashboard },
-  { href: "/?sheet=pulse", label: "Pulse", Icon: Activity },
-  { href: "/?sheet=lab", label: "Lab", Icon: FlaskConical },
-  { href: "/?sheet=compound", label: "Compound", Icon: Calculator },
+  {
+    href: "/?sheet=overview",
+    label: "Home",
+    title: "Today's briefing and your sheets",
+    Icon: LayoutDashboard,
+  },
+  {
+    href: "/?sheet=pulse",
+    label: "Pulse",
+    title: "Should you sell, hold, or add the dip?",
+    Icon: Activity,
+  },
+  {
+    href: "/?sheet=lab",
+    label: "Lab",
+    title: "Allocation, risk, trends, seasonality",
+    Icon: FlaskConical,
+  },
+  {
+    href: "/?sheet=compound",
+    label: "Growth",
+    title: "What this book could become if you keep going",
+    Icon: Calculator,
+  },
 ];
 
 export function BookBottomNav({ className }: { className?: string }) {
@@ -36,10 +56,11 @@ export function BookBottomNav({ className }: { className?: string }) {
       )}
     >
       <div className="mx-auto flex max-w-[1400px] items-stretch gap-1 px-3 pt-1.5 sm:px-4">
-        {ITEMS.map(({ href, label, Icon }) => (
+        {ITEMS.map(({ href, label, title, Icon }) => (
           <Link
             key={href}
             href={href}
+            title={title}
             className="flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-1.5 text-xs font-medium text-zinc-400 transition hover:bg-zinc-800/60 hover:text-zinc-100"
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden />

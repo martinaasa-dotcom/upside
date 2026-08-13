@@ -679,7 +679,7 @@ export function Dashboard() {
             nextStrike: r.nextStrike,
           }))
         );
-    const earn = buildEarningsAlerts(earningsEvents);
+    const earn = buildEarningsAlerts(earningsEvents, hideOptionsUI);
     const top = [...overview.tickers].sort(
       (a, b) => b.currentValue - a.currentValue
     )[0];
@@ -2405,11 +2405,11 @@ export function Dashboard() {
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
               {loadError
                 ? loadError
-                : "A sheet is one portfolio: holdings, cash, and a covered-call plan. Create your first one to start, or open your invite link again if someone shared a sheet with you."}
+                : "A sheet is one portfolio: what you own, what you paid, and leftover cash. Create your first one to start, or open an invite link if someone shared a sheet with you."}
             </p>
           </div>
           {!loadError && (
-            <div className="grid w-full gap-2 text-left sm:grid-cols-3">
+            <div className="grid w-full gap-2 text-left sm:grid-cols-2">
               {[
                 {
                   title: "See the book",
@@ -2420,8 +2420,12 @@ export function Dashboard() {
                   detail: "An AI copilot that reads your sheet and can make edits for you.",
                 },
                 {
-                  title: "Invite a partner",
-                  detail: "Optional. Share a sheet or a community when you want company.",
+                  title: "Watch the Fund",
+                  detail: "Margus trades a paper-money book in public. One decision a day.",
+                },
+                {
+                  title: "Invite a friend",
+                  detail: "Optional. Share a sheet or start a circle when you want company.",
                 },
               ].map((f) => (
                 <div

@@ -25,3 +25,26 @@ export function liveFundTotalValue(input: {
   );
   return input.cash + holdingsValue;
 }
+
+/** Live NAV minus the last daily snapshot. Same math on Overview and Fund. */
+export function liveFundTodayMove(input: {
+  liveTotal: number;
+  lastReportValue: number | null | undefined;
+}): { todayDollar: number; todayPct: number | null } {
+  const prev = input.lastReportValue;
+  if (prev == null || !Number.isFinite(prev)) {
+    return { todayDollar: 0, todayPct: null };
+  }
+  const todayDollar = input.liveTotal - prev;
+  return {
+    todayDollar,
+    todayPct: prev > 0 ? todayDollar / prev : null,
+  };
+}
+
+export function fundDayNumber(inceptionDate: string | null | undefined): number {
+  if (!inceptionDate) return 1;
+  const start = new Date(`${inceptionDate}T00:00:00Z`).getTime();
+  if (!Number.isFinite(start)) return 1;
+  return Math.max(1, Math.floor((Date.now() - start) / 86_400_000) + 1);
+}

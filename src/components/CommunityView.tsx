@@ -1005,7 +1005,7 @@ export function CommunityView({ communityId }: Props) {
             <>
               <section className="space-y-3">
                 <p className="text-xs uppercase tracking-wide text-zinc-400">
-                  Community overview · live read-only
+                  Everyone&apos;s books added together. Live, read-only.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Stat
@@ -1023,7 +1023,7 @@ export function CommunityView({ communityId }: Props) {
                     tone={overview.totals.todayDollar >= 0 ? "up" : "down"}
                   />
                   <Stat
-                    label="Unrealized P&L"
+                    label="All-time"
                     value={signedCurrency(overview.totals.roiDollar)}
                     sub={percent(overview.totals.roiPct)}
                     tone={overview.totals.roiDollar >= 0 ? "up" : "down"}
@@ -1056,9 +1056,9 @@ export function CommunityView({ communityId }: Props) {
               </div>
 
               {view === "overview" && (
-                <>
+                <div className="flex flex-col gap-8">
                   {membersWithBooks.length > 0 && (
-                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                    <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
@@ -1069,8 +1069,8 @@ export function CommunityView({ communityId }: Props) {
                               Power animals
                             </h3>
                             <p className="mt-0.5 text-sm text-zinc-400">
-                              Diversification, risk, and a modeled edge for every
-                              book. Not advice, just a fun comparison
+                              A playful read of how each book is built. Tap a
+                              person to open their sheets.
                             </p>
                           </div>
                         </div>
@@ -1207,7 +1207,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {achievements.length > 0 && (
-                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                    <section className="overview-fade order-2 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
@@ -1251,7 +1251,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {membersWithBooks.length > 0 && (
-                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                    <section className="overview-fade order-1 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
@@ -1359,7 +1359,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {overview.topHoldings.length > 0 && (
-                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                    <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
                           <Layers className="h-4 w-4" />
@@ -1413,18 +1413,18 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                    <section className="overview-fade order-5 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
                           <PieChart className="h-4 w-4" />
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-white">
-                            Family sector fingerprint
+                            What the circle owns
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Everyone&apos;s holdings pooled by theme, what the
-                            group collectively believes in
+                            Everyone&apos;s holdings pooled by theme. A fun
+                            fingerprint, not a target.
                           </p>
                         </div>
                       </div>
@@ -1462,7 +1462,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
+                  <section className="overview-fade order-6 rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-6">
                     <div className="mb-5 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
@@ -1506,7 +1506,7 @@ export function CommunityView({ communityId }: Props) {
                       )}
                     </ul>
                   </section>
-                </>
+                </div>
               )}
 
               {view === "members" && (

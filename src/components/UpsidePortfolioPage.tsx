@@ -12,7 +12,11 @@ import {
   buildPortfolioPersonality,
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
-import { liveFundTotalValue } from "@/lib/margus-fund-mark";
+import {
+  fundDayNumber,
+  liveFundTodayMove,
+  liveFundTotalValue,
+} from "@/lib/margus-fund-mark";
 import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
@@ -449,17 +453,12 @@ export function UpsidePortfolioPage() {
   const totalReturnDollar = totalValue - (fund?.starting_capital ?? 0);
   const totalReturnPct =
     fund && fund.starting_capital > 0 ? totalReturnDollar / fund.starting_capital : 0;
-  const todayDollar = latestReport ? totalValue - latestReport.portfolio_value : 0;
-  const todayPct =
-    latestReport && latestReport.portfolio_value > 0
-      ? todayDollar / latestReport.portfolio_value
-      : null;
+  const { todayDollar, todayPct } = liveFundTodayMove({
+    liveTotal: totalValue,
+    lastReportValue: latestReport?.portfolio_value,
+  });
 
-  const dayNumber = useMemo(() => {
-    if (!fund?.inception_date) return 1;
-    const start = new Date(`${fund.inception_date}T00:00:00Z`).getTime();
-    return Math.max(1, Math.floor((Date.now() - start) / 86_400_000) + 1);
-  }, [fund]);
+  const dayNumber = fundDayNumber(fund?.inception_date);
 
   // SPY "equally-funded" benchmark — inception price comes from the oldest
   // stored report once one exists; before day one runs, today's live price
@@ -737,7 +736,7 @@ export function UpsidePortfolioPage() {
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-      <AppHeader title="Fund" />
+      <AppHeader title="Upside Fund" />
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
         <div className="flex items-start gap-3">
@@ -747,7 +746,7 @@ export function UpsidePortfolioPage() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Upside Portfolio
+                Upside Fund
               </h1>
               <div className="flex items-center gap-2">
                 <span
@@ -777,8 +776,9 @@ export function UpsidePortfolioPage() {
               </div>
             </div>
             <p className="mt-1 text-sm text-zinc-400">
-              One decision a day, every trade with a stated thesis, timeline,
-              and exit plan.
+              Paper money Margus trades in public. One decision a day, every
+              trade with a thesis, a timeline, and an exit plan. Watch it,
+              don&apos;t copy it.
             </p>
             <p className="mt-0.5 text-xs text-zinc-400">
               Day {dayNumber} · started {fund ? fmtDate(fund.inception_date) : "—"}

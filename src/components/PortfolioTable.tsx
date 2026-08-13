@@ -481,7 +481,7 @@ export function PortfolioTable({
                     {(h.quote?.changePercent ?? 0) < -0.015 && (
                       <span
                         title="Thesis intact: macro dip without fundamental business breakdown"
-                        className="inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1 py-0.5 text-[10px] font-medium text-emerald-300"
+                        className="inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1 py-0.5 text-xs font-medium text-emerald-300"
                       >
                         <ShieldCheck className="h-3 w-3" /> Intact
                       </span>
