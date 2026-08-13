@@ -30,6 +30,7 @@ import {
   sessionShort,
   sessionKind,
 } from "@/lib/market-session";
+import { liveFundTotalValue } from "@/lib/margus-fund-mark";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CashflowEntry } from "@/lib/cashflow";
 import type { CoveredCallRow } from "@/lib/types";
@@ -520,21 +521,43 @@ export function OverviewDashboard({
       .then((r) => (r.ok ? r.json() : null))
       .then(
         (data: {
-          fund?: { starting_capital?: number } | null;
+          fund?: { starting_capital?: number; cash?: number } | null;
+          holdings?: {
+            ticker: string;
+            shares: number;
+            cost_basis: number;
+            status: string;
+          }[];
           reports?: {
             portfolio_value: number;
+            cash: number;
             total_return_pct: number | null;
             day_change_dollar: number | null;
             headline: string;
           }[];
+          quotes?: Record<string, { price?: number } | undefined>;
         } | null) => {
           if (cancelled || !data) return;
           const latest = data.reports?.[0];
           const startingCapital = data.fund?.starting_capital ?? 50000;
+          const cash = latest?.cash ?? data.fund?.cash ?? 0;
+          // Same live mark as /upside-portfolio — do not use the last cron
+          // snapshot here or Overview and Fund disagree intraday.
+          const totalValue = liveFundTotalValue({
+            cash,
+            holdings: data.holdings ?? [],
+            quotes: data.quotes ?? {},
+          });
+          const totalReturnPct =
+            startingCapital > 0
+              ? (totalValue - startingCapital) / startingCapital
+              : 0;
           setFundTeaser({
-            totalValue: latest?.portfolio_value ?? startingCapital,
-            totalReturnPct: latest?.total_return_pct ?? 0,
-            todayDollar: latest?.day_change_dollar ?? 0,
+            totalValue,
+            totalReturnPct,
+            todayDollar: latest
+              ? totalValue - latest.portfolio_value
+              : 0,
             headline: latest?.headline ?? null,
           });
         }

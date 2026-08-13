@@ -12,6 +12,7 @@ import {
   buildPortfolioPersonality,
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
+import { liveFundTotalValue } from "@/lib/margus-fund-mark";
 import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
@@ -414,16 +415,13 @@ export function UpsidePortfolioPage() {
   latestReportRef.current = latestReport;
   const oldestReport = reports[reports.length - 1] ?? null;
   const cash = latestReport?.cash ?? fund?.cash ?? 0;
-  // Live, not frozen at the last daily snapshot — sums current cash with
-  // each open holding priced at its just-fetched quote (falling back to
-  // cost basis only if a quote is momentarily missing), so this tracks
-  // the market throughout the day instead of only updating once a day
-  // when the cron writes a new report.
-  const liveHoldingsValue = openHoldings.reduce(
-    (sum, h) => sum + h.shares * (quotes[h.ticker]?.price ?? h.cost_basis),
-    0
-  );
-  const totalValue = cash + liveHoldingsValue;
+  // Live, not frozen at the last daily snapshot — same formula as the
+  // Overview teaser so the two surfaces never disagree.
+  const totalValue = liveFundTotalValue({
+    cash,
+    holdings: openHoldings,
+    quotes,
+  });
 
   // Same engine Lab uses on your own book, so "what is Margus actually
   // betting on" reads in the same units as your own concentration page
