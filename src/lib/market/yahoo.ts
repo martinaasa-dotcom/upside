@@ -166,23 +166,42 @@ export async function fetchQuotesYahoo(
             yf.chart(ticker, { period1, interval: "1d" }),
           ]);
 
+          // regularMarketPrice is the last REGULAR-session trade and does
+          // NOT move during extended hours — it holds yesterday's (or this
+          // morning's pre-open) close, stale, right through an active
+          // pre/post-market session. During those specific windows,
+          // pre/postMarketPrice are the genuinely current numbers and have
+          // to be what "the price" means everywhere in the app, not just a
+          // fallback for when regularMarketPrice happens to be missing.
+          const state = (
+            typeof quote.marketState === "string" ? quote.marketState : ""
+          ).toUpperCase();
+          const rawRegular = numOrNull(quote.regularMarketPrice);
+          const rawPost = numOrNull(quote.postMarketPrice);
+          const rawPre = numOrNull(quote.preMarketPrice);
           const nativePrice =
-            quote.regularMarketPrice ??
-            quote.postMarketPrice ??
-            quote.preMarketPrice ??
-            0;
+            (state === "POST" || state === "POSTPOST") && rawPost
+              ? rawPost
+              : (state === "PRE" || state === "PREPRE") && rawPre
+                ? rawPre
+                : rawRegular ?? rawPost ?? rawPre ?? 0;
           const currency =
             typeof quote.currency === "string" ? quote.currency : undefined;
           const price = priceToUsd(nativePrice, currency, fx);
-          const scale = nativePrice > 0 ? price / nativePrice : 1;
 
-          const change = (quote.regularMarketChange ?? 0) * scale;
-          const changePercent = (quote.regularMarketChangePercent ?? 0) / 100;
-          const previousClose = priceToUsd(
-            quote.regularMarketPreviousClose ?? nativePrice - (quote.regularMarketChange ?? 0),
-            currency,
-            fx
-          );
+          const nativePreviousClose =
+            numOrNull(quote.regularMarketPreviousClose) ??
+            (rawRegular != null && quote.regularMarketChange != null
+              ? rawRegular - quote.regularMarketChange
+              : nativePrice);
+          const previousClose = priceToUsd(nativePreviousClose, currency, fx);
+          // Derived directly from (current price vs yesterday's close)
+          // instead of reusing Yahoo's own change fields — regularMarket*
+          // and postMarket* changes are relative to two DIFFERENT baselines
+          // (previous close vs. the regular close), so summing them isn't
+          // valid; recomputing from scratch is correct in every session.
+          const change = previousClose > 0 ? price - previousClose : 0;
+          const changePercent = previousClose > 0 ? change / previousClose : 0;
           const sparkline =
             chart.quotes && chart.quotes.length > 1
               ? chart.quotes

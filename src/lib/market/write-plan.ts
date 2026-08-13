@@ -106,11 +106,30 @@ async function fetchSpotAndHistory(ticker: string): Promise<{
       yf.quote(ticker),
       yf.chart(ticker, { period1, interval: "1d" }),
     ]);
+    // Same fix as fetchQuotesYahoo: regularMarketPrice is stale (last
+    // regular-session trade) through an active pre/post-market window —
+    // strike/target math has to be grounded in the actually-current price.
+    const state = (
+      typeof quote.marketState === "string" ? quote.marketState : ""
+    ).toUpperCase();
+    const rawRegular =
+      typeof quote.regularMarketPrice === "number" && quote.regularMarketPrice > 0
+        ? quote.regularMarketPrice
+        : null;
+    const rawPost =
+      typeof quote.postMarketPrice === "number" && quote.postMarketPrice > 0
+        ? quote.postMarketPrice
+        : null;
+    const rawPre =
+      typeof quote.preMarketPrice === "number" && quote.preMarketPrice > 0
+        ? quote.preMarketPrice
+        : null;
     const spot =
-      quote.regularMarketPrice ??
-      quote.postMarketPrice ??
-      quote.preMarketPrice ??
-      0;
+      (state === "POST" || state === "POSTPOST") && rawPost
+        ? rawPost
+        : (state === "PRE" || state === "PREPRE") && rawPre
+          ? rawPre
+          : rawRegular ?? rawPost ?? rawPre ?? 0;
     if (!spot) return null;
     const history =
       chart.quotes && chart.quotes.length > 1
