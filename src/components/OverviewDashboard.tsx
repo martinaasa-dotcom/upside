@@ -49,20 +49,15 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import {
-  Activity,
   ArrowRight,
   Bot,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Flame,
   Info,
   Lightbulb,
   Radar,
-  ShieldCheck,
   Shuffle,
   Snowflake,
-  Sparkles,
   TrendingDown,
   TrendingUp,
   Trophy,
@@ -519,7 +514,6 @@ export function OverviewDashboard({
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
   const [factsShuffle, setFactsShuffle] = useState(0);
   const [fundTeaser, setFundTeaser] = useState<FundTeaser | null>(null);
-  const [briefingSlide, setBriefingSlide] = useState(0);
 
   const inaction = useMemo(
     () =>
@@ -816,6 +810,14 @@ export function OverviewDashboard({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {!guest && inaction && inaction.daysWithoutTrading >= 7 && (
+                <span
+                  className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium tabular-nums text-emerald-200"
+                  title={`${inaction.daysWithoutTrading} days holding strong without trade churn`}
+                >
+                  🛡️ {inaction.daysWithoutTrading}d patience
+                </span>
+              )}
               {!guest && visitStreak && visitStreak.currentStreak > 0 && (
                 <span
                   className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium tabular-nums text-amber-200"
@@ -928,124 +930,6 @@ export function OverviewDashboard({
                 </p>
               </div>
             ))}
-          </div>
-
-          {/* 3-Slide Morning Briefing Story Carousel */}
-          <div className="relative mt-4 overflow-hidden rounded-2xl border border-zinc-800/90 bg-zinc-950/60 p-4">
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-800/60">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-brand-bright" />
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-white">
-                  {briefingSlide === 0
-                    ? "1. Market Climate"
-                    : briefingSlide === 1
-                      ? "2. Book Velocity"
-                      : "3. Today's Directive"}
-                </h3>
-              </div>
-              <div className="flex items-center gap-1">
-                {[0, 1, 2].map((idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setBriefingSlide(idx)}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all",
-                      briefingSlide === idx
-                        ? "w-5 bg-brand-bright"
-                        : "w-2 bg-zinc-700 hover:bg-zinc-500"
-                    )}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-3 min-h-[4.5rem]">
-              {briefingSlide === 0 && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-white flex items-center gap-1.5">
-                    <Activity className="h-4 w-4 text-sky-400" />
-                    <span>{sessionLabel(marketState)} · Day move: <strong className={cn(tone(totals.todayDollar))}>{signedCurrency(totals.todayDollar)}</strong></span>
-                  </p>
-                  <p className="text-xs text-zinc-300 leading-relaxed">
-                    {totals.todayDollar >= 0
-                      ? "Capital is expanding nicely across your top holdings. No action required."
-                      : "Mild daily market fluctuation. Zero fundamental changes across your core theses."}
-                  </p>
-                </div>
-              )}
-
-              {briefingSlide === 1 && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-white flex items-center gap-1.5">
-                    <TrendingUp className="h-4 w-4 text-emerald-400" />
-                    <span>
-                      {todayWinners.length > 0
-                        ? `Top mover: ${cashtag(todayWinners[0]!.ticker)} (${percent(todayWinners[0]!.todayPct)})`
-                        : "All positions trading steady"}
-                    </span>
-                  </p>
-                  <p className="text-xs text-zinc-300 leading-relaxed">
-                    {todayWinners.length > 0
-                      ? `${cashtag(todayWinners[0]!.ticker)} leads the book today, adding ${signedCurrency(todayWinners[0]!.todayDollar)} to your portfolio.`
-                      : "Position prices are holding steady across your sheets today."}
-                  </p>
-                </div>
-              )}
-
-              {briefingSlide === 2 && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-white flex items-center gap-1.5">
-                    <ShieldCheck className="h-4 w-4 text-gain" />
-                    <span>Recommended Action: Stand Down & Let It Compound</span>
-                  </p>
-                  <p className="text-xs text-zinc-300 leading-relaxed">
-                    All core investment theses remain fully intact. The highest-ROI trade today is doing nothing.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-2 flex justify-between items-center pt-2 border-t border-zinc-900 text-xs text-zinc-400">
-              <button
-                type="button"
-                onClick={() => setBriefingSlide((prev) => (prev > 0 ? prev - 1 : 2))}
-                className="hover:text-white flex items-center gap-1"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" /> Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => setBriefingSlide((prev) => (prev < 2 ? prev + 1 : 0))}
-                className="hover:text-white flex items-center gap-1 font-medium text-zinc-300"
-              >
-                Next <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Inaction Dividend & Patience Card */}
-          <div className="relative mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{inaction.badgeEmoji}</span>
-                <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
-                    The Inaction Dividend · {inaction.patienceLevel}
-                  </h4>
-                  <p className="text-[11px] text-zinc-400">
-                    {inaction.daysWithoutTrading} days holding strong without reactionary trade churn
-                  </p>
-                </div>
-              </div>
-              <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-gain tabular-nums">
-                +{currency(inaction.estimatedFrictionSaved, 0)} friction saved
-              </span>
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-300">
-              {inaction.encouragement}
-            </p>
           </div>
 
           <ul className="relative mt-4 space-y-2">

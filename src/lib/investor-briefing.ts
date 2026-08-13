@@ -7,6 +7,7 @@ import { todayKeyInTz } from "@/lib/timezone";
 import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
 import { buildPortfolioPersonality, THEME_LABEL } from "@/lib/portfolio-personality";
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
+import { loadLastTradeTimestamp } from "@/lib/inaction-dividend";
 
 export type BriefingLink =
   | { type: "pulse" }
@@ -67,6 +68,18 @@ function buildPlays(opts: {
     detail:
       "Nothing here needs action right now. Checking in daily is the habit worth keeping, trading daily isn't.",
   });
+
+  const lastTradeTime = loadLastTradeTimestamp();
+  const daysPatience = Math.max(1, Math.floor((Date.now() - lastTradeTime) / 86400000));
+  if (daysPatience >= 7) {
+    plays.push({
+      id: `play-patience-${dayKey}`,
+      kind: "play",
+      title: `${daysPatience} days of holding discipline`,
+      detail:
+        "Compounding works best with zero unforced errors. Holding your conviction through noise is the real alpha.",
+    });
+  }
 
   if (!hideOptions) {
     plays.push({
