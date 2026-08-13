@@ -60,14 +60,31 @@ export type OverviewModel = {
   };
 };
 
-function todayDollarFor(
+/**
+ * Today's dollar move for a position.
+ *
+ * The percentage is measured against yesterday's close, so it has to be
+ * applied to what the position was worth *then*, not what it's worth now.
+ * Multiplying today's value by the percent understates the move by exactly
+ * that percent (a -3.4% day on a $125k position came out $150 short), which
+ * is why this backs out the prior close first.
+ */
+export function todayDollarFor(
   currentValue: number,
   changePercent: number | null | undefined
 ): { dollar: number; pct: number | null } {
-  if (changePercent === null || changePercent === undefined || Number.isNaN(changePercent)) {
+  if (
+    changePercent === null ||
+    changePercent === undefined ||
+    Number.isNaN(changePercent)
+  ) {
     return { dollar: 0, pct: null };
   }
-  return { dollar: currentValue * changePercent, pct: changePercent };
+  // A -100% day would mean yesterday's close divides to zero; nothing
+  // sensible to report, and the percent still stands on its own.
+  if (changePercent <= -1) return { dollar: 0, pct: changePercent };
+  const priorValue = currentValue / (1 + changePercent);
+  return { dollar: currentValue - priorValue, pct: changePercent };
 }
 
 export function buildOverview(

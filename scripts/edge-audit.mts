@@ -192,6 +192,42 @@ for (const [label, rate] of [["zero", 0], ["negative", -0.05], ["normal", 0.07]]
   );
 }
 
+// --- Today's P&L ----------------------------------------------------------
+// The move is quoted against yesterday's close, so it has to be applied to
+// the position's value *then*. Applying it to today's value understates the
+// day by exactly the day's percent, which is what this pins down.
+const { todayDollarFor } = await import("@/lib/overview");
+
+for (const [label, shares, price, pct] of [
+  ["down day", 500, 250.36, -0.034],
+  ["up day", 500, 250.36, 0.034],
+  ["flat", 500, 250.36, 0],
+  ["huge gain", 10, 1000, 5],
+] as const) {
+  const priorClose = price / (1 + pct);
+  const expected = shares * (price - priorClose);
+  const got = todayDollarFor(shares * price, pct).dollar;
+  check(
+    `todayDollarFor(${label})`,
+    Math.abs(got - expected) < 0.01,
+    (v) => v === true,
+    `shares x per-share move (${expected.toFixed(2)}), got ${got.toFixed(2)}`
+  );
+}
+
+for (const bad of [null, undefined, NaN]) {
+  const r = todayDollarFor(10000, bad);
+  check(`todayDollarFor(${String(bad)})`, r.dollar, (v) => v === 0, "0");
+  check(`todayDollarFor(${String(bad)}).pct`, r.pct, (v) => v === null, "null");
+}
+// -100% would divide yesterday's close to zero.
+check(
+  "todayDollarFor(total wipeout)",
+  todayDollarFor(0, -1).dollar,
+  finite,
+  "finite, not -Infinity"
+);
+
 // --- Correlation ----------------------------------------------------------
 const { pearson } = await import("@/lib/correlation");
 const CORR_CASES: Record<string, [number[], number[]]> = {

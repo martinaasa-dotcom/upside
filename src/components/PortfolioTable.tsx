@@ -12,6 +12,7 @@ import {
   parseDecimal,
 } from "@/lib/number-input";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
+import { todayDollarFor } from "@/lib/overview";
 import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
@@ -278,6 +279,35 @@ export function PortfolioTable({
     return rows;
   }, [holdings, sortKey, sortDir]);
 
+  /**
+   * Today's move, per row and for the sheet, via the same shared helper the
+   * Overview model uses so the two always agree. Cash is deliberately
+   * outside the percentage: it doesn't move, and folding it in would dilute
+   * the day's read on the positions that did.
+   */
+  const today = useMemo(() => {
+    let dollar = 0;
+    let weighted = 0;
+    let weight = 0;
+    let priced = 0;
+    for (const h of holdings) {
+      const t = todayDollarFor(h.currentValue, h.quote?.changePercent);
+      if (t.pct === null) continue;
+      dollar += t.dollar;
+      weighted += t.pct * h.currentValue;
+      weight += h.currentValue;
+      priced += 1;
+    }
+    return {
+      dollar,
+      pct: weight > 0 ? weighted / weight : null,
+      priced,
+    };
+  }, [holdings]);
+
+  const rowToday = (h: (typeof holdings)[number]): number =>
+    todayDollarFor(h.currentValue, h.quote?.changePercent).dollar;
+
   const emptyCta = (
     <div className="mt-4 flex flex-col items-center gap-2">
       <div className="flex flex-wrap items-center justify-center gap-2">
@@ -352,6 +382,34 @@ export function PortfolioTable({
           )}
         </div>
         <div className="flex items-center gap-1">
+          {today.priced > 0 && (
+            <div
+              className="flex items-center gap-2 rounded-lg px-2 py-1"
+              title="Move since yesterday's close, across priced positions. Cash is excluded."
+            >
+              <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                Today
+              </span>
+              <span
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  signedTone(today.dollar)
+                )}
+              >
+                {money(today.dollar)}
+              </span>
+              {today.pct !== null && (
+                <span
+                  className={cn(
+                    "text-[11px] font-medium tabular-nums",
+                    signedTone(today.pct)
+                  )}
+                >
+                  {percent(today.pct)}
+                </span>
+              )}
+            </div>
+          )}
           {onImportCsv && holdings.length > 0 && (
             <button
               type="button"
@@ -413,9 +471,19 @@ export function PortfolioTable({
                     )}
                   </p>
                   <p className="text-sm text-zinc-500">
-                    {percent(h.pctOfTotal)} of book ·{" "}
-                    {h.quote ? percent(h.quote.changePercent) : "—"} today
+                    {percent(h.pctOfTotal)} of book
                   </p>
+                  {h.quote && (
+                    <p
+                      className={cn(
+                        "text-sm font-medium tabular-nums",
+                        signedTone(h.quote.changePercent)
+                      )}
+                    >
+                      {percent(h.quote.changePercent)} ·{" "}
+                      {money(rowToday(h), 0)} today
+                    </p>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -501,6 +569,15 @@ export function PortfolioTable({
                 {money(totals.roiDollar)}
               </span>
             </div>
+            {today.priced > 0 && (
+              <div className="mt-1 flex justify-between border-t border-zinc-800 pt-1.5 text-zinc-400">
+                <span>Today</span>
+                <span className={cn("tabular-nums", signedTone(today.dollar))}>
+                  {money(today.dollar)}
+                  {today.pct !== null ? ` · ${percent(today.pct)}` : ""}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -632,7 +709,16 @@ export function PortfolioTable({
                       : "text-zinc-600"
                   )}
                 >
-                  {h.quote ? percent(h.quote.changePercent) : "—"}
+                  {h.quote ? (
+                    <span className="flex flex-col leading-tight">
+                      <span>{percent(h.quote.changePercent)}</span>
+                      <span className="text-[11px] font-normal opacity-70">
+                        {money(rowToday(h), 0)}
+                      </span>
+                    </span>
+                  ) : (
+                    "—"
+                  )}
                 </div>
                 <div className={cellBase}>
                   <button
@@ -680,7 +766,24 @@ export function PortfolioTable({
                 {money(totals.roiDollar)}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
+              <div
+                className={cn(
+                  cellBase,
+                  "py-2.5 tabular-nums",
+                  today.priced > 0 ? signedTone(today.dollar) : "text-zinc-600"
+                )}
+              >
+                {today.priced > 0 ? (
+                  <span className="flex flex-col leading-tight">
+                    <span>{today.pct !== null ? percent(today.pct) : "—"}</span>
+                    <span className="text-[11px] font-normal opacity-70">
+                      {money(today.dollar, 0)}
+                    </span>
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </div>
               <div className={cn(cellBase, "py-2.5")} />
             </FluidRow>
           </FluidTable>
