@@ -23,6 +23,7 @@ import {
   type ForecastTheme,
 } from "@/lib/forecast-conviction";
 import { buildCommunityFunFacts } from "@/lib/community-fun-facts";
+import { loadCachedQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 import { todayKeyInTz } from "@/lib/timezone";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
@@ -203,7 +204,11 @@ export function CommunityView({ communityId }: Props) {
   const [ownership, setOwnership] = useState<
     { portfolio_id: string; user_id: string }[]
   >(() => initialCacheRef.current.book?.ownership ?? []);
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+  // Community books paint instantly from cache, so without seeding prices
+  // too every member's value would render at cost basis for a beat.
+  const [quotes, setQuotes] = useState<Record<string, Quote>>(
+    () => loadCachedQuotes().quotes
+  );
   // Only true when we have nothing at all to show yet — a cache hit
   // (even a stale one) renders immediately while load() quietly confirms
   // it's current in the background, instead of blanking the page on
@@ -404,7 +409,10 @@ export function CommunityView({ communityId }: Props) {
         );
         if (!res.ok || cancelled) return;
         const data = await res.json();
-        if (!cancelled) setQuotes((data.quotes ?? {}) as Record<string, Quote>);
+        if (cancelled) return;
+        const fresh = (data.quotes ?? {}) as Record<string, Quote>;
+        setQuotes(fresh);
+        saveCachedQuotes(fresh);
       } catch {
         /* ignore */
       }

@@ -161,6 +161,7 @@ import {
   type ExperienceTier,
 } from "@/lib/experience-tier";
 import { pickLoadingMessage } from "@/lib/loading-messages";
+import { loadCachedQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 
 /**
  * Margus is a collapsed floating panel almost nobody opens on first paint,
@@ -374,14 +375,25 @@ export function Dashboard() {
       ? saved
       : OVERVIEW_TAB_ID;
   });
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+  // Hydrate from the last known market prices so the book's first paint is
+  // a real valuation. Starting empty made calculations.ts fall back to
+  // buy_price for every holding, flashing cost basis as if it were the
+  // book value until the quotes request landed.
+  const cachedQuotesRef = useRef(loadCachedQuotes());
+  const [quotes, setQuotes] = useState<Record<string, Quote>>(
+    () => cachedQuotesRef.current.quotes
+  );
   const [options, setOptions] = useState<Record<string, OptionCandidate | null>>(
     {}
   );
   const [loading, setLoading] = useState(!cachedBook);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
+  // Seeded with the cache's own timestamp so "Prices · Xs ago" is honest
+  // about showing older prices until the refresh lands.
+  const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(
+    () => cachedQuotesRef.current.savedAt
+  );
   const [quotesDelayed, setQuotesDelayed] = useState(false);
   const [quoteSources, setQuoteSources] = useState<Record<string, string>>({});
   const [eurUsd, setEurUsd] = useState<number | null>(null);
@@ -945,6 +957,7 @@ export function Dashboard() {
           const quotesJson = await quotesRes.json();
           nextQuotes = (quotesJson.quotes ?? {}) as Record<string, Quote>;
           setQuotes(nextQuotes);
+          saveCachedQuotes(nextQuotes);
           setQuotesUpdatedAt(Date.now());
           setQuotesDelayed(Boolean(quotesJson.delayed));
           setQuoteSources((quotesJson.sources ?? {}) as Record<string, string>);
