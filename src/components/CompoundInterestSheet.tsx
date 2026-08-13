@@ -569,12 +569,30 @@ export function CompoundInterestSheet({
   // (never again automatically; re-jumping the scroll every time a slider
   // moves would be its own kind of annoying).
   const firstPendingRowRef = useRef<HTMLTableRowElement | null>(null);
+  const milestoneScrollRef = useRef<HTMLDivElement | null>(null);
   const scrolledToMilestoneRef = useRef(false);
   useEffect(() => {
     if (scrolledToMilestoneRef.current) return;
-    if (!firstPendingRowRef.current) return;
+    const row = firstPendingRowRef.current;
+    const box = milestoneScrollRef.current;
+    if (!row || !box) return;
     scrolledToMilestoneRef.current = true;
-    firstPendingRowRef.current.scrollIntoView({ block: "center" });
+    // Set the container's own scrollTop rather than calling
+    // row.scrollIntoView(). scrollIntoView walks up and scrolls *every*
+    // scrollable ancestor including the document, so opening Compound
+    // yanked the whole page down to centre this row and you landed
+    // mid-page instead of at the top.
+    //
+    // Measured with rects rather than offsetTop: a <tr>'s offsetParent is
+    // browser-dependent, so offsetTop can be relative to the table rather
+    // than this container.
+    const rowRect = row.getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    const delta = rowRect.top - boxRect.top;
+    box.scrollTop = Math.max(
+      0,
+      box.scrollTop + delta - box.clientHeight / 2 + rowRect.height / 2
+    );
   }, [milestones]);
 
   function setMilestoneActual(goal: number, iso: string) {
@@ -1021,7 +1039,10 @@ export function CompoundInterestSheet({
               {milestoneTakeaway}
             </p>
           )}
-          <div className="mt-4 max-h-[26rem] overflow-y-auto overflow-x-auto rounded-lg">
+          <div
+            ref={milestoneScrollRef}
+            className="relative mt-4 max-h-[26rem] overflow-y-auto overflow-x-auto rounded-lg"
+          >
             <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
               <thead className="sticky top-0 z-10 bg-[#161618]">
                 <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">

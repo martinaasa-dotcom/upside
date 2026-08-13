@@ -1074,6 +1074,23 @@ export function Dashboard() {
     return () => window.clearTimeout(t);
   }, [loading]);
 
+  /**
+   * A new tab starts at the top. Switching tabs swaps the whole page body
+   * but leaves the window scrolled wherever the previous tab was, so going
+   * from halfway down Overview to Compound dropped you into the middle of
+   * it. Skipped on back/forward, where the browser restores the position
+   * you actually left.
+   */
+  const scrollResetSkipRef = useRef(true);
+  useEffect(() => {
+    if (scrollResetSkipRef.current) {
+      scrollResetSkipRef.current = false;
+      return;
+    }
+    if (historyFromPopRef.current) return;
+    window.scrollTo({ top: 0 });
+  }, [activeId]);
+
   useEffect(() => {
     saveActiveSheetId(activeId);
     if (typeof window === "undefined") return;
