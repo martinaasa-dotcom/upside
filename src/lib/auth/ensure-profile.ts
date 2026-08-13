@@ -160,46 +160,19 @@ async function claimWithServiceRole(user: User): Promise<{
     );
   }
 
-  const { data: circle } = await admin
-    .from(PORTFELL_TABLES.communities)
-    .select("id")
-    .eq("id", UPSIDE_CIRCLE_ID)
-    .maybeSingle();
-
-  if (circle) {
-    const isMartin =
-      email === "martin.aasa@upthink.ee" ||
-      email === "aasamartinaasa@gmail.com";
-    const { data: existing } = await admin
-      .from(PORTFELL_TABLES.communityMembers)
-      .select("user_id, role")
-      .eq("community_id", UPSIDE_CIRCLE_ID)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!existing) {
-      await admin.from(PORTFELL_TABLES.communityMembers).insert({
-        community_id: UPSIDE_CIRCLE_ID,
-        user_id: user.id,
-        role: isMartin ? "admin" : "member",
-      });
-      if (isMartin) {
-        await admin
-          .from(PORTFELL_TABLES.communities)
-          .update({
-            created_by: user.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", UPSIDE_CIRCLE_ID)
-          .is("created_by", null);
-      }
-    } else if (isMartin && (existing as { role?: string }).role !== "admin") {
-      await admin
-        .from(PORTFELL_TABLES.communityMembers)
-        .update({ role: "admin" })
-        .eq("community_id", UPSIDE_CIRCLE_ID)
-        .eq("user_id", user.id);
-    }
+  // Deliberately no auto-join to any community (including Upside Circle)
+  // here. Community membership is opt-in only, via an invite link (private
+  // communities) or a request an admin approves (public communities) — see
+  // /api/communities/[id]/join-request. Signing in must never silently
+  // expose a stranger's book to an existing community or vice versa.
+  const isMartin =
+    email === "martin.aasa@upthink.ee" || email === "aasamartinaasa@gmail.com";
+  if (isMartin) {
+    await admin
+      .from(PORTFELL_TABLES.communities)
+      .update({ created_by: user.id, updated_at: new Date().toISOString() })
+      .eq("id", UPSIDE_CIRCLE_ID)
+      .is("created_by", null);
   }
 
   return { claimedSlugs };

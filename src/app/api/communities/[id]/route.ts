@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     await Promise.all([
       supabase
         .from(PORTFELL_TABLES.communities)
-        .select("id, name, created_by, created_at, updated_at")
+        .select("id, name, visibility, created_by, created_at, updated_at")
         .eq("id", id)
         .single(),
       supabase
@@ -170,6 +170,52 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   const isAdmin = await userIsCommunityAdmin(auth.user.id, id);
 
+  let join_requests: {
+    id: string;
+    user_id: string;
+    message: string | null;
+    requested_at: string;
+    profile: { display_name: string | null; email: string | null; avatar_url: string | null } | null;
+  }[] = [];
+  if (isAdmin) {
+    const { data: pendingRequests } = await supabase
+      .from(PORTFELL_TABLES.communityJoinRequests)
+      .select("id, user_id, message, requested_at")
+      .eq("community_id", id)
+      .eq("status", "pending")
+      .order("requested_at", { ascending: true });
+    const reqUserIds = ((pendingRequests ?? []) as { user_id: string }[]).map(
+      (r) => r.user_id
+    );
+    const { data: reqProfiles } = reqUserIds.length
+      ? await supabase
+          .from(PORTFELL_TABLES.profiles)
+          .select("id, email, display_name, avatar_url")
+          .in("id", reqUserIds)
+      : { data: [] };
+    const reqProfileById = new Map(
+      (
+        (reqProfiles ?? []) as {
+          id: string;
+          email: string | null;
+          display_name: string | null;
+          avatar_url: string | null;
+        }[]
+      ).map((p) => [p.id, p])
+    );
+    join_requests = (
+      (pendingRequests ?? []) as {
+        id: string;
+        user_id: string;
+        message: string | null;
+        requested_at: string;
+      }[]
+    ).map((r) => ({
+      ...r,
+      profile: reqProfileById.get(r.user_id) ?? null,
+    }));
+  }
+
   // Remap ownership to person_id for client attribution
   const userToPerson = new Map<string, string>();
   for (const person of people) {
@@ -218,6 +264,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   return NextResponse.json({
     community,
     isAdmin,
+    join_requests,
     members: people.map((p) => ({
       user_id: p.person_id,
       user_ids: p.user_ids,
@@ -233,7 +280,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   });
 }
 
-/** Admin: rename the community. */
+/** Admin: rename the community and/or flip public/private visibility. */
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
@@ -248,17 +295,34 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { name?: string };
-  const name = String(body.name ?? "").trim().slice(0, 80);
-  if (!name) {
-    return NextResponse.json({ error: "name required" }, { status: 400 });
+  const body = (await req.json().catch(() => ({}))) as {
+    name?: string;
+    visibility?: string;
+  };
+
+  const patch: Record<string, string> = { updated_at: new Date().toISOString() };
+  if (body.name !== undefined) {
+    const name = String(body.name).trim().slice(0, 80);
+    if (!name) {
+      return NextResponse.json({ error: "name required" }, { status: 400 });
+    }
+    patch.name = name;
+  }
+  if (body.visibility !== undefined) {
+    if (body.visibility !== "public" && body.visibility !== "private") {
+      return NextResponse.json({ error: "invalid visibility" }, { status: 400 });
+    }
+    patch.visibility = body.visibility;
+  }
+  if (Object.keys(patch).length <= 1) {
+    return NextResponse.json({ error: "nothing to update" }, { status: 400 });
   }
 
   const { data: community, error } = await supabase
     .from(PORTFELL_TABLES.communities)
-    .update({ name, updated_at: new Date().toISOString() })
+    .update(patch)
     .eq("id", id)
-    .select("id, name, created_by, created_at, updated_at")
+    .select("id, name, visibility, created_by, created_at, updated_at")
     .single();
 
   if (error) {

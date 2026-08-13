@@ -31,10 +31,12 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  Globe,
   HelpCircle,
   LayoutGrid,
   Lightbulb,
   Link2,
+  Lock,
   Medal,
   PieChart,
   Settings,
@@ -44,6 +46,7 @@ import {
   Target,
   Trash2,
   Trophy,
+  UserCheck,
   UserMinus,
   Users,
   X,
@@ -95,7 +98,20 @@ type PendingMember = {
 type CommunityMeta = {
   id: string;
   name: string;
+  visibility?: "public" | "private";
   created_by: string | null;
+};
+
+type JoinRequest = {
+  id: string;
+  user_id: string;
+  message: string | null;
+  requested_at: string;
+  profile: {
+    display_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
 };
 
 type OwnedPortfolio = Portfolio & { owner_id?: string };
@@ -111,6 +127,7 @@ type CommunityMetaResponse = {
   members?: Member[];
   pending_members?: PendingMember[];
   isAdmin?: boolean;
+  join_requests?: JoinRequest[];
 };
 type CommunityBookResponse = {
   portfolios?: OwnedPortfolio[];
@@ -166,6 +183,12 @@ export function CommunityView({ communityId }: Props) {
   );
   const [isAdmin, setIsAdmin] = useState(
     () => initialCacheRef.current.meta?.isAdmin ?? false
+  );
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>(
+    () => initialCacheRef.current.meta?.join_requests ?? []
+  );
+  const [joinDecisionBusyId, setJoinDecisionBusyId] = useState<string | null>(
+    null
   );
   const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>(
     () => initialCacheRef.current.book?.portfolios ?? []
@@ -263,6 +286,7 @@ export function CommunityView({ communityId }: Props) {
       setMembers(meta.members ?? []);
       setPendingMembers(meta.pending_members ?? []);
       setIsAdmin(Boolean(meta.isAdmin));
+      setJoinRequests(meta.join_requests ?? []);
       setPortfolios(book.portfolios ?? []);
       setHoldings(book.holdings ?? []);
       setProfiles(book.profiles ?? []);
@@ -822,6 +846,49 @@ export function CommunityView({ communityId }: Props) {
     }
   }
 
+  async function handleVisibilityChange(next: "public" | "private") {
+    if (!community || community.visibility === next) return;
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visibility: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error ?? "Update failed");
+      }
+      setCommunity((data as { community: CommunityMeta }).community);
+    } catch (e) {
+      setSettingsError(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function decideJoinRequest(userId: string, decision: "approve" | "reject") {
+    setJoinDecisionBusyId(userId);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/join-request`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, decision }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { error?: string }).error ?? "Decision failed");
+      }
+      setJoinRequests((rows) => rows.filter((r) => r.user_id !== userId));
+      if (decision === "approve") await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Decision failed");
+    } finally {
+      setJoinDecisionBusyId(null);
+    }
+  }
+
   async function handleDeleteCommunity() {
     const res = await fetch(`/api/communities/${communityId}`, {
       method: "DELETE",
@@ -847,6 +914,23 @@ export function CommunityView({ communityId }: Props) {
               <span className="truncate text-sm font-medium">
                 {community?.name ?? "Community"}
               </span>
+              {community && (
+                <span title={community.visibility === "public" ? "Public community" : "Private community"}>
+                  {community.visibility === "public" ? (
+                    <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
+                  ) : (
+                    <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                  )}
+                </span>
+              )}
+              {isAdmin && joinRequests.length > 0 && (
+                <span
+                  title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
+                  className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300"
+                >
+                  {joinRequests.length}
+                </span>
+              )}
               {isAdmin && community && (
                 <button
                   type="button"
@@ -1568,6 +1652,57 @@ export function CommunityView({ communityId }: Props) {
                     </ul>
                   </section>
 
+                  {isAdmin && joinRequests.length > 0 && (
+                    <section className="space-y-3 rounded-xl border border-amber-800/50 bg-amber-950/10 p-4">
+                      <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
+                        <UserCheck className="h-4 w-4 text-amber-400" />
+                        Join requests
+                        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+                          {joinRequests.length}
+                        </span>
+                      </h2>
+                      <p className="text-xs text-zinc-500">
+                        This community is public — anyone can ask to join, but
+                        nothing happens until you approve them here.
+                      </p>
+                      <ul className="space-y-2">
+                        {joinRequests.map((r) => (
+                          <li
+                            key={r.id}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-2.5"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm text-zinc-200">
+                                {r.profile?.display_name ?? r.profile?.email ?? "Unknown"}
+                              </p>
+                              <p className="truncate text-xs text-zinc-500">
+                                {r.profile?.email}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 gap-1.5">
+                              <button
+                                type="button"
+                                disabled={joinDecisionBusyId === r.user_id}
+                                onClick={() => void decideJoinRequest(r.user_id, "approve")}
+                                className="rounded-md bg-emerald-600/90 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                disabled={joinDecisionBusyId === r.user_id}
+                                onClick={() => void decideJoinRequest(r.user_id, "reject")}
+                                className="rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
                   {isAdmin && (
                     <section className="space-y-3 rounded-xl border border-zinc-800 p-4">
                       <h2 className="text-sm font-medium text-zinc-200">
@@ -1808,6 +1943,41 @@ export function CommunityView({ communityId }: Props) {
               >
                 {settingsBusy ? "Saving …" : "Save name"}
               </button>
+            </div>
+
+            <div className="mt-5 border-t border-zinc-800 pt-4">
+              <label className="block text-xs font-medium text-zinc-400">
+                Visibility
+              </label>
+              <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+                {community?.visibility === "public"
+                  ? "Public — anyone signed in can find this community and ask to join. You still approve every request."
+                  : "Private — invite-only. No one can find or join without a link."}
+              </p>
+              <div className="mt-2 flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+                {(
+                  [
+                    ["private", Lock, "Private"],
+                    ["public", Globe, "Public"],
+                  ] as const
+                ).map(([id, Icon, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    disabled={settingsBusy}
+                    onClick={() => void handleVisibilityChange(id)}
+                    className={cn(
+                      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
+                      (community?.visibility ?? "private") === id
+                        ? "bg-brand/20 text-brand-bright"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {isAdmin && (

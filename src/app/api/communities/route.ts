@@ -32,7 +32,7 @@ export async function GET() {
 
   const { data: communities, error: cErr } = await supabase
     .from(PORTFELL_TABLES.communities)
-    .select("id, name, created_by, created_at, updated_at")
+    .select("id, name, visibility, created_by, created_at, updated_at")
     .in("id", ids)
     .order("name");
 
@@ -71,14 +71,19 @@ export async function POST(req: NextRequest) {
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
+  const visibility =
+    (body as { visibility?: string }).visibility === "public"
+      ? "public"
+      : "private";
 
   const { data: community, error } = await supabase
     .from(PORTFELL_TABLES.communities)
     .insert({
       name,
+      visibility,
       created_by: auth.user.id,
     })
-    .select("id, name, created_by, created_at, updated_at")
+    .select("id, name, visibility, created_by, created_at, updated_at")
     .single();
 
   if (error) {

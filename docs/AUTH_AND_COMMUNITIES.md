@@ -6,6 +6,9 @@
 - `portfell_portfolios.owner_id` remains as optional primary/creator hint; **authorization uses the junction table**.
 - **Communities**: members see each co-owner’s book live, **read-only**.
 - Sheet PIN/password and guest share links are **removed** — Google session + co-ownership is the only gate.
+- Community membership is **always opt-in, never automatic**. Signing in never adds anyone to any community (fixed in `030`, see below). A community is either:
+  - **Private** (default): invite-link only, exactly like portfolio co-ownership.
+  - **Public**: discoverable to any signed-in user (`GET /api/communities/discover`), who can ask to join (`POST /api/communities/:id/join-request`) — an admin still has to approve (`PATCH` same route) before the requester gets read access to anyone's book.
 
 ## Identity aliases
 
@@ -74,6 +77,9 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
 - `017` RLS hardening — closed a self co-owner-escalation hole on `portfell_portfolio_owners`, a world-readable `portfell_book_snapshots` policy, a stale shared-row leak on `portfell_lab_state`, and a null-email coalesce bug on invite `SELECT` policies
 - `018` fixed `portfell_claim_seed_for_me()` — a PL/pgSQL loop variable named `slug` collided with the `portfell_portfolios.slug` column, so every first-time seed claim raised "column reference is ambiguous" and rolled back (profile included). Silently broken since `010`; only worked for people seeded directly via `scripts/seed-ownership.sql` (Martin/Martina/Amanda). Rasmus was backfilled manually after the fix; Karoliine and Liina will claim normally on their first sign-in now
+- `029` community admin delete RLS policy (rename already had one from `008`)
+- `030` **critical fix**: `ensureProfileAndClaims`'s service-role path (`claimWithServiceRole`) auto-joined *every* signed-in user into Upside Circle unconditionally, regardless of any seed claim — meaning any stranger creating an account was silently added to the family's community and granted read access to their books (and vice versa). Confirmed live for two non-family test accounts before the fix. Removed the auto-join entirely from both the app-code path and `portfell_claim_seed_for_me()` (which had a narrower, seed-claim-gated version of the same auto-join) — see `031` for the invite/request model that replaced it
+- `031` `portfell_communities.visibility` (`public`/`private`, defaults to `private`), discovery `SELECT` policy for public communities, and `portfell_community_join_requests` (+ RLS) for the request-to-join flow
 
 Writes require a signed-in **co-owner** only.
 
