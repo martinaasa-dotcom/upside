@@ -30,7 +30,11 @@ export const pulseReportSchema = z.object({
         .describe(
           "One sentence on what drove the move (cite news when possible)."
         ),
-      thesisStatus: z.enum(["intact", "watch", "broken"]),
+      thesisStatus: z
+        .enum(["intact", "watch", "broken"])
+        .describe(
+          "Be conservative. intact = the reason you own it hasn't changed, including a normal red day, sector-wide weakness, or profit-taking. watch = something worth tracking emerged but hasn't invalidated the story. broken = the actual reason you bought this is gone (guidance genuinely cut, moat broken, fraud/restatement) — rare, and must pair with action=trim, never hold or add."
+        ),
       action: z
         .enum(["add", "hold", "trim", "watch"])
         .describe(

@@ -346,6 +346,23 @@ export function formatMovePct(pct: number | null): string {
 }
 
 /**
+ * The model sometimes tags thesisStatus "broken" while still recommending
+ * hold or add, which is a contradiction users notice immediately: a red
+ * "Thesis at risk" badge next to "Hold" reads as nonsense, and once it
+ * fires on every position it stops meaning anything. If the thesis were
+ * actually broken you wouldn't hold or add, you'd trim. Enforcing that as
+ * a hard invariant (rather than trusting the prompt alone) is what keeps
+ * "Thesis at risk" rare and actually meaningful. Only ever downgrades,
+ * never upgrades, so it can't manufacture false alarms.
+ */
+export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
+  if (check.thesisStatus === "broken" && check.action !== "trim") {
+    return { ...check, thesisStatus: "watch" };
+  }
+  return check;
+}
+
+/**
  * Deterministic fallback so every visible card gets a colored action/status
  * even if the model misses a ticker in its response.
  */

@@ -1,6 +1,5 @@
 "use client";
 
-import { calculateInactionDividend } from "@/lib/inaction-dividend";
 import { Sparkline } from "@/components/Sparkline";
 import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { CommunitiesSpotlight } from "@/components/CommunitiesSpotlight";
@@ -515,16 +514,6 @@ export function OverviewDashboard({
   const [factsShuffle, setFactsShuffle] = useState(0);
   const [fundTeaser, setFundTeaser] = useState<FundTeaser | null>(null);
 
-  const inaction = useMemo(
-    () =>
-      calculateInactionDividend(
-        totals.totalValue,
-        totals.roiDollar,
-        totals.buyValue
-      ),
-    [totals.totalValue, totals.roiDollar, totals.buyValue]
-  );
-
   useEffect(() => {
     if (guest) return;
     let cancelled = false;
@@ -810,14 +799,6 @@ export function OverviewDashboard({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {!guest && inaction && inaction.daysWithoutTrading >= 7 && (
-                <span
-                  className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium tabular-nums text-emerald-200"
-                  title={`${inaction.daysWithoutTrading} days holding strong without trade churn`}
-                >
-                  🛡️ {inaction.daysWithoutTrading}d patience
-                </span>
-              )}
               {!guest && visitStreak && visitStreak.currentStreak > 0 && (
                 <span
                   className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium tabular-nums text-amber-200"

@@ -11,6 +11,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import {
   buildFallbackPulseCheck,
   formatMovePct,
+  reconcilePulseCheck,
   type PulseCheck,
   type PulseCandidate,
   type PulseHeadline,
@@ -114,10 +115,21 @@ ${fg}
 - Use **trim** only when thesis is broken or euphorically extended.
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
+### thesisStatus — be conservative, this should rarely be "broken"
+- **intact**: the reason you own it hasn't changed. A normal red day, sector-wide
+  weakness, profit-taking after a run, or "priced in" digestion are NOT thesis
+  breaks — they're noise. Most red days on a name whose story is still true are intact.
+- **watch**: something worth tracking emerged (a soft quarter, a competitive wrinkle,
+  a guidance nuance) but it hasn't invalidated the core story yet.
+- **broken**: the actual reason you bought this is gone — guidance genuinely cut,
+  the moat/thesis is disproven, fraud or a restatement, the multi-year story is over.
+  This is rare. **broken must pair with action=trim, never with hold or add** — if
+  you'd still hold it, the thesis isn't broken, it's at most "watch".
+
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
 2. **moveReason**: one sentence (cite headline when possible).
-3. **thesisStatus**: intact / watch / broken.
+3. **thesisStatus**: intact / watch / broken, per the definitions above.
 4. **action**: add / hold / trim / watch per rules above.
 5. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position).
 6. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim).
@@ -274,12 +286,12 @@ export async function POST(req: Request) {
       const symbol = candidate.ticker.toUpperCase();
       const fromModel = newlyGeneratedMap.get(symbol);
       const check: PulseCheck = fromModel
-        ? {
+        ? reconcilePulseCheck({
             ...fromModel,
             ticker: symbol,
             trimPct:
               fromModel.action === "trim" ? (fromModel.trimPct ?? null) : null,
-          }
+          })
         : buildFallbackPulseCheck(candidate);
 
       const conv = convictions[symbol];
