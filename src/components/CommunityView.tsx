@@ -37,6 +37,7 @@ import {
   Lightbulb,
   Link2,
   Lock,
+  LogOut,
   Medal,
   PieChart,
   Settings,
@@ -237,6 +238,7 @@ export function CommunityView({ communityId }: Props) {
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -887,6 +889,22 @@ export function CommunityView({ communityId }: Props) {
     } finally {
       setJoinDecisionBusyId(null);
     }
+  }
+
+  async function handleLeaveCommunity() {
+    const me = members.find((m) => m.is_you);
+    if (!me) throw new Error("Could not work out which member you are");
+    const res = await fetch(
+      `/api/communities/${communityId}/members/${me.user_id}`,
+      { method: "DELETE" }
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? "Leave failed");
+    }
+    clearCommunityCache(communityId);
+    router.push("/communities");
+    return true;
   }
 
   async function handleDeleteCommunity() {
@@ -1581,6 +1599,17 @@ export function CommunityView({ communityId }: Props) {
                                 </button>
                               </div>
                             )}
+                            {m.is_you && (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => setLeaveOpen(true)}
+                                className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-rose-800/60 hover:text-rose-300"
+                              >
+                                <LogOut className="h-3 w-3" />
+                                Leave
+                              </button>
+                            )}
                           </li>
                         );
                       })}
@@ -1880,6 +1909,16 @@ export function CommunityView({ communityId }: Props) {
           if (!removeTarget) return false;
           return removeMember(removeTarget.userId);
         }}
+      />
+
+      <ConfirmModal
+        open={leaveOpen}
+        title="Leave this community?"
+        body={`You'll stop seeing everyone else's book in ${community?.name ?? "this community"}, and they'll stop seeing yours. Your own portfolios and holdings stay exactly as they are. You can rejoin later with an invite, or by requesting again if it's public.`}
+        confirmLabel="Leave"
+        destructive
+        onClose={() => setLeaveOpen(false)}
+        onConfirm={handleLeaveCommunity}
       />
 
       <ConfirmModal

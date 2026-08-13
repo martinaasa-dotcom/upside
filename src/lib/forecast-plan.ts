@@ -1,4 +1,8 @@
-import { z } from "zod";
+// Type-only imports: erased at build time, so ForecastPlan can still be
+// derived from the schema without pulling zod into the client bundle that
+// ForecastPanel (a client component) loads from this module.
+import type { z } from "zod";
+import type { forecastPlanSchema } from "@/lib/forecast-plan-schema";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
@@ -52,76 +56,6 @@ export const TICKER_SECTORS: Record<string, string> = {
   "ANX.PA": "European equity",
   "EX13.VI": "European equity ETF",
 };
-
-const yearPriceSchema = z.object({
-  2026: z.number().positive(),
-  2027: z.number().positive(),
-  2028: z.number().positive(),
-  2029: z.number().positive(),
-  2030: z.number().positive(),
-});
-
-export const forecastPlanSchema = z.object({
-  generalAdvice: z
-    .string()
-    .describe(
-      "2–4 sentences of actionable book-level advice (risk, concentration, CC overlap, cash)."
-    ),
-  sectorRotation: z
-    .string()
-    .describe(
-      "What sector / factor rotation looks plausible over the next quarter and year, tied to this book."
-    ),
-  periods: z
-    .array(
-      z.object({
-        label: z
-          .string()
-          .describe(
-            'Horizon label, e.g. "Next quarter (Q4 2026)", "2027", "2028–2029"'
-          ),
-        theme: z.string().describe("Short memorable theme name for the period"),
-        add: z
-          .string()
-          .describe(
-            'Actionable adds — multiple OK. Format: "NAME / NAME — why" or "SaaS / drones — why". Names can be book tickers, new tickers, or sectors (SaaS, healthcare, drones, AI power…). Max ~40 words. Never empty; say "Hold — no add" if nothing.'
-          ),
-        trim: z
-          .string()
-          .describe(
-            'Actionable trims — multiple OK. Format: "TICKER / TICKER — why" or "fintech sleeve — why". Max ~40 words. Never empty; say "Hold — no trim" if nothing.'
-          ),
-        notes: z
-          .string()
-          .optional()
-          .describe(
-            "Optional ONE short context line only — do NOT repeat add/trim tickers here"
-          ),
-      })
-    )
-    .min(2)
-    .max(6),
-  eoyTargets: z
-    .array(
-      z.object({
-        ticker: z
-          .string()
-          .describe("Exact ticker as listed in holdings (keep exchange suffix)"),
-        prices: yearPriceSchema.describe(
-          "NON-LINEAR EOY prices 2026–2030. Forbidden: equal steps / flat CAGR. Crypto needs a winter year; AI infra can rip with digestion as slower-up not collapse."
-        ),
-        rationale: z
-          .string()
-          .optional()
-          .describe(
-            "Human thesis in one sentence: micro-thesis + path dynamics (bull run / winter / digestion). Never say overridden, rejected, calibrated, or sheet-aligned."
-          ),
-      })
-    )
-    .describe(
-      "EOY SP for EVERY holding, all years 2026–2030. High-conviction AI infra / AI power / crypto magnitudes. Never paste spot across years. Never draw a straight line."
-    ),
-});
 
 export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
   generatedAt: string;

@@ -30,6 +30,11 @@
   --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Tailwind ships no xs breakpoint, and WorkspaceSwitcher was already
+     using xs:inline to show nav labels on larger phones. Without this the
+     class silently did nothing, so anything between 480px and sm rendered
+     the nav as unlabelled icons. */
+  --breakpoint-xs: 30rem;
 }
 
 html {

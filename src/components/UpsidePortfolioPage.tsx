@@ -6,6 +6,10 @@ import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonC
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
+import {
+  loadUpsidePortfolioCache,
+  saveUpsidePortfolioCache,
+} from "@/lib/upside-portfolio-cache";
 import type { Quote } from "@/lib/types";
 import {
   Bot,
@@ -165,6 +169,15 @@ type ReportRow = {
   spy_price: number | null;
 };
 
+/** Exactly what /api/upside-portfolio returns, and what gets cached. */
+type FundPayload = {
+  fund: FundRow | null;
+  holdings: HoldingRow[];
+  reports: ReportRow[];
+  weeklyRecaps: WeeklyRecapRow[];
+  quotes: Record<string, Quote>;
+};
+
 function fmtDate(iso: string): string {
   try {
     return new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, {
@@ -203,12 +216,27 @@ function ActionBadge({ action }: { action: FundActionRow }) {
 }
 
 export function UpsidePortfolioPage() {
-  const [fund, setFund] = useState<FundRow | null>(null);
-  const [holdings, setHoldings] = useState<HoldingRow[]>([]);
-  const [reports, setReports] = useState<ReportRow[]>([]);
-  const [weeklyRecaps, setWeeklyRecaps] = useState<WeeklyRecapRow[]>([]);
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
-  const [loading, setLoading] = useState(true);
+  // Paint the last known fund immediately; the fetch below still runs and
+  // corrects it. Only a genuinely cold visit shows a loading line.
+  const cachedRef = useRef<FundPayload | null>(null);
+  if (cachedRef.current === null) {
+    cachedRef.current =
+      (loadUpsidePortfolioCache()?.payload as FundPayload | undefined) ?? null;
+  }
+  const cached = cachedRef.current;
+
+  const [fund, setFund] = useState<FundRow | null>(cached?.fund ?? null);
+  const [holdings, setHoldings] = useState<HoldingRow[]>(
+    cached?.holdings ?? []
+  );
+  const [reports, setReports] = useState<ReportRow[]>(cached?.reports ?? []);
+  const [weeklyRecaps, setWeeklyRecaps] = useState<WeeklyRecapRow[]>(
+    cached?.weeklyRecaps ?? []
+  );
+  const [quotes, setQuotes] = useState<Record<string, Quote>>(
+    cached?.quotes ?? {}
+  );
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -227,7 +255,9 @@ export function UpsidePortfolioPage() {
 
   const load = useCallback(async (mode: "initial" | "manual" | "background") => {
     if (mode === "manual") setRefreshing(true);
-    else if (mode === "initial") setLoading(true);
+    // A cached paint means the first fetch is really a background refresh:
+    // never swap a populated page back to a loading line.
+    else if (mode === "initial" && !cachedRef.current) setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/upside-portfolio", { cache: "no-store" });
@@ -238,10 +268,19 @@ export function UpsidePortfolioPage() {
       setReports(data.reports ?? []);
       setWeeklyRecaps(data.weeklyRecaps ?? []);
       setQuotes(data.quotes ?? {});
+      saveUpsidePortfolioCache({
+        fund: data.fund,
+        holdings: data.holdings ?? [],
+        reports: data.reports ?? [],
+        weeklyRecaps: data.weeklyRecaps ?? [],
+        quotes: data.quotes ?? {},
+      });
     } catch (e) {
       // Background polls fail silently rather than blanking an
-      // already-loaded page over one flaky tick.
-      if (mode !== "background") {
+      // already-loaded page over one flaky tick. A cache-backed first load
+      // counts as already-loaded for the same reason: showing an error
+      // over a perfectly readable page helps nobody.
+      if (mode !== "background" && !cachedRef.current) {
         setError(e instanceof Error ? e.message : "Failed to load");
       }
     } finally {

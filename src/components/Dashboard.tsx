@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { CashModal } from "@/components/CashModal";
-import { CcAdvisorChat, type AdvisorAction } from "@/components/CcAdvisorChat";
+import type { AdvisorAction } from "@/components/CcAdvisorChat";
 import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
@@ -137,6 +137,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 
 import {
   CC_DEFAULT_VISIBLE,
@@ -160,6 +161,19 @@ import {
   type ExperienceTier,
 } from "@/lib/experience-tier";
 import { pickLoadingMessage } from "@/lib/loading-messages";
+
+/**
+ * Margus is a collapsed floating panel almost nobody opens on first paint,
+ * but eagerly importing him put the AI SDK, react-markdown, remark-gfm and
+ * zod on every dashboard load. Deferred here and warmed on idle below, so
+ * the chunk is nearly always in cache before the first click (which
+ * matters: the silent screenshot import clicks a file input, and browsers
+ * only allow that close to a real user gesture).
+ */
+const CcAdvisorChat = dynamic(
+  () => import("@/components/CcAdvisorChat").then((m) => m.CcAdvisorChat),
+  { ssr: false }
+);
 
 type DataSource = "demo" | "supabase";
 
@@ -198,8 +212,33 @@ function PricesAgeStatus({
 }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
+    let id: number | undefined;
+    const stop = () => {
+      if (id !== undefined) {
+        window.clearInterval(id);
+        id = undefined;
+      }
+    };
+    const start = () => {
+      stop();
+      // Every other interval in the app pauses on a hidden tab; this one
+      // was ticking 3,600 times an hour in the background to update a
+      // string that only changes once a minute after the first minute.
+      if (document.hidden) return;
+      id = window.setInterval(() => setNow(Date.now()), 1000);
+    };
+    const onVisibility = () => {
+      // Resync first: the clock stopped while hidden, so the age on screen
+      // is as stale as the time spent away.
+      setNow(Date.now());
+      start();
+    };
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   const pricesSec = ageSeconds(quotesUpdatedAt, now);
@@ -987,6 +1026,23 @@ export function Dashboard() {
     setVisitStreak(state);
     if (justHitMilestone) toast(milestoneToast(justHitMilestone), "success");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per app load
+  }, []);
+
+  // Warm Margus's chunk once the page is idle. Keeps him off the critical
+  // path without making the first click wait on a download.
+  useEffect(() => {
+    const warm = () => void import("@/components/CcAdvisorChat");
+    const idle = (
+      window as Window & {
+        requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
+    if (idle) {
+      idle(warm, { timeout: 3000 });
+      return;
+    }
+    const id = window.setTimeout(warm, 1500);
+    return () => window.clearTimeout(id);
   }, []);
 
   // After initial load, sheet switches push history so Back stays in-app.

@@ -104,14 +104,19 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * Admin removes a member, or a member removes themselves.
+ *
+ * Self-removal matters now that public communities let people request in:
+ * without it, anyone who joined one was stuck until an admin got around to
+ * evicting them. The last-admin guard below still applies either way, so
+ * nobody can leave a community with no admin behind.
+ */
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
   const { id, userId } = await ctx.params;
-  if (!(await userIsCommunityAdmin(auth.user.id, id))) {
-    return NextResponse.json({ error: "Admin only" }, { status: 403 });
-  }
 
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
@@ -121,6 +126,13 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const targetIds = await resolveTargetUserIds(id, userId, supabase);
   if (!targetIds.length) {
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
+  }
+
+  // Resolve first: "self" means any account linked to the caller's person,
+  // so leaving with a household alias takes both logins out together.
+  const isSelf = targetIds.includes(auth.user.id);
+  if (!isSelf && !(await userIsCommunityAdmin(auth.user.id, id))) {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
   }
 
   const { data: admins } = await supabase
@@ -136,7 +148,11 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
     const remainingAdmins = adminIds.filter((a) => !targetIds.includes(a));
     if (remainingAdmins.length === 0) {
       return NextResponse.json(
-        { error: "Keep at least one admin" },
+        {
+          error: isSelf
+            ? "You're the only admin. Promote someone else first, or delete the community."
+            : "Keep at least one admin",
+        },
         { status: 400 }
       );
     }

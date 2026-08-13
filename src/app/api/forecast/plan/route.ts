@@ -6,9 +6,9 @@ import {
 import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
-  forecastPlanSchema,
   DEFAULT_FORECAST_STANCE,
 } from "@/lib/forecast-plan";
+import { forecastPlanSchema } from "@/lib/forecast-plan-schema";
 import type { ForecastModel } from "@/lib/forecast";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";

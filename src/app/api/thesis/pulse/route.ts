@@ -10,12 +10,12 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import {
   buildFallbackPulseCheck,
   formatMovePct,
-  pulseReportSchema,
   type PulseCheck,
   type PulseCandidate,
   type PulseHeadline,
   type PulseReport,
 } from "@/lib/thesis-pulse";
+import { pulseReportSchema } from "@/lib/thesis-pulse-schema";
 import { generateObject } from "ai";
 
 export const maxDuration = 90;
