@@ -64,7 +64,7 @@ type FundTeaser = {
   headline: string | null;
 };
 
-export type LabDeepLink = "pulse" | "seasonality";
+export type LabDeepLink = "seasonality";
 
 type EarningsEvent = { ticker: string; date: string; days: number };
 

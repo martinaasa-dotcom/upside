@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, FlaskConical, LayoutDashboard, Plus, Users } from "lucide-react";
+import { Activity, Calculator, FlaskConical, LayoutDashboard, Plus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
@@ -8,6 +8,7 @@ import {
   COMPOUND_TAB_ID,
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
+  PULSE_TAB_ID,
 } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
 
@@ -55,6 +56,12 @@ const MODES = [
     label: "Compound",
     shortLabel: "Growth",
     Icon: Calculator,
+  },
+  {
+    id: PULSE_TAB_ID,
+    label: "Pulse",
+    shortLabel: "Pulse",
+    Icon: Activity,
   },
   {
     id: LAB_TAB_ID,

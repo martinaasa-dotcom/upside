@@ -57,9 +57,11 @@ export function saveStoredTier(tier: ExperienceTier) {
  * plain labels. These were previously plain strings ("pulse", "lab", …)
  * that never matched, so novice-tier tab hiding silently did nothing.
  *
- * Pulse and Seasonality used to be top-level meta-tabs listed here. They
- * are Lab sub-tabs now, so hiding Lab for a novice hides them too, and
- * the per-tier detail moved to TIER_HIDDEN_LAB_TABS below.
+ * Pulse is deliberately absent, so every tier sees it: "is my thesis
+ * still intact after that move" is the question a newer investor most
+ * needs answered, and it's the reason Pulse sits in the main tab row
+ * rather than buried in Lab. Seasonality is a Lab sub-tab, so hiding Lab
+ * for a novice hides it too.
  */
 export const TIER_HIDDEN_META_TABS: Record<ExperienceTier, string[]> = {
   novice: [LAB_TAB_ID],
@@ -70,7 +72,7 @@ export const TIER_HIDDEN_META_TABS: Record<ExperienceTier, string[]> = {
 /**
  * LabSheet sub-tab ids hidden per tier. Novices don't reach Lab at all,
  * so their list is empty by construction; an investor-tier viewer gets
- * Lab minus the two heaviest tools (stress/correlation modelling).
+ * Lab minus its heaviest tool (stress/correlation modelling).
  */
 export const TIER_HIDDEN_LAB_TABS: Record<ExperienceTier, string[]> = {
   novice: [],

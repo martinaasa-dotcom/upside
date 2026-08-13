@@ -23,9 +23,7 @@ import {
   correlationMatrix,
 } from "@/lib/correlation";
 import { currency, percent, cn } from "@/lib/format";
-import { PulsePage } from "@/components/PulsePage";
 import { SeasonalityPage } from "@/components/SeasonalityPage";
-import type { ConvictionMap } from "@/lib/conviction";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import { FlaskConical } from "lucide-react";
@@ -37,8 +35,6 @@ type Props = {
   /** Needed to re-scope the book down to a single sheet. */
   holdings: Holding[];
   quotes: Record<string, Quote>;
-  /** Conviction notes, needed by the Pulse tab. */
-  convictions: ConvictionMap;
   /** Deep-link from Overview (pulse / seasonality). */
   intentTab?: LabDeepLink | null;
   onIntentConsumed?: () => void;
@@ -46,27 +42,26 @@ type Props = {
   hiddenTabs?: string[];
 };
 
-type LabTab = "alloc" | "risk" | "pulse" | "seasonality";
+type LabTab = "alloc" | "risk" | "seasonality";
 
 /** One flat row, ordered as a reading path: what you hold, how risky it
- * is, whether the thesis still holds, and when it tends to move. */
+ * is, and when it tends to move. Pulse used to sit here but earns its own
+ * top-level tab. */
 const TABS: { id: LabTab; label: string }[] = [
   { id: "alloc", label: "Allocation" },
   { id: "risk", label: "Risk" },
-  { id: "pulse", label: "Pulse" },
   { id: "seasonality", label: "Seasonality" },
 ];
 
 const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
-  pulse: "pulse",
   seasonality: "seasonality",
 };
 
 /** Reads `?labtab=` so a hard refresh (or revisiting Lab after switching
  * away) lands back on the sub-tab you were on, not always Allocation.
- * Also honours the legacy `?sheet=pulse` / `?sheet=stats` links from when
- * those were top-level tabs, so old bookmarks still land in the right
- * place rather than dumping you on Allocation. */
+ * Also honours the legacy `?sheet=stats` links from when Seasonality was
+ * a top-level tab, so old bookmarks still land in the right place rather
+ * than dumping you on Allocation. */
 function initialLabTab(): LabTab {
   if (typeof window === "undefined") return "alloc";
   const params = new URLSearchParams(window.location.search);
@@ -74,7 +69,6 @@ function initialLabTab(): LabTab {
   if (TABS.some((t) => t.id === param)) return param as LabTab;
 
   const sheetParam = params.get("sheet")?.trim().toLowerCase();
-  if (sheetParam === "pulse" || sheetParam === "__pulse__") return "pulse";
   if (
     sheetParam === "stats" ||
     sheetParam === "statistics" ||
@@ -91,7 +85,6 @@ export function LabSheet({
   portfolios,
   holdings,
   quotes,
-  convictions,
   intentTab,
   onIntentConsumed,
   hiddenTabs = [],
@@ -548,10 +541,6 @@ export function LabSheet({
             </>
           )}
         </div>
-      )}
-
-      {tab === "pulse" && (
-        <PulsePage model={overview} quotes={quotes} convictions={convictions} />
       )}
 
       {tab === "seasonality" && (

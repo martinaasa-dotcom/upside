@@ -20,6 +20,7 @@ import {
   type HoldingPatch,
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
+import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
@@ -311,11 +312,15 @@ function normalizeMetaTabId(id: string): string | null {
   if (
     id === OVERVIEW_TAB_ID ||
     id === COMPOUND_TAB_ID ||
-    id === LAB_TAB_ID
+    id === LAB_TAB_ID ||
+    id === PULSE_TAB_ID
   ) {
     return id;
   }
-  if (id === PULSE_TAB_ID || id === SEASONALITY_TAB_ID) return LAB_TAB_ID;
+  // Seasonality is a Lab sub-tab, so a persisted id from when it was
+  // top-level folds onto Lab rather than resolving to a tab that no
+  // longer renders and leaving the user on a blank page.
+  if (id === SEASONALITY_TAB_ID) return LAB_TAB_ID;
   return null;
 }
 
@@ -328,12 +333,12 @@ function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
     return COMPOUND_TAB_ID;
   }
   if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) return LAB_TAB_ID;
-  // Pulse and Seasonality are Lab sub-tabs now. Old links (and anyone's
-  // saved tab from before the move) still resolve, they just land on Lab
-  // with the matching sub-tab selected via ?labtab= below.
+  if (sheetParam === "pulse" || sheetParam === PULSE_TAB_ID) {
+    return PULSE_TAB_ID;
+  }
+  // Seasonality is a Lab sub-tab. Old links still resolve, they just land
+  // on Lab with the right sub-tab selected via ?labtab= below.
   if (
-    sheetParam === "pulse" ||
-    sheetParam === PULSE_TAB_ID ||
     sheetParam === "statistics" ||
     sheetParam === "stats" ||
     sheetParam === "seasonality" ||
@@ -544,11 +549,13 @@ export function Dashboard() {
     [experienceTier]
   );
   const labHiddenForTier = hiddenMetaTabIds.includes(LAB_TAB_ID);
+  const pulseHiddenForTier = hiddenMetaTabIds.includes(PULSE_TAB_ID);
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
-  const isMetaTab = isOverview || isCompound || isLab;
+  const isPulse = activeId === PULSE_TAB_ID;
+  const isMetaTab = isOverview || isCompound || isLab || isPulse;
 
   const activePortfolio =
     isMetaTab
@@ -1077,6 +1084,8 @@ export function Dashboard() {
       url.searchParams.set("sheet", "compound");
     } else if (activeId === LAB_TAB_ID) {
       url.searchParams.set("sheet", "lab");
+    } else if (activeId === PULSE_TAB_ID) {
+      url.searchParams.set("sheet", "pulse");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
       if (p?.slug) url.searchParams.set("sheet", p.slug);
@@ -2231,11 +2240,8 @@ export function Dashboard() {
         id: "pulse",
         label: "Pulse: thesis check",
         group: "Go",
-        hint: "In Lab · big movers",
-        run: () => {
-          setLabIntent("pulse");
-          setActiveId(LAB_TAB_ID);
-        },
+        hint: "Big movers",
+        run: () => setActiveId(PULSE_TAB_ID),
       },
       {
         id: "statistics",
@@ -2601,13 +2607,18 @@ export function Dashboard() {
           </div>
         )}
 
-        {isLab ? (
+        {isPulse ? (
+          <PulsePage
+            model={overview}
+            quotes={quotes}
+            convictions={convictionMap}
+          />
+        ) : isLab ? (
           <LabSheet
             overview={overview}
             portfolios={portfolios}
             holdings={holdings}
             quotes={quotes}
-            convictions={convictionMap}
             intentTab={labIntent}
             onIntentConsumed={() => setLabIntent(null)}
             hiddenTabs={
@@ -2654,12 +2665,7 @@ export function Dashboard() {
                     }
               }
               onOpenPulse={
-                labHiddenForTier
-                  ? undefined
-                  : () => {
-                      setLabIntent("pulse");
-                      setActiveId(LAB_TAB_ID);
-                    }
+                pulseHiddenForTier ? undefined : () => setActiveId(PULSE_TAB_ID)
               }
               onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
             />
