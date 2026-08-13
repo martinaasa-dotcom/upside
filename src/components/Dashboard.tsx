@@ -149,7 +149,6 @@ import {
   toggleVisibilityMap,
 } from "@/lib/panel-visibility";
 import {
-  defaultForecastVisible,
   loadStoredKnowsOptions,
   loadStoredTier,
   NO_OPTIONS_HIDDEN_LAB_TABS,
@@ -494,12 +493,11 @@ export function Dashboard() {
       : activePortfolio
         ? isPanelVisible(ccVisibleByPortfolio, activePortfolio, experienceTier !== "novice")
         : true;
+  // Forecast defaults to visible for every experience tier — unlike Lab/
+  // Pulse/Seasonality, it's plain price-scenario modeling, not something
+  // that needs "growing into."
   const forecastVisible = activePortfolio
-    ? isPanelVisible(
-        forecastVisibleByPortfolio,
-        activePortfolio,
-        experienceTier ? defaultForecastVisible(experienceTier) : FORECAST_DEFAULT_VISIBLE
-      )
+    ? isPanelVisible(forecastVisibleByPortfolio, activePortfolio, FORECAST_DEFAULT_VISIBLE)
     : true;
 
   const allTickers = useMemo(() => {

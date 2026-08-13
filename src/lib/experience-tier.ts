@@ -63,13 +63,6 @@ export const TIER_HIDDEN_LAB_GROUPS: Record<ExperienceTier, string[]> = {
   advanced: [],
 };
 
-/** Forecast panel (scenario modeling) — hidden by default for novices,
- * same as today for everyone else. Users can still manually re-show it
- * via the existing per-sheet visibility toggle either way. */
-export function defaultForecastVisible(tier: ExperienceTier | null): boolean {
-  return tier !== "novice";
-}
-
 const KNOWS_OPTIONS_STORAGE_KEY = "portfell-knows-options";
 
 /**
