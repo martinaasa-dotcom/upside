@@ -46,11 +46,30 @@ type LabTab = "alloc" | "risk" | "seasonality";
 
 /** One flat row, ordered as a reading path: what you hold, how risky it
  * is, and when it tends to move. Pulse used to sit here but earns its own
- * top-level tab. */
-const TABS: { id: LabTab; label: string }[] = [
-  { id: "alloc", label: "Allocation" },
-  { id: "risk", label: "Risk" },
-  { id: "seasonality", label: "Seasonality" },
+ * top-level tab.
+ *
+ * Every tab carries a blurb because none of these names explain
+ * themselves. "Shock" in particular told you nothing about what it did.
+ */
+const TABS: { id: LabTab; label: string; blurb: string }[] = [
+  {
+    id: "alloc",
+    label: "Allocation",
+    blurb:
+      "What you own and how lopsided it is. Shows whether a few names quietly decide your whole year.",
+  },
+  {
+    id: "risk",
+    label: "Risk",
+    blurb:
+      "What a bad day would actually cost you. Pick a crash scenario to see the damage, and check whether your names tend to fall together.",
+  },
+  {
+    id: "seasonality",
+    label: "Seasonality",
+    blurb:
+      "How the market has typically behaved at this time of year. History, not a prediction.",
+  },
 ];
 
 const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
@@ -102,6 +121,8 @@ export function LabSheet({
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
+
+  const activeTabMeta = TABS.find((t) => t.id === tab);
 
   function selectTab(id: LabTab) {
     setTab(id);
@@ -300,8 +321,7 @@ export function LabSheet({
           <h2 className="text-sm font-semibold text-white">Lab</h2>
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Everything analytical about your book in one place. Edits sync when
-          a locked sheet is unlocked.
+          Everything analytical about your book in one place.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex min-h-8 items-center gap-2">
@@ -367,6 +387,13 @@ export function LabSheet({
             <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#161618] to-transparent" />
           )}
         </div>
+        {/* Says what the tab you just picked actually does. A label like
+          * "Shock" or "Risk" means nothing on its own. */}
+        {activeTabMeta && (
+          <p className="mt-2.5 text-xs leading-relaxed text-zinc-400">
+            {activeTabMeta.blurb}
+          </p>
+        )}
       </div>
 
       {tab === "alloc" && (
@@ -551,9 +578,18 @@ export function LabSheet({
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-white">Shock lab</p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                {SHOCKS.find((s) => s.id === shock)?.tagline} · {scopeLabel}
+              <p className="text-sm font-semibold text-white">
+                Crash test your book
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                Pick a scenario below and every position is repriced as if it
+                had already happened, so you can see the damage in dollars
+                before it costs you any. Each name moves by how exposed it is,
+                not all by the same amount.
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Showing: {SHOCKS.find((s) => s.id === shock)?.tagline} ·{" "}
+                {scopeLabel}
               </p>
             </div>
           </div>
@@ -670,12 +706,22 @@ export function LabSheet({
 
       {tab === "risk" && (
         <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <p className="text-sm font-semibold text-white">
-            Correlations (90d sparkline)
-          </p>
+          <div>
+            <p className="text-sm font-semibold text-white">
+              Do these move together?
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+              How closely each pair has tracked each other over the last 90
+              days. Near <span className="tabular-nums">+1</span> means they
+              rise and fall as one, so holding both spreads your money without
+              spreading your risk. Near{" "}
+              <span className="tabular-nums">0</span> means they drift
+              independently, which is what real diversification looks like.
+            </p>
+          </div>
           {corrHeat.tickers.length < 2 ? (
             <p className="text-sm text-zinc-500">
-              Need at least two names with price history.
+              Need at least two names with price history to compare.
             </p>
           ) : (
             <>
