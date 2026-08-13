@@ -7,6 +7,7 @@ import {
   buildAdvisorProviderChain,
   describeAdvisorError,
   invalidateStreamingProvider,
+  markProviderUnhealthy,
   pickStreamingProvider,
 } from "@/lib/ai/model";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -108,11 +109,20 @@ export async function POST(req: Request) {
           }
         : {}),
       stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 12),
-      maxRetries: 3,
+      // Retrying a rate-limited provider three more times just deepens the
+      // limit and makes the user wait for four identical failures. One
+      // retry covers a genuine blip; anything worse should move providers,
+      // which the cooldown below arranges for the next message.
+      maxRetries: 1,
       abortSignal: req.signal,
       onError: ({ error }) => {
         console.error(`[chat] provider "${provider.id}" stream error`, error);
         invalidateStreamingProvider(cacheKey);
+        // The probe is a 4-token ping that a rate-limited provider still
+        // answers, so without this the same exhausted provider gets
+        // re-picked on the retry and fails again.
+        const { status } = describeAdvisorError(error);
+        if (status === 429 || status === 503) markProviderUnhealthy(provider.id);
       },
     });
 

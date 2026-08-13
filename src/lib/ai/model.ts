@@ -238,6 +238,41 @@ export type AdvisorFallbackOptions = {
 /** Below this there isn't enough time left for a call to plausibly land. */
 const MIN_ATTEMPT_MS = 5_000;
 
+/**
+ * Providers that just failed a REAL request, parked for a while.
+ *
+ * The streaming probe sends a 4-token "ping", which a rate-limited
+ * provider will happily answer even though it 429s the actual chat a
+ * second later. That's how the same exhausted provider kept getting
+ * re-picked on every retry: the ping passed, the real request didn't.
+ * A live failure is far better evidence than a ping, so trust it and
+ * step over that provider for a few minutes.
+ *
+ * Bounded by the number of providers (4), so nothing accumulates.
+ */
+const providerCooldownUntil = new Map<AdvisorProviderId, number>();
+const PROVIDER_COOLDOWN_MS = 3 * 60 * 1000;
+
+export function markProviderUnhealthy(
+  id: AdvisorProviderId,
+  ms: number = PROVIDER_COOLDOWN_MS
+) {
+  providerCooldownUntil.set(id, Date.now() + ms);
+}
+
+/** Chain minus anything cooling down, or the original if all are. */
+function usableChain(
+  chain: AdvisorProviderCandidate[]
+): AdvisorProviderCandidate[] {
+  const now = Date.now();
+  const healthy = chain.filter(
+    (c) => (providerCooldownUntil.get(c.id) ?? 0) <= now
+  );
+  // Everything is cooling down: better to try a tired provider than to
+  // refuse outright.
+  return healthy.length > 0 ? healthy : chain;
+}
+
 function attemptSignal(
   caller: AbortSignal | undefined,
   budgetMs: number | null
@@ -261,9 +296,10 @@ export async function withAdvisorFallback<T>(
       "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) in .env.local."
     );
   }
+  const order = usableChain(chain);
   let lastErr: unknown;
-  for (let i = 0; i < chain.length; i++) {
-    const candidate = chain[i]!;
+  for (let i = 0; i < order.length; i++) {
+    const candidate = order[i]!;
 
     // The caller gave up (client disconnected, request aborted). Failing
     // over to another provider would just burn quota answering nobody.
@@ -276,8 +312,8 @@ export async function withAdvisorFallback<T>(
 
     if (remaining != null && remaining < MIN_ATTEMPT_MS && i > 0) {
       console.error(
-        `[ai] out of time budget after "${chain[i - 1]!.id}", skipping ${
-          chain.length - i
+        `[ai] out of time budget after "${order[i - 1]!.id}", skipping ${
+          order.length - i
         } remaining provider(s)`
       );
       break;
@@ -288,7 +324,7 @@ export async function withAdvisorFallback<T>(
     const slice =
       remaining == null
         ? null
-        : Math.max(MIN_ATTEMPT_MS, Math.floor(remaining / (chain.length - i)));
+        : Math.max(MIN_ATTEMPT_MS, Math.floor(remaining / (order.length - i)));
 
     try {
       return await fn(
@@ -298,6 +334,10 @@ export async function withAdvisorFallback<T>(
       );
     } catch (err) {
       console.error(`[ai] provider "${candidate.id}" failed`, err);
+      // A rate limit or outage won't clear in the seconds before the next
+      // request, so park this provider instead of leading with it again.
+      const { status } = describeAdvisorError(err);
+      if (status === 429 || status === 503) markProviderUnhealthy(candidate.id);
       lastErr = err;
     }
   }
@@ -333,9 +373,12 @@ export async function pickStreamingProvider(
       "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) in .env.local."
     );
   }
+  // Skip anything that just failed a live request, then probe the rest.
+  const order = usableChain(chain);
+
   // Nothing to choose between — skip the probe entirely so the common
   // today (single provider configured) case pays zero extra latency.
-  if (chain.length === 1) return chain[0]!;
+  if (order.length === 1) return order[0]!;
 
   const ttl = cacheKey.includes("vision")
     ? VISION_STREAMING_PROVIDER_CACHE_TTL_MS
@@ -344,13 +387,13 @@ export async function pickStreamingProvider(
   if (
     cached &&
     Date.now() - cached.at < ttl &&
-    chain.some((c) => c.id === cached.candidate.id)
+    order.some((c) => c.id === cached.candidate.id)
   ) {
     return cached.candidate;
   }
 
   let lastErr: unknown;
-  for (const candidate of chain) {
+  for (const candidate of order) {
     try {
       await generateText({
         model: candidate.model,
@@ -380,11 +423,40 @@ export function invalidateStreamingProvider(cacheKey: string) {
  * model can't help there — Margus instead falls through to a different
  * PROVIDER (Groq/Gemini/Cerebras) when one is configured.
  */
+/**
+ * Providers report the same failure in wildly different shapes: a message
+ * with "429" in it, a bare "Too Many Requests", or a clean message with the
+ * code only on `statusCode`. The AI SDK then buries the real one inside a
+ * RetryError ("Failed after 4 attempts. Last error: ..."). Dig through all
+ * of it so classification doesn't depend on one lucky substring.
+ */
+function extractStatusCode(err: unknown, depth = 0): number | null {
+  if (!err || typeof err !== "object" || depth > 4) return null;
+  const e = err as Record<string, unknown>;
+  for (const key of ["statusCode", "status", "responseStatus"]) {
+    const value = e[key];
+    if (typeof value === "number" && value >= 400) return value;
+  }
+  return extractStatusCode(e.lastError ?? e.cause, depth + 1);
+}
+
+function collectMessages(err: unknown, depth = 0): string {
+  if (!err || depth > 4) return "";
+  if (typeof err === "string") return err;
+  if (typeof err !== "object") return String(err);
+  const e = err as Record<string, unknown>;
+  const own = typeof e.message === "string" ? e.message : "";
+  const nested = collectMessages(e.lastError ?? e.cause, depth + 1);
+  return nested ? `${own} ${nested}` : own;
+}
+
 export function describeAdvisorError(err: unknown): {
   message: string;
   status: number;
 } {
-  const msg = err instanceof Error ? err.message : String(err ?? "");
+  const raw = err instanceof Error ? err.message : String(err ?? "");
+  const msg = collectMessages(err) || raw;
+  const code = extractStatusCode(err);
 
   if (/free-models-per-day|models-per-day/i.test(msg)) {
     return {
@@ -393,23 +465,42 @@ export function describeAdvisorError(err: unknown): {
       status: 429,
     };
   }
-  if (/rate.?limit|429|temporar/i.test(msg)) {
+  if (
+    code === 429 ||
+    /rate.?limit|429|too many requests|quota|temporar/i.test(msg)
+  ) {
     return {
       message:
-        "Model is busy / rate-limited. Wait a few seconds and try again. Margus will auto-fallback to another provider when one is configured.",
+        "Margus's model is rate-limited right now. He'll switch to a backup provider, so try that message again in a few seconds.",
       status: 429,
     };
   }
-  if (/timeout|504|timed out/i.test(msg)) {
+  if (code === 504 || code === 408 || /timeout|504|timed out/i.test(msg)) {
     return {
       message: "Model timed out. Try again, free models are flaky under load.",
       status: 504,
     };
   }
-  if (/OPENROUTER|GROQ|GEMINI|CEREBRAS|API key|503|LLM/i.test(msg)) {
+  if (code === 401 || code === 403 || /invalid api key|unauthorized|forbidden/i.test(msg)) {
+    return {
+      message:
+        "Margus's API key was rejected by the provider. Check the key is still valid in the provider dashboard.",
+      status: 502,
+    };
+  }
+  // Deliberately narrow: matching any mention of a provider name here used
+  // to swallow ordinary provider errors and mislabel them "missing key".
+  if (/no llm key configured|_API_KEY/i.test(msg)) {
     return {
       message:
         "Missing LLM API key. Add OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) to .env.local, then restart the dev server.",
+      status: 503,
+    };
+  }
+  if (code === 503 || code === 502 || /overloaded|unavailable/i.test(msg)) {
+    return {
+      message:
+        "The model provider is overloaded right now. Margus will try a backup on your next message.",
       status: 503,
     };
   }
