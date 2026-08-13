@@ -2957,9 +2957,6 @@ export function Dashboard() {
         sparkline={
           drawerTicker ? quotes[drawerTicker]?.sparkline : undefined
         }
-        todayChangePct={
-          drawerTicker ? quotes[drawerTicker]?.changePercent ?? null : null
-        }
         conviction={
           drawerTicker
             ? convictionMap[drawerTicker.toUpperCase()] ?? null
