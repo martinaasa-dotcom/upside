@@ -130,21 +130,24 @@ function extractImages(
     .map((p) => ({ url: p.url!, mediaType: p.mediaType! }));
 }
 
-/** Shared with the silent-import status card so the two surfaces never
- * disagree on what a given error means. Mirrors describeAdvisorError's
- * provider-agnostic framing server-side — this used to hardcode
- * OpenRouter specifically, which was actively misleading once Groq/
- * Gemini/Cerebras fallbacks existed (it'd tell you to add a key you
- * already have while the real issue was a different provider). */
+/**
+ * Shared with the silent-import status card so the two surfaces never
+ * disagree on what a given error means.
+ *
+ * The server's describeAdvisorError already returns a sentence written
+ * for whoever is holding the phone, so the job here is mostly to get out
+ * of its way. This used to re-classify everything itself and told real
+ * users to "add another free provider key in .env.local", which is
+ * advice for someone running the app locally, not for Liina on 4G.
+ * Only genuinely client-side failures get rewritten now.
+ */
 function describeChatUiError(message: string): string {
-  if (/free-models-per-day|models-per-day/i.test(message)) {
-    return "OpenRouter's free daily quota is used up for today. Add a Groq/Gemini/Cerebras free key for a fallback, or try again after it resets.";
-  }
-  if (/OPENROUTER|GROQ|GEMINI|CEREBRAS|API key|503|LLM/i.test(message)) {
-    return "Every configured AI provider failed or is rate-limited right now. Wait a bit and try again, or add another free provider key (Groq/Gemini/Cerebras) in .env.local for a fallback.";
-  }
   if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(message)) {
-    return "Connection dropped (dev server restart or a long reply). Refresh the page and try again.";
+    return "The connection dropped before Margus finished. Check your signal and try again.";
+  }
+  // Never surface raw SDK internals if something slips through unmapped.
+  if (/AI_[A-Za-z]*Error|Failed after \d+ attempts/i.test(message)) {
+    return "Margus couldn't reach a working model just then. Give it a few seconds and try again.";
   }
   return message;
 }

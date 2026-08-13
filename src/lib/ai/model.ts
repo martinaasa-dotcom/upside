@@ -1,25 +1,42 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, type LanguageModel } from "ai";
 
-const DEFAULT_TEXT_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 /**
- * Vision + tools. Prefer a capable omni model; reasoning budget is capped in /api/chat
- * so screenshot→importSheet doesn't stall on endless thinking.
+ * OpenRouter's `:free` catalogue rots: slugs get retired or moved behind
+ * payment, and a listed model can still 404 when its provider drops the
+ * endpoint. Everything below was verified live against the API, so if
+ * Margus starts failing across the board, re-check these first rather
+ * than assuming a rate limit:
+ *
+ *   curl -s https://openrouter.ai/api/v1/models | jq -r \
+ *     '.data[] | select(.id|endswith(":free"))
+ *      | select(.supported_parameters|index("tools")) | .id'
+ *
+ * Tools support is non-negotiable here. Margus edits the sheet through
+ * tool calls, and several fast free models answer in prose while quietly
+ * never emitting one, which looks like success and changes nothing.
  */
-const DEFAULT_VISION_MODEL =
-  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
+// gpt-oss-20b: ~5s and reliable tool calls. The previous default
+// (nemotron-3-super-120b) works but took 36s for a one-word reply.
+const DEFAULT_TEXT_MODEL = "openai/gpt-oss-20b:free";
 
-/** Free-tier backups when the primary OpenRouter model is rate-limited / down. */
-const DEFAULT_TEXT_FALLBACKS = [
-  "nvidia/nemotron-3-nano-30b-a3b:free",
-  "openai/gpt-oss-20b:free",
-  "qwen/qwen3-14b:free",
-];
+/**
+ * Vision + tools, for screenshot import. Gemma 4 answers an image with a
+ * forced tool call in ~1.5s. The previous default
+ * (nemotron-3-nano-omni-...-reasoning) now 404s: still listed in the
+ * models API, but its provider endpoint is gone.
+ */
+const DEFAULT_VISION_MODEL = "google/gemma-4-31b-it:free";
 
-const DEFAULT_VISION_FALLBACKS = [
-  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-  "google/gemini-2.0-flash-exp:free",
-];
+/**
+ * Free-tier backups when the primary OpenRouter model is rate-limited.
+ * Deliberately excludes nemotron-3-ultra-550b: it answers with a valid
+ * tool call but took 101s to do it, which is worse for the user than
+ * failing fast and letting the provider chain move to Groq.
+ */
+const DEFAULT_TEXT_FALLBACKS = ["nvidia/nemotron-3-super-120b-a12b:free"];
+
+const DEFAULT_VISION_FALLBACKS = ["google/gemma-4-26b-a4b-it:free"];
 
 function parseEnvList(raw: string | undefined): string[] {
   if (!raw?.trim()) return [];
@@ -134,6 +151,24 @@ export function buildAdvisorProviderChain(options?: {
   const vision = Boolean(options?.vision) && !options?.reasoning;
   const chain: AdvisorProviderCandidate[] = [];
 
+  // Groq leads for text: measured 380-640ms with dependable tool calls,
+  // against 5s at best and 100s at worst on OpenRouter's free tier, which
+  // also 404s and 429s far more often. It can't take images though, so
+  // vision still starts at OpenRouter below.
+  if (hasKey("GROQ_API_KEY") && !vision) {
+    const groq = createOpenAI({
+      apiKey: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
+    });
+    // gpt-oss is Groq's only model family with guaranteed json_schema
+    // support — llama-3.3-70b-versatile 400s on any structured
+    // (generateObject) call, which would silently break this as a
+    // fallback for forecast/thesis-pulse/margus-fund without ever
+    // touching the plain-text chat path (confirmed against the live API).
+    const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
+    chain.push({ id: "groq", model: groq.chat(groqModel) });
+  }
+
   if (hasKey("OPENROUTER_API_KEY")) {
     const modelId = resolveAdvisorModelId(options);
     const fallbacks = resolveAdvisorFallbackIds(options);
@@ -150,20 +185,6 @@ export function buildAdvisorProviderChain(options?: {
       fetch: openRouterFetchWithFallbacks(fallbacks),
     });
     chain.push({ id: "openrouter", model: openrouter.chat(modelId) });
-  }
-
-  if (hasKey("GROQ_API_KEY") && !vision) {
-    const groq = createOpenAI({
-      apiKey: process.env.GROQ_API_KEY,
-      baseURL: "https://api.groq.com/openai/v1",
-    });
-    // gpt-oss is Groq's only model family with guaranteed json_schema
-    // support — llama-3.3-70b-versatile 400s on any structured
-    // (generateObject) call, which would silently break this as a
-    // fallback for forecast/thesis-pulse/margus-fund without ever
-    // touching the plain-text chat path (confirmed against the live API).
-    const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
-    chain.push({ id: "groq", model: groq.chat(groqModel) });
   }
 
   if (hasKey("GEMINI_API_KEY")) {
