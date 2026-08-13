@@ -23,7 +23,6 @@ import {
   ArrowLeft,
   Check,
   Copy,
-  Gauge,
   LayoutGrid,
   Lightbulb,
   Link2,
@@ -103,6 +102,24 @@ function readCommunityCache(communityId: string): {
     meta: (cached.meta as CommunityMetaResponse) ?? null,
     book: (cached.book as CommunityBookResponse) ?? null,
   };
+}
+
+/** "Martin Aasa" + "Amanda Aasa" -> "Martin & Amanda Aasa". Falls back to
+ * joining full names when surnames don't match (or there's no clean last
+ * word to share), and to a plain "&" join for 3+ people. */
+function combineHouseholdNames(names: string[]): string {
+  const clean = names.map((n) => n.trim()).filter(Boolean);
+  if (clean.length <= 1) return clean[0] ?? "Household";
+  if (clean.length > 2) return clean.join(", ").replace(/, ([^,]*)$/, " & $1");
+
+  const parts = clean.map((n) => n.split(/\s+/));
+  const lastWords = parts.map((p) => p[p.length - 1] ?? "");
+  const sameSurname = Boolean(lastWords[0]) && lastWords.every((w) => w === lastWords[0]);
+  if (sameSurname && parts.every((p) => p.length > 1)) {
+    const firstNames = parts.map((p) => p.slice(0, -1).join(" "));
+    return `${firstNames.join(" & ")} ${lastWords[0]}`;
+  }
+  return clean.join(" & ");
 }
 
 export function CommunityView({ communityId }: Props) {
@@ -370,19 +387,55 @@ export function CommunityView({ communityId }: Props) {
   // animals grid, leaderboard, risk comparison, and fun facts — instead of
   // each section re-deriving its own copy of "which sheets does this
   // person own".
+  type PersonMilestone = {
+    total: number;
+    hitCount: number;
+    goalCount: number;
+    next: number | null;
+    remaining: number;
+    progress: number;
+    lastGoal: number;
+  };
   type MemberStat = {
     id: string;
     name: string;
     isYou: boolean;
     isPending: boolean;
     sheetCount: number;
+    sheetKey: string;
     totalValue: number;
     todayDollar: number;
     todayPct: number | null;
     roiPct: number;
     personality: PortfolioPersonality | null;
+    milestone: PersonMilestone;
   };
+
   const memberStats = useMemo<MemberStat[]>(() => {
+    const milestoneFor = (total: number): PersonMilestone => {
+      const hitCount = COMPOUND_MILESTONE_GOALS.filter((g) => total >= g).length;
+      const next = COMPOUND_MILESTONE_GOALS.find((g) => total < g) ?? null;
+      const lastGoal =
+        [...COMPOUND_MILESTONE_GOALS].reverse().find((g) => total >= g) ?? 0;
+      // Progress WITHIN the current bracket (lastGoal -> next), so the bar
+      // fill actually lines up with the lastGoal/next labels instead of
+      // always reading against zero.
+      const bracketSize = next != null ? next - lastGoal : 1;
+      const progress =
+        next != null && bracketSize > 0
+          ? Math.min(1, (total - lastGoal) / bracketSize)
+          : 1;
+      return {
+        total,
+        hitCount,
+        goalCount: COMPOUND_MILESTONE_GOALS.length,
+        next,
+        remaining: next != null ? next - total : 0,
+        progress,
+        lastGoal,
+      };
+    };
+
     const statFor = (
       id: string,
       name: string,
@@ -415,15 +468,17 @@ export function CommunityView({ communityId }: Props) {
         isYou,
         isPending,
         sheetCount: sheets.length,
+        sheetKey: [...sheetIds].sort().join(","),
         totalValue,
         todayDollar,
         todayPct,
         roiPct,
         personality,
+        milestone: milestoneFor(totalValue),
       };
     };
 
-    const list: MemberStat[] = members.map((m) => {
+    const rawMembers: MemberStat[] = members.map((m) => {
       const sheetIds = new Set(
         ownership.filter((o) => o.user_id === m.user_id).map((o) => o.portfolio_id)
       );
@@ -435,6 +490,35 @@ export function CommunityView({ communityId }: Props) {
         false
       );
     });
+
+    // Co-owners of the exact same sheet(s) are one household, not two
+    // separate "members" — a couple sharing a book shouldn't double up in
+    // the leaderboard/power-animals grid with identical numbers twice.
+    const bySheetKey = new Map<string, MemberStat[]>();
+    const solo: MemberStat[] = [];
+    for (const m of rawMembers) {
+      if (!m.sheetKey) {
+        solo.push(m);
+        continue;
+      }
+      const arr = bySheetKey.get(m.sheetKey) ?? [];
+      arr.push(m);
+      bySheetKey.set(m.sheetKey, arr);
+    }
+    const list: MemberStat[] = [...solo];
+    for (const group of bySheetKey.values()) {
+      if (group.length === 1) {
+        list.push(group[0]!);
+        continue;
+      }
+      const first = group[0]!;
+      list.push({
+        ...first,
+        name: combineHouseholdNames(group.map((g) => g.name)),
+        isYou: group.some((g) => g.isYou),
+      });
+    }
+
     for (const p of pendingMembers) {
       const sheetIds = new Set(p.portfolio_ids);
       list.push(statFor(`pending:${p.key}`, p.label, sheetIds, false, true));
@@ -446,31 +530,6 @@ export function CommunityView({ communityId }: Props) {
     () => memberStats.filter((m) => m.sheetCount > 0),
     [memberStats]
   );
-
-  const communityMilestones = useMemo(() => {
-    const total = overview.totals.totalValue;
-    const hitCount = COMPOUND_MILESTONE_GOALS.filter((g) => total >= g).length;
-    const next = COMPOUND_MILESTONE_GOALS.find((g) => total < g) ?? null;
-    const lastGoal =
-      [...COMPOUND_MILESTONE_GOALS].reverse().find((g) => total >= g) ?? 0;
-    // Progress WITHIN the current bracket (lastGoal -> next), so the bar
-    // fill actually lines up with the lastGoal/next labels shown below it
-    // instead of always reading against zero.
-    const bracketSize = next != null ? next - lastGoal : 1;
-    const progress =
-      next != null && bracketSize > 0
-        ? Math.min(1, (total - lastGoal) / bracketSize)
-        : 1;
-    return {
-      total,
-      hitCount,
-      goalCount: COMPOUND_MILESTONE_GOALS.length,
-      next,
-      remaining: next != null ? next - total : 0,
-      progress,
-      lastGoal,
-    };
-  }, [overview.totals.totalValue]);
 
   const [funFactsShuffle, setFunFactsShuffle] = useState(0);
   const communityFunFacts = useMemo(
@@ -644,55 +703,6 @@ export function CommunityView({ communityId }: Props) {
 
               {view === "overview" && (
                 <>
-                  <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
-                          <Target className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">
-                            Family milestone tracker
-                          </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
-                            {communityMilestones.hitCount} of{" "}
-                            {communityMilestones.goalCount} cleared, combined
-                          </p>
-                        </div>
-                      </div>
-                      {communityMilestones.next != null && (
-                        <p className="text-sm text-zinc-300">
-                          Next: <span className="font-semibold text-white">
-                            {currency(communityMilestones.next, 0)}
-                          </span>
-                          <span className="text-zinc-500">
-                            {" "}
-                            · {currency(communityMilestones.remaining, 0)} to go
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-zinc-900">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-brand to-brand-bright transition-all"
-                        style={{
-                          width: `${Math.round(communityMilestones.progress * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-2 flex justify-between text-xs text-zinc-500">
-                      <span>{currency(communityMilestones.lastGoal, 0)}</span>
-                      <span className="tabular-nums text-brand-bright">
-                        {currency(communityMilestones.total, 0)}
-                      </span>
-                      <span>
-                        {communityMilestones.next != null
-                          ? currency(communityMilestones.next, 0)
-                          : "🎉 all cleared"}
-                      </span>
-                    </div>
-                  </section>
-
                   {membersWithBooks.length > 0 && (
                     <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
                       <div className="mb-5 flex items-center gap-2.5">
@@ -704,11 +714,12 @@ export function CommunityView({ communityId }: Props) {
                             Power animals
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Diversification + risk, turned into a spirit animal
+                            Diversification, risk, and a modeled edge for every
+                            book — not advice, just a fun comparison
                           </p>
                         </div>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-4 lg:grid-cols-2">
                         {membersWithBooks.map((m) => (
                           <button
                             key={m.id}
@@ -717,43 +728,103 @@ export function CommunityView({ communityId }: Props) {
                               setSelectedOwnerId(m.id);
                               setSelectedPortfolioId(null);
                             }}
-                            className="flex items-start gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-left transition hover:border-brand/40"
+                            className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 text-left transition hover:border-brand/40 sm:p-5"
                           >
-                            <span className="text-3xl" aria-hidden>
-                              {m.personality?.animalEmoji ?? "❔"}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-white">
-                                {m.name}
-                                {m.isYou && (
-                                  <span className="ml-1.5 text-xs font-normal text-zinc-500">
-                                    (you)
-                                  </span>
-                                )}
-                                {m.isPending && (
-                                  <span className="ml-1.5 text-xs font-normal text-amber-500/90">
-                                    awaiting sign-in
-                                  </span>
-                                )}
+                            <div className="flex items-start gap-3">
+                              <span className="text-3xl" aria-hidden>
+                                {m.personality?.animalEmoji ?? "❔"}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-white">
+                                  {m.name}
+                                  {m.isYou && (
+                                    <span className="ml-1.5 text-xs font-normal text-zinc-500">
+                                      (you)
+                                    </span>
+                                  )}
+                                  {m.isPending && (
+                                    <span className="ml-1.5 text-xs font-normal text-amber-500/90">
+                                      awaiting sign-in
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-xs font-medium text-brand-bright">
+                                  {m.personality?.animal ?? "No book yet"}
+                                </p>
+                              </div>
+                              <p className="shrink-0 text-sm font-semibold tabular-nums text-zinc-200">
+                                {currency(m.totalValue, 0)}
                               </p>
-                              <p className="text-xs font-medium text-brand-bright">
-                                {m.personality?.animal ?? "No book yet"}
-                              </p>
-                              {m.personality && (
-                                <div className="mt-2 space-y-1">
-                                  <MiniBar
-                                    label="Diversified"
-                                    value={m.personality.diversificationScore}
+                            </div>
+
+                            {m.personality && (
+                              <div className="mt-4 space-y-4">
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <ScoreBar
+                                    label="Diversification"
+                                    score={m.personality.diversificationScore}
+                                    band={m.personality.diversificationBand.label}
                                     color="#38bdf8"
                                   />
-                                  <MiniBar
+                                  <ScoreBar
                                     label="Risk"
-                                    value={m.personality.riskScore}
+                                    score={m.personality.riskScore}
+                                    band={m.personality.riskBand.label}
                                     color="#f472b6"
                                   />
                                 </div>
-                              )}
-                            </div>
+                                <div className="grid grid-cols-3 gap-2 rounded-xl border border-zinc-800/60 bg-zinc-950/40 p-2.5">
+                                  <MiniStat
+                                    label="Expected/yr"
+                                    value={`${m.personality.expectedAnnualReturnPct.toFixed(1)}%`}
+                                    tone="up"
+                                  />
+                                  <MiniStat
+                                    label="Max drawdown"
+                                    value={`-${m.personality.maxDrawdownPct}%`}
+                                    tone="warn"
+                                  />
+                                  <MiniStat
+                                    label="Modeled alpha"
+                                    value={`${m.personality.modeledAlphaPct >= 0 ? "+" : ""}${m.personality.modeledAlphaPct.toFixed(1)}%`}
+                                    tone={m.personality.modeledAlphaPct >= 0 ? "up" : "down"}
+                                  />
+                                </div>
+                                <div>
+                                  <div className="flex items-center justify-between gap-2 text-xs">
+                                    <span className="inline-flex items-center gap-1 text-zinc-500">
+                                      <Target className="h-3 w-3 shrink-0" />
+                                      {m.milestone.next != null ? (
+                                        <>
+                                          Next{" "}
+                                          <span className="font-medium text-zinc-300">
+                                            {currency(m.milestone.next, 0)}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        "🎉 top of the ladder"
+                                      )}
+                                    </span>
+                                    {m.milestone.next != null && (
+                                      <span className="tabular-nums text-zinc-500">
+                                        {Math.round(m.milestone.progress * 100)}%
+                                        there
+                                      </span>
+                                    )}
+                                  </div>
+                                  {m.milestone.next != null && (
+                                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800">
+                                      <div
+                                        className="h-full rounded-full bg-gradient-to-r from-brand to-brand-bright"
+                                        style={{
+                                          width: `${Math.round(m.milestone.progress * 100)}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -862,54 +933,6 @@ export function CommunityView({ communityId }: Props) {
                             )}
                           </div>
                         ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {membersWithBooks.length > 0 && (
-                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
-                      <div className="mb-5 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
-                          <Gauge className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">
-                            Risk &amp; diversification
-                          </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
-                            Not advice — just a fun comparison of how each book
-                            is built
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {membersWithBooks
-                          .filter((m) => m.personality)
-                          .map((m) => (
-                            <div key={m.id} className="space-y-1.5">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-medium text-zinc-200">
-                                  {m.personality?.animalEmoji} {m.name}
-                                </span>
-                                <span className="text-zinc-500">
-                                  Diversified {m.personality?.diversificationScore}{" "}
-                                  · Risk {m.personality?.riskScore}
-                                </span>
-                              </div>
-                              <MiniBar
-                                label="Diversified"
-                                value={m.personality?.diversificationScore ?? 0}
-                                color="#38bdf8"
-                                hideLabel
-                              />
-                              <MiniBar
-                                label="Risk"
-                                value={m.personality?.riskScore ?? 0}
-                                color="#f472b6"
-                                hideLabel
-                              />
-                            </div>
-                          ))}
                       </div>
                     </section>
                   )}
@@ -1242,10 +1265,13 @@ export function CommunityView({ communityId }: Props) {
               </button>
               <div>
                 <h2 className="text-lg font-semibold">
-                  {profileName(selectedOwnerId)}
+                  {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
+                    profileName(selectedOwnerId)}
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  Read-only · owned by {profileName(selectedOwnerId)}
+                  Read-only · owned by{" "}
+                  {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
+                    profileName(selectedOwnerId)}
                 </p>
               </div>
               <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
@@ -1347,36 +1373,63 @@ export function CommunityView({ communityId }: Props) {
   );
 }
 
-function MiniBar({
+/** Score + qualitative band + bar, with real breathing room — replaces the
+ * old cramped label/bar/number row that had nowhere to put the band text. */
+function ScoreBar({
   label,
-  value,
+  score,
+  band,
   color,
-  hideLabel = false,
 }: {
   label: string;
-  value: number;
+  score: number;
+  band: string;
   color: string;
-  hideLabel?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      {!hideLabel && (
-        <span className="w-16 shrink-0 text-[10px] text-zinc-500">{label}</span>
-      )}
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
+    <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 p-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[11px] text-zinc-500">{label}</span>
+        <span className="text-xs font-medium text-zinc-300">
+          {band} <span className="text-zinc-500">· {Math.round(score)}</span>
+        </span>
+      </div>
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800">
         <div
           className="h-full rounded-full transition-all"
           style={{
-            width: `${Math.max(0, Math.min(100, value))}%`,
+            width: `${Math.max(0, Math.min(100, score))}%`,
             backgroundColor: color,
           }}
         />
       </div>
-      {!hideLabel && (
-        <span className="w-7 shrink-0 text-right text-[10px] tabular-nums text-zinc-500">
-          {Math.round(value)}
-        </span>
-      )}
+    </div>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: "up" | "down" | "warn" | "neutral";
+}) {
+  return (
+    <div className="text-center">
+      <p className="text-[10px] text-zinc-500">{label}</p>
+      <p
+        className={cn(
+          "mt-0.5 text-sm font-semibold tabular-nums",
+          tone === "up" && "text-emerald-400",
+          tone === "down" && "text-red-400",
+          tone === "warn" && "text-amber-400/90",
+          tone === "neutral" && "text-zinc-200"
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
