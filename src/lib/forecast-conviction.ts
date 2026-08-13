@@ -106,30 +106,70 @@ export function blendedExpectedAnnualReturn(
   return sum;
 }
 
+/**
+ * Sector classification, not a view on any of these names. Purely "what
+ * kind of company is this", the same job TICKER_SECTORS does for the
+ * forecast prompt; no price target or bias attaches to membership here.
+ *
+ * The lists were originally just the family's own holdings, which meant a
+ * book holding MSFT, AMD and ADI reported itself as 51% "other". Anything
+ * unclassified falls into a bucket that gets the plainest assumptions, so
+ * a thin list quietly mislabels most real portfolios.
+ */
+const THEME_TICKERS: [ForecastTheme, string[]][] = [
+  // GPU clouds, AI datacenter build and the hardware inside it.
+  ["ai_infra", ["NBIS", "CRWV", "SMCI", "VRT", "ANET", "DELL", "IREN", "APLD", "CIFR"]],
+  // Generation and grid feeding those datacenters.
+  ["ai_power", ["VST", "PWR", "CEG", "NRG", "TLN", "GEV", "ETN", "OKLO", "SMR", "BWXT"]],
+  ["crypto", ["BMNR", "MSTR", "COIN", "MARA", "RIOT", "CLSK", "HUT", "BITF", "HOOD", "GLXY"]],
+  ["space", ["RKLB", "ASTS", "LUNR", "RDW", "PL", "SPCE"]],
+  [
+    "semi",
+    ["NVDA", "AVGO", "TSM", "ASML", "AMD", "INTC", "MU", "QCOM", "TXN", "ADI",
+     "LRCX", "AMAT", "KLAC", "ARM", "MRVL", "NXPI", "ON", "MCHP", "SWKS", "TER"],
+  ],
+  ["fintech", ["SOFI", "AFRM", "UPST", "PYPL", "SQ", "XYZ", "NU", "TOST", "MELI", "V", "MA"]],
+  [
+    "software",
+    ["PLTR", "NOW", "GOOGL", "GOOG", "CRM", "DDOG", "SNOW", "MSFT", "ORCL",
+     "ADBE", "TEAM", "WDAY", "ZS", "CRWD", "PANW", "NET", "MDB", "HUBS",
+     "SHOP", "TTD", "APP", "U", "RBLX", "META", "AMZN", "IBM", "SAP"],
+  ],
+  [
+    "healthcare",
+    ["UNH", "LLY", "ISRG", "HIMS", "NVO", "PFE", "MRK", "ABBV", "JNJ", "TMO",
+     "DHR", "VRTX", "REGN", "AMGN", "MRNA"],
+  ],
+  ["drones", ["AVAV", "KTOS", "RCAT", "ONDS", "UMAC", "LMT", "RTX", "NOC", "GD", "LHX"]],
+  [
+    "index",
+    ["SPY", "VOO", "IVV", "QQQ", "VTI", "VT", "CSPX", "VWCE", "VUSA", "SMH",
+     "SOXX", "EX13", "JEDI", "ARKK", "SCHD", "IWM", "DIA", "EEM", "VXUS"],
+  ],
+];
+
+const THEME_BY_TICKER: Map<string, ForecastTheme> = new Map(
+  THEME_TICKERS.flatMap(([theme, tickers]) =>
+    tickers.map((t) => [t, theme] as [string, ForecastTheme])
+  )
+);
+
 export function forecastThemeForTicker(ticker: string): ForecastTheme {
   const base = ticker.split(".")[0]!.toUpperCase();
 
-  if (["NBIS", "CRWV"].includes(base)) return "ai_infra";
-  if (["VST", "PWR"].includes(base)) return "ai_power";
-  if (["BMNR", "MSTR", "COIN", "MARA", "RIOT"].includes(base)) return "crypto";
-  if (["RKLB"].includes(base)) return "space";
-  if (["NVDA", "AVGO", "TSM", "ASML"].includes(base)) return "semi";
-  if (["HOOD", "SOFI"].includes(base)) return "fintech";
-  if (["PLTR", "NOW", "GOOGL", "CRM", "DDOG", "SNOW"].includes(base))
-    return "software";
-  if (["UNH", "LLY", "ISRG", "HIMS"].includes(base)) return "healthcare";
-  if (["AVAV", "KTOS", "RCAT"].includes(base)) return "drones";
-  if (
-    ["SPY", "CSPX", "VWCE", "SMH", "EX13", "JEDI"].includes(base) ||
-    ticker.includes("=")
-  ) {
-    return "index";
-  }
+  const known = THEME_BY_TICKER.get(base);
+  if (known) return known;
+
+  // FX pairs and anything else with an `=` are index-like for our purposes.
+  if (ticker.includes("=")) return "index";
+
+  // Name-shaped guesses for tickers not on the list above.
   if (/BTC|ETH|CRYPTO|MINE/.test(base)) return "crypto";
   if (/CLOUD|GPU|AI/.test(base)) return "ai_infra";
   if (/HEALTH|PHARMA|BIO/.test(base)) return "healthcare";
   if (/DRONE|UAV|DEFENSE/.test(base)) return "drones";
   if (/SAAS|SOFT/.test(base)) return "software";
+  if (/SOLAR|ENERGY|POWER|ELEC/.test(base)) return "ai_power";
   return "other";
 }
 

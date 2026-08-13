@@ -261,9 +261,13 @@ export const THEME_LABEL: Record<ForecastTheme, string> = {
   fintech: "fintech",
   software: "software",
   healthcare: "healthcare",
-  drones: "drones",
+  // Covers the defense primes as well as pure drone/autonomy names, so
+  // "drones" alone would mislabel a Lockheed or an RTX.
+  drones: "defense & drones",
   index: "index funds",
-  other: "a mixed bag",
+  // Not "a mixed bag": this is the bucket for names the sector map doesn't
+  // recognise, and as the label on a 51% slice it explained nothing.
+  other: "other sectors",
 };
 
 function diversificationBandFor(score: number): ScoreBand {
