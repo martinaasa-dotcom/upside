@@ -359,6 +359,67 @@ for (const regime of REGIMES) {
   );
 }
 
+// --- Pulse thesis-status/action reconciliation ------------------------------
+// Trim and sell mean opposite situations (profit-taking on a winner vs.
+// exiting a broken thesis). If the model conflates them, "broken" + "trim"
+// must resolve to "sell" (never keep trim), and "broken" + "add" must
+// soften the status rather than let a broken thesis recommend deploying.
+const { reconcilePulseCheck } = await import("@/lib/thesis-pulse");
+const baseCheck = {
+  ticker: "ZZZZ",
+  situation: ["placeholder"],
+  moveReason: "placeholder",
+  earningsNote: "",
+  addLevel: "",
+  verdict: "placeholder",
+};
+{
+  const brokenTrim = reconcilePulseCheck({
+    ...baseCheck,
+    thesisStatus: "broken" as const,
+    action: "trim" as const,
+    trimPct: 20,
+  });
+  check(
+    "reconcile(broken+trim).action",
+    brokenTrim.action,
+    (v) => v === "sell",
+    "sell, never trim, for a broken thesis"
+  );
+  check(
+    "reconcile(broken+trim).trimPct",
+    brokenTrim.trimPct,
+    (v) => v == null,
+    "cleared, a sell has no trim size"
+  );
+
+  const brokenAdd = reconcilePulseCheck({
+    ...baseCheck,
+    thesisStatus: "broken" as const,
+    action: "add" as const,
+    trimPct: null,
+  });
+  check(
+    "reconcile(broken+add).thesisStatus",
+    brokenAdd.thesisStatus,
+    (v) => v === "watch",
+    "softened to watch, broken shouldn't pair with add"
+  );
+
+  const brokenSell = reconcilePulseCheck({
+    ...baseCheck,
+    thesisStatus: "broken" as const,
+    action: "sell" as const,
+    trimPct: null,
+  });
+  check(
+    "reconcile(broken+sell)",
+    brokenSell.action,
+    (v) => v === "sell",
+    "left untouched, this pairing is already correct"
+  );
+}
+
 // Every formatter is the last line of defence before a bad number reaches
 // the screen, so all of them must degrade to a dash rather than printing
 // "$∞", "Infinity%" or "$NaN".

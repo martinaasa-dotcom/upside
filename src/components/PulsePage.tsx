@@ -74,7 +74,13 @@ function ActionBadge({ action }: { action: PulseAction }) {
           "border-emerald-500/40 bg-emerald-500/15 text-emerald-200",
         action === "hold" &&
           "border-zinc-600/80 bg-zinc-900/60 text-zinc-300",
+        // Trim is disciplined profit-taking on a winner, not a warning, so
+        // it deliberately doesn't share the rose alarm color with Sell —
+        // that overlap is what made "Trim" and "Thesis at risk" look like
+        // the same kind of bad news.
         action === "trim" &&
+          "border-violet-400/40 bg-violet-500/15 text-violet-200",
+        action === "sell" &&
           "border-rose-500/40 bg-rose-500/15 text-rose-200",
         action === "watch" &&
           "border-amber-500/40 bg-amber-500/15 text-amber-200"

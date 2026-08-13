@@ -33,7 +33,14 @@ export type PulseCandidate = {
 
 export type ThesisStatus = "intact" | "watch" | "broken";
 
-export type PulseAction = "add" | "hold" | "trim" | "watch";
+/**
+ * trim and sell look similar but mean opposite situations: trim is
+ * disciplined profit-taking on a winner that ran too hot (thesis still
+ * intact or at most "watch"), sell is what you do when the thesis is
+ * actually broken. Collapsing them into one "reduce" action is what made
+ * a euphoric name and a genuinely broken one look the same on screen.
+ */
+export type PulseAction = "add" | "hold" | "trim" | "sell" | "watch";
 
 export type PulseHeadline = {
   title: string;
@@ -332,6 +339,7 @@ export function statusLabel(status: ThesisStatus): string {
 export function actionLabel(action: PulseAction): string {
   if (action === "add") return "Add";
   if (action === "trim") return "Trim";
+  if (action === "sell") return "Sell";
   if (action === "watch") return "Wait";
   return "Hold";
 }
@@ -346,18 +354,29 @@ export function formatMovePct(pct: number | null): string {
 }
 
 /**
- * The model sometimes tags thesisStatus "broken" while still recommending
- * hold or add, which is a contradiction users notice immediately: a red
- * "Thesis at risk" badge next to "Hold" reads as nonsense, and once it
- * fires on every position it stops meaning anything. If the thesis were
- * actually broken you wouldn't hold or add, you'd trim. Enforcing that as
- * a hard invariant (rather than trusting the prompt alone) is what keeps
- * "Thesis at risk" rare and actually meaningful. Only ever downgrades,
- * never upgrades, so it can't manufacture false alarms.
+ * Keeps thesisStatus and action honest against each other, since the model
+ * doesn't always respect the prompt's pairing rules and the mismatch is
+ * exactly what makes the badges meaningless:
+ *
+ * - broken + trim is a contradiction of the word "trim" itself. Trim means
+ *   disciplined profit-taking on a winner that ran too hot; it has nothing
+ *   to do with a broken thesis. If the model calls something broken and
+ *   wants out, that's a sell, full stop.
+ * - broken + add makes no sense either way (you wouldn't deploy new money
+ *   into a thesis you just called broken), so soften the status to "watch"
+ *   instead of second-guessing the add call.
+ *
+ * Only ever downgrades/relabels toward the safer, more conservative
+ * reading — never invents a new alarm that wasn't already there.
  */
 export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
-  if (check.thesisStatus === "broken" && check.action !== "trim") {
-    return { ...check, thesisStatus: "watch" };
+  if (check.thesisStatus === "broken") {
+    if (check.action === "trim") {
+      return { ...check, action: "sell", trimPct: null };
+    }
+    if (check.action === "add") {
+      return { ...check, thesisStatus: "watch" };
+    }
   }
   return check;
 }

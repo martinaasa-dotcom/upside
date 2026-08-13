@@ -33,12 +33,12 @@ export const pulseReportSchema = z.object({
       thesisStatus: z
         .enum(["intact", "watch", "broken"])
         .describe(
-          "Be conservative. intact = the reason you own it hasn't changed, including a normal red day, sector-wide weakness, or profit-taking. watch = something worth tracking emerged but hasn't invalidated the story. broken = the actual reason you bought this is gone (guidance genuinely cut, moat broken, fraud/restatement) — rare, and must pair with action=trim, never hold or add."
+          "Be conservative. intact = the reason you own it hasn't changed, including a normal red day, sector-wide weakness, or profit-taking. watch = something worth tracking emerged but hasn't invalidated the story. broken = the actual reason you bought this is gone (guidance genuinely cut, moat broken, fraud/restatement) — rare, and must pair with action=sell or hold, never add or trim."
         ),
       action: z
-        .enum(["add", "hold", "trim", "watch"])
+        .enum(["add", "hold", "trim", "sell", "watch"])
         .describe(
-          "add = deploy on intact thesis dip; hold = no change; trim = reduce; watch = wait for clarity."
+          "add = deploy on intact thesis dip. hold = no change. trim = disciplined profit-taking on a winner that ran too hot (thesis intact or at most watch) — never use trim for a broken thesis. sell = the thesis is broken and you're exiting, not taking profit. watch = wait for clarity."
         ),
       trimPct: z
         .number()
@@ -47,7 +47,7 @@ export const pulseReportSchema = z.object({
         .nullable()
         .optional()
         .describe(
-          "Only when action=trim: percent of position to trim as take-profit (e.g. 10, 15, 20). Null otherwise."
+          "Only when action=trim: percent of position to trim as take-profit (e.g. 10, 15, 20). Null otherwise, including for sell."
         ),
       addLevel: z
         .string()

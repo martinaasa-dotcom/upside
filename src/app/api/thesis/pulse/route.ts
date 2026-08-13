@@ -104,15 +104,18 @@ Primary job: **down ≥5% moves** (including pre-market / after-hours). Also cov
 ${fg}
 
 ### Action rules (do NOT default everything to hold)
-- **action** = \`add\` | \`hold\` | \`trim\` | \`watch\`
+- **action** = \`add\` | \`hold\` | \`trim\` | \`sell\` | \`watch\`
+- **trim** and **sell** are opposites in spirit, don't blur them:
+  - **trim** = disciplined profit-taking on a winner that ran too hot (parabolic move, crowd chase). Thesis is **intact or at most watch**. This is "take some money off the table because it went up a lot", never a reaction to bad news.
+  - **sell** = the thesis is actually **broken**. You're exiting because the reason you owned it is gone, not because it went up too much.
 - **intact thesis + red day** on a high-conviction compounder (AI infra, AI power, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal. This is about the thesis, not a fixed ticker list; apply it to whatever the user actually holds.
-- If a line is in **rapid euphoria** (parabolic move / crowd chase), prefer **trim** with explicit take-profit sizing.
+- If a line is in **rapid euphoria** (parabolic move / crowd chase) with the thesis still intact: prefer **trim** with explicit take-profit sizing.
 - **addLevel**: always give a concrete, self-explanatory price plan when thesis is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
   - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
   - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
-- Use **hold** only when you would not deploy (max concentration, broken narrative, no cash story).
-- Use **trim** only when thesis is broken or euphorically extended.
+- Use **hold** only when you would not deploy (max concentration, broken narrative, no cash story) but aren't ready to sell either.
+- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis, that's what makes "Trim" and "Thesis at risk" contradict each other on screen.
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 ### thesisStatus — be conservative, this should rarely be "broken"
@@ -123,16 +126,16 @@ ${fg}
   a guidance nuance) but it hasn't invalidated the core story yet.
 - **broken**: the actual reason you bought this is gone — guidance genuinely cut,
   the moat/thesis is disproven, fraud or a restatement, the multi-year story is over.
-  This is rare. **broken must pair with action=trim, never with hold or add** — if
+  This is rare. **broken must pair with action=sell or hold, never add or trim** — if
   you'd still hold it, the thesis isn't broken, it's at most "watch".
 
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
 2. **moveReason**: one sentence (cite headline when possible).
 3. **thesisStatus**: intact / watch / broken, per the definitions above.
-4. **action**: add / hold / trim / watch per rules above.
-5. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position).
-6. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim).
+4. **action**: add / hold / trim / sell / watch per rules above.
+5. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.
+6. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim/sell).
 7. **earningsNote**: if relevant; else empty string.
 8. **verdict**: one sentence tying **action + addLevel/trimPct** to the thesis.
 
