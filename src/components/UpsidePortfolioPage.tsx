@@ -19,6 +19,7 @@ import type { Quote } from "@/lib/types";
 import {
   Bot,
   ChevronDown,
+  ChevronRight,
   Minus,
   Plus,
   RefreshCw,
@@ -223,6 +224,48 @@ function ActionBadge({ action }: { action: FundActionRow }) {
 /** Fast enough that the page reads as live without hammering the free
  * quote tiers. My book polls on a similar cadence. */
 const QUOTE_POLL_MS = 30_000;
+
+/** Date + closing value + day move. Shared by the open latest report and
+ * the collapsed summary row of every older one, so the two can't drift. */
+function ReportMeta({ r }: { r: ReportRow }) {
+  return (
+    <>
+      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+        {fmtDate(r.report_date)}
+      </p>
+      <p
+        className={cn(
+          "text-xs font-semibold tabular-nums",
+          signedTone(r.day_change_dollar ?? 0, "text-zinc-500")
+        )}
+      >
+        {currency(r.portfolio_value, 0)}
+        {r.day_change_dollar != null && (
+          <> · {signedCurrency(r.day_change_dollar)}</>
+        )}
+      </p>
+    </>
+  );
+}
+
+/** The actual content: what he did, and why. */
+function ReportDetail({ r }: { r: ReportRow }) {
+  const moves = (r.actions ?? []).filter((a) => a.type !== "hold");
+  return (
+    <>
+      {moves.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {moves.map((a, i) => (
+            <ActionBadge key={`${a.ticker}-${i}`} action={a} />
+          ))}
+        </div>
+      )}
+      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-400">
+        {r.body}
+      </p>
+    </>
+  );
+}
 
 function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   if (quotesAt == null) return "Loading prices …";
@@ -1129,49 +1172,50 @@ export function UpsidePortfolioPage() {
                   after today&apos;s market close.
                 </p>
               ) : (
+                /* Today's report reads in full; every earlier one collapses
+                 * to its date, close and headline. Otherwise the page grows
+                 * an unreadable wall of prose one day at a time, and the
+                 * decision you actually came to read sits on top of weeks of
+                 * history. <details> keeps it keyboard and screen-reader
+                 * friendly without any open/closed state to manage. */
                 <div className="space-y-3">
-                  {reports.map((r) => (
-                    <article
-                      key={r.id}
-                      className="space-y-2 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4"
-                    >
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                          {fmtDate(r.report_date)}
-                        </p>
-                        <p
-                          className={cn(
-                            "text-xs font-semibold tabular-nums",
-                            (r.day_change_dollar ?? 0) > 0
-                              ? "text-gain"
-                              : (r.day_change_dollar ?? 0) < 0
-                                ? "text-loss"
-                                : "text-zinc-500"
-                          )}
-                        >
-                          {currency(r.portfolio_value, 0)}
-                          {r.day_change_dollar != null && (
-                            <> · {signedCurrency(r.day_change_dollar)}</>
-                          )}
-                        </p>
-                      </div>
-                      <h3 className="text-sm font-semibold text-white">
-                        {r.headline}
-                      </h3>
-                      {r.actions?.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {r.actions
-                            .filter((a) => a.type !== "hold")
-                            .map((a, i) => (
-                              <ActionBadge key={`${a.ticker}-${i}`} action={a} />
-                            ))}
+                  {reports.map((r, i) =>
+                    i === 0 ? (
+                      <article
+                        key={r.id}
+                        className="space-y-2 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <ReportMeta r={r} />
                         </div>
-                      )}
-                      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-400">
-                        {r.body}
-                      </p>
-                    </article>
-                  ))}
+                        <h3 className="text-sm font-semibold text-white">
+                          {r.headline}
+                        </h3>
+                        <ReportDetail r={r} />
+                      </article>
+                    ) : (
+                      <details
+                        key={r.id}
+                        className="group overflow-hidden rounded-2xl border border-zinc-800 bg-[#161618]/40"
+                      >
+                        <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-zinc-900/40 [&::-webkit-details-marker]:hidden">
+                          <ChevronRight
+                            aria-hidden
+                            className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-transform group-open:rotate-90"
+                          />
+                          <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
+                            {r.headline}
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <ReportMeta r={r} />
+                          </span>
+                        </summary>
+                        <div className="space-y-2 border-t border-zinc-800/60 px-4 py-3">
+                          <ReportDetail r={r} />
+                        </div>
+                      </details>
+                    )
+                  )}
                 </div>
               )}
             </section>
