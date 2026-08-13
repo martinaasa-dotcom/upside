@@ -736,9 +736,51 @@ export function CommunityView({ communityId }: Props) {
     ? portfolios.find((p) => p.id === selectedPortfolioId)
     : null;
 
-  const selectedHoldings = selectedPortfolioId
-    ? holdings.filter((h) => h.portfolio_id === selectedPortfolioId)
-    : [];
+  /** Every book the drilled-into member owns. */
+  const ownerPortfolios = useMemo(() => {
+    if (!selectedOwnerId) return [];
+    return portfolios.filter((p) =>
+      ownership.some(
+        (o) => o.portfolio_id === p.id && o.user_id === selectedOwnerId
+      )
+    );
+  }, [portfolios, ownership, selectedOwnerId]);
+
+  /**
+   * Holdings for the current drill-down. Opening a member shows every book
+   * pooled, so a ticker held in two of them collapses into one row with a
+   * share-weighted average cost, which is what "combined" has to mean for
+   * the ROI column to be right. Picking a single book skips the merge.
+   */
+  const selectedHoldings = useMemo(() => {
+    if (selectedPortfolioId) {
+      return holdings.filter((h) => h.portfolio_id === selectedPortfolioId);
+    }
+    const ids = new Set(ownerPortfolios.map((p) => p.id));
+    const mine = holdings.filter((h) => ids.has(h.portfolio_id));
+    const byTicker = new Map<string, Holding>();
+    for (const h of mine) {
+      const prev = byTicker.get(h.ticker);
+      if (!prev) {
+        byTicker.set(h.ticker, { ...h });
+        continue;
+      }
+      const shares = prev.shares + h.shares;
+      byTicker.set(h.ticker, {
+        ...prev,
+        shares,
+        buy_price:
+          shares > 0
+            ? (prev.buy_price * prev.shares + h.buy_price * h.shares) / shares
+            : prev.buy_price,
+      });
+    }
+    return [...byTicker.values()];
+  }, [selectedPortfolioId, ownerPortfolios, holdings]);
+
+  const selectedCash = selectedPortfolio
+    ? selectedPortfolio.cash_balance
+    : ownerPortfolios.reduce((s, p) => s + p.cash_balance, 0);
 
   async function createInvite() {
     setBusy(true);
@@ -1787,11 +1829,20 @@ export function CommunityView({ communityId }: Props) {
             </>
           )}
 
-          {!loading && selectedOwnerId && !selectedPortfolioId && (
+          {/* One view, not two. Opening a member used to land on a list of
+            * their books, so seeing a single position always cost two
+            * clicks (and for the many members with exactly one book, that
+            * list was a page containing one row). It now opens on the
+            * combined book, with a picker only when there's more than one
+            * to pick from. */}
+          {!loading && selectedOwnerId && (
             <section className="space-y-4">
               <button
                 type="button"
-                onClick={() => setSelectedOwnerId(null)}
+                onClick={() => {
+                  setSelectedPortfolioId(null);
+                  setSelectedOwnerId(null);
+                }}
                 className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -1802,89 +1853,53 @@ export function CommunityView({ communityId }: Props) {
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
                 </h2>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-amber-500/90">
                   Read-only · owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
+                  {selectedPortfolio ? ` · ${selectedPortfolio.name}` : ""}
                 </p>
               </div>
-              <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
-                {portfolios
-                  .filter((p) =>
-                    ownership.some(
-                      (o) =>
-                        o.portfolio_id === p.id && o.user_id === selectedOwnerId
-                    )
-                  )
-                  .map((p) => {
-                    const score = overview.sheets.find(
-                      (s) => s.portfolio.id === p.id
-                    );
-                    const tickerValues = holdings
-                      .filter((h) => h.portfolio_id === p.id)
-                      .map((h) => ({
-                        ticker: h.ticker,
-                        value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
-                      }));
-                    const personality =
-                      tickerValues.length > 0
-                        ? buildPortfolioPersonality(tickerValues)
-                        : null;
-                    return (
-                      <li key={p.id}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPortfolioId(p.id)}
-                          className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left hover:bg-zinc-900/50"
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className="text-sm font-medium">{p.name}</span>
-                            {personality && (
-                              <span
-                                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
-                                title={`${personality.tagline} Diversification ${personality.diversificationScore}/100 · Risk ${personality.riskScore}/100.`}
-                              >
-                                <span aria-hidden>{personality.animalEmoji}</span>
-                                {personality.animal}
-                              </span>
-                            )}
-                          </span>
-                          <span className="shrink-0 text-xs text-zinc-400">
-                            {currency(score?.totalValue ?? 0)}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-              </ul>
-            </section>
-          )}
 
-          {!loading && selectedPortfolio && (
-            <section className="space-y-4">
-              <button
-                type="button"
-                onClick={() => setSelectedPortfolioId(null)}
-                className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                {profileName(selectedOwnerId!)}’s portfolios
-              </button>
-              <div>
-                <h2 className="text-lg font-semibold">
-                  {selectedPortfolio.name}
-                </h2>
-                <p className="text-xs text-amber-500/90">
-                  Read-only · owned by{" "}
-                  {profileName(
-                    selectedPortfolio.owner_id ?? selectedOwnerId!
-                  )}
-                </p>
-              </div>
+              {ownerPortfolios.length > 1 && (
+                <div className="scrollbar-none flex gap-1.5 overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPortfolioId(null)}
+                    className={cn(
+                      "shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                      selectedPortfolioId === null
+                        ? "border-brand/40 bg-brand/15 text-brand-bright"
+                        : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                    )}
+                  >
+                    All books
+                    <span className="ml-1.5 text-zinc-500">
+                      {ownerPortfolios.length}
+                    </span>
+                  </button>
+                  {ownerPortfolios.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPortfolioId(p.id)}
+                      className={cn(
+                        "shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                        selectedPortfolioId === p.id
+                          ? "border-brand/40 bg-brand/15 text-brand-bright"
+                          : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      )}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <ReadOnlyHoldings
                 holdings={selectedHoldings}
                 quotes={quotes}
-                cash={selectedPortfolio.cash_balance}
+                cash={selectedCash}
               />
             </section>
           )}
