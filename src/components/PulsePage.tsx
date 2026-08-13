@@ -26,6 +26,7 @@ import {
   isPulseCacheFresh,
   loadPulseSummary,
   loadPulseTickerCache,
+  reconcilePulseCheck,
   savePulseSummary,
   savePulseTickerCache,
   statusLabel,
@@ -115,8 +116,13 @@ function PulseCard({
 }) {
   const pct = c.effectivePct ?? 0;
   const up = pct >= 0;
-  const status = check?.thesisStatus ?? (c.needsAttention ? "watch" : "intact");
-  const action = check?.action;
+  // Re-applied at render time (not just when the check is first cached) so
+  // an already-cached "broken" + "hold" contradiction from before this
+  // guardrail existed, or from a stale server/localStorage entry, clears
+  // immediately instead of waiting out the cache window.
+  const reconciled = check ? reconcilePulseCheck(check) : check;
+  const status = reconciled?.thesisStatus ?? (c.needsAttention ? "watch" : "intact");
+  const action = reconciled?.action;
 
   return (
     <li
