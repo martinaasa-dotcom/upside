@@ -232,3 +232,65 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     ownership: ownershipForClient,
   });
 }
+
+/** Admin: rename the community. */
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
+  const { id } = await ctx.params;
+  if (!(await userIsCommunityAdmin(auth.user.id, id))) {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  }
+
+  const supabase = await getSupabaseDataClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as { name?: string };
+  const name = String(body.name ?? "").trim().slice(0, 80);
+  if (!name) {
+    return NextResponse.json({ error: "name required" }, { status: 400 });
+  }
+
+  const { data: community, error } = await supabase
+    .from(PORTFELL_TABLES.communities)
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("id, name, created_by, created_at, updated_at")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ community });
+}
+
+/** Admin: delete the community outright. Members lose shared read access;
+ * everyone's own portfolios are untouched (only community_members and
+ * community_portfolios rows cascade-delete). */
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
+  const { id } = await ctx.params;
+  if (!(await userIsCommunityAdmin(auth.user.id, id))) {
+    return NextResponse.json({ error: "Admin only" }, { status: 403 });
+  }
+
+  const supabase = await getSupabaseDataClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
+  }
+
+  const { error } = await supabase
+    .from(PORTFELL_TABLES.communities)
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}

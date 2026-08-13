@@ -10,6 +10,7 @@ import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
   saveCommunityCache,
+  clearCommunityCache,
 } from "@/lib/community-cache";
 import {
   buildPortfolioPersonality,
@@ -36,16 +37,19 @@ import {
   Link2,
   Medal,
   PieChart,
+  Settings,
   Shield,
   Shuffle,
   Sparkles,
   Target,
+  Trash2,
   Trophy,
   UserMinus,
   Users,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 /** Stable color per forecast theme, reused across the family sector chart
  * and its legend so the swatch always matches the bar segment. */
@@ -149,6 +153,7 @@ function combineHouseholdNames(names: string[]): string {
 }
 
 export function CommunityView({ communityId }: Props) {
+  const router = useRouter();
   const initialCacheRef = useRef(readCommunityCache(communityId));
   const [community, setCommunity] = useState<CommunityMeta | null>(
     () => initialCacheRef.current.meta?.community ?? null
@@ -204,6 +209,11 @@ export function CommunityView({ communityId }: Props) {
     "today"
   );
   const [bestiaryOpen, setBestiaryOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsName, setSettingsName] = useState("");
+  const [settingsBusy, setSettingsBusy] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -782,6 +792,49 @@ export function CommunityView({ communityId }: Props) {
     }
   }
 
+  function openSettings() {
+    setSettingsName(community?.name ?? "");
+    setSettingsError(null);
+    setSettingsOpen(true);
+  }
+
+  async function handleRename() {
+    const name = settingsName.trim();
+    if (!name || name === community?.name) return;
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error ?? "Rename failed");
+      }
+      setCommunity((data as { community: CommunityMeta }).community);
+      setSettingsOpen(false);
+    } catch (e) {
+      setSettingsError(e instanceof Error ? e.message : "Rename failed");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function handleDeleteCommunity() {
+    const res = await fetch(`/api/communities/${communityId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? "Delete failed");
+    }
+    clearCommunityCache(communityId);
+    router.push("/communities");
+    return true;
+  }
+
   return (
     <SignInGate>
       <div className="min-h-dvh bg-[#121214] text-zinc-100">
@@ -794,6 +847,16 @@ export function CommunityView({ communityId }: Props) {
               <span className="truncate text-sm font-medium">
                 {community?.name ?? "Community"}
               </span>
+              {isAdmin && community && (
+                <button
+                  type="button"
+                  onClick={openSettings}
+                  title="Community settings"
+                  className="shrink-0 rounded-lg p-3.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -1683,6 +1746,95 @@ export function CommunityView({ communityId }: Props) {
           return removeMember(removeTarget.userId);
         }}
       />
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        title="Delete this community?"
+        body={`This removes "${community?.name ?? "this community"}" for everyone — members lose shared read access and the invite link stops working. Nobody's actual portfolio or holdings are touched, and it can't be undone.`}
+        confirmLabel="Delete community"
+        destructive
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteCommunity}
+      />
+
+      {settingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-label="Close"
+            onClick={() => setSettingsOpen(false)}
+          />
+          <div className="relative w-full max-w-sm rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:rounded-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <h3 className="text-base font-semibold text-white">
+                Community settings
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="shrink-0 rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <label className="block text-xs font-medium text-zinc-400">
+              Community name
+            </label>
+            <input
+              value={settingsName}
+              onChange={(e) => setSettingsName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleRename();
+              }}
+              maxLength={80}
+              disabled={settingsBusy}
+              className="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand/50 disabled:opacity-50"
+            />
+            {settingsError && (
+              <p className="mt-2 text-xs text-rose-400">{settingsError}</p>
+            )}
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => void handleRename()}
+                disabled={
+                  settingsBusy ||
+                  !settingsName.trim() ||
+                  settingsName.trim() === community?.name
+                }
+                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
+              >
+                {settingsBusy ? "Saving …" : "Save name"}
+              </button>
+            </div>
+
+            {isAdmin && (
+              <div className="mt-6 rounded-xl border border-rose-900/40 bg-rose-950/20 p-3.5">
+                <p className="text-xs font-semibold text-rose-300">
+                  Danger zone
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-rose-300/70">
+                  Deleting the community removes it for every member. Their
+                  own portfolios and holdings are never affected.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setDeleteConfirmOpen(true);
+                  }}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-rose-800/60 bg-rose-950/40 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-900/40"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete community
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {bestiaryOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">

@@ -56,6 +56,17 @@ export function isCommunityCacheFresh(entry: CommunityCacheEntry | null): boolea
   return Number.isFinite(ts) && Date.now() - ts < CACHE_MAX_AGE_MS;
 }
 
+/** Drop a community's cached entry — call after deleting/leaving one so a
+ * stale copy doesn't linger in localStorage forever. */
+export function clearCommunityCache(communityId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(cacheKey(communityId));
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Fetch + cache one community's meta+book in the background — used by
  * CommunitiesList to warm the cache for every row as soon as the list is
  * known, so clicking in (even for the first time this session) already
