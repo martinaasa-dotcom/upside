@@ -13,7 +13,7 @@ import {
 } from "@/lib/number-input";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
-import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
@@ -466,7 +466,7 @@ export function PortfolioTable({
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-base font-semibold text-white">
+                  <div className="flex items-center gap-1.5 font-semibold text-white">
                     {onOpenTicker ? (
                       <button
                         type="button"
@@ -478,7 +478,15 @@ export function PortfolioTable({
                     ) : (
                       h.ticker
                     )}
-                  </p>
+                    {(h.quote?.changePercent ?? 0) < -0.015 && (
+                      <span
+                        title="Thesis intact: macro dip without fundamental business breakdown"
+                        className="inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1 py-0.5 text-[10px] font-medium text-emerald-300"
+                      >
+                        <ShieldCheck className="h-3 w-3" /> Intact
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-zinc-400">
                     {percent(h.pctOfTotal)} of book
                   </p>
@@ -634,7 +642,7 @@ export function PortfolioTable({
                 <div
                   className={cn(
                     cellBase,
-                    "font-semibold tracking-wide text-white"
+                    "font-semibold tracking-wide text-white flex items-center gap-1.5"
                   )}
                 >
                   {onOpenTicker ? (
@@ -647,6 +655,14 @@ export function PortfolioTable({
                     </button>
                   ) : (
                     h.ticker
+                  )}
+                  {(h.quote?.changePercent ?? 0) < -0.015 && (
+                    <span
+                      title="Thesis intact: macro dip without fundamental business breakdown"
+                      className="inline-flex items-center text-emerald-400"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                    </span>
                   )}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
