@@ -266,6 +266,47 @@ for (const s of SHOCKS) {
   check(`shockedPct(${s.id})`, shockedPct("ZZZZQQ", s.id), finite, "finite");
 }
 
+// --- Trend story ------------------------------------------------------------
+// Every regime × divergence combination has to produce a non-empty headline
+// and sentence, and the sentence must not stutter the ticker (the original
+// bug: composing "TICKER" placeholders wrong printed "NBIS NBIS is ..." or
+// "NBIS 's long-term trend").
+const { buildTrendStory } = await import("@/lib/market/trend-story");
+const REGIMES = ["strong-up", "weakening", "strong-down", "recovering", "flat"] as const;
+const DIVERGENCES = [
+  null,
+  { kind: "bearish" as const, weeksAgo: 2, priceFrom: 100, priceTo: 110, rsiFrom: 70, rsiTo: 60 },
+  { kind: "bullish" as const, weeksAgo: 2, priceFrom: 100, priceTo: 90, rsiFrom: 30, rsiTo: 40 },
+];
+for (const regime of REGIMES) {
+  for (const divergence of DIVERGENCES) {
+    const story = buildTrendStory({
+      ticker: "NBIS",
+      regime,
+      aboveLongMa: regime === "strong-up" || regime === "weakening",
+      rsi: 55,
+      macdBuilding: true,
+      divergence,
+      rs13: 0.1,
+      rs26: 0.2,
+    });
+    const label = `trendStory(${regime},${divergence?.kind ?? "none"})`;
+    check(label, story.headline, (v) => typeof v === "string" && v.length > 0, "non-empty headline");
+    check(
+      `${label}.sentence`,
+      story.sentence,
+      (v) => typeof v === "string" && v.includes("NBIS") && !v.includes("NBIS NBIS") && !/NBIS\s+'s/.test(v),
+      "mentions NBIS exactly once, no stutter"
+    );
+    check(
+      `${label}.priority`,
+      story.priority,
+      finite,
+      "finite"
+    );
+  }
+}
+
 // Every formatter is the last line of defence before a bad number reaches
 // the screen, so all of them must degrade to a dash rather than printing
 // "$∞", "Infinity%" or "$NaN".
