@@ -59,7 +59,7 @@ import {
   Trophy,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   overview: OverviewModel;
@@ -167,6 +167,9 @@ export function LabSheet({
       ? fromUrl
       : visibleTabs[0]?.id ?? "alloc";
   });
+  const tabScrollRef = useRef<HTMLDivElement | null>(null);
+  const tabRefs = useRef<Partial<Record<LabTab, HTMLButtonElement | null>>>({});
+  const [tabOverflow, setTabOverflow] = useState({ left: false, right: false });
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
@@ -219,6 +222,38 @@ export function LabSheet({
   function selectTab(id: LabTab) {
     setTab(id);
   }
+
+  // The tab row scrolls horizontally on phones (eight tabs never fit), so
+  // keep the active one on screen. Without this, arriving from a deep link
+  // or the command palette on a later tab (Alerts, Cashflow) left the
+  // highlight scrolled out of view and the page looked like it had opened
+  // on Allocation.
+  useEffect(() => {
+    const el = tabRefs.current[tab];
+    if (!el) return;
+    el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [tab]);
+
+  // Edge fades, but only on the side that actually has more tabs, so the
+  // row reads as scrollable instead of looking arbitrarily clipped.
+  const syncTabOverflow = useCallback(() => {
+    const el = tabScrollRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    setTabOverflow({
+      left: el.scrollLeft > 4,
+      right: maxScroll > 4 && el.scrollLeft < maxScroll - 4,
+    });
+  }, []);
+
+  useEffect(() => {
+    syncTabOverflow();
+    const el = tabScrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(syncTabOverflow);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [syncTabOverflow, visibleTabs.length]);
 
   // Mirror the sub-tab into the URL (replaceState only — sub-tab clicks
   // shouldn't pile onto the back-button stack the way top-level tab
@@ -465,22 +500,41 @@ export function LabSheet({
               : "Scope unused on this tool"}
           </span>
         </div>
-        <div className="scrollbar-none mt-3 flex min-h-[2rem] gap-1 overflow-x-auto snap-x snap-mandatory">
-          {visibleTabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => selectTab(t.id)}
-              className={cn(
-                "shrink-0 snap-start rounded-md px-2.5 py-2 text-xs font-medium transition touch-target",
-                tab === t.id
-                  ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="relative mt-3">
+          <div
+            ref={tabScrollRef}
+            onScroll={syncTabOverflow}
+            role="tablist"
+            aria-label="Lab sections"
+            className="scrollbar-none flex min-h-[2rem] gap-1 overflow-x-auto"
+          >
+            {visibleTabs.map((t) => (
+              <button
+                key={t.id}
+                ref={(el) => {
+                  tabRefs.current[t.id] = el;
+                }}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.id}
+                onClick={() => selectTab(t.id)}
+                className={cn(
+                  "shrink-0 rounded-md px-2.5 py-2 text-xs font-medium transition touch-target",
+                  tab === t.id
+                    ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40"
+                    : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {tabOverflow.left && (
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#161618] to-transparent" />
+          )}
+          {tabOverflow.right && (
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#161618] to-transparent" />
+          )}
         </div>
       </div>
 

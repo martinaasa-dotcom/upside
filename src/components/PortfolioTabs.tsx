@@ -82,6 +82,7 @@ export function PortfolioTabs({
   const [menu, setMenu] = useState<OpenMenu | null>(null);
   const [mounted, setMounted] = useState(false);
   const longPressRef = useRef<number | null>(null);
+  const sheetRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sheetActive = portfolios.some((p) => p.id === activeId);
   const modes = MODES.filter((m) => {
     if (guest && m.id === LAB_TAB_ID) return false;
@@ -93,6 +94,16 @@ export function PortfolioTabs({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // The sheet rail scrolls once you have more than a few sheets, so keep
+  // the active one visible. Switching sheets from the command palette or a
+  // shared ?sheet= link otherwise left the highlight off-screen.
+  useEffect(() => {
+    sheetRefs.current[activeId]?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [activeId]);
 
   function submit() {
     const trimmed = name.trim();
@@ -301,6 +312,9 @@ export function PortfolioTabs({
               return (
                 <button
                   key={p.id}
+                  ref={(el) => {
+                    sheetRefs.current[p.id] = el;
+                  }}
                   type="button"
                   role="tab"
                   aria-selected={active}

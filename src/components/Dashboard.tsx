@@ -1799,6 +1799,24 @@ export function Dashboard() {
     [activePortfolio, holdings, source, eoyOverrides]
   );
 
+  /**
+   * First-run actions fire from Overview, which is a meta-tab with no
+   * active sheet, and every write path bails out without one (handleSave
+   * returns early on a null activePortfolio). So switch to the sheet the
+   * holdings will land in first, which also shows the user where their
+   * data is going instead of silently picking for them.
+   */
+  const startFirstRunAction = useCallback(
+    (kind: "manual" | "csv" | "screenshot") => {
+      const target = portfolios[0];
+      if (target && activeId !== target.id) setActiveId(target.id);
+      if (kind === "manual") setModalOpen(true);
+      else if (kind === "csv") setCsvImportOpen(true);
+      else setMargusImagePickSignal((n) => n + 1);
+    },
+    [portfolios, activeId]
+  );
+
   const handleCsvImport = useCallback(
     (input: { rows: CsvHoldingRow[]; cash: number | null; replace: boolean }) => {
       if (input.rows.length === 0 && input.cash == null) return;
@@ -2635,6 +2653,9 @@ export function Dashboard() {
               marketState={marketState}
               showCommunities={source === "supabase"}
               hideOptions={hideOptionsUI}
+              onAddHolding={() => startFirstRunAction("manual")}
+              onImportScreenshot={() => startFirstRunAction("screenshot")}
+              onImportCsv={() => startFirstRunAction("csv")}
               onOpenLab={
                 labHiddenForTier
                   ? undefined

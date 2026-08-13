@@ -92,7 +92,107 @@ type Props = {
   showCommunities?: boolean;
   /** Viewer has no options experience — keep fun facts / copy options-free. */
   hideOptions?: boolean;
+  /** First-run actions, shown only while the book is completely empty. */
+  onAddHolding?: () => void;
+  onImportScreenshot?: () => void;
+  onImportCsv?: () => void;
 };
+
+/**
+ * What a brand-new account sees instead of a hero reading $0 followed by a
+ * column of "No green names yet" placeholders. Every route into the app
+ * starts here, so it has to answer "what do I do now" rather than render
+ * an analytics page with nothing in it.
+ */
+function EmptyBook({
+  onAddHolding,
+  onImportScreenshot,
+  onImportCsv,
+}: {
+  onAddHolding?: () => void;
+  onImportScreenshot?: () => void;
+  onImportCsv?: () => void;
+}) {
+  const routes = [
+    {
+      key: "screenshot",
+      label: "Import a screenshot",
+      detail:
+        "Snap your broker's holdings page. Margus reads it and fills everything in.",
+      hint: "Fastest",
+      onClick: onImportScreenshot,
+      primary: true,
+    },
+    {
+      key: "csv",
+      label: "Upload a CSV",
+      detail: "Most brokers export one. Bring it over in a single go.",
+      hint: "Best for big books",
+      onClick: onImportCsv,
+      primary: false,
+    },
+    {
+      key: "manual",
+      label: "Add one by hand",
+      detail: "Ticker, shares, what you paid. Takes about ten seconds.",
+      hint: "Just trying it out",
+      onClick: onAddHolding,
+      primary: false,
+    },
+  ].filter((r) => r.onClick);
+
+  return (
+    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-gradient-to-b from-brand/10 to-[#161618]/60 p-5 sm:p-8">
+      <h2 className="text-2xl font-semibold tracking-tight text-white">
+        Your book is empty. Let&apos;s fix that.
+      </h2>
+      <p className="mt-2 max-w-xl text-base text-zinc-400">
+        Add what you own and this page turns into your daily read: what moved,
+        what needs attention, and what the numbers say about the way you
+        invest.
+      </p>
+
+      {routes.length > 0 && (
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {routes.map((r) => (
+            <button
+              key={r.key}
+              type="button"
+              onClick={r.onClick}
+              className={cn(
+                "group rounded-2xl border p-4 text-left transition active:scale-[0.99]",
+                r.primary
+                  ? "border-brand/40 bg-brand/10 hover:border-brand/70 hover:bg-brand/15"
+                  : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/70"
+              )}
+            >
+              <span
+                className={cn(
+                  "text-[11px] font-semibold uppercase tracking-wide",
+                  r.primary ? "text-brand-bright" : "text-zinc-500"
+                )}
+              >
+                {r.hint}
+              </span>
+              <p className="mt-1.5 flex items-center gap-1.5 text-base font-semibold text-white">
+                {r.label}
+                <ArrowRight className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                {r.detail}
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <p className="mt-5 text-sm text-zinc-500">
+        Nothing here is advice, and nothing you add is shared until you invite
+        someone.
+      </p>
+    </section>
+  );
+}
 
 function BriefingCard({
   kind,
@@ -396,6 +496,9 @@ export function OverviewDashboard({
   visitStreak = null,
   showCommunities = false,
   hideOptions = false,
+  onAddHolding,
+  onImportScreenshot,
+  onImportCsv,
 }: Props) {
   const {
     totals,
@@ -588,6 +691,12 @@ export function OverviewDashboard({
     return Boolean(link.portfolioId);
   }
 
+  // An empty book has nothing to analyse, so swap the whole analytics
+  // stack for the first-run panel. The Upside Portfolio teaser stays: with
+  // no holdings of your own, watching Margus run one is the most
+  // interesting thing on the page.
+  const bookIsEmpty = model.tickers.length === 0;
+
   return (
     <div className="space-y-8">
       {/* Upside Portfolio — the flagship AI-managed feed, always front and
@@ -634,10 +743,20 @@ export function OverviewDashboard({
         <ArrowRight className="relative h-4 w-4 shrink-0 text-amber-300/70 transition group-hover:translate-x-0.5" />
       </Link>
 
-      {showCommunities && !guest && (
+      {bookIsEmpty && (
+        <EmptyBook
+          onAddHolding={onAddHolding}
+          onImportScreenshot={onImportScreenshot}
+          onImportCsv={onImportCsv}
+        />
+      )}
+
+      {showCommunities && !guest && !bookIsEmpty && (
         <CommunitiesSpotlight />
       )}
 
+      {!bookIsEmpty && (
+        <>
       {/* Hero habit loop — sticky on phone */}
       <section className="overview-fade space-y-3 max-sm:static max-sm:z-0 sm:space-y-3">
         <div className="relative overflow-hidden rounded-3xl border border-brand-deep/30 bg-[#161618]/95 p-4 shadow-lg shadow-black/40 backdrop-blur-md sm:bg-[#161618]/80 sm:p-7 sm:shadow-none sm:backdrop-blur-none">
@@ -1141,7 +1260,8 @@ export function OverviewDashboard({
           )}
         </ul>
       </section>
-
+        </>
+      )}
     </div>
   );
 }
