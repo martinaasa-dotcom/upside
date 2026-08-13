@@ -11,15 +11,48 @@ import type { CoveredCallRow } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 
-/** Spot within 2% of the write level — matches the Overview briefing trigger. */
-function isNearWriteLevel(r: CoveredCallRow): boolean {
+type WriteLevelState = "near-strike" | "at-target" | "approaching";
+
+/**
+ * Where spot actually sits against the plan. "At write level" has to mean
+ * spot reached the target, not merely got within 2% of it: a row sitting
+ * 1.9% BELOW its write level was getting the same badge as one 4% past it,
+ * which reads as "you can write this now" when you can't. The at-target
+ * threshold matches buildStrikeAlerts in lib/alerts.ts, so the badge and
+ * the Alerts tab fire on the same condition.
+ */
+function writeLevelState(r: CoveredCallRow): WriteLevelState | null {
   const spot = r.spot;
-  if (spot == null || !(spot > 0)) return false;
-  const atTarget = r.stockTarget != null && spot >= r.stockTarget * 0.98;
-  const atStrike =
-    r.nextStrike != null && r.nextStrike > 0 && spot / r.nextStrike >= 0.98;
-  return atTarget || atStrike;
+  if (spot == null || !(spot > 0)) return null;
+  if (r.nextStrike != null && r.nextStrike > 0 && spot / r.nextStrike >= 0.98) {
+    return "near-strike";
+  }
+  if (r.stockTarget == null) return null;
+  if (spot >= r.stockTarget) return "at-target";
+  if (spot >= r.stockTarget * 0.98) return "approaching";
+  return null;
 }
+
+const WRITE_LEVEL_BADGE: Record<
+  WriteLevelState,
+  { label: string; className: string; title: string }
+> = {
+  "near-strike": {
+    label: "Near strike",
+    className: "bg-rose-500/20 text-rose-200",
+    title: "Spot is within 2% of the strike you'd be selling, so assignment is live",
+  },
+  "at-target": {
+    label: "At write level",
+    className: "bg-amber-500/20 text-amber-200",
+    title: "Spot reached your stock target, this is the level you planned to write at",
+  },
+  approaching: {
+    label: "Almost at write level",
+    className: "bg-zinc-700/60 text-zinc-300",
+    title: "Spot is within 2% below your stock target, not there yet",
+  },
+};
 
 type Props = {
   rows: CoveredCallRow[];
@@ -235,11 +268,22 @@ export function CoveredCallPanel({
                       ? percent(r.targetDistance)
                       : "—"}
                   </p>
-                  {isNearWriteLevel(r) && (
-                    <span className="mt-1 inline-block rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[11px] font-medium text-amber-200">
-                      At write level
-                    </span>
-                  )}
+                  {(() => {
+                    const state = writeLevelState(r);
+                    if (!state) return null;
+                    const badge = WRITE_LEVEL_BADGE[state];
+                    return (
+                      <span
+                        title={badge.title}
+                        className={cn(
+                          "mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                          badge.className
+                        )}
+                      >
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div>
                   <p className="text-zinc-500">Next strike</p>
@@ -356,11 +400,22 @@ export function CoveredCallPanel({
                       ? percent(r.targetDistance)
                       : "—"}
                   </span>
-                  {isNearWriteLevel(r) && (
-                    <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[11px] font-medium normal-case text-amber-200">
-                      At write level
-                    </span>
-                  )}
+                  {(() => {
+                    const state = writeLevelState(r);
+                    if (!state) return null;
+                    const badge = WRITE_LEVEL_BADGE[state];
+                    return (
+                      <span
+                        title={badge.title}
+                        className={cn(
+                          "rounded-md px-1.5 py-0.5 text-[11px] font-medium normal-case",
+                          badge.className
+                        )}
+                      >
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
                 </span>
               </div>
               <div
