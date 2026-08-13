@@ -57,7 +57,13 @@ export function HeaderOverflowMenu({
   if (items.length === 0) return null;
 
   return (
-    <div className="relative" data-header-more={menuId}>
+    // `flex` matters: the trigger below is inline-flex, so in a plain block
+    // wrapper it sits in an inline formatting context and the div grows to a
+    // line box (button height plus the strut's descender space). The header
+    // row then centres that taller wrapper, leaving the button visibly high
+    // next to Refresh, which is a direct flex child with no wrapper. Making
+    // the wrapper a flex container collapses it to exactly the button's 32px.
+    <div className="relative flex" data-header-more={menuId}>
       <button
         ref={btnRef}
         type="button"

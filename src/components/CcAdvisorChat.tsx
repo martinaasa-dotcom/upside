@@ -897,11 +897,15 @@ export function CcAdvisorChat({
                 <Maximize2 className="h-4 w-4" />
               )}
             </button>
-            <div className="relative" ref={rulesRef}>
+            {/* `flex` on the wrapper, matching the header's other controls:
+             * a block wrapper puts this button in an inline formatting
+             * context and grows to a line box, which centres a few pixels
+             * off from its unwrapped siblings. */}
+            <div className="relative flex" ref={rulesRef}>
               <button
                 type="button"
                 onClick={() => setRulesOpen((o) => !o)}
-                className={`rounded-lg p-1.5 transition ${
+                className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                   rulesOpen
                     ? "bg-brand/15 text-brand"
                     : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
