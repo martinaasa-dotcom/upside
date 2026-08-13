@@ -10,19 +10,13 @@ import {
   buildPortfolioPersonality,
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
-import {
-  SHOCKS,
-  getShockProfile,
-  shockedPct,
-  shockedPrice,
-  type ShockId,
-} from "@/lib/book-shock";
+import { ScenarioSimulator } from "@/components/ScenarioSimulator";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
   correlationMatrix,
 } from "@/lib/correlation";
-import { currency, percent, cn, cashtag } from "@/lib/format";
+import { currency, cn, cashtag } from "@/lib/format";
 import { SeasonalityPage } from "@/components/SeasonalityPage";
 import { TrendsPanel } from "@/components/TrendsPanel";
 import type { OverviewModel } from "@/lib/overview";
@@ -125,7 +119,6 @@ export function LabSheet({
   const tabScrollRef = useRef<HTMLDivElement | null>(null);
   const tabRefs = useRef<Partial<Record<LabTab, HTMLButtonElement | null>>>({});
   const [tabOverflow, setTabOverflow] = useState({ left: false, right: false });
-  const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
 
@@ -287,38 +280,6 @@ export function LabSheet({
     [corrSeries]
   );
   const corrHeat = useMemo(() => correlationGrid(corrSeries), [corrSeries]);
-
-  const shockRows = useMemo(() => {
-    return scopedTickers
-      .map((t) => {
-        const livePx = t.price;
-        const shockPx = shockedPrice(t.ticker, livePx, shock);
-        const liveVal = t.currentValue;
-        const shockVal = t.shares * shockPx;
-        const profile = getShockProfile(t.ticker);
-        return {
-          ticker: t.ticker,
-          label: profile.label,
-          shares: t.shares,
-          livePx,
-          shockPx,
-          liveVal,
-          shockVal,
-          delta: shockVal - liveVal,
-          deltaPct: liveVal > 0 ? (shockVal - liveVal) / liveVal : 0,
-          movePct: shockedPct(t.ticker, shock),
-        };
-      })
-      .sort((a, b) => a.delta - b.delta);
-  }, [scopedTickers, shock]);
-
-  const shockTotals = useMemo(() => {
-    const liveEquity = shockRows.reduce((s, r) => s + r.liveVal, 0);
-    const shockEquity = shockRows.reduce((s, r) => s + r.shockVal, 0);
-    const live = liveEquity + scopedCash;
-    const shocked = shockEquity + scopedCash;
-    return { live, shocked, delta: shocked - live };
-  }, [shockRows, scopedCash]);
 
   return (
     <div className="space-y-4">
@@ -582,133 +543,11 @@ export function LabSheet({
       )}
 
       {tab === "risk" && (
-        <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Crash test your book
-              </p>
-              <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
-                Pick a scenario below and every position is repriced as if it
-                had already happened, so you can see the damage in dollars
-                before it costs you any. Each name moves by how exposed it is,
-                not all by the same amount.
-              </p>
-              <p className="mt-1 text-xs text-zinc-400">
-                Showing: {SHOCKS.find((s) => s.id === shock)?.tagline} ·{" "}
-                {scopeLabel}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {SHOCKS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                title={s.tagline}
-                onClick={() => setShock(s.id)}
-                className={cn(
-                  "rounded-md px-2.5 py-1.5 text-xs font-medium",
-                  shock === s.id
-                    ? "bg-brand/20 text-brand-bright ring-1 ring-brand/40"
-                    : "text-zinc-400 hover:bg-zinc-800"
-                )}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <div>
-              <p className="text-zinc-400">Live</p>
-              <p className="tabular-nums text-white">
-                {currency(shockTotals.live)}
-              </p>
-            </div>
-            <div>
-              <p className="text-zinc-400">Shocked</p>
-              <p className="tabular-nums text-white">
-                {currency(shockTotals.shocked)}
-              </p>
-            </div>
-            <div>
-              <p className="text-zinc-400">Delta</p>
-              <p
-                className={cn(
-                  "tabular-nums font-medium",
-                  shockTotals.delta >= 0 ? "text-gain" : "text-loss"
-                )}
-              >
-                {currency(shockTotals.delta)}
-              </p>
-            </div>
-          </div>
-          {shock !== "none" && (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[36rem] text-left text-xs">
-                <thead className="text-zinc-400">
-                  <tr className="border-b border-zinc-800">
-                    <th className="py-1.5 pr-2 font-medium">Ticker</th>
-                    <th className="py-1.5 pr-2 font-medium">Theme</th>
-                    <th className="py-1.5 pr-2 font-medium">Move</th>
-                    <th className="py-1.5 pr-2 font-medium">Live</th>
-                    <th className="py-1.5 pr-2 font-medium">Shock</th>
-                    <th className="py-1.5 font-medium">Δ value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shockRows.map((r) => (
-                    <tr key={r.ticker} className="border-b border-zinc-900">
-                      <td className="py-1.5 pr-2 font-medium text-white">
-                        {cashtag(r.ticker)}
-                      </td>
-                      <td className="max-w-[10rem] truncate py-1.5 pr-2 text-zinc-400">
-                        {r.label}
-                      </td>
-                      <td
-                        className={cn(
-                          "py-1.5 pr-2 tabular-nums",
-                          r.movePct === 0
-                            ? "text-zinc-400"
-                            : r.movePct > 0
-                              ? "text-gain"
-                              : "text-loss"
-                        )}
-                      >
-                        {percent(r.movePct)}
-                      </td>
-                      <td className="py-1.5 pr-2 tabular-nums text-zinc-400">
-                        {currency(r.liveVal, 0)}
-                      </td>
-                      <td className="py-1.5 pr-2 tabular-nums text-zinc-300">
-                        {currency(r.shockVal, 0)}
-                      </td>
-                      <td
-                        className={cn(
-                          "py-1.5 tabular-nums",
-                          r.delta === 0
-                            ? "text-zinc-400"
-                            : r.delta > 0
-                              ? "text-gain"
-                              : "text-loss"
-                        )}
-                      >
-                        {currency(r.delta, 0)}
-                      </td>
-                    </tr>
-                  ))}
-                  {shockRows.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-3 text-zinc-400">
-                        No holdings in this scope.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <ScenarioSimulator
+          holdings={scopedTickers}
+          cash={scopedCash}
+          scopeLabel={scopeLabel}
+        />
       )}
 
       {tab === "risk" && (
