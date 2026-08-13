@@ -15,6 +15,7 @@ import {
 import {
   buildPortfolioPersonality,
   ANIMAL_BESTIARY,
+  THEME_COLOR,
   THEME_LABEL,
   type PortfolioPersonality,
 } from "@/lib/portfolio-personality";
@@ -55,22 +56,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
-/** Stable color per forecast theme, reused across the family sector chart
- * and its legend so the swatch always matches the bar segment. */
-const THEME_COLOR: Record<ForecastTheme, string> = {
-  crypto: "#f59e0b",
-  space: "#a78bfa",
-  ai_infra: "#38bdf8",
-  drones: "#22d3ee",
-  semi: "#818cf8",
-  ai_power: "#e879f9",
-  fintech: "#34d399",
-  software: "#60a5fa",
-  other: "#a1a1aa",
-  healthcare: "#fb7185",
-  index: "#2dd4bf",
-};
 
 type Profile = {
   id: string;

@@ -8,7 +8,7 @@ import { buildPortfolioPersonality, THEME_LABEL } from "@/lib/portfolio-personal
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 
 export type BriefingLink =
-  | { type: "lab"; tab: "alerts" | "versus" | "season" }
+  | { type: "lab"; tab: "alerts" | "season" }
   | { type: "pulse" }
   | { type: "sheet"; portfolioId: string }
   | { type: "compound" };
@@ -56,9 +56,8 @@ function buildPlays(opts: {
   model: OverviewModel;
   dayKey: string;
   hideOptions: boolean;
-  canReachLab: boolean;
 }): BriefingItem[] {
-  const { model, dayKey, hideOptions, canReachLab } = opts;
+  const { model, dayKey, hideOptions } = opts;
   const plays: BriefingItem[] = [];
 
   plays.push({
@@ -76,17 +75,6 @@ function buildPlays(opts: {
       title: "Hold, and only write when it's worth it",
       detail:
         "Own the shares. Sell a call only when the premium's actually rich enough to bother. Otherwise there's nothing to do today.",
-    });
-  }
-
-  if (canReachLab) {
-    plays.push({
-      id: `play-versus-${dayKey}`,
-      kind: "play",
-      title: "Family scoreboard is live",
-      detail: "Glance Versus in Lab if you want the family sheet rankings.",
-      link: { type: "lab", tab: "versus" },
-      cta: "Scoreboard →",
     });
   }
 
@@ -208,11 +196,13 @@ export function buildInvestorBriefing(input: {
             `${pct1(todayPct)} today. Check Thesis Pulse if anything moved enough to matter; otherwise it's a nothing-burger day.`,
           ])
         : "Quotes still settling. Open, skim, close.",
-    link: { type: "pulse" },
-    cta: "Thesis pulse →",
+    // Pulse lives inside Lab now, so the CTA is only offered to viewers
+    // who can actually reach Lab.
+    link: canReachLab ? { type: "pulse" } : undefined,
+    cta: canReachLab ? "Thesis pulse →" : undefined,
   });
 
-  if (activeAlerts.length > 0) {
+  if (activeAlerts.length > 0 && canReachLab) {
     const top = activeAlerts[0]!;
     items.push({
       id: `alerts-${dayKey}`,
@@ -299,7 +289,7 @@ export function buildInvestorBriefing(input: {
     });
   }
 
-  const plays = buildPlays({ model, dayKey, hideOptions, canReachLab });
+  const plays = buildPlays({ model, dayKey, hideOptions });
   if (plays.length > 0) {
     items.push(plays[Math.abs(hash(dayKey)) % plays.length]!);
   }

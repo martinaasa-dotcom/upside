@@ -20,8 +20,6 @@ import {
   type HoldingPatch,
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
-import { PulsePage } from "@/components/PulsePage";
-import { SeasonalityPage } from "@/components/SeasonalityPage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
@@ -156,7 +154,7 @@ import {
   NO_OPTIONS_HIDDEN_LAB_TABS,
   saveStoredKnowsOptions,
   saveStoredTier,
-  TIER_HIDDEN_LAB_GROUPS,
+  TIER_HIDDEN_LAB_TABS,
   TIER_HIDDEN_META_TABS,
   type ExperienceTier,
 } from "@/lib/experience-tier";
@@ -305,6 +303,24 @@ function extendedHoursFromQuote(q: Quote | null | undefined) {
  * no `sheet` param or it doesn't match anything, so callers can fall
  * through to their own next-best default (previous tab, localStorage, Overview).
  */
+/**
+ * Meta-tab ids that are still real top-level tabs. Pulse and Seasonality
+ * moved inside Lab, so anything persisted (localStorage, history state)
+ * from before that move has to fold onto Lab rather than resolving to a
+ * tab that no longer renders and leaving the user on a blank page.
+ */
+function normalizeMetaTabId(id: string): string | null {
+  if (
+    id === OVERVIEW_TAB_ID ||
+    id === COMPOUND_TAB_ID ||
+    id === LAB_TAB_ID
+  ) {
+    return id;
+  }
+  if (id === PULSE_TAB_ID || id === SEASONALITY_TAB_ID) return LAB_TAB_ID;
+  return null;
+}
+
 function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
@@ -314,13 +330,18 @@ function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
     return COMPOUND_TAB_ID;
   }
   if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) return LAB_TAB_ID;
-  if (sheetParam === "pulse" || sheetParam === PULSE_TAB_ID) return PULSE_TAB_ID;
+  // Pulse and Seasonality are Lab sub-tabs now. Old links (and anyone's
+  // saved tab from before the move) still resolve, they just land on Lab
+  // with the matching sub-tab selected via ?labtab= below.
   if (
+    sheetParam === "pulse" ||
+    sheetParam === PULSE_TAB_ID ||
     sheetParam === "statistics" ||
     sheetParam === "stats" ||
+    sheetParam === "seasonality" ||
     sheetParam === SEASONALITY_TAB_ID
   ) {
-    return SEASONALITY_TAB_ID;
+    return LAB_TAB_ID;
   }
   if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
     return OVERVIEW_TAB_ID;
@@ -362,15 +383,8 @@ export function Dashboard() {
     if (!cachedBook) return OVERVIEW_TAB_ID;
     const saved = loadActiveSheetId();
     if (!saved) return OVERVIEW_TAB_ID;
-    if (
-      saved === OVERVIEW_TAB_ID ||
-      saved === COMPOUND_TAB_ID ||
-      saved === LAB_TAB_ID ||
-      saved === PULSE_TAB_ID ||
-      saved === SEASONALITY_TAB_ID
-    ) {
-      return saved;
-    }
+    const meta = normalizeMetaTabId(saved);
+    if (meta) return meta;
     return cachedBook.portfolios.some((p) => p.id === saved)
       ? saved
       : OVERVIEW_TAB_ID;
@@ -532,14 +546,11 @@ export function Dashboard() {
     [experienceTier]
   );
   const labHiddenForTier = hiddenMetaTabIds.includes(LAB_TAB_ID);
-  const pulseHiddenForTier = hiddenMetaTabIds.includes(PULSE_TAB_ID);
 
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
-  const isPulse = activeId === PULSE_TAB_ID;
-  const isSeasonality = activeId === SEASONALITY_TAB_ID;
-  const isMetaTab = isOverview || isCompound || isLab || isPulse || isSeasonality;
+  const isMetaTab = isOverview || isCompound || isLab;
 
   const activePortfolio =
     isMetaTab
@@ -738,28 +749,16 @@ export function Dashboard() {
     (list: Portfolio[], prev: string) => {
       const fromUrl = resolveSheetIdFromUrl(list);
       if (fromUrl) return fromUrl;
-      if (
-        prev &&
-        (prev === OVERVIEW_TAB_ID ||
-          prev === COMPOUND_TAB_ID ||
-          prev === LAB_TAB_ID ||
-          prev === PULSE_TAB_ID ||
-          prev === SEASONALITY_TAB_ID ||
-          list.some((p) => p.id === prev))
-      ) {
-        return prev;
+      if (prev) {
+        const meta = normalizeMetaTabId(prev);
+        if (meta) return meta;
+        if (list.some((p) => p.id === prev)) return prev;
       }
       const saved = loadActiveSheetId();
-      if (
-        saved &&
-        (saved === OVERVIEW_TAB_ID ||
-          saved === COMPOUND_TAB_ID ||
-          saved === LAB_TAB_ID ||
-          saved === PULSE_TAB_ID ||
-          saved === SEASONALITY_TAB_ID ||
-          list.some((p) => p.id === saved))
-      ) {
-        return saved;
+      if (saved) {
+        const meta = normalizeMetaTabId(saved);
+        if (meta) return meta;
+        if (list.some((p) => p.id === saved)) return saved;
       }
       return OVERVIEW_TAB_ID;
     },
@@ -1080,10 +1079,6 @@ export function Dashboard() {
       url.searchParams.set("sheet", "compound");
     } else if (activeId === LAB_TAB_ID) {
       url.searchParams.set("sheet", "lab");
-    } else if (activeId === PULSE_TAB_ID) {
-      url.searchParams.set("sheet", "pulse");
-    } else if (activeId === SEASONALITY_TAB_ID) {
-      url.searchParams.set("sheet", "statistics");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
       if (p?.slug) url.searchParams.set("sheet", p.slug);
@@ -1129,15 +1124,9 @@ export function Dashboard() {
           : null;
 
       if (fromState) {
-        if (
-          fromState === OVERVIEW_TAB_ID ||
-          fromState === COMPOUND_TAB_ID ||
-          fromState === LAB_TAB_ID ||
-          fromState === PULSE_TAB_ID ||
-          fromState === SEASONALITY_TAB_ID ||
-          portfolios.some((p) => p.id === fromState)
-        ) {
-          setActiveId(fromState);
+        const meta = normalizeMetaTabId(fromState);
+        if (meta || portfolios.some((p) => p.id === fromState)) {
+          setActiveId(meta ?? fromState);
           return;
         }
       }
@@ -2226,22 +2215,28 @@ export function Dashboard() {
         id: "pulse",
         label: "Pulse: thesis check",
         group: "Go",
-        hint: "Big movers",
-        run: () => setActiveId(PULSE_TAB_ID),
+        hint: "In Lab · big movers",
+        run: () => {
+          setLabIntent("pulse");
+          setActiveId(LAB_TAB_ID);
+        },
       },
       {
         id: "statistics",
         label: "Seasonality",
         group: "Go",
-        hint: "Year & calendar patterns",
-        run: () => setActiveId(SEASONALITY_TAB_ID),
+        hint: "In Lab · year & calendar patterns",
+        run: () => {
+          setLabIntent("seasonality");
+          setActiveId(LAB_TAB_ID);
+        },
       },
     ];
     items.push({
       id: "lab",
       label: "Lab",
       group: "Go",
-      hint: "Play layer",
+      hint: "Analysis tools",
       run: () => setActiveId(LAB_TAB_ID),
     });
     items.push({
@@ -2500,13 +2495,9 @@ export function Dashboard() {
                 ? "Overview"
                 : isCompound
                   ? "Compound"
-                : isPulse
-                  ? "Pulse"
-                  : isSeasonality
-                    ? "Seasonality"
-                    : isLab
-                      ? "Lab"
-                      : activePortfolio!.name}
+                  : isLab
+                    ? "Lab"
+                    : activePortfolio!.name}
             </h1>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
@@ -2608,12 +2599,13 @@ export function Dashboard() {
             onDismissAlert={(id) =>
               setAlertToastsSent((prev) => dismissAlert(id, prev))
             }
+            convictions={convictionMap}
             intentTab={labIntent}
             onIntentConsumed={() => setLabIntent(null)}
-            hiddenGroups={
-              experienceTier ? TIER_HIDDEN_LAB_GROUPS[experienceTier] : []
-            }
-            hiddenTabs={hideOptionsUI ? NO_OPTIONS_HIDDEN_LAB_TABS : []}
+            hiddenTabs={[
+              ...(experienceTier ? TIER_HIDDEN_LAB_TABS[experienceTier] : []),
+              ...(hideOptionsUI ? NO_OPTIONS_HIDDEN_LAB_TABS : []),
+            ]}
           />
         ) : isCompound ? (
           <CompoundInterestSheet
@@ -2630,16 +2622,6 @@ export function Dashboard() {
             bookCash={overview.totals.cash}
             eurUsd={eurUsd}
             eurUsdDetail={eurUsdDetail}
-          />
-        ) : isPulse ? (
-          <PulsePage
-            model={overview}
-            quotes={quotes}
-            convictions={convictionMap}
-          />
-        ) : isSeasonality ? (
-          <SeasonalityPage
-            bookTickers={overview.tickers.map((t) => t.ticker)}
           />
         ) : isOverview ? (
           <>
@@ -2662,7 +2644,12 @@ export function Dashboard() {
                     }
               }
               onOpenPulse={
-                pulseHiddenForTier ? undefined : () => setActiveId(PULSE_TAB_ID)
+                labHiddenForTier
+                  ? undefined
+                  : () => {
+                      setLabIntent("pulse");
+                      setActiveId(LAB_TAB_ID);
+                    }
               }
               onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
             />
@@ -2747,10 +2734,7 @@ export function Dashboard() {
           setConfirmDelete({ kind: "sheet", id, label: name })
         }
         mobileSummary={{
-          title:
-            isOverview || isLab || isCompound || isSeasonality
-              ? "Book"
-              : (activePortfolio?.name ?? "Sheet"),
+          title: isMetaTab ? "Book" : (activePortfolio?.name ?? "Sheet"),
           totalValue: (() => {
             const usdAmt = isMetaTab
               ? overview.totals.totalValue

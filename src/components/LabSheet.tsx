@@ -1,7 +1,16 @@
 "use client";
 
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
-import { allocationBySector, allocationByTicker } from "@/lib/allocation";
+import {
+  allocationBySector,
+  allocationByTicker,
+  concentrationRead,
+  themeBreakdown,
+} from "@/lib/allocation";
+import {
+  buildPortfolioPersonality,
+  THEME_COLOR,
+} from "@/lib/portfolio-personality";
 import type { UpsideAlert } from "@/lib/alerts";
 import {
   SHOCKS,
@@ -35,10 +44,9 @@ import type { LabBundle } from "@/lib/lab-bundle";
 import { loadDuelHistory, duelStats } from "@/lib/daily-duel";
 import { loadVisitStreak } from "@/lib/visit-streak";
 import { personalBadges } from "@/lib/personal-badges";
-import {
-  buildSheetRivalry,
-  rivalryTagline,
-} from "@/lib/sheet-rivalry";
+import { PulsePage } from "@/components/PulsePage";
+import { SeasonalityPage } from "@/components/SeasonalityPage";
+import type { ConvictionMap } from "@/lib/conviction";
 import { buildWeeklyRecap } from "@/lib/weekly-recap";
 import type { OverviewModel } from "@/lib/overview";
 import type { CoveredCallRow, Holding, Portfolio, Quote } from "@/lib/types";
@@ -68,58 +76,71 @@ type Props = {
   guest?: boolean;
   dismissedAlertIds?: Set<string>;
   onDismissAlert?: (id: string) => void;
-  /** Deep-link from Overview (versus / alerts / …). */
+  /** Conviction notes, needed by the Pulse tab. */
+  convictions: ConvictionMap;
+  /** Deep-link from Overview (alerts / watch / …). */
   intentTab?: LabDeepLink | null;
   onIntentConsumed?: () => void;
-  /** Group ids to hide, driven by the viewer's experience tier. */
-  hiddenGroups?: string[];
-  /** Specific tab ids to hide (independent of group), e.g. covered-call
-   * mechanics for a viewer with no options experience. */
+  /** Specific tab ids to hide, driven by the viewer's experience tier and
+   * options familiarity. */
   hiddenTabs?: string[];
 };
 
-type LabGroup = "book" | "income" | "digest" | "advanced";
 type LabTab =
   | "alloc"
-  | "versus"
+  | "risk"
+  | "pulse"
+  | "seasonality"
   | "watch"
-  | "shock"
-  | "corr"
   | "season"
   | "cashflow"
   | "alerts";
 
-const GROUPS: { id: LabGroup; label: string }[] = [
-  { id: "book", label: "Book" },
-  { id: "income", label: "Income" },
-  { id: "digest", label: "Review" },
-  { id: "advanced", label: "Advanced" },
-];
-
-const TABS: { id: LabTab; group: LabGroup; label: string }[] = [
-  { id: "alloc", group: "book", label: "Allocation" },
-  { id: "versus", group: "book", label: "Versus" },
-  { id: "watch", group: "book", label: "Watchlist" },
-  { id: "season", group: "income", label: "CC income" },
-  { id: "cashflow", group: "income", label: "Cashflow" },
-  { id: "alerts", group: "digest", label: "Alerts & recap" },
-  { id: "shock", group: "advanced", label: "Shock" },
-  { id: "corr", group: "advanced", label: "Correlation" },
+/** One flat row, ordered as a reading path: what you hold, how risky it
+ * is, whether the thesis still holds, when it tends to move, what you're
+ * eyeing next, then the income and review tools. Group headers used to
+ * sit above this and only added a click. */
+const TABS: { id: LabTab; label: string }[] = [
+  { id: "alloc", label: "Allocation" },
+  { id: "risk", label: "Risk" },
+  { id: "pulse", label: "Pulse" },
+  { id: "seasonality", label: "Seasonality" },
+  { id: "watch", label: "Watchlist" },
+  { id: "season", label: "CC income" },
+  { id: "cashflow", label: "Cashflow" },
+  { id: "alerts", label: "Alerts & recap" },
 ];
 
 const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
-  versus: "versus",
   alerts: "alerts",
   watch: "watch",
   season: "season",
+  pulse: "pulse",
+  seasonality: "seasonality",
 };
 
 /** Reads `?labtab=` so a hard refresh (or revisiting Lab after switching
- * away) lands back on the sub-tab you were on, not always Allocation. */
+ * away) lands back on the sub-tab you were on, not always Allocation.
+ * Also honours the legacy `?sheet=pulse` / `?sheet=stats` links from when
+ * those were top-level tabs, so old bookmarks still land in the right
+ * place rather than dumping you on Allocation. */
 function initialLabTab(): LabTab {
   if (typeof window === "undefined") return "alloc";
-  const param = new URLSearchParams(window.location.search).get("labtab");
-  return TABS.some((t) => t.id === param) ? (param as LabTab) : "alloc";
+  const params = new URLSearchParams(window.location.search);
+  const param = params.get("labtab");
+  if (TABS.some((t) => t.id === param)) return param as LabTab;
+
+  const sheetParam = params.get("sheet")?.trim().toLowerCase();
+  if (sheetParam === "pulse" || sheetParam === "__pulse__") return "pulse";
+  if (
+    sheetParam === "stats" ||
+    sheetParam === "statistics" ||
+    sheetParam === "seasonality" ||
+    sheetParam === "__seasonality__"
+  ) {
+    return "seasonality";
+  }
+  return "alloc";
 }
 
 export function LabSheet({
@@ -134,19 +155,12 @@ export function LabSheet({
   guest,
   dismissedAlertIds,
   onDismissAlert,
+  convictions,
   intentTab,
   onIntentConsumed,
-  hiddenGroups = [],
   hiddenTabs = [],
 }: Props) {
-  const visibleGroups = GROUPS.filter((g) => !hiddenGroups.includes(g.id));
-  const visibleTabs = TABS.filter(
-    (t) => !hiddenGroups.includes(t.group) && !hiddenTabs.includes(t.id)
-  );
-  const [group, setGroup] = useState<LabGroup>(() => {
-    const fromUrl = visibleTabs.find((t) => t.id === initialLabTab())?.group;
-    return fromUrl ?? visibleGroups[0]?.id ?? "book";
-  });
+  const visibleTabs = TABS.filter((t) => !hiddenTabs.includes(t.id));
   const [tab, setTab] = useState<LabTab>(() => {
     const fromUrl = initialLabTab();
     return visibleTabs.some((t) => t.id === fromUrl)
@@ -202,17 +216,7 @@ export function LabSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the ticker-list string, not quotes/watchQuotes identity churn
   }, [watchKey]);
 
-  const groupTabs = visibleTabs.filter((t) => t.group === group);
-
-  function selectGroup(g: LabGroup) {
-    setGroup(g);
-    const first = visibleTabs.find((t) => t.group === g);
-    if (first) setTab(first.id);
-  }
-
   function selectTab(id: LabTab) {
-    const meta = visibleTabs.find((t) => t.id === id);
-    if (meta) setGroup(meta.group);
     setTab(id);
   }
 
@@ -311,7 +315,7 @@ export function LabSheet({
       : (portfolios.find((p) => p.id === scopeId)?.name ?? "Sheet");
 
   const scopeApplies =
-    tab === "alloc" || tab === "shock" || tab === "corr" || tab === "season";
+    tab === "alloc" || tab === "risk" || tab === "season";
 
   const sheetHoldings = useMemo(
     () =>
@@ -328,6 +332,18 @@ export function LabSheet({
   );
   const byTicker = useMemo(
     () => allocationByTicker(sheetHoldings),
+    [sheetHoldings]
+  );
+  const themes = useMemo(() => themeBreakdown(sheetHoldings), [sheetHoldings]);
+  const concentration = useMemo(
+    () => concentrationRead(sheetHoldings),
+    [sheetHoldings]
+  );
+  const personality = useMemo(
+    () =>
+      buildPortfolioPersonality(
+        sheetHoldings.map((h) => ({ ticker: h.ticker, value: h.currentValue }))
+      ),
     [sheetHoldings]
   );
 
@@ -387,7 +403,6 @@ export function LabSheet({
     return coveredCallRows.filter((r) => r.holding.portfolio_id === scopeId);
   }, [coveredCallRows, scopeId]);
 
-  const rivalry = useMemo(() => buildSheetRivalry(overview), [overview]);
   const ccSeason = useMemo(
     () =>
       buildCcSeason({
@@ -411,8 +426,6 @@ export function LabSheet({
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [scopedCcRows]);
 
-  const maxRivalNav = Math.max(...rivalry.map((r) => r.value), 1);
-
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
@@ -421,9 +434,8 @@ export function LabSheet({
           <h2 className="text-sm font-semibold text-white">Lab</h2>
         </div>
         <p className="mt-1 text-xs text-zinc-500">
-          Allocation, Versus &amp; Watchlist live under Book; income tracking
-          under Income; Shock &amp; Correlation under Advanced. Edits sync
-          when a locked sheet is unlocked.
+          Everything analytical about your book in one place. Edits sync when
+          a locked sheet is unlocked.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex min-h-8 items-center gap-2">
@@ -453,25 +465,8 @@ export function LabSheet({
               : "Scope unused on this tool"}
           </span>
         </div>
-        <div className="scrollbar-none mt-3 flex min-h-[2.25rem] gap-1 overflow-x-auto border-b border-zinc-800 pb-2 snap-x snap-mandatory">
-          {visibleGroups.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => selectGroup(g.id)}
-              className={cn(
-                "shrink-0 snap-start rounded-md px-3 py-2 text-xs font-semibold transition touch-target",
-                group === g.id
-                  ? "bg-zinc-100 text-[#121214]"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-              )}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
-        <div className="scrollbar-none mt-2 flex min-h-[2rem] gap-1 overflow-x-auto snap-x snap-mandatory">
-          {groupTabs.map((t) => (
+        <div className="scrollbar-none mt-3 flex min-h-[2rem] gap-1 overflow-x-auto snap-x snap-mandatory">
+          {visibleTabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -490,102 +485,147 @@ export function LabSheet({
       </div>
 
       {tab === "alloc" && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <AllocCard title="By sector" slices={sectors} />
-          <AllocCard title="By ticker" slices={byTicker} />
+        <div className="space-y-4">
+          {concentration.positionCount === 0 ? (
+            <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-6 text-center">
+              <p className="text-sm text-zinc-400">
+                No positions on {scopeLabel} yet. Add a holding and this fills
+                in with your concentration read.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      Concentration
+                    </p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {personality.diversificationBand.description} ·{" "}
+                      {scopeLabel}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-semibold tabular-nums text-white">
+                      {personality.diversificationScore}
+                      <span className="text-sm text-zinc-600">/100</span>
+                    </p>
+                    <p className="text-[11px] font-medium text-brand-bright">
+                      {personality.diversificationBand.label}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <StatCell
+                    label="Behaves like"
+                    value={`${concentration.effectivePositions.toFixed(1)} names`}
+                    hint={`You hold ${concentration.positionCount}. Uneven weights make it act like fewer.`}
+                  />
+                  <StatCell
+                    label="Largest position"
+                    value={`${(concentration.topWeightPct * 100).toFixed(1)}%`}
+                    hint={concentration.topWeightTicker ?? ""}
+                    tone={
+                      concentration.topWeightPct >= 0.25 ? "warn" : "neutral"
+                    }
+                  />
+                  <StatCell
+                    label="Top 5 combined"
+                    value={`${(concentration.topFivePct * 100).toFixed(1)}%`}
+                    hint={
+                      concentration.topFivePct >= 0.8
+                        ? "Most of the book rides on five names."
+                        : "Rest of the book carries real weight."
+                    }
+                    tone={concentration.topFivePct >= 0.8 ? "warn" : "neutral"}
+                  />
+                </div>
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <StatCell
+                    label="Modeled return"
+                    value={`${personality.expectedAnnualReturnPct.toFixed(1)}%/yr`}
+                    hint="Theme-weighted, not a forecast."
+                  />
+                  <StatCell
+                    label="Drawdown potential"
+                    value={`-${personality.maxDrawdownPct}%`}
+                    hint="What this theme mix has historically given up."
+                    tone={personality.maxDrawdownPct >= 50 ? "warn" : "neutral"}
+                  />
+                  <StatCell
+                    label="Modeled alpha"
+                    value={`${personality.modeledAlphaPct >= 0 ? "+" : ""}${personality.modeledAlphaPct.toFixed(1)}%`}
+                    hint="Versus the risk you're taking (CAPM-style)."
+                    tone={personality.modeledAlphaPct >= 0 ? "good" : "warn"}
+                  />
+                </div>
+              </div>
+
+              {themes.length > 0 && (
+                <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
+                  <p className="text-sm font-semibold text-white">
+                    What you&apos;re actually betting on
+                  </p>
+                  <p className="mt-0.5 mb-4 text-xs text-zinc-500">
+                    Your holdings pooled by theme, which is usually a blunter
+                    read than the ticker list.
+                  </p>
+                  <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
+                    {themes.map((t) => (
+                      <div
+                        key={t.theme}
+                        style={{
+                          width: `${Math.max(1.5, t.pct * 100)}%`,
+                          backgroundColor: THEME_COLOR[t.theme],
+                        }}
+                        title={`${t.label}: ${Math.round(t.pct * 100)}%`}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {themes.map((t) => (
+                      <div
+                        key={t.theme}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                      >
+                        <span className="flex items-center gap-2 text-xs text-zinc-300">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: THEME_COLOR[t.theme] }}
+                          />
+                          {t.label}
+                        </span>
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-400">
+                          {Math.round(t.pct * 100)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <AllocCard title="By sector" slices={sectors} />
+                <AllocCard
+                  title="By ticker"
+                  slices={byTicker}
+                  flagAbovePct={0.2}
+                />
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {tab === "versus" && (
-        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Trophy className="h-4 w-4 text-brand" /> Family scoreboard
-              </div>
-              <p className="mt-1 text-xs text-zinc-500">
-                {rivalryTagline(rivalry[0])} Score weights today&apos;s P&amp;L
-                most, then lifetime return, then book size.
-              </p>
-            </div>
-          </div>
-          <ul className="space-y-2">
-            {rivalry.map((r, i) => (
-              <li
-                key={r.id}
-                className={cn(
-                  "rounded-xl border px-3 py-3",
-                  i === 0
-                    ? "border-brand/40 bg-brand/10"
-                    : "border-zinc-800 bg-zinc-950/40"
-                )}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xs tabular-nums text-zinc-500">
-                      #{i + 1}
-                    </span>
-                    <span className="text-base font-semibold text-white">
-                      {r.name}
-                    </span>
-                    <span className="text-[11px] text-zinc-500">
-                      {r.score} pts · {r.holdingCount} names
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm tabular-nums text-zinc-100">
-                      {currency(r.value)}
-                    </p>
-                    <p
-                      className={cn(
-                        "text-xs tabular-nums",
-                        r.todayDollar >= 0 ? "text-gain" : "text-loss"
-                      )}
-                    >
-                      Today {currency(r.todayDollar)}
-                      {r.todayPct != null ? ` · ${percent(r.todayPct)}` : ""}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-900">
-                  <div
-                    className="h-full rounded-full bg-brand/70"
-                    style={{
-                      width: `${Math.max(4, (r.value / maxRivalNav) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-zinc-500">
-                  <span>
-                    Today rank{" "}
-                    <span className="text-zinc-300">#{r.medals.today}</span>
-                  </span>
-                  <span>
-                    ROI{" "}
-                    <span
-                      className={
-                        r.roiPct >= 0 ? "text-gain" : "text-loss"
-                      }
-                    >
-                      {percent(r.roiPct)}
-                    </span>{" "}
-                    <span className="text-zinc-600">#{r.medals.roi}</span>
-                  </span>
-                  <span>
-                    NAV rank{" "}
-                    <span className="text-zinc-300">#{r.medals.nav}</span>
-                  </span>
-                  <span className="tabular-nums">
-                    Cash {currency(r.cash)}
-                  </span>
-                </div>
-              </li>
-            ))}
-            {rivalry.length === 0 && (
-              <li className="text-sm text-zinc-500">No sheets to rank.</li>
-            )}
-          </ul>
-        </div>
+      {tab === "pulse" && (
+        <PulsePage model={overview} quotes={quotes} convictions={convictions} />
+      )}
+
+      {tab === "seasonality" && (
+        <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
       )}
 
       {tab === "watch" && (
@@ -680,7 +720,7 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "shock" && (
+      {tab === "risk" && (
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -1058,7 +1098,7 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "corr" && (
+      {tab === "risk" && (
         <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <p className="text-sm font-semibold text-white">
             Correlations (90d sparkline)
@@ -1267,37 +1307,91 @@ function AlertKindBadge({ kind }: { kind: UpsideAlert["kind"] }) {
   );
 }
 
+function StatCell({
+  label,
+  value,
+  hint,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "neutral" | "good" | "warn";
+}) {
+  return (
+    <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2.5">
+      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-0.5 text-base font-semibold tabular-nums",
+          tone === "good" && "text-gain",
+          tone === "warn" && "text-amber-300",
+          tone === "neutral" && "text-zinc-100"
+        )}
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-0.5 text-[11px] text-zinc-500">{hint}</p>}
+    </div>
+  );
+}
+
 function AllocCard({
   title,
   slices,
+  flagAbovePct,
 }: {
   title: string;
   slices: { label: string; pct: number; value: number }[];
+  /** Tint any slice at or above this weight, so an oversized single
+   * position reads as a flag rather than just another bar. */
+  flagAbovePct?: number;
 }) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
       <p className="mb-3 text-sm font-semibold text-white">{title}</p>
       <div className="space-y-2">
-        {slices.map((s) => (
-          <div key={s.label}>
-            <div className="mb-0.5 flex justify-between text-xs text-zinc-400">
-              <span>{s.label}</span>
-              <span className="tabular-nums">
-                {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}
-              </span>
+        {slices.map((s) => {
+          const flagged = flagAbovePct != null && s.pct >= flagAbovePct;
+          return (
+            <div key={s.label}>
+              <div className="mb-0.5 flex justify-between text-xs text-zinc-400">
+                <span className={cn(flagged && "font-medium text-amber-300")}>
+                  {s.label}
+                </span>
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    flagged && "font-medium text-amber-300"
+                  )}
+                >
+                  {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
+                <div
+                  className={cn(
+                    "h-full rounded-full",
+                    flagged ? "bg-amber-400/80" : "bg-brand/70"
+                  )}
+                  style={{ width: `${Math.min(100, s.pct * 100)}%` }}
+                />
+              </div>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                className="h-full rounded-full bg-brand/70"
-                style={{ width: `${Math.min(100, s.pct * 100)}%` }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {slices.length === 0 && (
           <p className="text-sm text-zinc-500">No equity to allocate.</p>
         )}
       </div>
+      {flagAbovePct != null && (
+        <p className="mt-3 text-[11px] text-zinc-600">
+          Amber marks anything at or above {Math.round(flagAbovePct * 100)}% of
+          the book.
+        </p>
+      )}
     </div>
   );
 }

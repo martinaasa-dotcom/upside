@@ -26,10 +26,7 @@ import {
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CashflowEntry } from "@/lib/cashflow";
 import type { CoveredCallRow } from "@/lib/types";
-import {
-  buildSheetRivalry,
-  rivalryOverviewCopy,
-} from "@/lib/sheet-rivalry";
+import { buildSheetRivalry, type RivalRow } from "@/lib/sheet-rivalry";
 import {
   calendarDaysBetweenKeys,
   formatRelativeDays,
@@ -66,7 +63,12 @@ type FundTeaser = {
   headline: string | null;
 };
 
-export type LabDeepLink = "versus" | "alerts" | "watch" | "season";
+export type LabDeepLink =
+  | "alerts"
+  | "watch"
+  | "season"
+  | "pulse"
+  | "seasonality";
 
 type EarningsEvent = { ticker: string; date: string; days: number };
 
@@ -293,10 +295,16 @@ function PortfolioLane({
   sheet,
   maxValue,
   onOpen,
+  rival,
+  rank,
 }: {
   sheet: SheetScore;
   maxValue: number;
   onOpen: () => void;
+  /** Blended standing among your sheets. Absent when there's only one
+   * sheet, where "rank #1 of 1" would be noise. */
+  rival?: RivalRow;
+  rank?: number;
 }) {
   const width =
     maxValue > 0 ? Math.max(8, (sheet.totalValue / maxValue) * 100) : 8;
@@ -306,7 +314,19 @@ function PortfolioLane({
     <button type="button" onClick={onOpen} className="group w-full text-left">
       <div className="mb-2 flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-lg font-semibold text-white group-hover:text-brand-bright">
+          <p className="flex items-center gap-2 truncate text-lg font-semibold text-white group-hover:text-brand-bright">
+            {rank != null && (
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums",
+                  rank === 1
+                    ? "bg-brand/20 text-brand-bright"
+                    : "bg-zinc-800 text-zinc-400"
+                )}
+              >
+                {rank === 1 && <Trophy className="h-3 w-3" />}#{rank}
+              </span>
+            )}
             {sheet.portfolio.name}
           </p>
           <p className="mt-1 text-sm text-zinc-400">
@@ -345,6 +365,19 @@ function PortfolioLane({
           {sheet.todayPct !== null ? percent(sheet.todayPct) : "—"}
         </span>
       </div>
+      {rival && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-zinc-800/60 pt-2 text-xs text-zinc-500">
+          <span>
+            Today <span className="text-zinc-300">#{rival.medals.today}</span>
+          </span>
+          <span>
+            Lifetime <span className="text-zinc-300">#{rival.medals.roi}</span>
+          </span>
+          <span>
+            Size <span className="text-zinc-300">#{rival.medals.nav}</span>
+          </span>
+        </div>
+      )}
     </button>
   );
 }
@@ -515,11 +548,24 @@ export function OverviewDashboard({
     [model, activeAlerts, coveredCallRows, cashflows, hideOptions, guest, onOpenLab]
   );
 
+  // Sheet standings fold straight into the Portfolios list below rather
+  // than living in their own card: ranking your own sheets is the same
+  // data the list already shows, just ordered.
   const rivalry = useMemo(() => buildSheetRivalry(model), [model]);
-  const scoreboard = useMemo(
-    () => rivalryOverviewCopy(rivalry[0], model.sheets.length),
-    [rivalry, model.sheets.length]
+  const ranked = sheets.length > 1;
+  const rivalById = useMemo(
+    () => new Map(rivalry.map((r) => [r.id, r])),
+    [rivalry]
   );
+  const orderedSheets = useMemo(() => {
+    if (!ranked) return sheets;
+    const order = new Map(rivalry.map((r, i) => [r.id, i]));
+    return [...sheets].sort(
+      (a, b) =>
+        (order.get(a.portfolio.id) ?? Number.MAX_SAFE_INTEGER) -
+        (order.get(b.portfolio.id) ?? Number.MAX_SAFE_INTEGER)
+    );
+  }, [sheets, rivalry, ranked]);
   const kind = sessionKind(marketState);
 
   function openFirstPortfolio(t: TickerScore) {
@@ -796,16 +842,20 @@ export function OverviewDashboard({
         <div className="mb-5">
           <h3 className="text-xl font-semibold text-white">Portfolios</h3>
           <p className="mt-1 text-base text-zinc-400">
-            Bar = book size · color = lifetime ROI
+            {ranked
+              ? "Ranked by today, lifetime, then size · bar = book size"
+              : "Bar = book size · color = lifetime ROI"}
           </p>
         </div>
         <div className="space-y-6">
-          {sheets.map((sheet) => (
+          {orderedSheets.map((sheet, i) => (
             <PortfolioLane
               key={sheet.portfolio.id}
               sheet={sheet}
               maxValue={maxSheet}
               onOpen={() => onOpenSheet(sheet.portfolio.id)}
+              rival={ranked ? rivalById.get(sheet.portfolio.id) : undefined}
+              rank={ranked ? i + 1 : undefined}
             />
           ))}
         </div>
@@ -1050,37 +1100,6 @@ export function OverviewDashboard({
       </section>
 
       {!guest && <DailyDuelCard tickers={tickers} />}
-
-      {/* Family scoreboard — social/gamification, deliberately kept down
-       * here with the other personal-engagement cards rather than in the
-       * primary above-the-fold path. */}
-      <button
-        type="button"
-        disabled={guest || !onOpenLab}
-        onClick={() => onOpenLab?.("versus")}
-        className="overview-fade w-full rounded-2xl border border-brand/25 bg-brand/10 px-4 py-4 text-left transition hover:border-brand/50 disabled:cursor-default disabled:opacity-80"
-      >
-        <div className="flex items-center gap-2 text-brand-bright">
-          <Trophy className="h-4 w-4" />
-          <span className="text-[11px] font-semibold uppercase tracking-wide">
-            {scoreboard.eyebrow}
-          </span>
-        </div>
-        <p className="mt-2 text-lg font-semibold text-white">
-          {scoreboard.name}
-        </p>
-        <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-          {scoreboard.detail}
-        </p>
-        {scoreboard.ranks && (
-          <p className="mt-2 text-xs tabular-nums text-zinc-500">
-            {scoreboard.ranks}
-          </p>
-        )}
-        {!guest && (
-          <p className="mt-2 text-[11px] text-brand/80">See all rankings →</p>
-        )}
-      </button>
 
       <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-2.5">

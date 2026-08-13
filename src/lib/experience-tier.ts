@@ -4,7 +4,7 @@
  * per-feature toggles: the goal is "this looks simpler," not a settings
  * page with 30 checkboxes.
  */
-import { LAB_TAB_ID, PULSE_TAB_ID, SEASONALITY_TAB_ID } from "@/lib/overview";
+import { LAB_TAB_ID } from "@/lib/overview";
 
 export type ExperienceTier = "novice" | "investor" | "advanced";
 
@@ -56,17 +56,25 @@ export function saveStoredTier(tier: ExperienceTier) {
  * constants from lib/overview (matches PortfolioTabs' MODES[i].id), not
  * plain labels. These were previously plain strings ("pulse", "lab", …)
  * that never matched, so novice-tier tab hiding silently did nothing.
+ *
+ * Pulse and Seasonality used to be top-level meta-tabs listed here. They
+ * are Lab sub-tabs now, so hiding Lab for a novice hides them too, and
+ * the per-tier detail moved to TIER_HIDDEN_LAB_TABS below.
  */
 export const TIER_HIDDEN_META_TABS: Record<ExperienceTier, string[]> = {
-  novice: [PULSE_TAB_ID, SEASONALITY_TAB_ID, LAB_TAB_ID],
+  novice: [LAB_TAB_ID],
   investor: [],
   advanced: [],
 };
 
-/** LabSheet group ids hidden per tier. */
-export const TIER_HIDDEN_LAB_GROUPS: Record<ExperienceTier, string[]> = {
+/**
+ * LabSheet sub-tab ids hidden per tier. Novices don't reach Lab at all,
+ * so their list is empty by construction; an investor-tier viewer gets
+ * Lab minus the two heaviest tools (stress/correlation modelling).
+ */
+export const TIER_HIDDEN_LAB_TABS: Record<ExperienceTier, string[]> = {
   novice: [],
-  investor: ["advanced"],
+  investor: ["risk"],
   advanced: [],
 };
 
