@@ -42,6 +42,27 @@ function sheetMostCash(model: OverviewModel): string | undefined {
   return sorted[0]?.portfolio.id;
 }
 
+/** Which sheet actually holds the covered-call premium being modeled, so
+ * the briefing card can take the viewer straight to it instead of just
+ * quoting a book-wide number with nowhere to go. */
+function sheetMostCcPremium(rows: CoveredCallRow[]): string | undefined {
+  const byPortfolio = new Map<string, number>();
+  for (const r of rows) {
+    const id = r.holding.portfolio_id;
+    if (!id) continue;
+    byPortfolio.set(id, (byPortfolio.get(id) ?? 0) + (r.premium ?? 0));
+  }
+  let best: string | undefined;
+  let bestPremium = -Infinity;
+  for (const [id, premium] of byPortfolio) {
+    if (premium > bestPremium) {
+      bestPremium = premium;
+      best = id;
+    }
+  }
+  return best;
+}
+
 /**
  * One rotating "what's the play today" card. Built from what this viewer
  * can actually reach, so a no-options novice never gets a covered-call
@@ -197,6 +218,7 @@ export function buildInvestorBriefing(input: {
       const rng = mulberry32(
         hashSeed(`upside-briefing-cc|${Math.round(openPrem)}`)
       );
+      const ccSheetId = sheetMostCcPremium(coveredCallRows);
       items.push({
         id: `cc-season-${dayKey}`,
         kind: "watch",
@@ -205,6 +227,8 @@ export function buildInvestorBriefing(input: {
           "Modeled on your current strikes, not money in the account yet.",
           "That's what the open calls are worth on paper if they run to expiry.",
         ]),
+        link: ccSheetId ? { type: "sheet", portfolioId: ccSheetId } : undefined,
+        cta: ccSheetId ? "Open covered calls →" : undefined,
       });
     }
   }
