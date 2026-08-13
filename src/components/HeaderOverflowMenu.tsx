@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/format";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -17,9 +17,20 @@ export type HeaderMenuItem = {
 type Props = {
   items: HeaderMenuItem[];
   label?: string;
+  /** Shown next to the icon on wide screens — set "" to keep icon-only. */
+  showLabel?: boolean;
+  icon?: LucideIcon;
+  /** Renders a round avatar (photo, else an initial) instead of `icon`. */
+  avatar?: { url?: string | null; initial?: string };
 };
 
-export function HeaderOverflowMenu({ items, label = "More" }: Props) {
+export function HeaderOverflowMenu({
+  items,
+  label = "More",
+  showLabel = true,
+  icon: Icon = MoreHorizontal,
+  avatar,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -64,10 +75,30 @@ export function HeaderOverflowMenu({ items, label = "More" }: Props) {
           }
           setOpen((o) => !o);
         }}
-        className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+        className={cn(
+          "inline-flex items-center gap-1 rounded-md border border-zinc-700 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200",
+          avatar ? "p-0.5" : "px-2 py-1.5"
+        )}
       >
-        <MoreHorizontal className="h-3.5 w-3.5" />
-        <span className="hidden lg:inline">{label}</span>
+        {avatar ? (
+          avatar.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatar.url}
+              alt=""
+              className="h-6 w-6 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand/20 text-[11px] font-semibold text-brand-bright">
+              {avatar.initial ?? "?"}
+            </span>
+          )
+        ) : (
+          <Icon className="h-3.5 w-3.5" />
+        )}
+        {showLabel && !avatar && (
+          <span className="hidden lg:inline">{label}</span>
+        )}
       </button>
       {open &&
         pos &&
@@ -79,6 +110,11 @@ export function HeaderOverflowMenu({ items, label = "More" }: Props) {
             className="fixed z-[80] min-w-[11rem] overflow-hidden rounded-lg border border-zinc-700 bg-[#1a1a1c] py-1 shadow-xl"
             style={{ top: pos.top, right: pos.right }}
           >
+            {avatar && (
+              <div className="truncate border-b border-zinc-800 px-3 py-2 text-xs font-medium text-zinc-300">
+                {label}
+              </div>
+            )}
             {items.map((item) => (
               <button
                 key={item.id}

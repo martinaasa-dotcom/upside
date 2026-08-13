@@ -134,6 +134,7 @@ import type {
 import {
   Plus,
   RefreshCw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -2204,52 +2205,19 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [portfolios, overview.tickers, undoStack.length]);
 
-  const headerMenuItems: HeaderMenuItem[] = useMemo(() => {
-    const items: HeaderMenuItem[] = [];
+  // Page-level view toggles for the current sheet — kept separate from
+  // account actions below so one menu isn't a junk drawer of unrelated
+  // things. Doesn't duplicate Communities/My account: those are already
+  // one click away via WorkspaceSwitcher right next to this.
+  const viewMenuItems: HeaderMenuItem[] = useMemo(() => {
+    const items: HeaderMenuItem[] = [
+      { id: "cmd", label: "Command palette", hint: "⌘K", onSelect: () => setCmdOpen(true) },
+    ];
     if (undoStack.length > 0) {
       items.push({
         id: "undo",
         label: "Undo Margus write",
         onSelect: () => undoLastMargusWrite(),
-      });
-    }
-    items.push({
-      id: "cmd",
-      label: "Command palette",
-      hint: "⌘K",
-      onSelect: () => setCmdOpen(true),
-    });
-    if (source === "supabase") {
-      items.push({
-        id: "communities",
-        label: "Communities",
-        onSelect: () => {
-          router.push("/communities");
-        },
-      });
-      items.push({
-        id: "account",
-        label: "My account",
-        onSelect: () => {
-          router.push("/account");
-        },
-      });
-      items.push({
-        id: "snapshots",
-        label: "Snapshots",
-        onSelect: () => setSnapshotsOpen(true),
-      });
-      items.push({
-        id: "signout",
-        label: profile?.display_name
-          ? `Sign out (${profile.display_name})`
-          : "Sign out",
-        onSelect: () =>
-          void signOut().then(() => {
-            clearBookCache();
-            router.push("/");
-            router.refresh();
-          }),
       });
     }
     if (!isMetaTab) {
@@ -2292,6 +2260,30 @@ export function Dashboard() {
     locked,
     activePortfolio?.id,
   ]);
+
+  // Account-scoped actions only — Communities/My account live in
+  // WorkspaceSwitcher already, so they're deliberately not repeated here.
+  const accountMenuItems: HeaderMenuItem[] = useMemo(() => {
+    if (source !== "supabase") return [];
+    return [
+      {
+        id: "snapshots",
+        label: "Snapshots",
+        onSelect: () => setSnapshotsOpen(true),
+      },
+      {
+        id: "signout",
+        label: "Sign out",
+        onSelect: () =>
+          void signOut().then(() => {
+            clearBookCache();
+            router.push("/");
+            router.refresh();
+          }),
+      },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- menu chrome deps only
+  }, [source]);
 
   const syntheticTickers = useMemo(() => {
     // Precise now: the API reports which tier actually priced each ticker,
@@ -2478,7 +2470,24 @@ export function Dashboard() {
                 <span className="sm:hidden">Add</span>
               </button>
             )}
-            <HeaderOverflowMenu items={headerMenuItems} />
+            <HeaderOverflowMenu
+              items={viewMenuItems}
+              label="View"
+              icon={SlidersHorizontal}
+            />
+            {source === "supabase" && (
+              <HeaderOverflowMenu
+                items={accountMenuItems}
+                label={profile?.display_name || user?.email || "Account"}
+                avatar={{
+                  url: profile?.avatar_url,
+                  initial: (profile?.display_name || user?.email || "?")
+                    .trim()
+                    .charAt(0)
+                    .toUpperCase(),
+                }}
+              />
+            )}
           </div>
         </div>
         <div className="mx-auto flex max-w-[1400px] flex-col gap-1 border-t border-zinc-800/60 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
