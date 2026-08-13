@@ -190,7 +190,12 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
     explain: "Gain or loss in dollars: Value minus Cost",
   },
   { label: "90d", explain: "Price trend over the last ~90 days" },
-  { label: "Today", key: "today", explain: "Price move since yesterday's close" },
+  {
+    label: "Today",
+    key: "today",
+    explain:
+      "What this position made or lost today, in dollars, versus yesterday's close",
+  },
   { label: "" },
 ];
 
@@ -215,7 +220,12 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
     case "roiDollar":
       return h.roiDollar;
     case "today":
-      return h.quote?.changePercent ?? Number.NEGATIVE_INFINITY;
+      // Sort by the dollars the column actually shows. Keying this off
+      // changePercent while displaying dollars meant a -0.7% loss on a big
+      // position could sort above a -2.7% loss on a small one, so the
+      // column looked mis-sorted.
+      if (!h.quote) return Number.NEGATIVE_INFINITY;
+      return todayDollarFor(h.currentValue, h.quote.changePercent).dollar;
   }
 }
 
@@ -474,7 +484,6 @@ export function PortfolioTable({
                         signedTone(h.quote.changePercent)
                       )}
                     >
-                      {percent(h.quote.changePercent)} ·{" "}
                       {money(rowToday(h), 0)} today
                     </p>
                   )}
@@ -563,15 +572,8 @@ export function PortfolioTable({
                 {money(totals.roiDollar)}
               </span>
             </div>
-            {today.priced > 0 && (
-              <div className="mt-1 flex justify-between border-t border-zinc-800 pt-1.5 text-zinc-400">
-                <span>Today</span>
-                <span className={cn("tabular-nums", signedTone(today.dollar))}>
-                  {money(today.dollar)}
-                  {today.pct !== null ? ` · ${percent(today.pct)}` : ""}
-                </span>
-              </div>
-            )}
+            {/* No Today row here either: the header states it once, and it
+              * sits above this list on phones too. */}
           </div>
         )}
       </div>
@@ -703,16 +705,12 @@ export function PortfolioTable({
                       : "text-zinc-400"
                   )}
                 >
-                  {h.quote ? (
-                    <span className="flex flex-col leading-tight">
-                      <span>{percent(h.quote.changePercent)}</span>
-                      <span className="text-xs font-normal opacity-70">
-                        {money(rowToday(h), 0)}
-                      </span>
-                    </span>
-                  ) : (
-                    "—"
-                  )}
+                  {/* One number per cell. Stacking the percent above the
+                    * dollar put ten figures in a narrow column and made the
+                    * whole table hard to scan. The dollar is the one the
+                    * table uniquely knows, since it is weighted by how much
+                    * you actually hold. */}
+                  {h.quote ? money(rowToday(h), 0) : "—"}
                 </div>
                 <div className={cellBase}>
                   <button
@@ -760,24 +758,10 @@ export function PortfolioTable({
                 {money(totals.roiDollar)}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
-              <div
-                className={cn(
-                  cellBase,
-                  "py-2.5 tabular-nums",
-                  today.priced > 0 ? signedTone(today.dollar) : "text-zinc-400"
-                )}
-              >
-                {today.priced > 0 ? (
-                  <span className="flex flex-col leading-tight">
-                    <span>{today.pct !== null ? percent(today.pct) : "—"}</span>
-                    <span className="text-xs font-normal opacity-70">
-                      {money(today.dollar, 0)}
-                    </span>
-                  </span>
-                ) : (
-                  "—"
-                )}
-              </div>
+              {/* Intentionally blank. The book's move for the day is stated
+                * once, in the header, where it's visible without scrolling
+                * past every row. Repeating it here was the duplication. */}
+              <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
             </FluidRow>
           </FluidTable>
