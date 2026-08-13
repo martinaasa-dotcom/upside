@@ -16,7 +16,6 @@ import {
  * dimmer than the shared default. */
 const tone = (value: number | null | undefined) =>
   signedTone(value, "text-zinc-400");
-import { buildDailyFunFacts } from "@/lib/fun-facts";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
 import type { UpsideAlert } from "@/lib/alerts";
 import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
@@ -30,9 +29,7 @@ import {
   sessionShort,
   sessionKind,
 } from "@/lib/market-session";
-import { liveFundTotalValue } from "@/lib/margus-fund-mark";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
-import type { CashflowEntry } from "@/lib/cashflow";
 import type { CoveredCallRow } from "@/lib/types";
 import { buildSheetRivalry, type RivalRow } from "@/lib/sheet-rivalry";
 import {
@@ -49,27 +46,12 @@ import {
 } from "@/lib/visit-diff";
 import {
   ArrowRight,
-  Bot,
   CalendarDays,
-  Flame,
   Info,
-  Lightbulb,
   Radar,
-  Shuffle,
-  Snowflake,
-  TrendingDown,
-  TrendingUp,
   Trophy,
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-
-type FundTeaser = {
-  totalValue: number;
-  totalReturnPct: number;
-  todayDollar: number;
-  headline: string | null;
-};
 
 export type LabDeepLink = "seasonality";
 
@@ -79,11 +61,8 @@ type Props = {
   model: OverviewModel;
   onOpenSheet: (portfolioId: string) => void;
   coveredCallRows?: CoveredCallRow[];
-  /** Book-wide, not-yet-dismissed alerts (earnings/strike/margin/concentration)
-   * — same list and dismissal state as Lab's Alerts tab, so the briefing
-   * can point at it instead of re-deriving its own copy of these conditions. */
+  /** Book-wide, not-yet-dismissed alerts (earnings/strike/margin/concentration). */
   activeAlerts?: UpsideAlert[];
-  cashflows?: CashflowEntry[];
   onOpenLab?: (tab?: LabDeepLink) => void;
   onOpenPulse?: () => void;
   onOpenCompound?: () => void;
@@ -93,7 +72,7 @@ type Props = {
   visitStreak?: VisitStreakState | null;
   /** Show communities spotlight (signed-in My book Overview). */
   showCommunities?: boolean;
-  /** Viewer has no options experience — keep fun facts / copy options-free. */
+  /** Viewer has no options experience — keep copy options-free. */
   hideOptions?: boolean;
   /** First-run actions, shown only while the book is completely empty. */
   onAddHolding?: () => void;
@@ -484,8 +463,6 @@ export function OverviewDashboard({
   onOpenSheet,
   coveredCallRows = [],
   activeAlerts = [],
-  cashflows = [],
-  onOpenLab,
   onOpenPulse,
   onOpenCompound,
   marketState = null,
@@ -504,89 +481,14 @@ export function OverviewDashboard({
     losers,
     todayWinners,
     todayLosers,
-    topHoldings,
-    funFacts,
     tickers,
   } = model;
   const maxSheet = Math.max(...sheets.map((s) => s.totalValue), 1);
   const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
-  const [factsShuffle, setFactsShuffle] = useState(0);
-  const [fundTeaser, setFundTeaser] = useState<FundTeaser | null>(null);
-
-  useEffect(() => {
-    if (guest) return;
-    let cancelled = false;
-    void fetch("/api/upside-portfolio", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then(
-        (data: {
-          fund?: { starting_capital?: number; cash?: number } | null;
-          holdings?: {
-            ticker: string;
-            shares: number;
-            cost_basis: number;
-            status: string;
-          }[];
-          reports?: {
-            portfolio_value: number;
-            cash: number;
-            total_return_pct: number | null;
-            day_change_dollar: number | null;
-            headline: string;
-          }[];
-          quotes?: Record<string, { price?: number } | undefined>;
-        } | null) => {
-          if (cancelled || !data) return;
-          const latest = data.reports?.[0];
-          const startingCapital = data.fund?.starting_capital ?? 50000;
-          const cash = latest?.cash ?? data.fund?.cash ?? 0;
-          // Same live mark as /upside-portfolio — do not use the last cron
-          // snapshot here or Overview and Fund disagree intraday.
-          const totalValue = liveFundTotalValue({
-            cash,
-            holdings: data.holdings ?? [],
-            quotes: data.quotes ?? {},
-          });
-          const totalReturnPct =
-            startingCapital > 0
-              ? (totalValue - startingCapital) / startingCapital
-              : 0;
-          setFundTeaser({
-            totalValue,
-            totalReturnPct,
-            todayDollar: latest
-              ? totalValue - latest.portfolio_value
-              : 0,
-            headline: latest?.headline ?? null,
-          });
-        }
-      )
-      .catch(() => {
-        // Teaser is a nice-to-have — skip silently, the full page still works.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [guest]);
-
-  const displayedFunFacts = useMemo(() => {
-    const base =
-      factsShuffle === 0 || !sheets.length || !tickers.length
-        ? funFacts
-        : buildDailyFunFacts(
-            sheets,
-            tickers,
-            totals,
-            `shuffle-${factsShuffle}`,
-            hideOptions
-          );
-    // model.funFacts (day-0) is computed upstream without the tier in
-    // scope — belt-and-suspenders filter for the one options-flavored joke.
-    return hideOptions
-      ? base.filter((f) => !/covered call/i.test(f))
-      : base;
-  }, [factsShuffle, funFacts, sheets, tickers, totals, hideOptions]);
+  const [moverHorizon, setMoverHorizon] = useState<"today" | "lifetime">(
+    "today"
+  );
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
   useEffect(() => {
@@ -663,12 +565,31 @@ export function OverviewDashboard({
         model,
         activeAlerts,
         coveredCallRows,
-        cashflows,
         hideOptions,
-        canReachLab: !guest && Boolean(onOpenLab),
+        canReachPulse: !guest && Boolean(onOpenPulse),
       }),
-    [model, activeAlerts, coveredCallRows, cashflows, hideOptions, guest, onOpenLab]
+    [model, activeAlerts, coveredCallRows, hideOptions, guest, onOpenPulse]
   );
+
+  const movers = useMemo(() => {
+    if (moverHorizon === "today") {
+      return [
+        ...todayWinners.map((t) => ({ t, mode: "today-win" as const })),
+        ...todayLosers.map((t) => ({ t, mode: "today-loss" as const })),
+      ]
+        .sort(
+          (a, b) =>
+            Math.abs(b.t.todayPct ?? 0) - Math.abs(a.t.todayPct ?? 0)
+        )
+        .slice(0, 8);
+    }
+    return [
+      ...winners.map((t) => ({ t, mode: "win" as const })),
+      ...losers.map((t) => ({ t, mode: "loss" as const })),
+    ]
+      .sort((a, b) => Math.abs(b.t.roiPct) - Math.abs(a.t.roiPct))
+      .slice(0, 8);
+  }, [moverHorizon, todayWinners, todayLosers, winners, losers]);
 
   // Sheet standings fold straight into the Portfolios list below rather
   // than living in their own card: ranking your own sheets is the same
@@ -708,68 +629,16 @@ export function OverviewDashboard({
     return Boolean(link.portfolioId);
   }
 
-  // An empty book has nothing to analyse, so swap the whole analytics
-  // stack for the first-run panel. The Upside Portfolio teaser stays: with
-  // no holdings of your own, watching Margus run one is the most
-  // interesting thing on the page.
   const bookIsEmpty = model.tickers.length === 0;
 
   return (
-    <div className="space-y-8">
-      {/* Upside Portfolio — the flagship AI-managed feed, always front and
-       * center rather than one nav item among several. */}
-      <Link
-        href="/upside-portfolio"
-        className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-[#161618]/90 to-[#161618]/90 p-4 shadow-lg shadow-black/30 transition hover:border-amber-400/50 sm:p-5"
-      >
-        <div
-          className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl"
-          aria-hidden
-        />
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-400/15 text-amber-300">
-          <Bot className="h-5 w-5" />
-        </div>
-        <div className="relative min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-white">Upside Portfolio</p>
-            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-300">
-              Live
-            </span>
-          </div>
-          <p className="truncate text-xs text-zinc-400">
-            {fundTeaser?.headline
-              ? fundTeaser.headline
-              : "Margus manages his own $50k paper portfolio. One decision a day, reasoning included."}
-          </p>
-        </div>
-        {fundTeaser && (
-          <div className="relative shrink-0 text-right">
-            <p className="text-sm font-semibold tabular-nums text-white">
-              {currency(fundTeaser.totalValue, 0)}
-            </p>
-            <p
-              className={cn(
-                "text-xs font-semibold tabular-nums",
-                fundTeaser.totalReturnPct >= 0 ? "text-gain" : "text-loss"
-              )}
-            >
-              {percent(fundTeaser.totalReturnPct)}
-            </p>
-          </div>
-        )}
-        <ArrowRight className="relative h-4 w-4 shrink-0 text-amber-300/70 transition group-hover:translate-x-0.5" />
-      </Link>
-
+    <div className="space-y-6">
       {bookIsEmpty && (
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
           onImportCsv={onImportCsv}
         />
-      )}
-
-      {showCommunities && !guest && !bookIsEmpty && (
-        <CommunitiesSpotlight />
       )}
 
       {!bookIsEmpty && (
@@ -804,7 +673,7 @@ export function OverviewDashboard({
                   className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium tabular-nums text-amber-200"
                   title={streakFlavor(visitStreak.currentStreak)}
                 >
-                  🔥 {visitStreak.currentStreak}d streak
+                  {visitStreak.currentStreak}d streak
                 </span>
               )}
               <span
@@ -965,6 +834,8 @@ export function OverviewDashboard({
         </div>
       </section>
 
+      {!guest && <DailyDuelCard tickers={tickers} compact />}
+
       <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
         <div className="mb-5">
           <h3 className="text-xl font-semibold text-white">Portfolios</h3>
@@ -988,160 +859,48 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        <div className="overview-fade rounded-3xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-[#161618]/40 p-4 sm:p-6">
-          <div className="mb-5 flex items-center gap-2.5">
-            <div className="rounded-xl bg-emerald-500/15 p-2 text-gain">
-              <Flame className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-xl font-semibold text-white">Winners</h3>
-              <p className="text-sm text-zinc-400">Best lifetime ROI</p>
-            </div>
-            <TrendingUp className="ml-auto h-4 w-4 text-gain" />
-          </div>
-          <div className="space-y-3">
-            {winners.length === 0 ? (
-              <p className="py-5 text-center text-base text-zinc-400">
-                No green names yet.
-              </p>
-            ) : (
-              winners.map((t, i) => (
-                <RankCard
-                  key={t.ticker}
-                  rank={i + 1}
-                  ticker={t}
-                  mode="win"
-                  onOpen={() => openFirstPortfolio(t)}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="overview-fade rounded-3xl border border-rose-500/20 bg-gradient-to-b from-rose-500/5 to-[#161618]/40 p-4 sm:p-6">
-          <div className="mb-5 flex items-center gap-2.5">
-            <div className="rounded-xl bg-rose-500/15 p-2 text-rose-400">
-              <Snowflake className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-xl font-semibold text-white">Losers</h3>
-              <p className="text-sm text-zinc-400">Deepest drawdowns</p>
-            </div>
-            <TrendingDown className="ml-auto h-4 w-4 text-rose-400" />
-          </div>
-          <div className="space-y-3">
-            {losers.length === 0 ? (
-              <p className="py-5 text-center text-base text-zinc-400">
-                Nobody underwater.
-              </p>
-            ) : (
-              losers.map((t, i) => (
-                <RankCard
-                  key={t.ticker}
-                  rank={i + 1}
-                  ticker={t}
-                  mode="loss"
-                  onOpen={() => openFirstPortfolio(t)}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
-          <h3 className="text-xl font-semibold text-white">
-            Today&apos;s gainzzz
-          </h3>
-          <p className="mb-5 mt-1 text-base text-zinc-400">Session gainers</p>
-          <div className="space-y-3">
-            {todayWinners.length === 0 ? (
-              <p className="text-base text-zinc-400">Waiting on quotes …</p>
-            ) : (
-              todayWinners.map((t, i) => (
-                <RankCard
-                  key={`tg-${t.ticker}`}
-                  rank={i + 1}
-                  ticker={t}
-                  mode="today-win"
-                  onOpen={() => openFirstPortfolio(t)}
-                />
-              ))
-            )}
-          </div>
-        </div>
-        <div className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
-          <h3 className="text-xl font-semibold text-white">
-            Today&apos;s stinkies
-          </h3>
-          <p className="mb-5 mt-1 text-base text-zinc-400">Session laggards</p>
-          <div className="space-y-3">
-            {todayLosers.length === 0 ? (
-              <p className="text-base text-zinc-400">Waiting on quotes …</p>
-            ) : (
-              todayLosers.map((t, i) => (
-                <RankCard
-                  key={`ts-${t.ticker}`}
-                  rank={i + 1}
-                  ticker={t}
-                  mode="today-loss"
-                  onOpen={() => openFirstPortfolio(t)}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
-        <div className="mb-5 flex items-center gap-2.5">
-          <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
-            <Trophy className="h-4 w-4" />
-          </div>
+      <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 className="text-xl font-semibold text-white">Top 10 holdings</h3>
-            <p className="mt-1 text-base text-zinc-400">
-              Combined value across portfolios
+            <h3 className="text-xl font-semibold text-white">Movers</h3>
+            <p className="mt-1 text-sm text-zinc-400">
+              Biggest swings, both directions
             </p>
+          </div>
+          <div className="inline-flex rounded-lg border border-zinc-700 bg-zinc-950/50 p-0.5">
+            {(["today", "lifetime"] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setMoverHorizon(id)}
+                className={cn(
+                  "rounded-md px-2.5 py-1 text-xs font-medium capitalize",
+                  moverHorizon === id
+                    ? "bg-brand/20 text-brand-bright"
+                    : "text-zinc-400 hover:text-zinc-200"
+                )}
+              >
+                {id}
+              </button>
+            ))}
           </div>
         </div>
         <div className="space-y-3">
-          {topHoldings.map((t, i) => (
-            <button
-              key={t.ticker}
-              type="button"
-              onClick={() => openFirstPortfolio(t)}
-              className="flex w-full flex-wrap items-center gap-3 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 px-4 py-3.5 text-left transition hover:border-zinc-600 sm:flex-nowrap"
-            >
-              <span className="w-6 text-base tabular-nums text-zinc-400">
-                {i + 1}
-              </span>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-lg font-semibold text-white">
-                    {cashtag(t.ticker)}
-                  </span>
-                  <span className="text-sm text-zinc-400">
-                    {t.shares.toLocaleString("en-US")} sh
-                  </span>
-                </div>
-                <PortfolioChips names={t.portfolios} />
-              </div>
-              <div className="ml-auto text-right">
-                <p className="text-lg font-semibold tabular-nums text-zinc-100">
-                  {currency(t.price)}
-                </p>
-                <p className="mt-0.5 text-sm tabular-nums text-zinc-400">
-                  {currency(t.currentValue, 0)}
-                </p>
-                <p className={cn("mt-0.5 text-sm tabular-nums", tone(t.roiPct))}>
-                  {percent(t.roiPct)} · {signedCurrency(t.roiDollar)}
-                </p>
-              </div>
-            </button>
-          ))}
+          {movers.length === 0 ? (
+            <p className="py-5 text-center text-sm text-zinc-400">
+              Waiting on quotes.
+            </p>
+          ) : (
+            movers.map(({ t, mode }, i) => (
+              <RankCard
+                key={`${mode}-${t.ticker}`}
+                rank={i + 1}
+                ticker={t}
+                mode={mode}
+                onOpen={() => openFirstPortfolio(t)}
+              />
+            ))
+          )}
         </div>
       </section>
 
@@ -1226,50 +985,11 @@ export function OverviewDashboard({
         </div>
       </section>
 
-      {!guest && <DailyDuelCard tickers={tickers} />}
-
-      <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
-        <div className="mb-5 flex items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
-              <Lightbulb className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-white">Fun facts</h3>
-              <p className="mt-1 text-base text-zinc-400">
-                {factsShuffle > 0
-                  ? "Shuffled, reload for the daily batch"
-                  : "10 new ones every Tallinn day"}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFactsShuffle((n) => n + 1)}
-            className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:border-amber-400/60 hover:bg-amber-500/10 active:scale-95"
-            title="Get a fresh random batch"
-          >
-            <Shuffle className="h-3.5 w-3.5" />
-            Shuffle
-          </button>
-        </div>
-        <ul className="space-y-3">
-          {displayedFunFacts.length === 0 ? (
-            <li className="text-base text-zinc-400">Waiting on quotes …</li>
-          ) : (
-            displayedFunFacts.map((fact, i) => (
-              <li
-                key={`${i}-${fact.slice(0, 24)}`}
-                className="rounded-2xl border border-zinc-800/70 bg-zinc-950/50 px-4 py-3.5 text-base leading-relaxed text-zinc-200"
-              >
-                {fact}
-              </li>
-            ))
-          )}
-        </ul>
-      </section>
+      {showCommunities && !guest && <CommunitiesSpotlight />}
         </>
       )}
+
+      {bookIsEmpty && showCommunities && !guest && <CommunitiesSpotlight />}
     </div>
   );
 }

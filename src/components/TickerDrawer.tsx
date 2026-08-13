@@ -82,6 +82,14 @@ export function TickerDrawer({
   const [showValuation, setShowValuation] = useState(false);
   const [editingYear, setEditingYear] = useState<ForecastYear | null>(null);
   const [yearDraftPrice, setYearDraftPrice] = useState<string>("");
+  const [thesisDraft, setThesisDraft] = useState(conviction?.thesis ?? "");
+
+  // Reset when the drawer target changes, not on every remote save, or
+  // the textarea fights you mid-sentence.
+  useEffect(() => {
+    setThesisDraft(conviction?.thesis ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ticker/open only
+  }, [ticker, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -132,7 +140,7 @@ export function TickerDrawer({
       ? (spot - buyPrice) / buyPrice
       : null;
   const level = conviction?.level ?? 3;
-  const thesis = conviction?.thesis ?? "";
+  const thesis = thesisDraft;
   const theme = forecastThemeForTicker(ticker);
   const shockProfile = getShockProfile(ticker);
 
@@ -528,12 +536,16 @@ export function TickerDrawer({
               Thesis Notes
             </p>
             <textarea
-              value={thesis}
+              value={thesisDraft}
               rows={3}
-              onChange={(e) => onConviction(level, e.target.value)}
+              onChange={(e) => setThesisDraft(e.target.value)}
+              onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Why do you own this? Ground your conviction here."
               className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-xs leading-relaxed text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
             />
+            <p className="mt-1.5 text-xs text-zinc-400">
+              Pulse and Forecast read this. Saves when you leave the box.
+            </p>
           </div>
 
           {/* Ask Margus CTA */}

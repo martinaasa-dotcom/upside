@@ -369,10 +369,10 @@ export async function GET(req: Request) {
       const ticker = idea.ticker.trim().toUpperCase();
       if (!ticker) continue;
       // Not already priced above (it's a new name) -- fetch it specifically.
-      const { quotes: ideaQuotes, sources: ideaSources } =
+      const { quotes: ideaQuotes, missing: ideaMissing } =
         await fetchQuotesWithFallback([ticker]);
       const q = ideaQuotes[ticker];
-      if (!q || ideaSources[ticker] === "synthetic") {
+      if (!q || ideaMissing.includes(ticker)) {
         actions.push({
           type: "hold",
           ticker,

@@ -178,11 +178,13 @@ export function ForecastPanel({
   const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
   const [planHydrated, setPlanHydrated] = useState(false);
+  const [stance, setStance] = useState<ForecastStance>(DEFAULT_FORECAST_STANCE);
 
   useEffect(() => {
     setPlanHydrated(false);
     const loaded = loadForecastPlan(portfolioId);
     setPlan(loaded);
+    setStance(loaded?.stance ?? DEFAULT_FORECAST_STANCE);
     setError(null);
     setAppliedFlash(false);
     autoKeyRef.current = "";
@@ -191,9 +193,10 @@ export function ForecastPanel({
     setPlanHydrated(true);
   }, [portfolioId]);
 
-  async function askMargus(opts?: { auto?: boolean }) {
+  async function askMargus(opts?: { auto?: boolean; stance?: ForecastStance }) {
     if (askInFlight.current) return;
     askInFlight.current = true;
+    const usedStance = opts?.stance ?? stance;
     if (!opts?.auto) track("forecast_plan_requested");
     setBusy(true);
     setError(null);
@@ -207,7 +210,7 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
-          stance: DEFAULT_FORECAST_STANCE,
+          stance: usedStance,
           convictions,
         }),
       });
@@ -218,13 +221,13 @@ export function ForecastPanel({
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,
-        stance: DEFAULT_FORECAST_STANCE,
+        stance: usedStance,
       };
-      const { eoyTargets, paths } = calibratedPaths(next, model);
+      const { eoyTargets, paths } = calibratedPaths(next, model, usedStance);
       const calibrated: ForecastPlan = {
         ...next,
         eoyTargets,
-        stance: DEFAULT_FORECAST_STANCE,
+        stance: usedStance,
       };
       saveForecastPlan(calibrated);
       setPlan(calibrated);
@@ -296,15 +299,15 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
-      stance: DEFAULT_FORECAST_STANCE,
+      stance,
     });
     if (!decision.run) return;
     const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
     if (autoKeyRef.current === key) return;
     autoKeyRef.current = key;
-    void askMargus({ auto: true });
+    void askMargus({ auto: true, stance });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
-  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy]);
+  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, stance]);
 
   // Safety net for the brief window between "you sold this" and the
   // auto-refresh above actually landing (or if it fails/gets rate
@@ -327,7 +330,7 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
-      stance: DEFAULT_FORECAST_STANCE,
+      stance,
     });
     if (decision.run && decision.reason === "first-run") {
       return "No Margus plan yet, generating a base-case path …";
@@ -338,8 +341,11 @@ export function ForecastPanel({
     if (decision.run && decision.reason === "sold-holding") {
       return "A holding this plan named has been sold, regenerating the playbook …";
     }
+    if (decision.run && decision.reason === "stance-changed") {
+      return "Stance changed, Margus is re-reasoning the path …";
+    }
     return null;
-  }, [planHydrated, model.rows, plan, fullyCovered, busy]);
+  }, [planHydrated, model.rows, plan, fullyCovered, busy, stance]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
@@ -368,6 +374,34 @@ export function ForecastPanel({
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <div className="inline-flex rounded-lg border border-zinc-700 bg-zinc-950/50 p-0.5">
+              {(
+                [
+                  ["bearish", "Bear"],
+                  ["base", "Base"],
+                  ["bullish", "Bull"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={busy || model.rows.length === 0}
+                  onClick={() => {
+                    if (id === stance) return;
+                    setStance(id);
+                    void askMargus({ stance: id });
+                  }}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs font-medium disabled:opacity-40",
+                    stance === id
+                      ? "bg-brand/20 text-brand-bright"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             {overrideCount > 0 && (
               <button
                 type="button"

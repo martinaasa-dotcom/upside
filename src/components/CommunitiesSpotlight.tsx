@@ -12,8 +12,8 @@ type CommunityRow = {
 };
 
 /**
- * First-screen showcase for communities after sign-in — sits on Overview
- * so the circle is as visible as the personal book.
+ * Quiet row on Overview. Communities live in the header workspace, so
+ * this is a reminder, not a second hero.
  */
 export function CommunitiesSpotlight({ className }: { className?: string }) {
   const [communities, setCommunities] = useState<CommunityRow[] | null>(null);
@@ -38,90 +38,36 @@ export function CommunitiesSpotlight({ className }: { className?: string }) {
     };
   }, []);
 
-  if (communities === null) {
-    return (
-      <div
-        className={cn(
-          "h-[4.5rem] animate-pulse rounded-2xl border border-brand-deep/20 bg-brand/5",
-          className
-        )}
-        aria-hidden
-      />
-    );
-  }
+  if (communities === null) return null;
 
   const primary = communities[0];
+  const href = primary ? `/communities/${primary.id}` : "/communities";
+  const label = primary
+    ? communities.length > 1
+      ? `${primary.name} and ${communities.length - 1} more`
+      : primary.name
+    : "Browse communities";
 
   return (
-    <section
+    <Link
+      href={href}
       className={cn(
-        "overview-fade relative overflow-hidden rounded-2xl border border-brand-mid/35 bg-gradient-to-br from-brand/20 via-[#1a1610] to-[#161618] p-4 sm:p-5",
+        "flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-3 text-left transition hover:border-zinc-600 hover:bg-zinc-900/60",
         className
       )}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-brand/20 blur-3xl"
-      />
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
-            <Users className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-bright/90">
-              Communities
-            </p>
-            {primary ? (
-              <>
-                <h2 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-white">
-                  {primary.name}
-                </h2>
-                <p className="mt-0.5 text-sm text-zinc-400">
-                  Live books from every member · read-only rivalry
-                  {communities.length > 1
-                    ? ` · +${communities.length - 1} more`
-                    : ""}
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="mt-0.5 text-lg font-semibold tracking-tight text-white">
-                  Join the circle
-                </h2>
-                <p className="mt-0.5 text-sm text-zinc-400">
-                  See everyone’s book in one place. Invite partners when you’re
-                  ready.
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-          {primary ? (
-            <Link
-              href={`/communities/${primary.id}`}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-bright px-4 text-sm font-semibold text-[#1a1510] transition hover:bg-[#F0E4C8]"
-            >
-              Open {primary.name}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          ) : null}
-          <Link
-            href="/communities"
-            className={cn(
-              "inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-medium transition",
-              primary
-                ? "border-brand-mid/40 text-brand-bright hover:border-brand-mid/70 hover:bg-brand/10"
-                : "border-brand-mid/50 bg-brand/15 text-brand-bright hover:bg-brand/25"
-            )}
-          >
-            {primary ? "All communities" : "Browse communities"}
-            {!primary && <ArrowRight className="h-4 w-4" />}
-          </Link>
-        </div>
-      </div>
-    </section>
+      <Users className="h-4 w-4 shrink-0 text-brand-bright" aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
+        {primary ? (
+          <>
+            <span className="text-zinc-400">Circle · </span>
+            {label}
+          </>
+        ) : (
+          "Invite someone, or join a public circle"
+        )}
+      </span>
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+    </Link>
   );
 }

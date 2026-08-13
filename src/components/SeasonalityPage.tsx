@@ -40,9 +40,9 @@ function stanceStyles(stance: ActionStance): string {
 }
 
 function stanceLabel(stance: ActionStance): string {
-  if (stance === "deploy") return "Deploy cash";
-  if (stance === "raise_cash") return "Raise cash";
-  return "Hold / neutral";
+  if (stance === "deploy") return "Historically strong";
+  if (stance === "raise_cash") return "Historically soft";
+  return "Mixed / no edge";
 }
 
 function Section({

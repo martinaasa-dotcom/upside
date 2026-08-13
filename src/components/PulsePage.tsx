@@ -661,10 +661,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               Should you sell, or add the dip?
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-              Type any ticker and hit Check, even if it&apos;s already in your
-              book. Big book loads from cache instantly, refreshes hourly in the
-              background, and your check pins to the top with a ticker-only
-              update when needed.
+              Auto-checks your 10 largest names, plus anything down 5% or more.
+              Type any other ticker and hit Check. Cached results show
+              instantly and refresh hourly in the background.
             </p>
             <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-400">
               {ADVICE_DISCLAIMER_LONG}

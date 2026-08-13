@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Calculator, FlaskConical, LayoutDashboard, Plus, Users } from "lucide-react";
+import { Activity, Calculator, FlaskConical, LayoutDashboard, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
@@ -23,8 +23,6 @@ type Props = {
   guest?: boolean;
   /** Meta-tab ids to hide, driven by the viewer's experience tier. */
   hiddenModeIds?: string[];
-  /** Opens Communities workspace (signed-in). */
-  onOpenCommunities?: () => void;
   /** Compact book/sheet totals shown above tabs on phone. */
   mobileSummary?: {
     title: string;
@@ -80,7 +78,6 @@ export function PortfolioTabs({
   onDeleteRequest,
   guest = false,
   hiddenModeIds = [],
-  onOpenCommunities,
   mobileSummary,
   sheetTodayTone,
 }: Props) {
@@ -284,20 +281,6 @@ export function PortfolioTabs({
               })}
             </div>
           </div>
-          {onOpenCommunities && (
-            <button
-              type="button"
-              onClick={() => {
-                setMenu(null);
-                onOpenCommunities();
-              }}
-              className="touch-target inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg border border-brand-mid/45 bg-brand/15 px-2.5 text-xs font-semibold text-brand-bright transition hover:bg-brand/25 sm:px-3 sm:text-[13px]"
-              aria-label="Communities"
-            >
-              <Users className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              <span className="hidden sm:inline">Communities</span>
-            </button>
-          )}
         </div>
 
         {/* Sheets — different language: text rail, not twin chips */}

@@ -57,7 +57,7 @@ export type QuotesResult = {
 
 /** Raw Yahoo attempt — reports which tickers failed instead of silently
  * papering over them, so a caller can try another provider before falling
- * back to synthetic placeholder data. */
+ * back to a last-known cached price on the client. */
 export type YahooQuotesAttempt = {
   quotes: Record<string, Quote>;
   fx: FxRates;

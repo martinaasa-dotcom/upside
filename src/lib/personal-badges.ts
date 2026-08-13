@@ -26,7 +26,7 @@ export function personalBadges(
   if (bestMilestone) {
     out.push({
       id: `streak-${bestMilestone}`,
-      label: `🔥 ${bestMilestone}-day streak`,
+      label: `${bestMilestone}-day streak`,
       detail: `Visited ${bestMilestone} Tallinn days in a row at your best (current: ${streak.currentStreak}).`,
     });
   }
@@ -38,7 +38,7 @@ export function personalBadges(
   if (bestDuelMilestone) {
     out.push({
       id: `duel-streak-${bestDuelMilestone}`,
-      label: `⚔️ ${bestDuelMilestone}-win Duel streak`,
+      label: `${bestDuelMilestone}-win Duel streak`,
       detail: `Called ${bestDuelMilestone} Daily Duels correctly in a row at your best.`,
     });
   }
@@ -46,13 +46,13 @@ export function personalBadges(
   if (duel.totalPlayed >= 20) {
     out.push({
       id: "duel-veteran",
-      label: "⚔️ Duel veteran",
+      label: "Duel veteran",
       detail: `Played 20+ Daily Duels — ${duel.totalCorrect}/${duel.totalPlayed} correct (${Math.round((duel.accuracyPct ?? 0) * 100)}%).`,
     });
   } else if (duel.totalPlayed >= 1 && (duel.accuracyPct ?? 0) >= 0.8 && duel.totalPlayed >= 5) {
     out.push({
       id: "duel-sharpshooter",
-      label: "🎯 Sharpshooter",
+      label: "Sharpshooter",
       detail: `${Math.round((duel.accuracyPct ?? 0) * 100)}% Daily Duel accuracy over ${duel.totalPlayed} plays.`,
     });
   }

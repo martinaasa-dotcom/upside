@@ -19,7 +19,7 @@ type WriteLevelState = "near-strike" | "at-target" | "approaching";
  * 1.9% BELOW its write level was getting the same badge as one 4% past it,
  * which reads as "you can write this now" when you can't. The at-target
  * threshold matches buildStrikeAlerts in lib/alerts.ts, so the badge and
- * the Alerts tab fire on the same condition.
+ * the briefing alerts fire on the same condition.
  */
 function writeLevelState(r: CoveredCallRow): WriteLevelState | null {
   const spot = r.spot;

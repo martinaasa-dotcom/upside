@@ -4,6 +4,12 @@ import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
 import {
+  addWatchlistTicker,
+  loadWatchlist,
+  removeWatchlistTicker,
+  saveWatchlist,
+} from "@/lib/watchlist";
+import {
   AlertTriangle,
   Minus,
   Plus,
@@ -14,23 +20,30 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const WATCHLIST_KEY = "portfell-trends-watchlist";
 // Mirrors MAX_TICKERS in src/lib/market/trends-cache.ts; kept as a plain
 // constant here so this client component never imports the yahoo-finance2
 // dependency chain.
 const MAX_TICKERS = 14;
+const LEGACY_WATCHLIST_KEY = "portfell-trends-watchlist";
 
-function loadWatchlist(): string[] {
-  if (typeof window === "undefined") return [];
+function loadTrendsWatchlist(): string[] {
+  const shared = loadWatchlist();
+  if (shared.length > 0 || typeof window === "undefined") return shared;
   try {
-    const raw = window.localStorage.getItem(WATCHLIST_KEY);
+    const raw = window.localStorage.getItem(LEGACY_WATCHLIST_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed)
+    const legacy = Array.isArray(parsed)
       ? parsed.filter((t): t is string => typeof t === "string")
       : [];
+    if (legacy.length > 0) {
+      saveWatchlist(legacy);
+      window.localStorage.removeItem(LEGACY_WATCHLIST_KEY);
+      return loadWatchlist();
+    }
   } catch {
-    return [];
+    /* ignore */
   }
+  return shared;
 }
 
 type TrendRow = TrendRowLike;
@@ -139,7 +152,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
-    setWatchlist(loadWatchlist());
+    setWatchlist(loadTrendsWatchlist());
   }, []);
 
   const holdingSet = useMemo(
@@ -197,19 +210,14 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       setAddError(`That's the limit, ${MAX_TICKERS} names at once.`);
       return;
     }
-    const next = [...watchlist, symbol];
+    const next = addWatchlistTicker(watchlist, symbol);
     setWatchlist(next);
-    window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
     setDraft("");
     setAddError(null);
   }, [draft, holdingSet, watchlist, combined.length]);
 
   const removeFromWatchlist = useCallback((symbol: string) => {
-    setWatchlist((prev) => {
-      const next = prev.filter((t) => t !== symbol);
-      window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
-      return next;
-    });
+    setWatchlist((prev) => removeWatchlistTicker(prev, symbol));
   }, []);
 
   // Stories with the loudest news (a divergence, a regime actually
@@ -237,6 +245,12 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               Is the trend changing?
             </p>
             <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+              Showing up to {MAX_TICKERS} names at once
+              {combined.length > MAX_TICKERS
+                ? ` (${MAX_TICKERS} of ${combined.length} queued).`
+                : combined.length > 0
+                  ? ` (${Math.min(combined.length, MAX_TICKERS)} on the list).`
+                  : "."}{" "}
               Everything here runs on weekly bars, so it answers &quot;has the
               story changed&quot; rather than &quot;what happened today&quot;.
               A signal that fired every week would be noise. That slowness is

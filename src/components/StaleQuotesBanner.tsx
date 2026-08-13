@@ -5,21 +5,21 @@ import { cn } from "@/lib/format";
 type Props = {
   delayed?: boolean;
   updatedAt: number | null;
-  syntheticTickers?: string[];
+  missingTickers?: string[];
 };
 
-/** Honesty banner when quotes are old or synthetic. */
+/** Honesty banner when quotes are old or a name has no live mark. */
 export function StaleQuotesBanner({
   delayed,
   updatedAt,
-  syntheticTickers = [],
+  missingTickers = [],
 }: Props) {
   const ageMin =
     updatedAt != null
       ? Math.floor((Date.now() - updatedAt) / 60000)
       : null;
   const stale = delayed || (ageMin != null && ageMin >= 15);
-  if (!stale && syntheticTickers.length === 0) return null;
+  if (!stale && missingTickers.length === 0) return null;
 
   return (
     <div
@@ -38,12 +38,13 @@ export function StaleQuotesBanner({
             {delayed ? " · provider delayed flag" : ""}.
           </span>
         )}
-        {syntheticTickers.length > 0 && (
+        {missingTickers.length > 0 && (
           <span>
-            Synthetic / fallback marks: {syntheticTickers.slice(0, 8).join(", ")}
-            {syntheticTickers.length > 8
-              ? ` +${syntheticTickers.length - 8}`
+            No live quote for {missingTickers.slice(0, 8).join(", ")}
+            {missingTickers.length > 8
+              ? ` +${missingTickers.length - 8}`
               : ""}
+            . Showing the last known price.
           </span>
         )}
       </div>

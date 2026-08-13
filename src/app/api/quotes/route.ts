@@ -25,22 +25,30 @@ export async function GET(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       },
       {
-        headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=120" },
+        headers: {
+          "Cache-Control":
+            "public, max-age=60, s-maxage=60, stale-while-revalidate=120",
+        },
       }
     );
   }
 
-  const { quotes, delayed, fx, sources } = await fetchQuotesWithFallback(tickers);
+  const { quotes, delayed, fx, sources, missing } =
+    await fetchQuotesWithFallback(tickers);
   return NextResponse.json(
     {
       quotes,
       fx,
       delayed,
       sources,
+      missing,
       updatedAt: new Date().toISOString(),
     },
     {
-      headers: { "Cache-Control": "s-maxage=15, stale-while-revalidate=30" },
+      headers: {
+        "Cache-Control":
+          "public, max-age=15, s-maxage=15, stale-while-revalidate=30",
+      },
     }
   );
 }

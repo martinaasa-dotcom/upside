@@ -617,7 +617,7 @@ export function CommunityView({ communityId }: Props) {
       title: "The Diversifier",
       winner: mostDiversified.name,
       stat: `${mostDiversified.personality!.diversificationScore}/100`,
-      description: "Most spread-out book in the family.",
+      description: "Most spread-out book in the circle.",
     });
 
     const mostRisk = [...withPersonality].sort(
@@ -642,18 +642,6 @@ export function CommunityView({ communityId }: Props) {
       winner: steadiest.name,
       stat: `${steadiest.personality!.riskScore}/100`,
       description: "Calmest, most defensive book in the group.",
-    });
-
-    const bestAlpha = [...withPersonality].sort(
-      (a, b) => b.personality!.modeledAlphaPct - a.personality!.modeledAlphaPct
-    )[0]!;
-    out.push({
-      id: "alpha-hunter",
-      emoji: "🎯",
-      title: "The Alpha Hunter",
-      winner: bestAlpha.name,
-      stat: `${bestAlpha.personality!.modeledAlphaPct >= 0 ? "+" : ""}${bestAlpha.personality!.modeledAlphaPct.toFixed(1)}%`,
-      description: "Biggest modeled edge over a same-risk index bet.",
     });
 
     const biggestBook = [...membersWithBooks].sort(
@@ -1162,23 +1150,11 @@ export function CommunityView({ communityId }: Props) {
                                     color="#f472b6"
                                   />
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 rounded-xl border border-zinc-800/60 bg-zinc-950/40 p-2.5">
-                                  <MiniStat
-                                    label="Expected/yr"
-                                    value={`${m.personality.expectedAnnualReturnPct.toFixed(1)}%`}
-                                    tone="up"
-                                  />
-                                  <MiniStat
-                                    label="Max drawdown"
-                                    value={`-${m.personality.maxDrawdownPct}%`}
-                                    tone="warn"
-                                  />
-                                  <MiniStat
-                                    label="Modeled alpha"
-                                    value={`${m.personality.modeledAlphaPct >= 0 ? "+" : ""}${m.personality.modeledAlphaPct.toFixed(1)}%`}
-                                    tone={m.personality.modeledAlphaPct >= 0 ? "up" : "down"}
-                                  />
-                                </div>
+                                <p className="rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-3 py-2 text-xs leading-relaxed text-zinc-400">
+                                  Spirit animal and risk band are a playful
+                                  read of the theme mix. The leaderboard above
+                                  is the real scoreboard.
+                                </p>
                                 <div>
                                   <div className="flex items-center justify-between gap-2 text-xs">
                                     <span className="inline-flex items-center gap-1 text-zinc-400">
@@ -2187,33 +2163,6 @@ function ScoreBar({
           }}
         />
       </div>
-    </div>
-  );
-}
-
-function MiniStat({
-  label,
-  value,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string;
-  tone?: "up" | "down" | "warn" | "neutral";
-}) {
-  return (
-    <div className="text-center">
-      <p className="text-xs text-zinc-400">{label}</p>
-      <p
-        className={cn(
-          "mt-0.5 text-sm font-semibold tabular-nums",
-          tone === "up" && "text-emerald-400",
-          tone === "down" && "text-red-400",
-          tone === "warn" && "text-amber-400/90",
-          tone === "neutral" && "text-zinc-200"
-        )}
-      >
-        {value}
-      </p>
     </div>
   );
 }

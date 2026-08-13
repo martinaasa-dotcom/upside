@@ -46,11 +46,7 @@ import {
 import { buildSnapshot, STRATEGY } from "@/lib/calculations";
 import type { CsvHoldingRow } from "@/lib/csv-import";
 import { clearChatHistory } from "@/lib/chat-history";
-import {
-  deriveBadges,
-  emptyLabBundle,
-  type LabBundle,
-} from "@/lib/lab-bundle";
+import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import {
   fetchLabBundle,
   mirrorLabLocal,
@@ -411,7 +407,7 @@ export function Dashboard() {
     () => cachedQuotesRef.current.savedAt
   );
   const [quotesDelayed, setQuotesDelayed] = useState(false);
-  const [quoteSources, setQuoteSources] = useState<Record<string, string>>({});
+  const [missingTickers, setMissingTickers] = useState<string[]>([]);
   const [eurUsd, setEurUsd] = useState<number | null>(null);
   const [eurUsdDetail, setEurUsdDetail] = useState<{
     open: number | null;
@@ -959,20 +955,24 @@ export function Dashboard() {
         let nextQuotes = existingQuotes;
         if (!nextQuotes || Object.keys(nextQuotes).length === 0) {
           const quotesRes = await fetch(
-            `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`,
-            { cache: "no-store" }
+            `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`
           );
           if (!quotesRes.ok) {
             setQuotesDelayed(true);
             throw new Error(`Quotes request failed (${quotesRes.status})`);
           }
           const quotesJson = await quotesRes.json();
-          nextQuotes = (quotesJson.quotes ?? {}) as Record<string, Quote>;
-          setQuotes(nextQuotes);
-          saveCachedQuotes(nextQuotes);
+          const incoming = (quotesJson.quotes ?? {}) as Record<string, Quote>;
+          const missing = (quotesJson.missing ?? []) as string[];
+          setQuotes((prev) => {
+            const merged = { ...prev, ...incoming };
+            nextQuotes = merged;
+            return merged;
+          });
+          saveCachedQuotes(incoming);
           setQuotesUpdatedAt(Date.now());
-          setQuotesDelayed(Boolean(quotesJson.delayed));
-          setQuoteSources((quotesJson.sources ?? {}) as Record<string, string>);
+          setQuotesDelayed(Boolean(quotesJson.delayed) || missing.length > 0);
+          setMissingTickers(missing);
           applyFxPayload(quotesJson.fx);
         }
 
@@ -2163,27 +2163,6 @@ export function Dashboard() {
     setLabBundle((prev) => ({ ...prev, ...patch }));
   }
 
-  useEffect(() => {
-    if (!labReady) return;
-    const nextBadges = deriveBadges({
-      greenStreakMax: 0,
-      roiPct: overview.totals.roiPct,
-      holdingCount: overview.totals.uniqueTickers,
-      existing: labBundle.badges,
-    });
-    const same =
-      nextBadges.length === labBundle.badges.length &&
-      nextBadges.every((b, i) => b.id === labBundle.badges[i]?.id);
-    if (same) return;
-    labDirtyRef.current = true;
-    setLabBundle((prev) => ({ ...prev, badges: nextBadges }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed badges from totals
-  }, [
-    labReady,
-    overview.totals.roiPct,
-    overview.totals.uniqueTickers,
-  ]);
-
   const overviewTickerKey = overview.tickers
     .map((t) => t.ticker)
     .slice(0, 40)
@@ -2404,12 +2383,7 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- menu chrome deps only
   }, [source]);
 
-  const syntheticTickers = useMemo(() => {
-    // Precise now: the API reports which tier actually priced each ticker,
-    // rather than guessing from sparkline shape (which real fallback
-    // providers also populate, unlike true synthetic placeholders).
-    return Object.keys(quotes).filter((t) => quoteSources[t] === "synthetic");
-  }, [quotes, quoteSources]);
+  const missingQuoteTickers = missingTickers;
 
   if (loading) {
     return (
@@ -2438,16 +2412,16 @@ export function Dashboard() {
             <div className="grid w-full gap-2 text-left sm:grid-cols-3">
               {[
                 {
-                  title: "Track & write calls",
-                  detail: "Holdings, cost basis, and covered-call targets in one table.",
+                  title: "See the book",
+                  detail: "Holdings, cost basis, and today's move in one table.",
                 },
                 {
                   title: "Ask Margus",
                   detail: "An AI copilot that reads your sheet and can make edits for you.",
                 },
                 {
-                  title: "Compete with family",
-                  detail: "Optional communities, a live leaderboard, not a spreadsheet share.",
+                  title: "Invite a partner",
+                  detail: "Optional. Share a sheet or a community when you want company.",
                 },
               ].map((f) => (
                 <div
@@ -2510,7 +2484,7 @@ export function Dashboard() {
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}
-        syntheticTickers={syntheticTickers}
+        missingTickers={missingQuoteTickers}
       />
       <AppHeader
         onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
@@ -2654,7 +2628,6 @@ export function Dashboard() {
               onOpenSheet={(id) => setActiveId(id)}
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}
-              cashflows={labBundle.cashflows}
               marketState={marketState}
               showCommunities={source === "supabase"}
               hideOptions={hideOptionsUI}
@@ -2746,11 +2719,6 @@ export function Dashboard() {
         onAdd={handleAddSheet}
         sheetTodayTone={sheetTodayTone}
         hiddenModeIds={hiddenMetaTabIds}
-        onOpenCommunities={
-          source === "supabase"
-            ? () => router.push("/communities")
-            : undefined
-        }
         onRenameRequest={(id, name) => setRenameTarget({ id, name })}
         onDeleteRequest={(id, name) =>
           setConfirmDelete({ kind: "sheet", id, label: name })

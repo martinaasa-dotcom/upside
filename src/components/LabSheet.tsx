@@ -461,25 +461,11 @@ export function LabSheet({
                   )}
                 </div>
 
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <StatCell
-                    label="Modeled return"
-                    value={`${personality.expectedAnnualReturnPct.toFixed(1)}%/yr`}
-                    hint="Theme-weighted, not a forecast."
-                  />
-                  <StatCell
-                    label="Drawdown potential"
-                    value={`-${personality.maxDrawdownPct}%`}
-                    hint="What this theme mix has historically given up."
-                    tone={personality.maxDrawdownPct >= 50 ? "warn" : "neutral"}
-                  />
-                  <StatCell
-                    label="Modeled alpha"
-                    value={`${personality.modeledAlphaPct >= 0 ? "+" : ""}${personality.modeledAlphaPct.toFixed(1)}%`}
-                    hint="Versus the risk you're taking (CAPM-style)."
-                    tone={personality.modeledAlphaPct >= 0 ? "good" : "warn"}
-                  />
-                </div>
+                <p className="mt-3 text-xs leading-relaxed text-zinc-400">
+                  The score above is how spread out the book is. Theme bars
+                  below are a blunt read of what you&apos;re betting on, not a
+                  return forecast.
+                </p>
               </div>
 
               {themes.length > 0 && (
@@ -558,7 +544,7 @@ export function LabSheet({
             </p>
             <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
               How closely each pair has tracked each other over the last 90
-              days. Near <span className="tabular-nums">+1</span> means they
+              days, up to 8 names. Near <span className="tabular-nums">+1</span> means they
               rise and fall as one, so holding both spreads your money without
               spreading your risk. Near{" "}
               <span className="tabular-nums">0</span> means they drift

@@ -78,7 +78,7 @@ export function CommunitiesList() {
       // Warm each community's own cache in the background so clicking in
       // right after the list loads is instant too, not just the list
       // itself.
-      for (const c of rows) void prefetchCommunity(c.id);
+      for (const c of rows.slice(0, 2)) void prefetchCommunity(c.id);
     } catch (e) {
       if (!hadCache) setError(e instanceof Error ? e.message : "Failed to load");
     } finally {

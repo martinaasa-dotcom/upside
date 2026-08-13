@@ -18,10 +18,11 @@ import { todayKeyInTz } from "@/lib/timezone";
 
 type Props = {
   tickers: Array<{ ticker: string; todayPct: number | null }>;
+  compact?: boolean;
 };
 
 /** Pick who finishes the US cash session higher — reveal only after the close. */
-export function DailyDuelCard({ tickers }: Props) {
+export function DailyDuelCard({ tickers, compact = false }: Props) {
   const dayKey = todayKeyInTz();
   const tickerList = useMemo(() => tickers.map((t) => t.ticker), [tickers]);
   const pctByTicker = useMemo(() => {
@@ -71,16 +72,21 @@ export function DailyDuelCard({ tickers }: Props) {
   const waitingOnClose = record.pick != null && record.outcome === "pending";
 
   return (
-    <section className="overview-fade rounded-3xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <section
+      className={cn(
+        "overview-fade rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4",
+        !compact && "sm:p-6"
+      )}
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold text-white">Daily Duel</h3>
-            <p className="mt-1 text-base text-zinc-400">
-              Who ends the day higher, settles after the US close
+            <h3 className="text-base font-semibold text-white">Daily Duel</h3>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Who ends the day higher. Settles after the US close.
             </p>
           </div>
         </div>
@@ -97,7 +103,7 @@ export function DailyDuelCard({ tickers }: Props) {
             </p>
             {stats.currentStreak >= 2 && (
               <p className="text-xs text-amber-300">
-                🔥 {stats.currentStreak} in a row
+                {stats.currentStreak} in a row
               </p>
             )}
           </div>
