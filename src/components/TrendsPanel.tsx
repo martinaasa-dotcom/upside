@@ -2,8 +2,35 @@
 
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Minus,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const WATCHLIST_KEY = "portfell-trends-watchlist";
+// Mirrors MAX_TICKERS in src/lib/market/trends-cache.ts; kept as a plain
+// constant here so this client component never imports the yahoo-finance2
+// dependency chain.
+const MAX_TICKERS = 14;
+
+function loadWatchlist(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(WATCHLIST_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((t): t is string => typeof t === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 type TrendRow = {
   ticker: string;
@@ -62,7 +89,23 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   const [rows, setRows] = useState<TrendRow[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const key = tickers.join(",");
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [draft, setDraft] = useState("");
+  const [addError, setAddError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setWatchlist(loadWatchlist());
+  }, []);
+
+  const holdingSet = useMemo(
+    () => new Set(tickers.map((t) => t.toUpperCase())),
+    [tickers]
+  );
+  const combined = useMemo(
+    () => [...tickers, ...watchlist.filter((t) => !holdingSet.has(t))],
+    [tickers, watchlist, holdingSet]
+  );
+  const key = combined.join(",");
   const lastKey = useRef<string>("");
 
   const load = useCallback(async (force = false) => {
@@ -98,6 +141,32 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
     void load();
   }, [key, load]);
 
+  const addToWatchlist = useCallback(() => {
+    const symbol = draft.trim().toUpperCase().replace(/\s+/g, "");
+    if (!symbol) return;
+    if (holdingSet.has(symbol) || watchlist.includes(symbol)) {
+      setAddError(`${symbol} is already on the list.`);
+      return;
+    }
+    if (combined.length >= MAX_TICKERS) {
+      setAddError(`That's the limit, ${MAX_TICKERS} names at once.`);
+      return;
+    }
+    const next = [...watchlist, symbol];
+    setWatchlist(next);
+    window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
+    setDraft("");
+    setAddError(null);
+  }, [draft, holdingSet, watchlist, combined.length]);
+
+  const removeFromWatchlist = useCallback((symbol: string) => {
+    setWatchlist((prev) => {
+      const next = prev.filter((t) => t !== symbol);
+      window.localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const changing = (rows ?? []).filter(
     (r) => r.divergence || r.regime === "weakening" || r.regime === "recovering"
   );
@@ -129,6 +198,58 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             {busy ? "Reading …" : "Recheck"}
           </button>
         </div>
+
+        <div className="mt-4 border-t border-zinc-800 pt-4">
+          <p className="text-xs font-medium text-zinc-300">
+            Watch anything, not just what you hold
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+            Add a sector ETF, an index, or a crypto pair to read its trend the
+            same way, e.g. $XLK for tech, $SPY for the index, or BTC-USD.
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <input
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                setAddError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addToWatchlist();
+              }}
+              placeholder="BTC-USD, XLK, SPY …"
+              className="h-8 w-40 rounded-md border border-zinc-700 bg-black/20 px-2.5 text-xs text-white placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={addToWatchlist}
+              disabled={!draft.trim()}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </button>
+            {watchlist.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900/60 px-2 py-1 text-xs text-zinc-200"
+              >
+                {cashtag(t)}
+                <button
+                  type="button"
+                  onClick={() => removeFromWatchlist(t)}
+                  aria-label={`Remove ${t} from watchlist`}
+                  className="text-zinc-500 hover:text-white"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          {addError && (
+            <p className="mt-1.5 text-xs text-loss">{addError}</p>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -145,7 +266,8 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
       {rows != null && rows.length === 0 && !error && (
         <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 px-4 py-10 text-center text-sm text-zinc-400">
-          Add a holding and its trend read shows up here.
+          Add a holding, or watch a ticker above, and its trend read shows up
+          here.
         </div>
       )}
 
@@ -297,6 +419,11 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   <tr key={r.ticker} className="border-b border-zinc-800/60">
                     <td className="px-4 py-2 font-medium text-zinc-100">
                       {cashtag(r.ticker)}
+                      {!holdingSet.has(r.ticker) && (
+                        <span className="ml-1.5 text-xs font-normal uppercase tracking-wide text-zinc-400">
+                          watching
+                        </span>
+                      )}
                     </td>
                     <td
                       className={cn("px-4 py-2", REGIME_COPY[r.regime].tone)}

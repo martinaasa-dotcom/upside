@@ -69,11 +69,9 @@ type Props = {
   bookValue: number;
   /** Sheet values in USD */
   sheets: CompoundSheetOption[];
-  /** Per-ticker book-wide value in USD — used only to derive a default
-   * interest rate from what's actually held (see blendedExpectedAnnualReturn),
-   * different for every person instead of one fixed number for everyone. */
+  /** Per-ticker book-wide value in USD to derive default interest rate from holdings */
   tickerValues?: Array<{ ticker: string; value: number }>;
-  /** Book-wide cash in USD, for the same blended-rate calculation. */
+  /** Book-wide cash in USD for the blended rate calculation */
   bookCash?: number;
   /** USD per 1 EUR (Yahoo EURUSD) */
   eurUsd?: number | null;
@@ -114,20 +112,51 @@ function SegButton({
   active,
   onClick,
   children,
+  className,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-md px-2.5 py-1.5 text-xs font-medium transition",
+        "rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
         active
-          ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40"
-          : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+          ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40 shadow-sm"
+          : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200",
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ChipButton({
+  active,
+  onClick,
+  children,
+  className,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-md px-2 py-1 text-[11px] font-medium transition tabular-nums",
+        active
+          ? "bg-brand/25 text-brand-bright ring-1 ring-brand/50 font-semibold"
+          : "border border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-200",
+        className
       )}
     >
       {children}
@@ -148,12 +177,6 @@ function DualPathChart({
   eurUsd: number | null;
   tippingYear: number | null;
 }) {
-  // A native SVG <title> only works on mouse hover (no touch support, and
-  // a ~1s delay even on desktop) — swap it for a real, instant, touch-
-  // friendly tooltip that follows the data point. Anchored to the
-  // viewBox coordinates of the hovered point (not raw cursor pixels), so
-  // its position as a % of the SVG box is correct regardless of how wide
-  // the responsive SVG actually renders.
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -183,8 +206,6 @@ function DualPathChart({
   const toPoints = (series: number[]) =>
     series.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
 
-  // Fill the gap between the two lines so the compounding edge is
-  // something you see, not just two lines you have to mentally subtract.
   const gapArea = (() => {
     const top = active.map((v, i) => `${xAt(i)},${yAt(v)}`);
     const bottomRev = [...stay].map((v, i) => `${xAt(i)},${yAt(v)}`).reverse();
@@ -197,8 +218,6 @@ function DualPathChart({
     return shown.length > 9 ? shown.replace(/\.00$/, "") : shown;
   };
 
-  // A handful of x-axis year labels — every year would collide on a long
-  // horizon, so space them out to roughly 5-6 ticks.
   const yearTickEvery = Math.max(1, Math.round(lastIdx / 5));
   const yearTicks = Array.from(
     { length: Math.floor(lastIdx / yearTickEvery) + 1 },
@@ -343,59 +362,32 @@ function DualPathChart({
             />
           </g>
         )}
-
       </svg>
       {hoverIdx != null && (
         <div
-          className={cn(
-            "pointer-events-none absolute z-10 min-w-[9rem] -translate-y-full rounded-lg border border-zinc-700 bg-[#1a1a1c] px-2.5 py-2 text-xs shadow-xl",
-            // Near either edge, anchor from that side instead of centering
-            // so the tooltip can't spill past the card's own edges.
-            hoverIdx / lastIdx < 0.15
-              ? "translate-x-0"
-              : hoverIdx / lastIdx > 0.85
-                ? "-translate-x-full"
-                : "-translate-x-1/2"
-          )}
+          className="pointer-events-none absolute top-2 rounded-md border border-zinc-700 bg-zinc-900/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
           style={{
-            left: `${(xAt(hoverIdx) / w) * 100}%`,
-            top: `${(Math.min(yAt(active[hoverIdx] ?? 0), yAt(stay[hoverIdx] ?? 0)) / h) * 100}%`,
-            marginTop: "-8px",
+            left: `${Math.min(
+              82,
+              Math.max(18, ((xAt(hoverIdx) - padL) / plotW) * 100)
+            )}%`,
+            transform: "translateX(-50%)",
           }}
         >
-          <p className="font-semibold text-zinc-200">Year {hoverIdx}</p>
-          <p className="mt-1 flex items-center justify-between gap-2 text-gain">
-            <span>Active</span>
-            <span className="tabular-nums">
-              {money(active[hoverIdx] ?? 0, currency, eurUsd)}
-            </span>
+          <p className="font-semibold text-white">Year {hoverIdx}</p>
+          <p className="tabular-nums text-gain">
+            Plan: {money(active[hoverIdx] ?? 0, currency, eurUsd, 0)}
           </p>
-          <p className="flex items-center justify-between gap-2 text-zinc-400">
-            <span>Stay</span>
-            <span className="tabular-nums">
-              {money(stay[hoverIdx] ?? 0, currency, eurUsd)}
-            </span>
+          <p className="tabular-nums text-zinc-400">
+            No deposits: {money(stay[hoverIdx] ?? 0, currency, eurUsd, 0)}
           </p>
+          {tippingYear === hoverIdx && (
+            <p className="mt-0.5 text-[10px] font-semibold text-gain">
+              Tipping year
+            </p>
+          )}
         </div>
       )}
-      <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-400">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-4 border-t-2 border-dashed border-zinc-500" />
-          Stay the course · {money(stay[stay.length - 1] ?? 0, currency, eurUsd)}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-gain">
-          <span className="h-0.5 w-4 bg-gain" />
-          Active path · {money(active[active.length - 1] ?? 0, currency, eurUsd)}
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-emerald-400/80">
-          <span className="h-2 w-4 rounded-sm bg-gain/20" />
-          Gap · {money(
-            (active[active.length - 1] ?? 0) - (stay[stay.length - 1] ?? 0),
-            currency,
-            eurUsd
-          )}
-        </span>
-      </div>
     </div>
   );
 }
@@ -419,10 +411,18 @@ export function CompoundInterestSheet({
   const [storyIdx, setStoryIdx] = useState(0);
   const [tipFlash, setTipFlash] = useState(false);
   const [copied, setCopied] = useState(false);
-  // Only true once we've applied a fresh, never-before-stored default rate
-  // — guards against clobbering a rate the user typed in, or re-rolling it
-  // every time tickerValues re-renders with a new array identity.
   const appliedDefaultRateRef = useRef(false);
+
+  // Calculate the portfolio's actual blended expected growth rate
+  const portfolioExpectedRatePct = useMemo(() => {
+    if (tickerValues.length === 0 && bookCash === 0) return 10.0;
+    const blended = blendedExpectedAnnualReturn(tickerValues, {
+      balance: bookCash,
+      annualReturnPct: COMPOUND_CASH_YIELD_ANNUAL_PCT,
+    });
+    const pct = Math.round(blended * 1000) / 10;
+    return pct > 0 ? pct : 10.0;
+  }, [tickerValues, bookCash]);
 
   useEffect(() => {
     const stored = loadStored();
@@ -432,34 +432,32 @@ export function CompoundInterestSheet({
     setHydrated(true);
   }, []);
 
-  // First-ever visit (nothing in localStorage yet): swap the generic 8%
-  // fallback for a rate derived from what this book actually holds, the
-  // moment ticker data is ready. Runs once — after that, the stored value
-  // (default or user-edited) is respected like any other persisted input.
+  // Sync default interest rate to the portfolio's average growth rate by default
   useEffect(() => {
     if (!hydrated || appliedDefaultRateRef.current) return;
-    if (tickerValues.length === 0 && bookCash === 0) return;
-    const stored = loadStored();
-    const hadExplicitRate = Boolean(
-      window.localStorage.getItem(COMPOUND_STORAGE_KEY)
-    );
-    appliedDefaultRateRef.current = true;
-    if (hadExplicitRate) return;
-    const blended = blendedExpectedAnnualReturn(tickerValues, {
-      balance: bookCash,
-      annualReturnPct: COMPOUND_CASH_YIELD_ANNUAL_PCT,
-    });
-    const pct = Math.round(blended * 1000) / 10;
-    if (!(pct > 0)) return;
-    setDraft({ ...stored, ratePercent: pct });
-  }, [hydrated, tickerValues, bookCash]);
+    if (portfolioExpectedRatePct > 0) {
+      appliedDefaultRateRef.current = true;
+      const stored = loadStored();
+      const rawStored = typeof window !== "undefined" ? window.localStorage.getItem(COMPOUND_STORAGE_KEY) : null;
+      // If never saved before or matches the generic 8% fallback, adopt portfolio's real rate
+      if (!rawStored || stored.ratePercent === 8 || stored.ratePercent === DEFAULT_COMPOUND_INPUTS.ratePercent) {
+        setDraft((prev) => ({
+          ...prev,
+          ratePercent: portfolioExpectedRatePct,
+          principal: bookValue > 0 && prev.principal === 5000 ? Math.round(bookValue) : prev.principal,
+        }));
+        if (bookValue > 0 && stored.principal === 5000) {
+          setPrincipalSource("book");
+        }
+      }
+    }
+  }, [hydrated, portfolioExpectedRatePct, bookValue]);
 
   useEffect(() => {
     if (!hydrated) return;
     saveCompoundCurrency(currency);
   }, [currency, hydrated]);
 
-  const fxReady = currency === "USD" || (eurUsd != null && eurUsd > 0);
   const fxHint = formatEurUsdHint(eurUsd, eurUsdDetail);
 
   function show(amountUsd: number, digits = 0) {
@@ -470,7 +468,6 @@ export function CompoundInterestSheet({
     setCurrency(next);
   }
 
-  /** Money inputs are shown in display currency; draft stays USD. */
   function onMoneyUsdChange(
     displayAmount: number,
     apply: (usd: number) => void
@@ -487,12 +484,6 @@ export function CompoundInterestSheet({
     }
   }, [draft, hydrated]);
 
-  // Sliders bind straight to `draft` so the handle/number label track the
-  // pointer with zero lag. The month-by-month simulation behind it (up to
-  // 480 iterations, x2-3 for shock/stay-course variants) is real work —
-  // deferring it lets React keep the drag itself perfectly smooth and
-  // catch the chart/table up right after, instead of recomputing on every
-  // single pointermove tick.
   const deferredDraft = useDeferredValue(draft);
   const liveInputs: CompoundInputs = useMemo(
     () => ({ ...deferredDraft, compound: "monthly" }),
@@ -526,7 +517,6 @@ export function CompoundInterestSheet({
     [liveInputs]
   );
   const compareTakeaway = useMemo(() => buildCompareTakeaway(compare), [compare]);
-
   const narrative = useMemo(() => buildNarrative(result), [result]);
 
   const storyOpts = useMemo(
@@ -563,11 +553,6 @@ export function CompoundInterestSheet({
     [milestones]
   );
 
-  // With 30+ rungs on the ladder, anyone past the early ones would land on
-  // a wall of already-hit checkmarks before reaching anything relevant —
-  // scroll the first not-yet-hit goal into view once, on first paint only
-  // (never again automatically; re-jumping the scroll every time a slider
-  // moves would be its own kind of annoying).
   const firstPendingRowRef = useRef<HTMLTableRowElement | null>(null);
   const milestoneScrollRef = useRef<HTMLDivElement | null>(null);
   const scrolledToMilestoneRef = useRef(false);
@@ -577,15 +562,6 @@ export function CompoundInterestSheet({
     const box = milestoneScrollRef.current;
     if (!row || !box) return;
     scrolledToMilestoneRef.current = true;
-    // Set the container's own scrollTop rather than calling
-    // row.scrollIntoView(). scrollIntoView walks up and scrolls *every*
-    // scrollable ancestor including the document, so opening Compound
-    // yanked the whole page down to centre this row and you landed
-    // mid-page instead of at the top.
-    //
-    // Measured with rects rather than offsetTop: a <tr>'s offsetParent is
-    // browser-dependent, so offsetTop can be relative to the table rather
-    // than this container.
     const rowRect = row.getBoundingClientRect();
     const boxRect = box.getBoundingClientRect();
     const delta = rowRect.top - boxRect.top;
@@ -623,6 +599,11 @@ export function CompoundInterestSheet({
     if (sheet) patchDraft("principal", Math.round(sheet.value * 100) / 100);
   }
 
+  function syncToPortfolioRate() {
+    patchDraft("ratePercent", portfolioExpectedRatePct);
+    patchDraft("ratePeriod", "annual");
+  }
+
   async function copyPostcard() {
     const text = [
       `Upside compound postcard`,
@@ -651,69 +632,98 @@ export function CompoundInterestSheet({
 
   const staySeries = stayResult.yearly.map((y) => y.balance);
   const activeSeries = result.yearly.map((y) => y.balance);
+
+  // Dynamic max slider ranges based on current values
+  const principalSliderMax = Math.max(100000, Math.ceil((draft.principal * 1.5) / 10000) * 10000);
+  const depositSliderMax = Math.max(5000, Math.ceil((draft.depositAmount * 2) / 500) * 500);
+
+  const isRateMatchedToPortfolio = Math.abs(draft.ratePercent - portfolioExpectedRatePct) < 0.05;
+
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(280px,340px)_1fr]">
-      {/* —— Inputs —— */}
-      <aside className="space-y-5 rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+    <div className="grid gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
+      {/* Interactive Controls Sidebar */}
+      <aside className="space-y-4 rounded-xl border border-brand-deep/30 bg-[#161618]/90 p-4 sm:p-5">
         <div>
-          <h2 className="text-sm font-semibold text-white">Compound playground</h2>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-md bg-brand/20 text-brand-bright ring-1 ring-brand/40">
+                <Calculator className="h-3.5 w-3.5" />
+              </span>
+              <h2 className="text-sm font-semibold text-white">Compound Engine</h2>
+            </div>
+            <span className="rounded-full bg-zinc-800/80 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
+              Interactive
+            </span>
+          </div>
           <p className="mt-1 text-xs text-zinc-400">
-            Live projections. Dial deposits, pick a sheet, shock the path.
+            Simulate future wealth. Type exact numbers or slide to experiment.
           </p>
         </div>
 
-        <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">
-            Currency
-          </p>
-          <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
-            {CURRENCIES.map((c) => (
-              <SegButton
-                key={c.code}
-                active={currency === c.code}
-                onClick={() => setCurrencySafe(c.code)}
-              >
-                {c.label}
-              </SegButton>
-            ))}
+        {/* Currency Selector */}
+        <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+              Display Currency
+            </span>
+            <div className="flex gap-1">
+              {CURRENCIES.map((c) => (
+                <SegButton
+                  key={c.code}
+                  active={currency === c.code}
+                  onClick={() => setCurrencySafe(c.code)}
+                >
+                  {c.label}
+                </SegButton>
+              ))}
+            </div>
           </div>
-          <p
-            className={cn(
-              "mt-1.5 text-xs tabular-nums",
-              fxReady ? "text-zinc-400" : "text-amber-300/90"
-            )}
-            title="Book amounts stay USD; EUR uses Yahoo EURUSD last → close → open"
-          >
+          <p className="mt-1 text-[11px] text-zinc-400">
             {currency === "EUR"
               ? fxHint
               : eurUsd && eurUsd > 0
-                ? `Book USD · ${fxHint}`
-                : "Book USD"}
+                ? `Book in USD · ${fxHint}`
+                : "Book in USD"}
           </p>
         </div>
 
-        <div>
-          <label className="block text-xs text-zinc-400">
-            Principal source
-            <select
-              value={principalSource}
-              onChange={(e) => applyPrincipal(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            >
-              <option value="custom">Custom amount</option>
+        {/* 1. Initial Investment (Principal) */}
+        <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="compound-principal-input" className="text-xs font-semibold text-zinc-200">
+              1. Initial Investment
+            </label>
+            <span className="text-[11px] font-medium text-brand-bright tabular-nums">
+              {show(draft.principal, 0)}
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400">
+            Starting capital you are putting to work today.
+          </p>
+
+          {/* Quick Source Dropdown */}
+          <select
+            value={principalSource}
+            onChange={(e) => applyPrincipal(e.target.value)}
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-brand"
+          >
+            <option value="custom">Custom amount</option>
+            {bookValue > 0 && (
               <option value="book">
-                All portfolios ({show(bookValue)})
+                Full Book Value ({show(bookValue, 0)})
               </option>
-              {sheets.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({show(s.value)})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="mt-3 block text-xs text-zinc-400">
-            Initial investment
+            )}
+            {sheets.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({show(s.value, 0)})
+              </option>
+            ))}
+          </select>
+
+          {/* Direct Formatted Punch-in Input */}
+          <div className="relative">
             <FormattedNumberInput
+              id="compound-principal-input"
               kind="money"
               currency={currency}
               value={usdToDisplay(draft.principal, currency, eurUsd)}
@@ -721,79 +731,289 @@ export function CompoundInterestSheet({
                 setPrincipalSource("custom");
                 onMoneyUsdChange(n, (usd) => patchDraft("principal", usd));
               }}
-              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
             />
-          </label>
+          </div>
+
+          {/* Quick Amount Chips */}
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {[1000, 5000, 10000, 25000, 50000, 100000].map((amt) => {
+              const displayAmt = Math.round(displayToUsd(amt, currency, eurUsd));
+              return (
+                <ChipButton
+                  key={amt}
+                  active={Math.abs(draft.principal - displayAmt) < 50}
+                  onClick={() => {
+                    setPrincipalSource("custom");
+                    patchDraft("principal", displayAmt);
+                  }}
+                >
+                  {currency === "USD" ? `$${amt >= 1000 ? `${amt / 1000}k` : amt}` : `€${amt >= 1000 ? `${amt / 1000}k` : amt}`}
+                </ChipButton>
+              );
+            })}
+          </div>
+
+          {/* Synchronized Slider */}
+          <div className="pt-1">
+            <input
+              type="range"
+              min={0}
+              max={principalSliderMax}
+              step={1000}
+              value={draft.principal}
+              onChange={(e) => {
+                setPrincipalSource("custom");
+                patchDraft("principal", Number(e.target.value));
+              }}
+              className="w-full accent-[var(--brand)] cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-zinc-400">
+              <span>{show(0)}</span>
+              <span>{show(principalSliderMax)}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <label className="block text-xs text-zinc-400">
-            Interest rate %
-            <FormattedNumberInput
-              kind="percent"
-              value={draft.ratePercent}
-              onChange={(n) => patchDraft("ratePercent", n)}
-              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
-            />
-          </label>
-          <label className="block text-xs text-zinc-400">
-            Period
+        {/* 2. Expected Annual Growth Rate */}
+        <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="compound-rate-input" className="text-xs font-semibold text-zinc-200">
+              2. Expected Growth Rate
+            </label>
+            <span className="text-xs font-bold text-gain tabular-nums">
+              {draft.ratePercent.toFixed(1)}% / yr
+            </span>
+          </div>
+
+          {/* Portfolio Sync Badge / Button */}
+          <div className="flex items-center justify-between rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1.5 text-xs">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-brand-bright" />
+              <span className="text-[11px] text-zinc-300">
+                Portfolio avg growth:{" "}
+                <strong className="text-brand-bright tabular-nums">
+                  {portfolioExpectedRatePct.toFixed(1)}%/yr
+                </strong>
+              </span>
+            </div>
+            {!isRateMatchedToPortfolio && (
+              <button
+                type="button"
+                onClick={syncToPortfolioRate}
+                className="rounded bg-brand/20 px-2 py-0.5 text-[10px] font-semibold text-brand-bright hover:bg-brand/30 transition"
+              >
+                Sync
+              </button>
+            )}
+            {isRateMatchedToPortfolio && (
+              <span className="text-[10px] font-medium text-gain flex items-center gap-0.5">
+                <CheckCircle2 className="h-3 w-3" /> Matched
+              </span>
+            )}
+          </div>
+
+          {/* Direct Punch-in and Period */}
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="relative">
+              <FormattedNumberInput
+                id="compound-rate-input"
+                kind="percent"
+                value={draft.ratePercent}
+                onChange={(n) => patchDraft("ratePercent", Math.max(0, n))}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
+              />
+            </div>
             <select
               value={draft.ratePeriod}
               onChange={(e) =>
                 patchDraft("ratePeriod", e.target.value as RatePeriod)
               }
-              className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-2 text-sm text-white outline-none focus:border-brand"
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-xs text-white outline-none focus:border-brand"
             >
               <option value="annual">annual</option>
               <option value="monthly">monthly</option>
             </select>
-          </label>
-        </div>
+          </div>
 
-        <div>
-          <p className="mb-1.5 text-xs text-zinc-400">Duration (years)</p>
-          <input
-            type="range"
-            min={1}
-            max={40}
-            value={draft.years}
-            onChange={(e) => patchDraft("years", Number(e.target.value))}
-            className="w-full accent-[var(--brand)]"
-          />
-          <div className="mt-1 flex justify-between text-xs text-zinc-400">
-            <span>1y</span>
-            <span className="tabular-nums text-zinc-300">{draft.years} years</span>
-            <span>40y</span>
+          {/* Benchmark Preset Chips */}
+          <div>
+            <span className="text-[10px] uppercase tracking-wider text-zinc-400">
+              Benchmarks
+            </span>
+            <div className="mt-1 flex flex-wrap gap-1">
+              <ChipButton
+                active={isRateMatchedToPortfolio}
+                onClick={syncToPortfolioRate}
+              >
+                Book ({portfolioExpectedRatePct.toFixed(1)}%)
+              </ChipButton>
+              <ChipButton
+                active={draft.ratePercent === 10}
+                onClick={() => {
+                  patchDraft("ratePercent", 10);
+                  patchDraft("ratePeriod", "annual");
+                }}
+              >
+                S&P 500 (10%)
+              </ChipButton>
+              <ChipButton
+                active={draft.ratePercent === 15}
+                onClick={() => {
+                  patchDraft("ratePercent", 15);
+                  patchDraft("ratePeriod", "annual");
+                }}
+              >
+                Growth (15%)
+              </ChipButton>
+              <ChipButton
+                active={draft.ratePercent === 25}
+                onClick={() => {
+                  patchDraft("ratePercent", 25);
+                  patchDraft("ratePeriod", "annual");
+                }}
+              >
+                High Conviction (25%)
+              </ChipButton>
+            </div>
+          </div>
+
+          {/* Steppers & Slider */}
+          <div className="pt-1">
+            <div className="flex items-center justify-between gap-1 mb-1.5">
+              <span className="text-[10px] text-zinc-400">Quick step</span>
+              <div className="flex gap-1">
+                {[-1, -0.5, 0.5, 1].map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() =>
+                      patchDraft(
+                        "ratePercent",
+                        Math.max(0, Math.round((draft.ratePercent + step) * 10) / 10)
+                      )
+                    }
+                    className="rounded border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-zinc-300 hover:bg-zinc-800"
+                  >
+                    {step > 0 ? `+${step}%` : `${step}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={50}
+              step={0.5}
+              value={Math.min(50, draft.ratePercent)}
+              onChange={(e) => patchDraft("ratePercent", Number(e.target.value))}
+              className="w-full accent-[var(--brand)] cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-zinc-400">
+              <span>0%</span>
+              <span>25%</span>
+              <span>50%</span>
+            </div>
           </div>
         </div>
 
-        {/* 4 — Contributions: one card for mode + amount + frequency, so
-         * the deposit dial isn't a second, disconnected control for the
-         * same thing this section already governs. */}
+        {/* 3. Duration (Time Horizon) */}
+        <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <label htmlFor="compound-duration-input" className="text-xs font-semibold text-zinc-200">
+              3. Time Horizon
+            </label>
+            <span className="text-xs font-bold text-sky-400 tabular-nums">
+              {durationLabel}
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400">
+            Number of years you stay invested and let compounding work.
+          </p>
+
+          {/* Direct Punch-in Box */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                id="compound-duration-input"
+                type="number"
+                min={1}
+                max={50}
+                value={draft.years || ""}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  patchDraft("years", Number.isNaN(val) ? 1 : Math.min(50, Math.max(1, val)));
+                }}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
+              />
+              <span className="pointer-events-none absolute right-3 top-2.5 text-xs text-zinc-400">
+                years
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Year Chips */}
+          <div className="flex flex-wrap gap-1">
+            {[3, 5, 10, 15, 20, 25, 30].map((yr) => (
+              <ChipButton
+                key={yr}
+                active={draft.years === yr}
+                onClick={() => patchDraft("years", yr)}
+              >
+                {yr}y
+              </ChipButton>
+            ))}
+          </div>
+
+          {/* Synchronized Slider */}
+          <div className="pt-1">
+            <input
+              type="range"
+              min={1}
+              max={40}
+              value={draft.years}
+              onChange={(e) => patchDraft("years", Number(e.target.value))}
+              className="w-full accent-[var(--brand)] cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-zinc-400">
+              <span>1 year</span>
+              <span>20 years</span>
+              <span>40 years</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Regular Savings & Cashflows */}
         <div
           className={cn(
-            "rounded-xl border p-3 transition",
+            "rounded-xl border p-3.5 space-y-3 transition",
             tipFlash
-              ? "border-gain/50 bg-gain/10"
-              : "border-zinc-800 bg-zinc-900/40"
+              ? "border-gain/50 bg-gain/10 ring-1 ring-gain/30"
+              : "border-zinc-800/80 bg-zinc-900/30"
           )}
         >
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-medium text-zinc-300">Contributions</p>
+            <span className="text-xs font-semibold text-zinc-200">
+              4. Regular Contributions
+            </span>
             {tipping != null &&
               (draft.contributionMode === "deposits" ||
                 draft.contributionMode === "both") && (
-                <span className="text-xs font-semibold uppercase tracking-wide text-gain">
-                  Tip year {tipping}
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gain rounded bg-gain/15 px-1.5 py-0.5">
+                  Tipping Year {tipping}
                 </span>
               )}
           </div>
-          <div className="mt-2 flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+          <p className="text-[11px] text-zinc-400">
+            Adding savings month-by-month accelerates your compounding curve.
+          </p>
+
+          {/* Mode Tabs */}
+          <div className="flex flex-wrap gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
             {(
               [
-                ["none", "None"],
                 ["deposits", "Deposits"],
+                ["none", "None"],
                 ["withdrawals", "Withdrawals"],
                 ["both", "Both"],
               ] as const
@@ -810,27 +1030,68 @@ export function CompoundInterestSheet({
             ))}
           </div>
 
+          {/* Deposit Fields */}
           {(draft.contributionMode === "deposits" ||
             draft.contributionMode === "both") && (
-            <div className="mt-3 space-y-2.5 border-t border-zinc-800/60 pt-3">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
-                <span>Monthly deposit</span>
-                <span className="tabular-nums text-brand-bright">
-                  {show(draft.depositAmount)}/mo
+            <div className="space-y-2.5 border-t border-zinc-800/60 pt-2.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="compound-deposit-input" className="text-xs text-zinc-300 font-medium">
+                  Deposit Amount
+                </label>
+                <span className="text-xs font-bold text-brand-bright tabular-nums">
+                  {show(draft.depositAmount, 0)} / {draft.depositFrequency === "annually" ? "yr" : "mo"}
                 </span>
               </div>
-              <input
-                type="range"
-                min={0}
-                max={2000}
-                step={50}
-                value={Math.min(2000, draft.depositAmount)}
-                onChange={(e) =>
-                  patchDraft("depositAmount", Number(e.target.value))
+
+              {/* Direct Formatted Punch-in */}
+              <FormattedNumberInput
+                id="compound-deposit-input"
+                kind="money"
+                currency={currency}
+                value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
+                onChange={(n) =>
+                  onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
                 }
-                className="w-full accent-[var(--brand)]"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
               />
-              <div className="grid grid-cols-2 gap-2">
+
+              {/* Quick Deposit Chips */}
+              <div className="flex flex-wrap gap-1">
+                {[0, 100, 250, 500, 1000, 2500].map((amt) => {
+                  const displayAmt = Math.round(displayToUsd(amt, currency, eurUsd));
+                  return (
+                    <ChipButton
+                      key={amt}
+                      active={Math.abs(draft.depositAmount - displayAmt) < 5}
+                      onClick={() => patchDraft("depositAmount", displayAmt)}
+                    >
+                      {currency === "USD" ? `$${amt}` : `€${amt}`}/mo
+                    </ChipButton>
+                  );
+                })}
+              </div>
+
+              {/* Synchronized Slider */}
+              <div className="pt-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={depositSliderMax}
+                  step={50}
+                  value={draft.depositAmount}
+                  onChange={(e) =>
+                    patchDraft("depositAmount", Number(e.target.value))
+                  }
+                  className="w-full accent-[var(--brand)] cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-zinc-400">
+                  <span>{show(0)}</span>
+                  <span>{show(depositSliderMax)}</span>
+                </div>
+              </div>
+
+              {/* Frequency and Annual Increase */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <label className="block text-xs text-zinc-400">
                   Frequency
                   <select
@@ -841,30 +1102,31 @@ export function CompoundInterestSheet({
                         e.target.value as ContributionFrequency
                       )
                     }
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-white outline-none focus:border-brand"
                   >
-                    <option value="monthly">monthly</option>
-                    <option value="annually">annually</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="annually">Annually</option>
                   </select>
                 </label>
                 <label className="block text-xs text-zinc-400">
-                  Annual increase %
+                  Yearly Raise %
                   <FormattedNumberInput
                     kind="percent"
                     value={draft.annualIncrease}
                     onChange={(n) => patchDraft("annualIncrease", n)}
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-white outline-none focus:border-brand"
                   />
                 </label>
               </div>
             </div>
           )}
 
+          {/* Withdrawal Fields */}
           {(draft.contributionMode === "withdrawals" ||
             draft.contributionMode === "both") && (
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-800/60 pt-3">
+            <div className="space-y-2 border-t border-zinc-800/60 pt-2.5">
               <label className="block text-xs text-zinc-400">
-                Withdrawal / mo
+                Withdrawal Amount
                 <FormattedNumberInput
                   kind="money"
                   currency={currency}
@@ -874,38 +1136,27 @@ export function CompoundInterestSheet({
                       patchDraft("withdrawalAmount", usd)
                     )
                   }
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white outline-none focus:border-brand"
                 />
-              </label>
-              <label className="block text-xs text-zinc-400">
-                Frequency
-                <select
-                  value={draft.withdrawalFrequency}
-                  onChange={(e) =>
-                    patchDraft(
-                      "withdrawalFrequency",
-                      e.target.value as ContributionFrequency
-                    )
-                  }
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
-                >
-                  <option value="monthly">monthly</option>
-                  <option value="annually">annually</option>
-                </select>
               </label>
             </div>
           )}
         </div>
 
-        {/* 7 — Shock buttons */}
-        <div>
-          <p className="mb-1.5 text-xs text-zinc-400">Shock the path</p>
+        {/* 5. Shock Scenarios */}
+        <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-3.5 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-zinc-200">
+              5. Stress Test Your Plan
+            </span>
+            <span className="text-[10px] text-zinc-400">Path dependence</span>
+          </div>
           <div className="flex flex-wrap gap-1">
             {(
               [
-                ["none", "Smooth"],
-                ["drawdown30", "−30% Y1"],
-                ["flat2y", "Flat 2y"],
+                ["none", "Smooth Compound"],
+                ["drawdown30", "−30% Drop Y1"],
+                ["flat2y", "Flat 2 Years"],
               ] as const
             ).map(([id, label]) => (
               <SegButton
@@ -917,100 +1168,135 @@ export function CompoundInterestSheet({
               </SegButton>
             ))}
           </div>
-          <p className="mt-1.5 text-xs text-zinc-400">
-            Path dependence without a lecture. Then compounding resumes.
+          <p className="text-[11px] leading-relaxed text-zinc-400">
+            {shock === "none"
+              ? "Theoretical continuous growth path."
+              : shock === "drawdown30"
+                ? "Models a 30% crash in year 1 followed by recovery."
+                : "Models 2 years of flat market stagnation before growth resumes."}
           </p>
         </div>
-
-        <p className="text-xs text-zinc-400">
-          Compounded monthly · live updates as you dial
-        </p>
       </aside>
 
-      {/* —— Results playground —— */}
+      {/* Results & Projections Section */}
       <section className="space-y-5">
-        {/* Hero stats */}
+        {/* Hero KPI Summary */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <h3 className="text-base font-semibold text-white sm:text-lg">
-              Interest calculation for {durationLabel}
-            </h3>
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand-bright">
+                Compound Horizon Forecast
+              </span>
+              <h3 className="text-base font-bold text-white sm:text-lg">
+                Estimated Result for {durationLabel}
+              </h3>
+            </div>
             <button
               type="button"
               onClick={() => void copyPostcard()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white transition"
             >
               {copied ? (
                 <Copy className="h-3.5 w-3.5 text-gain" />
               ) : (
                 <Share2 className="h-3.5 w-3.5" />
               )}
-              {copied ? "Copied" : "Postcard"}
+              {copied ? "Copied" : "Share Summary"}
             </button>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Future value
+          {/* Primary Cards */}
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+                Future Portfolio Value
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-gain sm:text-3xl">
                 {show(result.futureValue)}
               </p>
+              <p className="mt-1 text-[11px] text-zinc-400">
+                {liveInputs.depositAmount > 0
+                  ? `Includes ${show(result.totalDeposited)} total deposits`
+                  : "Pure compound with 0 deposits"}
+              </p>
             </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Total interest
+
+            <div className="rounded-xl border border-orange-500/30 bg-orange-950/20 p-3.5">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+                Total Interest Earned
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400 sm:text-3xl">
                 {show(result.totalInterest)}
               </p>
+              <p className="mt-1 text-[11px] text-zinc-400">
+                {result.totalDeposited > 0
+                  ? `${((result.totalInterest / result.futureValue) * 100).toFixed(0)}% of final portfolio`
+                  : "Compound gains"}
+              </p>
             </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Initial balance
+
+            <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-3.5">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+                Starting Investment
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-sky-400 sm:text-3xl">
                 {show(result.principal)}
               </p>
+              <p className="mt-1 text-[11px] text-zinc-400">
+                {principalSource === "book" ? "Current Book Value" : "Initial Capital"}
+              </p>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 border-t border-zinc-800 pt-4 text-sm sm:grid-cols-3">
+          {/* Secondary Stats */}
+          <div className="mt-4 grid gap-3 border-t border-zinc-800/80 pt-4 text-xs sm:grid-cols-4">
             <div>
-              <p className="text-xs text-zinc-400">Yearly → compounded</p>
-              <p className="mt-0.5 tabular-nums text-zinc-200">
-                {(result.nominalAnnualRate * 100).toFixed(2)}% →{" "}
+              <p className="text-zinc-400">Effective Annual Yield</p>
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-200">
                 {(result.effectiveAnnualRate * 100).toFixed(2)}%
               </p>
             </div>
             <div>
-              <p className="text-xs text-zinc-400">All-time RoR</p>
-              <p className="mt-0.5 inline-flex items-center gap-1 tabular-nums text-gain">
+              <p className="text-zinc-400">All-time Return on Money</p>
+              <p className="mt-0.5 inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-gain">
                 {(result.allTimeRoR * 100).toFixed(1)}%
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </p>
             </div>
             <div>
-              <p className="text-xs text-zinc-400">Time to double</p>
-              <p className="mt-0.5 tabular-nums text-zinc-200">
+              <p className="text-zinc-400">Time to Double</p>
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-200">
                 {Number.isFinite(result.doubleYears)
                   ? `${result.doubleYears}y ${result.doubleMonths}m`
                   : "—"}
               </p>
             </div>
+            <div>
+              <p className="text-zinc-400">Tipping Point</p>
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-brand-bright">
+                {tipping != null ? `Year ${tipping}` : "No deposits"}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* 1 — Dual path */}
+        {/* Dual Path Chart */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
-          <h4 className="text-sm font-semibold text-white">
-            Your book vs the path
-          </h4>
-          <p className="mt-1 text-xs text-zinc-400">
-            Dashed = stay invested, no new deposits. Solid = your dialed path
-            {shock !== "none" ? " (with shock)" : ""}.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h4 className="text-sm font-semibold text-white">
+                Your Compound Curve
+              </h4>
+              <p className="mt-0.5 text-xs text-zinc-400">
+                Solid green line = your dialed plan. Dashed line = staying invested with zero extra deposits.
+              </p>
+            </div>
+            {tipping != null && (
+              <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/40">
+                Tipping Point: Year {tipping}
+              </span>
+            )}
+          </div>
           <div className="mt-4">
             <DualPathChart
               stay={staySeries}
@@ -1022,56 +1308,35 @@ export function CompoundInterestSheet({
           </div>
         </div>
 
-        {/* 2 — Milestone tracker (driven by compounder dial) */}
+        {/* Milestone Tracker */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
           <div className="flex flex-wrap items-center gap-2">
-            <Target className="h-4 w-4 text-brand" />
+            <Target className="h-4 w-4 text-brand-bright" />
             <h4 className="text-sm font-semibold text-white">
-              Milestone tracker
+              Wealth Milestone Ladder
             </h4>
           </div>
           <p className="mt-1 text-xs text-zinc-400">
-            Target dates and years-until recompute from your dialed principal,
-            rate, deposits, and compounding. Same path as Calculate.
+            Projected dates and timeframes to cross major net worth milestones at your dialed growth rate.
           </p>
           {milestoneTakeaway && (
-            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-brand-bright">
+            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-xs text-brand-bright">
               {milestoneTakeaway}
             </p>
           )}
           <div
             ref={milestoneScrollRef}
-            className="relative mt-4 max-h-[26rem] overflow-y-auto overflow-x-auto rounded-lg"
+            className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-zinc-800"
           >
-            <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
+            <table className="w-full min-w-[36rem] border-collapse text-left text-xs">
               <thead className="sticky top-0 z-10 bg-[#161618]">
-                <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
-                  <th className="pb-2 pr-3 font-medium">Goal</th>
-                  <th
-                    className="pb-2 pr-3 font-medium"
-                    title="Projected date you'd cross this goal at your dialed rate"
-                  >
-                    Target
-                  </th>
-                  <th
-                    className="pb-2 pr-3 font-medium"
-                    title="The date you actually crossed it, once you've logged it as hit"
-                  >
-                    Actual
-                  </th>
-                  <th className="pb-2 pr-3 font-medium">Years until</th>
-                  <th
-                    className="pb-2 pr-3 font-medium"
-                    title="Compound Annual Growth Rate: the steady yearly rate that would take you from one milestone to the next, once both have real dates"
-                  >
-                    CAGR
-                  </th>
-                  <th
-                    className="pb-2 font-medium"
-                    title="The annual rate dialed into this calculator, which is what drives the Target date"
-                  >
-                    Est. growth
-                  </th>
+                <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-400">
+                  <th className="py-2.5 px-3 font-medium">Goal</th>
+                  <th className="py-2.5 px-3 font-medium">Estimated Date</th>
+                  <th className="py-2.5 px-3 font-medium">Actual Achieved</th>
+                  <th className="py-2.5 px-3 font-medium">Years Away</th>
+                  <th className="py-2.5 px-3 font-medium">CAGR Pace</th>
+                  <th className="py-2.5 px-3 font-medium">Growth Rate</th>
                 </tr>
               </thead>
               <tbody>
@@ -1086,14 +1351,14 @@ export function CompoundInterestSheet({
                         key={row.goal}
                         ref={isFirstPending ? firstPendingRowRef : undefined}
                         className={cn(
-                          "border-b border-zinc-800/80",
+                          "border-b border-zinc-800/80 transition hover:bg-zinc-800/30",
                           done && "bg-emerald-500/[0.06]"
                         )}
                       >
-                        <td className="py-2.5 pr-3">
+                        <td className="py-2.5 px-3">
                           <span
                             className={cn(
-                              "inline-flex items-center gap-2 tabular-nums",
+                              "inline-flex items-center gap-2 tabular-nums font-medium",
                               done ? "font-semibold text-gain" : "text-zinc-200"
                             )}
                           >
@@ -1111,16 +1376,16 @@ export function CompoundInterestSheet({
                             {show(row.goal)}
                           </span>
                         </td>
-                        <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                        <td className="py-2.5 px-3 tabular-nums text-zinc-300">
                           {row.hit ? (
-                            <span className="font-medium text-gain">Hit ✓</span>
+                            <span className="font-semibold text-gain">Achieved</span>
                           ) : row.targetDate ? (
                             formatMilestoneDate(row.targetDate)
                           ) : (
                             "Beyond 50y"
                           )}
                         </td>
-                        <td className="py-2.5 pr-3">
+                        <td className="py-2.5 px-3">
                           <input
                             type="date"
                             value={row.actualDate ?? ""}
@@ -1135,17 +1400,17 @@ export function CompoundInterestSheet({
                             )}
                           />
                         </td>
-                        <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                        <td className="py-2.5 px-3 tabular-nums text-zinc-300">
                           {row.hit
                             ? "—"
                             : row.yearsUntil != null
-                              ? row.yearsUntil.toFixed(1)
+                              ? `${row.yearsUntil.toFixed(1)}y`
                               : "—"}
                         </td>
-                        <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                        <td className="py-2.5 px-3 tabular-nums text-zinc-300">
                           {row.cagrPct != null ? `${row.cagrPct}%` : "—"}
                         </td>
-                        <td className="py-2.5 tabular-nums text-zinc-300">
+                        <td className="py-2.5 px-3 tabular-nums text-zinc-300">
                           {row.hit ? "—" : `${row.estGrowthPct}%`}
                         </td>
                       </tr>
@@ -1157,9 +1422,9 @@ export function CompoundInterestSheet({
           </div>
         </div>
 
-        {/* 3 — Year-flip story cards */}
+        {/* Year-by-Year Story Cards */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
-          <h4 className="text-sm font-semibold text-white">Year-flip stories</h4>
+          <h4 className="text-sm font-semibold text-white">Year-by-Year Milestones</h4>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {storyOpts.map((y, i) => (
               <SegButton
@@ -1171,7 +1436,7 @@ export function CompoundInterestSheet({
                 {tipping === y && (
                   <span
                     className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-gain align-middle"
-                    title="The flip: interest first beats deposits this year"
+                    title="Tipping year: interest outpaces deposits"
                     aria-hidden
                   />
                 )}
@@ -1181,12 +1446,12 @@ export function CompoundInterestSheet({
           {storyRow && (
             <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
               <p className="text-xs uppercase tracking-wide text-zinc-400">
-                Year {storyRow.index}
+                Portfolio at Year {storyRow.index}
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-white">
                 {show(storyRow.balance)}
               </p>
-              <p className="mt-2 text-sm text-zinc-400">
+              <p className="mt-2 text-xs leading-relaxed text-zinc-300">
                 {yearStories.get(storyRow.index) ??
                   `Interest earned this year: ${show(storyRow.interest)}. Accrued interest: ${show(storyRow.accruedInterest)}.`}
               </p>
@@ -1194,19 +1459,19 @@ export function CompoundInterestSheet({
           )}
         </div>
 
-        {/* 5 — Lazy vs Upside */}
+        {/* Benchmark Scenario Comparison */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-brand" />
+            <Zap className="h-4 w-4 text-brand-bright" />
             <h4 className="text-sm font-semibold text-white">
-              Lazy vs Upside
+              Alternative Scenarios Comparison
             </h4>
           </div>
           <p className="mt-1 text-xs text-zinc-400">
-            Same principal & horizon. Not advice, just contrast.
+            Same starting principal and time horizon under different investing paths.
           </p>
           {compareTakeaway && (
-            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-brand-bright">
+            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-xs text-brand-bright">
               {compareTakeaway}
             </p>
           )}
@@ -1214,38 +1479,38 @@ export function CompoundInterestSheet({
             {compare.map((s) => (
               <div
                 key={s.id}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3"
+                className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
                 style={{ borderTopColor: s.color, borderTopWidth: 2 }}
               >
-                <p className="text-sm font-semibold text-white">{s.label}</p>
-                <p className="text-xs text-zinc-400">{s.tagline}</p>
+                <p className="text-xs font-semibold text-white">{s.label}</p>
+                <p className="text-[11px] text-zinc-400">{s.tagline}</p>
                 <p
-                  className="mt-3 text-xl font-bold tabular-nums"
+                  className="mt-2.5 text-lg font-bold tabular-nums"
                   style={{ color: s.color }}
                 >
                   {show(s.result.futureValue)}
                 </p>
-                <p className="mt-1 text-xs text-zinc-400">
-                  Interest {show(s.result.totalInterest)}
+                <p className="mt-1 text-[11px] text-zinc-400">
+                  Gains: {show(s.result.totalInterest)}
                 </p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* 8 — Margus narrative */}
+        {/* Narrative Takeaways */}
         <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-brand" />
+            <Sparkles className="h-4 w-4 text-brand-bright" />
             <h4 className="text-sm font-semibold text-white">
-              The quick read
+              Key Insights & Observations
             </h4>
           </div>
           <ul className="mt-3 space-y-2">
             {narrative.map((line) => (
               <li
                 key={line}
-                className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 px-3 py-2 text-sm leading-relaxed text-zinc-300"
+                className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 px-3 py-2 text-xs leading-relaxed text-zinc-300"
               >
                 {line}
               </li>
@@ -1253,94 +1518,52 @@ export function CompoundInterestSheet({
           </ul>
         </div>
 
-        {/* Yearly table */}
+        {/* Full Yearly Breakdown Table */}
         <div className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/80">
           <div className="border-b border-zinc-800 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Yearly breakdown
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+              Year-by-Year Growth Table
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-left text-sm">
+            <table className="w-full min-w-[36rem] text-left text-xs">
               <thead>
-                <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
+                <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-400">
                   <th className="px-4 py-2.5 font-medium">Year</th>
-                  <th
-                    className="px-4 py-2.5 font-medium"
-                    title="Your own money in the balance: what you started with plus everything you've paid in, before any growth"
-                  >
-                    Principal
+                  <th className="px-4 py-2.5 font-medium">Deposited Principal</th>
+                  <th className="px-4 py-2.5 font-medium">Year Interest</th>
+                  <th className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300">
+                    Cumulative Interest
                   </th>
-                  <th
-                    className="px-4 py-2.5 font-medium"
-                    title="Interest earned during this year alone"
-                  >
-                    Interest
-                  </th>
-                  <th
-                    className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300"
-                    title="Every year's interest added together so far"
-                  >
-                    Accrued interest
-                  </th>
-                  <th
-                    className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300"
-                    title="Principal plus accrued interest"
-                  >
-                    Balance
+                  <th className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300">
+                    End Balance
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {result.yearly.map((row, i) => {
                   const isLast = i === result.yearly.length - 1;
-                  // Derived from balance rather than summing contributions so
-                  // the three money columns always reconcile on screen
-                  // (principal + accrued interest = balance). Summing
-                  // contributions drifts once withdrawals drain the account,
-                  // because those keep accumulating past what was actually
-                  // there and the balance floors at zero.
-                  const principal = Math.max(
-                    0,
-                    row.balance - row.accruedInterest
-                  );
+                  const principalShown = row.balance - row.accruedInterest;
                   return (
                     <tr
                       key={row.index}
-                      className="border-b border-zinc-800/80 hover:bg-zinc-900/40"
+                      className={cn(
+                        "border-b border-zinc-900 transition hover:bg-zinc-800/30",
+                        isLast && "font-semibold text-white bg-zinc-800/20"
+                      )}
                     >
+                      <td className="px-4 py-2 text-zinc-300">{row.label}</td>
                       <td className="px-4 py-2 tabular-nums text-zinc-300">
-                        {row.index}
+                        {show(principalShown)}
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-zinc-400">
-                        {show(principal, 2)}
+                      <td className="px-4 py-2 tabular-nums text-orange-400">
+                        {show(row.interest)}
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-zinc-300">
-                        {row.index === 0
-                          ? "—"
-                          : show(row.interest, 2)}
+                      <td className="bg-orange-500/5 px-4 py-2 tabular-nums text-orange-300">
+                        {show(row.accruedInterest)}
                       </td>
-                      <td
-                        className={cn(
-                          "px-4 py-2 tabular-nums",
-                          isLast
-                            ? "bg-orange-500/20 font-semibold text-orange-300"
-                            : "text-zinc-300"
-                        )}
-                      >
-                        {row.index === 0
-                          ? "—"
-                          : show(row.accruedInterest, 2)}
-                      </td>
-                      <td
-                        className={cn(
-                          "px-4 py-2 tabular-nums",
-                          isLast
-                            ? "bg-emerald-500/20 font-semibold text-gain"
-                            : "text-zinc-100"
-                        )}
-                      >
-                        {show(row.balance, 2)}
+                      <td className="bg-emerald-500/5 px-4 py-2 tabular-nums font-semibold text-gain">
+                        {show(row.balance)}
                       </td>
                     </tr>
                   );
@@ -1348,37 +1571,6 @@ export function CompoundInterestSheet({
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* 6 — Postcard preview */}
-        <div className="rounded-xl border border-brand/30 bg-gradient-to-br from-brand/10 via-[#161618] to-[#161618] p-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-brand" />
-              <h4 className="text-sm font-semibold text-white">
-                Compound postcard
-              </h4>
-            </div>
-            <button
-              type="button"
-              onClick={() => void copyPostcard()}
-              className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
-            >
-              {copied ? "Copied ✓" : "Copy share text"}
-            </button>
-          </div>
-          <p className="mt-4 text-lg font-semibold tracking-tight text-white sm:text-xl">
-            {show(result.principal)} →{" "}
-            {show(result.futureValue)}{" "}
-            <span className="text-zinc-400">in {durationLabel}</span>
-          </p>
-          <p className="mt-2 text-sm text-zinc-400">
-            Interest {show(result.totalInterest)} ·{" "}
-            {(result.allTimeRoR * 100).toFixed(0)}% all-time RoR
-            {draft.depositAmount > 0
-              ? ` · +${show(draft.depositAmount)}/mo`
-              : ""}
-          </p>
         </div>
       </section>
     </div>
