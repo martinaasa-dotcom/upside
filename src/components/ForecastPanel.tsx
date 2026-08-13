@@ -344,8 +344,8 @@ export function ForecastPanel({
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="border-b border-zinc-800/80 px-4 py-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
             <p className="mt-0.5 text-xs text-zinc-400">
               Margus reasons an EOY price path per holding. He does a monthly
@@ -367,29 +367,37 @@ export function ForecastPanel({
               </p>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {overrideCount > 0 && (
+              <button
+                type="button"
+                onClick={onClearOverrides}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                title="Clear manual and Margus EOY overrides for this sheet"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Reset overrides ({overrideCount})
+              </button>
+            )}
             <button
               type="button"
               disabled={busy || model.rows.length === 0}
               onClick={() => void askMargus()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-xs font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
-              title="Re-run the forecast against your conviction notes"
+              title="Re-run the full Margus forecast for this sheet"
             >
-              <RotateCcw className={cn("h-3 w-3", busy && "animate-spin")} />
-              {busy ? "Rethinking …" : "Rerun"}
+              {busy ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-3 w-3" />
+              )}
+              {busy
+                ? "Rethinking …"
+                : plan
+                  ? "Rerun forecast"
+                  : "Ask Margus"}
             </button>
           </div>
-          {overrideCount > 0 && (
-            <button
-              type="button"
-              onClick={onClearOverrides}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-              title="Clear manual and Margus EOY overrides for this sheet"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Reset overrides ({overrideCount})
-            </button>
-          )}
         </div>
       </header>
 
@@ -582,39 +590,20 @@ export function ForecastPanel({
       )}
 
       <div className="border-t border-zinc-800/80 px-4 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              Margus plan · themes / trim / add / EOY path
-            </h3>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Add / trim can be multiple names or sectors (SaaS, healthcare,
-              drones …). Manual refresh still available anytime.
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            Margus plan · themes / trim / add / EOY path
+          </h3>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Add / trim can be multiple names or sectors (SaaS, healthcare,
+            drones …). Use Rerun forecast above anytime.
+          </p>
+          {plan?.generatedAt && (
+            <p className="mt-1 text-xs text-zinc-400">
+              Last generated {formatGeneratedAt(plan.generatedAt)}
+              {appliedFlash ? " · prices applied" : ""}
             </p>
-            {plan?.generatedAt && (
-              <p className="mt-1 text-xs text-zinc-400">
-                Last generated {formatGeneratedAt(plan.generatedAt)}
-                {appliedFlash ? " · prices applied" : ""}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => void askMargus()}
-            disabled={busy || model.rows.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-deep/60 bg-brand/10 px-3 py-2 text-xs font-medium text-brand-bright hover:border-brand hover:bg-brand/20 disabled:opacity-50"
-          >
-            {busy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            {busy
-              ? "Margus is reasoning …"
-              : plan
-                ? "Refresh Margus forecast"
-                : "Ask Margus for a forecast"}
-          </button>
+          )}
         </div>
 
         {error && (
