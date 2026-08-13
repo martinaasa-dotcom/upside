@@ -2576,7 +2576,7 @@ export function Dashboard() {
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
       <div className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
             quotesDelayed={quotesDelayed}
@@ -2588,7 +2588,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-5 sm:pb-28 md:pb-24">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-5 pb-[calc(7.5rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6 sm:pb-28 md:pb-24">
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
@@ -2956,6 +2956,9 @@ export function Dashboard() {
         }
         sparkline={
           drawerTicker ? quotes[drawerTicker]?.sparkline : undefined
+        }
+        todayChangePct={
+          drawerTicker ? quotes[drawerTicker]?.changePercent ?? null : null
         }
         conviction={
           drawerTicker

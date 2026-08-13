@@ -13,7 +13,7 @@ import {
 } from "@/lib/number-input";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
-import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
@@ -355,7 +355,7 @@ export function PortfolioTable({
 
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/80 px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800/80 px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-semibold text-white">Holdings</h2>
           {onDisplayCurrencyChange && (
@@ -385,10 +385,13 @@ export function PortfolioTable({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        {/* Two distinct chips, not one dense strip — Today is the fact you
+          * check daily, Cash (plus import) is book upkeep. Separating them
+          * with their own borders reads as two things, not a wall of numbers. */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {today.priced > 0 && (
             <div
-              className="flex items-center gap-2 rounded-lg px-2 py-1"
+              className="flex items-center gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/40 px-3 py-1.5"
               title="Move since yesterday's close, across priced positions. Cash is excluded."
             >
               <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
@@ -414,35 +417,37 @@ export function PortfolioTable({
               )}
             </div>
           )}
-          {onImportCsv && holdings.length > 0 && (
+          <div className="flex items-center gap-1 rounded-lg border border-zinc-800/60 bg-zinc-900/40 py-1 pl-1 pr-1">
+            {onImportCsv && holdings.length > 0 && (
+              <button
+                type="button"
+                onClick={onImportCsv}
+                title="Import / update holdings from a CSV file"
+                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+                aria-label="Import CSV"
+              >
+                <FileUp className="h-3.5 w-3.5" />
+              </button>
+            )}
             <button
               type="button"
-              onClick={onImportCsv}
-              title="Import / update holdings from a CSV file"
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-300"
-              aria-label="Import CSV"
+              onClick={onEditCash}
+              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-zinc-800"
+              title="Edit cash (stored in USD)"
             >
-              <FileUp className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                Cash
+              </span>
+              <span
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  signedTone(portfolio.cash_balance)
+                )}
+              >
+                {money(portfolio.cash_balance)}
+              </span>
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onEditCash}
-            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-zinc-900"
-            title="Edit cash (stored in USD)"
-          >
-            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Cash
-            </span>
-            <span
-              className={cn(
-                "text-sm font-semibold tabular-nums",
-                signedTone(portfolio.cash_balance)
-              )}
-            >
-              {money(portfolio.cash_balance)}
-            </span>
-          </button>
+          </div>
         </div>
       </header>
 
@@ -461,7 +466,7 @@ export function PortfolioTable({
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-base font-semibold text-white">
+                  <div className="flex items-center gap-1.5 font-semibold text-white">
                     {onOpenTicker ? (
                       <button
                         type="button"
@@ -473,7 +478,15 @@ export function PortfolioTable({
                     ) : (
                       h.ticker
                     )}
-                  </p>
+                    {(h.quote?.changePercent ?? 0) < -0.015 && (
+                      <span
+                        title="Thesis intact: macro dip without fundamental business breakdown"
+                        className="inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1 py-0.5 text-[10px] font-medium text-emerald-300"
+                      >
+                        <ShieldCheck className="h-3 w-3" /> Intact
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-zinc-400">
                     {percent(h.pctOfTotal)} of book
                   </p>
@@ -629,7 +642,7 @@ export function PortfolioTable({
                 <div
                   className={cn(
                     cellBase,
-                    "font-semibold tracking-wide text-white"
+                    "font-semibold tracking-wide text-white flex items-center gap-1.5"
                   )}
                 >
                   {onOpenTicker ? (
@@ -642,6 +655,14 @@ export function PortfolioTable({
                     </button>
                   ) : (
                     h.ticker
+                  )}
+                  {(h.quote?.changePercent ?? 0) < -0.015 && (
+                    <span
+                      title="Thesis intact: macro dip without fundamental business breakdown"
+                      className="inline-flex items-center text-emerald-400"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                    </span>
                   )}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
