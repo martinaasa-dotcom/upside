@@ -696,11 +696,21 @@ export function estimateYearsToGoal(opts: {
   return null;
 }
 
-/** Net-worth ladder — more incremental in the early, most-motivating
- * stretch (every $50-100k) before widening out at the larger milestones. */
+/**
+ * Net-worth ladder — granularity steps down as the numbers get bigger:
+ * every $25k under $100k, every $50k from $100k-$500k, every $250k from
+ * $500k-$2M, every $500k past that (up to $10M, aspirational territory
+ * beyond that doesn't need a line for every half-million).
+ */
 export const COMPOUND_MILESTONE_GOALS = [
-  0, 50_000, 100_000, 200_000, 300_000, 500_000, 750_000, 1_000_000,
-  2_000_000, 5_000_000,
+  25_000, 50_000, 75_000,
+  100_000, 150_000, 200_000, 250_000, 300_000, 350_000, 400_000, 450_000,
+  500_000,
+  750_000, 1_000_000, 1_250_000, 1_500_000, 1_750_000,
+  2_000_000,
+  2_500_000, 3_000_000, 3_500_000, 4_000_000, 4_500_000, 5_000_000,
+  5_500_000, 6_000_000, 6_500_000, 7_000_000, 7_500_000, 8_000_000,
+  8_500_000, 9_000_000, 9_500_000, 10_000_000,
 ] as const;
 
 export const MILESTONE_ACTUALS_KEY = "upside-compound-milestone-actuals-v1";

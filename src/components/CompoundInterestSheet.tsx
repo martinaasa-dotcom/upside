@@ -563,6 +563,20 @@ export function CompoundInterestSheet({
     [milestones]
   );
 
+  // With 30+ rungs on the ladder, anyone past the early ones would land on
+  // a wall of already-hit checkmarks before reaching anything relevant —
+  // scroll the first not-yet-hit goal into view once, on first paint only
+  // (never again automatically; re-jumping the scroll every time a slider
+  // moves would be its own kind of annoying).
+  const firstPendingRowRef = useRef<HTMLTableRowElement | null>(null);
+  const scrolledToMilestoneRef = useRef(false);
+  useEffect(() => {
+    if (scrolledToMilestoneRef.current) return;
+    if (!firstPendingRowRef.current) return;
+    scrolledToMilestoneRef.current = true;
+    firstPendingRowRef.current.scrollIntoView({ block: "center" });
+  }, [milestones]);
+
   function setMilestoneActual(goal: number, iso: string) {
     setMilestoneActuals((prev) => {
       const next = { ...prev };
@@ -1007,9 +1021,9 @@ export function CompoundInterestSheet({
               {milestoneTakeaway}
             </p>
           )}
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 max-h-[26rem] overflow-y-auto overflow-x-auto rounded-lg">
             <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#161618]">
                 <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
                   <th className="pb-2 pr-3 font-medium">Goal</th>
                   <th
@@ -1040,77 +1054,83 @@ export function CompoundInterestSheet({
                 </tr>
               </thead>
               <tbody>
-                {milestones.map((row) => {
-                  const done = row.hit || Boolean(row.actualDate);
-                  return (
-                    <tr
-                      key={row.goal}
-                      className={cn(
-                        "border-b border-zinc-800/80",
-                        done && "bg-emerald-500/[0.06]"
-                      )}
-                    >
-                      <td className="py-2.5 pr-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-2 tabular-nums",
-                            done ? "font-semibold text-gain" : "text-zinc-200"
-                          )}
-                        >
-                          {done ? (
-                            <CheckCircle2
-                              className="h-4 w-4 shrink-0 text-gain"
-                              aria-hidden
-                            />
-                          ) : (
-                            <span
-                              className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-zinc-600 bg-transparent"
-                              aria-hidden
-                            />
-                          )}
-                          {show(row.goal)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
-                        {row.hit ? (
-                          <span className="font-medium text-gain">Hit ✓</span>
-                        ) : row.targetDate ? (
-                          formatMilestoneDate(row.targetDate)
-                        ) : (
-                          "Beyond 50y"
+                {(() => {
+                  let firstPendingSeen = false;
+                  return milestones.map((row) => {
+                    const done = row.hit || Boolean(row.actualDate);
+                    const isFirstPending = !done && !firstPendingSeen;
+                    if (isFirstPending) firstPendingSeen = true;
+                    return (
+                      <tr
+                        key={row.goal}
+                        ref={isFirstPending ? firstPendingRowRef : undefined}
+                        className={cn(
+                          "border-b border-zinc-800/80",
+                          done && "bg-emerald-500/[0.06]"
                         )}
-                      </td>
-                      <td className="py-2.5 pr-3">
-                        <input
-                          type="date"
-                          value={row.actualDate ?? ""}
-                          onChange={(e) =>
-                            setMilestoneActual(row.goal, e.target.value)
-                          }
-                          className={cn(
-                            "max-w-[9.5rem] rounded border bg-zinc-900 px-1.5 py-1 text-xs tabular-nums outline-none focus:border-brand",
-                            done
-                              ? "border-gain/40 text-gain"
-                              : "border-zinc-700 text-zinc-300"
+                      >
+                        <td className="py-2.5 pr-3">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-2 tabular-nums",
+                              done ? "font-semibold text-gain" : "text-zinc-200"
+                            )}
+                          >
+                            {done ? (
+                              <CheckCircle2
+                                className="h-4 w-4 shrink-0 text-gain"
+                                aria-hidden
+                              />
+                            ) : (
+                              <span
+                                className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-zinc-600 bg-transparent"
+                                aria-hidden
+                              />
+                            )}
+                            {show(row.goal)}
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                          {row.hit ? (
+                            <span className="font-medium text-gain">Hit ✓</span>
+                          ) : row.targetDate ? (
+                            formatMilestoneDate(row.targetDate)
+                          ) : (
+                            "Beyond 50y"
                           )}
-                        />
-                      </td>
-                      <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
-                        {row.hit
-                          ? "—"
-                          : row.yearsUntil != null
-                            ? row.yearsUntil.toFixed(1)
-                            : "—"}
-                      </td>
-                      <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
-                        {row.cagrPct != null ? `${row.cagrPct}%` : "—"}
-                      </td>
-                      <td className="py-2.5 tabular-nums text-zinc-300">
-                        {row.hit ? "—" : `${row.estGrowthPct}%`}
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                        <td className="py-2.5 pr-3">
+                          <input
+                            type="date"
+                            value={row.actualDate ?? ""}
+                            onChange={(e) =>
+                              setMilestoneActual(row.goal, e.target.value)
+                            }
+                            className={cn(
+                              "max-w-[9.5rem] rounded border bg-zinc-900 px-1.5 py-1 text-xs tabular-nums outline-none focus:border-brand",
+                              done
+                                ? "border-gain/40 text-gain"
+                                : "border-zinc-700 text-zinc-300"
+                            )}
+                          />
+                        </td>
+                        <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                          {row.hit
+                            ? "—"
+                            : row.yearsUntil != null
+                              ? row.yearsUntil.toFixed(1)
+                              : "—"}
+                        </td>
+                        <td className="py-2.5 pr-3 tabular-nums text-zinc-300">
+                          {row.cagrPct != null ? `${row.cagrPct}%` : "—"}
+                        </td>
+                        <td className="py-2.5 tabular-nums text-zinc-300">
+                          {row.hit ? "—" : `${row.estGrowthPct}%`}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
