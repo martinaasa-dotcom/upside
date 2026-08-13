@@ -170,8 +170,8 @@ function EmptyBook({
             >
               <span
                 className={cn(
-                  "text-[11px] font-semibold uppercase tracking-wide",
-                  r.primary ? "text-brand-bright" : "text-zinc-500"
+                  "text-xs font-semibold uppercase tracking-wide",
+                  r.primary ? "text-brand-bright" : "text-zinc-400"
                 )}
               >
                 {r.hint}
@@ -188,7 +188,7 @@ function EmptyBook({
         </div>
       )}
 
-      <p className="mt-5 text-sm text-zinc-500">
+      <p className="mt-5 text-sm text-zinc-400">
         Nothing here is advice, and nothing you add is shared until you invite
         someone.
       </p>
@@ -230,14 +230,14 @@ function BriefingCard({
 
   const body = (
     <>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
         {kind}
         {ticker ? ` · ${cashtag(ticker)}` : ""}
       </p>
       <p className="mt-0.5 text-[15px] font-medium text-white">{title}</p>
       <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{detail}</p>
       {canNavigate && cta && (
-        <p className="mt-2 text-[11px] font-medium text-brand-bright">{cta}</p>
+        <p className="mt-2 text-xs font-medium text-brand-bright">{cta}</p>
       )}
     </>
   );
@@ -275,14 +275,14 @@ function InfoTip({ text }: { text: string }) {
         onBlur={() => setOpen(false)}
         aria-label="What does this mean?"
         aria-expanded={open}
-        className="inline-flex items-center justify-center p-1.5 text-zinc-600 hover:text-zinc-300"
+        className="inline-flex items-center justify-center p-1.5 text-zinc-400 hover:text-zinc-300"
       >
         <Info className="h-3 w-3" />
       </button>
       {open && (
         <span
           role="tooltip"
-          className="absolute left-1/2 top-full z-20 mt-1 w-44 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-[11px] font-normal leading-relaxed text-zinc-300 shadow-xl"
+          className="absolute left-1/2 top-full z-20 mt-1 w-44 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-xs font-normal leading-relaxed text-zinc-300 shadow-xl"
         >
           {text}
         </span>
@@ -356,7 +356,7 @@ function RankCard({
           </span>
         </div>
         <PortfolioChips names={ticker.portfolios} />
-        <div className="flex items-center gap-2.5 text-sm text-zinc-500">
+        <div className="flex items-center gap-2.5 text-sm text-zinc-400">
           <span>{ticker.shares.toLocaleString("en-US")} sh</span>
           <Sparkline points={ticker.sparkline} width={64} height={18} />
         </div>
@@ -375,7 +375,7 @@ function RankCard({
         </div>
         <div
           className={cn(
-            "mt-0.5 text-[11px] tabular-nums text-zinc-500",
+            "mt-0.5 text-xs tabular-nums text-zinc-400",
             Math.abs(dollar) > 0.005 && tone(dollar)
           )}
           title={`${dollarLabel} P&L`}
@@ -450,7 +450,7 @@ function PortfolioLane({
           style={{ width: `${width}%` }}
         />
       </div>
-      <div className="mt-2 flex justify-between text-sm text-zinc-500">
+      <div className="mt-2 flex justify-between text-sm text-zinc-400">
         <span>
           Today{" "}
           <span className={tone(sheet.todayDollar)}>
@@ -462,7 +462,7 @@ function PortfolioLane({
         </span>
       </div>
       {rival && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-zinc-800/60 pt-2 text-xs text-zinc-500">
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
           <span>
             Today <span className="text-zinc-300">#{rival.medals.today}</span>
           </span>
@@ -709,7 +709,7 @@ export function OverviewDashboard({
         <div className="relative min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-white">Upside Portfolio</p>
-            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-300">
               Live
             </span>
           </div>
@@ -769,7 +769,7 @@ export function OverviewDashboard({
                   <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
                     Today’s briefing
                   </h2>
-                  <p className="mt-0.5 text-sm text-zinc-500">
+                  <p className="mt-0.5 text-sm text-zinc-400">
                     What matters today · Tallinn
                   </p>
                 </div>
@@ -778,7 +778,7 @@ export function OverviewDashboard({
             <div className="flex flex-wrap items-center gap-2">
               {!guest && visitStreak && visitStreak.currentStreak > 0 && (
                 <span
-                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium tabular-nums text-amber-200"
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium tabular-nums text-amber-200"
                   title={streakFlavor(visitStreak.currentStreak)}
                 >
                   🔥 {visitStreak.currentStreak}d streak
@@ -786,7 +786,7 @@ export function OverviewDashboard({
               )}
               <span
                 className={cn(
-                  "rounded-lg border px-2.5 py-1 text-[11px] font-medium tabular-nums",
+                  "rounded-lg border px-2.5 py-1 text-xs font-medium tabular-nums",
                   kind === "open"
                     ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
                     : kind === "pre" || kind === "ah"
@@ -816,7 +816,7 @@ export function OverviewDashboard({
                   />
                 ))}
               </div>
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-xs text-zinc-400">
                 {streakFlavor(visitStreak.currentStreak)}
               </p>
             </div>
@@ -862,7 +862,7 @@ export function OverviewDashboard({
                 key={s.label}
                 className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-3 py-2.5"
               >
-                <p className="flex items-center gap-0.5 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="flex items-center gap-0.5 text-xs uppercase tracking-wide text-zinc-400">
                   {s.label}
                   <InfoTip text={s.explain} />
                 </p>
@@ -878,10 +878,10 @@ export function OverviewDashboard({
                 </p>
                 <p
                   className={cn(
-                    "text-[11px]",
+                    "text-xs",
                     "tone" in s && typeof s.tone === "number"
                       ? tone(s.tone)
-                      : "text-zinc-500"
+                      : "text-zinc-400"
                   )}
                 >
                   {s.sub}
@@ -909,10 +909,10 @@ export function OverviewDashboard({
 
           {visitDiff && visitDiff.lines.length > 0 && (
             <div className="relative mt-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/40 px-3.5 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 While you were away
               </p>
-              <p className="mt-0.5 text-[11px] text-zinc-600">
+              <p className="mt-0.5 text-xs text-zinc-400">
                 Since{" "}
                 {new Date(visitDiff.previousAt).toLocaleString("en-GB", {
                   timeZone: "Europe/Tallinn",
@@ -979,7 +979,7 @@ export function OverviewDashboard({
           </div>
           <div className="space-y-3">
             {winners.length === 0 ? (
-              <p className="py-5 text-center text-base text-zinc-500">
+              <p className="py-5 text-center text-base text-zinc-400">
                 No green names yet.
               </p>
             ) : (
@@ -1009,7 +1009,7 @@ export function OverviewDashboard({
           </div>
           <div className="space-y-3">
             {losers.length === 0 ? (
-              <p className="py-5 text-center text-base text-zinc-500">
+              <p className="py-5 text-center text-base text-zinc-400">
                 Nobody underwater.
               </p>
             ) : (
@@ -1035,7 +1035,7 @@ export function OverviewDashboard({
           <p className="mb-5 mt-1 text-base text-zinc-400">Session gainers</p>
           <div className="space-y-3">
             {todayWinners.length === 0 ? (
-              <p className="text-base text-zinc-500">Waiting on quotes …</p>
+              <p className="text-base text-zinc-400">Waiting on quotes …</p>
             ) : (
               todayWinners.map((t, i) => (
                 <RankCard
@@ -1056,7 +1056,7 @@ export function OverviewDashboard({
           <p className="mb-5 mt-1 text-base text-zinc-400">Session laggards</p>
           <div className="space-y-3">
             {todayLosers.length === 0 ? (
-              <p className="text-base text-zinc-500">Waiting on quotes …</p>
+              <p className="text-base text-zinc-400">Waiting on quotes …</p>
             ) : (
               todayLosers.map((t, i) => (
                 <RankCard
@@ -1092,7 +1092,7 @@ export function OverviewDashboard({
               onClick={() => openFirstPortfolio(t)}
               className="flex w-full flex-wrap items-center gap-3 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 px-4 py-3.5 text-left transition hover:border-zinc-600 sm:flex-nowrap"
             >
-              <span className="w-6 text-base tabular-nums text-zinc-500">
+              <span className="w-6 text-base tabular-nums text-zinc-400">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1 space-y-1.5">
@@ -1152,7 +1152,7 @@ export function OverviewDashboard({
               ))}
             </div>
           ) : upcomingEarnings.length === 0 ? (
-            <p className="text-base text-zinc-500">
+            <p className="text-base text-zinc-400">
               No earnings dates in the next 90 days.
             </p>
           ) : (
@@ -1173,7 +1173,7 @@ export function OverviewDashboard({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1.5">
                       <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-sm tabular-nums text-zinc-500">
+                        <span className="text-sm tabular-nums text-zinc-400">
                           #{index + 1}
                         </span>
                         <span className="text-lg font-semibold text-white">
@@ -1191,7 +1191,7 @@ export function OverviewDashboard({
                       <p className="text-base font-medium tabular-nums text-zinc-100">
                         {when}
                       </p>
-                      <p className="mt-0.5 text-sm tabular-nums text-zinc-500">
+                      <p className="mt-0.5 text-sm tabular-nums text-zinc-400">
                         {e.date}
                       </p>
                     </div>
@@ -1232,7 +1232,7 @@ export function OverviewDashboard({
         </div>
         <ul className="space-y-3">
           {displayedFunFacts.length === 0 ? (
-            <li className="text-base text-zinc-500">Waiting on quotes …</li>
+            <li className="text-base text-zinc-400">Waiting on quotes …</li>
           ) : (
             displayedFunFacts.map((fact, i) => (
               <li

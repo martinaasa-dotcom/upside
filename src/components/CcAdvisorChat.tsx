@@ -293,7 +293,7 @@ function ChatMarkdown({ children }: { children: string }) {
             </ol>
           ),
           li: ({ children: c }) => (
-            <li className="break-words leading-relaxed marker:text-zinc-600">{c}</li>
+            <li className="break-words leading-relaxed marker:text-zinc-400">{c}</li>
           ),
           strong: ({ children: c }) => (
             <strong className="font-semibold text-white">{c}</strong>
@@ -315,13 +315,13 @@ function ChatMarkdown({ children }: { children: string }) {
             const block = Boolean(className);
             if (block) {
               return (
-                <code className="block w-full overflow-x-auto rounded-md bg-zinc-950/80 px-2 py-1.5 font-mono text-[11px] text-zinc-300">
+                <code className="block w-full overflow-x-auto rounded-md bg-zinc-950/80 px-2 py-1.5 font-mono text-xs text-zinc-300">
                   {c}
                 </code>
               );
             }
             return (
-              <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-[11px] text-brand-bright">
+              <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-xs text-brand-bright">
                 {c}
               </code>
             );
@@ -339,7 +339,7 @@ function ChatMarkdown({ children }: { children: string }) {
             </div>
           ),
           thead: ({ children: c }) => (
-            <thead className="border-b border-zinc-700 text-[11px] uppercase tracking-wide text-zinc-500">
+            <thead className="border-b border-zinc-700 text-xs uppercase tracking-wide text-zinc-400">
               {c}
             </thead>
           ),
@@ -811,7 +811,7 @@ export function CcAdvisorChat({
                       : "Margus"}
               </p>
               {silentPhase === "sending" ? (
-                <p className="mt-0.5 text-xs text-zinc-500">
+                <p className="mt-0.5 text-xs text-zinc-400">
                   Usually takes a few seconds.
                 </p>
               ) : (
@@ -833,7 +833,7 @@ export function CcAdvisorChat({
                 </div>
               )}
               {silentPhase === "result" && (
-                <p className="mt-1 text-[11px] text-zinc-600">
+                <p className="mt-1 text-xs text-zinc-400">
                   Tap to open chat
                 </p>
               )}
@@ -845,7 +845,7 @@ export function CcAdvisorChat({
                 setSilentPhase("idle");
                 setSilentSummary(null);
               }}
-              className="shrink-0 rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+              className="shrink-0 rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               aria-label="Dismiss"
             >
               <X className="h-3.5 w-3.5" />
@@ -878,7 +878,7 @@ export function CcAdvisorChat({
               <h2 className="text-sm font-semibold text-white">
                 Assistant Margus
               </h2>
-              <p className="truncate text-xs text-zinc-500">
+              <p className="truncate text-xs text-zinc-400">
                 {context.adviseOnly
                   ? "Advise-only · open a sheet to apply changes"
                   : `Chat for ${context.portfolioName}`}
@@ -887,7 +887,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={toggleWide}
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-300"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
               title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >
@@ -908,7 +908,7 @@ export function CcAdvisorChat({
                 className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                   rulesOpen
                     ? "bg-brand/15 text-brand"
-                    : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
                 }`}
                 aria-label="Strategy rules"
                 aria-expanded={rulesOpen}
@@ -924,7 +924,7 @@ export function CcAdvisorChat({
                     <button
                       type="button"
                       onClick={() => setRulesOpen(false)}
-                      className="rounded p-3 text-zinc-500 hover:text-zinc-300 sm:p-0.5"
+                      className="rounded p-3 text-zinc-400 hover:text-zinc-300 sm:p-0.5"
                       aria-label="Close rules"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -936,7 +936,7 @@ export function CcAdvisorChat({
                         key={r.title}
                         className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0"
                       >
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                        <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                           {r.title}
                         </p>
                         <p className="mt-0.5 text-sm font-semibold text-brand">
@@ -948,7 +948,7 @@ export function CcAdvisorChat({
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2.5 border-t border-zinc-800/80 pt-2.5 text-[11px] leading-relaxed text-zinc-600">
+                  <p className="mt-2.5 border-t border-zinc-800/80 pt-2.5 text-xs leading-relaxed text-zinc-400">
                     {ADVICE_DISCLAIMER_SHORT}
                   </p>
                 </div>
@@ -957,14 +957,14 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
               aria-label="Close Margus"
             >
               <X className="h-4 w-4" />
             </button>
           </header>
 
-          <p className="shrink-0 border-b border-zinc-800/60 px-3 py-1.5 text-center text-[11px] leading-snug text-zinc-600">
+          <p className="shrink-0 border-b border-zinc-800/60 px-3 py-1.5 text-center text-xs leading-snug text-zinc-400">
             {ADVICE_DISCLAIMER_SHORT}
           </p>
 
@@ -986,7 +986,7 @@ export function CcAdvisorChat({
                       type="button"
                       disabled={busy}
                       onClick={() => sendMessage({ text: s })}
-                      className="rounded-full border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-300 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
+                      className="rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
                     >
                       {s}
                     </button>
@@ -1039,7 +1039,7 @@ export function CcAdvisorChat({
                       : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
                   }
                 >
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
                     {message.role === "user" ? "You" : "Margus"}
                   </p>
                   {images.length > 0 && (
@@ -1065,7 +1065,7 @@ export function CcAdvisorChat({
                     </div>
                   ) : null}
                   {toolPending && !text && toolNotes.length === 0 ? (
-                    <p className="text-xs text-zinc-500">Running analysis …</p>
+                    <p className="text-xs text-zinc-400">Running analysis …</p>
                   ) : null}
                   {toolNotes.map((note, i) => (
                     <p
@@ -1080,13 +1080,13 @@ export function CcAdvisorChat({
             })}
 
             {busy && (
-              <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Thinking …
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-[11px] uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-xs uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
                 >
                   <Square className="h-2.5 w-2.5 fill-current" />
                   Stop
@@ -1170,7 +1170,7 @@ export function CcAdvisorChat({
                 onPaste={(e) => void onPaste(e)}
                 placeholder="Paste a screenshot or ask Margus …"
                 disabled={busy}
-                className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-brand/50 disabled:opacity-50"
               />
               <button
                 type="submit"

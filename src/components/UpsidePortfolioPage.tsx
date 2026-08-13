@@ -212,7 +212,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
         meta.cls
       )}
     >
@@ -230,13 +230,13 @@ const QUOTE_POLL_MS = 30_000;
 function ReportMeta({ r }: { r: ReportRow }) {
   return (
     <>
-      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+      <p className="text-xs uppercase tracking-wide text-zinc-400">
         {fmtDate(r.report_date)}
       </p>
       <p
         className={cn(
           "text-xs font-semibold tabular-nums",
-          signedTone(r.day_change_dollar ?? 0, "text-zinc-500")
+          signedTone(r.day_change_dollar ?? 0, "text-zinc-400")
         )}
       >
         {currency(r.portfolio_value, 0)}
@@ -287,11 +287,11 @@ function FundStat({
 }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+      <p className="text-xs uppercase tracking-wide text-zinc-400">
         {label}
       </p>
       <p className="mt-0.5 text-sm font-semibold text-zinc-100">{value}</p>
-      {hint && <p className="mt-0.5 text-[11px] text-zinc-500">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
     </div>
   );
 }
@@ -759,7 +759,7 @@ export function UpsidePortfolioPage() {
               </h1>
               <div className="flex items-center gap-2">
                 <span
-                  className="inline-flex items-center gap-1.5 text-[11px] tabular-nums text-zinc-500"
+                  className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
                   title={`Prices refresh automatically every ${QUOTE_POLL_MS / 1000}s while this tab is open`}
                 >
                   {quotesAt != null && (
@@ -788,7 +788,7 @@ export function UpsidePortfolioPage() {
               One decision a day, every trade with a stated thesis, timeline,
               and exit plan.
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-400">
               Day {dayNumber} · started {fund ? fmtDate(fund.inception_date) : "—"}
             </p>
           </div>
@@ -799,7 +799,7 @@ export function UpsidePortfolioPage() {
         </p>
 
         {loading ? (
-          <p className="text-sm text-zinc-500">{loadingMessage}</p>
+          <p className="text-sm text-zinc-400">{loadingMessage}</p>
         ) : error ? (
           <p className="text-sm text-red-400">{error}</p>
         ) : (
@@ -807,7 +807,7 @@ export function UpsidePortfolioPage() {
             <section className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-xs uppercase tracking-wide text-zinc-400">
                     Total value
                   </p>
                   <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
@@ -815,7 +815,7 @@ export function UpsidePortfolioPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-xs uppercase tracking-wide text-zinc-400">
                     Today
                   </p>
                   <p
@@ -829,8 +829,8 @@ export function UpsidePortfolioPage() {
                   {todayPct != null && (
                     <p
                       className={cn(
-                        "text-[11px] tabular-nums",
-                        signedTone(todayPct, "text-zinc-500")
+                        "text-xs tabular-nums",
+                        signedTone(todayPct, "text-zinc-400")
                       )}
                     >
                       {percent(todayPct)}
@@ -838,7 +838,7 @@ export function UpsidePortfolioPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-xs uppercase tracking-wide text-zinc-400">
                     Total return
                   </p>
                   <p
@@ -853,7 +853,7 @@ export function UpsidePortfolioPage() {
                   >
                     {percent(totalReturnPct)}
                   </p>
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="text-xs text-zinc-400">
                     {signedCurrency(totalReturnDollar)} ·{" "}
                     <span className={alphaVsSpy >= 0 ? "text-gain" : "text-loss"}>
                       {alphaVsSpy >= 0 ? "+" : ""}
@@ -862,13 +862,13 @@ export function UpsidePortfolioPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <p className="text-xs uppercase tracking-wide text-zinc-400">
                     Cash
                   </p>
                   <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
                     {currency(cash, 0)}
                   </p>
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="text-xs text-zinc-400">
                     of {currency(fund?.starting_capital ?? 0, 0)} start
                   </p>
                 </div>
@@ -889,9 +889,9 @@ export function UpsidePortfolioPage() {
                   pickerOpen ? (
                     <div className="space-y-2">
                       {myPortfolios === null ? (
-                        <p className="text-xs text-zinc-500">Loading your sheets …</p>
+                        <p className="text-xs text-zinc-400">Loading your sheets …</p>
                       ) : myPortfolios.length === 0 ? (
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-zinc-400">
                           You don&apos;t have any sheets to compare yet.
                         </p>
                       ) : (
@@ -909,7 +909,7 @@ export function UpsidePortfolioPage() {
                                 </option>
                               ))}
                             </select>
-                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
                           </div>
                           <button
                             type="button"
@@ -922,7 +922,7 @@ export function UpsidePortfolioPage() {
                           <button
                             type="button"
                             onClick={() => setPickerOpen(false)}
-                            className="touch-target rounded-md px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
+                            className="touch-target rounded-md px-2 py-1.5 text-xs text-zinc-400 hover:text-zinc-300"
                           >
                             Cancel
                           </button>
@@ -953,7 +953,7 @@ export function UpsidePortfolioPage() {
                       <button
                         type="button"
                         onClick={handleClearBenchmark}
-                        className="touch-target flex shrink-0 items-center justify-center rounded-md text-zinc-500 hover:text-zinc-300"
+                        className="touch-target flex shrink-0 items-center justify-center rounded-md text-zinc-400 hover:text-zinc-300"
                         aria-label="Remove benchmark"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -993,7 +993,7 @@ export function UpsidePortfolioPage() {
                         </span>
                       </div>
                     ) : (
-                      <p className="text-xs text-zinc-500">Calculating …</p>
+                      <p className="text-xs text-zinc-400">Calculating …</p>
                     )}
                   </div>
                 )}
@@ -1098,14 +1098,14 @@ export function UpsidePortfolioPage() {
                             {percent(pnlPct)}
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-zinc-400">
                           {currency(marketValue, 0)} · entered {fmtDate(h.entry_date)} at{" "}
                           {currency(h.cost_basis)}, now {currency(price)}
                         </p>
                         <p className="text-xs leading-relaxed text-zinc-400">
                           {h.thesis}
                         </p>
-                        <div className="flex flex-wrap gap-1.5 text-[11px] text-zinc-500">
+                        <div className="flex flex-wrap gap-1.5 text-xs text-zinc-400">
                           {h.target_timeframe && (
                             <span className="rounded-md bg-zinc-800/80 px-1.5 py-0.5">
                               Timeline: {h.target_timeframe}
@@ -1136,7 +1136,7 @@ export function UpsidePortfolioPage() {
                       className="space-y-2 rounded-2xl border border-brand-mid/30 bg-gradient-to-br from-brand/10 via-[#161618]/70 to-[#161618]/70 p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-[11px] uppercase tracking-wide text-brand-bright">
+                        <p className="text-xs uppercase tracking-wide text-brand-bright">
                           Week of {fmtDate(r.week_ending)}
                         </p>
                         {r.week_return_pct != null && (
@@ -1145,7 +1145,7 @@ export function UpsidePortfolioPage() {
                               {percent(r.week_return_pct)}
                             </span>
                             {r.spy_week_return_pct != null && (
-                              <span className="ml-2 text-zinc-500">
+                              <span className="ml-2 text-zinc-400">
                                 SPY {percent(r.spy_week_return_pct)}
                               </span>
                             )}
@@ -1167,7 +1167,7 @@ export function UpsidePortfolioPage() {
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 px-4 py-6 text-center text-sm text-zinc-500">
+                <p className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 px-4 py-6 text-center text-sm text-zinc-400">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1201,7 +1201,7 @@ export function UpsidePortfolioPage() {
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-zinc-900/40 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
                             aria-hidden
-                            className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-transform group-open:rotate-90"
+                            className="h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform group-open:rotate-90"
                           />
                           <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
                             {r.headline}
@@ -1246,7 +1246,7 @@ export function UpsidePortfolioPage() {
                           {currency(Math.abs(h.realized_pnl ?? 0), 0)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-zinc-500">
+                      <p className="mt-0.5 text-xs text-zinc-400">
                         {fmtDate(h.entry_date)} → {h.closed_at ? fmtDate(h.closed_at) : "—"}
                         {h.exit_reasoning ? ` · ${h.exit_reasoning}` : ""}
                       </p>

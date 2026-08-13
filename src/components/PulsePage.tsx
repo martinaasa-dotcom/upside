@@ -68,7 +68,7 @@ function ActionBadge({ action }: { action: PulseAction }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide",
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
         action === "add" &&
           "border-emerald-500/40 bg-emerald-500/15 text-emerald-200",
         action === "hold" &&
@@ -137,17 +137,17 @@ function PulseCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-base font-semibold text-white">{cashtag(c.ticker)}</span>
             {pinned && (
-              <span className="rounded bg-brand/20 px-1.5 py-0.5 text-[11px] font-medium text-brand-bright">
+              <span className="rounded bg-brand/20 px-1.5 py-0.5 text-xs font-medium text-brand-bright">
                 Your check
               </span>
             )}
             {!c.inBook && (
-              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] text-zinc-400">
+              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">
                 Lookup
               </span>
             )}
             {c.needsAttention && (
-              <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[11px] font-medium text-rose-200">
+              <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-xs font-medium text-rose-200">
                 Down ≥5%
               </span>
             )}
@@ -164,10 +164,10 @@ function PulseCard({
               )}
               {formatMovePct(c.effectivePct)}
             </span>
-            <span className="text-xs text-zinc-500">{c.moveLabel}</span>
+            <span className="text-xs text-zinc-400">{c.moveLabel}</span>
             {loading && check && (
               <span
-                className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500"
+                className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-zinc-400"
                 title="Refreshing in the background. This result stays on screen until the new one lands"
               >
                 <RefreshCw className="h-2.5 w-2.5 animate-spin" />
@@ -176,20 +176,20 @@ function PulseCard({
             )}
           </div>
           {c.inBook ? (
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-400">
               {currency(c.price)} · {percent(c.bookPct)} of book ·{" "}
               {currency(c.currentValue)} ·{" "}
-              <span className={signedTone(c.todayDollar, "text-zinc-500")}>
+              <span className={signedTone(c.todayDollar, "text-zinc-400")}>
                 {signedCurrency(c.todayDollar)}
               </span>{" "}
               today · lifetime{" "}
-              <span className={signedTone(c.roiPct, "text-zinc-500")}>
+              <span className={signedTone(c.roiPct, "text-zinc-400")}>
                 {percent(c.roiPct)}
               </span>{" "}
               · {c.portfolios.join(", ")}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-400">
               {currency(c.price)} · not in your book
             </p>
           )}
@@ -197,7 +197,7 @@ function PulseCard({
         {check && (
           <div className="flex flex-wrap items-center gap-1.5">
             {action && <ActionBadge action={action} />}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-[11px] font-medium text-zinc-200">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
               <StatusIcon status={status} />
               {statusLabel(status)}
             </span>
@@ -221,7 +221,7 @@ function PulseCard({
       </div>
 
       {check && checkedAt && (
-        <p className="mt-1.5 text-[11px] text-zinc-600">
+        <p className="mt-1.5 text-xs text-zinc-400">
           Checked {formatRelativeTime(checkedAt)}
         </p>
       )}
@@ -237,7 +237,7 @@ function PulseCard({
                 className="text-xs leading-snug text-zinc-400 hover:text-brand-bright"
               >
                 {h.title}
-                <span className="text-zinc-600"> · {h.publisher}</span>
+                <span className="text-zinc-400"> · {h.publisher}</span>
               </a>
             </li>
           ))}
@@ -245,7 +245,7 @@ function PulseCard({
       )}
 
       {loading && !check ? (
-        <p className="mt-3 text-sm text-zinc-500">Pulling news & checking thesis …</p>
+        <p className="mt-3 text-sm text-zinc-400">Pulling news & checking thesis …</p>
       ) : check ? (
         <div className="mt-3 space-y-2 text-sm leading-relaxed text-zinc-300">
           <ul className="space-y-1 text-zinc-100">
@@ -280,7 +280,7 @@ function PulseCard({
       ) : null}
 
       {convictionThesis ? (
-        <p className="mt-3 border-t border-zinc-800/80 pt-2 text-xs text-zinc-500">
+        <p className="mt-3 border-t border-zinc-800/80 pt-2 text-xs text-zinc-400">
           Your thesis: {convictionThesis}
         </p>
       ) : null}
@@ -642,7 +642,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
       <section className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-bright">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
               Thesis Pulse
             </p>
             <h2 className="mt-1 text-lg font-semibold text-white">
@@ -654,7 +654,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               background, and your check pins to the top with a ticker-only
               update when needed.
             </p>
-            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-600">
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-400">
               {ADVICE_DISCLAIMER_LONG}
             </p>
           </div>
@@ -671,7 +671,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
         <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
@@ -682,7 +682,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                 }
               }}
               placeholder="Type ticker: BMNR, RKLB, NVDA …"
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-brand/50"
               autoComplete="off"
             />
             {suggestions.length > 0 && searchInput.trim().length > 0 && (
@@ -695,7 +695,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                       onClick={() => void checkTicker(t)}
                     >
                       {t}
-                      <span className="ml-2 text-xs text-zinc-500">in book</span>
+                      <span className="ml-2 text-xs text-zinc-400">in book</span>
                     </button>
                   </li>
                 ))}
@@ -717,7 +717,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             <button
               type="button"
               onClick={() => setPinnedTicker(null)}
-              className="inline-flex items-center gap-0.5 text-zinc-500 hover:text-zinc-300"
+              className="inline-flex items-center gap-0.5 text-zinc-400 hover:text-zinc-300"
             >
               <X className="h-3 w-3" /> Clear
             </button>
@@ -725,7 +725,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         )}
 
         {fearGreed && (
-          <p className="mt-3 text-xs text-zinc-500">
+          <p className="mt-3 text-xs text-zinc-400">
             Market mood: Fear &amp; Greed{" "}
             <span
               className={cn(
@@ -782,7 +782,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
       {candidates.length === 0 && !pinnedCandidate ? (
         <section className="rounded-xl border border-zinc-800 bg-zinc-950/30 px-4 py-8 text-center">
           <p className="text-sm text-zinc-300">No positions in the book yet.</p>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-400">
             Type a ticker above to run a one-off check.
           </p>
         </section>
@@ -814,7 +814,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 {attention.length > 0
                   ? "Rest of big book"
                   : `Big book · top ${plural(rest.length, "position")}`}
@@ -841,7 +841,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
       )}
 
       {lastGeneratedAt && (
-        <p className="text-center text-[11px] text-zinc-600">
+        <p className="text-center text-xs text-zinc-400">
           Last checked{" "}
           {new Date(lastGeneratedAt).toLocaleString(undefined, {
             dateStyle: "medium",

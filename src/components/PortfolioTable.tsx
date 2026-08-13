@@ -336,7 +336,7 @@ export function PortfolioTable({
           </button>
         )}
       </div>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-400">
         Screenshot or CSV drops every row in at once. Pick whichever&apos;s
         easier to get your hands on.
       </p>
@@ -363,10 +363,10 @@ export function PortfolioTable({
                   type="button"
                   onClick={() => onDisplayCurrencyChange(code)}
                   className={cn(
-                    "rounded-md px-2 py-1 text-[11px] font-semibold transition",
+                    "rounded-md px-2 py-1 text-xs font-semibold transition",
                     displayCurrency === code
                       ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      : "text-zinc-400 hover:text-zinc-300"
                   )}
                 >
                   {code}
@@ -381,7 +381,7 @@ export function PortfolioTable({
               className="flex items-center gap-2 rounded-lg px-2 py-1"
               title="Move since yesterday's close, across priced positions. Cash is excluded."
             >
-              <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Today
               </span>
               <span
@@ -395,7 +395,7 @@ export function PortfolioTable({
               {today.pct !== null && (
                 <span
                   className={cn(
-                    "text-[11px] font-medium tabular-nums",
+                    "text-xs font-medium tabular-nums",
                     signedTone(today.pct)
                   )}
                 >
@@ -409,7 +409,7 @@ export function PortfolioTable({
               type="button"
               onClick={onImportCsv}
               title="Import / update holdings from a CSV file"
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-zinc-300"
               aria-label="Import CSV"
             >
               <FileUp className="h-3.5 w-3.5" />
@@ -421,7 +421,7 @@ export function PortfolioTable({
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-left transition hover:bg-zinc-900"
             title="Edit cash (stored in USD)"
           >
-            <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Cash
             </span>
             <span
@@ -464,7 +464,7 @@ export function PortfolioTable({
                       h.ticker
                     )}
                   </p>
-                  <p className="text-sm text-zinc-500">
+                  <p className="text-sm text-zinc-400">
                     {percent(h.pctOfTotal)} of book
                   </p>
                   {h.quote && (
@@ -482,14 +482,14 @@ export function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded p-3.5 text-zinc-500 hover:bg-zinc-800 hover:text-rose-400"
+                  className="rounded p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-rose-400"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <label className="grid gap-1 text-zinc-500">
+                <label className="grid gap-1 text-zinc-400">
                   Shares
                   <InlineNumber
                     value={h.shares}
@@ -499,7 +499,7 @@ export function PortfolioTable({
                     className="w-full"
                   />
                 </label>
-                <label className="grid gap-1 text-zinc-500">
+                <label className="grid gap-1 text-zinc-400">
                   Buy
                   <InlineNumber
                     value={h.buy_price}
@@ -509,25 +509,25 @@ export function PortfolioTable({
                   />
                 </label>
                 <div>
-                  <p className="text-zinc-500">Price</p>
+                  <p className="text-zinc-400">Price</p>
                   <p className="tabular-nums font-semibold text-white">
                     {usd(h.quote?.price ?? h.buy_price)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-500">Value</p>
+                  <p className="text-zinc-400">Value</p>
                   <p className="tabular-nums text-zinc-100">
                     {money(h.currentValue)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-500">ROI %</p>
+                  <p className="text-zinc-400">ROI %</p>
                   <p className={cn("tabular-nums font-medium", signedTone(h.roiPct))}>
                     {percent(h.roiPct)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-500">ROI $</p>
+                  <p className="text-zinc-400">ROI $</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
@@ -585,7 +585,7 @@ export function PortfolioTable({
           </div>
         ) : (
           <FluidTable template={TEMPLATE}>
-            <FluidRow className="border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            <FluidRow className="border-zinc-800 text-xs font-medium uppercase tracking-wide text-zinc-400">
               {COLUMNS.map((col) => (
                 <div key={col.label || "actions"} className={cellBase}>
                   {col.key ? (
@@ -700,13 +700,13 @@ export function PortfolioTable({
                     "tabular-nums font-medium",
                     h.quote
                       ? signedTone(h.quote.changePercent)
-                      : "text-zinc-600"
+                      : "text-zinc-400"
                   )}
                 >
                   {h.quote ? (
                     <span className="flex flex-col leading-tight">
                       <span>{percent(h.quote.changePercent)}</span>
-                      <span className="text-[11px] font-normal opacity-70">
+                      <span className="text-xs font-normal opacity-70">
                         {money(rowToday(h), 0)}
                       </span>
                     </span>
@@ -718,7 +718,7 @@ export function PortfolioTable({
                   <button
                     type="button"
                     onClick={() => onDelete(h.id)}
-                    className="rounded p-1 text-zinc-600 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+                    className="rounded p-1 text-zinc-400 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
                     aria-label={`Delete ${h.ticker}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -764,13 +764,13 @@ export function PortfolioTable({
                 className={cn(
                   cellBase,
                   "py-2.5 tabular-nums",
-                  today.priced > 0 ? signedTone(today.dollar) : "text-zinc-600"
+                  today.priced > 0 ? signedTone(today.dollar) : "text-zinc-400"
                 )}
               >
                 {today.priced > 0 ? (
                   <span className="flex flex-col leading-tight">
                     <span>{today.pct !== null ? percent(today.pct) : "—"}</span>
-                    <span className="text-[11px] font-normal opacity-70">
+                    <span className="text-xs font-normal opacity-70">
                       {money(today.dollar, 0)}
                     </span>
                   </span>

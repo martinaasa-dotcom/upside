@@ -207,7 +207,7 @@ export function PortfolioTabs({
         {mobileSummary && (
           <div className="flex items-center justify-between gap-3 border-b border-zinc-800/70 pb-2 md:hidden">
             <div className="min-w-0">
-              <p className="truncate text-[10px] uppercase tracking-wide text-zinc-500">
+              <p className="truncate text-xs uppercase tracking-wide text-zinc-400">
                 {mobileSummary.title}
               </p>
               <p className="truncate text-sm font-semibold tabular-nums text-white">
@@ -215,7 +215,7 @@ export function PortfolioTabs({
               </p>
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+              <p className="text-xs uppercase tracking-wide text-zinc-400">
                 Today
               </p>
               <p
@@ -226,7 +226,7 @@ export function PortfolioTabs({
               >
                 {mobileSummary.todayValue}
                 {mobileSummary.todayPct ? (
-                  <span className="ml-1 text-[11px] font-normal opacity-80">
+                  <span className="ml-1 text-xs font-normal opacity-80">
                     {mobileSummary.todayPct}
                   </span>
                 ) : null}
@@ -238,7 +238,7 @@ export function PortfolioTabs({
         {/* App modes — one segmented control, equal cells (Lab isn't tiny) */}
         <div className="flex shrink-0 items-end gap-2 md:min-w-0">
           <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="mb-1 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:block">
+            <p className="mb-1 hidden text-xs font-medium uppercase tracking-[0.14em] text-zinc-400 sm:block">
               Workspace
             </p>
             <div
@@ -273,7 +273,7 @@ export function PortfolioTabs({
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                    <span className="max-w-full truncate text-[9px] leading-none sm:hidden">
+                    <span className="max-w-full truncate text-xs leading-none sm:hidden">
                       {shortLabel}
                     </span>
                     <span className="hidden truncate text-[13px] sm:inline">
@@ -291,7 +291,7 @@ export function PortfolioTabs({
                 setMenu(null);
                 onOpenCommunities();
               }}
-              className="touch-target inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg border border-brand-mid/45 bg-brand/15 px-2.5 text-[11px] font-semibold text-brand-bright transition hover:bg-brand/25 sm:px-3 sm:text-[13px]"
+              className="touch-target inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg border border-brand-mid/45 bg-brand/15 px-2.5 text-xs font-semibold text-brand-bright transition hover:bg-brand/25 sm:px-3 sm:text-[13px]"
               aria-label="Communities"
             >
               <Users className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -302,7 +302,7 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 hidden text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500 sm:block">
+          <p className="mb-1 hidden text-xs font-medium uppercase tracking-[0.14em] text-zinc-400 sm:block">
             Sheets
           </p>
           <div
@@ -340,7 +340,7 @@ export function PortfolioTabs({
                     "touch-target relative shrink-0 snap-start px-3 text-[13px] transition",
                     active
                       ? "font-semibold text-white"
-                      : "text-zinc-500 hover:text-zinc-200"
+                      : "text-zinc-400 hover:text-zinc-200"
                   )}
                 >
                   <span className="flex h-full items-center gap-1.5 whitespace-nowrap">
@@ -395,7 +395,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="inline-flex shrink-0 items-center gap-1 px-2.5 text-[12px] text-zinc-500 hover:text-zinc-300"
+                className="inline-flex shrink-0 items-center gap-1 px-2.5 text-[12px] text-zinc-400 hover:text-zinc-300"
                 aria-label="Add sheet"
               >
                 <Plus className="h-3.5 w-3.5" />

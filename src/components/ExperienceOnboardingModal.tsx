@@ -86,7 +86,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
         {step !== 3 ? (
           <>
             <div className="mb-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-bright">
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
                 Quick question · {step}/2
               </p>
               <h2 className="mt-1 text-lg font-semibold text-white">
@@ -94,7 +94,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   ? "How would you describe yourself as an investor?"
                   : "Have you used covered calls or other options strategies?"}
               </h2>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-400">
                 This just simplifies what you see. Nothing is locked, and you can change it anytime in Account.
               </p>
             </div>
@@ -138,7 +138,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="mt-3 text-xs text-zinc-500 hover:text-zinc-300"
+                className="mt-3 text-xs text-zinc-400 hover:text-zinc-300"
               >
                 ← Back
               </button>

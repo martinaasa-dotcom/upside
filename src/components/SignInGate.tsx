@@ -41,12 +41,12 @@ export function SignInGate({ children }: Props) {
   if (!needsAuth) return <>{children}</>;
   if (!ready) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-500">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-400">
         <UpsideLogo
           variant="mark"
           className="h-10 w-10 animate-pulse opacity-70"
         />
-        <p className="text-sm text-zinc-500">Checking sign-in …</p>
+        <p className="text-sm text-zinc-400">Checking sign-in …</p>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export function SignInGate({ children }: Props) {
           <p className="signin-rise-2 max-w-[17rem] text-[15px] font-medium leading-snug text-zinc-200">
             Track your portfolio, and watch an AI manage its own $50k, in the open.
           </p>
-          <p className="signin-rise-2 mt-2.5 max-w-[15.5rem] text-[13px] leading-relaxed text-zinc-500">
+          <p className="signin-rise-2 mt-2.5 max-w-[15.5rem] text-[13px] leading-relaxed text-zinc-400">
             Sign in to open the portfolios you own.
           </p>
 
@@ -117,11 +117,11 @@ export function SignInGate({ children }: Props) {
             </p>
           )}
 
-          <p className="signin-rise-4 mt-8 text-[11px] leading-relaxed text-zinc-600">
+          <p className="signin-rise-4 mt-8 text-xs leading-relaxed text-zinc-400">
             Communities stay read-only for everyone else.
           </p>
 
-          <p className="signin-rise-4 mt-3 text-[11px] leading-relaxed text-zinc-600">
+          <p className="signin-rise-4 mt-3 text-xs leading-relaxed text-zinc-400">
             By continuing you agree to the{" "}
             <Link href="/terms" className="underline hover:text-zinc-400">
               Terms

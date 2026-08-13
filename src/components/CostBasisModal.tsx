@@ -44,7 +44,7 @@ export function CostBasisModal({
             <h3 className="text-base font-semibold text-white">
               Cost basis pass
             </h3>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-400">
               Import used market marks as cost. Put in your real average buy
               price (USD) and apply, then ROI actually means something.
             </p>
@@ -66,7 +66,7 @@ export function CostBasisModal({
             >
               <span>
                 <span className="font-semibold text-white">{cashtag(r.ticker)}</span>
-                <span className="ml-2 text-zinc-600">
+                <span className="ml-2 text-zinc-400">
                   {r.shares.toLocaleString("en-US")} sh · mark≈$
                   {r.suggestedBuy.toFixed(2)}
                 </span>

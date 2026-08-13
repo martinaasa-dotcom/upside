@@ -320,12 +320,12 @@ export function LabSheet({
           <FlaskConical className="h-4 w-4 text-brand" />
           <h2 className="text-sm font-semibold text-white">Lab</h2>
         </div>
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-zinc-400">
           Everything analytical about your book in one place.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex min-h-8 items-center gap-2">
-            <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
               Scope
             </span>
             <select
@@ -345,7 +345,7 @@ export function LabSheet({
               ))}
             </select>
           </div>
-          <span className="min-w-0 text-[11px] text-zinc-600">
+          <span className="min-w-0 text-xs text-zinc-400">
             {scopeApplies
               ? `What-ifs run on ${scopeLabel}`
               : "Scope unused on this tool"}
@@ -413,7 +413,7 @@ export function LabSheet({
                     <p className="text-sm font-semibold text-white">
                       Diversification
                     </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
+                    <p className="mt-0.5 text-xs text-zinc-400">
                       {personality.diversificationBand.description} ·{" "}
                       {scopeLabel}
                     </p>
@@ -421,9 +421,9 @@ export function LabSheet({
                   <div className="text-right">
                     <p className="text-2xl font-semibold tabular-nums text-white">
                       {personality.diversificationScore}
-                      <span className="text-sm text-zinc-600">/100</span>
+                      <span className="text-sm text-zinc-400">/100</span>
                     </p>
-                    <p className="text-[11px] font-medium text-brand-bright">
+                    <p className="text-xs font-medium text-brand-bright">
                       {personality.diversificationBand.label}
                     </p>
                   </div>
@@ -440,7 +440,7 @@ export function LabSheet({
                       }}
                     />
                   </div>
-                  <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+                  <div className="mt-1 flex justify-between text-xs text-zinc-400">
                     <span>0 · all in one name</span>
                     <span>100 · index-broad</span>
                   </div>
@@ -519,7 +519,7 @@ export function LabSheet({
                   <p className="text-sm font-semibold text-white">
                     What you&apos;re actually betting on
                   </p>
-                  <p className="mt-0.5 mb-4 text-xs text-zinc-500">
+                  <p className="mt-0.5 mb-4 text-xs text-zinc-400">
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
                   </p>
@@ -587,7 +587,7 @@ export function LabSheet({
                 before it costs you any. Each name moves by how exposed it is,
                 not all by the same amount.
               </p>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-400">
                 Showing: {SHOCKS.find((s) => s.id === shock)?.tagline} ·{" "}
                 {scopeLabel}
               </p>
@@ -613,19 +613,19 @@ export function LabSheet({
           </div>
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div>
-              <p className="text-zinc-500">Live</p>
+              <p className="text-zinc-400">Live</p>
               <p className="tabular-nums text-white">
                 {currency(shockTotals.live)}
               </p>
             </div>
             <div>
-              <p className="text-zinc-500">Shocked</p>
+              <p className="text-zinc-400">Shocked</p>
               <p className="tabular-nums text-white">
                 {currency(shockTotals.shocked)}
               </p>
             </div>
             <div>
-              <p className="text-zinc-500">Delta</p>
+              <p className="text-zinc-400">Delta</p>
               <p
                 className={cn(
                   "tabular-nums font-medium",
@@ -639,7 +639,7 @@ export function LabSheet({
           {shock !== "none" && (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[36rem] text-left text-xs">
-                <thead className="text-zinc-500">
+                <thead className="text-zinc-400">
                   <tr className="border-b border-zinc-800">
                     <th className="py-1.5 pr-2 font-medium">Ticker</th>
                     <th className="py-1.5 pr-2 font-medium">Theme</th>
@@ -655,14 +655,14 @@ export function LabSheet({
                       <td className="py-1.5 pr-2 font-medium text-white">
                         {cashtag(r.ticker)}
                       </td>
-                      <td className="max-w-[10rem] truncate py-1.5 pr-2 text-zinc-500">
+                      <td className="max-w-[10rem] truncate py-1.5 pr-2 text-zinc-400">
                         {r.label}
                       </td>
                       <td
                         className={cn(
                           "py-1.5 pr-2 tabular-nums",
                           r.movePct === 0
-                            ? "text-zinc-500"
+                            ? "text-zinc-400"
                             : r.movePct > 0
                               ? "text-gain"
                               : "text-loss"
@@ -680,7 +680,7 @@ export function LabSheet({
                         className={cn(
                           "py-1.5 tabular-nums",
                           r.delta === 0
-                            ? "text-zinc-500"
+                            ? "text-zinc-400"
                             : r.delta > 0
                               ? "text-gain"
                               : "text-loss"
@@ -692,7 +692,7 @@ export function LabSheet({
                   ))}
                   {shockRows.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-3 text-zinc-500">
+                      <td colSpan={6} className="py-3 text-zinc-400">
                         No holdings in this scope.
                       </td>
                     </tr>
@@ -720,7 +720,7 @@ export function LabSheet({
             </p>
           </div>
           {corrHeat.tickers.length < 2 ? (
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-400">
               Need at least two names with price history to compare.
             </p>
           ) : (
@@ -730,14 +730,14 @@ export function LabSheet({
              * matrix takes its natural width and the list fills the rest. */
             <div className="grid gap-5 lg:grid-cols-[auto_1fr] lg:items-start">
               <div className="min-w-0 overflow-x-auto">
-                <table className="border-collapse text-[11px]">
+                <table className="border-collapse text-xs">
                   <thead>
                     <tr>
                       <th className="p-1" />
                       {corrHeat.tickers.map((t) => (
                         <th
                           key={t}
-                          className="p-1 text-[11px] font-medium text-zinc-500"
+                          className="p-1 text-xs font-medium text-zinc-400"
                         >
                           {cashtag(t)}
                         </th>
@@ -747,7 +747,7 @@ export function LabSheet({
                   <tbody>
                     {corrHeat.tickers.map((row, i) => (
                       <tr key={row}>
-                        <td className="whitespace-nowrap p-1 pr-2 text-[11px] font-medium text-zinc-400">
+                        <td className="whitespace-nowrap p-1 pr-2 text-xs font-medium text-zinc-400">
                           {cashtag(row)}
                         </td>
                         {corrHeat.grid[i]!.map((c, j) => (
@@ -780,7 +780,7 @@ export function LabSheet({
                   </tbody>
                 </table>
                 {/* The two colours were never explained anywhere. */}
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-500">
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
                   <span className="flex items-center gap-1.5">
                     <span
                       aria-hidden
@@ -802,7 +802,7 @@ export function LabSheet({
               </div>
 
               <div className="min-w-0">
-                <p className="mb-2 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
                   Tightest pairs
                 </p>
                 <ul className="space-y-1">
@@ -851,7 +851,7 @@ function StatCell({
 }) {
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2.5">
-      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+      <p className="text-xs uppercase tracking-wide text-zinc-400">
         {label}
       </p>
       <p
@@ -864,7 +864,7 @@ function StatCell({
       >
         {value}
       </p>
-      {hint && <p className="mt-0.5 text-[11px] text-zinc-500">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
     </div>
   );
 }
@@ -914,11 +914,11 @@ function AllocCard({
           );
         })}
         {slices.length === 0 && (
-          <p className="text-sm text-zinc-500">No equity to allocate.</p>
+          <p className="text-sm text-zinc-400">No equity to allocate.</p>
         )}
       </div>
       {flagAbovePct != null && (
-        <p className="mt-3 text-[11px] text-zinc-600">
+        <p className="mt-3 text-xs text-zinc-400">
           Amber marks anything at or above {Math.round(flagAbovePct * 100)}% of
           the book.
         </p>

@@ -96,7 +96,7 @@ export function HoldingModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-white">Add holding</h3>
-            <p className="text-xs text-zinc-500">{portfolioName}</p>
+            <p className="text-xs text-zinc-400">{portfolioName}</p>
           </div>
           <button
             type="button"
@@ -122,7 +122,7 @@ export function HoldingModal({
               placeholder="NBIS or VWCE.DE / VUSA.L"
               required
             />
-            <span className="text-[11px] leading-relaxed text-zinc-600">
+            <span className="text-xs leading-relaxed text-zinc-400">
               US: bare symbol. London:{" "}
               <span className="text-zinc-400">TICKER.L</span> or{" "}
               <span className="text-zinc-400">LON:TICKER</span>. Xetra:{" "}

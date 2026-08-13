@@ -32,7 +32,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
         "inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition sm:px-2.5",
         active
           ? "bg-brand/20 text-brand-bright shadow-sm shadow-black/20"
-          : "text-zinc-500 hover:text-zinc-300"
+          : "text-zinc-400 hover:text-zinc-300"
       )}
     >
       <Icon className="h-3.5 w-3.5" />

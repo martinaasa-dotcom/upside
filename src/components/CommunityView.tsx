@@ -979,14 +979,14 @@ export function CommunityView({ communityId }: Props) {
                   {community.visibility === "public" ? (
                     <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
                   ) : (
-                    <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                    <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                   )}
                 </span>
               )}
               {isAdmin && joinRequests.length > 0 && (
                 <span
                   title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-                  className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300"
+                  className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs font-semibold text-amber-300"
                 >
                   {joinRequests.length}
                 </span>
@@ -996,7 +996,7 @@ export function CommunityView({ communityId }: Props) {
                   type="button"
                   onClick={openSettings}
                   title="Community settings"
-                  className="shrink-0 rounded-lg p-3.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
+                  className="shrink-0 rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
                 >
                   <Settings className="h-4 w-4" />
                 </button>
@@ -1007,7 +1007,7 @@ export function CommunityView({ communityId }: Props) {
 
         <main className="mx-auto max-w-6xl space-y-8 px-4 py-6">
           {loading && (
-            <p className="text-sm text-zinc-500">Loading community …</p>
+            <p className="text-sm text-zinc-400">Loading community …</p>
           )}
           {error && (
             <p className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-300">
@@ -1018,7 +1018,7 @@ export function CommunityView({ communityId }: Props) {
           {!loading && !selectedOwnerId && (
             <>
               <section className="space-y-3">
-                <p className="text-xs uppercase tracking-wide text-zinc-500">
+                <p className="text-xs uppercase tracking-wide text-zinc-400">
                   Community overview · live read-only
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -1116,7 +1116,7 @@ export function CommunityView({ communityId }: Props) {
                                 <p className="truncate text-sm font-semibold text-white">
                                   {m.name}
                                   {m.isYou && (
-                                    <span className="ml-1.5 text-xs font-normal text-zinc-500">
+                                    <span className="ml-1.5 text-xs font-normal text-zinc-400">
                                       (you)
                                     </span>
                                   )}
@@ -1183,7 +1183,7 @@ export function CommunityView({ communityId }: Props) {
                                 </div>
                                 <div>
                                   <div className="flex items-center justify-between gap-2 text-xs">
-                                    <span className="inline-flex items-center gap-1 text-zinc-500">
+                                    <span className="inline-flex items-center gap-1 text-zinc-400">
                                       <Target className="h-3 w-3 shrink-0" />
                                       {m.milestone.next != null ? (
                                         <>
@@ -1197,7 +1197,7 @@ export function CommunityView({ communityId }: Props) {
                                       )}
                                     </span>
                                     {m.milestone.next != null && (
-                                      <span className="tabular-nums text-zinc-500">
+                                      <span className="tabular-nums text-zinc-400">
                                         {Math.round(m.milestone.progress * 100)}%
                                         there
                                       </span>
@@ -1214,7 +1214,7 @@ export function CommunityView({ communityId }: Props) {
                                     </div>
                                   )}
                                 </div>
-                                <div className="space-y-1.5 rounded-lg border border-zinc-800/60 bg-zinc-950/40 p-2.5 text-[11px] leading-relaxed">
+                                <div className="space-y-1.5 rounded-lg border border-zinc-800/60 bg-zinc-950/40 p-2.5 text-xs leading-relaxed">
                                   <p className="flex gap-1.5 text-emerald-300/90">
                                     <Shield className="mt-0.5 h-3 w-3 shrink-0" />
                                     <span>{m.personality.archetype.strength}</span>
@@ -1263,11 +1263,11 @@ export function CommunityView({ communityId }: Props) {
                             </div>
                             <p className="mt-1.5 truncate text-sm font-medium text-brand-bright">
                               {a.winner}{" "}
-                              <span className="font-normal text-zinc-500">
+                              <span className="font-normal text-zinc-400">
                                 · {a.stat}
                               </span>
                             </p>
-                            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+                            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                               {a.description}
                             </p>
                           </div>
@@ -1340,7 +1340,7 @@ export function CommunityView({ communityId }: Props) {
                                   ) : i === 2 ? (
                                     <Medal className="mx-auto h-4 w-4 text-amber-700" />
                                   ) : (
-                                    <span className="text-xs text-zinc-600">
+                                    <span className="text-xs text-zinc-400">
                                       {i + 1}
                                     </span>
                                   )}
@@ -1348,7 +1348,7 @@ export function CommunityView({ communityId }: Props) {
                                 <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
                                   {m.name}
                                   {m.isYou && (
-                                    <span className="ml-1.5 text-xs text-zinc-500">
+                                    <span className="ml-1.5 text-xs text-zinc-400">
                                       (you)
                                     </span>
                                   )}
@@ -1364,7 +1364,7 @@ export function CommunityView({ communityId }: Props) {
                                   {pct != null ? percent(pct) : "—"}
                                 </span>
                                 {leaderboardRange === "today" && (
-                                  <span className="hidden shrink-0 text-xs tabular-nums text-zinc-500 sm:inline">
+                                  <span className="hidden shrink-0 text-xs tabular-nums text-zinc-400 sm:inline">
                                     {signedCurrency(m.todayDollar)}
                                   </span>
                                 )}
@@ -1400,7 +1400,7 @@ export function CommunityView({ communityId }: Props) {
                             <span className="text-sm font-semibold text-white">
                               {cashtag(t.ticker)}
                             </span>
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-xs text-zinc-400">
                               {currency(t.currentValue, 0)}
                             </span>
                             {t.todayPct != null && (
@@ -1417,7 +1417,7 @@ export function CommunityView({ communityId }: Props) {
                             )}
                             {t.portfolios.length > 1 && (
                               <span
-                                className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright"
+                                className="rounded-full bg-brand/15 px-1.5 py-0.5 text-xs font-medium text-brand-bright"
                                 title={`Held in ${t.portfolios.join(", ")}`}
                               >
                                 ×{t.portfolios.length} books
@@ -1508,7 +1508,7 @@ export function CommunityView({ communityId }: Props) {
                     </div>
                     <ul className="space-y-3">
                       {communityFunFacts.length === 0 ? (
-                        <li className="text-sm text-zinc-500">
+                        <li className="text-sm text-zinc-400">
                           Not enough data yet. Check back once books load.
                         </li>
                       ) : (
@@ -1530,7 +1530,7 @@ export function CommunityView({ communityId }: Props) {
                 <>
                   <section className="space-y-3">
                     <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
-                      <Users className="h-4 w-4 text-zinc-500" />
+                      <Users className="h-4 w-4 text-zinc-400" />
                       Members
                     </h2>
                     <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
@@ -1581,13 +1581,13 @@ export function CommunityView({ communityId }: Props) {
                               <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
                                 {profileName(m.user_id)}
                                 {m.is_you && (
-                                  <span className="text-xs text-zinc-500">
+                                  <span className="text-xs text-zinc-400">
                                     (you)
                                   </span>
                                 )}
                                 {personality && (
                                   <span
-                                    className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
+                                    className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand-bright"
                                     title={personality.whyThisAnimal}
                                   >
                                     <span aria-hidden>
@@ -1603,11 +1603,11 @@ export function CommunityView({ communityId }: Props) {
                                 </div>
                               ) : null}
                               {emails.length > 1 ? (
-                                <div className="text-xs text-zinc-500">
+                                <div className="text-xs text-zinc-400">
                                   {emails.join(" · ")}
                                 </div>
                               ) : null}
-                              <div className="text-xs text-zinc-500">
+                              <div className="text-xs text-zinc-400">
                                 {m.role}
                                 {" · "}
                                 {sheets.length} portfolio
@@ -1713,11 +1713,11 @@ export function CommunityView({ communityId }: Props) {
                                 </span>
                               </div>
                               {p.emails.length ? (
-                                <div className="text-xs text-zinc-500">
+                                <div className="text-xs text-zinc-400">
                                   {p.emails.join(" · ")}
                                 </div>
                               ) : null}
-                              <div className="text-xs text-zinc-500">
+                              <div className="text-xs text-zinc-400">
                                 {sheets.length} portfolio
                                 {sheets.length === 1 ? "" : "s"}
                                 {" · "}
@@ -1749,11 +1749,11 @@ export function CommunityView({ communityId }: Props) {
                       <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
                         <UserCheck className="h-4 w-4 text-amber-400" />
                         Join requests
-                        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
+                        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs font-semibold text-amber-300">
                           {joinRequests.length}
                         </span>
                       </h2>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-zinc-400">
                         This community is public, so anyone can ask to join,
                         but nothing happens until you approve them here.
                       </p>
@@ -1767,7 +1767,7 @@ export function CommunityView({ communityId }: Props) {
                               <p className="truncate text-sm text-zinc-200">
                                 {r.profile?.display_name ?? r.profile?.email ?? "Unknown"}
                               </p>
-                              <p className="truncate text-xs text-zinc-500">
+                              <p className="truncate text-xs text-zinc-400">
                                 {r.profile?.email}
                               </p>
                             </div>
@@ -1800,7 +1800,7 @@ export function CommunityView({ communityId }: Props) {
                       <h2 className="text-sm font-medium text-zinc-200">
                         Admin · invite
                       </h2>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-zinc-400">
                         Invites join the community; members share their whole
                         book read-only.
                       </p>
@@ -1902,7 +1902,7 @@ export function CommunityView({ communityId }: Props) {
                     )}
                   >
                     All books
-                    <span className="ml-1.5 text-zinc-500">
+                    <span className="ml-1.5 text-zinc-400">
                       {ownerPortfolios.length}
                     </span>
                   </button>
@@ -2024,7 +2024,7 @@ export function CommunityView({ communityId }: Props) {
               <label className="block text-xs font-medium text-zinc-400">
                 Visibility
               </label>
-              <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                 {community?.visibility === "public"
                   ? "Public: anyone signed in can find this community and ask to join. You still approve every request."
                   : "Private: invite-only. No one can find or join without a link."}
@@ -2060,7 +2060,7 @@ export function CommunityView({ communityId }: Props) {
                 <p className="text-xs font-semibold text-rose-300">
                   Danger zone
                 </p>
-                <p className="mt-1 text-[11px] leading-relaxed text-rose-300/70">
+                <p className="mt-1 text-xs leading-relaxed text-rose-300/70">
                   Deleting the community removes it for every member. Their
                   own portfolios and holdings are never affected.
                 </p>
@@ -2095,7 +2095,7 @@ export function CommunityView({ communityId }: Props) {
                 <h3 className="text-base font-semibold text-white">
                   The power animal field guide
                 </h3>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-zinc-400">
                   Every book gets scored on diversification and risk, then
                   matched to whichever archetype fits best. A fun lens, not
                   an investing verdict.
@@ -2123,13 +2123,13 @@ export function CommunityView({ communityId }: Props) {
                       <p className="text-sm font-semibold text-white">
                         {a.animal}
                       </p>
-                      <p className="text-[11px] text-zinc-500">{a.criteria}</p>
+                      <p className="text-xs text-zinc-400">{a.criteria}</p>
                     </div>
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-400">
                     {a.vibe}
                   </p>
-                  <div className="mt-2 space-y-1 text-[11px] leading-relaxed">
+                  <div className="mt-2 space-y-1 text-xs leading-relaxed">
                     <p className="flex gap-1.5 text-emerald-300/90">
                       <Shield className="mt-0.5 h-3 w-3 shrink-0" />
                       <span>{a.strength}</span>
@@ -2165,9 +2165,9 @@ function ScoreBar({
   return (
     <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 p-2.5">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[11px] text-zinc-500">{label}</span>
+        <span className="text-xs text-zinc-400">{label}</span>
         <span className="text-xs font-medium text-zinc-300">
-          {band} <span className="text-zinc-500">· {Math.round(score)}</span>
+          {band} <span className="text-zinc-400">· {Math.round(score)}</span>
         </span>
       </div>
       <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800">
@@ -2194,7 +2194,7 @@ function MiniStat({
 }) {
   return (
     <div className="text-center">
-      <p className="text-[10px] text-zinc-500">{label}</p>
+      <p className="text-xs text-zinc-400">{label}</p>
       <p
         className={cn(
           "mt-0.5 text-sm font-semibold tabular-nums",
@@ -2223,7 +2223,7 @@ function Stat({
 }) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-      <div className="text-xs text-zinc-500">{label}</div>
+      <div className="text-xs text-zinc-400">{label}</div>
       <div
         className={cn(
           "mt-1 text-xl font-semibold tabular-nums",
@@ -2233,7 +2233,7 @@ function Stat({
       >
         {value}
       </div>
-      {sub && <div className="text-xs text-zinc-500">{sub}</div>}
+      {sub && <div className="text-xs text-zinc-400">{sub}</div>}
     </div>
   );
 }
@@ -2291,7 +2291,7 @@ function ReadOnlyHoldings({
       </div>
       <div className="overflow-x-auto rounded-xl border border-zinc-800">
         <table className="w-full min-w-[36rem] text-left text-sm">
-          <thead className="border-b border-zinc-800 text-xs text-zinc-500">
+          <thead className="border-b border-zinc-800 text-xs text-zinc-400">
             <tr>
               <th className="px-3 py-2 font-medium">Ticker</th>
               <th className="px-3 py-2 font-medium">% Book</th>
@@ -2315,7 +2315,7 @@ function ReadOnlyHoldings({
               return (
                 <tr key={h.id} className="border-b border-zinc-800/60">
                   <td className="px-3 py-2 font-medium">{cashtag(h.ticker)}</td>
-                  <td className="px-3 py-2 tabular-nums text-zinc-500">
+                  <td className="px-3 py-2 tabular-nums text-zinc-400">
                     {percent(pctBook)}
                   </td>
                   <td className="px-3 py-2 tabular-nums text-zinc-400">
@@ -2328,7 +2328,7 @@ function ReadOnlyHoldings({
                     className={cn(
                       "px-3 py-2 tabular-nums",
                       todayPct == null
-                        ? "text-zinc-600"
+                        ? "text-zinc-400"
                         : todayPct >= 0
                           ? "text-emerald-400"
                           : "text-red-400"
@@ -2358,13 +2358,13 @@ function ReadOnlyHoldings({
             })}
             {holdings.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-zinc-500" colSpan={8}>
+                <td className="px-3 py-6 text-center text-zinc-400" colSpan={8}>
                   No holdings on this sheet.
                 </td>
               </tr>
             )}
             <tr>
-              <td className="px-3 py-2 text-zinc-500" colSpan={6}>
+              <td className="px-3 py-2 text-zinc-400" colSpan={6}>
                 Cash
               </td>
               <td className="px-3 py-2 tabular-nums" colSpan={2}>

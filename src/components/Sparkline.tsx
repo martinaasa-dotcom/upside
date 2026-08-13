@@ -18,7 +18,7 @@ export function Sparkline({
   if (!points.length) {
     return (
       <div
-        className={cn("text-[11px] text-zinc-500", className)}
+        className={cn("text-xs text-zinc-400", className)}
         style={{ width, height }}
       >
         —

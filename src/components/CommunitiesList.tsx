@@ -173,11 +173,11 @@ export function CommunitiesList() {
             <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
               {communities.length === 0 && (
                 <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-                  <Users className="h-6 w-6 text-zinc-600" />
+                  <Users className="h-6 w-6 text-zinc-400" />
                   <p className="text-sm text-zinc-400">
                     No communities yet.
                   </p>
-                  <p className="text-xs text-zinc-600">
+                  <p className="text-xs text-zinc-400">
                     Create one below, or ask a member for an invite link.
                   </p>
                 </li>
@@ -192,7 +192,7 @@ export function CommunitiesList() {
                       {c.visibility === "public" ? (
                         <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
                       ) : (
-                        <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                        <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                       )}
                       <span className="min-w-0 truncate text-sm font-semibold text-zinc-100">
                         {c.name}
@@ -202,7 +202,7 @@ export function CommunitiesList() {
                       <span className="text-xs capitalize text-brand-bright/80">
                         {c.role}
                       </span>
-                      <ChevronRight className="h-4 w-4 text-zinc-600" />
+                      <ChevronRight className="h-4 w-4 text-zinc-400" />
                     </span>
                   </Link>
                 </li>
@@ -218,7 +218,7 @@ export function CommunitiesList() {
                   Discover public communities
                 </h2>
               </div>
-              <p className="mb-3 text-xs text-zinc-500">
+              <p className="mb-3 text-xs text-zinc-400">
                 Anyone can ask to join. An admin still has to approve before
                 you see any books.
               </p>
@@ -233,7 +233,7 @@ export function CommunitiesList() {
                       <span className="min-w-0 truncate text-sm font-medium text-zinc-100">
                         {c.name}
                       </span>
-                      <span className="shrink-0 text-xs text-zinc-500">
+                      <span className="shrink-0 text-xs text-zinc-400">
                         {c.memberCount} {c.memberCount === 1 ? "member" : "members"}
                       </span>
                     </span>

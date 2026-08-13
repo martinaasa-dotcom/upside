@@ -58,7 +58,7 @@ function Section({
     <section className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-white">{title}</h3>
       {subtitle ? (
-        <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>
+        <p className="mt-1 text-xs text-zinc-400">{subtitle}</p>
       ) : null}
       <div className="mt-4">{children}</div>
     </section>
@@ -117,17 +117,17 @@ function CycleMonthlyChart({
             </div>
             <span
               className={cn(
-                "text-[10px]",
+                "text-xs",
                 isSelected
                   ? "font-bold text-brand-bright"
                   : isCurrent
                     ? "font-semibold text-brand-bright/80"
-                    : "text-zinc-500"
+                    : "text-zinc-400"
               )}
             >
               {row.label}
             </span>
-            <span className={cn("text-[10px] tabular-nums", retText(v))}>
+            <span className={cn("text-xs tabular-nums", retText(v))}>
               {v >= 0 ? "+" : ""}
               {v.toFixed(1)}%
             </span>
@@ -153,7 +153,7 @@ function CycleHistoryBars({
 }) {
   if (history.length === 0) {
     return (
-      <p className="text-xs text-zinc-600">No prior data in this cycle phase.</p>
+      <p className="text-xs text-zinc-400">No prior data in this cycle phase.</p>
     );
   }
 
@@ -166,35 +166,35 @@ function CycleHistoryBars({
 
   return (
     <div className="space-y-2.5">
-      <div className="flex flex-wrap gap-1.5 text-[11px]">
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-500">
+      <div className="flex flex-wrap gap-1.5 text-xs">
+        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
           Best{" "}
           <span className={cn("font-semibold tabular-nums", retText(best.returnPct))}>
             {best.year} {best.returnPct >= 0 ? "+" : ""}
             {best.returnPct.toFixed(1)}%
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-500">
+        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
           Worst{" "}
           <span className={cn("font-semibold tabular-nums", retText(worst.returnPct))}>
             {worst.year} {worst.returnPct >= 0 ? "+" : ""}
             {worst.returnPct.toFixed(1)}%
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-500">
+        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
           Median{" "}
           <span className={cn("font-semibold tabular-nums", retText(median))}>
             {median >= 0 ? "+" : ""}
             {median.toFixed(1)}%
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-500">
+        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
           Range{" "}
           <span className="font-semibold tabular-nums text-zinc-300">
             {(best.returnPct - worst.returnPct).toFixed(1)}pp
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-500">
+        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
           {wins}/{sorted.length} green
         </span>
       </div>
@@ -214,10 +214,10 @@ function CycleHistoryBars({
             >
               <span
                 className={cn(
-                  "text-[11px] tabular-nums",
+                  "text-xs tabular-nums",
                   isHighlight
                     ? "font-semibold text-brand-bright"
-                    : "text-zinc-500"
+                    : "text-zinc-400"
                 )}
               >
                 {h.year}
@@ -238,7 +238,7 @@ function CycleHistoryBars({
               </div>
               <span
                 className={cn(
-                  "text-right text-[11px] font-medium tabular-nums",
+                  "text-right text-xs font-medium tabular-nums",
                   retText(h.returnPct)
                 )}
               >
@@ -336,18 +336,18 @@ function DayOfMonthChart({
               </div>
               <span
                 className={cn(
-                  "text-[10px] tabular-nums",
+                  "text-xs tabular-nums",
                   isSelected || isToday
                     ? "font-bold text-brand-bright"
-                    : "text-zinc-500"
+                    : "text-zinc-400"
                 )}
               >
                 {row.day}
               </span>
               <span
                 className={cn(
-                  "text-[9px] leading-none tabular-nums",
-                  row.samples === 0 ? "text-zinc-600" : retText(v)
+                  "text-xs leading-none tabular-nums",
+                  row.samples === 0 ? "text-zinc-400" : retText(v)
                 )}
               >
                 {row.samples === 0 ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}`}
@@ -357,7 +357,7 @@ function DayOfMonthChart({
         })}
       </div>
       </div>
-      <p className="text-[11px] text-zinc-600">
+      <p className="text-xs text-zinc-400">
         Each bar = average session return on that calendar day in {monthLabel}{" "}
         (cycle-filtered). Click a day for year-by-year history. Swipe
         sideways on phone if the month has more days than fit.
@@ -371,7 +371,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
   const s = signals[0]!;
   return (
     <div className={cn("rounded-xl border px-4 py-3", stanceStyles(s.stance))}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
         {stanceLabel(s.stance)} · this month
       </p>
       <p className="mt-1 text-sm font-medium text-white">{s.headline}</p>
@@ -471,14 +471,14 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Seasonality</h2>
-          <p className="mt-0.5 text-sm text-zinc-500">
+          <p className="mt-0.5 text-sm text-zinc-400">
             Historical timing patterns only. For your book&apos;s live
             numbers see Overview, for allocation/correlation/scenario tools
             see Lab.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-[11px] text-zinc-500">
+          <label className="text-xs text-zinc-400">
             Benchmark
             <select
               value={ticker}
@@ -511,7 +511,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       )}
 
       {loading && !model ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-12 text-center text-sm text-zinc-500">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-12 text-center text-sm text-zinc-400">
           Loading seasonality for {cashtag(ticker)}…
         </div>
       ) : null}
@@ -526,7 +526,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               {" · "}
               {cashtag(model.ticker)} since {model.from.slice(0, 4)}
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-zinc-400">
               All monthly and daily patterns below use only history from prior{" "}
               {model.currentCycleLabel.toLowerCase()} years, same slot in the
               4-year presidential cycle as today.
@@ -553,7 +553,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   </p>
                   <p
                     className={cn(
-                      "text-[11px] tabular-nums font-semibold",
+                      "text-xs tabular-nums font-semibold",
                       retText(playbookMonthRow.avgMonthReturnPct)
                     )}
                   >
@@ -590,12 +590,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 </p>
                 {viewMonth === marketToday.month &&
                 selectedDay === marketToday.day ? (
-                  <p className="text-[11px] text-brand-bright">Today</p>
+                  <p className="text-xs text-brand-bright">Today</p>
                 ) : (
                   <button
                     type="button"
                     onClick={goToToday}
-                    className="text-[11px] text-zinc-500 underline-offset-2 hover:text-brand-bright hover:underline"
+                    className="text-xs text-zinc-400 underline-offset-2 hover:text-brand-bright hover:underline"
                   >
                     Jump to today
                   </button>
@@ -619,12 +619,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     type="button"
                     onClick={() => setViewMonth(m)}
                     className={cn(
-                      "rounded-md px-2 py-1 text-[11px] font-medium transition",
+                      "rounded-md px-2 py-1 text-xs font-medium transition",
                       viewMonth === m
                         ? "bg-brand text-[#121214]"
                         : m === marketToday.month
                           ? "text-brand-bright ring-1 ring-brand/40 hover:bg-brand/15"
-                          : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                          : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
                     )}
                   >
                     {label}
@@ -649,7 +649,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   </p>
                   <p
                     className={cn(
-                      "text-[11px] tabular-nums font-semibold",
+                      "text-xs tabular-nums font-semibold",
                       retText(selectedDayRow.avgReturnPct)
                     )}
                   >

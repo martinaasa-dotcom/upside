@@ -254,7 +254,7 @@ function PricesAgeStatus({
 
   return (
     <span
-      className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-500"
+      className="shrink-0 whitespace-nowrap text-xs tabular-nums text-zinc-400"
       title={
         source === "supabase"
           ? "Shared live book"
@@ -2407,7 +2407,7 @@ export function Dashboard() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
         <UpsideLogo variant="icon" className="animate-pulse" />
-        <p className="mt-6 text-sm text-zinc-500">{loadingMessage}</p>
+        <p className="mt-6 text-sm text-zinc-400">{loadingMessage}</p>
       </div>
     );
   }
@@ -2452,7 +2452,7 @@ export function Dashboard() {
                   className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
                 >
                   <p className="text-xs font-semibold text-white">{f.title}</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                     {f.detail}
                   </p>
                 </div>

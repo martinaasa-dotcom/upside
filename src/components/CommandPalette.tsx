@@ -83,11 +83,11 @@ export function CommandPalette({ open, onClose, items }: Props) {
             }
           }}
           placeholder="Jump to sheet, ticker, unlock, Lab …"
-          className="w-full border-b border-zinc-800 bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600"
+          className="w-full border-b border-zinc-800 bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-400"
         />
         <ul className="max-h-80 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
-            <li className="px-3 py-6 text-center text-sm text-zinc-500">
+            <li className="px-3 py-6 text-center text-sm text-zinc-400">
               No matches
             </li>
           )}
@@ -106,14 +106,14 @@ export function CommandPalette({ open, onClose, items }: Props) {
               >
                 <span>
                   {item.group && (
-                    <span className="mr-2 text-[10px] uppercase tracking-wide text-zinc-600">
+                    <span className="mr-2 text-xs uppercase tracking-wide text-zinc-400">
                       {item.group}
                     </span>
                   )}
                   {item.label}
                 </span>
                 {item.hint && (
-                  <span className="shrink-0 text-[11px] text-zinc-600">
+                  <span className="shrink-0 text-xs text-zinc-400">
                     {item.hint}
                   </span>
                 )}
@@ -121,7 +121,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
             </li>
           ))}
         </ul>
-        <p className="border-t border-zinc-800 px-3 py-1.5 text-[10px] text-zinc-600">
+        <p className="border-t border-zinc-800 px-3 py-1.5 text-xs text-zinc-400">
           ↑↓ navigate · Enter run · Esc close · ⌘K toggle
         </p>
       </div>

@@ -69,7 +69,7 @@ export function CommunitiesSpotlight({ className }: { className?: string }) {
             <Users className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-bright/90">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-bright/90">
               Communities
             </p>
             {primary ? (

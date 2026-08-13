@@ -27,7 +27,7 @@ export function ComparisonChart({ series, width = 640, height = 160, className }
   if (usable.length === 0) {
     return (
       <div
-        className="flex items-center justify-center text-xs text-zinc-500"
+        className="flex items-center justify-center text-xs text-zinc-400"
         style={{ height }}
       >
         History builds up day by day. Check back tomorrow.

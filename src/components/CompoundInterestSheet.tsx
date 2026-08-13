@@ -348,7 +348,7 @@ function DualPathChart({
       {hoverIdx != null && (
         <div
           className={cn(
-            "pointer-events-none absolute z-10 min-w-[9rem] -translate-y-full rounded-lg border border-zinc-700 bg-[#1a1a1c] px-2.5 py-2 text-[11px] shadow-xl",
+            "pointer-events-none absolute z-10 min-w-[9rem] -translate-y-full rounded-lg border border-zinc-700 bg-[#1a1a1c] px-2.5 py-2 text-xs shadow-xl",
             // Near either edge, anchor from that side instead of centering
             // so the tooltip can't spill past the card's own edges.
             hoverIdx / lastIdx < 0.15
@@ -378,7 +378,7 @@ function DualPathChart({
           </p>
         </div>
       )}
-      <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
+      <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-400">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-0.5 w-4 border-t-2 border-dashed border-zinc-500" />
           Stay the course · {money(stay[stay.length - 1] ?? 0, currency, eurUsd)}
@@ -657,13 +657,13 @@ export function CompoundInterestSheet({
       <aside className="space-y-5 rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
         <div>
           <h2 className="text-sm font-semibold text-white">Compound playground</h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-400">
             Live projections. Dial deposits, pick a sheet, shock the path.
           </p>
         </div>
 
         <div>
-          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">
             Currency
           </p>
           <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
@@ -679,8 +679,8 @@ export function CompoundInterestSheet({
           </div>
           <p
             className={cn(
-              "mt-1.5 text-[11px] tabular-nums",
-              fxReady ? "text-zinc-500" : "text-amber-300/90"
+              "mt-1.5 text-xs tabular-nums",
+              fxReady ? "text-zinc-400" : "text-amber-300/90"
             )}
             title="Book amounts stay USD; EUR uses Yahoo EURUSD last → close → open"
           >
@@ -761,7 +761,7 @@ export function CompoundInterestSheet({
             onChange={(e) => patchDraft("years", Number(e.target.value))}
             className="w-full accent-[var(--brand)]"
           />
-          <div className="mt-1 flex justify-between text-[11px] text-zinc-500">
+          <div className="mt-1 flex justify-between text-xs text-zinc-400">
             <span>1y</span>
             <span className="tabular-nums text-zinc-300">{draft.years} years</span>
             <span>40y</span>
@@ -784,7 +784,7 @@ export function CompoundInterestSheet({
             {tipping != null &&
               (draft.contributionMode === "deposits" ||
                 draft.contributionMode === "both") && (
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-gain">
+                <span className="text-xs font-semibold uppercase tracking-wide text-gain">
                   Tip year {tipping}
                 </span>
               )}
@@ -813,7 +813,7 @@ export function CompoundInterestSheet({
           {(draft.contributionMode === "deposits" ||
             draft.contributionMode === "both") && (
             <div className="mt-3 space-y-2.5 border-t border-zinc-800/60 pt-3">
-              <div className="flex items-center justify-between text-[11px] text-zinc-500">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
                 <span>Monthly deposit</span>
                 <span className="tabular-nums text-brand-bright">
                   {show(draft.depositAmount)}/mo
@@ -831,7 +831,7 @@ export function CompoundInterestSheet({
                 className="w-full accent-[var(--brand)]"
               />
               <div className="grid grid-cols-2 gap-2">
-                <label className="block text-[11px] text-zinc-500">
+                <label className="block text-xs text-zinc-400">
                   Frequency
                   <select
                     value={draft.depositFrequency}
@@ -847,7 +847,7 @@ export function CompoundInterestSheet({
                     <option value="annually">annually</option>
                   </select>
                 </label>
-                <label className="block text-[11px] text-zinc-500">
+                <label className="block text-xs text-zinc-400">
                   Annual increase %
                   <FormattedNumberInput
                     kind="percent"
@@ -863,7 +863,7 @@ export function CompoundInterestSheet({
           {(draft.contributionMode === "withdrawals" ||
             draft.contributionMode === "both") && (
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-800/60 pt-3">
-              <label className="block text-[11px] text-zinc-500">
+              <label className="block text-xs text-zinc-400">
                 Withdrawal / mo
                 <FormattedNumberInput
                   kind="money"
@@ -877,7 +877,7 @@ export function CompoundInterestSheet({
                   className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
                 />
               </label>
-              <label className="block text-[11px] text-zinc-500">
+              <label className="block text-xs text-zinc-400">
                 Frequency
                 <select
                   value={draft.withdrawalFrequency}
@@ -917,12 +917,12 @@ export function CompoundInterestSheet({
               </SegButton>
             ))}
           </div>
-          <p className="mt-1.5 text-[11px] text-zinc-600">
+          <p className="mt-1.5 text-xs text-zinc-400">
             Path dependence without a lecture. Then compounding resumes.
           </p>
         </div>
 
-        <p className="text-[11px] text-zinc-600">
+        <p className="text-xs text-zinc-400">
           Compounded monthly · live updates as you dial
         </p>
       </aside>
@@ -951,7 +951,7 @@ export function CompoundInterestSheet({
 
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Future value
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-gain sm:text-3xl">
@@ -959,7 +959,7 @@ export function CompoundInterestSheet({
               </p>
             </div>
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Total interest
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400 sm:text-3xl">
@@ -967,7 +967,7 @@ export function CompoundInterestSheet({
               </p>
             </div>
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Initial balance
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-sky-400 sm:text-3xl">
@@ -978,21 +978,21 @@ export function CompoundInterestSheet({
 
           <div className="mt-5 grid gap-3 border-t border-zinc-800 pt-4 text-sm sm:grid-cols-3">
             <div>
-              <p className="text-xs text-zinc-500">Yearly → compounded</p>
+              <p className="text-xs text-zinc-400">Yearly → compounded</p>
               <p className="mt-0.5 tabular-nums text-zinc-200">
                 {(result.nominalAnnualRate * 100).toFixed(2)}% →{" "}
                 {(result.effectiveAnnualRate * 100).toFixed(2)}%
               </p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">All-time RoR</p>
+              <p className="text-xs text-zinc-400">All-time RoR</p>
               <p className="mt-0.5 inline-flex items-center gap-1 tabular-nums text-gain">
                 {(result.allTimeRoR * 100).toFixed(1)}%
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Time to double</p>
+              <p className="text-xs text-zinc-400">Time to double</p>
               <p className="mt-0.5 tabular-nums text-zinc-200">
                 {Number.isFinite(result.doubleYears)
                   ? `${result.doubleYears}y ${result.doubleMonths}m`
@@ -1007,7 +1007,7 @@ export function CompoundInterestSheet({
           <h4 className="text-sm font-semibold text-white">
             Your book vs the path
           </h4>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-400">
             Dashed = stay invested, no new deposits. Solid = your dialed path
             {shock !== "none" ? " (with shock)" : ""}.
           </p>
@@ -1030,7 +1030,7 @@ export function CompoundInterestSheet({
               Milestone tracker
             </h4>
           </div>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-400">
             Target dates and years-until recompute from your dialed principal,
             rate, deposits, and compounding. Same path as Calculate.
           </p>
@@ -1045,7 +1045,7 @@ export function CompoundInterestSheet({
           >
             <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
               <thead className="sticky top-0 z-10 bg-[#161618]">
-                <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
+                <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
                   <th className="pb-2 pr-3 font-medium">Goal</th>
                   <th
                     className="pb-2 pr-3 font-medium"
@@ -1180,7 +1180,7 @@ export function CompoundInterestSheet({
           </div>
           {storyRow && (
             <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className="text-xs uppercase tracking-wide text-zinc-400">
                 Year {storyRow.index}
               </p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-white">
@@ -1202,7 +1202,7 @@ export function CompoundInterestSheet({
               Lazy vs Upside
             </h4>
           </div>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-zinc-400">
             Same principal & horizon. Not advice, just contrast.
           </p>
           {compareTakeaway && (
@@ -1218,14 +1218,14 @@ export function CompoundInterestSheet({
                 style={{ borderTopColor: s.color, borderTopWidth: 2 }}
               >
                 <p className="text-sm font-semibold text-white">{s.label}</p>
-                <p className="text-[11px] text-zinc-500">{s.tagline}</p>
+                <p className="text-xs text-zinc-400">{s.tagline}</p>
                 <p
                   className="mt-3 text-xl font-bold tabular-nums"
                   style={{ color: s.color }}
                 >
                   {show(s.result.futureValue)}
                 </p>
-                <p className="mt-1 text-[11px] text-zinc-500">
+                <p className="mt-1 text-xs text-zinc-400">
                   Interest {show(s.result.totalInterest)}
                 </p>
               </div>
@@ -1256,14 +1256,14 @@ export function CompoundInterestSheet({
         {/* Yearly table */}
         <div className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/80">
           <div className="border-b border-zinc-800 px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Yearly breakdown
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[40rem] text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
+                <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
                   <th className="px-4 py-2.5 font-medium">Year</th>
                   <th
                     className="px-4 py-2.5 font-medium"
@@ -1370,7 +1370,7 @@ export function CompoundInterestSheet({
           <p className="mt-4 text-lg font-semibold tracking-tight text-white sm:text-xl">
             {show(result.principal)} →{" "}
             {show(result.futureValue)}{" "}
-            <span className="text-zinc-500">in {durationLabel}</span>
+            <span className="text-zinc-400">in {durationLabel}</span>
           </p>
           <p className="mt-2 text-sm text-zinc-400">
             Interest {show(result.totalInterest)} ·{" "}

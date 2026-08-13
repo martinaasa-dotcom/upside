@@ -50,7 +50,7 @@ export function CashModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-white">Edit cash</h3>
-            <p className="text-xs text-zinc-500">{portfolioName}</p>
+            <p className="text-xs text-zinc-400">{portfolioName}</p>
           </div>
           <button
             type="button"

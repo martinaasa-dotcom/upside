@@ -104,7 +104,7 @@ export function CsvImportModal({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
+            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -149,7 +149,7 @@ export function CsvImportModal({
               Download template
             </button>
             {fileName && (
-              <span className="text-xs text-zinc-500">{fileName}</span>
+              <span className="text-xs text-zinc-400">{fileName}</span>
             )}
           </div>
 
@@ -162,7 +162,7 @@ export function CsvImportModal({
 
           {rows.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs uppercase tracking-wide text-zinc-500">
+              <div className="flex items-center justify-between text-xs uppercase tracking-wide text-zinc-400">
                 <span>Preview · {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
                 {cash != null && (
                   <span className="text-zinc-400">
@@ -172,7 +172,7 @@ export function CsvImportModal({
               </div>
               <div className="max-h-48 overflow-y-auto rounded-lg border border-zinc-800">
                 <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-zinc-900 text-xs text-zinc-500">
+                  <thead className="sticky top-0 bg-zinc-900 text-xs text-zinc-400">
                     <tr>
                       <th className="px-3 py-1.5 font-medium">Ticker</th>
                       <th className="px-3 py-1.5 font-medium">Shares</th>
@@ -195,7 +195,7 @@ export function CsvImportModal({
                           ${r.buyPrice.toFixed(2)}
                         </td>
                         {!hideCallPct && (
-                          <td className="px-3 py-1.5 tabular-nums text-zinc-500">
+                          <td className="px-3 py-1.5 tabular-nums text-zinc-400">
                             {r.callPct != null
                               ? `${Math.round(r.callPct * 100)}%`
                               : "default"}
@@ -214,7 +214,7 @@ export function CsvImportModal({
               <p className="text-xs uppercase tracking-wide text-amber-400/80">
                 Skipped {skipped.length} row{skipped.length === 1 ? "" : "s"}
               </p>
-              <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-zinc-500">
+              <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-zinc-400">
                 {skipped.slice(0, 10).map((s) => (
                   <li key={`${s.line}-${s.raw}`}>
                     Line {s.line}: {s.reason}

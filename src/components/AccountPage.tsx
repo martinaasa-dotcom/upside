@@ -396,7 +396,7 @@ export function AccountPage() {
                 <h2 className="text-sm font-semibold text-white">
                   Community profile
                 </h2>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-400">
                   Signed in as {user?.email ?? "—"}
                 </p>
               </div>
@@ -420,7 +420,7 @@ export function AccountPage() {
                 <p className="truncate text-sm font-medium text-white">
                   {displayName || "Your name"}
                 </p>
-                <p className="truncate text-xs text-zinc-500">
+                <p className="truncate text-xs text-zinc-400">
                   {bio || "Add a short bio for the community scoreboard."}
                 </p>
               </div>
@@ -428,7 +428,7 @@ export function AccountPage() {
 
             <form onSubmit={(e) => void saveProfile(e)} className="space-y-3">
               <label className="block space-y-1">
-                <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+                <span className="text-xs uppercase tracking-wide text-zinc-400">
                   Display name
                 </span>
                 <input
@@ -441,10 +441,10 @@ export function AccountPage() {
               </label>
               <label className="block space-y-1">
                 <span className="flex items-baseline justify-between">
-                  <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <span className="text-xs uppercase tracking-wide text-zinc-400">
                     Bio · communities
                   </span>
-                  <span className="text-[11px] tabular-nums text-zinc-600">
+                  <span className="text-xs tabular-nums text-zinc-400">
                     {bio.length}/280
                   </span>
                 </span>
@@ -462,7 +462,7 @@ export function AccountPage() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+                <span className="text-xs uppercase tracking-wide text-zinc-400">
                   Avatar URL (optional)
                 </span>
                 <input
@@ -504,7 +504,7 @@ export function AccountPage() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-white">Experience level</h2>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-400">
                   Simplifies what&apos;s shown. Nothing is locked, change it anytime.
                 </p>
               </div>
@@ -524,7 +524,7 @@ export function AccountPage() {
                 >
                   <span>
                     <span className="font-medium">{t.label}</span>
-                    <span className="mt-0.5 block text-xs text-zinc-500">{t.blurb}</span>
+                    <span className="mt-0.5 block text-xs text-zinc-400">{t.blurb}</span>
                   </span>
                   {tier === t.id && <Check className="h-4 w-4 shrink-0 text-brand-bright" />}
                 </button>
@@ -534,7 +534,7 @@ export function AccountPage() {
 
             <div className="mt-4 border-t border-zinc-800 pt-4">
               <p className="text-sm font-medium text-white">Options experience</p>
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <p className="mt-0.5 text-xs text-zinc-400">
                 Controls covered calls, strike alerts, and Call % everywhere.
                 Separate from the level above.
               </p>
@@ -550,7 +550,7 @@ export function AccountPage() {
                   )}
                 >
                   <span className="font-medium">Yes</span>
-                  <span className="mt-0.5 block text-xs text-zinc-500">
+                  <span className="mt-0.5 block text-xs text-zinc-400">
                     Show covered calls
                   </span>
                 </button>
@@ -565,7 +565,7 @@ export function AccountPage() {
                   )}
                 >
                   <span className="font-medium">No</span>
-                  <span className="mt-0.5 block text-xs text-zinc-500">
+                  <span className="mt-0.5 block text-xs text-zinc-400">
                     Hide options entirely
                   </span>
                 </button>
@@ -584,7 +584,7 @@ export function AccountPage() {
                 <h2 className="text-sm font-semibold text-white">
                   Invite to a portfolio
                 </h2>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-400">
                   Partners get full live edit access to that sheet, not
                   community read-only.
                 </p>
@@ -592,13 +592,13 @@ export function AccountPage() {
             </div>
 
             {portfolios.length === 0 ? (
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-400">
                 No sheets in My book yet. Create one first.
               </p>
             ) : (
               <>
                 <label className="block space-y-1">
-                  <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <span className="text-xs uppercase tracking-wide text-zinc-400">
                     Sheet
                   </span>
                   <select
@@ -615,7 +615,7 @@ export function AccountPage() {
                 </label>
 
                 <label className="block space-y-1">
-                  <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+                  <span className="text-xs uppercase tracking-wide text-zinc-400">
                     Partner email (optional)
                   </span>
                   <input
@@ -650,7 +650,7 @@ export function AccountPage() {
                     {inviteCode && (
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          <p className="text-xs uppercase tracking-wide text-zinc-400">
                             Invite code · {selectedName}
                           </p>
                           <p className="mt-0.5 font-mono text-sm text-brand-bright">
@@ -695,7 +695,7 @@ export function AccountPage() {
 
                 {owners.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    <p className="text-xs uppercase tracking-wide text-zinc-400">
                       Co-owners on {selectedName}
                     </p>
                     {removeOwnerErr && (
@@ -712,13 +712,13 @@ export function AccountPage() {
                               o.profile?.email ||
                               o.user_id.slice(0, 8)}
                             {o.user_id === user?.id && (
-                              <span className="ml-2 text-xs text-zinc-500">
+                              <span className="ml-2 text-xs text-zinc-400">
                                 (you)
                               </span>
                             )}
                           </span>
                           <span className="flex shrink-0 items-center gap-2">
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-xs text-zinc-400">
                               {o.profile?.email}
                             </span>
                             {owners.length > 1 && (
@@ -738,7 +738,7 @@ export function AccountPage() {
                                     ? "Leave this sheet"
                                     : "Remove co-owner"
                                 }
-                                className="touch-target rounded-md p-1.5 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300"
+                                className="touch-target rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-rose-300"
                               >
                                 <UserMinus className="h-3.5 w-3.5" />
                               </button>
@@ -763,7 +763,7 @@ export function AccountPage() {
                 <h2 className="text-sm font-semibold text-white">
                   Data &amp; privacy
                 </h2>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-400">
                   Your data, your call. Export it or wipe it any time.
                 </p>
               </div>
@@ -774,7 +774,7 @@ export function AccountPage() {
                 <p className="text-sm font-medium text-white">
                   Download everything
                 </p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-400">
                   One JSON file: profile, sheets, holdings, Lab state.
                 </p>
               </div>
@@ -795,7 +795,7 @@ export function AccountPage() {
                 <p className="text-sm font-medium text-rose-200">
                   Delete my account
                 </p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-400">
                   Removes your profile, deletes sheets only you own, and steps
                   you off any shared ones. Cannot be undone.
                 </p>
@@ -814,7 +814,7 @@ export function AccountPage() {
               </button>
             </div>
 
-            <p className="text-center text-[11px] text-zinc-600">
+            <p className="text-center text-xs text-zinc-400">
               <Link href="/privacy" className="underline hover:text-zinc-400">
                 Privacy policy
               </Link>
@@ -825,7 +825,7 @@ export function AccountPage() {
             </p>
           </section>
 
-          <p className="text-center text-xs text-zinc-600">
+          <p className="text-center text-xs text-zinc-400">
             Partner signs in with Google, then opens the invite link, or pastes
             the code at{" "}
             <Link href="/account/join" className="text-brand-bright/80 underline">
@@ -857,7 +857,7 @@ export function AccountPage() {
               Google account separately if you want that severed too.
             </p>
             <label className="mt-4 block space-y-1">
-              <span className="text-[11px] uppercase tracking-wide text-zinc-500">
+              <span className="text-xs uppercase tracking-wide text-zinc-400">
                 Type DELETE to confirm
               </span>
               <input

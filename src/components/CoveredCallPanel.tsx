@@ -105,7 +105,7 @@ function InlineTargetCall({
         }}
         className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
       />
-      <span className="text-xs text-zinc-500">%</span>
+      <span className="text-xs text-zinc-400">%</span>
     </div>
   );
 }
@@ -128,7 +128,7 @@ function InlineStockTarget({
 
   return (
     <div className="inline-flex items-center justify-center gap-0.5">
-      <span className="text-xs text-zinc-500">$</span>
+      <span className="text-xs text-zinc-400">$</span>
       <input
         type="text"
         inputMode="decimal"
@@ -233,14 +233,14 @@ export function CoveredCallPanel({
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="mb-1 text-zinc-500">Call %</p>
+                  <p className="mb-1 text-zinc-400">Call %</p>
                   <InlineTargetCall
                     value={r.targetCall}
                     onCommit={(pct) => onPatchTargetCall(r.holding.id, pct)}
                   />
                 </div>
                 <div>
-                  <p className="mb-1 text-zinc-500">Stock target</p>
+                  <p className="mb-1 text-zinc-400">Stock target</p>
                   <InlineStockTarget
                     value={r.stockTarget}
                     onCommit={(price) =>
@@ -249,13 +249,13 @@ export function CoveredCallPanel({
                   />
                 </div>
                 <div>
-                  <p className="text-zinc-500">Distance</p>
+                  <p className="text-zinc-400">Distance</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
                       r.targetDistance != null
                         ? signedTone(r.targetDistance)
-                        : "text-zinc-600"
+                        : "text-zinc-400"
                     )}
                   >
                     {r.targetDistance != null
@@ -270,7 +270,7 @@ export function CoveredCallPanel({
                       <span
                         title={badge.title}
                         className={cn(
-                          "mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                          "mt-1 inline-block rounded-md px-1.5 py-0.5 text-xs font-medium",
                           badge.className
                         )}
                       >
@@ -280,25 +280,25 @@ export function CoveredCallPanel({
                   })()}
                 </div>
                 <div>
-                  <p className="text-zinc-500">Next strike</p>
+                  <p className="text-zinc-400">Next strike</p>
                   <p className="tabular-nums font-semibold text-brand">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-500">CC yield</p>
+                  <p className="text-zinc-400">CC yield</p>
                   <p className="tabular-nums font-medium text-sky-400">
                     {r.yield2w != null ? percent(r.yield2w) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-500">Premium</p>
+                  <p className="text-zinc-400">Premium</p>
                   <p className="tabular-nums text-zinc-100">
                     {r.premium != null ? currency(r.premium) : "—"}
                   </p>
                 </div>
               </div>
-              <p className="mt-2 text-sm text-zinc-500">
+              <p className="mt-2 text-sm text-zinc-400">
                 {r.contracts} contracts
                 {r.expiration
                   ? ` · exp ${format(parseISO(r.expiration), "MMM d, yyyy")}`
@@ -325,7 +325,7 @@ export function CoveredCallPanel({
       {/* Desktop table */}
       <div className="hidden md:block">
         <FluidTable template={TEMPLATE}>
-          <FluidRow className="border-zinc-800 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+          <FluidRow className="border-zinc-800 text-xs font-medium uppercase tracking-wide text-zinc-400">
             {HEADERS.map((label) => (
               <div
                 key={label}
@@ -338,7 +338,7 @@ export function CoveredCallPanel({
           </FluidRow>
 
           {rows.length === 0 && (
-            <div className="col-span-full px-3 py-10 text-center text-sm text-zinc-500">
+            <div className="col-span-full px-3 py-10 text-center text-sm text-zinc-400">
               Add holdings above to generate covered-call targets.
               {onAddHolding && (
                 <div className="mt-3">
@@ -385,7 +385,7 @@ export function CoveredCallPanel({
                   "tabular-nums font-medium",
                   r.targetDistance != null
                     ? signedTone(r.targetDistance)
-                    : "text-zinc-600"
+                    : "text-zinc-400"
                 )}
               >
                 <span className="flex flex-col items-center gap-0.5">
@@ -402,7 +402,7 @@ export function CoveredCallPanel({
                       <span
                         title={badge.title}
                         className={cn(
-                          "rounded-md px-1.5 py-0.5 text-[11px] font-medium normal-case",
+                          "rounded-md px-1.5 py-0.5 text-xs font-medium normal-case",
                           badge.className
                         )}
                       >

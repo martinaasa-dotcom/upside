@@ -69,7 +69,7 @@ export function TickerDrawer({
         <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div>
             <h3 className="text-lg font-semibold text-white">{cashtag(ticker)}</h3>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-400">
               {spot != null ? currency(spot) : "—"}
               {shares != null ? ` · ${shares.toLocaleString("en-US")} sh` : ""}
               {roi != null ? ` · ${percent(roi)} vs cost` : ""}
@@ -86,13 +86,13 @@ export function TickerDrawer({
         </div>
         <div className="space-y-4 overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
               Streak
             </p>
             <p className="mt-1 text-sm text-zinc-200">{streak.label}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
               Conviction (1–5)
             </p>
             <div className="mt-2 flex gap-1">
@@ -113,14 +113,14 @@ export function TickerDrawer({
                 </button>
               ))}
             </div>
-            <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+            <div className="mt-1 flex justify-between text-xs text-zinc-400">
               <span>Low conviction</span>
               <span>{CONVICTION_LABELS[level]}</span>
               <span>High conviction</span>
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
               Thesis
             </p>
             <textarea
@@ -133,7 +133,7 @@ export function TickerDrawer({
           </div>
           {sparkline && sparkline.length > 1 && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 ~90d path
               </p>
               <svg

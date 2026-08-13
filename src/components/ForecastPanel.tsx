@@ -175,7 +175,7 @@ function EoyPriceInput({
       }}
       className={cn(
         "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
-        targeted ? "text-zinc-100" : "text-zinc-500"
+        targeted ? "text-zinc-100" : "text-zinc-400"
       )}
     />
   );
@@ -404,22 +404,22 @@ export function ForecastPanel({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-white">Forecast</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-400">
               Margus reasons an EOY price path per holding. He does a monthly
               recheck; new holdings are filled without re-scanning the whole
               sheet.
             </p>
-            <p className="mt-1 text-[11px] text-zinc-600">{FORECAST_DISCLAIMER}</p>
+            <p className="mt-1 text-xs text-zinc-400">{FORECAST_DISCLAIMER}</p>
             {statusHint && (
-              <p className="mt-1 text-[11px] text-amber-200/80">{statusHint}</p>
+              <p className="mt-1 text-xs text-amber-200/80">{statusHint}</p>
             )}
             {flatCount > 0 && !busy && !plan && !statusHint && (
-              <p className="mt-1 text-[11px] text-amber-200/80">
+              <p className="mt-1 text-xs text-amber-200/80">
                 No saved forecast yet. Margus will lock prices in shortly.
               </p>
             )}
             {busy && (
-              <p className="mt-1 text-[11px] text-amber-200/80">
+              <p className="mt-1 text-xs text-amber-200/80">
                 Margus is updating the forecast …
               </p>
             )}
@@ -440,10 +440,10 @@ export function ForecastPanel({
                     saveStance(portfolioId, s.id);
                   }}
                   className={cn(
-                    "rounded-md px-2 py-1 text-[11px] font-semibold transition",
+                    "rounded-md px-2 py-1 text-xs font-semibold transition",
                     stance === s.id
                       ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-500 hover:text-zinc-300"
+                      : "text-zinc-400 hover:text-zinc-300"
                   )}
                 >
                   {s.label}
@@ -454,7 +454,7 @@ export function ForecastPanel({
               type="button"
               disabled={busy || model.rows.length === 0}
               onClick={() => void askMargus()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-[11px] font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-xs font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
               title="Re-run the forecast with the current stance and your conviction notes"
             >
               <RotateCcw className={cn("h-3 w-3", busy && "animate-spin")} />
@@ -465,7 +465,7 @@ export function ForecastPanel({
             <button
               type="button"
               onClick={onClearOverrides}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
               title="Clear manual and Margus EOY overrides for this sheet"
             >
               <RotateCcw className="h-3 w-3" />
@@ -476,7 +476,7 @@ export function ForecastPanel({
       </header>
 
       {model.rows.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-zinc-500">
+        <div className="px-4 py-10 text-center text-sm text-zinc-400">
           Add holdings to project EOY prices.
         </div>
       ) : (
@@ -493,7 +493,7 @@ export function ForecastPanel({
                     <p className="text-base font-semibold text-white">
                       {cashtag(r.ticker)}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-zinc-400">
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · awaiting Margus"}
                     </p>
@@ -503,7 +503,7 @@ export function ForecastPanel({
                       "text-sm font-medium tabular-nums",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
-                        : "text-zinc-600"
+                        : "text-zinc-400"
                     )}
                   >
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
@@ -511,7 +511,7 @@ export function ForecastPanel({
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                   <div className="text-center">
-                    <p className="text-zinc-500">Current SP</p>
+                    <p className="text-zinc-400">Current SP</p>
                     <p className="tabular-nums text-zinc-100">
                       {currency(r.currentPrice)}
                     </p>
@@ -520,7 +520,7 @@ export function ForecastPanel({
                     <div key={y} className="text-center">
                       <p
                         className={cn(
-                          "text-zinc-500",
+                          "text-zinc-400",
                           isCurrentYear(y) && "text-brand-bright"
                         )}
                       >
@@ -539,7 +539,7 @@ export function ForecastPanel({
             ))}
 
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 px-3 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Portfolio value
               </p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-white">
@@ -550,7 +550,7 @@ export function ForecastPanel({
                   <div key={y}>
                     <p
                       className={cn(
-                        "text-zinc-500",
+                        "text-zinc-400",
                         isCurrentYear(y) && "text-brand-bright"
                       )}
                     >
@@ -579,7 +579,7 @@ export function ForecastPanel({
           {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
-              <FluidRow className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+              <FluidRow className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 <div className={cellLabel}>Ticker</div>
                 <div className={cellNum}>Current SP</div>
                 {yearCols.map((y) => (
@@ -603,7 +603,7 @@ export function ForecastPanel({
                   <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
                     {cashtag(r.ticker)}
                     {!r.hasTargets && (
-                      <span className="mt-0.5 text-[11px] font-normal tracking-normal text-zinc-600">
+                      <span className="mt-0.5 text-xs font-normal tracking-normal text-zinc-400">
                         awaiting Margus
                       </span>
                     )}
@@ -626,7 +626,7 @@ export function ForecastPanel({
                       "font-medium",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
-                        : "text-zinc-600"
+                        : "text-zinc-400"
                     )}
                   >
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
@@ -652,7 +652,7 @@ export function ForecastPanel({
                     "py-2.5",
                     model.gainPct != null
                       ? signedTone(model.gainPct)
-                      : "text-zinc-600"
+                      : "text-zinc-400"
                   )}
                 >
                   {model.gainPct != null ? percent(model.gainPct) : "—"}
@@ -666,15 +666,15 @@ export function ForecastPanel({
       <div className="border-t border-zinc-800/80 px-4 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
               Margus plan · themes / trim / add / EOY path
             </h3>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-zinc-400">
               Add / trim can be multiple names or sectors (SaaS, healthcare,
               drones …). Manual refresh still available anytime.
             </p>
             {plan?.generatedAt && (
-              <p className="mt-1 text-[11px] text-zinc-600">
+              <p className="mt-1 text-xs text-zinc-400">
                 Last generated {formatGeneratedAt(plan.generatedAt)}
                 {appliedFlash ? " · prices applied" : ""}
               </p>
@@ -724,7 +724,7 @@ export function ForecastPanel({
           <div className="mt-4 space-y-4">
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                   General advice
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
@@ -732,7 +732,7 @@ export function ForecastPanel({
                 </p>
               </div>
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                   Sector rotation
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
@@ -743,7 +743,7 @@ export function ForecastPanel({
 
             {(plan.eoyTargets?.length ?? 0) > 0 && (
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
                   Margus EOY rationale
                 </p>
                 <ul className="mt-2 space-y-1.5">
@@ -787,7 +787,7 @@ export function ForecastPanel({
                   key={`${s.label}-${s.theme}`}
                   className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-brand/90">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand/90">
                     {s.label}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white">
@@ -795,7 +795,7 @@ export function ForecastPanel({
                   </p>
                   <div className="mt-3 space-y-2">
                     <div className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-bright">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
                         Add
                       </p>
                       <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
@@ -803,7 +803,7 @@ export function ForecastPanel({
                       </p>
                     </div>
                     <div className="rounded-lg border border-rose-500/25 bg-rose-950/30 px-2.5 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-300">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-rose-300">
                         Trim
                       </p>
                       <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
@@ -812,7 +812,7 @@ export function ForecastPanel({
                     </div>
                   </div>
                   {s.notes?.trim() && (
-                    <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-400">
                       {s.notes}
                     </p>
                   )}
