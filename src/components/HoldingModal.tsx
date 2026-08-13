@@ -66,7 +66,7 @@ export function HoldingModal({
       return;
     }
     if (!Number.isFinite(callN) || callN < 0 || callN > 100) {
-      setError("Target call % must be 0–100");
+      setError("That has to be a number between 0 and 100");
       return;
     }
 
@@ -171,7 +171,7 @@ export function HoldingModal({
           </div>
           {!hideCallPct && (
             <label className="grid gap-1 text-xs text-zinc-400">
-              Target call % (OTM)
+              How far above your target to sell (%)
               <input
                 type="text"
                 inputMode="numeric"

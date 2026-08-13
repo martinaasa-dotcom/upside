@@ -354,17 +354,17 @@ export function PortfolioTable({
   );
 
   return (
-    <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
+    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800/80 px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-white">Holdings</h2>
+          <h2 className="text-base font-semibold text-white">Holdings</h2>
           {onDisplayCurrencyChange && (
             <div
               className="flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5"
               title={
                 eurUsd && eurUsd > 0
-                  ? `Values convert via ${formatEurUsdHint(eurUsd)}. Spot stays USD.`
-                  : "Totals & values · waiting for EURUSD"
+                  ? `Converted at ${formatEurUsdHint(eurUsd)}. Share prices stay in dollars.`
+                  : "Waiting on the euro rate"
               }
             >
               {(["USD", "EUR"] as const).map((code) => (

@@ -129,6 +129,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
 } from "lucide-react";
+import { quotePollMs, quotesUrl } from "@/lib/market/session";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
@@ -955,7 +956,7 @@ export function Dashboard() {
         let nextQuotes = existingQuotes;
         if (!nextQuotes || Object.keys(nextQuotes).length === 0) {
           const quotesRes = await fetch(
-            `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`
+            quotesUrl(tickers)
           );
           if (!quotesRes.ok) {
             setQuotesDelayed(true);
@@ -1258,25 +1259,46 @@ export function Dashboard() {
     refreshMarkets,
   ]);
 
-  // Free Yahoo poll: prices every 45s while the tab is visible (options stay on demand)
+  /**
+   * Live price poll. Cadence follows the New York clock rather than a flat 45s:
+   * out of hours the same close comes back every time, and the quote chain is
+   * a shared free tier. Options stay on demand.
+   *
+   * Holdings are read through a ref so editing the book doesn't tear the timer
+   * down and start the interval over.
+   */
+  const pollRowsRef = useRef({ holdings, isMetaTab, portfolioId: activePortfolio?.id });
+  pollRowsRef.current = { holdings, isMetaTab, portfolioId: activePortfolio?.id };
+
   useEffect(() => {
     if (allTickers.length === 0) return;
 
-    const POLL_MS = 45_000;
     let cancelled = false;
+    let timer = 0;
 
     const tick = () => {
       if (cancelled || document.hidden) return;
-      const rows = isMetaTab
-        ? holdings
-        : holdings.filter((h) => h.portfolio_id === activePortfolio?.id);
+      const { holdings: rowsAll, isMetaTab: meta, portfolioId } =
+        pollRowsRef.current;
+      const rows = meta
+        ? rowsAll
+        : rowsAll.filter((h) => h.portfolio_id === portfolioId);
       void refreshMarkets(allTickers, rows, undefined, {
         quotesOnly: true,
         silent: true,
       });
     };
 
-    const id = window.setInterval(tick, POLL_MS);
+    // Re-armed each cycle so the cadence changes when the session does,
+    // instead of being fixed at whatever it was when the tab opened.
+    const schedule = () => {
+      timer = window.setTimeout(() => {
+        tick();
+        schedule();
+      }, quotePollMs());
+    };
+    schedule();
+
     const onVisibility = () => {
       if (!document.hidden) tick();
     };
@@ -1284,18 +1306,12 @@ export function Dashboard() {
 
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
     // ticker identity via allTickersKey fingerprint
     // eslint-disable-next-line react-hooks/exhaustive-deps -- allTickers covered by key
-  }, [
-    activePortfolio?.id,
-    isMetaTab,
-    allTickersKey,
-    holdings,
-    refreshMarkets,
-  ]);
+  }, [allTickersKey, refreshMarkets]);
 
   async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
     const headers: Record<string, string> = {
@@ -2413,7 +2429,7 @@ export function Dashboard() {
               {[
                 {
                   title: "See the book",
-                  detail: "Holdings, cost basis, and today's move in one table.",
+                  detail: "Everything you own, what you paid, and how today went.",
                 },
                 {
                   title: "Ask Margus",
@@ -2521,7 +2537,7 @@ export function Dashboard() {
               }}
               disabled={refreshing}
               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
-              title={isLab ? "Refresh prices & option premiums" : "Refresh prices"}
+              title={isLab ? "Fetch prices and option quotes now" : "Fetch prices now"}
               aria-label="Refresh prices"
             >
               <RefreshCw

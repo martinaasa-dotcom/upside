@@ -148,6 +148,7 @@ const CARD_TONES = {
   good: "border-emerald-500/25 bg-emerald-500/[0.07]",
   warn: "border-amber-500/30 bg-amber-500/[0.07]",
   bad: "border-rose-500/25 bg-rose-500/[0.07]",
+  info: "border-sky-500/25 bg-sky-500/[0.07]",
 } as const;
 
 export type CardTone = keyof typeof CARD_TONES;
@@ -158,12 +159,13 @@ export function Card({
   interactive = false,
   className,
   children,
+  ...rest
 }: {
   tone?: CardTone;
   interactive?: boolean;
   className?: string;
   children: ReactNode;
-}) {
+} & Omit<React.HTMLAttributes<HTMLDivElement>, "className" | "children">) {
   return (
     <div
       className={cn(
@@ -173,6 +175,7 @@ export function Card({
           "transition hover:border-brand/40 active:scale-[0.995]",
         className
       )}
+      {...rest}
     >
       {children}
     </div>

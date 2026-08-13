@@ -1,8 +1,32 @@
 import { fetchFxOnly, fetchQuotesWithFallback } from "@/lib/market/quotes";
+import { marketSession } from "@/lib/market/session";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * How long a quote response may be reused. Prices only move while New York is
+ * open, so a 15-second window out of hours just means every tab in the world
+ * takes its own turn through the free-tier provider chain to be told the same
+ * close. Widening it after the bell is the cheapest protection that chain has.
+ */
+function cacheSeconds(): number {
+  switch (marketSession()) {
+    case "open":
+      return 15;
+    case "extended":
+      return 60;
+    case "closed":
+      return 300;
+  }
+}
+
+function cacheHeaders(seconds: number) {
+  return {
+    "Cache-Control": `public, max-age=${seconds}, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`,
+  };
+}
 
 export async function GET(req: NextRequest) {
   const tickersParam = req.nextUrl.searchParams.get("tickers") ?? "";
@@ -24,12 +48,7 @@ export async function GET(req: NextRequest) {
         delayed: false,
         updatedAt: new Date().toISOString(),
       },
-      {
-        headers: {
-          "Cache-Control":
-            "public, max-age=60, s-maxage=60, stale-while-revalidate=120",
-        },
-      }
+      { headers: cacheHeaders(Math.max(60, cacheSeconds())) }
     );
   }
 
@@ -44,11 +63,6 @@ export async function GET(req: NextRequest) {
       missing,
       updatedAt: new Date().toISOString(),
     },
-    {
-      headers: {
-        "Cache-Control":
-          "public, max-age=15, s-maxage=15, stale-while-revalidate=30",
-      },
-    }
+    { headers: cacheHeaders(cacheSeconds()) }
   );
 }

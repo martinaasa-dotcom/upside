@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { quotesUrl } from "@/lib/market/session";
 
 type Profile = {
   id: string;
@@ -390,7 +391,7 @@ export function CommunityView({ communityId }: Props) {
     void (async () => {
       try {
         const res = await fetch(
-          `/api/quotes?tickers=${encodeURIComponent(tickers.join(","))}`,
+          quotesUrl(tickers),
           { cache: "no-store" }
         );
         if (!res.ok || cancelled) return;
@@ -2240,7 +2241,7 @@ function ReadOnlyHoldings({
           tone={todayDollar >= 0 ? "up" : "down"}
         />
         <Stat
-          label="Unrealized P&L"
+          label="Gain so far"
           value={signedCurrency(totalPnl)}
           sub={percent(totalRoiPct)}
           tone={totalPnl >= 0 ? "up" : "down"}

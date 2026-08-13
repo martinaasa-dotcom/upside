@@ -249,6 +249,47 @@ run("no em dashes in user-facing copy", () => {
   );
 });
 
+run("live price polls back off when New York is closed", () => {
+  // A flat setInterval on quotes burns the shared free-tier rate limit all
+  // night re-fetching the same close. Anything that polls prices has to ask
+  // marketSession/quotePollMs what the right cadence is right now.
+  const pollers = ["Dashboard.tsx", "UpsidePortfolioPage.tsx", "MacroStrip.tsx"];
+  const offenders = pollers.filter((name) => {
+    const found = sources.find(({ file }) => file.endsWith(name));
+    return !found || !/marketSession|quotePollMs/.test(found.src);
+  });
+  assert.deepEqual(
+    offenders,
+    [],
+    `these poll prices without checking the session: ${offenders.join(", ")}`
+  );
+});
+
+run("every tier's default surface uses the shared Panel shell", () => {
+  // The drift this catches: a new screen hand-rolls its own border+bg and the
+  // app grows a fourth dialect. If a file draws a top-level section, it should
+  // be getting the shell from ui/Panel.
+  const shells = [
+    "OverviewDashboard.tsx",
+    "PulsePage.tsx",
+    "ForecastPanel.tsx",
+    "LabSheet.tsx",
+    "CoveredCallPanel.tsx",
+    "CompoundInterestSheet.tsx",
+    "TickerDrawer.tsx",
+    "ScenarioSimulator.tsx",
+  ];
+  const offenders = shells.filter((name) => {
+    const found = sources.find(({ file }) => file.endsWith(name));
+    return !found || !/from "@\/components\/ui\/Panel"/.test(found.src);
+  });
+  assert.deepEqual(
+    offenders,
+    [],
+    `these draw their own panel shell instead of using ui/Panel: ${offenders.join(", ")}`
+  );
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

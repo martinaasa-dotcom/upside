@@ -2,6 +2,13 @@
 
 import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
+import {
+  Card,
+  EmptyState,
+  MicroLabel,
+  PanelHeader,
+  Segmented,
+} from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
@@ -57,9 +64,16 @@ function calibratedPaths(
   };
 }
 
+/** "EOY 2028" assumed the reader already knew the abbreviation. */
 function yearLabel(year: number) {
-  return `EOY ${year}`;
+  return `End ${year}`;
 }
+
+const STANCES = [
+  { id: "bearish" as const, label: "Cautious", title: "Assume things go badly" },
+  { id: "base" as const, label: "Base", title: "Margus's honest best guess" },
+  { id: "bullish" as const, label: "Optimistic", title: "Assume things go well" },
+];
 
 /** Current calendar year gets a "this year" cue so the nearest, most-actionable
  * target doesn't blend into the same-looking longer-horizon columns. */
@@ -333,111 +347,88 @@ export function ForecastPanel({
       stance,
     });
     if (decision.run && decision.reason === "first-run") {
-      return "No Margus plan yet, generating a base-case path …";
+      return "First time on this sheet, Margus is working out the prices …";
     }
     if (decision.run && decision.reason === "monthly") {
-      return "Monthly thesis check, Margus is refreshing EOY if anything shifted …";
+      return "Monthly check, Margus is seeing whether anything has changed …";
     }
     if (decision.run && decision.reason === "sold-holding") {
-      return "A holding this plan named has been sold, regenerating the playbook …";
+      return "You sold something this covered, Margus is redoing it …";
     }
     if (decision.run && decision.reason === "stance-changed") {
-      return "Stance changed, Margus is re-reasoning the path …";
+      return "Rethinking it with your new setting …";
     }
     return null;
   }, [planHydrated, model.rows, plan, fullyCovered, busy, stance]);
 
   return (
-    <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
-      <header className="border-b border-zinc-800/80 px-4 py-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-white">Forecast</h2>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Margus reasons an EOY price path per holding. He does a monthly
-              recheck; new holdings are filled without re-scanning the whole
-              sheet.
-            </p>
-            <p className="mt-1 text-xs text-zinc-400">{FORECAST_DISCLAIMER}</p>
-            {statusHint && (
-              <p className="mt-1 text-xs text-amber-200/80">{statusHint}</p>
-            )}
-            {flatCount > 0 && !busy && !plan && !statusHint && (
-              <p className="mt-1 text-xs text-amber-200/80">
-                No saved forecast yet. Margus will lock prices in shortly.
-              </p>
-            )}
-            {busy && (
-              <p className="mt-1 text-xs text-amber-200/80">
-                Margus is updating the forecast …
-              </p>
-            )}
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            <div className="inline-flex rounded-lg border border-zinc-700 bg-zinc-950/50 p-0.5">
-              {(
-                [
-                  ["bearish", "Bear"],
-                  ["base", "Base"],
-                  ["bullish", "Bull"],
-                ] as const
-              ).map(([id, label]) => (
+    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+      <header className="border-b border-zinc-800/80 p-4 sm:p-6">
+        <PanelHeader
+          title="Forecast"
+          subtitle="Margus works out a price for each holding at the end of every year to 2030, and explains why. He rechecks monthly, and fills in anything you buy without redoing the whole sheet."
+          actions={
+            <>
+              <Segmented
+                options={STANCES}
+                value={stance}
+                onChange={(id) => {
+                  if (id === stance) return;
+                  setStance(id);
+                  void askMargus({ stance: id });
+                }}
+                disabled={busy || model.rows.length === 0}
+                ariaLabel="How optimistic the forecast should be"
+              />
+              {overrideCount > 0 && (
                 <button
-                  key={id}
                   type="button"
-                  disabled={busy || model.rows.length === 0}
-                  onClick={() => {
-                    if (id === stance) return;
-                    setStance(id);
-                    void askMargus({ stance: id });
-                  }}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-medium disabled:opacity-40",
-                    stance === id
-                      ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-400 hover:text-zinc-200"
-                  )}
+                  onClick={onClearOverrides}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200"
+                  title="Throw away every price you or Margus changed on this sheet"
                 >
-                  {label}
+                  <RotateCcw className="h-3 w-3" aria-hidden />
+                  Undo my changes ({overrideCount})
                 </button>
-              ))}
-            </div>
-            {overrideCount > 0 && (
+              )}
               <button
                 type="button"
-                onClick={onClearOverrides}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-                title="Clear manual and Margus EOY overrides for this sheet"
+                disabled={busy || model.rows.length === 0}
+                onClick={() => void askMargus()}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-xs font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
+                title="Work the whole forecast out again from scratch"
               >
-                <RotateCcw className="h-3 w-3" />
-                Reset overrides ({overrideCount})
+                {busy ? (
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                ) : (
+                  <Sparkles className="h-3 w-3" aria-hidden />
+                )}
+                {busy ? "Thinking …" : plan ? "Work it out again" : "Ask Margus"}
               </button>
-            )}
-            <button
-              type="button"
-              disabled={busy || model.rows.length === 0}
-              onClick={() => void askMargus()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-xs font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
-              title="Re-run the full Margus forecast for this sheet"
-            >
-              {busy ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Sparkles className="h-3 w-3" />
-              )}
-              {busy
-                ? "Rethinking …"
-                : plan
-                  ? "Rerun forecast"
-                  : "Ask Margus"}
-            </button>
-          </div>
-        </div>
+            </>
+          }
+        />
+        <p className="mt-3 text-xs leading-relaxed text-zinc-400">
+          {FORECAST_DISCLAIMER}
+        </p>
+        {statusHint && (
+          <p className="mt-1 text-xs text-amber-200/80">{statusHint}</p>
+        )}
+        {flatCount > 0 && !busy && !plan && !statusHint && (
+          <p className="mt-1 text-xs text-amber-200/80">
+            No forecast saved yet. Margus is working on it.
+          </p>
+        )}
+        {busy && (
+          <p className="mt-1 text-xs text-amber-200/80">
+            Margus is updating the forecast …
+          </p>
+        )}
       </header>
 
       {model.rows.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-zinc-400">
-          Add holdings to project EOY prices.
+          Add a holding and Margus will work out where it could go.
         </div>
       ) : (
         <>
@@ -455,7 +446,7 @@ export function ForecastPanel({
                     </p>
                     <p className="text-xs text-zinc-400">
                       {r.shares.toLocaleString("en-US")} shares
-                      {!r.hasTargets && " · awaiting Margus"}
+                      {!r.hasTargets && " · Margus is working on it"}
                     </p>
                   </div>
                   <p
@@ -471,7 +462,7 @@ export function ForecastPanel({
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                   <div className="text-center">
-                    <p className="text-zinc-400">Current SP</p>
+                    <p className="text-zinc-400">Price now</p>
                     <p className="tabular-nums text-zinc-100">
                       {currency(r.currentPrice)}
                     </p>
@@ -500,7 +491,7 @@ export function ForecastPanel({
 
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 px-3 py-3">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Portfolio value
+                Whole sheet
               </p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-white">
                 {currency(model.currentTotal)}
@@ -541,7 +532,7 @@ export function ForecastPanel({
             <FluidTable template={template}>
               <FluidRow className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 <div className={cellLabel}>Ticker</div>
-                <div className={cellNum}>Current SP</div>
+                <div className={cellNum}>Price now</div>
                 {yearCols.map((y) => (
                   <div
                     key={y}
@@ -555,7 +546,7 @@ export function ForecastPanel({
                     {isCurrentYear(y) && " · now"}
                   </div>
                 ))}
-                <div className={cellNum}>Gain</div>
+                <div className={cellNum}>Change</div>
               </FluidRow>
 
               {model.rows.map((r) => (
@@ -564,7 +555,7 @@ export function ForecastPanel({
                     {cashtag(r.ticker)}
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-xs font-normal tracking-normal text-zinc-400">
-                        awaiting Margus
+                        working on it
                       </span>
                     )}
                   </div>
@@ -623,19 +614,19 @@ export function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-zinc-800/80 px-4 py-4">
+      <div className="border-t border-zinc-800/80 p-4 sm:p-6">
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Margus plan · themes / trim / add / EOY path
+          <h3 className="text-base font-semibold text-white">
+            What Margus makes of it
           </h3>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Add / trim can be multiple names or sectors (SaaS, healthcare,
-            drones …). Use Rerun forecast above anytime.
+          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            His reasoning behind those numbers, and where he&apos;d put money in
+            or take it out. Educational, not a recommendation.
           </p>
           {plan?.generatedAt && (
             <p className="mt-1 text-xs text-zinc-400">
-              Last generated {formatGeneratedAt(plan.generatedAt)}
-              {appliedFlash ? " · prices applied" : ""}
+              Worked out {formatGeneratedAt(plan.generatedAt)}
+              {appliedFlash ? " · prices updated" : ""}
             </p>
           )}
         </div>
@@ -647,46 +638,39 @@ export function ForecastPanel({
         )}
 
         {!plan && !busy && !error && (
-          <div className="mt-3 rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
-            <p className="text-sm text-zinc-400">
-              Margus will reason an EOY price path for every holding
-              automatically.
-            </p>
-          </div>
+          <EmptyState
+            className="mt-3"
+            title="Margus hasn't weighed in yet"
+            detail="He works out a price path for every holding on his own. Nothing for you to do."
+          />
         )}
 
         {busy && !plan && (
           <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-brand-deep/30 bg-brand/5 px-4 py-6 text-sm text-brand-bright">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Reasoning full EOY paths for this sheet …
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            Working through every holding on this sheet …
           </div>
         )}
         {plan && (
           <div className="mt-4 space-y-4">
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  General advice
-                </p>
+              <Card tone="raised">
+                <MicroLabel>The short version</MicroLabel>
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
                   {plan.generalAdvice}
                 </p>
-              </div>
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  Sector rotation
-                </p>
+              </Card>
+              <Card tone="raised">
+                <MicroLabel>Where money is moving</MicroLabel>
                 <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
                   {plan.sectorRotation}
                 </p>
-              </div>
+              </Card>
             </div>
 
             {(plan.eoyTargets?.length ?? 0) > 0 && (
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  Margus EOY rationale
-                </p>
+              <Card tone="raised">
+                <MicroLabel>Why each number</MicroLabel>
                 <ul className="mt-2 space-y-1.5">
                   {plan.eoyTargets.map((t) => (
                     <li
@@ -696,27 +680,27 @@ export function ForecastPanel({
                       <span className="font-semibold text-zinc-200">
                         {cashtag(t.ticker)}
                       </span>
-                      {t.rationale ? `: ${t.rationale}` : ": path applied"}
+                      {t.rationale ? `: ${t.rationale}` : ": price set"}
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             )}
 
             {soldTickersInPlan.length > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-2.5 text-xs text-amber-100">
                 <span>
-                  This playbook may still name{" "}
-                  {soldTickersInPlan.join(", ")}, no longer in this sheet.
-                  {busy ? " Refreshing …" : ""}
+                  This still mentions {soldTickersInPlan.join(", ")}, which you
+                  no longer hold here.
+                  {busy ? " Updating …" : ""}
                 </span>
                 {!busy && (
                   <button
                     type="button"
                     onClick={() => void askMargus()}
-                    className="shrink-0 rounded-lg border border-amber-400/40 px-2.5 py-1 font-semibold text-amber-200 hover:bg-amber-500/10"
+                    className="shrink-0 rounded-lg border border-amber-400/40 px-2.5 py-1 font-semibold text-amber-200 transition hover:bg-amber-500/10"
                   >
-                    Regenerate now
+                    Update it
                   </button>
                 )}
               </div>
@@ -724,31 +708,30 @@ export function ForecastPanel({
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {plan.periods.map((s) => (
-                <div
+                <Card
                   key={`${s.label}-${s.theme}`}
-                  className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
+                  tone="raised"
+                  className="flex flex-col"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand/90">
-                    {s.label}
-                  </p>
+                  <MicroLabel className="text-brand/90">{s.label}</MicroLabel>
                   <p className="mt-1 text-sm font-semibold text-white">
                     {s.theme}
                   </p>
                   <div className="mt-3 space-y-2">
                     <div className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
-                        Add
-                      </p>
-                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
-                        {s.add?.trim() || "Hold, no add"}
+                      <MicroLabel className="text-brand-bright">
+                        Worth adding
+                      </MicroLabel>
+                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-relaxed text-zinc-100">
+                        {s.add?.trim() || "Nothing, just hold"}
                       </p>
                     </div>
                     <div className="rounded-lg border border-rose-500/25 bg-rose-950/30 px-2.5 py-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-rose-300">
-                        Trim
-                      </p>
-                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
-                        {s.trim?.trim() || "Hold, no trim"}
+                      <MicroLabel className="text-rose-300">
+                        Worth trimming
+                      </MicroLabel>
+                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-relaxed text-zinc-100">
+                        {s.trim?.trim() || "Nothing, just hold"}
                       </p>
                     </div>
                   </div>
@@ -757,7 +740,7 @@ export function ForecastPanel({
                       {s.notes}
                     </p>
                   )}
-                </div>
+                </Card>
               ))}
             </div>
           </div>

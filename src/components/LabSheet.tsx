@@ -11,6 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
+import { EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -283,44 +284,41 @@ export function LabSheet({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="h-4 w-4 text-brand" />
-          <h2 className="text-sm font-semibold text-white">Lab</h2>
-        </div>
-        <p className="mt-1 text-xs text-zinc-400">
-          Allocation, risk, trends, and seasonality. Tools for looking, not
-          trading.
-        </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-          <div className="flex min-h-8 items-center gap-2">
-            <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Scope
-            </span>
-            <select
-              value={scopeId}
-              onChange={(e) => setScopeId(e.target.value)}
-              disabled={!scopeApplies}
-              className={cn(
-                "min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-xs text-white sm:flex-none sm:shrink-0",
-                !scopeApplies && "cursor-not-allowed opacity-40"
-              )}
-            >
-              <option value="book">Entire book</option>
-              {portfolios.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <span className="min-w-0 text-xs text-zinc-400">
-            {scopeApplies
-              ? `What-ifs run on ${scopeLabel}`
-              : "This tool always uses the whole book"}
-          </span>
-        </div>
-        <div className="relative mt-3">
+      <Panel>
+        <PanelHeader
+          icon={<FlaskConical className="h-4 w-4" />}
+          title="Lab"
+          subtitle="Four ways of looking at what you already own. Nothing here places a trade."
+          actions={
+            <label className="flex items-center gap-2">
+              <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                Looking at
+              </span>
+              <select
+                value={scopeId}
+                onChange={(e) => setScopeId(e.target.value)}
+                disabled={!scopeApplies}
+                className={cn(
+                  "min-w-0 rounded-lg border border-zinc-700 bg-zinc-950/50 px-2.5 py-1.5 text-xs text-white",
+                  !scopeApplies && "cursor-not-allowed opacity-40"
+                )}
+                title={
+                  scopeApplies
+                    ? "Narrow these tools down to one sheet"
+                    : "This tool always uses your whole book"
+                }
+              >
+                <option value="book">Everything</option>
+                {portfolios.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          }
+        />
+        <div className="relative mt-4">
           <div
             ref={tabScrollRef}
             onScroll={syncTabOverflow}
@@ -359,29 +357,27 @@ export function LabSheet({
         {/* Says what the tab you just picked actually does. A label like
           * "Shock" or "Risk" means nothing on its own. */}
         {activeTabMeta && (
-          <p className="mt-2.5 text-xs leading-relaxed text-zinc-400">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
             {activeTabMeta.blurb}
           </p>
         )}
-      </div>
+      </Panel>
 
       {tab === "alloc" && (
         <div className="space-y-4">
           {concentration.positionCount === 0 ? (
-            <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-6 text-center">
-              <p className="text-sm text-zinc-400">
-                No positions on {scopeLabel} yet. Add a holding and this fills
-                in with your concentration read.
-              </p>
-            </div>
+            <EmptyState
+              title="Nothing to look at yet"
+              detail={`Add a holding to ${scopeLabel} and this fills in with how spread out you are.`}
+            />
           ) : (
             <>
-              <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
+              <Panel tone="plain">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-white">
-                      Diversification
-                    </p>
+                    <h3 className="text-base font-semibold text-white">
+                      How spread out you are
+                    </h3>
                     <p className="mt-0.5 text-xs text-zinc-400">
                       {personality.diversificationBand.description} ·{" "}
                       {scopeLabel}
@@ -467,13 +463,13 @@ export function LabSheet({
                   below are a blunt read of what you&apos;re betting on, not a
                   return forecast.
                 </p>
-              </div>
+              </Panel>
 
               {themes.length > 0 && (
-                <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
-                  <p className="text-sm font-semibold text-white">
+                <Panel tone="plain">
+                  <h3 className="text-base font-semibold text-white">
                     What you&apos;re actually betting on
-                  </p>
+                  </h3>
                   <p className="mt-0.5 mb-4 text-xs text-zinc-400">
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
@@ -509,7 +505,7 @@ export function LabSheet({
                       </div>
                     ))}
                   </div>
-                </div>
+                </Panel>
               )}
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -538,11 +534,11 @@ export function LabSheet({
       )}
 
       {tab === "risk" && (
-        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
+        <Panel tone="plain" className="space-y-4">
           <div>
-            <p className="text-sm font-semibold text-white">
+            <h3 className="text-base font-semibold text-white">
               Do these move together?
-            </p>
+            </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
               How closely each pair has tracked each other over the last 90
               days, up to 8 names. Near <span className="tabular-nums">+1</span> means they
@@ -665,7 +661,7 @@ export function LabSheet({
               </div>
             </div>
           )}
-        </div>
+        </Panel>
       )}
     </div>
   );
@@ -710,8 +706,8 @@ function AllocCard({
   slices: { label: string; pct: number; value: number }[];
 }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-      <p className="mb-3 text-sm font-semibold text-white">{title}</p>
+    <Panel tone="plain">
+      <h3 className="mb-3 text-base font-semibold text-white">{title}</h3>
       <div className="space-y-2">
         {slices.map((s) => (
           <div key={s.label}>
@@ -733,6 +729,6 @@ function AllocCard({
           <p className="text-sm text-zinc-400">No equity to allocate.</p>
         )}
       </div>
-    </div>
+    </Panel>
   );
 }

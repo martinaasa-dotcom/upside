@@ -9,6 +9,12 @@ import {
   plural,
   signedTone,  cashtag,
 } from "@/lib/format";
+import {
+  Card,
+  EmptyState,
+  Panel,
+  PanelHeader,
+} from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
@@ -40,6 +46,7 @@ import {
   type ThesisStatus,
 } from "@/lib/thesis-pulse";
 import {
+  Activity,
   AlertTriangle,
   CheckCircle2,
   Eye,
@@ -651,34 +658,30 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
-              Thesis Pulse
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-white">
-              Should you sell, or add the dip?
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-              Auto-checks your 10 largest names, plus anything down 5% or more.
-              Type any other ticker and hit Check. Cached results show
-              instantly and refresh hourly in the background.
-            </p>
-            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-400">
-              {ADVICE_DISCLAIMER_LONG}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void runPulse(candidates, { force: true })}
-            disabled={anyChecking || candidates.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", anyChecking && "animate-spin")} />
-            Refresh all
-          </button>
-        </div>
+      <Panel>
+        <PanelHeader
+          hero
+          icon={<Activity className="h-4 w-4" />}
+          title="Should you sell, or buy more?"
+          subtitle="Checks your ten biggest holdings, plus anything down 5% or more, against the news and the reason you bought it. Results are saved and refresh in the background every hour."
+          actions={
+            <button
+              type="button"
+              onClick={() => void runPulse(candidates, { force: true })}
+              disabled={anyChecking || candidates.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 disabled:opacity-50"
+            >
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", anyChecking && "animate-spin")}
+                aria-hidden
+              />
+              Check all again
+            </button>
+          }
+        />
+        <p className="mt-3 max-w-2xl text-xs leading-relaxed text-zinc-400">
+          {ADVICE_DISCLAIMER_LONG}
+        </p>
 
         <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
@@ -692,8 +695,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                   void checkTicker(suggestions[0]!);
                 }
               }}
-              placeholder="Type ticker: BMNR, RKLB, NVDA …"
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-brand/50"
+              placeholder="Check any ticker: NVDA, RKLB, BMNR …"
+              aria-label="Ticker to check"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-brand/50"
               autoComplete="off"
             />
             {suggestions.length > 0 && searchInput.trim().length > 0 && (
@@ -736,8 +740,11 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         )}
 
         {fearGreed && (
-          <p className="mt-3 text-xs text-zinc-400">
-            Market mood: Fear &amp; Greed{" "}
+          <p
+            className="mt-3 text-xs text-zinc-400"
+            title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
+          >
+            How the market is feeling today:{" "}
             <span
               className={cn(
                 "font-semibold tabular-nums",
@@ -746,30 +753,30 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                 fearGreedTone(fearGreed.score) === "greed" && "text-amber-300"
               )}
             >
-              {fearGreed.score}
+              {fearGreed.rating.toLowerCase()}
             </span>{" "}
-            · {fearGreed.rating}
+            <span className="tabular-nums">({fearGreed.score} out of 100)</span>
           </p>
         )}
 
         {summary && !pinnedTicker && (
-          <p className="mt-3 rounded-lg border border-zinc-800/80 bg-zinc-950/40 px-3 py-2 text-sm text-zinc-200">
-            {summary}
-          </p>
+          <Card className="mt-3">
+            <p className="text-sm leading-relaxed text-zinc-200">{summary}</p>
+          </Card>
         )}
 
         {error && (
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-sm text-rose-100">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             {error}
           </div>
         )}
-      </section>
+      </Panel>
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-bright">
-            Your check
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-brand-bright">
+            The one you asked about
           </h3>
           <ul className="space-y-3">
             <PulseCard
@@ -791,18 +798,16 @@ export function PulsePage({ model, quotes, convictions }: Props) {
       )}
 
       {candidates.length === 0 && !pinnedCandidate ? (
-        <section className="rounded-xl border border-zinc-800 bg-zinc-950/30 px-4 py-8 text-center">
-          <p className="text-sm text-zinc-300">No positions in the book yet.</p>
-          <p className="mt-1 text-xs text-zinc-400">
-            Type a ticker above to run a one-off check.
-          </p>
-        </section>
+        <EmptyState
+          title="Nothing to check yet"
+          detail="Add a holding and Pulse starts watching it automatically. You can also type any ticker above for a one-off look."
+        />
       ) : (
         <div className="space-y-6">
           {attention.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-300">
-                Needs attention · down {formatMovePct(-PULSE_DOWN_THRESHOLD)}+
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-rose-300">
+                Down {formatMovePct(-PULSE_DOWN_THRESHOLD)} or more
               </h3>
               <ul className="space-y-3">
                 {attention.map((c) => (
@@ -825,10 +830,10 @@ export function PulsePage({ model, quotes, convictions }: Props) {
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
                 {attention.length > 0
-                  ? "Rest of big book"
-                  : `Big book · top ${plural(rest.length, "position")}`}
+                  ? "Everything else"
+                  : `Your ${plural(rest.length, "biggest holding")}`}
               </h3>
               <ul className="space-y-3">
                 {rest.map((c) => (

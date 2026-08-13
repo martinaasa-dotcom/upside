@@ -55,7 +55,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+    <section className="rounded-2xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-white">{title}</h3>
       {subtitle ? (
         <p className="mt-1 text-xs text-zinc-400">{subtitle}</p>
@@ -471,10 +471,10 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Seasonality</h2>
-          <p className="mt-0.5 text-sm text-zinc-400">
-            Historical timing patterns only. For your book&apos;s live
-            numbers see Overview, for allocation/correlation/scenario tools
-            see Lab.
+          <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-zinc-400">
+            Which months and days have historically been kind to the market,
+            and which have not. Patterns from the past, nothing about your own
+            holdings and no claim about what happens next.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
