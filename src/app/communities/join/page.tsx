@@ -50,7 +50,7 @@ function JoinInner() {
         {error ? (
           <p className="text-sm text-red-400">{error}</p>
         ) : done ? (
-          <p className="text-sm text-zinc-400">Joined — redirecting …</p>
+          <p className="text-sm text-zinc-400">Joined, redirecting …</p>
         ) : (
           <p className="text-sm text-zinc-400">Accepting invite …</p>
         )}

@@ -57,7 +57,7 @@ export async function PUT(req: NextRequest) {
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase not configured — Lab stays local" },
+      { error: "Supabase not configured, Lab stays local" },
       { status: 400 }
     );
   }

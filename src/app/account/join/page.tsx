@@ -33,8 +33,8 @@ function JoinInner() {
       track("portfolio_invite_redeemed");
       setStatus(
         data.portfolio?.name
-          ? `Joined ${data.portfolio.name} — opening My book …`
-          : "Joined — opening My book …"
+          ? `Joined ${data.portfolio.name}, opening My book …`
+          : "Joined, opening My book …"
       );
       router.replace("/");
     } catch (e) {

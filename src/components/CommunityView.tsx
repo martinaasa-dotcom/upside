@@ -681,7 +681,7 @@ export function CommunityView({ communityId }: Props) {
         title: "Small but Mighty",
         winner: smallestBook.name,
         stat: currency(smallestBook.totalValue, 0),
-        description: "Smallest book — every family tree has a sapling.",
+        description: "Smallest book, every family tree has a sapling.",
       });
     }
 
@@ -1024,7 +1024,7 @@ export function CommunityView({ communityId }: Props) {
                             </h3>
                             <p className="mt-0.5 text-sm text-zinc-400">
                               Diversification, risk, and a modeled edge for every
-                              book — not advice, just a fun comparison
+                              book. Not advice, just a fun comparison
                             </p>
                           </div>
                         </div>
@@ -1359,7 +1359,7 @@ export function CommunityView({ communityId }: Props) {
                             Family sector fingerprint
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Everyone&apos;s holdings pooled by theme — what the
+                            Everyone&apos;s holdings pooled by theme, what the
                             group collectively believes in
                           </p>
                         </div>
@@ -1410,7 +1410,7 @@ export function CommunityView({ communityId }: Props) {
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
                             {funFactsShuffle > 0
-                              ? "Shuffled — reload for the daily batch"
+                              ? "Shuffled, reload for the daily batch"
                               : "New batch every day"}
                           </p>
                         </div>
@@ -1428,7 +1428,7 @@ export function CommunityView({ communityId }: Props) {
                     <ul className="space-y-3">
                       {communityFunFacts.length === 0 ? (
                         <li className="text-sm text-zinc-500">
-                          Not enough data yet — check back once books load.
+                          Not enough data yet. Check back once books load.
                         </li>
                       ) : (
                         communityFunFacts.map((fact, i) => (
@@ -1662,8 +1662,8 @@ export function CommunityView({ communityId }: Props) {
                         </span>
                       </h2>
                       <p className="text-xs text-zinc-500">
-                        This community is public — anyone can ask to join, but
-                        nothing happens until you approve them here.
+                        This community is public, so anyone can ask to join,
+                        but nothing happens until you approve them here.
                       </p>
                       <ul className="space-y-2">
                         {joinRequests.map((r) => (
@@ -1885,7 +1885,7 @@ export function CommunityView({ communityId }: Props) {
       <ConfirmModal
         open={deleteConfirmOpen}
         title="Delete this community?"
-        body={`This removes "${community?.name ?? "this community"}" for everyone — members lose shared read access and the invite link stops working. Nobody's actual portfolio or holdings are touched, and it can't be undone.`}
+        body={`This removes "${community?.name ?? "this community"}" for everyone. Members lose shared read access and the invite link stops working. Nobody's actual portfolio or holdings are touched, and it can't be undone.`}
         confirmLabel="Delete community"
         destructive
         onClose={() => setDeleteConfirmOpen(false)}
@@ -1951,8 +1951,8 @@ export function CommunityView({ communityId }: Props) {
               </label>
               <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
                 {community?.visibility === "public"
-                  ? "Public — anyone signed in can find this community and ask to join. You still approve every request."
-                  : "Private — invite-only. No one can find or join without a link."}
+                  ? "Public: anyone signed in can find this community and ask to join. You still approve every request."
+                  : "Private: invite-only. No one can find or join without a link."}
               </p>
               <div className="mt-2 flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
                 {(
@@ -2022,7 +2022,7 @@ export function CommunityView({ communityId }: Props) {
                 </h3>
                 <p className="mt-1 text-xs text-zinc-500">
                   Every book gets scored on diversification and risk, then
-                  matched to whichever archetype fits best — a fun lens, not
+                  matched to whichever archetype fits best. A fun lens, not
                   an investing verdict.
                 </p>
               </div>

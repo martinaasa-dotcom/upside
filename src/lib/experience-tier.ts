@@ -16,7 +16,7 @@ export const EXPERIENCE_TIERS: {
   {
     id: "novice",
     label: "New to investing",
-    blurb: "Show me the essentials — I'll grow into the rest.",
+    blurb: "Show me the essentials, I'll grow into the rest.",
   },
   {
     id: "investor",
@@ -26,7 +26,7 @@ export const EXPERIENCE_TIERS: {
   {
     id: "advanced",
     label: "Very experienced",
-    blurb: "I actively trade, use options — show me everything.",
+    blurb: "I actively trade, use options, show me everything.",
   },
 ];
 

@@ -171,28 +171,28 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   {
     label: "Buy",
     key: "buy",
-    explain: "Average price you paid per share — your cost basis",
+    explain: "Average price you paid per share: your cost basis",
   },
   { label: "Price", key: "price", explain: "Current market price per share" },
   {
     label: "ROI %",
     key: "roiPct",
-    explain: "Gain or loss vs. what you paid, as a percentage — (Value − Cost) ÷ Cost",
+    explain: "Gain or loss vs. what you paid, as a percentage: (Value − Cost) ÷ Cost",
   },
   {
     label: "Cost",
     key: "cost",
-    explain: "Total dollars you put in — shares × buy price",
+    explain: "Total dollars you put in: shares × buy price",
   },
   {
     label: "Value",
     key: "value",
-    explain: "What that position is worth right now — shares × current price",
+    explain: "What that position is worth right now: shares × current price",
   },
   {
     label: "ROI $",
     key: "roiDollar",
-    explain: "Gain or loss in dollars — Value minus Cost",
+    explain: "Gain or loss in dollars: Value minus Cost",
   },
   { label: "90d", explain: "Price trend over the last ~90 days" },
   { label: "Today", key: "today", explain: "Price move since yesterday's close" },
@@ -313,7 +313,7 @@ export function PortfolioTable({
         )}
       </div>
       <p className="text-xs text-zinc-500">
-        Screenshot or CSV drops every row in at once — pick whichever&apos;s
+        Screenshot or CSV drops every row in at once. Pick whichever&apos;s
         easier to get your hands on.
       </p>
     </div>

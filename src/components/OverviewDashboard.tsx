@@ -567,7 +567,7 @@ export function OverviewDashboard({
           <p className="truncate text-xs text-zinc-400">
             {fundTeaser?.headline
               ? fundTeaser.headline
-              : "Margus manages his own $50k paper portfolio — one decision a day, reasoning included."}
+              : "Margus manages his own $50k paper portfolio. One decision a day, reasoning included."}
           </p>
         </div>
         {fundTeaser && (
@@ -680,7 +680,7 @@ export function OverviewDashboard({
                 value: currency(totals.totalValue, 0),
                 sub: `${totals.sheetCount} sheets`,
                 explain:
-                  "Everything in this sheet is worth right now — your holdings plus cash, at today's prices.",
+                  "Everything in this sheet is worth right now: your holdings plus cash, at today's prices.",
               },
               {
                 label: "Today",
@@ -688,7 +688,7 @@ export function OverviewDashboard({
                 sub: totals.todayPct != null ? percent(totals.todayPct) : "—",
                 tone: totals.todayDollar,
                 explain:
-                  "How much this sheet moved just today. Resets to $0 every morning — it's not your total gain.",
+                  "How much this sheet moved just today. Resets to $0 every morning, it's not your total gain.",
               },
               {
                 label: "P&L",
@@ -696,7 +696,7 @@ export function OverviewDashboard({
                 sub: percent(totals.roiPct),
                 tone: totals.roiDollar,
                 explain:
-                  "Profit or loss since you started — the gain or loss on everything you've ever put in, not just today.",
+                  "Profit or loss since you started: the gain or loss on everything you've ever put in, not just today.",
               },
               {
                 label: "Cash",
@@ -704,7 +704,7 @@ export function OverviewDashboard({
                 sub: totals.cash < 0 ? "Margin" : "Powder",
                 explain:
                   totals.cash < 0
-                    ? "Negative cash means you're on margin — borrowing from your broker against your holdings."
+                    ? "Negative cash means you're on margin, borrowing from your broker against your holdings."
                     : "Uninvested money sitting ready in this sheet, waiting for you to deploy it.",
               },
             ].map((s) => (
@@ -1092,7 +1092,7 @@ export function OverviewDashboard({
               <h3 className="text-xl font-semibold text-white">Fun facts</h3>
               <p className="mt-1 text-base text-zinc-400">
                 {factsShuffle > 0
-                  ? "Shuffled — reload for the daily batch"
+                  ? "Shuffled, reload for the daily batch"
                   : "10 new ones every Tallinn day"}
               </p>
             </div>

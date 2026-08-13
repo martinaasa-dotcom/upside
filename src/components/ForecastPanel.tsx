@@ -98,7 +98,7 @@ function EoyPriceInput({
       type="text"
       inputMode="decimal"
       value={draft}
-      title={targeted ? "Edit EOY target" : "Awaiting Margus path — or type a price"}
+      title={targeted ? "Edit EOY target" : "Awaiting Margus path, or type a price"}
       onChange={(e) => {
         setDraft(e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, ""));
       }}
@@ -323,13 +323,13 @@ export function ForecastPanel({
       fullyCovered,
     });
     if (decision.run && decision.reason === "first-run") {
-      return "No Margus plan yet — generating a base-case path …";
+      return "No Margus plan yet, generating a base-case path …";
     }
     if (decision.run && decision.reason === "monthly") {
-      return "Monthly thesis check — Margus is refreshing EOY if anything shifted …";
+      return "Monthly thesis check, Margus is refreshing EOY if anything shifted …";
     }
     if (decision.run && decision.reason === "sold-holding") {
-      return "A holding this plan named has been sold — regenerating the playbook …";
+      return "A holding this plan named has been sold, regenerating the playbook …";
     }
     return null;
   }, [planHydrated, model.rows, plan, fullyCovered, busy]);
@@ -351,7 +351,7 @@ export function ForecastPanel({
             )}
             {flatCount > 0 && !busy && !plan && !statusHint && (
               <p className="mt-1 text-[11px] text-amber-200/80">
-                No saved forecast yet — Margus will lock prices in shortly.
+                No saved forecast yet. Margus will lock prices in shortly.
               </p>
             )}
             {busy && (
@@ -654,7 +654,7 @@ export function ForecastPanel({
                       <span className="font-semibold text-zinc-200">
                         {t.ticker}
                       </span>
-                      {t.rationale ? ` — ${t.rationale}` : " — path applied"}
+                      {t.rationale ? `: ${t.rationale}` : ": path applied"}
                     </li>
                   ))}
                 </ul>
@@ -665,7 +665,7 @@ export function ForecastPanel({
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-2.5 text-xs text-amber-100">
                 <span>
                   This playbook may still name{" "}
-                  {soldTickersInPlan.join(", ")} — no longer in this sheet.
+                  {soldTickersInPlan.join(", ")}, no longer in this sheet.
                   {busy ? " Refreshing …" : ""}
                 </span>
                 {!busy && (
@@ -698,7 +698,7 @@ export function ForecastPanel({
                         Add
                       </p>
                       <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
-                        {s.add?.trim() || "Hold — no add"}
+                        {s.add?.trim() || "Hold, no add"}
                       </p>
                     </div>
                     <div className="rounded-lg border border-rose-500/25 bg-rose-950/30 px-2.5 py-2">
@@ -706,7 +706,7 @@ export function ForecastPanel({
                         Trim
                       </p>
                       <p className="mt-0.5 whitespace-normal break-words text-xs leading-snug text-zinc-100">
-                        {s.trim?.trim() || "Hold — no trim"}
+                        {s.trim?.trim() || "Hold, no trim"}
                       </p>
                     </div>
                   </div>

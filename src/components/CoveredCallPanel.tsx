@@ -150,9 +150,9 @@ const HEADERS = [
 ] as const;
 
 const HEADER_HINTS: Partial<Record<(typeof HEADERS)[number], string>> = {
-  "Call %": "OTM % used to pick the strike — higher = further out, less premium",
+  "Call %": "OTM % used to pick the strike: higher means further out, less premium",
   "Stock target": "Price you're planning to write or roll a call toward",
-  Distance: "(Stock target − spot) / spot — negative means spot is at/past target",
+  Distance: "(Stock target − spot) / spot. Negative means spot is at/past target",
   "Next strike": "Stock target × (1 + Call %), rounded to a tradable strike",
   "CC yield": "Modeled 2-week premium yield if you wrote at the next strike today",
 };

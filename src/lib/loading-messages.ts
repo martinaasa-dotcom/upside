@@ -42,7 +42,7 @@ const LOADING_MESSAGES = [
   "Reading the fine print (there isn't any) …",
   "Asking Margus to hurry up …",
   "Double-checking you didn't buy the dip by accident …",
-  "Loading — unlike your portfolio, this won't take forever …",
+  "Loading, and unlike your portfolio, this won't take forever …",
   "Rehearsing your excuse for that one ticker …",
   "Giving your cash a pep talk …",
   "Waiting for the numbers to feel ready …",

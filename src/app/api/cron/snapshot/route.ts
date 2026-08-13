@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Nightly snapshot skipped — SUPABASE_SERVICE_ROLE_KEY is not configured, so a cron request (no user session) cannot read any portfolios under RLS.",
+          "Nightly snapshot skipped. SUPABASE_SERVICE_ROLE_KEY is not configured, so a cron request (no user session) cannot read any portfolios under RLS.",
       },
       { status: 503 }
     );

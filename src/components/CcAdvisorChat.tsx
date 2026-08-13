@@ -100,7 +100,7 @@ type Props = {
  * so the prompt itself has to make "call the tool, don't just narrate"
  * unambiguous. */
 const DEFAULT_SCREENSHOT_PROMPT =
-  "Read this broker screenshot carefully, then take action — do not just describe it. If it is a single ticker (Shares + Avg buy), call the addHolding tool with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call the importSheet tool for every row. You must call one of these tools before replying; only after that, briefly confirm what you saved.";
+  "Read this broker screenshot carefully, then take action. Do not just describe it. If it is a single ticker (Shares + Avg buy), call the addHolding tool with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call the importSheet tool for every row. You must call one of these tools before replying; only after that, briefly confirm what you saved.";
 
 type ToolPart = {
   type: string;
@@ -141,7 +141,7 @@ function describeChatUiError(message: string): string {
     return "OpenRouter's free daily quota is used up for today. Add a Groq/Gemini/Cerebras free key for a fallback, or try again after it resets.";
   }
   if (/OPENROUTER|GROQ|GEMINI|CEREBRAS|API key|503|LLM/i.test(message)) {
-    return "Every configured AI provider failed or is rate-limited right now — wait a bit and try again, or add another free provider key (Groq/Gemini/Cerebras) in .env.local for a fallback.";
+    return "Every configured AI provider failed or is rate-limited right now. Wait a bit and try again, or add another free provider key (Groq/Gemini/Cerebras) in .env.local for a fallback.";
   }
   if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(message)) {
     return "Connection dropped (dev server restart or a long reply). Refresh the page and try again.";
@@ -416,7 +416,7 @@ const RULES = [
   {
     title: "Market condition",
     rule: "Intraday green rebound",
-    detail: "Prefer selling calls when the name is green — avoid dumping strikes on red days.",
+    detail: "Prefer selling calls when the name is green. Avoid dumping strikes on red days.",
   },
   {
     title: "Contract duration",
@@ -426,7 +426,7 @@ const RULES = [
   {
     title: "Call %",
     rule: "Scaled to each ticker's own volatility",
-    detail: `Roughly ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}% for low-vol names up to ${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%+ for high-beta ones, nudged for earnings / distance — never one flat "safety" % for the whole book.`,
+    detail: `Roughly ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}% for low-vol names up to ${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%+ for high-beta ones, nudged for earnings / distance. Never one flat "safety" % for the whole book.`,
   },
   {
     title: "Earnings",
@@ -577,7 +577,7 @@ export function CcAdvisorChat({
     if (!last || last.role !== "assistant") {
       setSilentSummary({
         kind: "empty",
-        lines: ["Margus didn't confirm — open chat to check what happened."],
+        lines: ["Margus didn't confirm. Open chat to check what happened."],
       });
       setSilentPhase("result");
       return;
@@ -609,7 +609,7 @@ export function CcAdvisorChat({
       setSilentSummary({
         kind: "empty",
         lines: [
-          "Margus returned an empty reply — often a free-model rate limit. Open chat and try again.",
+          "Margus returned an empty reply. Often a free-model rate limit. Open chat and try again.",
         ],
       });
     }
@@ -880,7 +880,7 @@ export function CcAdvisorChat({
               onClick={toggleWide}
               className="rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
-              title={wide ? "Shrink panel" : "Widen panel — more room for tables"}
+              title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >
               {wide ? (
                 <Minimize2 className="h-4 w-4" />
@@ -1084,8 +1084,8 @@ export function CcAdvisorChat({
             {lastIsEmptyAssistant && !error && (
               <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
                 Margus returned an empty reply (often a free-model rate limit or
-                a long screenshot import). Wait a few seconds and ask again —
-                for broker sheets, say “import this portfolio breakdown”.
+                a long screenshot import). Wait a few seconds and ask again.
+                For broker sheets, say “import this portfolio breakdown”.
               </div>
             )}
 

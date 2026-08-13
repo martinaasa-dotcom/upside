@@ -139,23 +139,23 @@ export function buildFundSystemPrompt(): string {
 ## This specific job: managing your own paper portfolio
 You run a single, fully simulated (paper money) portfolio that started at ${money(
     MARGUS_FUND_START_CAPITAL
-  )} and is shown publicly as a daily, followable feed — think of it like a public "AI managed portfolio" account. People may glance at this for ideas, so:
-- Every position needs a genuine, specific, fundamentals-based thesis (growth drivers, moat, unit economics, TAM) — never momentum, never "it's up a lot," never because it's trending.
+  )} and is shown publicly as a daily, followable feed. Think of it like a public "AI managed portfolio" account. People may glance at this for ideas, so:
+- Every position needs a genuine, specific, fundamentals-based thesis (growth drivers, moat, unit economics, TAM). Never momentum, never "it's up a lot," never because it's trending.
 - Every new position needs a concrete timeframe and a concrete exit condition (a price/return level, a thesis-break condition, or a hard time stop) decided at entry, not improvised later.
-- Review EVERY currently open holding, every day, even when the action is "hold" — and when it's hold, say specifically why the original thesis and timeline still stand, not a generic "staying the course" line.
-- Position sizing discipline: don't let any single new position exceed roughly 25% of total portfolio value, and don't deploy all available cash even on a great idea — leave room to be wrong and to add later.
-- Most days should have zero or one action. A portfolio that trades every single day isn't disciplined, it's noisy — only act when something genuinely changed (thesis progressed/broke, timeline elapsed, price hit your own stated level) or a new idea truly clears the bar.
-- Keep every field SHORT. This report gets read daily — nobody wants a wall of text. 1-3 sentences per field, always.`;
+- Review EVERY currently open holding, every day, even when the action is "hold." When it's hold, say specifically why the original thesis and timeline still stand, not a generic "staying the course" line.
+- Position sizing discipline: don't let any single new position exceed roughly 25% of total portfolio value, and don't deploy all available cash even on a great idea. Leave room to be wrong and to add later.
+- Most days should have zero or one action. A portfolio that trades every single day isn't disciplined, it's noisy. Only act when something genuinely changed (thesis progressed/broke, timeline elapsed, price hit your own stated level) or a new idea truly clears the bar.
+- Keep every field SHORT. This report gets read daily; nobody wants a wall of text. 1-3 sentences per field, always.`;
 }
 
 const weeklyRecapSchema = z.object({
   headline: z
     .string()
-    .describe("One punchy sentence capturing the week — the story, not the stat line."),
+    .describe("One punchy sentence capturing the week: the story, not the stat line."),
   body: z
     .string()
     .describe(
-      "4-8 sentences: a genuine step back on how the week went — your biggest win, your biggest miss or lesson, how the numbers below shaped your thinking, and what you're specifically watching next week. This is the reflection, not a re-listing of each day's actions."
+      "4-8 sentences: a genuine step back on how the week went. Your biggest win, your biggest miss or lesson, how the numbers below shaped your thinking, and what you're specifically watching next week. This is the reflection, not a re-listing of each day's actions."
     ),
 });
 
@@ -169,7 +169,7 @@ export function buildWeeklyRecapSystemPrompt(): string {
   return `${MARGUS_PERSONA}
 
 ## This specific job: your weekly step-back
-Once a week (Friday's close) you write a short, honest recap of your own paper portfolio's week — not a re-listing of each day's trades, but a genuine reflection: what you got right, what you got wrong or would do differently, how you stack up against SPY, and what specifically you're watching next week. The numbers below are already computed and correct — don't recompute or contradict them, just make sense of them in your own voice. Keep it short: this gets read once a week, not once a day, but it should still feel like a real strategist thinking out loud, not a template.`;
+Once a week (Friday's close) you write a short, honest recap of your own paper portfolio's week. Not a re-listing of each day's trades, but a genuine reflection: what you got right, what you got wrong or would do differently, how you stack up against SPY, and what specifically you're watching next week. The numbers below are already computed and correct; don't recompute or contradict them, just make sense of them in your own voice. Keep it short: this gets read once a week, not once a day, but it should still feel like a real strategist thinking out loud, not a template.`;
 }
 
 export function buildWeeklyRecapUserPrompt(input: {
@@ -193,9 +193,9 @@ export function buildWeeklyRecapUserPrompt(input: {
 
   const actionsBlock = weekActions.length
     ? weekActions
-        .map((a) => `- ${a.date}: ${a.type.toUpperCase()} ${a.ticker} — ${a.reasoning}`)
+        .map((a) => `- ${a.date}: ${a.type.toUpperCase()} ${a.ticker}: ${a.reasoning}`)
         .join("\n")
-    : "No trades this week — held the book as-is.";
+    : "No trades this week, held the book as-is.";
 
   const holdingsBlock = currentHoldings
     .map(
@@ -232,7 +232,7 @@ export function buildFundUserPrompt(input: {
 
   const holdingsBlock =
     holdings.length === 0
-      ? "No open positions — 100% cash right now."
+      ? "No open positions, 100% cash right now."
       : holdings
           .map((h) => {
             return [
@@ -258,7 +258,7 @@ export function buildFundUserPrompt(input: {
 
   const recapBlock = recentHeadlines.length
     ? `Recent days, for continuity (don't repeat, don't contradict without explaining why):\n${recentHeadlines.map((h) => `- ${h}`).join("\n")}`
-    : "No prior reports yet — this may be day one.";
+    : "No prior reports yet, this may be day one.";
 
   return `${contextLines.join("\n")}
 
@@ -271,5 +271,5 @@ ${holdingsBlock}
 ## Recent history
 ${recapBlock}
 
-Decide today's actions. Review every open holding above. Only add a new position if something genuinely clears your bar today — most days that's zero new positions.`;
+Decide today's actions. Review every open holding above. Only add a new position if something genuinely clears your bar today; most days that's zero new positions.`;
 }

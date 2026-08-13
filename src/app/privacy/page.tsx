@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Upside",
+  title: "Privacy Policy: Upside",
 };
 
 export default function PrivacyPage() {
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-zinc-200">Usage &amp; performance:</strong>{" "}
               basic, privacy-respecting analytics and performance metrics via
-              Vercel Analytics / Speed Insights (page views, load times) — no
+              Vercel Analytics / Speed Insights (page views, load times), no
               cross-site tracking or ad identifiers.
             </li>
           </ul>
@@ -69,20 +69,20 @@ export default function PrivacyPage() {
           models, and we don&apos;t sell or rent your data to anyone.
         </Section>
 
-        <Section title="3. Who sees it — third parties">
+        <Section title="3. Who sees it: third parties">
           <p className="mb-2">
             A few categories of processor see limited data, only as needed to
             run the feature:
           </p>
           <ul className="list-disc space-y-1.5 pl-5">
             <li>
-              <strong className="text-zinc-200">Supabase</strong> (EU-hosted)
-              — our database and authentication provider. Everything you
+              <strong className="text-zinc-200">Supabase</strong> (EU-hosted),
+              our database and authentication provider. Everything you
               enter lives there.
             </li>
             <li>
               <strong className="text-zinc-200">AI model providers</strong>{" "}
-              (OpenRouter and fallback providers) — when you use Margus, ask
+              (OpenRouter and fallback providers). When you use Margus, ask
               for a forecast, or run Thesis Pulse, the relevant portfolio
               context and your message are sent to whichever provider
               answers that request. We don&apos;t control their retention
@@ -90,12 +90,12 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong className="text-zinc-200">Market data providers</strong>{" "}
-              (Yahoo Finance and fallback quote providers) — we send ticker
+              (Yahoo Finance and fallback quote providers). We send ticker
               symbols to fetch prices; we don&apos;t send your holdings or
               identity to these.
             </li>
             <li>
-              <strong className="text-zinc-200">Vercel</strong> — hosting,
+              <strong className="text-zinc-200">Vercel</strong>: hosting,
               plus the anonymized analytics mentioned above.
             </li>
           </ul>
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
           If you invite a co-owner to a sheet, they get full edit access to
           that sheet&apos;s data. If you join a community/leaderboard, other
           members see a read-only performance summary (returns, notable
-          holdings) for the sheet(s) you&apos;ve linked to that community —
+          holdings) for the sheet(s) you&apos;ve linked to that community,
           not your raw cash balance or full transaction history unless the
           community view is explicitly designed to show it. You control which
           sheets, if any, are linked to a community.
@@ -135,10 +135,10 @@ export default function PrivacyPage() {
           own, and your sign-in credential itself (sheets you share with a
           co-owner stay with them). If for any reason the sign-in credential
           can&apos;t be removed at the same time, your Upside data is still
-          fully wiped immediately — you&apos;d just want to also revoke
+          fully wiped immediately. You&apos;d just want to also revoke
           Upside&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
-          (access, rectification, erasure, portability, objection) — the
+          (access, rectification, erasure, portability, objection); the
           export/delete tools cover most of these directly; email us for
           anything else.
         </Section>

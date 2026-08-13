@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase not configured — use local demo store" },
+      { error: "Supabase not configured, use local demo store" },
       { status: 400 }
     );
   }

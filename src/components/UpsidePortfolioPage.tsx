@@ -897,7 +897,7 @@ export function UpsidePortfolioPage() {
               </h2>
               {reports.length === 0 ? (
                 <p className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 px-4 py-6 text-center text-sm text-zinc-500">
-                  No reports yet — Margus&apos;s first daily decision runs
+                  No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
               ) : (

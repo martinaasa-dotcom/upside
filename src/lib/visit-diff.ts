@@ -216,7 +216,7 @@ export function diffSinceLastVisit(
   if (lines.length === 0) {
     lines.push({
       id: "quiet",
-      text: "Quiet while you were away — barely moved",
+      text: "Quiet while you were away, barely moved",
       tone: "neutral",
     });
   }

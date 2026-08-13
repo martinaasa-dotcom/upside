@@ -7,11 +7,11 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 
 const CONVICTION_LABELS: Record<ConvictionLevel, string> = {
-  1: "Weak — watching for an exit",
-  2: "Below average — trimming candidate",
-  3: "Neutral — holding as-is",
-  4: "Strong — comfortable adding",
-  5: "Max — highest-confidence thesis",
+  1: "Weak, watching for an exit",
+  2: "Below average, trimming candidate",
+  3: "Neutral, holding as-is",
+  4: "Strong, comfortable adding",
+  5: "Max, highest-confidence thesis",
 };
 
 type Props = {
@@ -127,7 +127,7 @@ export function TickerDrawer({
               value={thesis}
               onChange={(e) => onConviction(level, e.target.value)}
               rows={4}
-              placeholder="Why we hold this — moat, path, invalidation …"
+              placeholder="Why we hold this: moat, path, invalidation …"
               className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </div>

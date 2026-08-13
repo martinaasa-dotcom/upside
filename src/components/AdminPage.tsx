@@ -221,7 +221,7 @@ export function AdminPage() {
                   <p className="text-sm text-zinc-500">Loading …</p>
                 ) : errorLog.length === 0 ? (
                   <p className="rounded-2xl border border-emerald-900/40 bg-emerald-950/15 px-4 py-4 text-center text-sm text-emerald-300/90">
-                    Nothing logged — all clear.
+                    Nothing logged, all clear.
                   </p>
                 ) : (
                   <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
@@ -342,7 +342,7 @@ export function AdminPage() {
                               {noPortfolios ? (
                                 <span
                                   className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300"
-                                  title="Signed in but owns/co-owns no sheet — possible broken seed claim or invite redemption"
+                                  title="Signed in but owns/co-owns no sheet. Possible broken seed claim or invite redemption"
                                 >
                                   <AlertTriangle className="h-3 w-3" />
                                   0 portfolios
@@ -450,7 +450,7 @@ export function AdminPage() {
       <ConfirmModal
         open={confirmClearErrors}
         title="Clear error log?"
-        body="Removes all logged errors. This doesn't fix anything — it just clears the list once you've triaged it."
+        body="Removes all logged errors. This doesn't fix anything, it just clears the list once you've triaged it."
         confirmLabel="Clear"
         destructive
         onClose={() => setConfirmClearErrors(false)}

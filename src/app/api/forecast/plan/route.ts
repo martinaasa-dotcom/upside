@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   const limit = checkRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
     return Response.json(
-      { error: "Forecast requests are limited — try again in a bit." },
+      { error: "Forecast requests are limited. Try again in a bit." },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
     );
   }

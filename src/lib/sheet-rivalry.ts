@@ -80,7 +80,7 @@ export function rivalryOverviewCopy(
     return {
       eyebrow: "Family scoreboard",
       name: "—",
-      detail: "Compare your portfolios — who's up today, lifetime, and by book size.",
+      detail: "Compare your portfolios: who's up today, lifetime, and by book size.",
       ranks: "",
     };
   }
@@ -91,12 +91,12 @@ export function rivalryOverviewCopy(
   const detail =
     today === 1 && roi === 1 && nav === 1
       ? pick(rng, [
-          `${leader.name} is sweeping all three columns (${sheetCount} sheets ranked) — today, lifetime, and size.`,
+          `${leader.name} is sweeping all three columns (${sheetCount} sheets ranked): today, lifetime, and size.`,
           `Clean sweep: ${leader.name} leads today, lifetime ROI, and book size out of ${sheetCount} sheets.`,
         ])
       : pick(rng, [
-          `Ranks your sheets against each other (${sheetCount} total). ${leader.name} is ahead on the blended score — not always #1 in every column.`,
-          `${leader.name} takes the blended lead across ${sheetCount} sheets — a mix of today, lifetime, and size, not a single stat.`,
+          `Ranks your sheets against each other (${sheetCount} total). ${leader.name} is ahead on the blended score, not always #1 in every column.`,
+          `${leader.name} takes the blended lead across ${sheetCount} sheets, a mix of today, lifetime, and size, not a single stat.`,
           `Out of ${sheetCount} sheets, ${leader.name} has the best combined score. Check the columns below for where it's winning (or not).`,
         ]);
   return {
@@ -107,9 +107,9 @@ export function rivalryOverviewCopy(
   };
 }
 
-/** Lab Versus header — still short. */
+/** Lab Versus header, still short. */
 export function rivalryTagline(leader: RivalRow | undefined): string {
   if (!leader) return "No sheets to rank yet.";
   const { today, roi, nav } = leader.medals;
-  return `${leader.name} leads — today ${ordinal(today)}, lifetime ${ordinal(roi)}, size ${ordinal(nav)}.`;
+  return `${leader.name} leads: today ${ordinal(today)}, lifetime ${ordinal(roi)}, size ${ordinal(nav)}.`;
 }

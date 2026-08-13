@@ -640,7 +640,7 @@ export function CompoundInterestSheet({
         <div>
           <h2 className="text-sm font-semibold text-white">Compound playground</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Live projections — dial deposits, pick a sheet, shock the path.
+            Live projections. Dial deposits, pick a sheet, shock the path.
           </p>
         </div>
 
@@ -900,7 +900,7 @@ export function CompoundInterestSheet({
             ))}
           </div>
           <p className="mt-1.5 text-[11px] text-zinc-600">
-            Path dependence without a lecture — then compounding resumes.
+            Path dependence without a lecture. Then compounding resumes.
           </p>
         </div>
 
@@ -1014,7 +1014,7 @@ export function CompoundInterestSheet({
           </div>
           <p className="mt-1 text-xs text-zinc-500">
             Target dates and years-until recompute from your dialed principal,
-            rate, deposits, and compounding — same path as Calculate.
+            rate, deposits, and compounding. Same path as Calculate.
           </p>
           {milestoneTakeaway && (
             <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-brand-bright">
@@ -1041,7 +1041,7 @@ export function CompoundInterestSheet({
                   <th className="pb-2 pr-3 font-medium">Years until</th>
                   <th
                     className="pb-2 pr-3 font-medium"
-                    title="Compound Annual Growth Rate — the steady yearly rate that would take you from one milestone to the next, once both have real dates"
+                    title="Compound Annual Growth Rate: the steady yearly rate that would take you from one milestone to the next, once both have real dates"
                   >
                     CAGR
                   </th>
@@ -1150,7 +1150,7 @@ export function CompoundInterestSheet({
                 {tipping === y && (
                   <span
                     className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-gain align-middle"
-                    title="The flip — interest first beats deposits this year"
+                    title="The flip: interest first beats deposits this year"
                     aria-hidden
                   />
                 )}
@@ -1182,7 +1182,7 @@ export function CompoundInterestSheet({
             </h4>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            Same principal & horizon — not advice, just contrast.
+            Same principal & horizon. Not advice, just contrast.
           </p>
           {compareTakeaway && (
             <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm text-brand-bright">

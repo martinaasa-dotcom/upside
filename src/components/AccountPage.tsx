@@ -215,7 +215,7 @@ export function AccountPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
-      setProfileMsg("Saved — this is how you appear in communities.");
+      setProfileMsg("Saved. This is how you appear in communities.");
       await refresh();
     } catch (err) {
       setProfileErr(err instanceof Error ? err.message : "Save failed");
@@ -271,8 +271,8 @@ export function AccountPage() {
       setInviteCode(data.code ?? data.token);
       setInviteMsg(
         email
-          ? `Invite ready for ${email} — share the link or code.`
-          : "Invite ready — share the link or code with your partner."
+          ? `Invite ready for ${email}. Share the link or code.`
+          : "Invite ready. Share the link or code with your partner."
       );
       await navigator.clipboard.writeText(url).catch(() => undefined);
       setCopied("link");
@@ -476,7 +476,7 @@ export function AccountPage() {
                 />
                 {avatarBroken && (
                   <span className="text-xs text-amber-400/90">
-                    Couldn&apos;t load that image — showing your initial instead.
+                    Couldn&apos;t load that image, showing your initial instead.
                   </span>
                 )}
               </label>
@@ -505,7 +505,7 @@ export function AccountPage() {
               <div>
                 <h2 className="text-sm font-semibold text-white">Experience level</h2>
                 <p className="text-xs text-zinc-500">
-                  Simplifies what&apos;s shown — nothing is locked, change it anytime.
+                  Simplifies what&apos;s shown. Nothing is locked, change it anytime.
                 </p>
               </div>
             </div>
@@ -535,8 +535,8 @@ export function AccountPage() {
             <div className="mt-4 border-t border-zinc-800 pt-4">
               <p className="text-sm font-medium text-white">Options experience</p>
               <p className="mt-0.5 text-xs text-zinc-500">
-                Controls covered calls, strike alerts, and Call % everywhere
-                — separate from the level above.
+                Controls covered calls, strike alerts, and Call % everywhere.
+                Separate from the level above.
               </p>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <button
@@ -585,7 +585,7 @@ export function AccountPage() {
                   Invite to a portfolio
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  Partners get full live edit access to that sheet — not
+                  Partners get full live edit access to that sheet, not
                   community read-only.
                 </p>
               </div>
@@ -764,7 +764,7 @@ export function AccountPage() {
                   Data &amp; privacy
                 </h2>
                 <p className="text-xs text-zinc-500">
-                  Your data, your call — export it or wipe it any time.
+                  Your data, your call. Export it or wipe it any time.
                 </p>
               </div>
             </div>
@@ -826,7 +826,7 @@ export function AccountPage() {
           </section>
 
           <p className="text-center text-xs text-zinc-600">
-            Partner signs in with Google, then opens the invite link — or pastes
+            Partner signs in with Google, then opens the invite link, or pastes
             the code at{" "}
             <Link href="/account/join" className="text-brand-bright/80 underline">
               /account/join
@@ -850,7 +850,7 @@ export function AccountPage() {
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
               This permanently deletes your profile and any sheet you&apos;re
-              the sole owner of (holdings included) — shared sheets stay for
+              the sole owner of (holdings included). Shared sheets stay for
               your co-owner. Where possible this also removes your sign-in
               itself, so the account can&apos;t be used again; if it can&apos;t
               be removed from here, revoke Upside&apos;s access from your

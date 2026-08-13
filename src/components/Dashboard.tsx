@@ -813,10 +813,10 @@ export function Dashboard() {
           err instanceof DOMException && err.name === "AbortError";
         setLoadError(
           aborted
-            ? "Timed out loading your book — check the connection and retry."
+            ? "Timed out loading your book. Check the connection and retry."
             : err instanceof Error
               ? err.message
-              : "Couldn’t load the shared book. Showing local demo — retry when ready."
+              : "Couldn’t load the shared book. Showing local demo, retry when ready."
         );
         if (!aborted && !(err instanceof Error && /Sign in/i.test(err.message))) {
           const demo = loadDemoStore();
@@ -1123,7 +1123,7 @@ export function Dashboard() {
             fetchedAt: Date.now(),
           });
         }
-        toast("Book updated elsewhere — synced", "info");
+        toast("Book updated elsewhere, synced", "info");
       } catch {
         /* ignore */
       }
@@ -1321,7 +1321,7 @@ export function Dashboard() {
           toast(
             typeof data.error === "string"
               ? data.error
-              : "Failed to update holding — reverted",
+              : "Failed to update holding, reverted",
             "error"
           );
         }
@@ -1824,7 +1824,7 @@ export function Dashboard() {
           toast(
             typeof data.error === "string"
               ? data.error
-              : "Failed to delete holding — restored",
+              : "Failed to delete holding, restored",
             "error"
           );
           return;
@@ -1892,7 +1892,7 @@ export function Dashboard() {
           toast(
             typeof data.error === "string"
               ? data.error
-              : "Failed to rename sheet — reverted",
+              : "Failed to rename sheet, reverted",
             "error"
           );
         }
@@ -1961,7 +1961,7 @@ export function Dashboard() {
           toast(
             typeof data.error === "string"
               ? data.error
-              : "Failed to update cash — reverted",
+              : "Failed to update cash, reverted",
             "error"
           );
         }
@@ -2155,14 +2155,14 @@ export function Dashboard() {
       },
       {
         id: "pulse",
-        label: "Pulse — thesis check",
+        label: "Pulse: thesis check",
         group: "Go",
         hint: "Big movers",
         run: () => setActiveId(PULSE_TAB_ID),
       },
       {
         id: "statistics",
-        label: "Statistics — seasonality",
+        label: "Seasonality",
         group: "Go",
         hint: "Year & calendar patterns",
         run: () => setActiveId(SEASONALITY_TAB_ID),
@@ -2325,7 +2325,7 @@ export function Dashboard() {
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
               {loadError
                 ? loadError
-                : "A sheet is one portfolio — holdings, cash, and a covered-call plan. Create your first one to start, or open your invite link again if someone shared a sheet with you."}
+                : "A sheet is one portfolio: holdings, cash, and a covered-call plan. Create your first one to start, or open your invite link again if someone shared a sheet with you."}
             </p>
           </div>
           {!loadError && (
@@ -2341,7 +2341,7 @@ export function Dashboard() {
                 },
                 {
                   title: "Compete with family",
-                  detail: "Optional communities — a live leaderboard, not a spreadsheet share.",
+                  detail: "Optional communities, a live leaderboard, not a spreadsheet share.",
                 },
               ].map((f) => (
                 <div
@@ -2411,7 +2411,7 @@ export function Dashboard() {
           <div className="flex min-w-0 items-center gap-3 text-[15px] leading-none">
             <HeaderBrand
               onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-              title="Upside — go to Overview"
+              title="Upside: go to Overview"
             />
             <span
               className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
@@ -2786,7 +2786,7 @@ export function Dashboard() {
         title="Reset forecast overrides?"
         body={`Clears every manual and Margus-generated EOY price target on ${
           activePortfolio?.name ?? "this sheet"
-        } — Margus will need to re-reason the whole forecast from scratch on next visit. This can't be undone.`}
+        }. Margus will need to re-reason the whole forecast from scratch on next visit. This can't be undone.`}
         confirmLabel="Reset"
         destructive
         onClose={() => setConfirmResetForecast(false)}

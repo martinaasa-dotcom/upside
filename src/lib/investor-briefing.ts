@@ -66,7 +66,7 @@ function buildPlays(opts: {
     kind: "play",
     title: "Most days, the job is just watching",
     detail:
-      "Nothing here needs action right now. Checking in daily is the habit worth keeping — trading daily isn't.",
+      "Nothing here needs action right now. Checking in daily is the habit worth keeping, trading daily isn't.",
   });
 
   if (!hideOptions) {
@@ -75,7 +75,7 @@ function buildPlays(opts: {
       kind: "play",
       title: "Hold, and only write when it's worth it",
       detail:
-        "Own the shares. Sell a call only when the premium's actually rich enough to bother — otherwise there's nothing to do today.",
+        "Own the shares. Sell a call only when the premium's actually rich enough to bother. Otherwise there's nothing to do today.",
     });
   }
 
@@ -103,10 +103,10 @@ function buildPlays(opts: {
     plays.push({
       id: `play-theme-${dayKey}`,
       kind: "play",
-      title: `${personality.animalEmoji} Mostly ${THEME_LABEL[personality.dominantTheme]} — ${personality.diversificationBand.label.toLowerCase()}`,
+      title: `${personality.animalEmoji} Mostly ${THEME_LABEL[personality.dominantTheme]}, ${personality.diversificationBand.label.toLowerCase()}`,
       detail: pick(rng, [
         `${personality.diversificationBand.description} Risk read: ${personality.riskBand.label.toLowerCase()}.`,
-        `That's ${personality.animal} energy — ${personality.riskBand.description.toLowerCase()}`,
+        `That's ${personality.animal} energy: ${personality.riskBand.description.toLowerCase()}`,
       ]),
     });
   }
@@ -123,7 +123,7 @@ function buildPlays(opts: {
       kind: "play",
       title: `$${money(remaining)} to your next milestone`,
       detail: pick(rng, [
-        `$${money(next)} is the next line on the ladder. No action needed — just time.`,
+        `$${money(next)} is the next line on the ladder. No action needed, just time.`,
         `Crossing $${money(next)} doesn't need a trade, just patience.`,
       ]),
       link: { type: "compound" },
@@ -146,7 +146,7 @@ function buildPlays(opts: {
       title: `${topMover.ticker} is today's biggest mover, ${pct >= 0 ? "+" : ""}${pct1(pct)}`,
       detail: pick(rng, [
         "Worth knowing why before you assume it's noise.",
-        "One name doing most of the day's talking — worth a glance.",
+        "One name doing most of the day's talking. Worth a glance.",
       ]),
       ticker: topMover.ticker,
       link: topMover.portfolioIds[0]
@@ -207,7 +207,7 @@ export function buildInvestorBriefing(input: {
             `${pct1(todayPct)} on the session. Nothing to do unless a write plan actually needs one.`,
             `${pct1(todayPct)} today. Check Thesis Pulse if anything moved enough to matter; otherwise it's a nothing-burger day.`,
           ])
-        : "Quotes still settling — open, skim, close.",
+        : "Quotes still settling. Open, skim, close.",
     link: { type: "pulse" },
     cta: "Thesis pulse →",
   });
@@ -266,11 +266,11 @@ export function buildInvestorBriefing(input: {
           openPrem > 0
             ? pick(rng, [
                 "When you actually fill a call, tap Log premium on the CC income tab so the season meter counts it.",
-                "Modeled, not banked yet — log the fill when it actually happens so the season meter matches reality.",
+                "Modeled, not banked yet. Log the fill when it actually happens so the season meter matches reality.",
               ])
             : pick(rng, [
-                "Premium already logged in Cashflow — season meter is current.",
-                "That's real, logged premium — the season meter already reflects it.",
+                "Premium already logged in Cashflow. Season meter is current.",
+                "That's real, logged premium, the season meter already reflects it.",
               ]),
         link: { type: "lab", tab: "season" },
         cta: openPrem > 0 ? "Log premium →" : "CC income →",
@@ -288,8 +288,8 @@ export function buildInvestorBriefing(input: {
       kind: "watch",
       title: `$${money(model.totals.cash)} sitting in cash`,
       detail: pick(rng, [
-        "Fine as powder. Only deploy on a real thesis dip — boredom isn’t a buy signal.",
-        "Dry powder, not dead money — it's doing its job just by being ready.",
+        "Fine as powder. Only deploy on a real thesis dip, boredom isn't a buy signal.",
+        "Dry powder, not dead money. It's doing its job just by being ready.",
         "Sitting idle on purpose beats forcing a mediocre entry. Wait for the dip you actually want.",
       ]),
       link: sheetMostCash(model)

@@ -452,7 +452,7 @@ export async function GET(req: Request) {
               : a.type === "trim"
                 ? "Trimmed"
                 : "Added to";
-        return `**${verb} ${a.ticker}** — ${a.reasoning}`;
+        return `**${verb} ${a.ticker}**: ${a.reasoning}`;
       });
     const holdLines = actions
       .filter((a) => a.type === "hold")

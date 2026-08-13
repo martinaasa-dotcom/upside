@@ -18,9 +18,9 @@ type Q1Answer = "new" | "comfortable" | "active";
 type Q2Answer = "never" | "know" | "regularly";
 
 const Q1_OPTIONS: { id: Q1Answer; label: string; icon: typeof GraduationCap }[] = [
-  { id: "new", label: "New to this — still learning the basics", icon: GraduationCap },
-  { id: "comfortable", label: "Comfortable — I understand stocks and portfolios", icon: TrendingUp },
-  { id: "active", label: "Very experienced — I trade actively or watch markets closely", icon: Sparkles },
+  { id: "new", label: "New to this, still learning the basics", icon: GraduationCap },
+  { id: "comfortable", label: "Comfortable, I understand stocks and portfolios", icon: TrendingUp },
+  { id: "active", label: "Very experienced, I trade actively or watch markets closely", icon: Sparkles },
 ];
 
 const Q2_OPTIONS: { id: Q2Answer; label: string }[] = [
@@ -95,7 +95,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   : "Have you used covered calls or other options strategies?"}
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
-                This just simplifies what you see — nothing is locked, and you can change it anytime in Account.
+                This just simplifies what you see. Nothing is locked, and you can change it anytime in Account.
               </p>
             </div>
 

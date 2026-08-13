@@ -43,7 +43,7 @@ const MAKERS: FactMaker[] = [
     if (!biggest || totals.totalValue <= 0) return null;
     const share = Math.round((biggest.totalValue / totals.totalValue) * 100);
     return pick(rng, [
-      `${biggest.portfolio.name} is the heavyweight book — ${share}% of combined NAV.`,
+      `${biggest.portfolio.name} is the heavyweight book, ${share}% of combined NAV.`,
       `${biggest.portfolio.name} is carrying ${share}% of the family fortune. No pressure.`,
       `If the books were a group chat, ${biggest.portfolio.name} would be the admin (${share}% of NAV).`,
       `${biggest.portfolio.name} ate ${share}% of the pie. The others are sharing crumbs politely.`,
@@ -56,7 +56,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${smallest.portfolio.name} is the scrappy underdog book at $${money(smallest.totalValue)}.`,
       `Tiny but mighty? ${smallest.portfolio.name} clocks in at $${money(smallest.totalValue)}.`,
-      `${smallest.portfolio.name} is running the guerrilla campaign — only $${money(smallest.totalValue)} on the board.`,
+      `${smallest.portfolio.name} is running the guerrilla campaign, only $${money(smallest.totalValue)} on the board.`,
     ]);
   },
 
@@ -70,7 +70,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${hot.ticker} is the lifetime MVP at ${pct1(hot.roiPct)} ROI ${where}.`,
       `Hall of fame: ${hot.ticker} printed ${pct1(hot.roiPct)} ROI ${where}.`,
-      `${hot.ticker} has been eating well — ${pct1(hot.roiPct)} lifetime ROI ${where}.`,
+      `${hot.ticker} has been eating well: ${pct1(hot.roiPct)} lifetime ROI ${where}.`,
       `Somebody high-fived ${hot.ticker}: ${pct1(hot.roiPct)} ROI ${where}.`,
     ]);
   },
@@ -79,7 +79,7 @@ const MAKERS: FactMaker[] = [
     const cold = [...tickers].sort(byRoiAsc)[0];
     if (!cold || cold.roiPct >= 0) return null;
     return pick(rng, [
-      `${cold.ticker} is the drama queen at ${pct1(cold.roiPct)} — owned by ${cold.portfolios.join(", ")}.`,
+      `${cold.ticker} is the drama queen at ${pct1(cold.roiPct)}, owned by ${cold.portfolios.join(", ")}.`,
       `${cold.ticker} is on a villain arc (${pct1(cold.roiPct)}) in ${cold.portfolios.join(", ")}.`,
       `Character development pending: ${cold.ticker} sits at ${pct1(cold.roiPct)}.`,
       `${cold.ticker} whispered “I’m just resting” at ${pct1(cold.roiPct)}.`,
@@ -94,10 +94,10 @@ const MAKERS: FactMaker[] = [
     )[0];
     if (!most || most.portfolios.length < 2) return null;
     return pick(rng, [
-      `${most.ticker} is the crowd favorite — in ${most.portfolios.length} books (${most.portfolios.join(", ")}).`,
+      `${most.ticker} is the crowd favorite, in ${most.portfolios.length} books (${most.portfolios.join(", ")}).`,
       `Conspiracy board: ${most.ticker} shows up in ${most.portfolios.length} portfolios.`,
       `Family reunion guest of honor: ${most.ticker} (${most.portfolios.join(", ")}).`,
-      `${most.ticker} has more group chats than you — ${most.portfolios.length} books deep.`,
+      `${most.ticker} has more group chats than you: ${most.portfolios.length} books deep.`,
     ]);
   },
 
@@ -106,7 +106,7 @@ const MAKERS: FactMaker[] = [
     if (!solo.length) return null;
     const t = pick(rng, solo);
     return pick(rng, [
-      `${t.ticker} is a solo act — only ${t.portfolios[0]} dared.`,
+      `${t.ticker} is a solo act, only ${t.portfolios[0]} dared.`,
       `Exclusive drop: ${t.ticker} lives only in ${t.portfolios[0]}.`,
       `${t.portfolios[0]} has a private ${t.ticker} stash. No sharing.`,
     ]);
@@ -116,7 +116,7 @@ const MAKERS: FactMaker[] = [
     const day = [...tickers].filter((t) => t.todayPct != null).sort(byTodayDesc)[0];
     if (!day || (day.todayPct ?? 0) <= 0) return null;
     return pick(rng, [
-      `Today's main character: ${day.ticker} at ${pct1(day.todayPct!)} — $${money(day.todayDollar)} of smile.`,
+      `Today's main character: ${day.ticker} at ${pct1(day.todayPct!)}, $${money(day.todayDollar)} of smile.`,
       `${day.ticker} stole the scene today (+${pct1(day.todayPct!)}, $${money(day.todayDollar)}).`,
       `Green confetti for ${day.ticker}: ${pct1(day.todayPct!)} / $${money(day.todayDollar)}.`,
       `Plot twist (bullish): ${day.ticker} ripped ${pct1(day.todayPct!)} today.`,
@@ -137,7 +137,7 @@ const MAKERS: FactMaker[] = [
     if (totals.cash === 0) return null;
     if (totals.cash < 0) {
       return pick(rng, [
-        `Combined cash is $${money(totals.cash)} — someone is surfing on margin.`,
+        `Combined cash is $${money(totals.cash)}. Someone is surfing on margin.`,
         `The family is $${money(Math.abs(totals.cash))} into the broker’s cookie jar.`,
         `Negative cash alert: $${money(totals.cash)}. Bold. Chaotic. On brand.`,
       ]);
@@ -146,7 +146,7 @@ const MAKERS: FactMaker[] = [
     const coffees = Math.max(1, Math.round(totals.cash / 4.5));
     return pick(rng, [
       `There's $${money(totals.cash)} in dry powder across the family of books.`,
-      `Cash pile: $${money(totals.cash)} — enough for ~${croissants.toLocaleString("en-US")} Tallinn croissants (theoretically).`,
+      `Cash pile: $${money(totals.cash)}, enough for ~${croissants.toLocaleString("en-US")} Tallinn croissants (theoretically).`,
       `$${money(totals.cash)} idle cash ≈ ${coffees.toLocaleString("en-US")} fancy coffees. Deploy wisely.`,
       `Dry powder report: $${money(totals.cash)} waiting for a spicy dip.`,
     ]);
@@ -157,7 +157,7 @@ const MAKERS: FactMaker[] = [
     if (!top || totals.equityValue <= 0) return null;
     const share = Math.round((top.currentValue / totals.equityValue) * 100);
     return pick(rng, [
-      `${top.ticker} alone is ${share}% of all equity — concentration is a feature (probably).`,
+      `${top.ticker} alone is ${share}% of all equity. Concentration is a feature (probably).`,
       `One ticker to rule them: ${top.ticker} is ${share}% of equity.`,
       `${top.ticker} hogged ${share}% of the equity buffet.`,
     ]);
@@ -171,7 +171,7 @@ const MAKERS: FactMaker[] = [
     );
     return pick(rng, [
       `Top 3 names (${top3.map((t) => t.ticker).join(", ")}) are ${share}% of equity.`,
-      `The podium — ${top3.map((t) => t.ticker).join(" / ")} — owns ${share}% of the stack.`,
+      `The podium (${top3.map((t) => t.ticker).join(" / ")}) owns ${share}% of the stack.`,
       `${share}% of equity lives in just three tickers. Minimalism, but make it finance.`,
     ]);
   },
@@ -190,9 +190,9 @@ const MAKERS: FactMaker[] = [
     const lean = [...sheets].sort((a, b) => a.holdingCount - b.holdingCount)[0];
     if (!lean) return null;
     return pick(rng, [
-      `${lean.portfolio.name} keeps it tight — only ${lean.holdingCount} holdings.`,
+      `${lean.portfolio.name} keeps it tight, only ${lean.holdingCount} holdings.`,
       `Minimalist award: ${lean.portfolio.name} (${lean.holdingCount} positions).`,
-      `${lean.portfolio.name} said “fewer, better” — ${lean.holdingCount} holdings.`,
+      `${lean.portfolio.name} said “fewer, better”: ${lean.holdingCount} holdings.`,
     ]);
   },
 
@@ -214,7 +214,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${day.portfolio.name} is today's sheet MVP (${pct1(day.todayPct!)}, $${money(day.todayDollar)}).`,
       `Intraday crown: ${day.portfolio.name} at ${pct1(day.todayPct!)}.`,
-      `${day.portfolio.name} moved $${money(day.todayDollar)} today — main-character energy.`,
+      `${day.portfolio.name} moved $${money(day.todayDollar)} today. Main-character energy.`,
     ]);
   },
 
@@ -235,7 +235,7 @@ const MAKERS: FactMaker[] = [
       .sort((a, b) => a.abs - b.abs)[0];
     if (!flat) return null;
     return pick(rng, [
-      `${flat.t.ticker} is the most “meh” at ${pct1(flat.t.roiPct)} ROI — zen mode.`,
+      `${flat.t.ticker} is the most “meh” at ${pct1(flat.t.roiPct)} ROI. Zen mode.`,
       `Boring-on-purpose award: ${flat.t.ticker} (${pct1(flat.t.roiPct)}).`,
       `${flat.t.ticker} refused the plot: ROI ≈ ${pct1(flat.t.roiPct)}.`,
     ]);
@@ -258,7 +258,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `Scoreboard today: ${green} green · ${red} red across unique tickers.`,
       `Mood ring: ${green} tickers smiling, ${red} frowning.`,
-      `Intraday census — greens ${green}, reds ${red}. Democracy is messy.`,
+      `Intraday census: greens ${green}, reds ${red}. Democracy is messy.`,
     ]);
   },
 
@@ -269,7 +269,7 @@ const MAKERS: FactMaker[] = [
     if (spread <= 0) return null;
     return pick(rng, [
       `ROI gap between best and worst ticker: ${pct1(spread)}. Whiplash included.`,
-      `Best-vs-worst ROI spread is ${pct1(spread)} — one book, many vibes.`,
+      `Best-vs-worst ROI spread is ${pct1(spread)}. One book, many vibes.`,
       `The emotional range of this book is ${pct1(spread)} of ROI. Method acting.`,
     ]);
   },
@@ -278,7 +278,7 @@ const MAKERS: FactMaker[] = [
     if (totals.totalValue <= 0) return null;
     const cashShare = totals.cash / totals.totalValue;
     return pick(rng, [
-      `Cash is ${pct1(cashShare)} of combined NAV — ${cashShare < 0 ? "levered chaos" : cashShare < 0.05 ? "fully invested energy" : "some dry powder left"}.`,
+      `Cash is ${pct1(cashShare)} of combined NAV: ${cashShare < 0 ? "levered chaos" : cashShare < 0.05 ? "fully invested energy" : "some dry powder left"}.`,
       `NAV vibe check: $${money(totals.totalValue)} total · cash share ${pct1(cashShare)}.`,
       `Family NAV: $${money(totals.totalValue)}. Not a small group project.`,
     ]);
@@ -291,7 +291,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `Average book size: ~$${money(perSheet)} across ${totals.sheetCount} sheets.`,
       `If you split the pie evenly: ~$${money(perSheet)} per book (you won’t).`,
-      `${totals.sheetCount} books · ~$${money(perSheet)} average — inequality is the spice.`,
+      `${totals.sheetCount} books · ~$${money(perSheet)} average. Inequality is the spice.`,
     ]);
   },
 
@@ -299,12 +299,12 @@ const MAKERS: FactMaker[] = [
     const multi = tickers.filter((t) => t.portfolios.length >= 2);
     if (!multi.length) {
       return pick(rng, [
-        "Zero overlapping tickers — every book is on its own island.",
+        "Zero overlapping tickers. Every book is on its own island.",
         "No shared names across portfolios. Parallel universes mode.",
       ]);
     }
     return pick(rng, [
-      `${multi.length} tickers are shared across 2+ books — family consensus (or copy-paste).`,
+      `${multi.length} tickers are shared across 2+ books. Family consensus (or copy-paste).`,
       `Overlap count: ${multi.length} names appear in multiple portfolios.`,
       `Groupthink index: ${multi.length} multi-owned ticker${multi.length === 1 ? "" : "s"}.`,
     ]);
@@ -343,7 +343,7 @@ const MAKERS: FactMaker[] = [
     const t = pick(rng, tickers);
     const moon = Math.max(1, Math.round(t.shares / 10));
     return pick(rng, [
-      `Random draw: ${t.ticker} — ${t.shares.toLocaleString("en-US")} shares, ~$${money(t.currentValue)} of opinions.`,
+      `Random draw: ${t.ticker}, ${t.shares.toLocaleString("en-US")} shares, ~$${money(t.currentValue)} of opinions.`,
       `Today’s random spotlight: ${t.ticker} in ${t.portfolios.join(", ")}.`,
       `If each ${t.ticker} share were a step, you’d walk ~${moon.toLocaleString("en-US")} “share-steps”. Science? No.`,
     ]);
@@ -381,7 +381,7 @@ const MAKERS: FactMaker[] = [
       { weekday: "long", timeZone: "Europe/Tallinn" }
     );
     return pick(rng, [
-      `It's ${weekday} in Tallinn — perfect day to not check prices every 4 minutes (you will anyway).`,
+      `It's ${weekday} in Tallinn. Perfect day to not check prices every 4 minutes (you will anyway).`,
       `${weekday} market folklore: the books refuse to be boring today.`,
       `Tallinn says it's ${weekday}. The tickers have been notified.`,
     ]);
@@ -416,7 +416,7 @@ const FILLERS: FactMaker[] = [
     pick(rng, [
       `Daily seed ${dayKey}: the fun-fact machine ate its vitamins.`,
       `New batch unlocked for ${dayKey}. Yesterday’s jokes have left the building.`,
-      `${dayKey} edition — same books, different nonsense.`,
+      `${dayKey} edition, same books, different nonsense.`,
     ]),
   ({ rng, hideOptions }) =>
     pick(rng, [

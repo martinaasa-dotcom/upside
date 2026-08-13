@@ -186,7 +186,7 @@ function pickExpiry(
       const after = expirations.find((e) => e.days > daysToEarnings + 3);
       return {
         pick: after ?? preferred[0] ?? expirations[0],
-        reason: `Earnings in ${daysToEarnings}d — prefer post-earnings expiry (or wait).`,
+        reason: `Earnings in ${daysToEarnings}d, prefer post-earnings expiry (or wait).`,
         writeNow: daysToEarnings > 2,
       };
     }
@@ -210,7 +210,7 @@ function pickExpiry(
     const after = expirations.find((e) => e.days > daysToEarnings + 2);
     return {
       pick: after ?? preferred[0] ?? expirations[0],
-      reason: `No clean pre-earnings 2–3w expiry — use longer dated past earnings (${daysToEarnings}d).`,
+      reason: `No clean pre-earnings 2–3w expiry, use longer dated past earnings (${daysToEarnings}d).`,
       writeNow: true,
     };
   }
@@ -237,7 +237,7 @@ function pickStockTarget(
     const target = roundToStrike(spot * 1.08);
     return {
       target,
-      reason: "No clear local high above spot — use ~8% structural target.",
+      reason: "No clear local high above spot, use ~8% structural target.",
     };
   }
 

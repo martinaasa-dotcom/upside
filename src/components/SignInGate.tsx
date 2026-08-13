@@ -89,13 +89,13 @@ export function SignInGate({ children }: Props) {
           {deletedNotice && (
             <p className="signin-rise-2 mb-4 max-w-[16rem] rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[13px] leading-relaxed text-emerald-200">
               {deletedNotice === "full"
-                ? "Account deleted — your data and sign-in are both gone."
+                ? "Account deleted. Your data and sign-in are both gone."
                 : "Your Upside data has been deleted. Signing in again starts a brand-new account."}
             </p>
           )}
 
           <p className="signin-rise-2 max-w-[17rem] text-[15px] font-medium leading-snug text-zinc-200">
-            Track your portfolio — and watch an AI manage its own $50k, in the open.
+            Track your portfolio, and watch an AI manage its own $50k, in the open.
           </p>
           <p className="signin-rise-2 mt-2.5 max-w-[15.5rem] text-[13px] leading-relaxed text-zinc-500">
             Sign in to open the portfolios you own.

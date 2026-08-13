@@ -266,7 +266,7 @@ function themeDynamicsLabel(
     case "space":
       return "launch-cadence story with digestion between expansion legs";
     case "semi":
-      return "AI semi cycle — digests, then re-accelerates on spend";
+      return "AI semi cycle that digests, then re-accelerates on spend";
     case "fintech":
       return "fintech beta to liquidity and risk appetite";
     case "software":
@@ -276,7 +276,7 @@ function themeDynamicsLabel(
     case "drones":
       return "defense / autonomy cadence with program digestion years";
     case "index":
-      return "broad beta grind — muted vs single-name conviction";
+      return "broad beta grind, muted vs single-name conviction";
     default:
       return "thesis path with non-linear bull / digestion phases";
   }
@@ -295,7 +295,7 @@ function fallbackRationale(input: {
   }
   const y26 = input.prices[FORECAST_YEARS[0]!];
   const y30 = input.prices[FORECAST_YEARS[FORECAST_YEARS.length - 1]!];
-  return `${input.ticker} — ${themeDynamicsLabel(input.theme)}; illustrative path EOY’26 ~$${Math.round(y26)} → ’30 ~$${Math.round(y30)} (spot $${input.spot.toFixed(0)}). Modeled scenario, not a target.`;
+  return `${input.ticker}: ${themeDynamicsLabel(input.theme)}; illustrative path EOY’26 ~$${Math.round(y26)} → ’30 ~$${Math.round(y30)} (spot $${input.spot.toFixed(0)}). Modeled scenario, not a target.`;
 }
 
 /**

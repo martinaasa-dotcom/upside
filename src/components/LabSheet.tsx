@@ -592,7 +592,7 @@ export function LabSheet({
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <p className="text-sm font-semibold text-white">Watchlist</p>
           <p className="text-xs text-zinc-500">
-            Names Margus can talk about without polluting sheets — SaaS,
+            Names Margus can talk about without polluting sheets: SaaS,
             healthcare, drones, whatever’s on deck.
           </p>
           {!guest && (
@@ -673,7 +673,7 @@ export function LabSheet({
             })}
             {watchlist.length === 0 && (
               <li className="text-sm text-zinc-500">
-                Empty — add tickers you’re curious about.
+                Empty. Add tickers you’re curious about.
               </li>
             )}
           </ul>
@@ -866,7 +866,7 @@ export function LabSheet({
           )}
           {ccByExpiry.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              No covered-call rows yet — add holdings with enough shares for
+              No covered-call rows yet. Add holdings with enough shares for
               contracts.
             </p>
           ) : (
@@ -1159,7 +1159,7 @@ export function LabSheet({
             </p>
             {alerts.length === 0 ? (
               <p className="text-sm text-zinc-500">
-                Quiet — no earnings ≤7d or strikes under pressure
+                Quiet. No earnings ≤7d or strikes under pressure
                 {dismissedAlertIds?.size ? " (some dismissed)" : ""}.
               </p>
             ) : (

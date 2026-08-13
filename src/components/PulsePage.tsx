@@ -164,7 +164,7 @@ function PulseCard({
             {loading && check && (
               <span
                 className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500"
-                title="Refreshing in the background — this result stays on screen until the new one lands"
+                title="Refreshing in the background. This result stays on screen until the new one lands"
               >
                 <RefreshCw className="h-2.5 w-2.5 animate-spin" />
                 Updating
@@ -597,7 +597,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
         quoteMap = { ...quoteMap, [ticker]: q };
       } else {
-        setError(`Could not fetch a quote for ${ticker} — check the symbol.`);
+        setError(`Could not fetch a quote for ${ticker}. Check the symbol.`);
         return;
       }
     }
@@ -625,10 +625,10 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               Thesis Pulse
             </p>
             <h2 className="mt-1 text-lg font-semibold text-white">
-              Should you sell — or add the dip?
+              Should you sell, or add the dip?
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
-              Type any ticker and hit Check — even if it&apos;s already in your
+              Type any ticker and hit Check, even if it&apos;s already in your
               book. Big book loads from cache instantly, refreshes hourly in the
               background, and your check pins to the top with a ticker-only
               update when needed.
@@ -660,7 +660,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                   void checkTicker(suggestions[0]!);
                 }
               }}
-              placeholder="Type ticker — BMNR, RKLB, NVDA …"
+              placeholder="Type ticker: BMNR, RKLB, NVDA …"
               className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
               autoComplete="off"
             />

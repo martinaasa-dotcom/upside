@@ -62,7 +62,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${bottom.name} is having a rough day, ${pct1(bottom.todayPct!)}. Chin up.`,
       `Today's villain arc belongs to ${bottom.name} (${pct1(bottom.todayPct!)}).`,
-      `${bottom.name} could use a pep talk today — ${pct1(bottom.todayPct!)}.`,
+      `${bottom.name} could use a pep talk today, ${pct1(bottom.todayPct!)}.`,
     ]);
   },
   // Best lifetime ROI.
@@ -71,9 +71,9 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top || top.roiPct <= 0) return null;
     return pick(rng, [
-      `${top.name} has the best lifetime record — up ${pct1(top.roiPct)} all-time.`,
+      `${top.name} has the best lifetime record, up ${pct1(top.roiPct)} all-time.`,
       `Hall of fame: ${top.name} at ${pct1(top.roiPct)} lifetime ROI.`,
-      `${top.name} is quietly winning the long game — ${pct1(top.roiPct)} lifetime.`,
+      `${top.name} is quietly winning the long game: ${pct1(top.roiPct)} lifetime.`,
     ]);
   },
   // Riskiest investor.
@@ -85,7 +85,7 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top?.personality) return null;
     return pick(rng, [
-      `${top.name} is the group's risk-taker — ${top.personality.riskScore}/100 risk score, ${top.personality.animalEmoji} ${top.personality.animal} energy.`,
+      `${top.name} is the group's risk-taker: ${top.personality.riskScore}/100 risk score, ${top.personality.animalEmoji} ${top.personality.animal} energy.`,
       `Highest risk appetite: ${top.name} (${top.personality.riskScore}/100). Not for the faint of heart.`,
       `${top.name} runs the hottest book in the family (risk ${top.personality.riskScore}/100).`,
     ]);
@@ -101,7 +101,7 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top?.personality) return null;
     return pick(rng, [
-      `${top.name} is the most spread out — ${top.personality.diversificationScore}/100 diversification.`,
+      `${top.name} is the most spread out, ${top.personality.diversificationScore}/100 diversification.`,
       `Least concentrated book: ${top.name} (${top.personality.diversificationScore}/100). Nothing keeping all its eggs in one basket.`,
     ]);
   },
@@ -116,8 +116,8 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top?.personality || top.personality.diversificationScore >= 40) return null;
     return pick(rng, [
-      `${top.name} is all-in on conviction — just ${top.personality.diversificationScore}/100 diversification.`,
-      `${top.name} keeps it tight — the most concentrated book in the group.`,
+      `${top.name} is all-in on conviction, just ${top.personality.diversificationScore}/100 diversification.`,
+      `${top.name} keeps it tight, the most concentrated book in the group.`,
     ]);
   },
   // Animal census.
@@ -176,8 +176,8 @@ const MAKERS: FactMaker[] = [
     if (falcons.length === 0) return null;
     const f = pick(rng, falcons);
     return pick(rng, [
-      `${f.name} is a Falcon — small book, sharp aim, ${pct1(f.roiPct)} lifetime.`,
-      `Don't underestimate ${f.name}'s Falcon book — few positions, high conviction.`,
+      `${f.name} is a Falcon: small book, sharp aim, ${pct1(f.roiPct)} lifetime.`,
+      `Don't underestimate ${f.name}'s Falcon book, few positions, high conviction.`,
     ]);
   },
 ];

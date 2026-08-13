@@ -327,20 +327,20 @@ export function describeAdvisorError(err: unknown): {
   if (/free-models-per-day|models-per-day/i.test(msg)) {
     return {
       message:
-        "OpenRouter's free daily AI quota is used up for today — this is shared across every free model, so switching models won't help. It resets ~daily, adding a Groq/Gemini/Cerebras free key gives Margus a fallback for this, or add credits at openrouter.ai/credits to raise the cap to 1000/day.",
+        "OpenRouter's free daily AI quota is used up for today. This is shared across every free model, so switching models won't help. It resets ~daily, adding a Groq/Gemini/Cerebras free key gives Margus a fallback for this, or add credits at openrouter.ai/credits to raise the cap to 1000/day.",
       status: 429,
     };
   }
   if (/rate.?limit|429|temporar/i.test(msg)) {
     return {
       message:
-        "Model is busy / rate-limited. Wait a few seconds and try again — Margus will auto-fallback to another provider when one is configured.",
+        "Model is busy / rate-limited. Wait a few seconds and try again. Margus will auto-fallback to another provider when one is configured.",
       status: 429,
     };
   }
   if (/timeout|504|timed out/i.test(msg)) {
     return {
-      message: "Model timed out. Try again — free models are flaky under load.",
+      message: "Model timed out. Try again, free models are flaky under load.",
       status: 504,
     };
   }

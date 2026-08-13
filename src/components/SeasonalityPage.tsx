@@ -359,7 +359,7 @@ function DayOfMonthChart({
       </div>
       <p className="text-[11px] text-zinc-600">
         Each bar = average session return on that calendar day in {monthLabel}{" "}
-        (cycle-filtered). Click a day for year-by-year history — swipe
+        (cycle-filtered). Click a day for year-by-year history. Swipe
         sideways on phone if the month has more days than fit.
       </p>
     </div>
@@ -472,7 +472,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
         <div>
           <h2 className="text-lg font-semibold text-white">Seasonality</h2>
           <p className="mt-0.5 text-sm text-zinc-500">
-            Historical timing patterns only — for your book&apos;s live
+            Historical timing patterns only. For your book&apos;s live
             numbers see Overview, for allocation/correlation/scenario tools
             see Lab.
           </p>
@@ -528,7 +528,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
             </p>
             <p className="mt-1 text-xs text-zinc-500">
               All monthly and daily patterns below use only history from prior{" "}
-              {model.currentCycleLabel.toLowerCase()} years — same slot in the
+              {model.currentCycleLabel.toLowerCase()} years, same slot in the
               4-year presidential cycle as today.
             </p>
           </div>
@@ -537,7 +537,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
           <Section
             title="Monthly playbook (this cycle phase)"
-            subtitle={`Total month return in each calendar month — historical ${model.currentCycleLabel.toLowerCase()} years only. Click a month to inspect its days.`}
+            subtitle={`Total month return in each calendar month, historical ${model.currentCycleLabel.toLowerCase()} years only. Click a month to inspect its days.`}
           >
             <CycleMonthlyChart
               rows={model.cycleMonthly}
@@ -573,7 +573,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
           <Section
             title="Daily rhythm within the month"
-            subtitle="Defaults to today. Click a day for its hourly pattern — independent from the monthly chart above."
+            subtitle="Defaults to today. Click a day for its hourly pattern, independent from the monthly chart above."
           >
             <div className="mb-4 flex items-center justify-between gap-2">
               <button
@@ -645,7 +645,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <div className="mt-4 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
                 <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <p className="text-xs font-medium text-zinc-300">
-                    {selectedDayLabel} — prior sessions
+                    {selectedDayLabel}, prior sessions
                   </p>
                   <p
                     className={cn(

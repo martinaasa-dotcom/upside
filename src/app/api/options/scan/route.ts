@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const limit = checkRateLimit(`options-scan:${auth.user.id}`, 30, 5 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
-      { error: "Options scan is rate-limited — try again shortly." },
+      { error: "Options scan is rate-limited. Try again shortly." },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
     );
   }

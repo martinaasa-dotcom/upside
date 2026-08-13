@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   const limit = checkRateLimit(`chat:${auth.user.id}`, 30, 5 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
-      { error: "You're sending messages faster than Margus can keep up — give it a few seconds." },
+      { error: "You're sending messages faster than Margus can keep up. Give it a few seconds." },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
     );
   }

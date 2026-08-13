@@ -23,7 +23,7 @@ export const SHOCKS: {
     id: "ai_down20",
     label: "AI −20%",
     tagline:
-      "GPU cloud, semis, AI software, and AI-power (VST/PWR) — sized by AI beta",
+      "GPU cloud, semis, AI software, and AI-power (VST/PWR), sized by AI beta",
     headlinePct: -0.2,
   },
   {

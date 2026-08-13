@@ -57,7 +57,7 @@ export function CsvImportModal({
         if (parsed.rows.length === 0 && parsed.cash == null) {
           setError(
             parsed.skipped[0]?.reason ??
-              "No valid holdings found — check the column headers match Ticker, Shares, Buy Price."
+              "No valid holdings found. Check the column headers match Ticker, Shares, Buy Price."
           );
           setRows([]);
           setCash(null);
@@ -69,7 +69,7 @@ export function CsvImportModal({
         setSkipped(parsed.skipped);
         setFileName(file.name);
       })
-      .catch(() => setError("Couldn't read that file — is it a .csv?"));
+      .catch(() => setError("Couldn't read that file. Is it a .csv?"));
   }
 
   function handleClose() {
@@ -116,7 +116,7 @@ export function CsvImportModal({
             <span className="text-zinc-200">Shares</span>,{" "}
             <span className="text-zinc-200">Buy Price</span>.{" "}
             {hideCallPct ? "Cash" : "Call % and Cash"} column
-            {hideCallPct ? " is" : "s are"} optional — a row named CASH is
+            {hideCallPct ? " is" : "s are"} optional. A row named CASH is
             read as your cash balance.
           </p>
 

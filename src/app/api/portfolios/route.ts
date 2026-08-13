@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
   const authedSupabase = await createSupabaseServerAuth();
   if (!authedSupabase) {
     return NextResponse.json(
-      { error: "Supabase not configured — use local demo store" },
+      { error: "Supabase not configured, use local demo store" },
       { status: 400 }
     );
   }

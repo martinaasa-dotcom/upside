@@ -24,7 +24,7 @@ export function buildStrikeAlerts(
         id: `strike-target-${r.ticker}`,
         kind: "strike",
         title: `${r.ticker} through Stock Target`,
-        detail: `Spot ${r.spot.toFixed(2)} ≥ target ${r.stockTarget.toFixed(2)} — refresh the write plan.`,
+        detail: `Spot ${r.spot.toFixed(2)} ≥ target ${r.stockTarget.toFixed(2)}. Refresh the write plan.`,
         ticker: r.ticker,
         at: Date.now(),
       });
@@ -34,7 +34,7 @@ export function buildStrikeAlerts(
         id: `strike-near-${r.ticker}`,
         kind: "strike",
         title: `${r.ticker} near planned Next Strike`,
-        detail: `Spot within ~2% of sheet strike ${r.nextStrike.toFixed(2)} — plan level, not a confirmed open call unless you logged premium.`,
+        detail: `Spot within ~2% of sheet strike ${r.nextStrike.toFixed(2)}. Plan level, not a confirmed open call unless you logged premium.`,
         ticker: r.ticker,
         at: Date.now(),
       });
@@ -52,7 +52,7 @@ export function buildEarningsAlerts(
       id: `earn-${e.ticker}-${e.date}`,
       kind: "earnings" as const,
       title: `${e.ticker} earnings in ${e.days}d`,
-      detail: `Dated ${e.date} — vol often expands into the print; CC writes into earnings can be attractive if you accept gap/assignment risk.`,
+      detail: `Dated ${e.date}. Vol often expands into the print; CC writes into earnings can be attractive if you accept gap/assignment risk.`,
       ticker: e.ticker,
       at: Date.now(),
     }));
@@ -70,7 +70,7 @@ export function buildDecisionAlerts(input: {
       id: "decision-margin",
       kind: "info",
       title: "Margin in play",
-      detail: `Cash ${input.cash.toFixed(0)} — keep leverage intentional (~30% ceiling).`,
+      detail: `Cash ${input.cash.toFixed(0)}. Keep leverage intentional (~30% ceiling).`,
       at: Date.now(),
     });
   }

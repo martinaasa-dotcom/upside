@@ -257,17 +257,17 @@ export function duelStats(history: DuelRecord[]): DuelStats {
 
 const WIN_LINES = [
   (t: string) => `Called it. ${t} takes the belt.`,
-  (t: string) => `Certified prophet — ${t} wins.`,
+  (t: string) => `Certified prophet, ${t} wins.`,
   (t: string) => `${t} delivered. Your gut was right.`,
   (t: string) => `Nailed it. ${t} came out on top.`,
 ];
 const LOSS_LINES = [
-  (t: string) => `Nope — ${t} had main character energy instead.`,
+  (t: string) => `Nope, ${t} had main character energy instead.`,
   (t: string) => `The market disagreed. ${t} won this one.`,
   (t: string) => `Rough beat. ${t} took it.`,
   (t: string) => `${t} said "not today". Try again tomorrow.`,
 ];
-const PUSH_LINE = "Dead heat — exact tie. Nobody wins, nobody cries.";
+const PUSH_LINE = "Dead heat, exact tie. Nobody wins, nobody cries.";
 
 function pick<T>(seed: string, items: T[]): T {
   const rng = mulberry32(hashSeed(seed));

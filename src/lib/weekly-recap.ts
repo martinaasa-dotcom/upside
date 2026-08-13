@@ -10,9 +10,9 @@ function weekKey(d: Date): string {
 }
 
 const SIGN_OFFS = [
-  "Margus: stay thesis-first — breathers are resets, not broken narratives. Write CCs on green rebounds.",
+  "Margus: stay thesis-first. Breathers are resets, not broken narratives. Write CCs on green rebounds.",
   "Margus: the thesis didn't change just because the ticker did. Sell the news, not the vibes.",
-  "Margus: green weeks feel earned, red weeks feel personal — neither one is. Same plan either way.",
+  "Margus: green weeks feel earned, red weeks feel personal. Neither one is. Same plan either way.",
   "Margus: boredom isn't a signal. If nothing broke the thesis, nothing needs to change.",
   "Margus: premium is for the patient. Write calls on strength, not out of anxiety.",
   "Margus: the book doesn't know what day it is. Judge the thesis on quarters, not candles.",

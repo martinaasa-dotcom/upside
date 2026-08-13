@@ -55,7 +55,7 @@ function buildPrompt(
     const move = formatMovePct(c.effectivePct);
     const bookPct = (c.bookPct * 100).toFixed(1);
     const roiPct = (c.roiPct * 100).toFixed(0);
-    const flag = c.needsAttention ? " **NEEDS ATTENTION — down ≥5%**" : "";
+    const flag = c.needsAttention ? " **NEEDS ATTENTION: down ≥5%**" : "";
     const parts = [
       `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup — not in book)"}`,
       conv?.thesis ? `  Owner thesis: ${conv.thesis}` : "",
@@ -79,8 +79,8 @@ function buildPrompt(
 
   return `${MARGUS_PERSONA}
 
-## Task — Thesis Pulse
-Martin uses this when a **big line drops hard**. He asks: *should I sell — or add the dip?*
+## Task: Thesis Pulse
+Martin uses this when a **big line drops hard**. He asks: *should I sell, or add the dip?*
 
 Primary job: **down ≥5% moves** (including pre-market / after-hours). Also covers other big book lines for context.
 
@@ -88,29 +88,29 @@ ${fg}
 
 ### Action rules (do NOT default everything to hold)
 - **action** = \`add\` | \`hold\` | \`trim\` | \`watch\`
-- **intact thesis + red day** on a high-conviction compounder (AI infra, AI power, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal. This is about the thesis, not a fixed ticker list — apply it to whatever the user actually holds.
+- **intact thesis + red day** on a high-conviction compounder (AI infra, AI power, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal. This is about the thesis, not a fixed ticker list; apply it to whatever the user actually holds.
 - If a line is in **rapid euphoria** (parabolic move / crowd chase), prefer **trim** with explicit take-profit sizing.
-- **addLevel** — always give a concrete, self-explanatory price plan when thesis is intact or action is add:
+- **addLevel**: always give a concrete, self-explanatory price plan when thesis is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
-  - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy) — spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
-  - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\` — NOT "wait for $50".
+  - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
+  - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
 - Use **hold** only when you would not deploy (max concentration, broken narrative, no cash story).
 - Use **trim** only when thesis is broken or euphorically extended.
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 For **each** ticker:
-1. **situation** — 2–3 short sentences, grounded in headlines.
-2. **moveReason** — one sentence (cite headline when possible).
-3. **thesisStatus** — intact / watch / broken.
-4. **action** — add / hold / trim / watch per rules above.
-5. **trimPct** — only when action=trim: choose 10, 15, 20, 25, 30 (% of position).
-6. **addLevel** — price trigger string (required for add; required for intact+down; empty for trim).
-7. **earningsNote** — if relevant; else empty string.
-8. **verdict** — one sentence tying **action + addLevel/trimPct** to the thesis.
+1. **situation**: 2-3 short sentences, grounded in headlines.
+2. **moveReason**: one sentence (cite headline when possible).
+3. **thesisStatus**: intact / watch / broken.
+4. **action**: add / hold / trim / watch per rules above.
+5. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position).
+6. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim).
+7. **earningsNote**: if relevant; else empty string.
+8. **verdict**: one sentence tying **action + addLevel/trimPct** to the thesis.
 
-**summary**: one sentence — lead with dips that are add opportunities vs real thesis breaks.
+**summary**: one sentence, lead with dips that are add opportunities vs real thesis breaks.
 
-Keep fields short. Use the headlines — don't invent news.
+Keep fields short. Use the headlines, don't invent news.
 
 ## Positions
 ${lines.join("\n\n")}`;
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
   const limit = checkRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
     return Response.json(
-      { error: "Thesis Pulse is limited — try again in a bit." },
+      { error: "Thesis Pulse is limited. Try again in a bit." },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
     );
   }
