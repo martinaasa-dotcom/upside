@@ -1,5 +1,6 @@
 import type { Holding, Quote } from "@/lib/types";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
+import { forecastThemeForTicker, shapedFallbackPath } from "@/lib/forecast-conviction";
 
 /** EOY columns shown after Current — next 5 years from this year. */
 export const FORECAST_YEARS = [2026, 2027, 2028, 2029, 2030] as const;
@@ -133,5 +134,88 @@ export function buildForecast(
     currentTotal,
     eoyTotals,
     gainPct,
+  };
+}
+
+export type TickerForecastSummary = {
+  ticker: string;
+  spot: number;
+  eoyPrices: Record<ForecastYear, number>;
+  eoyGains: Record<ForecastYear, number>;
+  targetedYears: Record<ForecastYear, boolean>;
+  /** EOY 2028 (3-year horizon from 2026) price */
+  threeYearPrice: number;
+  threeYearGainPct: number;
+  threeYearCagrPct: number;
+  /** EOY 2030 (terminal 5-year horizon) price */
+  fiveYearPrice: number;
+  fiveYearGainPct: number;
+  fiveYearCagrPct: number;
+  hasOverrides: boolean;
+};
+
+/**
+ * Resolves the exact forecast path for a single ticker matching the Forecast table.
+ * Honors manual/Margus overrides, otherwise falls back to the exact same theme shape.
+ */
+export function resolveTickerForecastPath(
+  ticker: string,
+  spot: number,
+  overrides?: PortfolioEoyOverrides
+): TickerForecastSummary {
+  const normTicker = ticker.toUpperCase();
+  const theme = forecastThemeForTicker(normTicker);
+  const fallback = shapedFallbackPath(spot > 0 ? spot : 1, theme, "base");
+
+  const eoyPrices = {} as Record<ForecastYear, number>;
+  const eoyGains = {} as Record<ForecastYear, number>;
+  const targetedYears = {} as Record<ForecastYear, boolean>;
+  let hasOverrides = false;
+
+  for (const year of FORECAST_YEARS) {
+    const override = overrides?.[normTicker]?.[year];
+    let price: number;
+    if (typeof override === "number" && override > 0) {
+      price = override;
+      targetedYears[year] = true;
+      hasOverrides = true;
+    } else {
+      price = fallback[year] ?? (spot > 0 ? spot : 1);
+      targetedYears[year] = false;
+    }
+    eoyPrices[year] = price;
+    eoyGains[year] = spot > 0 ? (price - spot) / spot : 0;
+  }
+
+  // 3-year horizon = EOY 2028 (index 2 in FORECAST_YEARS [2026, 2027, 2028, 2029, 2030])
+  const threeYearPrice = eoyPrices[2028] ?? eoyPrices[FORECAST_YEARS[2]] ?? spot;
+  const threeYearGainPct = spot > 0 ? (threeYearPrice - spot) / spot : 0;
+  const threeYearCagrPct =
+    spot > 0 && threeYearPrice > 0
+      ? (Math.pow(threeYearPrice / spot, 1 / 3) - 1) * 100
+      : 0;
+
+  // 5-year terminal horizon = EOY 2030 (index 4)
+  const fiveYearPrice =
+    eoyPrices[2030] ?? eoyPrices[FORECAST_YEARS[FORECAST_YEARS.length - 1]] ?? spot;
+  const fiveYearGainPct = spot > 0 ? (fiveYearPrice - spot) / spot : 0;
+  const fiveYearCagrPct =
+    spot > 0 && fiveYearPrice > 0
+      ? (Math.pow(fiveYearPrice / spot, 1 / 5) - 1) * 100
+      : 0;
+
+  return {
+    ticker: normTicker,
+    spot,
+    eoyPrices,
+    eoyGains,
+    targetedYears,
+    threeYearPrice,
+    threeYearGainPct,
+    threeYearCagrPct,
+    fiveYearPrice,
+    fiveYearGainPct,
+    fiveYearCagrPct,
+    hasOverrides,
   };
 }

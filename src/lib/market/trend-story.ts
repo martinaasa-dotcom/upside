@@ -31,6 +31,11 @@ export type TrendRowLike = {
   } | null;
   rs13: number | null;
   rs26: number | null;
+  /** Raw price change over the last 2 / 4 weekly closes — fast enough to
+   * catch a post-earnings re-rate before the slower trend/momentum reads
+   * below have had time to react to it. */
+  chg2w: number | null;
+  chg4w: number | null;
 };
 
 export type Tone = "gain" | "loss" | "warn" | "neutral";
@@ -139,6 +144,59 @@ function applyDivergence(
   };
 }
 
+/** 2-week move ≥15%, or 4-week move ≥25% — big enough that it's very
+ * unlikely to be normal daily noise, small enough that it still fires for
+ * real catalysts (a beat-and-raise print, a guidance cut) without tripping
+ * on every ordinary rally. */
+const SURGE_2W = 0.15;
+const SURGE_4W = 0.25;
+
+type Surge = { weeks: 2 | 4; pct: number };
+
+function detectSurge(row: TrendRowLike): Surge | null {
+  if (row.chg2w != null && Math.abs(row.chg2w) >= SURGE_2W) {
+    return { weeks: 2, pct: row.chg2w };
+  }
+  if (row.chg4w != null && Math.abs(row.chg4w) >= SURGE_4W) {
+    return { weeks: 4, pct: row.chg4w };
+  }
+  return null;
+}
+
+/**
+ * The 40-week trend line is deliberately slow, so it can keep calling a
+ * name "weakening" for a couple of weeks after a catalyst — a blowout
+ * earnings beat, a guidance raise — has already sent the price sharply
+ * the other way. When the raw recent move flatly disagrees with the slow
+ * read, the recent move is the actual news and wins the headline; the
+ * slow read still shows up as a supporting signal below, just not as the
+ * verdict. If the two already agree, this only adds color, not a new verdict.
+ */
+function applySurge(
+  base: { headline: string; tone: Tone; sentence: string },
+  surge: Surge | null
+): { headline: string; tone: Tone; sentence: string } {
+  if (!surge) return base;
+  const bullish = surge.pct > 0;
+  const alreadyAgrees = bullish ? base.tone === "gain" : base.tone === "loss";
+  if (alreadyAgrees) return base;
+
+  const pctText = `${surge.pct >= 0 ? "+" : ""}${(surge.pct * 100).toFixed(0)}%`;
+  const weeksText = surge.weeks === 2 ? "two weeks" : "four weeks";
+  if (bullish) {
+    return {
+      headline: "Sharp move higher",
+      tone: "gain",
+      sentence: `TICKER is up ${pctText} over the last ${weeksText}, a move sharp enough that the slower trend read below hasn't caught up to it yet. Worth checking what drove it, a beat, a guidance raise, a re-rate, rather than trusting the lagging trend label on its own.`,
+    };
+  }
+  return {
+    headline: "Sharp move lower",
+    tone: "loss",
+    sentence: `TICKER is down ${pctText} over the last ${weeksText}, a drop sharp enough that the slower trend read below hasn't caught up to it yet. Worth checking whether something actually broke before writing it off as noise.`,
+  };
+}
+
 function rsiZone(rsi: number | null): { label: string; tone: Tone; help: string } {
   if (rsi == null) {
     return { label: "—", tone: "neutral", help: "Not enough history yet." };
@@ -172,6 +230,8 @@ function rsText(v: number | null): string {
 export function buildTrendStory(row: TrendRowLike): TrendStory {
   const base = REGIME_BASE[row.regime];
   const withDivergence = applyDivergence(base, row.divergence);
+  const surge = detectSurge(row);
+  const withSurge = applySurge(withDivergence, surge);
   const zone = rsiZone(row.rsi);
 
   const signals: Signal[] = [
@@ -189,7 +249,14 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
                 ? "Turning up"
                 : "No trend",
       tone: REGIME_BASE[row.regime].tone,
-      help: "Whether price sits above or below its own 40-week average, and which way that average is sloping. This is the textbook definition of a trend.",
+      help: "Calculated as: price vs. its own 40-week (~200-day) simple moving average, plus whether that average's slope over the trailing 8 weeks is rising or falling. Deliberately slow on purpose, so a sudden 2-3 week move (see \u201cLast 2 weeks\u201d) can outrun this reading for a few weeks before it catches up.",
+    },
+    {
+      key: "recent",
+      label: "Last 2 weeks",
+      value: row.chg2w == null ? "—" : `${row.chg2w >= 0 ? "+" : ""}${(row.chg2w * 100).toFixed(1)}%`,
+      tone: row.chg2w == null ? "neutral" : row.chg2w >= 0 ? "gain" : "loss",
+      help: "Calculated as: raw price change over the last two weekly closes. The fastest-moving number on this card, so it's usually the first place a real catalyst, an earnings beat, a guidance cut, shows up, well before the slower Trend and Momentum reads have had time to react.",
     },
     {
       key: "momentum",
@@ -202,37 +269,42 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
           : row.macdBuilding
             ? "gain"
             : "neutral",
-      help: "Whether weekly MACD is growing or shrinking, a read on whether the move is speeding up or losing pace, separate from which direction it's going.",
+      help: "Calculated as: whether the weekly MACD histogram (12/26/9-week EMAs) is larger now than it was 4 weeks ago. A read on whether the move is speeding up or losing pace, separate from which direction it's going.",
     },
     {
       key: "rsi",
       label: "RSI",
       value: row.rsi == null ? "—" : `${row.rsi.toFixed(0)} · ${zone.label}`,
       tone: zone.tone,
-      help: `Weekly RSI(14): ${zone.help}`,
+      help: `Calculated as: 14-week Wilder RSI, the same formula your charting app shows, just computed weekly instead of daily. ${zone.help}`,
     },
     {
       key: "rs",
       label: "vs S&P (13w)",
       value: rsText(row.rs13),
       tone: row.rs13 == null ? "neutral" : row.rs13 >= 0 ? "gain" : "loss",
-      help: "How much this has out- or under-performed the S&P 500 over the last quarter. Positive means money is rotating toward it, not just going up with everything else.",
+      help: "Calculated as: this name's cumulative return minus the S&P 500's cumulative return over the trailing 13 weeks (~1 quarter). Positive means money is rotating toward it specifically, not just floating up with everything else.",
     },
   ];
 
-  const attention = Boolean(row.divergence) || row.regime === "weakening" || row.regime === "recovering";
+  const attention =
+    Boolean(row.divergence) ||
+    Boolean(surge) ||
+    row.regime === "weakening" ||
+    row.regime === "recovering";
 
-  // Rough sort priority: a divergence fighting the trend is the loudest
-  // story, then a regime that's actively changing, then everything else
-  // ranked by how much it's leading or lagging the index.
+  // Rough sort priority: a surge or divergence fighting the slow trend is
+  // the loudest story, then a regime that's actively changing, then
+  // everything else ranked by how much it's leading or lagging the index.
   let priority = row.rs13 ?? 0;
   if (row.divergence) priority += withDivergence.tone === "warn" ? 10 : 3;
+  if (surge && withSurge.headline !== withDivergence.headline) priority += 8;
   if (row.regime === "weakening" || row.regime === "recovering") priority += 5;
 
   return {
-    headline: withDivergence.headline,
-    tone: withDivergence.tone,
-    sentence: withDivergence.sentence.replace("TICKER", row.ticker),
+    headline: withSurge.headline,
+    tone: withSurge.tone,
+    sentence: withSurge.sentence.replace("TICKER", row.ticker),
     signals,
     attention,
     priority,

@@ -657,6 +657,15 @@ export function Dashboard() {
     [portfolios, holdings, quotes, options]
   );
 
+  const drawerCoveredCallRow = useMemo(() => {
+    if (!drawerTicker || hideOptionsUI) return null;
+    return (
+      bookCoveredCallRows.find(
+        (r) => r.holding.ticker.toUpperCase() === drawerTicker.toUpperCase()
+      ) ?? null
+    );
+  }, [drawerTicker, bookCoveredCallRows, hideOptionsUI]);
+
   // Single source of truth for "what needs attention" — earnings, near
   // strike/target, margin, concentration. Lab's Alerts tab and Overview's
   // briefing both read from this one list (and its one shared dismissal
@@ -2965,6 +2974,9 @@ export function Dashboard() {
             ? convictionMap[drawerTicker.toUpperCase()] ?? null
             : null
         }
+        overrides={eoyOverrides}
+        coveredCallRow={drawerCoveredCallRow}
+        onSetEoyPrice={commitEoyPrice}
         onConviction={(level, thesis) => {
           if (!drawerTicker) return;
           patchLab({

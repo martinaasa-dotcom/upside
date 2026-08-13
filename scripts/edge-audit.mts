@@ -289,6 +289,8 @@ for (const regime of REGIMES) {
       divergence,
       rs13: 0.1,
       rs26: 0.2,
+      chg2w: 0.05,
+      chg4w: 0.1,
     });
     const label = `trendStory(${regime},${divergence?.kind ?? "none"})`;
     check(label, story.headline, (v) => typeof v === "string" && v.length > 0, "non-empty headline");

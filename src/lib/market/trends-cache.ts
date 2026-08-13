@@ -7,17 +7,19 @@
 import { normalizeYahooTicker } from "@/lib/ticker";
 import {
   macd,
+  nWeekChange,
   relativeStrength,
   rsi,
   rsiDivergence,
   toWeekly,
   trendRegime,
   type Bar,
+  type TrendRegime,
 } from "@/lib/market/indicators";
 
 export type TrendRow = {
   ticker: string;
-  regime: string;
+  regime: TrendRegime;
   aboveLongMa: boolean | null;
   rsi: number | null;
   macdHistogram: number | null;
@@ -32,6 +34,11 @@ export type TrendRow = {
   } | null;
   rs13: number | null;
   rs26: number | null;
+  /** Raw price change over the last 2 / 4 weekly closes — fast enough to
+   * catch a post-earnings re-rate before the slow trend/momentum reads
+   * below catch up to it. */
+  chg2w: number | null;
+  chg4w: number | null;
   lastClose: number | null;
 };
 
@@ -252,6 +259,8 @@ export async function fetchTrendsBatch(
         : null,
       rs13: bench ? relativeStrength(closes, bench, 13) : null,
       rs26: bench ? relativeStrength(closes, bench, 26) : null,
+      chg2w: nWeekChange(closes, 2),
+      chg4w: nWeekChange(closes, 4),
       lastClose: closes.at(-1) ?? null,
     };
 

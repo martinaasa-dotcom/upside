@@ -248,6 +248,25 @@ export function trendRegime(weeklyCloses: number[]): {
 }
 
 /**
+ * Raw % change over the last N weekly closes — deliberately the fastest,
+ * dumbest number in this file. The trend/momentum reads above are smoothed
+ * over many weeks on purpose (so they don't whipsaw), which means a sudden
+ * catalyst — a blowout earnings print, a guidance raise — can move the
+ * price hard for two or three weeks before the slow measures catch up and
+ * start agreeing with it. This is what lets the UI say "yes, the slow
+ * trend line is still pointed down, but look at this" instead of just
+ * reporting the lagging read as if it were the whole story.
+ */
+export function nWeekChange(closes: number[], weeks: number): number | null {
+  const n = closes.length;
+  if (n <= weeks) return null;
+  const from = closes[n - 1 - weeks]!;
+  const to = closes[n - 1]!;
+  if (!(from > 0)) return null;
+  return to / from - 1;
+}
+
+/**
  * Relative strength versus a benchmark: how much a name has outpaced (or
  * lagged) the index over a window. This is what sector rotation actually
  * is, so it drives the rotation view rather than raw return.

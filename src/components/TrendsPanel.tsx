@@ -96,7 +96,7 @@ function TickerStoryCard({
         {story.sentence}
       </p>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
         {story.signals.map((s) => (
           <div
             key={s.key}
@@ -239,7 +239,14 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
               Everything here runs on weekly bars, so it answers &quot;has the
               story changed&quot; rather than &quot;what happened today&quot;.
-              A signal that fired every week would be noise.
+              A signal that fired every week would be noise. That slowness is
+              deliberate, but it means a sudden catalyst, a blowout earnings
+              print, can move the price hard for a week or two before the
+              trend line catches up. The &quot;Last 2 weeks&quot; number on
+              each card exists specifically to catch that: when it flatly
+              disagrees with the slower trend read, the recent move wins the
+              headline. Hover any box below for exactly how it&apos;s
+              calculated.
             </p>
           </div>
           <button
