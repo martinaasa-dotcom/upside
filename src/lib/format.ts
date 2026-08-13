@@ -38,9 +38,12 @@ export function number(value: number | null | undefined, digits = 0): string {
   }).format(value);
 }
 
-export function signedCurrency(value: number | null | undefined): string {
+export function signedCurrency(
+  value: number | null | undefined,
+  digits = 2
+): string {
   if (!isRenderable(value)) return "—";
-  const formatted = currency(Math.abs(value));
+  const formatted = currency(Math.abs(value), digits);
   if (value > 0) return `+${formatted}`;
   if (value < 0) return `-${formatted}`;
   return formatted;

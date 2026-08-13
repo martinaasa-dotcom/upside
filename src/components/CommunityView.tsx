@@ -1353,9 +1353,15 @@ export function CommunityView({ communityId }: Props) {
                                     </span>
                                   )}
                                 </span>
+                                {/* Both numeric columns are fixed-width and
+                                  * right-aligned. Without a width they only
+                                  * packed against the right edge, so a row
+                                  * showing -$5,114.99 pushed its percent
+                                  * left of a row showing +$0.81 and the
+                                  * column zig-zagged down the list. */}
                                 <span
                                   className={cn(
-                                    "shrink-0 text-sm font-semibold tabular-nums",
+                                    "w-16 shrink-0 text-right text-sm font-semibold tabular-nums",
                                     (pct ?? 0) >= 0
                                       ? "text-emerald-400"
                                       : "text-red-400"
@@ -1363,9 +1369,12 @@ export function CommunityView({ communityId }: Props) {
                                 >
                                   {pct != null ? percent(pct) : "—"}
                                 </span>
+                                {/* Whole dollars: cents are noise on a
+                                  * leaderboard, and at two decimals a
+                                  * seven-figure book overflows the column. */}
                                 {leaderboardRange === "today" && (
-                                  <span className="hidden shrink-0 text-xs tabular-nums text-zinc-400 sm:inline">
-                                    {signedCurrency(m.todayDollar)}
+                                  <span className="hidden w-24 shrink-0 text-right text-xs tabular-nums text-zinc-400 sm:inline-block">
+                                    {signedCurrency(m.todayDollar, 0)}
                                   </span>
                                 )}
                               </li>
