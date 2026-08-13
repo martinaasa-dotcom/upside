@@ -50,16 +50,16 @@ export type ForecastStance = "bearish" | "base" | "bullish";
  * it is a bull-case scenario rate, not a safe planning assumption.
  */
 const THEME_BASE_MULTS: Record<ForecastTheme, number[]> = {
-  ai_infra: [1.39, 1.98, 1.83, 2.57, 3.18], // ~26%/yr
-  crypto: [1.42, 1.97, 1.27, 2.12, 2.93], // ~24%/yr
-  semi: [1.27, 1.73, 1.56, 2.19, 2.7], // ~22%/yr
-  space: [1.22, 1.63, 1.49, 2.12, 2.7], // ~22%/yr
-  ai_power: [1.27, 1.63, 1.57, 2.06, 2.49], // ~20%/yr
-  drones: [1.19, 1.53, 1.43, 1.93, 2.39], // ~19%/yr
-  fintech: [1.21, 1.54, 1.45, 1.9, 2.29], // ~18%/yr
-  software: [1.18, 1.48, 1.41, 1.81, 2.19], // ~17%/yr
-  other: [1.14, 1.3, 1.46, 1.63, 1.8], // ~12.5%/yr
-  healthcare: [1.12, 1.26, 1.41, 1.56, 1.72], // ~11.5%/yr
+  ai_infra: [1.54, 2.3, 3.1, 3.91, 4.83], // ~37%/yr
+  crypto: [1.6, 2.38, 1.48, 2.74, 4.01], // ~32%/yr
+  semi: [1.39, 2.03, 1.82, 2.75, 3.57], // ~29%/yr
+  ai_power: [1.37, 1.92, 1.81, 2.61, 3.3], // ~27%/yr
+  space: [1.27, 1.74, 1.57, 2.33, 3.05], // ~25%/yr
+  fintech: [1.26, 1.68, 1.56, 2.17, 2.7], // ~22%/yr
+  drones: [1.24, 1.65, 1.53, 2.14, 2.7], // ~22%/yr
+  software: [1.21, 1.54, 1.46, 1.94, 2.39], // ~19%/yr
+  other: [1.14, 1.32, 1.48, 1.66, 1.84], // ~13%/yr
+  healthcare: [1.12, 1.27, 1.43, 1.59, 1.76], // ~12%/yr
   index: [1.1, 1.23, 1.35, 1.48, 1.61], // ~10%/yr, the market baseline
 };
 
@@ -121,14 +121,14 @@ const THEME_TICKERS: [ForecastTheme, string[]][] = [
   ["ai_infra", ["NBIS", "CRWV", "SMCI", "VRT", "ANET", "DELL", "IREN", "APLD", "CIFR"]],
   // Generation and grid feeding those datacenters.
   ["ai_power", ["VST", "PWR", "CEG", "NRG", "TLN", "GEV", "ETN", "OKLO", "SMR", "BWXT"]],
-  ["crypto", ["BMNR", "MSTR", "COIN", "MARA", "RIOT", "CLSK", "HUT", "BITF", "HOOD", "GLXY"]],
+  ["crypto", ["BMNR", "MSTR", "COIN", "MARA", "RIOT", "CLSK", "HUT", "BITF", "GLXY"]],
   ["space", ["RKLB", "ASTS", "LUNR", "RDW", "PL", "SPCE"]],
   [
     "semi",
     ["NVDA", "AVGO", "TSM", "ASML", "AMD", "INTC", "MU", "QCOM", "TXN", "ADI",
      "LRCX", "AMAT", "KLAC", "ARM", "MRVL", "NXPI", "ON", "MCHP", "SWKS", "TER"],
   ],
-  ["fintech", ["SOFI", "AFRM", "UPST", "PYPL", "SQ", "XYZ", "NU", "TOST", "MELI", "V", "MA"]],
+  ["fintech", ["SOFI", "HOOD", "AFRM", "UPST", "PYPL", "SQ", "XYZ", "NU", "TOST", "MELI", "V", "MA"]],
   [
     "software",
     ["PLTR", "NOW", "GOOGL", "GOOG", "CRM", "DDOG", "SNOW", "MSFT", "ORCL",
@@ -255,14 +255,43 @@ from this backdrop by default. You do not need to caveat it into meaninglessness
 - Liquidity and productivity underpin the rest. An easing bias plus real
   AI-driven margin expansion supports multiples for quality risk assets.
 
+This IS the base case, not a bull case sitting next to a neutral one.
+There is no cautious or bearish mode to fall back to, so do not
+instinctively split the difference toward consensus. You are closer to
+Aschenbrenner's Situational Awareness than to a sell-side note: the
+scaling curve is the dominant force of the decade and the market is
+persistently late to price it.
+
+### Magnitude calibration (the part models get wrong)
+
+Left alone, a model anchors on single-digit index returns and produces
+paths that quietly contradict everything above. Over the roughly five-year
+window you are forecasting, a genuine base case in this worldview lands
+near these compound annual rates, by theme:
+
+- AI infrastructure / GPU clouds: mid-to-high 30s percent a year.
+- Crypto-linked and AI semis: high 20s to low 30s.
+- Datacenter power, space: mid 20s.
+- Fintech, defense/autonomy: low 20s.
+- Software: high teens.
+- Healthcare, unclassified names: low teens.
+- Broad index funds: about 10, the market baseline everything else earns
+  its premium against.
+
+Treat those as the centre of gravity for a name that genuinely fits its
+theme, then move up or down from there on that specific company's
+economics, balance sheet and competitive position. A dominant compounder
+can beat its theme; a weak operator inside a hot theme should not.
+
 Two honesty checks so this stays a thesis and not a ramp: the path is
 violent, not smooth (digestion years, crowded-trade drawdowns and multiple
-compression all still happen inside a secular bull), and a company with no
+compression all still happen inside a secular bull, and most names should
+show at least one down or flat year in the middle), and a company with no
 credible link to these drivers does not inherit the thesis. Earn each path
 bottom-up from that company's own economics.
 
-Every ticker still gets its OWN thesis. There is no fixed price target to
-match, and no ticker has a predetermined destination.
+Every ticker still gets its OWN thesis. There is no per-ticker price
+target to match, and no ticker has a predetermined destination.
 
 ### Required dynamics
 - Non-linear paths: bull runs and/or consolidation years, reasoned from that specific company's fundamentals and cycle — never a flat CAGR line.

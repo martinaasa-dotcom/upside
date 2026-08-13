@@ -41,53 +41,6 @@ type Props = {
   convictions?: ConvictionMap;
 };
 
-const STANCE_STORAGE_KEY = "upside-forecast-stance-by-portfolio";
-
-const STANCE_OPTIONS: { id: ForecastStance; label: string; hint: string }[] = [
-  {
-    id: "bearish",
-    label: "Cautious",
-    hint: "Stress-test the thesis: slower buildout, longer digestion",
-  },
-  {
-    id: "base",
-    label: "Base",
-    hint: "Margus's default read on the AI buildout and the cycle",
-  },
-  {
-    id: "bullish",
-    label: "Bullish",
-    hint: "Take the thesis toward its upside case where a name earns it",
-  },
-];
-
-function loadStance(portfolioId: string): ForecastStance {
-  if (typeof window === "undefined") return DEFAULT_FORECAST_STANCE;
-  try {
-    const raw = window.localStorage.getItem(STANCE_STORAGE_KEY);
-    if (!raw) return DEFAULT_FORECAST_STANCE;
-    const parsed = JSON.parse(raw) as Record<string, ForecastStance>;
-    const v = parsed?.[portfolioId];
-    return v === "bullish" || v === "bearish" || v === "base"
-      ? v
-      : DEFAULT_FORECAST_STANCE;
-  } catch {
-    return DEFAULT_FORECAST_STANCE;
-  }
-}
-
-function saveStance(portfolioId: string, stance: ForecastStance) {
-  if (typeof window === "undefined") return;
-  try {
-    const raw = window.localStorage.getItem(STANCE_STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Record<string, ForecastStance>) : {};
-    parsed[portfolioId] = stance;
-    window.localStorage.setItem(STANCE_STORAGE_KEY, JSON.stringify(parsed));
-  } catch {
-    /* ignore quota / private mode */
-  }
-}
-
 function calibratedPaths(
   plan: ForecastPlan,
   model: ForecastModel,
@@ -213,14 +166,7 @@ export function ForecastPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [appliedFlash, setAppliedFlash] = useState(false);
-  const [stance, setStance] = useState<ForecastStance>(() =>
-    loadStance(portfolioId)
-  );
   const overrideCount = countOverrides(overrides);
-
-  useEffect(() => {
-    setStance(loadStance(portfolioId));
-  }, [portfolioId]);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
   const holdingsKey = forecastHoldingsKey(model.rows.map((r) => r.ticker));
   const fullyCovered = isForecastFullyCovered(
@@ -261,7 +207,7 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
-          stance,
+          stance: DEFAULT_FORECAST_STANCE,
           convictions,
         }),
       });
@@ -272,13 +218,13 @@ export function ForecastPanel({
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,
-        stance,
+        stance: DEFAULT_FORECAST_STANCE,
       };
-      const { eoyTargets, paths } = calibratedPaths(next, model, stance);
+      const { eoyTargets, paths } = calibratedPaths(next, model);
       const calibrated: ForecastPlan = {
         ...next,
         eoyTargets,
-        stance,
+        stance: DEFAULT_FORECAST_STANCE,
       };
       saveForecastPlan(calibrated);
       setPlan(calibrated);
@@ -350,15 +296,15 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
-      stance,
+      stance: DEFAULT_FORECAST_STANCE,
     });
     if (!decision.run) return;
-    const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${stance}:${plan?.generatedAt ?? "none"}`;
+    const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
     if (autoKeyRef.current === key) return;
     autoKeyRef.current = key;
     void askMargus({ auto: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
-  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, stance]);
+  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy]);
 
   // Safety net for the brief window between "you sold this" and the
   // auto-refresh above actually landing (or if it fails/gets rate
@@ -381,7 +327,7 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
-      stance,
+      stance: DEFAULT_FORECAST_STANCE,
     });
     if (decision.run && decision.reason === "first-run") {
       return "No Margus plan yet, generating a base-case path …";
@@ -392,11 +338,8 @@ export function ForecastPanel({
     if (decision.run && decision.reason === "sold-holding") {
       return "A holding this plan named has been sold, regenerating the playbook …";
     }
-    if (decision.run && decision.reason === "stance-changed") {
-      return "Stance changed, Margus is re-reasoning every path …";
-    }
     return null;
-  }, [planHydrated, model.rows, plan, fullyCovered, busy, stance]);
+  }, [planHydrated, model.rows, plan, fullyCovered, busy]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-brand-deep/30 bg-[#161618]/70">
@@ -425,37 +368,12 @@ export function ForecastPanel({
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div
-              className="flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5"
-              title="How hard Margus leans on his AI-buildout thesis when he reasons each path"
-            >
-              {STANCE_OPTIONS.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  title={s.hint}
-                  onClick={() => {
-                    if (s.id === stance) return;
-                    setStance(s.id);
-                    saveStance(portfolioId, s.id);
-                  }}
-                  className={cn(
-                    "rounded-md px-2 py-1 text-xs font-semibold transition",
-                    stance === s.id
-                      ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-400 hover:text-zinc-300"
-                  )}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
             <button
               type="button"
               disabled={busy || model.rows.length === 0}
               onClick={() => void askMargus()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-xs font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
-              title="Re-run the forecast with the current stance and your conviction notes"
+              title="Re-run the forecast against your conviction notes"
             >
               <RotateCcw className={cn("h-3 w-3", busy && "animate-spin")} />
               {busy ? "Rethinking …" : "Rerun"}

@@ -559,11 +559,7 @@ export function LabSheet({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <AllocCard title="By sector" slices={sectors} />
-                <AllocCard
-                  title="By ticker"
-                  slices={byTicker}
-                  flagAbovePct={0.2}
-                />
+                <AllocCard title="By ticker" slices={byTicker} />
               </div>
             </>
           )}
@@ -872,57 +868,34 @@ function StatCell({
 function AllocCard({
   title,
   slices,
-  flagAbovePct,
 }: {
   title: string;
   slices: { label: string; pct: number; value: number }[];
-  /** Tint any slice at or above this weight, so an oversized single
-   * position reads as a flag rather than just another bar. */
-  flagAbovePct?: number;
 }) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
       <p className="mb-3 text-sm font-semibold text-white">{title}</p>
       <div className="space-y-2">
-        {slices.map((s) => {
-          const flagged = flagAbovePct != null && s.pct >= flagAbovePct;
-          return (
-            <div key={s.label}>
-              <div className="mb-0.5 flex justify-between text-xs text-zinc-400">
-                <span className={cn(flagged && "font-medium text-amber-300")}>
-                  {s.label}
-                </span>
-                <span
-                  className={cn(
-                    "tabular-nums",
-                    flagged && "font-medium text-amber-300"
-                  )}
-                >
-                  {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
-                <div
-                  className={cn(
-                    "h-full rounded-full",
-                    flagged ? "bg-amber-400/80" : "bg-brand/70"
-                  )}
-                  style={{ width: `${Math.min(100, s.pct * 100)}%` }}
-                />
-              </div>
+        {slices.map((s) => (
+          <div key={s.label}>
+            <div className="mb-0.5 flex justify-between text-xs text-zinc-400">
+              <span>{s.label}</span>
+              <span className="tabular-nums">
+                {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}
+              </span>
             </div>
-          );
-        })}
+            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
+              <div
+                className="h-full rounded-full bg-brand/70"
+                style={{ width: `${Math.min(100, s.pct * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
         {slices.length === 0 && (
           <p className="text-sm text-zinc-400">No equity to allocate.</p>
         )}
       </div>
-      {flagAbovePct != null && (
-        <p className="mt-3 text-xs text-zinc-400">
-          Amber marks anything at or above {Math.round(flagAbovePct * 100)}% of
-          the book.
-        </p>
-      )}
     </div>
   );
 }
