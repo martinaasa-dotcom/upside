@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, currency, percent } from "@/lib/format";
+import { cn, signedTone, currency, percent } from "@/lib/format";
 import {
   usdToDisplay,
   formatEurUsdHint,
@@ -52,12 +52,6 @@ type Props = {
   eurUsd?: number | null;
   onDisplayCurrencyChange?: (currency: DisplayCurrency) => void;
 };
-
-function signedTone(value: number) {
-  if (value > 0) return "text-gain";
-  if (value < 0) return "text-loss";
-  return "text-zinc-300";
-}
 
 function InlineNumber({
   value,

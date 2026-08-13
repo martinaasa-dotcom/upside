@@ -143,7 +143,10 @@ const MAKERS: FactMaker[] = [
     const total = members.reduce((s, m) => s + m.todayDollar, 0);
     if (total === 0) return null;
     return pick(rng, [
-      `Combined family movement today: ${total >= 0 ? "+" : ""}$${money(Math.abs(total))}. ${total >= 0 ? "Nice." : "Rough one."}`,
+      // The sign has to survive: this used to print "+" for gains and
+      // nothing at all for losses, so a red day read as a plain positive
+      // dollar figure sitting next to "Rough one."
+      `Combined family movement today: ${total >= 0 ? "+" : "-"}$${money(Math.abs(total))}. ${total >= 0 ? "Nice." : "Rough one."}`,
       `Add up every book's day and the family is ${total >= 0 ? "up" : "down"} $${money(Math.abs(total))} today.`,
     ]);
   },

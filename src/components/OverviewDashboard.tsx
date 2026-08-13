@@ -9,7 +9,13 @@ import {
   signedCurrency,
   cn,
   plural,
+  signedTone,
 } from "@/lib/format";
+
+/** Overview sits on a darker surface, so flat reads better one step
+ * dimmer than the shared default. */
+const tone = (value: number | null | undefined) =>
+  signedTone(value, "text-zinc-400");
 import { buildDailyFunFacts } from "@/lib/fun-facts";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
 import type { UpsideAlert } from "@/lib/alerts";
@@ -283,12 +289,6 @@ function InfoTip({ text }: { text: string }) {
       )}
     </span>
   );
-}
-
-function tone(value: number) {
-  if (value > 0) return "text-gain";
-  if (value < 0) return "text-loss";
-  return "text-zinc-400";
 }
 
 function PortfolioChips({ names }: { names: string[] }) {

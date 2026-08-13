@@ -3,7 +3,7 @@
 import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
-import { cn, currency, percent } from "@/lib/format";
+import { cn, signedTone, currency, percent } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   ensureCompleteEoyTargets,
@@ -102,12 +102,6 @@ function calibratedPaths(
     eoyTargets,
     paths: planEoyPaths({ ...plan, eoyTargets, stance }),
   };
-}
-
-function signedTone(value: number) {
-  if (value > 0) return "text-gain";
-  if (value < 0) return "text-loss";
-  return "text-zinc-300";
 }
 
 function yearLabel(year: number) {

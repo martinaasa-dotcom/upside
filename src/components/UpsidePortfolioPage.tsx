@@ -3,7 +3,7 @@
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
-import { currency, percent, signedCurrency, cn } from "@/lib/format";
+import { currency, percent, signedCurrency, cn, signedTone } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { concentrationRead, themeBreakdown } from "@/lib/allocation";
@@ -716,17 +716,20 @@ export function UpsidePortfolioPage() {
                   <p
                     className={cn(
                       "mt-0.5 text-lg font-semibold tabular-nums sm:text-xl",
-                      todayDollar > 0
-                        ? "text-gain"
-                        : todayDollar < 0
-                          ? "text-loss"
-                          : "text-white"
+                      signedTone(todayDollar, "text-white")
                     )}
                   >
                     {signedCurrency(todayDollar)}
                   </p>
                   {todayPct != null && (
-                    <p className="text-[11px] text-zinc-500">{percent(todayPct)}</p>
+                    <p
+                      className={cn(
+                        "text-[11px] tabular-nums",
+                        signedTone(todayPct, "text-zinc-500")
+                      )}
+                    >
+                      {percent(todayPct)}
+                    </p>
                   )}
                 </div>
                 <div>

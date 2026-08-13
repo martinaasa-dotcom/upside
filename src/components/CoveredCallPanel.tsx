@@ -1,7 +1,7 @@
 "use client";
 
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
-import { cn, currency, percent } from "@/lib/format";
+import { cn, signedTone, currency, percent } from "@/lib/format";
 import {
   blockWheelChange,
   formatDecimal,
@@ -62,12 +62,6 @@ type Props = {
   onPatchStockTarget: (holdingId: string, stockTarget: number) => void;
   onAddHolding?: () => void;
 };
-
-function signedTone(value: number) {
-  if (value > 0) return "text-gain";
-  if (value < 0) return "text-loss";
-  return "text-zinc-300";
-}
 
 function InlineTargetCall({
   value,

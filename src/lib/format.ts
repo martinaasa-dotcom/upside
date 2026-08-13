@@ -47,6 +47,27 @@ export function signedCurrency(value: number | null | undefined): string {
 }
 
 /**
+ * Green for a gain, red for a loss, neutral grey for flat. The single
+ * source of truth for how a signed number is coloured, so a P&L figure
+ * looks the same wherever it appears. Four components each had their own
+ * identical copy of this before.
+ *
+ * Only for numbers where up is good and down is bad: P&L, ROI, today's
+ * move, alpha, a change versus a benchmark. Deliberately not for plain
+ * magnitudes (book value, cost basis, share counts, cash), where colour
+ * would imply a judgement that isn't there.
+ */
+export function signedTone(
+  value: number | null | undefined,
+  neutral = "text-zinc-300"
+): string {
+  if (!isRenderable(value)) return neutral;
+  if (value > 0) return "text-gain";
+  if (value < 0) return "text-loss";
+  return neutral;
+}
+
+/**
  * "1 sheet" / "2 sheets". Pass an explicit plural for irregular words.
  * Counts here are small and human-scale (sheets, holdings, members), so
  * the naive s-suffix covers everything we actually label.

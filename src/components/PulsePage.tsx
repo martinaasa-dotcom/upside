@@ -7,6 +7,7 @@ import {
   signedCurrency,
   cn,
   plural,
+  signedTone,
 } from "@/lib/format";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
@@ -176,8 +177,15 @@ function PulseCard({
           {c.inBook ? (
             <p className="mt-0.5 text-xs text-zinc-500">
               {currency(c.price)} · {percent(c.bookPct)} of book ·{" "}
-              {currency(c.currentValue)} · {signedCurrency(c.todayDollar)} today
-              · lifetime {percent(c.roiPct)} · {c.portfolios.join(", ")}
+              {currency(c.currentValue)} ·{" "}
+              <span className={signedTone(c.todayDollar, "text-zinc-500")}>
+                {signedCurrency(c.todayDollar)}
+              </span>{" "}
+              today · lifetime{" "}
+              <span className={signedTone(c.roiPct, "text-zinc-500")}>
+                {percent(c.roiPct)}
+              </span>{" "}
+              · {c.portfolios.join(", ")}
             </p>
           ) : (
             <p className="mt-0.5 text-xs text-zinc-500">
