@@ -176,7 +176,7 @@ export function DailyDuelCard({ tickers }: Props) {
           ? "Predict the closer — tap to lock it. No take-backs, no live % until 4pm ET."
           : waitingOnClose
             ? canSettle
-              ? "Locked in — waiting on session quotes to settle…"
+              ? "Locked in — waiting on session quotes to settle …"
               : "Locked in. Results unlock after the US close (4pm ET)."
             : resultLine}
       </p>

@@ -639,7 +639,7 @@ export function CommunityView({ communityId }: Props) {
 
         <main className="mx-auto max-w-6xl space-y-8 px-4 py-6">
           {loading && (
-            <p className="text-sm text-zinc-500">Loading community…</p>
+            <p className="text-sm text-zinc-500">Loading community …</p>
           )}
           {error && (
             <p className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-300">

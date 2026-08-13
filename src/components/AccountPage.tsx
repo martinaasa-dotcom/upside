@@ -491,7 +491,7 @@ export function AccountPage() {
                 disabled={savingProfile}
                 className="rounded-lg bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8] disabled:opacity-60"
               >
-                {savingProfile ? "Saving…" : "Save profile"}
+                {savingProfile ? "Saving …" : "Save profile"}
               </button>
             </form>
           </section>
@@ -634,7 +634,7 @@ export function AccountPage() {
                     onClick={() => void createInvite({ emailOnly: true })}
                     className="rounded-lg bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8] disabled:opacity-60"
                   >
-                    {busyInvite ? "Working…" : "Create invite code"}
+                    {busyInvite ? "Working …" : "Create invite code"}
                   </button>
                 </div>
 
@@ -785,7 +785,7 @@ export function AccountPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 hover:border-zinc-500 disabled:opacity-60"
               >
                 <Download className="h-3.5 w-3.5" />
-                {exporting ? "Preparing…" : "Export my data"}
+                {exporting ? "Preparing …" : "Export my data"}
               </button>
             </div>
             {exportErr && <p className="text-sm text-red-400">{exportErr}</p>}
@@ -886,7 +886,7 @@ export function AccountPage() {
                 disabled={deleting || deleteText.trim() !== "DELETE"}
                 className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-40"
               >
-                {deleting ? "Deleting…" : "Permanently delete"}
+                {deleting ? "Deleting …" : "Permanently delete"}
               </button>
             </div>
           </div>

@@ -46,7 +46,7 @@ export function SignInGate({ children }: Props) {
           variant="mark"
           className="h-10 w-10 animate-pulse opacity-70"
         />
-        <p className="text-sm text-zinc-500">Checking sign-in…</p>
+        <p className="text-sm text-zinc-500">Checking sign-in …</p>
       </div>
     );
   }
@@ -108,7 +108,7 @@ export function SignInGate({ children }: Props) {
             className="signin-rise-3 mt-9 inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-lg border border-brand-mid/40 bg-brand-bright px-4 text-[14px] font-semibold text-[#1a1510] shadow-[0_12px_40px_-12px_rgba(212,184,122,0.5)] transition hover:bg-[#F0E4C8] hover:shadow-[0_16px_48px_-12px_rgba(212,184,122,0.6)] active:scale-[0.985] disabled:opacity-60"
           >
             <GoogleMark />
-            {busy ? "Redirecting…" : "Continue with Google"}
+            {busy ? "Redirecting …" : "Continue with Google"}
           </button>
 
           {err && (

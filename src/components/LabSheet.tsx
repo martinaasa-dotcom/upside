@@ -653,7 +653,7 @@ export function LabSheet({
                         </span>
                       </>
                     ) : (
-                      <span className="text-xs text-zinc-600">loading…</span>
+                      <span className="text-xs text-zinc-600">loading …</span>
                     )}
                     {!guest && (
                       <button
@@ -809,7 +809,7 @@ export function LabSheet({
             </span>
             {scopedCcRows.some((r) => r.premium == null && r.contracts > 0) && (
               <span className="text-[11px] font-normal text-zinc-500">
-                Scanning option premiums…
+                Scanning option premiums …
               </span>
             )}
           </div>

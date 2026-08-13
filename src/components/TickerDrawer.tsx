@@ -127,7 +127,7 @@ export function TickerDrawer({
               value={thesis}
               onChange={(e) => onConviction(level, e.target.value)}
               rows={4}
-              placeholder="Why we hold this — moat, path, invalidation…"
+              placeholder="Why we hold this — moat, path, invalidation …"
               className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             />
           </div>

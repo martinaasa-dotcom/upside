@@ -879,7 +879,7 @@ export function OverviewDashboard({
           <p className="mb-5 mt-1 text-base text-zinc-400">Session gainers</p>
           <div className="space-y-3">
             {todayWinners.length === 0 ? (
-              <p className="text-base text-zinc-500">Waiting on quotes…</p>
+              <p className="text-base text-zinc-500">Waiting on quotes …</p>
             ) : (
               todayWinners.map((t, i) => (
                 <RankCard
@@ -900,7 +900,7 @@ export function OverviewDashboard({
           <p className="mb-5 mt-1 text-base text-zinc-400">Session laggards</p>
           <div className="space-y-3">
             {todayLosers.length === 0 ? (
-              <p className="text-base text-zinc-500">Waiting on quotes…</p>
+              <p className="text-base text-zinc-500">Waiting on quotes …</p>
             ) : (
               todayLosers.map((t, i) => (
                 <RankCard
@@ -1107,7 +1107,7 @@ export function OverviewDashboard({
         </div>
         <ul className="space-y-3">
           {displayedFunFacts.length === 0 ? (
-            <li className="text-base text-zinc-500">Waiting on quotes…</li>
+            <li className="text-base text-zinc-500">Waiting on quotes …</li>
           ) : (
             displayedFunFacts.map((fact, i) => (
               <li

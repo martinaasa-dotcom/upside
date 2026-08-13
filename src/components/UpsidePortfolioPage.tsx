@@ -681,7 +681,7 @@ export function UpsidePortfolioPage() {
                   pickerOpen ? (
                     <div className="space-y-2">
                       {myPortfolios === null ? (
-                        <p className="text-xs text-zinc-500">Loading your sheets…</p>
+                        <p className="text-xs text-zinc-500">Loading your sheets …</p>
                       ) : myPortfolios.length === 0 ? (
                         <p className="text-xs text-zinc-500">
                           You don&apos;t have any sheets to compare yet.
@@ -694,7 +694,7 @@ export function UpsidePortfolioPage() {
                               onChange={(e) => setPickerSelection(e.target.value)}
                               className="touch-target appearance-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pr-8 text-xs text-zinc-200 focus:border-brand-mid focus:outline-none"
                             >
-                              <option value="">Choose a sheet…</option>
+                              <option value="">Choose a sheet …</option>
                               {myPortfolios.map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.name}
@@ -709,7 +709,7 @@ export function UpsidePortfolioPage() {
                             disabled={!pickerSelection || benchmarkBusy}
                             className="touch-target rounded-md bg-brand/20 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/30 disabled:opacity-50"
                           >
-                            {benchmarkBusy ? "Setting…" : "Set as benchmark"}
+                            {benchmarkBusy ? "Setting …" : "Set as benchmark"}
                           </button>
                           <button
                             type="button"
@@ -785,7 +785,7 @@ export function UpsidePortfolioPage() {
                         </span>
                       </div>
                     ) : (
-                      <p className="text-xs text-zinc-500">Calculating…</p>
+                      <p className="text-xs text-zinc-500">Calculating …</p>
                     )}
                   </div>
                 )}

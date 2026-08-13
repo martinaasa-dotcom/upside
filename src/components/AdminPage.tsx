@@ -179,7 +179,7 @@ export function AdminPage() {
               This account is not a superadmin.
             </p>
           ) : loading ? (
-            <p className="text-sm text-zinc-500">Loading overview…</p>
+            <p className="text-sm text-zinc-500">Loading overview …</p>
           ) : error ? (
             <p className="text-sm text-red-400">{error}</p>
           ) : (
@@ -218,7 +218,7 @@ export function AdminPage() {
                   </div>
                 </div>
                 {errorLogLoading && errorLog.length === 0 ? (
-                  <p className="text-sm text-zinc-500">Loading…</p>
+                  <p className="text-sm text-zinc-500">Loading …</p>
                 ) : errorLog.length === 0 ? (
                   <p className="rounded-2xl border border-emerald-900/40 bg-emerald-950/15 px-4 py-4 text-center text-sm text-emerald-300/90">
                     Nothing logged — all clear.
@@ -306,7 +306,7 @@ export function AdminPage() {
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search name, email, or sheet…"
+                      placeholder="Search name, email, or sheet …"
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-900 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
                     />
                   </div>

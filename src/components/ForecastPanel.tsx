@@ -323,13 +323,13 @@ export function ForecastPanel({
       fullyCovered,
     });
     if (decision.run && decision.reason === "first-run") {
-      return "No Margus plan yet — generating a base-case path…";
+      return "No Margus plan yet — generating a base-case path …";
     }
     if (decision.run && decision.reason === "monthly") {
-      return "Monthly thesis check — Margus is refreshing EOY if anything shifted…";
+      return "Monthly thesis check — Margus is refreshing EOY if anything shifted …";
     }
     if (decision.run && decision.reason === "sold-holding") {
-      return "A holding this plan named has been sold — regenerating the playbook…";
+      return "A holding this plan named has been sold — regenerating the playbook …";
     }
     return null;
   }, [planHydrated, model.rows, plan, fullyCovered, busy]);
@@ -356,7 +356,7 @@ export function ForecastPanel({
             )}
             {busy && (
               <p className="mt-1 text-[11px] text-amber-200/80">
-                Margus is updating the forecast…
+                Margus is updating the forecast …
               </p>
             )}
           </div>
@@ -570,7 +570,7 @@ export function ForecastPanel({
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
               Add / trim can be multiple names or sectors (SaaS, healthcare,
-              drones…). Manual refresh still available anytime.
+              drones …). Manual refresh still available anytime.
             </p>
             {plan?.generatedAt && (
               <p className="mt-1 text-[11px] text-zinc-600">
@@ -591,7 +591,7 @@ export function ForecastPanel({
               <Sparkles className="h-3.5 w-3.5" />
             )}
             {busy
-              ? "Margus is reasoning…"
+              ? "Margus is reasoning …"
               : plan
                 ? "Refresh Margus forecast"
                 : "Ask Margus for a forecast"}
@@ -616,7 +616,7 @@ export function ForecastPanel({
         {busy && !plan && (
           <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-brand-deep/30 bg-brand/5 px-4 py-6 text-sm text-brand-bright">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Reasoning full EOY paths for this sheet…
+            Reasoning full EOY paths for this sheet …
           </div>
         )}
         {plan && (
@@ -666,7 +666,7 @@ export function ForecastPanel({
                 <span>
                   This playbook may still name{" "}
                   {soldTickersInPlan.join(", ")} — no longer in this sheet.
-                  {busy ? " Refreshing…" : ""}
+                  {busy ? " Refreshing …" : ""}
                 </span>
                 {!busy && (
                   <button

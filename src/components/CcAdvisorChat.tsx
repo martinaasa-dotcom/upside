@@ -775,7 +775,7 @@ export function CcAdvisorChat({
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-white">
                 {silentPhase === "sending"
-                  ? "Margus is reading your screenshot…"
+                  ? "Margus is reading your screenshot …"
                   : silentSummary?.kind === "error"
                     ? "Import failed"
                     : silentSummary?.kind === "empty"
@@ -1033,7 +1033,7 @@ export function CcAdvisorChat({
                     </div>
                   ) : null}
                   {toolPending && !text && toolNotes.length === 0 ? (
-                    <p className="text-xs text-zinc-500">Running analysis…</p>
+                    <p className="text-xs text-zinc-500">Running analysis …</p>
                   ) : null}
                   {toolNotes.map((note, i) => (
                     <p
@@ -1050,7 +1050,7 @@ export function CcAdvisorChat({
             {busy && (
               <div className="flex items-center gap-2 text-xs text-zinc-500">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Thinking…
+                Thinking …
                 <button
                   type="button"
                   onClick={() => stop()}
@@ -1136,7 +1136,7 @@ export function CcAdvisorChat({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onPaste={(e) => void onPaste(e)}
-                placeholder="Paste a screenshot or ask Margus…"
+                placeholder="Paste a screenshot or ask Margus …"
                 disabled={busy}
                 className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
               />

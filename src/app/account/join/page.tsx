@@ -16,12 +16,12 @@ function JoinInner() {
   const [manual, setManual] = useState(code);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(
-    code ? "Accepting invite…" : null
+    code ? "Accepting invite …" : null
   );
 
   async function accept(inviteCode: string) {
     setError(null);
-    setStatus("Accepting invite…");
+    setStatus("Accepting invite …");
     try {
       const res = await fetch("/api/portfolios/join", {
         method: "POST",
@@ -33,8 +33,8 @@ function JoinInner() {
       track("portfolio_invite_redeemed");
       setStatus(
         data.portfolio?.name
-          ? `Joined ${data.portfolio.name} — opening My book…`
-          : "Joined — opening My book…"
+          ? `Joined ${data.portfolio.name} — opening My book …`
+          : "Joined — opening My book …"
       );
       router.replace("/");
     } catch (e) {
@@ -93,7 +93,7 @@ export default function AccountJoinPage() {
     <Suspense
       fallback={
         <div className="flex min-h-dvh items-center justify-center bg-[#121214] text-zinc-400">
-          Loading…
+          Loading …
         </div>
       }
     >

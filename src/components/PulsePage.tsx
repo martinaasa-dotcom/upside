@@ -231,7 +231,7 @@ function PulseCard({
       )}
 
       {loading && !check ? (
-        <p className="mt-3 text-sm text-zinc-500">Pulling news & checking thesis…</p>
+        <p className="mt-3 text-sm text-zinc-500">Pulling news & checking thesis …</p>
       ) : check ? (
         <div className="mt-3 space-y-2 text-sm leading-relaxed text-zinc-300">
           <p className="text-zinc-100">{check.situation}</p>
@@ -660,7 +660,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                   void checkTicker(suggestions[0]!);
                 }
               }}
-              placeholder="Type ticker — BMNR, RKLB, NVDA…"
+              placeholder="Type ticker — BMNR, RKLB, NVDA …"
               className="w-full rounded-lg border border-zinc-700 bg-zinc-950/60 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
               autoComplete="off"
             />
@@ -686,7 +686,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             disabled={!searchInput.trim() || pinnedLoading}
             className="shrink-0 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40 sm:py-2"
           >
-            {pinnedLoading ? "Checking…" : "Check"}
+            {pinnedLoading ? "Checking …" : "Check"}
           </button>
         </form>
 

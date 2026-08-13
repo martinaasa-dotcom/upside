@@ -50,9 +50,9 @@ function JoinInner() {
         {error ? (
           <p className="text-sm text-red-400">{error}</p>
         ) : done ? (
-          <p className="text-sm text-zinc-400">Joined — redirecting…</p>
+          <p className="text-sm text-zinc-400">Joined — redirecting …</p>
         ) : (
-          <p className="text-sm text-zinc-400">Accepting invite…</p>
+          <p className="text-sm text-zinc-400">Accepting invite …</p>
         )}
       </div>
     </SignInGate>
@@ -64,7 +64,7 @@ export default function JoinCommunityPage() {
     <Suspense
       fallback={
         <div className="flex min-h-dvh items-center justify-center bg-[#121214] text-zinc-400">
-          Loading…
+          Loading …
         </div>
       }
     >
