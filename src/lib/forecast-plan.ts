@@ -78,7 +78,7 @@ export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "monthly" | "sold-holding";
+      reason: "first-run" | "monthly" | "sold-holding" | "stance-changed";
     };
 
 /** Auto API refresh for first run, then monthly (not daily) — plus
@@ -90,6 +90,10 @@ export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
   fullyCovered: boolean;
+  /** Currently selected stance. A cached plan reasoned under a different
+   * stance is stale by definition: flipping to Bullish has to actually
+   * re-reason the paths, not just relabel the old ones. */
+  stance?: ForecastStance;
   nowMs?: number;
 }): ForecastAutoRefresh {
   const tickers = input.tickers.map((t) => t.toUpperCase());
@@ -104,6 +108,10 @@ export function shouldAutoRefreshForecast(input: {
 
   if (!plan.generatedAt && !input.fullyCovered) {
     return { run: true, reason: "first-run" };
+  }
+
+  if (input.stance && (plan.stance ?? DEFAULT_FORECAST_STANCE) !== input.stance) {
+    return { run: true, reason: "stance-changed" };
   }
 
   const planKey =
@@ -172,11 +180,11 @@ export function saveForecastPlan(plan: ForecastPlan) {
 function stanceGuidance(stance: ForecastStance): string {
   switch (stance) {
     case "bearish":
-      return `STANCE = BEARISH. Softer paths, deeper winters OK — still non-linear and reasoned per-ticker. Do not invent a uniform "everything dips" book — some names hold up better than others.`;
+      return `STANCE = BEARISH. The macro thesis above is the backdrop you are stress-testing, not discarding: assume the buildout slows, digestion years run longer, and multiples compress before earnings catch up. Softer paths and deeper winters are fine. Still non-linear and reasoned per-ticker, and do not invent a uniform "everything dips" book, since some names hold up far better than others.`;
     case "bullish":
-      return `STANCE = BULLISH. More optimistic paths than the base case, but still grounded in each ticker's own fundamentals — not an across-the-board multiplier.`;
+      return `STANCE = BULLISH. Take the macro thesis above closer to its upside case rather than its midpoint. Where a company is a direct beneficiary of the compute buildout, the inference/agentic demand curve, or the agentic payments layer, let the path reflect demand staying ahead of supply for longer than consensus models: durable pricing power, upgraded capacity plans, and multiple expansion on top of earnings growth, not just earnings growth alone. Digestion years still appear, they are shallower and shorter. This is not a blanket multiplier: a name with no credible link to those drivers should still get an ordinary path, and the gap between your best and worst holding should widen under this stance, not narrow.`;
     default:
-      return `STANCE = BASE CASE. Reason each ticker's path from its own fundamentals, sector cycle, and volatility — no fixed target to match. Consistency: if macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood — only reprice when the thesis meaningfully changes.`;
+      return `STANCE = BASE CASE. Reason each ticker's path from its own fundamentals, sector cycle, and volatility against the macro thesis above, with no fixed target to match. Consistency: if macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when the thesis meaningfully changes.`;
   }
 }
 
@@ -317,6 +325,10 @@ export function buildForecastPlanPrompt(input: {
   cashBalance: number;
   forecast: ForecastModel;
   stance?: ForecastStance;
+  /** The owner's own per-ticker conviction level and written thesis. This
+   * is where a personal view belongs (the engine itself stays generic and
+   * ticker-agnostic), so it's passed through and weighted explicitly. */
+  convictions?: Record<string, { level: number; thesis: string }>;
   now?: Date;
 }): string {
   const now = input.now ?? new Date();
@@ -338,8 +350,21 @@ export function buildForecastPlanPrompt(input: {
       input.forecast.currentTotal > 0
         ? ((r.currentValue / input.forecast.currentTotal) * 100).toFixed(1)
         : "0";
-    return `${r.ticker} [${sector} · theme=${theme}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, weight=${weightPct}% of book, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}`;
+    const conv =
+      input.convictions?.[r.ticker] ??
+      input.convictions?.[r.ticker.split(".")[0]!.toUpperCase()];
+    const convBit = conv
+      ? `, OWNER CONVICTION=${conv.level}/5${conv.thesis?.trim() ? ` — owner's thesis: "${conv.thesis.trim().slice(0, 400)}"` : ""}`
+      : "";
+    return `${r.ticker} [${sector} · theme=${theme}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, weight=${weightPct}% of book, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}${convBit}`;
   });
+
+  const anyConviction = lines.some((l) => l.includes("OWNER CONVICTION"));
+  const convictionGuidance = anyConviction
+    ? `
+OWNER CONVICTION: some holdings carry the owner's own conviction level (1-5) and written thesis. Treat a high-conviction written thesis as a serious input, not decoration: if the owner has articulated why a name is a long-term compounder, reason their argument through properly and let the path reflect it where the argument holds up. You are allowed to disagree, but if you land materially below their thesis you must say why in one plain sentence in that ticker's rationale, naming the specific thing you think they are underweighting. A 5/5 with a substantive thesis should not quietly get an average path.
+`
+    : "";
 
   const yearsList = FORECAST_YEARS.join(", ");
   const stance = input.stance ?? DEFAULT_FORECAST_STANCE;
@@ -355,7 +380,7 @@ CRITICAL: Reason every price from each company's micro-thesis + the conviction b
 Today (Europe/Tallinn): ${todayKeyInTz()} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
 ${stanceGuidance(stance)}
-
+${convictionGuidance}
 Cash: ${input.cashBalance}
 Current portfolio value (equity+cash): ${input.forecast.currentTotal.toFixed(0)}
 

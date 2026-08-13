@@ -2732,6 +2732,7 @@ export function Dashboard() {
                 onSetEoyPrice={commitEoyPrice}
                 onApplyMargusPaths={applyMargusEoyPaths}
                 onClearOverrides={() => setConfirmResetForecast(true)}
+                convictions={convictionMap}
               />
             )}
           </>

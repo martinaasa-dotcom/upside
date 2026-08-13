@@ -27,21 +27,30 @@ export type ForecastTheme =
 export type ForecastStance = "bearish" | "base" | "bullish";
 
 /**
- * Modest illustrative path as multiples of today's spot for EOY 2026…2030,
- * per sector theme. Intentionally non-linear (a straight CAGR line is
- * detected and rejected elsewhere) but NOT an aggressive return promise —
- * this is a safety-net shape, not house guidance.
+ * Illustrative path as multiples of today's spot for EOY 2026…2030, per
+ * sector theme. Intentionally non-linear (a straight CAGR line is detected
+ * and rejected elsewhere). This is a safety-net shape for gaps the model
+ * left empty, not a target and not a promise.
+ *
+ * Shapes are calibrated to the constructive base case in
+ * FORECAST_CONVICTION_PROMPT: the AI-linked themes carry the buildout and
+ * the agentic second-order trade, each with a digestion year rather than a
+ * clean ramp. Sectors with no link to that thesis stay deliberately plain.
+ *
+ * Note these also seed the Compound sheet's default expected return via
+ * impliedAnnualReturnForTheme, so an AI-heavy book will now default to a
+ * hotter planning rate than an index-heavy one.
  */
 const THEME_BASE_MULTS: Record<ForecastTheme, number[]> = {
-  ai_infra: [1.15, 1.35, 1.55, 1.85, 2.2],
-  ai_power: [1.12, 1.28, 1.45, 1.68, 1.95],
-  crypto: [1.3, 1.6, 1.1, 1.5, 2.0],
+  ai_infra: [1.22, 1.55, 1.42, 1.95, 2.65],
+  ai_power: [1.18, 1.42, 1.35, 1.75, 2.3],
+  crypto: [1.35, 1.7, 1.15, 1.7, 2.3],
   space: [1.1, 1.3, 1.2, 1.5, 1.9],
-  fintech: [1.12, 1.3, 1.15, 1.45, 1.8],
-  software: [1.1, 1.25, 1.15, 1.4, 1.7],
+  fintech: [1.16, 1.4, 1.28, 1.65, 2.15],
+  software: [1.14, 1.35, 1.25, 1.6, 2.05],
   healthcare: [1.08, 1.2, 1.12, 1.35, 1.6],
   drones: [1.1, 1.3, 1.2, 1.5, 1.9],
-  semi: [1.15, 1.35, 1.25, 1.6, 2.0],
+  semi: [1.18, 1.45, 1.32, 1.8, 2.4],
   index: [1.06, 1.13, 1.1, 1.2, 1.32],
   other: [1.1, 1.25, 1.15, 1.45, 1.75],
 };
@@ -175,7 +184,37 @@ export function enforcePathRules(
 
 export const FORECAST_CONVICTION_PROMPT = `## Forecast conviction (MANDATORY)
 
-Macro backdrop: Tom Lee–style (liquidity + AI spend + crypto institutionalization) is a reasonable structurally-supportive backdrop for risk assets in general — use it as color, not a script to copy on every ticker/year. Every ticker gets its OWN bottom-up thesis; there is no fixed price target to match.
+### Base-case macro thesis (this is your default worldview, not a hedge)
+
+You are structurally constructive on this decade, in the Tom Lee mould: you
+think consensus is anchoring on the last cycle's multiples while the actual
+earnings power of the AI buildout compounds faster than models assume. Reason
+from this backdrop by default. You do not need to caveat it into meaninglessness.
+
+- AI capex is a multi-year supercycle, not a two-year fad. Hyperscaler,
+  sovereign, and enterprise demand are additive, and each has a different
+  budget cycle, so they do not all roll over at once.
+- Compute stays supply-constrained longer than consensus expects. Power,
+  fab capacity, and datacenter shells are the binding constraints, not
+  chip design, so operators with secured capacity keep pricing power.
+- Inference is the bigger prize than training. Agents that run continuously
+  consume orders of magnitude more compute than a training run, and that
+  demand curve is only starting.
+- Agentic software and fintech are the second-order trade. Once agents can
+  transact, the payments, ledger, and risk rails they run on take a cut of a
+  much larger transaction volume. Treat that as a genuine growth vector, not
+  a story stock premium.
+- Liquidity and productivity underpin the rest. An easing bias plus real
+  AI-driven margin expansion supports multiples for quality risk assets.
+
+Two honesty checks so this stays a thesis and not a ramp: the path is
+violent, not smooth (digestion years, crowded-trade drawdowns and multiple
+compression all still happen inside a secular bull), and a company with no
+credible link to these drivers does not inherit the thesis. Earn each path
+bottom-up from that company's own economics.
+
+Every ticker still gets its OWN thesis. There is no fixed price target to
+match, and no ticker has a predetermined destination.
 
 ### Required dynamics
 - Non-linear paths: bull runs and/or consolidation years, reasoned from that specific company's fundamentals and cycle — never a flat CAGR line.

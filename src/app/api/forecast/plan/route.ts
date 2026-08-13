@@ -7,6 +7,7 @@ import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
   DEFAULT_FORECAST_STANCE,
+  type ForecastStance,
 } from "@/lib/forecast-plan";
 import { forecastPlanSchema } from "@/lib/forecast-plan-schema";
 import type { ForecastModel } from "@/lib/forecast";
@@ -52,7 +53,16 @@ export async function POST(req: Request) {
     const portfolioName = String(body.portfolioName ?? "Portfolio");
     const cashBalance = Number(body.cashBalance ?? 0);
     const forecast = body.forecast as ForecastModel | undefined;
-    const stance = DEFAULT_FORECAST_STANCE;
+    const requestedStance = body.stance;
+    const stance: ForecastStance =
+      requestedStance === "bullish" ||
+      requestedStance === "bearish" ||
+      requestedStance === "base"
+        ? requestedStance
+        : DEFAULT_FORECAST_STANCE;
+    const convictions = body.convictions as
+      | Record<string, { level: number; thesis: string }>
+      | undefined;
 
     if (!portfolioId || !forecast?.rows) {
       return Response.json(
@@ -66,6 +76,7 @@ export async function POST(req: Request) {
       cashBalance,
       forecast,
       stance,
+      convictions,
     });
 
     const { object } = await withAdvisorFallback(
