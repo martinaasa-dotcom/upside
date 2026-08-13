@@ -106,7 +106,7 @@ ${fg}
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 For **each** ticker:
-1. **situation**: 2-3 short sentences, grounded in headlines.
+1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
 2. **moveReason**: one sentence (cite headline when possible).
 3. **thesisStatus**: intact / watch / broken.
 4. **action**: add / hold / trim / watch per rules above.

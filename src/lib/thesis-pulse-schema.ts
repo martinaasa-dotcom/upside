@@ -19,9 +19,11 @@ export const pulseReportSchema = z.object({
     z.object({
       ticker: z.string(),
       situation: z
-        .string()
+        .array(z.string())
+        .min(2)
+        .max(4)
         .describe(
-          "2–3 short sentences: current situation explainer using the supplied news headlines. Plain English."
+          "2-4 bullets explaining the current situation, grounded in the supplied headlines. One short line each, under about 18 words, no bullet longer than a single clause plus its consequence. Plain English, no preamble, no trailing summary bullet."
         ),
       moveReason: z
         .string()

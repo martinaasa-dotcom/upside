@@ -41,9 +41,30 @@ export type PulseHeadline = {
   publishedAt: string;
 };
 
+/**
+ * `situation` used to be one prose blob and is now bullets, but reports
+ * cached in localStorage before that change still hold a string. Split
+ * those on sentence boundaries so an old cached report still renders as a
+ * list instead of crashing on .map or showing nothing.
+ */
+export function normalizePulseSituation(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((v): v is string => typeof v === "string" && !!v.trim());
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 export type PulseCheck = {
   ticker: string;
-  situation: string;
+  /** Short bullets, not a paragraph. Reports cached before this changed
+   * hold a single string; normalizePulseSituation() handles both. */
+  situation: string[];
   moveReason: string;
   thesisStatus: ThesisStatus;
   earningsNote: string;
@@ -321,8 +342,10 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     const trimPct = candidate.bookPct >= 0.08 ? 20 : 10;
     return {
       ticker: candidate.ticker,
-      situation:
-        "Momentum is running hot and price action looks stretched versus a normal day range.",
+      situation: [
+        "Momentum is running hot.",
+        "Price action looks stretched versus a normal day range.",
+      ],
       moveReason:
         "Likely momentum/euphoria extension rather than a thesis reset.",
       thesisStatus: "watch",
@@ -338,8 +361,10 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     const price = candidate.price > 0 ? candidate.price.toFixed(2) : "spot";
     return {
       ticker: candidate.ticker,
-      situation:
-        "This is a sharp down move that needs a thesis check, but no hard break is confirmed from market move alone.",
+      situation: [
+        "Sharp down move that warrants a thesis check.",
+        "No hard break confirmed from the price move alone.",
+      ],
       moveReason: `${candidate.moveLabel} move is ${movePct}.`,
       thesisStatus: "intact",
       earningsNote: "",
@@ -355,8 +380,10 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
 
   return {
     ticker: candidate.ticker,
-    situation:
-      "No stress signal from today’s move. Position remains in normal monitoring mode.",
+    situation: [
+      "No stress signal from today\u2019s move.",
+      "Position stays in normal monitoring mode.",
+    ],
     moveReason: `${candidate.moveLabel} move is ${movePct}.`,
     thesisStatus: "intact",
     earningsNote: "",

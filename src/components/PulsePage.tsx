@@ -30,6 +30,7 @@ import {
   savePulseTickerCache,
   statusLabel,
   actionLabel,
+  normalizePulseSituation,
   type PulseAction,
   type PulseCheck,
   type PulseHeadline,
@@ -247,7 +248,14 @@ function PulseCard({
         <p className="mt-3 text-sm text-zinc-500">Pulling news & checking thesis …</p>
       ) : check ? (
         <div className="mt-3 space-y-2 text-sm leading-relaxed text-zinc-300">
-          <p className="text-zinc-100">{check.situation}</p>
+          <ul className="space-y-1 text-zinc-100">
+            {normalizePulseSituation(check.situation).map((point, i) => (
+              <li key={i} className="flex gap-2">
+                <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
           <p>
             <span className="font-medium text-zinc-200">Move:</span>{" "}
             {check.moveReason}
