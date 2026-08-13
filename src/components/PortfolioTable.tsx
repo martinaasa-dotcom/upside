@@ -156,18 +156,46 @@ type SortKey =
   | "roiDollar"
   | "today";
 
-const COLUMNS: { label: string; key?: SortKey }[] = [
+const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   { label: "Ticker", key: "ticker" },
-  { label: "% Total", key: "pct" },
-  { label: "Shares", key: "shares" },
-  { label: "Buy", key: "buy" },
-  { label: "Price", key: "price" },
-  { label: "ROI %", key: "roiPct" },
-  { label: "Cost", key: "cost" },
-  { label: "Value", key: "value" },
-  { label: "ROI $", key: "roiDollar" },
-  { label: "90d" },
-  { label: "Today", key: "today" },
+  {
+    label: "% Total",
+    key: "pct",
+    explain: "Share of your whole book's value this position takes up",
+  },
+  {
+    label: "Shares",
+    key: "shares",
+    explain: "How many shares (or fractional shares) you hold",
+  },
+  {
+    label: "Buy",
+    key: "buy",
+    explain: "Average price you paid per share — your cost basis",
+  },
+  { label: "Price", key: "price", explain: "Current market price per share" },
+  {
+    label: "ROI %",
+    key: "roiPct",
+    explain: "Gain or loss vs. what you paid, as a percentage — (Value − Cost) ÷ Cost",
+  },
+  {
+    label: "Cost",
+    key: "cost",
+    explain: "Total dollars you put in — shares × buy price",
+  },
+  {
+    label: "Value",
+    key: "value",
+    explain: "What that position is worth right now — shares × current price",
+  },
+  {
+    label: "ROI $",
+    key: "roiDollar",
+    explain: "Gain or loss in dollars — Value minus Cost",
+  },
+  { label: "90d", explain: "Price trend over the last ~90 days" },
+  { label: "Today", key: "today", explain: "Price move since yesterday's close" },
   { label: "" },
 ];
 
@@ -497,7 +525,11 @@ export function PortfolioTable({
                         "group inline-flex items-center gap-1 transition hover:text-zinc-300",
                         sortKey === col.key && "text-brand-bright"
                       )}
-                      title={`Sort by ${col.label}`}
+                      title={
+                        col.explain
+                          ? `${col.explain}. Click to sort.`
+                          : `Sort by ${col.label}`
+                      }
                     >
                       {col.label}
                       {sortKey === col.key ? (
@@ -510,6 +542,8 @@ export function PortfolioTable({
                         <ArrowUpDown className="h-3 w-3 opacity-30 transition group-hover:opacity-70" />
                       )}
                     </button>
+                  ) : col.explain ? (
+                    <span title={col.explain}>{col.label}</span>
                   ) : (
                     col.label
                   )}

@@ -49,7 +49,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 type CurrencyCode = DisplayCurrency;
 
@@ -148,6 +148,15 @@ function DualPathChart({
   eurUsd: number | null;
   tippingYear: number | null;
 }) {
+  // A native SVG <title> only works on mouse hover (no touch support, and
+  // a ~1s delay even on desktop) — swap it for a real, instant, touch-
+  // friendly tooltip that follows the data point. Anchored to the
+  // viewBox coordinates of the hovered point (not raw cursor pixels), so
+  // its position as a % of the SVG box is correct regardless of how wide
+  // the responsive SVG actually renders.
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const max = Math.max(...stay, ...active, 1);
   const w = 640;
   const h = 240;
@@ -161,6 +170,15 @@ function DualPathChart({
 
   const xAt = (i: number) => padL + (i / lastIdx) * plotW;
   const yAt = (v: number) => padT + plotH - (v / max) * plotH;
+
+  function updateHoverFromClientX(clientX: number) {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const relX = ((clientX - rect.left) / rect.width) * w;
+    const idx = Math.round(((relX - padL) / plotW) * lastIdx);
+    setHoverIdx(Math.max(0, Math.min(lastIdx, idx)));
+  }
 
   const toPoints = (series: number[]) =>
     series.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
@@ -189,12 +207,24 @@ function DualPathChart({
   if (yearTicks[yearTicks.length - 1] !== lastIdx) yearTicks.push(lastIdx);
 
   return (
-    <div>
+    <div className="relative">
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${w} ${h}`}
-        className="h-auto w-full"
+        className="h-auto w-full touch-none"
         role="img"
         aria-label="Stay the course vs active path"
+        onMouseMove={(e) => updateHoverFromClientX(e.clientX)}
+        onMouseLeave={() => setHoverIdx(null)}
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (t) updateHoverFromClientX(t.clientX);
+        }}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (t) updateHoverFromClientX(t.clientX);
+        }}
+        onTouchEnd={() => setHoverIdx(null)}
       >
         <defs>
           <linearGradient id="dualPathGap" x1="0" y1="0" x2="0" y2="1">
@@ -283,22 +313,71 @@ function DualPathChart({
           strokeWidth="2.5"
         />
 
-        {active.map((v, i) => (
-          <circle
-            key={`a-${i}`}
-            cx={xAt(i)}
-            cy={yAt(v)}
-            r="7"
-            fill="transparent"
-          >
-            <title>
-              Year {i} · Active {money(v, currency, eurUsd)} · Stay
-              {" "}
-              {money(stay[i] ?? 0, currency, eurUsd)}
-            </title>
-          </circle>
-        ))}
+        {hoverIdx != null && (
+          <g pointerEvents="none">
+            <line
+              x1={xAt(hoverIdx)}
+              x2={xAt(hoverIdx)}
+              y1={padT}
+              y2={padT + plotH}
+              stroke="#a1a1aa"
+              strokeWidth="1"
+              strokeDasharray="2 3"
+              opacity="0.7"
+            />
+            <circle
+              cx={xAt(hoverIdx)}
+              cy={yAt(active[hoverIdx] ?? 0)}
+              r="4"
+              fill="#34d399"
+              stroke="#0a0a0b"
+              strokeWidth="1.5"
+            />
+            <circle
+              cx={xAt(hoverIdx)}
+              cy={yAt(stay[hoverIdx] ?? 0)}
+              r="4"
+              fill="#71717a"
+              stroke="#0a0a0b"
+              strokeWidth="1.5"
+            />
+          </g>
+        )}
+
       </svg>
+      {hoverIdx != null && (
+        <div
+          className={cn(
+            "pointer-events-none absolute z-10 min-w-[9rem] -translate-y-full rounded-lg border border-zinc-700 bg-[#1a1a1c] px-2.5 py-2 text-[11px] shadow-xl",
+            // Near either edge, anchor from that side instead of centering
+            // so the tooltip can't spill past the card's own edges.
+            hoverIdx / lastIdx < 0.15
+              ? "translate-x-0"
+              : hoverIdx / lastIdx > 0.85
+                ? "-translate-x-full"
+                : "-translate-x-1/2"
+          )}
+          style={{
+            left: `${(xAt(hoverIdx) / w) * 100}%`,
+            top: `${(Math.min(yAt(active[hoverIdx] ?? 0), yAt(stay[hoverIdx] ?? 0)) / h) * 100}%`,
+            marginTop: "-8px",
+          }}
+        >
+          <p className="font-semibold text-zinc-200">Year {hoverIdx}</p>
+          <p className="mt-1 flex items-center justify-between gap-2 text-gain">
+            <span>Active</span>
+            <span className="tabular-nums">
+              {money(active[hoverIdx] ?? 0, currency, eurUsd)}
+            </span>
+          </p>
+          <p className="flex items-center justify-between gap-2 text-zinc-400">
+            <span>Stay</span>
+            <span className="tabular-nums">
+              {money(stay[hoverIdx] ?? 0, currency, eurUsd)}
+            </span>
+          </p>
+        </div>
+      )}
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-0.5 w-4 border-t-2 border-dashed border-zinc-500" />
@@ -408,9 +487,16 @@ export function CompoundInterestSheet({
     }
   }, [draft, hydrated]);
 
+  // Sliders bind straight to `draft` so the handle/number label track the
+  // pointer with zero lag. The month-by-month simulation behind it (up to
+  // 480 iterations, x2-3 for shock/stay-course variants) is real work —
+  // deferring it lets React keep the drag itself perfectly smooth and
+  // catch the chart/table up right after, instead of recomputing on every
+  // single pointermove tick.
+  const deferredDraft = useDeferredValue(draft);
   const liveInputs: CompoundInputs = useMemo(
-    () => ({ ...draft, compound: "monthly" }),
-    [draft]
+    () => ({ ...deferredDraft, compound: "monthly" }),
+    [deferredDraft]
   );
 
   const result = useMemo(
@@ -926,11 +1012,31 @@ export function CompoundInterestSheet({
               <thead>
                 <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
                   <th className="pb-2 pr-3 font-medium">Goal</th>
-                  <th className="pb-2 pr-3 font-medium">Target</th>
-                  <th className="pb-2 pr-3 font-medium">Actual</th>
+                  <th
+                    className="pb-2 pr-3 font-medium"
+                    title="Projected date you'd cross this goal at your dialed rate"
+                  >
+                    Target
+                  </th>
+                  <th
+                    className="pb-2 pr-3 font-medium"
+                    title="The date you actually crossed it, once you've logged it as hit"
+                  >
+                    Actual
+                  </th>
                   <th className="pb-2 pr-3 font-medium">Years until</th>
-                  <th className="pb-2 pr-3 font-medium">CAGR</th>
-                  <th className="pb-2 font-medium">Est. growth</th>
+                  <th
+                    className="pb-2 pr-3 font-medium"
+                    title="Compound Annual Growth Rate — the steady yearly rate that would take you from one milestone to the next, once both have real dates"
+                  >
+                    CAGR
+                  </th>
+                  <th
+                    className="pb-2 font-medium"
+                    title="The annual rate dialed into this calculator — what's driving the Target date"
+                  >
+                    Est. growth
+                  </th>
                 </tr>
               </thead>
               <tbody>

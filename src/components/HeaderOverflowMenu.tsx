@@ -77,7 +77,7 @@ export function HeaderOverflowMenu({
         }}
         className={cn(
           "inline-flex items-center gap-1 rounded-md border border-zinc-700 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200",
-          avatar ? "p-0.5" : "px-2 py-1.5"
+          avatar ? "p-1" : "px-2 py-1.5"
         )}
       >
         {avatar ? (
