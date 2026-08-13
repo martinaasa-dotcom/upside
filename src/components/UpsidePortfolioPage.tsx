@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/AppHeader";
+import { BookBottomNav } from "@/components/BookBottomNav";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
@@ -1250,6 +1251,7 @@ export function UpsidePortfolioPage() {
           </>
         )}
       </main>
+      <BookBottomNav />
     </div>
   );
 }

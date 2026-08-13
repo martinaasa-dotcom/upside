@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { SignInGate } from "@/components/SignInGate";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -827,6 +828,7 @@ export function AccountPage() {
             .
           </p>
         </main>
+        <BookBottomNav />
       </div>
 
       {deleteOpen && (
