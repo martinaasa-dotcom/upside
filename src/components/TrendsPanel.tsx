@@ -182,7 +182,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             <p className="text-sm font-semibold text-white">
               Is the trend changing?
             </p>
-            <p className="mt-0.5 max-w-2xl text-xs leading-relaxed text-zinc-400">
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
               Everything here runs on weekly bars, so it answers &quot;has the
               story changed&quot; rather than &quot;what happened today&quot;.
               A signal that fired every week would be noise.
