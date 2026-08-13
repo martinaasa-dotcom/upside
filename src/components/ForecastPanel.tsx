@@ -15,6 +15,7 @@ import {
   forecastHoldingsKey,
   type ForecastPlan,
 } from "@/lib/forecast-plan";
+import { readJsonOrThrow } from "@/lib/http";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { isForecastFullyCovered } from "@/lib/forecast";
@@ -205,10 +206,10 @@ export function ForecastPanel({
           stance: DEFAULT_FORECAST_STANCE,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error ?? "Failed to generate plan");
-      }
+      const data = await readJsonOrThrow<{ plan: ForecastPlan }>(
+        res,
+        "Failed to generate plan"
+      );
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,

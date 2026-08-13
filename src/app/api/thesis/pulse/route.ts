@@ -21,6 +21,13 @@ import { generateObject } from "ai";
 export const maxDuration = 90;
 export const runtime = "nodejs";
 
+/**
+ * Absolute deadline measured from handler start, so the news/earnings
+ * context fetch above counts against it too. Leaves headroom under
+ * maxDuration to still return JSON rather than being killed mid-flight.
+ */
+const LLM_BUDGET_MS = 70_000;
+
 type Body = {
   candidates?: PulseCandidate[];
   convictions?: Record<string, { thesis?: string; level?: number }>;
@@ -117,6 +124,7 @@ ${lines.join("\n\n")}`;
 }
 
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -160,19 +168,22 @@ export async function POST(req: Request) {
       body.fearGreed ?? null
     );
 
-    const { object } = await withAdvisorFallback(providerChain, (model) =>
-      generateObject({
-        model,
-        schema: pulseReportSchema,
-        prompt,
-        maxRetries: 1,
-        abortSignal: req.signal,
-        providerOptions: {
-          openrouter: {
-            reasoning: { effort: "medium", max_tokens: 6000 },
+    const { object } = await withAdvisorFallback(
+      providerChain,
+      (model, _providerId, signal) =>
+        generateObject({
+          model,
+          schema: pulseReportSchema,
+          prompt,
+          maxRetries: 1,
+          abortSignal: signal ?? req.signal,
+          providerOptions: {
+            openrouter: {
+              reasoning: { effort: "medium", max_tokens: 6000 },
+            },
           },
-        },
-      })
+        }),
+      { deadlineAt: startedAt + LLM_BUDGET_MS, signal: req.signal }
     );
 
     const modelChecks = (object.checks ?? []) as PulseCheck[];

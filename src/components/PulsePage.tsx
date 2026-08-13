@@ -11,6 +11,7 @@ import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { ADVICE_DISCLAIMER_LONG } from "@/lib/disclaimer";
+import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
@@ -500,10 +501,10 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             force,
           }),
         });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error ?? "Pulse check failed");
-        }
+        const data = await readJsonOrThrow<{
+          report: PulseReport;
+          headlines?: Record<string, PulseHeadline[]>;
+        }>(res, "Pulse check failed");
         const newReport = data.report as PulseReport;
         const newHeadlines =
           (data.headlines as Record<string, PulseHeadline[]>) ?? {};

@@ -17,7 +17,16 @@ import { generateObject } from "ai";
 export const maxDuration = 120;
 export const runtime = "nodejs";
 
+/**
+ * Stop reasoning with enough of maxDuration left to still build and send a
+ * JSON response. Overrunning means the platform kills the function and the
+ * browser gets its plain-text error page, which used to surface to the user
+ * as a raw "... is not valid JSON" parser error.
+ */
+const LLM_BUDGET_MS = 95_000;
+
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -59,19 +68,22 @@ export async function POST(req: Request) {
       stance,
     });
 
-    const { object } = await withAdvisorFallback(providerChain, (model) =>
-      generateObject({
-        model,
-        schema: forecastPlanSchema,
-        prompt,
-        maxRetries: 2,
-        abortSignal: req.signal,
-        providerOptions: {
-          openrouter: {
-            reasoning: { effort: "high", max_tokens: 6000 },
+    const { object } = await withAdvisorFallback(
+      providerChain,
+      (model, _providerId, signal) =>
+        generateObject({
+          model,
+          schema: forecastPlanSchema,
+          prompt,
+          maxRetries: 1,
+          abortSignal: signal ?? req.signal,
+          providerOptions: {
+            openrouter: {
+              reasoning: { effort: "high", max_tokens: 6000 },
+            },
           },
-        },
-      })
+        }),
+      { deadlineAt: startedAt + LLM_BUDGET_MS, signal: req.signal }
     );
 
     const eoyTargets = ensureCompleteEoyTargets(

@@ -221,9 +221,40 @@ export function resolveAdvisorModel(options?: {
  * OpenRouter's account-wide daily quota running out no longer means Margus
  * is down if Groq/Gemini/Cerebras are also configured.
  */
+export type AdvisorFallbackOptions = {
+  /**
+   * Epoch ms the whole chain must finish by. Without this, walking 3
+   * providers that each retry twice can outlive the route's maxDuration, at
+   * which point the platform kills the function and serves its own
+   * plain-text timeout page instead of our JSON error. Each attempt gets a
+   * slice of whatever budget is left, and no new provider starts once the
+   * budget is gone, so the route always lives long enough to answer.
+   */
+  deadlineAt?: number;
+  /** Caller's own cancellation, usually the incoming request's signal. */
+  signal?: AbortSignal;
+};
+
+/** Below this there isn't enough time left for a call to plausibly land. */
+const MIN_ATTEMPT_MS = 5_000;
+
+function attemptSignal(
+  caller: AbortSignal | undefined,
+  budgetMs: number | null
+): AbortSignal | undefined {
+  if (budgetMs == null) return caller;
+  const timeout = AbortSignal.timeout(budgetMs);
+  return caller ? AbortSignal.any([caller, timeout]) : timeout;
+}
+
 export async function withAdvisorFallback<T>(
   chain: AdvisorProviderCandidate[],
-  fn: (model: LanguageModel, providerId: AdvisorProviderId) => Promise<T>
+  fn: (
+    model: LanguageModel,
+    providerId: AdvisorProviderId,
+    signal?: AbortSignal
+  ) => Promise<T>,
+  opts?: AdvisorFallbackOptions
 ): Promise<T> {
   if (chain.length === 0) {
     throw new Error(
@@ -231,15 +262,46 @@ export async function withAdvisorFallback<T>(
     );
   }
   let lastErr: unknown;
-  for (const candidate of chain) {
+  for (let i = 0; i < chain.length; i++) {
+    const candidate = chain[i]!;
+
+    // The caller gave up (client disconnected, request aborted). Failing
+    // over to another provider would just burn quota answering nobody.
+    if (opts?.signal?.aborted) {
+      throw opts.signal.reason ?? new Error("Request aborted");
+    }
+
+    const remaining =
+      opts?.deadlineAt != null ? opts.deadlineAt - Date.now() : null;
+
+    if (remaining != null && remaining < MIN_ATTEMPT_MS && i > 0) {
+      console.error(
+        `[ai] out of time budget after "${chain[i - 1]!.id}", skipping ${
+          chain.length - i
+        } remaining provider(s)`
+      );
+      break;
+    }
+
+    // Split what's left across the providers still to try, so one hung
+    // provider can't spend the entire budget on its own.
+    const slice =
+      remaining == null
+        ? null
+        : Math.max(MIN_ATTEMPT_MS, Math.floor(remaining / (chain.length - i)));
+
     try {
-      return await fn(candidate.model, candidate.id);
+      return await fn(
+        candidate.model,
+        candidate.id,
+        attemptSignal(opts?.signal, slice)
+      );
     } catch (err) {
       console.error(`[ai] provider "${candidate.id}" failed`, err);
       lastErr = err;
     }
   }
-  throw lastErr;
+  throw lastErr ?? new Error("AI request timed out before any provider replied");
 }
 
 /**
