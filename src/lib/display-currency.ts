@@ -2,6 +2,8 @@
  * Per-sheet display currency. Book of record stays USD; UI converts via EURUSD.
  */
 
+import { roundMoney } from "@/lib/money";
+
 export type DisplayCurrency = "USD" | "EUR";
 
 export const DISPLAY_CURRENCY_KEY = "upside-display-currency-v1";
@@ -91,8 +93,8 @@ export function usdToDisplay(
   eurUsd: number | null
 ): number {
   if (!Number.isFinite(amountUsd)) return 0;
-  if (currency === "USD" || !eurUsd || eurUsd <= 0) return amountUsd;
-  return amountUsd / eurUsd;
+  if (currency === "USD" || !eurUsd || eurUsd <= 0) return roundMoney(amountUsd);
+  return roundMoney(amountUsd / eurUsd);
 }
 
 /** Convert a display-currency amount back to USD book of record. */
@@ -102,8 +104,8 @@ export function displayToUsd(
   eurUsd: number | null
 ): number {
   if (!Number.isFinite(amountDisplay)) return 0;
-  if (currency === "USD" || !eurUsd || eurUsd <= 0) return amountDisplay;
-  return amountDisplay * eurUsd;
+  if (currency === "USD" || !eurUsd || eurUsd <= 0) return roundMoney(amountDisplay);
+  return roundMoney(amountDisplay * eurUsd);
 }
 
 export function formatEurUsdHint(eurUsd: number | null, detail?: EurUsdQuote | null): string {

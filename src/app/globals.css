@@ -69,6 +69,12 @@ body {
   }
 }
 
+/* Wide tables scroll with finger momentum, not the whole page. */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
 /*
  * iOS Safari auto-zooms the page when a focused form field's font-size is
  * below 16px. Every inline-edit cell, PIN field, and modal input in this

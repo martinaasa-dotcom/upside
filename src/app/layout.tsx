@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 const SITE_DESCRIPTION =
-  "Track your portfolio with covered-call targets and Assistant Margus. Plus Upside Portfolio, an AI-managed $50k paper fund with every trade reasoned out loud, live in the open.";
+  "Track your book, ask Margus, and watch an AI-managed paper fund trade in the open. Built for people who want a clear daily read, not a Bloomberg terminal.";
 
 export const metadata: Metadata = {
   title: "Upside - Portfolio Tracker & AI-Managed Fund",

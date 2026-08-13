@@ -1323,69 +1323,106 @@ export function Dashboard() {
     return fetch(input, { ...init, headers });
   }
 
-  async function handleSave(values: HoldingFormValues) {
+  function handleSave(values: HoldingFormValues) {
     if (!activePortfolio) return;
 
-    if (source === "supabase") {
-      const res = await apiFetch("/api/holdings", {
-        method: "POST",
-        body: JSON.stringify({
-          ...values,
-          ticker: normalizeYahooTicker(values.ticker),
+    const ticker = normalizeYahooTicker(values.ticker);
+    const sortOrder =
+      holdings.filter((h) => h.portfolio_id === activePortfolio.id).length + 1;
+    const existing = holdings.find(
+      (h) =>
+        h.portfolio_id === activePortfolio.id &&
+        h.ticker.toUpperCase() === ticker
+    );
+    const optimistic: Holding = existing
+      ? {
+          ...existing,
+          shares: values.shares,
+          buy_price: values.buy_price,
+          target_call_pct: values.target_call_pct,
+        }
+      : {
+          id: `tmp-${crypto.randomUUID()}`,
           portfolio_id: activePortfolio.id,
-          sort_order:
-            holdings.filter((h) => h.portfolio_id === activePortfolio.id)
-              .length + 1,
-        }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        holding?: Holding;
-      };
-      if (!res.ok) {
-        toast(
-          typeof data.error === "string" ? data.error : "Failed to save holding",
-          "error"
-        );
-        return;
+          ticker,
+          shares: values.shares,
+          buy_price: values.buy_price,
+          eoy_target: null,
+          target_call_pct: values.target_call_pct,
+          stock_target_override: null,
+          sort_order: sortOrder,
+        };
+
+    setHoldings((prev) => {
+      if (existing) {
+        return prev.map((h) => (h.id === existing.id ? optimistic : h));
       }
-      // Server upserts on (portfolio_id, ticker), so this may be a new row OR
-      // an edit of an existing one — use the returned row directly instead
-      // of a full reload round-trip either way.
-      const { holding } = data;
-      if (holding) {
-        setHoldings((prev) => {
-          const exists = prev.some((h) => h.id === holding.id);
-          return exists
-            ? prev.map((h) => (h.id === holding.id ? holding : h))
-            : [...prev, holding];
-        });
-        void refreshMarkets(
-          [holding.ticker],
-          holdings
-            .filter((h) => h.portfolio_id === activePortfolio.id)
-            .concat(holding)
-        );
-      } else {
-        await loadPortfolios({ silent: true });
-      }
-    } else {
-      const store = loadDemoStore();
-      const next = upsertHolding(store, {
-        ...values,
-        eoy_target: null,
-        stock_target_override: null,
-        portfolio_id: activePortfolio.id,
-        sort_order:
-          holdings.filter((h) => h.portfolio_id === activePortfolio.id).length +
-          1,
-      });
-      setPortfolios(next.portfolios);
-      setHoldings(next.holdings);
-    }
-    track("holding_added", { ticker: normalizeYahooTicker(values.ticker) });
+      return [...prev, optimistic];
+    });
     setModalOpen(false);
     toast("Holding saved", "success");
+    track("holding_added", { ticker });
+    void refreshMarkets(
+      [ticker],
+      holdings
+        .filter((h) => h.portfolio_id === activePortfolio.id)
+        .concat(optimistic)
+    );
+
+    if (source === "supabase") {
+      void (async () => {
+        const res = await apiFetch("/api/holdings", {
+          method: "POST",
+          body: JSON.stringify({
+            ...values,
+            ticker,
+            portfolio_id: activePortfolio.id,
+            sort_order: sortOrder,
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          holding?: Holding;
+        };
+        if (!res.ok) {
+          setHoldings((prev) => {
+            if (existing) {
+              return prev.map((h) => (h.id === existing.id ? existing : h));
+            }
+            return prev.filter((h) => h.id !== optimistic.id);
+          });
+          toast(
+            typeof data.error === "string"
+              ? data.error
+              : "Could not save holding, reverted",
+            "error"
+          );
+          return;
+        }
+        if (data.holding) {
+          const saved = data.holding;
+          setHoldings((prev) => {
+            const withoutTemp = prev.filter((h) => h.id !== optimistic.id);
+            const exists = withoutTemp.some((h) => h.id === saved.id);
+            return exists
+              ? withoutTemp.map((h) => (h.id === saved.id ? saved : h))
+              : [...withoutTemp, saved];
+          });
+        }
+      })();
+      return;
+    }
+
+    const store = loadDemoStore();
+    const next = upsertHolding(store, {
+      ...values,
+      eoy_target: null,
+      stock_target_override: null,
+      portfolio_id: activePortfolio.id,
+      sort_order: sortOrder,
+    });
+    setPortfolios(next.portfolios);
+    setHoldings(next.holdings);
   }
 
   function handlePatch(patch: HoldingPatch): boolean {

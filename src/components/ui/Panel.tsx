@@ -219,7 +219,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
         onBlur={() => setOpen(false)}
         aria-label={label ?? "What does this mean?"}
         aria-expanded={open}
-        className="inline-flex items-center justify-center p-1.5 text-zinc-400 transition hover:text-zinc-200"
+        className="touch-target inline-flex items-center justify-center p-1.5 text-zinc-400 transition hover:text-zinc-200"
       >
         <Info className="h-3 w-3" />
       </button>

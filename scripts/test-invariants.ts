@@ -10,6 +10,7 @@ import {
   BRIEFING_PULSE_CTA,
   buildInvestorBriefing,
 } from "../src/lib/investor-briefing";
+import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { reconcilePulseCheck, type PulseCheck } from "../src/lib/thesis-pulse";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
@@ -161,6 +162,13 @@ run("broken + add becomes watch", () => {
 run("novice hides Lab, not Pulse", () => {
   assert.ok(TIER_HIDDEN_META_TABS.novice.includes(LAB_TAB_ID));
   assert.ok(!TIER_HIDDEN_META_TABS.novice.includes(PULSE_TAB_ID));
+});
+
+run("FX conversion falls back to 1:1 and rounds to cents", () => {
+  assert.equal(usdToDisplay(100.004, "USD", null), 100);
+  assert.equal(usdToDisplay(100, "EUR", null), 100);
+  assert.equal(usdToDisplay(100, "EUR", 0), 100);
+  assert.equal(displayToUsd(50, "EUR", null), 50);
 });
 
 run("home keeps Fund and Communities in view", () => {

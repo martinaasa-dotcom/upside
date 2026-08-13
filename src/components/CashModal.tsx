@@ -1,6 +1,7 @@
 "use client";
 
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
+import { roundMoney } from "@/lib/money";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -31,8 +32,8 @@ export function CashModal({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const n = parseDecimal(cash);
-    if (Number.isNaN(n)) return;
-    onSave(n);
+    if (!Number.isFinite(n)) return;
+    onSave(roundMoney(n));
   }
 
   return (

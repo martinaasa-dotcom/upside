@@ -14,7 +14,7 @@ export function FluidTable({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
       <div
         className="grid w-full min-w-0 text-sm"
         style={{ gridTemplateColumns: template }}

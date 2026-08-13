@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -13,6 +14,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { clearBookCache } from "@/lib/book-cache";
+import { loadLastUser, saveLastUser } from "@/lib/last-session";
 
 export type AuthProfile = {
   id: string;
@@ -33,10 +35,28 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+function stubUser(id: string, email: string | null): User {
+  return {
+    id,
+    email: email ?? undefined,
+    app_metadata: {},
+    user_metadata: {},
+    aud: "authenticated",
+    created_at: "",
+  } as User;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState<AuthProfile | null>(null);
+
+  useLayoutEffect(() => {
+    const last = loadLastUser();
+    if (!last) return;
+    setUser(stubUser(last.id, last.email));
+    setReady(true);
+  }, []);
 
   const loadProfile = useCallback(async (u: User | null) => {
     if (!u) {
@@ -88,13 +108,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
         }),
       ]);
-      setUser(result.data.user ?? null);
+      const next = result.data.user ?? null;
+      setUser(next);
       setReady(true);
-      void loadProfile(result.data.user ?? null);
+      if (next) {
+        saveLastUser({ id: next.id, email: next.email ?? null });
+        void loadProfile(next);
+      } else {
+        saveLastUser(null);
+        setProfile(null);
+        clearBookCache();
+      }
     } catch {
-      setUser(null);
-      setProfile(null);
+      // Keep the last-known user on a flaky network. Kicking someone to
+      // the sign-in screen because getUser timed out is worse than showing
+      // a slightly stale book.
       setReady(true);
+      if (!loadLastUser()) {
+        setUser(null);
+        setProfile(null);
+      }
     } finally {
       if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     }
@@ -109,11 +142,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const next = session?.user ?? null;
-      setUser(next);
-      setReady(true);
-      void loadProfile(next);
+      if (next) {
+        setUser(next);
+        setReady(true);
+        saveLastUser({ id: next.id, email: next.email ?? null });
+        void loadProfile(next);
+        return;
+      }
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setReady(true);
+        saveLastUser(null);
+        setProfile(null);
+        clearBookCache();
+      }
     });
     return () => subscription.unsubscribe();
   }, [loadProfile, refresh]);
@@ -137,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    saveLastUser(null);
     clearBookCache();
   }, []);
 

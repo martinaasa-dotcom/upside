@@ -3,6 +3,7 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { roundMoney, roundShares } from "@/lib/money";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +33,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const shares = roundShares(Number(body.shares));
+  const buyPrice = roundMoney(Number(body.buy_price));
+  if (!Number.isFinite(shares) || shares <= 0) {
+    return NextResponse.json({ error: "Shares must be a positive number" }, { status: 400 });
+  }
+  if (!Number.isFinite(buyPrice) || buyPrice <= 0) {
+    return NextResponse.json({ error: "Buy price must be a positive number" }, { status: 400 });
+  }
+
   const row = {
     portfolio_id: portfolioId,
     ticker,
-    shares: Number(body.shares),
-    buy_price: Number(body.buy_price),
+    shares,
+    buy_price: buyPrice,
     eoy_target: body.eoy_target != null ? Number(body.eoy_target) : null,
     target_call_pct: Number(body.target_call_pct ?? 0.15),
     stock_target_override:
@@ -108,6 +118,17 @@ export async function PATCH(req: NextRequest) {
         body[key] === null
       ) {
         patch[key] = null;
+      } else if (key === "shares") {
+        const n = roundShares(Number(body[key]));
+        if (!Number.isFinite(n) || n <= 0) {
+          return NextResponse.json(
+            { error: "Shares must be a positive number" },
+            { status: 400 }
+          );
+        }
+        patch[key] = n;
+      } else if (key === "buy_price") {
+        patch[key] = roundMoney(Number(body[key]));
       } else patch[key] = Number(body[key]);
     }
   }
