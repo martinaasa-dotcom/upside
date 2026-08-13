@@ -2458,7 +2458,7 @@ export function Dashboard() {
                 }
               }}
               disabled={refreshing}
-              className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
               title={isLab ? "Refresh prices & option premiums" : "Refresh prices"}
               aria-label="Refresh prices"
             >
@@ -2471,7 +2471,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-1 rounded-md bg-brand px-2.5 py-1.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
+                className="inline-flex h-8 items-center gap-1 rounded-md bg-brand px-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Add holding</span>

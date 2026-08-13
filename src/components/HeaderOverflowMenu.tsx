@@ -76,12 +76,13 @@ export function HeaderOverflowMenu({
           setOpen((o) => !o);
         }}
         className={cn(
-          "inline-flex items-center gap-1 rounded-md border border-zinc-700 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200",
-          // Matches the ~30px height of its sibling header buttons
-          // (Refresh, View) exactly: 24px circle + 2px padding + 2px
-          // border = 30px. A larger circle or padding here looks visibly
-          // oversized next to those flatter icon+text buttons.
-          avatar ? "p-0.5" : "px-2 py-1.5"
+          "inline-flex h-8 items-center justify-center gap-1 rounded-md border border-zinc-700 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200",
+          // A fixed height (rather than relying on padding to add up to the
+          // same total as the icon+text buttons next to it) guarantees this
+          // lines up with Refresh/View exactly, however the avatar image or
+          // its padding renders — the previous padding-only sizing left the
+          // avatar visibly taller and nudged out of alignment.
+          avatar ? "w-8 p-0" : "px-2"
         )}
       >
         {avatar ? (
