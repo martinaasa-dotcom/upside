@@ -90,7 +90,11 @@ export function allocationBySector(
 ): AllocationSlice[] {
   const totals = new Map<string, number>();
   let sum = 0;
+  // Positive exposures only. A short (or a fat-fingered negative value)
+  // used to be summed into the denominator, which pushed one slice over
+  // 100% and rendered the other as a negative bar width.
   for (const h of holdings) {
+    if (h.currentValue <= 0) continue;
     const base = h.ticker.split(".")[0]!.toUpperCase();
     const sector =
       TICKER_SECTORS[h.ticker] ?? TICKER_SECTORS[base] ?? "Unclassified";
@@ -112,9 +116,10 @@ export function allocationByTicker(
   holdings: Array<{ ticker: string; currentValue: number }>,
   topN = 8
 ): AllocationSlice[] {
-  const sum = holdings.reduce((s, h) => s + h.currentValue, 0);
+  const positive = holdings.filter((h) => h.currentValue > 0);
+  const sum = positive.reduce((s, h) => s + h.currentValue, 0);
   if (sum <= 0) return [];
-  const sorted = [...holdings].sort((a, b) => b.currentValue - a.currentValue);
+  const sorted = [...positive].sort((a, b) => b.currentValue - a.currentValue);
   const top = sorted.slice(0, topN);
   const rest = sorted.slice(topN).reduce((s, h) => s + h.currentValue, 0);
   const slices = top.map((h) => ({

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "validate": "npx tsx scripts/validate-audit-features.ts"
+    "validate": "npx tsx scripts/validate-audit-features.ts",
+    "check:edges": "npx tsx scripts/edge-audit.mts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.36",
