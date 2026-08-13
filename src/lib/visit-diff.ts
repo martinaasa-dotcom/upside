@@ -1,3 +1,4 @@
+import { cashtag } from "@/lib/format";
 import type { OverviewModel } from "@/lib/overview";
 import { todayKeyInTz } from "@/lib/timezone";
 
@@ -186,8 +187,8 @@ export function diffSinceLastVisit(
   moves.sort((a, b) => Math.abs(b.deltaValue) - Math.abs(a.deltaValue));
   for (const m of moves.slice(0, 3)) {
     lines.push({
-      id: `t-${m.ticker}`,
-      text: `${m.ticker} ${pct1(m.deltaPct)} (${money(m.deltaValue)})`,
+      id: `t-${cashtag(m.ticker)}`,
+      text: `${cashtag(m.ticker)} ${pct1(m.deltaPct)} (${money(m.deltaValue)})`,
       tone: m.deltaPct >= 0 ? "up" : "down",
     });
   }

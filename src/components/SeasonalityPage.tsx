@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/format";
+import { cn, cashtag } from "@/lib/format";
 import {
   MONTH_NAMES,
   MONTH_SHORT,
@@ -512,7 +512,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
       {loading && !model ? (
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-12 text-center text-sm text-zinc-500">
-          Loading seasonality for {ticker}…
+          Loading seasonality for {cashtag(ticker)}…
         </div>
       ) : null}
 
@@ -524,7 +524,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               {" · "}
               <span className="text-brand-bright">{model.currentCycleLabel} year</span>
               {" · "}
-              {model.ticker} since {model.from.slice(0, 4)}
+              {cashtag(model.ticker)} since {model.from.slice(0, 4)}
             </p>
             <p className="mt-1 text-xs text-zinc-500">
               All monthly and daily patterns below use only history from prior{" "}

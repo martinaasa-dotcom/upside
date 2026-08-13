@@ -6,7 +6,7 @@ import {
   type CsvHoldingRow,
   type CsvSkippedRow,
 } from "@/lib/csv-import";
-import { cn } from "@/lib/format";
+import { cn, cashtag } from "@/lib/format";
 import { AlertTriangle, Download, FileUp, X } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -186,7 +186,7 @@ export function CsvImportModal({
                     {rows.map((r) => (
                       <tr key={r.ticker} className="border-t border-zinc-900">
                         <td className="px-3 py-1.5 font-medium text-white">
-                          {r.ticker}
+                          {cashtag(r.ticker)}
                         </td>
                         <td className="px-3 py-1.5 tabular-nums text-zinc-300">
                           {r.shares}

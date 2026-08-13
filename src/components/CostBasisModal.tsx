@@ -1,6 +1,7 @@
 "use client";
 
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import { cashtag } from "@/lib/format";
 import { X } from "lucide-react";
 
 export type CostBasisRow = {
@@ -64,7 +65,7 @@ export function CostBasisModal({
               className="grid grid-cols-[1fr_7rem] items-center gap-2 text-xs text-zinc-400"
             >
               <span>
-                <span className="font-semibold text-white">{r.ticker}</span>
+                <span className="font-semibold text-white">{cashtag(r.ticker)}</span>
                 <span className="ml-2 text-zinc-600">
                   {r.shares.toLocaleString("en-US")} sh · mark≈$
                   {r.suggestedBuy.toFixed(2)}

@@ -47,6 +47,24 @@ export function signedCurrency(value: number | null | undefined): string {
 }
 
 /**
+ * Ticker as a cashtag for display: NBIS -> $NBIS.
+ *
+ * Display only. Never use this for a value that has to round-trip as data:
+ * the ticker input in HoldingModal, CSV cells, quote-provider URLs, URL
+ * params, React keys, or anything looked up in the `quotes` map. Those all
+ * need the bare symbol.
+ *
+ * Exchange suffixes are kept ($CSPX.L, not $CSPX) since the listing is
+ * meaningful, and an already-prefixed string is returned untouched so
+ * double application is harmless.
+ */
+export function cashtag(ticker: string | null | undefined): string {
+  const t = (ticker ?? "").trim();
+  if (!t) return "—";
+  return t.startsWith("$") ? t : `$${t}`;
+}
+
+/**
  * Green for a gain, red for a loss, neutral grey for flat. The single
  * source of truth for how a signed number is coloured, so a P&L figure
  * looks the same wherever it appears. Four components each had their own

@@ -3,7 +3,7 @@
 import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
-import { cn, signedTone, currency, percent } from "@/lib/format";
+import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   ensureCompleteEoyTargets,
@@ -491,7 +491,7 @@ export function ForecastPanel({
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
                     <p className="text-base font-semibold text-white">
-                      {r.ticker}
+                      {cashtag(r.ticker)}
                     </p>
                     <p className="text-xs text-zinc-500">
                       {r.shares.toLocaleString("en-US")} shares
@@ -601,7 +601,7 @@ export function ForecastPanel({
               {model.rows.map((r) => (
                 <FluidRow key={r.ticker} className="hover:bg-zinc-900/40">
                   <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
-                    {r.ticker}
+                    {cashtag(r.ticker)}
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-[11px] font-normal tracking-normal text-zinc-600">
                         awaiting Margus
@@ -753,7 +753,7 @@ export function ForecastPanel({
                       className="text-xs leading-relaxed text-zinc-400"
                     >
                       <span className="font-semibold text-zinc-200">
-                        {t.ticker}
+                        {cashtag(t.ticker)}
                       </span>
                       {t.rationale ? `: ${t.rationale}` : ": path applied"}
                     </li>

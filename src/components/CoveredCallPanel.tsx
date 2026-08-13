@@ -1,7 +1,7 @@
 "use client";
 
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
-import { cn, signedTone, currency, percent } from "@/lib/format";
+import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
 import {
   blockWheelChange,
   formatDecimal,
@@ -225,7 +225,7 @@ export function CoveredCallPanel({
             >
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-base font-semibold text-white">
-                  {r.holding.ticker}
+                  {cashtag(r.holding.ticker)}
                 </p>
                 <p className="text-sm tabular-nums text-zinc-400">
                   Spot {currency(r.spot)}
@@ -362,7 +362,7 @@ export function CoveredCallPanel({
                   "font-semibold tracking-wide text-white"
                 )}
               >
-                {r.holding.ticker}
+                {cashtag(r.holding.ticker)}
               </div>
               <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
                 {currency(r.spot)}

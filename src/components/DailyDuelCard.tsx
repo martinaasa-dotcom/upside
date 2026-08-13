@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Swords } from "lucide-react";
-import { cn, percent } from "@/lib/format";
+import { cn, percent, cashtag } from "@/lib/format";
 import {
   duelCanSettle,
   duelResultLine,
@@ -139,7 +139,7 @@ export function DailyDuelCard({ tickers }: Props) {
               )}
             >
               <p className="text-2xl font-bold tracking-tight text-white">
-                {ticker}
+                {cashtag(ticker)}
               </p>
               {isPick && (
                 <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-sky-300">

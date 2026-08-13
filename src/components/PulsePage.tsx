@@ -7,7 +7,7 @@ import {
   signedCurrency,
   cn,
   plural,
-  signedTone,
+  signedTone,  cashtag,
 } from "@/lib/format";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
@@ -134,7 +134,7 @@ function PulseCard({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-base font-semibold text-white">{c.ticker}</span>
+            <span className="text-base font-semibold text-white">{cashtag(c.ticker)}</span>
             {pinned && (
               <span className="rounded bg-brand/20 px-1.5 py-0.5 text-[11px] font-medium text-brand-bright">
                 Your check
@@ -610,7 +610,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
         quoteMap = { ...quoteMap, [ticker]: q };
       } else {
-        setError(`Could not fetch a quote for ${ticker}. Check the symbol.`);
+        setError(`Could not fetch a quote for ${cashtag(ticker)}. Check the symbol.`);
         return;
       }
     }

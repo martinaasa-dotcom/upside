@@ -5,7 +5,7 @@ import { track } from "@vercel/analytics";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { currency, percent, signedCurrency, cn } from "@/lib/format";
+import { currency, percent, signedCurrency, cn, cashtag } from "@/lib/format";
 import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
@@ -1388,7 +1388,7 @@ export function CommunityView({ communityId }: Props) {
                             className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2"
                           >
                             <span className="text-sm font-semibold text-white">
-                              {t.ticker}
+                              {cashtag(t.ticker)}
                             </span>
                             <span className="text-xs text-zinc-500">
                               {currency(t.currentValue, 0)}
@@ -2304,7 +2304,7 @@ function ReadOnlyHoldings({
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-zinc-800/60">
-                  <td className="px-3 py-2 font-medium">{h.ticker}</td>
+                  <td className="px-3 py-2 font-medium">{cashtag(h.ticker)}</td>
                   <td className="px-3 py-2 tabular-nums text-zinc-500">
                     {percent(pctBook)}
                   </td>

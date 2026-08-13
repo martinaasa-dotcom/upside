@@ -22,7 +22,7 @@ import {
   correlationGrid,
   correlationMatrix,
 } from "@/lib/correlation";
-import { currency, percent, cn } from "@/lib/format";
+import { currency, percent, cn, cashtag } from "@/lib/format";
 import { SeasonalityPage } from "@/components/SeasonalityPage";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
@@ -617,7 +617,7 @@ export function LabSheet({
                   {shockRows.map((r) => (
                     <tr key={r.ticker} className="border-b border-zinc-900">
                       <td className="py-1.5 pr-2 font-medium text-white">
-                        {r.ticker}
+                        {cashtag(r.ticker)}
                       </td>
                       <td className="max-w-[10rem] truncate py-1.5 pr-2 text-zinc-500">
                         {r.label}

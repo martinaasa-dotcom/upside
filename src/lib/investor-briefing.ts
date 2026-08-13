@@ -1,3 +1,4 @@
+import { cashtag } from "@/lib/format";
 import type { CoveredCallRow } from "@/lib/types";
 import type { OverviewModel } from "@/lib/overview";
 import type { CashflowEntry } from "@/lib/cashflow";
@@ -125,12 +126,12 @@ function buildPlays(opts: {
   if (topMover && Math.abs(topMover.todayPct ?? 0) >= 0.02) {
     const pct = topMover.todayPct!;
     const rng = mulberry32(
-      hashSeed(`upside-briefing-mover|${dayKey}|${topMover.ticker}`)
+      hashSeed(`upside-briefing-mover|${dayKey}|${cashtag(topMover.ticker)}`)
     );
     plays.push({
       id: `play-mover-${dayKey}`,
       kind: "play",
-      title: `${topMover.ticker} is today's biggest mover, ${pct >= 0 ? "+" : ""}${pct1(pct)}`,
+      title: `${cashtag(topMover.ticker)} is today's biggest mover, ${pct >= 0 ? "+" : ""}${pct1(pct)}`,
       detail: pick(rng, [
         "Worth knowing why before you assume it's noise.",
         "One name doing most of the day's talking. Worth a glance.",

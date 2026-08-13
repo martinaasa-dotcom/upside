@@ -3,7 +3,7 @@
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
-import { currency, percent, signedCurrency, cn, signedTone } from "@/lib/format";
+import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { concentrationRead, themeBreakdown } from "@/lib/allocation";
@@ -215,7 +215,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
         meta.cls
       )}
     >
-      {meta.label} {action.ticker}
+      {meta.label} {cashtag(action.ticker)}
     </span>
   );
 }
@@ -977,7 +977,7 @@ export function UpsidePortfolioPage() {
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-white">
-                            {h.ticker}
+                            {cashtag(h.ticker)}
                           </span>
                           <span
                             className={cn(
@@ -1124,7 +1124,7 @@ export function UpsidePortfolioPage() {
                     <li key={h.id} className="px-4 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="font-medium text-zinc-200">
-                          {h.ticker}
+                          {cashtag(h.ticker)}
                         </span>
                         <span
                           className={cn(

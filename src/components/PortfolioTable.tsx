@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, signedTone, currency, percent } from "@/lib/format";
+import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
 import {
   usdToDisplay,
   formatEurUsdHint,
@@ -458,7 +458,7 @@ export function PortfolioTable({
                         onClick={() => onOpenTicker(h.ticker)}
                         className="hover:text-brand-bright"
                       >
-                        {h.ticker}
+                        {cashtag(h.ticker)}
                       </button>
                     ) : (
                       h.ticker
@@ -636,7 +636,7 @@ export function PortfolioTable({
                       onClick={() => onOpenTicker(h.ticker)}
                       className="hover:text-brand-bright"
                     >
-                      {h.ticker}
+                      {cashtag(h.ticker)}
                     </button>
                   ) : (
                     h.ticker

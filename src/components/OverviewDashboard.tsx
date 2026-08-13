@@ -9,7 +9,7 @@ import {
   signedCurrency,
   cn,
   plural,
-  signedTone,
+  signedTone,  cashtag,
 } from "@/lib/format";
 
 /** Overview sits on a darker surface, so flat reads better one step
@@ -232,7 +232,7 @@ function BriefingCard({
     <>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
         {kind}
-        {ticker ? ` · ${ticker}` : ""}
+        {ticker ? ` · ${cashtag(ticker)}` : ""}
       </p>
       <p className="mt-0.5 text-[15px] font-medium text-white">{title}</p>
       <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{detail}</p>
@@ -349,7 +349,7 @@ function RankCard({
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-base font-semibold text-white sm:text-lg">
-            {ticker.ticker}
+            {cashtag(ticker.ticker)}
           </span>
           <span className="text-xs text-zinc-400 sm:text-sm">
             {currency(ticker.currentValue, 0)}
@@ -1098,7 +1098,7 @@ export function OverviewDashboard({
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="text-lg font-semibold text-white">
-                    {t.ticker}
+                    {cashtag(t.ticker)}
                   </span>
                   <span className="text-sm text-zinc-400">
                     {t.shares.toLocaleString("en-US")} sh
@@ -1177,7 +1177,7 @@ export function OverviewDashboard({
                           #{index + 1}
                         </span>
                         <span className="text-lg font-semibold text-white">
-                          {e.ticker}
+                          {cashtag(e.ticker)}
                         </span>
                         {soon && (
                           <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-sm font-medium text-amber-200">

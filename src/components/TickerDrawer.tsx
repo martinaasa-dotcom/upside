@@ -1,6 +1,6 @@
 "use client";
 
-import { currency, percent, cn } from "@/lib/format";
+import { currency, percent, cn, cashtag } from "@/lib/format";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
 import { X } from "lucide-react";
@@ -68,7 +68,7 @@ export function TickerDrawer({
     <div className="relative flex h-full w-full max-w-none flex-col border-l border-zinc-700 bg-[#121214] shadow-2xl sm:max-w-md">
         <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
           <div>
-            <h3 className="text-lg font-semibold text-white">{ticker}</h3>
+            <h3 className="text-lg font-semibold text-white">{cashtag(ticker)}</h3>
             <p className="text-xs text-zinc-500">
               {spot != null ? currency(spot) : "—"}
               {shares != null ? ` · ${shares.toLocaleString("en-US")} sh` : ""}
@@ -173,7 +173,7 @@ export function TickerDrawer({
               }}
               className="w-full rounded-lg border border-brand-deep/50 bg-brand/10 px-3 py-2 text-sm font-medium text-brand-bright hover:bg-brand/20"
             >
-              Ask Margus about {ticker}
+              Ask Margus about {cashtag(ticker)}
             </button>
           )}
         </div>
