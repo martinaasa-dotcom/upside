@@ -1,0 +1,47 @@
+---
+description: Never write AI-sounding text (em dashes, AI-tell phrases) in any user-facing copy
+alwaysApply: true
+---
+
+# Write like a human, not like an AI
+
+Every string a real person actually reads has to read like a person wrote it.
+This covers: JSX/rendered text, toasts and error messages, generated
+narrative copy (fun facts, investor briefing, Compound year stories, weekly
+recaps, community facts), legal pages, onboarding copy, and Margus's own
+generated output (chat replies, Forecast rationale, Thesis Pulse verdicts,
+Upside Portfolio reports).
+
+It does not cover code comments, prompt/schema text sent *to* the model
+(only what the model or app actually shows a user matters), or the standard
+`—` placeholder character for a missing/N-A value in a table cell.
+
+## Never use em dashes in user-facing prose
+
+Rewrite with a period, comma, or colon instead, whatever reads most
+naturally for that sentence. This is the single biggest AI tell.
+
+```
+BAD:  "Modeled scenario, not a target — Margus reasons this per ticker."
+GOOD: "Modeled scenario, not a target. Margus reasons this per ticker."
+```
+
+## Skip AI-tell phrases and structures
+
+Avoid: "it's important to note," "whether you're X or Y," "in today's
+fast-paced market," "unlock/leverage/elevate/dive into/harness," "not just X,
+but Y," "seamless/robust/cutting-edge," ending every message with a tidy
+summary paragraph, or excessive symmetrical rule-of-three lists.
+
+Short, plain, slightly opinionated sentences beat balanced, hedge-everything
+ones.
+
+## Where this is already enforced
+
+`MARGUS_PERSONA` in `src/lib/ai/margus-persona.ts` already carries this exact
+instruction, and it's shared by chat, Forecast, Thesis Pulse, and the Upside
+Portfolio fund/recap prompts. Do not remove or soften that instruction. When
+adding a brand-new generated-copy string anywhere (a new fun fact, a new
+briefing card, a new toast, a new AI surface), write it dash-free and
+human-sounding from the start, and hold new AI prompts to the same voice bar
+Margus already gets.
