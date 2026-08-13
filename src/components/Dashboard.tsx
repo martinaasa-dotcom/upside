@@ -2215,11 +2215,12 @@ export function Dashboard() {
   // Page-level view toggles for the current sheet — kept separate from
   // account actions below so one menu isn't a junk drawer of unrelated
   // things. Doesn't duplicate Communities/My account: those are already
-  // one click away via WorkspaceSwitcher right next to this.
+  // one click away via WorkspaceSwitcher right next to this. Command
+  // palette isn't listed here — ⌘K already opens it globally (see the
+  // keydown listener below), so a menu entry was just a redundant, often
+  // lone item making this button show up for no reason.
   const viewMenuItems: HeaderMenuItem[] = useMemo(() => {
-    const items: HeaderMenuItem[] = [
-      { id: "cmd", label: "Command palette", hint: "⌘K", onSelect: () => setCmdOpen(true) },
-    ];
+    const items: HeaderMenuItem[] = [];
     if (undoStack.length > 0) {
       items.push({
         id: "undo",
