@@ -24,6 +24,7 @@ import {
 } from "@/lib/correlation";
 import { currency, percent, cn, cashtag } from "@/lib/format";
 import { SeasonalityPage } from "@/components/SeasonalityPage";
+import { TrendsPanel } from "@/components/TrendsPanel";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import { FlaskConical } from "lucide-react";
@@ -42,7 +43,7 @@ type Props = {
   hiddenTabs?: string[];
 };
 
-type LabTab = "alloc" | "risk" | "seasonality";
+type LabTab = "alloc" | "risk" | "trends" | "seasonality";
 
 /** One flat row, ordered as a reading path: what you hold, how risky it
  * is, and when it tends to move. Pulse used to sit here but earns its own
@@ -63,6 +64,12 @@ const TABS: { id: LabTab; label: string; blurb: string }[] = [
     label: "Risk",
     blurb:
       "What a bad day would actually cost you. Pick a crash scenario to see the damage, and check whether your names tend to fall together.",
+  },
+  {
+    id: "trends",
+    label: "Trends",
+    blurb:
+      "Whether each holding is still in its trend, and which ones have started disagreeing with their own momentum. Weekly bars, so it reads regime changes rather than daily noise.",
   },
   {
     id: "seasonality",
@@ -564,6 +571,10 @@ export function LabSheet({
             </>
           )}
         </div>
+      )}
+
+      {tab === "trends" && (
+        <TrendsPanel tickers={scopedTickers.map((t) => t.ticker)} />
       )}
 
       {tab === "seasonality" && (
