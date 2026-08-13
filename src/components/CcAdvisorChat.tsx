@@ -765,7 +765,13 @@ export function CcAdvisorChat({
   const showSilentCard = silentPhase !== "idle" && !open;
 
   return (
-    <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[60] flex flex-col items-end gap-3">
+    // z-40 is deliberate and load-bearing. Above the sticky mobile bottom
+    // nav (z-30) so Margus still floats over the page, but below every
+    // modal overlay (z-50 and up) so he can't sit on top of one. At z-60
+    // this button covered the confirm action of any bottom-anchored mobile
+    // modal, which on a phone is exactly where both of them live: Add
+    // holding, Cash, Rename sheet, Delete account, and every ConfirmModal.
+    <div className="pointer-events-none fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3">
       <input
         ref={silentFileInputRef}
         type="file"
