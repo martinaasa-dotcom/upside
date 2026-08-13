@@ -6,6 +6,11 @@ import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonC
 import { currency, percent, signedCurrency, cn } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
+import { concentrationRead, themeBreakdown } from "@/lib/allocation";
+import {
+  buildPortfolioPersonality,
+  THEME_COLOR,
+} from "@/lib/portfolio-personality";
 import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
@@ -215,6 +220,26 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   );
 }
 
+function FundStat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+        {label}
+      </p>
+      <p className="mt-0.5 text-sm font-semibold text-zinc-100">{value}</p>
+      {hint && <p className="mt-0.5 text-[11px] text-zinc-500">{hint}</p>}
+    </div>
+  );
+}
+
 export function UpsidePortfolioPage() {
   // Paint the last known fund immediately; the fetch below still runs and
   // corrects it. Only a genuinely cold visit shows a loading line.
@@ -337,6 +362,30 @@ export function UpsidePortfolioPage() {
     0
   );
   const totalValue = cash + liveHoldingsValue;
+
+  // Same engine Lab uses on your own book, so "what is Margus actually
+  // betting on" reads in the same units as your own concentration page
+  // rather than being a bespoke one-off chart.
+  const fundValued = useMemo(
+    () =>
+      openHoldings.map((h) => ({
+        ticker: h.ticker,
+        currentValue: h.shares * (quotes[h.ticker]?.price ?? h.cost_basis),
+      })),
+    [openHoldings, quotes]
+  );
+  const fundThemes = useMemo(() => themeBreakdown(fundValued), [fundValued]);
+  const fundConcentration = useMemo(
+    () => concentrationRead(fundValued),
+    [fundValued]
+  );
+  const fundPersonality = useMemo(
+    () =>
+      buildPortfolioPersonality(
+        fundValued.map((h) => ({ ticker: h.ticker, value: h.currentValue }))
+      ),
+    [fundValued]
+  );
   const totalReturnDollar = totalValue - (fund?.starting_capital ?? 0);
   const totalReturnPct =
     fund && fund.starting_capital > 0 ? totalReturnDollar / fund.starting_capital : 0;
@@ -842,6 +891,69 @@ export function UpsidePortfolioPage() {
                 )}
               </div>
             </section>
+
+            {fundThemes.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                  What he&apos;s betting on
+                </h2>
+                <div className="rounded-xl border border-brand-deep/30 bg-[#161618]/70 p-4">
+                  <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
+                    {fundThemes.map((t) => (
+                      <div
+                        key={t.theme}
+                        style={{
+                          width: `${Math.max(1.5, t.pct * 100)}%`,
+                          backgroundColor: THEME_COLOR[t.theme],
+                        }}
+                        title={`${t.label}: ${Math.round(t.pct * 100)}%`}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {fundThemes.map((t) => (
+                      <div
+                        key={t.theme}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                      >
+                        <span className="flex items-center gap-2 text-xs text-zinc-300">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: THEME_COLOR[t.theme] }}
+                          />
+                          {t.label}
+                        </span>
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-400">
+                          {Math.round(t.pct * 100)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 grid gap-2 border-t border-zinc-800/60 pt-4 sm:grid-cols-4">
+                    <FundStat
+                      label="Spread"
+                      value={fundPersonality.diversificationBand.label}
+                      hint={`Behaves like ${fundConcentration.effectivePositions.toFixed(1)} names`}
+                    />
+                    <FundStat
+                      label="Biggest bet"
+                      value={`${(fundConcentration.topWeightPct * 100).toFixed(0)}%`}
+                      hint={fundConcentration.topWeightTicker ?? ""}
+                    />
+                    <FundStat
+                      label="Risk"
+                      value={fundPersonality.riskBand.label}
+                      hint={`Drawdown potential -${fundPersonality.maxDrawdownPct}%`}
+                    />
+                    <FundStat
+                      label="Cash"
+                      value={`${totalValue > 0 ? Math.round((cash / totalValue) * 100) : 0}%`}
+                      hint="Dry powder he's holding back"
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
 
             {openHoldings.length > 0 && (
               <section className="space-y-3">
