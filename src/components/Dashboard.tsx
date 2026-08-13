@@ -1,6 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
+import { AppHeader } from "@/components/AppHeader";
 import { CashModal } from "@/components/CashModal";
 import type { AdvisorAction } from "@/components/CcAdvisorChat";
 import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
@@ -24,10 +25,8 @@ import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
-import { HeaderBrand } from "@/components/HeaderBrand";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useAuth } from "@/components/AuthProvider";
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
@@ -2415,12 +2414,7 @@ export function Dashboard() {
   if (source === "supabase" && portfolios.length === 0) {
     return (
       <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
-        <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
-            <HeaderBrand />
-            <WorkspaceSwitcher />
-          </div>
-        </header>
+        <AppHeader />
         <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
           <UpsideLogo variant="icon" />
           <div>
@@ -2509,45 +2503,22 @@ export function Dashboard() {
         updatedAt={quotesUpdatedAt}
         syntheticTickers={syntheticTickers}
       />
-      <header className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
-          <div className="flex min-w-0 items-center gap-3 text-[15px] leading-none">
-            <HeaderBrand
-              onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-              title="Upside: go to Overview"
-            />
-            {/* Same slot as every other page (Communities, Fund, Account,
-              * Admin) put it in. It used to live in the right-hand action
-              * cluster here and on the left everywhere else, so the primary
-              * nav swapped sides the moment you left My book. */}
-            {source === "supabase" && <WorkspaceSwitcher />}
-            <span
-              className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
-              aria-hidden
-            />
-            {/* Hidden on phones so the switcher (which collapses to icons
-              * there) has room. Nothing is lost: the sticky mobile summary
-              * bar already names the active sheet. */}
-            <h1
-              className="hidden min-w-0 truncate font-medium leading-none tracking-tight text-zinc-300 sm:block"
-              title={
-                source === "supabase"
-                  ? "My book"
-                  : locked
-                    ? "Local demo (saved)"
-                    : "Local demo"
-              }
-            >
-              {isOverview
-                ? "Overview"
-                : isCompound
-                  ? "Compound"
-                  : isLab
-                    ? "Lab"
-                    : activePortfolio!.name}
-            </h1>
-          </div>
-          <div className="flex shrink-0 items-center justify-end gap-1.5">
+      <AppHeader
+        onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
+        brandTitle="Upside: go to Overview"
+        showWorkspaceNav={source === "supabase"}
+        title={
+          isOverview
+            ? "Overview"
+            : isCompound
+              ? "Compound"
+              : isLab
+                ? "Lab"
+                : isPulse
+                  ? "Pulse"
+                  : activePortfolio!.name
+        }
+      >
             <button
               type="button"
               onClick={() => {
@@ -2600,9 +2571,12 @@ export function Dashboard() {
                 }}
               />
             )}
-          </div>
-        </div>
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 border-t border-zinc-800/60 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+      </AppHeader>
+
+      {/* Status strip, below the header rather than inside it, so the bar
+        * itself stays exactly one fixed height on every page. */}
+      <div className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
             quotesDelayed={quotesDelayed}
@@ -2612,7 +2586,7 @@ export function Dashboard() {
           />
           <MacroStrip />
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-4 pb-[calc(7.5rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-5 sm:pb-28 md:pb-24">
         {loadError && (

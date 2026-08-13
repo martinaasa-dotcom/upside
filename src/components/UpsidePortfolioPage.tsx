@@ -1,7 +1,6 @@
 "use client";
 
-import { HeaderBrand } from "@/components/HeaderBrand";
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { AppHeader } from "@/components/AppHeader";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
@@ -738,14 +737,7 @@ export function UpsidePortfolioPage() {
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-      <header className="border-b border-brand-deep/25 bg-[#121214]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <HeaderBrand />
-            <WorkspaceSwitcher />
-          </div>
-        </div>
-      </header>
+      <AppHeader title="Fund" />
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
         <div className="flex items-start gap-3">

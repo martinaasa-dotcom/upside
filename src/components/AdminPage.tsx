@@ -1,9 +1,8 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { AppHeader } from "@/components/AppHeader";
 import { SignInGate } from "@/components/SignInGate";
-import { HeaderBrand } from "@/components/HeaderBrand";
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
@@ -150,14 +149,7 @@ export function AdminPage() {
   return (
     <SignInGate>
       <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-        <header className="border-b border-brand-deep/25 bg-[#121214]/90 backdrop-blur">
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <HeaderBrand />
-              <WorkspaceSwitcher />
-            </div>
-          </div>
-        </header>
+        <AppHeader title="Admin" />
 
         <main className="mx-auto max-w-4xl space-y-8 px-4 py-8">
           <div className="flex items-start gap-3">

@@ -1,8 +1,7 @@
 "use client";
 
 import { SignInGate } from "@/components/SignInGate";
-import { HeaderBrand } from "@/components/HeaderBrand";
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { AppHeader } from "@/components/AppHeader";
 import { cn } from "@/lib/format";
 import { prefetchCommunity } from "@/lib/community-cache";
 import { ChevronRight, Compass, Globe, Lock, Users } from "lucide-react";
@@ -142,14 +141,7 @@ export function CommunitiesList() {
   return (
     <SignInGate>
       <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-        <header className="border-b border-brand-deep/25 bg-[#121214]/90 backdrop-blur">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <HeaderBrand />
-              <WorkspaceSwitcher />
-            </div>
-          </div>
-        </header>
+        <AppHeader title="Communities" />
         <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-white">

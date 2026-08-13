@@ -1,9 +1,8 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { AppHeader } from "@/components/AppHeader";
 import { SignInGate } from "@/components/SignInGate";
-import { HeaderBrand } from "@/components/HeaderBrand";
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { cn } from "@/lib/format";
 import {
@@ -356,26 +355,20 @@ export function AccountPage() {
   return (
     <SignInGate>
       <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-        <header className="border-b border-brand-deep/25 bg-[#121214]/90 backdrop-blur">
-          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <HeaderBrand />
-              <WorkspaceSwitcher />
-            </div>
-            <button
-              type="button"
-              onClick={() =>
-                void signOut().then(() => {
-                  router.push("/");
-                })
-              }
-              className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Sign out
-            </button>
-          </div>
-        </header>
+        <AppHeader title="Account">
+          <button
+            type="button"
+            onClick={() =>
+              void signOut().then(() => {
+                router.push("/");
+              })
+            }
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
+        </AppHeader>
 
         <main className="mx-auto max-w-3xl space-y-8 px-4 py-8">
           <div>

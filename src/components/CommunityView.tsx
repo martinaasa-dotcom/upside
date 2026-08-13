@@ -1,9 +1,8 @@
 "use client";
 
 import { SignInGate } from "@/components/SignInGate";
+import { AppHeader } from "@/components/AppHeader";
 import { track } from "@vercel/analytics";
-import { HeaderBrand } from "@/components/HeaderBrand";
-import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { currency, percent, signedCurrency, cn, cashtag } from "@/lib/format";
 import { buildOverview } from "@/lib/overview";
@@ -959,23 +958,20 @@ export function CommunityView({ communityId }: Props) {
   return (
     <SignInGate>
       <div className="min-h-dvh bg-[#121214] text-zinc-100">
-        <header className="sticky top-0 z-40 border-b border-brand-deep/25 bg-[#121214]/95 backdrop-blur">
-          {/* Stacks on phones so the workspace nav can stay visible here
-            * too. Side by side, the community name plus the admin gear left
-            * no room for it, which is why this page used to be the one
-            * place the nav vanished on mobile. */}
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex items-center gap-3">
-              <HeaderBrand />
-              <WorkspaceSwitcher />
-            </div>
-            <div className="flex min-w-0 items-center gap-2 sm:ml-auto">
-              <Users className="hidden h-4 w-4 shrink-0 text-brand-bright/80 sm:block" />
-              <span className="truncate text-sm font-medium">
-                {community?.name ?? "Community"}
-              </span>
+        {/* The community's own name is "where you are", so it belongs on the
+          * left with the wordmark. Only the admin gear is a control. */}
+        <AppHeader
+          title={
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate">{community?.name ?? "Community"}</span>
               {community && (
-                <span title={community.visibility === "public" ? "Public community" : "Private community"}>
+                <span
+                  title={
+                    community.visibility === "public"
+                      ? "Public community"
+                      : "Private community"
+                  }
+                >
                   {community.visibility === "public" ? (
                     <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
                   ) : (
@@ -983,27 +979,28 @@ export function CommunityView({ communityId }: Props) {
                   )}
                 </span>
               )}
-              {isAdmin && joinRequests.length > 0 && (
-                <span
-                  title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-                  className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs font-semibold text-amber-300"
-                >
-                  {joinRequests.length}
-                </span>
-              )}
-              {isAdmin && community && (
-                <button
-                  type="button"
-                  onClick={openSettings}
-                  title="Community settings"
-                  className="shrink-0 rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
-                >
-                  <Settings className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </header>
+            </span>
+          }
+        >
+          {isAdmin && joinRequests.length > 0 && (
+            <span
+              title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
+              className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs font-semibold text-amber-300"
+            >
+              {joinRequests.length}
+            </span>
+          )}
+          {isAdmin && community && (
+            <button
+              type="button"
+              onClick={openSettings}
+              title="Community settings"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+          )}
+        </AppHeader>
 
         <main className="mx-auto max-w-6xl space-y-8 px-4 py-6">
           {loading && (
