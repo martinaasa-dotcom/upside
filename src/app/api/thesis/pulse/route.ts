@@ -16,6 +16,14 @@ import {
   type PulseHeadline,
   type PulseReport,
 } from "@/lib/thesis-pulse";
+import {
+  getCachedPulseCheck,
+  getPulseCacheKey,
+  setCachedPulseCheck,
+  getCachedPulseSummary,
+  setCachedPulseSummary,
+  isPulseEntryFresh,
+} from "@/lib/thesis-pulse-server-cache";
 import { pulseReportSchema } from "@/lib/thesis-pulse-schema";
 import { generateObject } from "ai";
 
@@ -65,7 +73,7 @@ function buildPrompt(
     const roiPct = (c.roiPct * 100).toFixed(0);
     const flag = c.needsAttention ? " **NEEDS ATTENTION: down ≥5%**" : "";
     const parts = [
-      `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup — not in book)"}`,
+      `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup, not in book)"}`,
       conv?.thesis ? `  Owner thesis: ${conv.thesis}` : "",
       conv?.level ? `  Conviction: ${conv.level}/5` : "",
       ctx?.sector ? `  Sector: ${ctx.sector}` : "",
@@ -129,10 +137,88 @@ export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
+  const body = (await req.json().catch(() => ({}))) as Body;
+  const candidates = body.candidates ?? [];
+  if (candidates.length === 0) {
+    return Response.json(
+      { error: "No pulse candidates supplied" },
+      { status: 400 }
+    );
+  }
+
+  const force = Boolean(body.force);
+  const convictions = body.convictions ?? {};
+
+  // Check server-side SWR cache for each candidate
+  const cachedMap = new Map<string, { check: PulseCheck; headlines: PulseHeadline[] }>();
+  const uncachedCandidates: PulseCandidate[] = [];
+
+  for (const c of candidates) {
+    const symbol = c.ticker.toUpperCase();
+    const conv = convictions[symbol];
+    const cacheKey = getPulseCacheKey(symbol, c.effectivePct, conv?.thesis, conv?.level);
+    const cachedEntry = getCachedPulseCheck(cacheKey, { force });
+
+    if (cachedEntry && isPulseEntryFresh(cachedEntry)) {
+      cachedMap.set(symbol, {
+        check: cachedEntry.check,
+        headlines: cachedEntry.headlines,
+      });
+    } else {
+      uncachedCandidates.push(c);
+    }
+  }
+
+  const headlines: Record<string, PulseHeadline[]> = {};
+  for (const [symbol, cached] of cachedMap.entries()) {
+    headlines[symbol] = cached.headlines;
+  }
+
+  // If all candidates are cached, return immediately without LLM invocation
+  if (uncachedCandidates.length === 0) {
+    const checks: PulseCheck[] = candidates.map((c) => {
+      const cached = cachedMap.get(c.ticker.toUpperCase());
+      return cached ? cached.check : buildFallbackPulseCheck(c);
+    });
+
+    const summary =
+      getCachedPulseSummary() ??
+      "Dips on high-conviction holdings remain intact add opportunities.";
+
+    const report: PulseReport = {
+      summary: humanizeMargusText(summary),
+      checks,
+      generatedAt: new Date().toISOString(),
+    };
+
+    return Response.json(
+      { report, headlines, cachedCount: candidates.length, freshCount: 0 },
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=300, stale-while-revalidate=1800",
+          "x-pulse-cache": "HIT_ALL",
+        },
+      }
+    );
+  }
+
+  // Rate limit check before making external LLM calls
   const limit = checkRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
+    // If rate limited, return cached checks if possible or fallback reads
+    const checks = candidates.map((c) => {
+      const cached = cachedMap.get(c.ticker.toUpperCase());
+      return cached ? cached.check : buildFallbackPulseCheck(c);
+    });
+    const report: PulseReport = {
+      summary: humanizeMargusText(
+        "Rate limit reached. Showing cached and rule-based reads below."
+      ),
+      checks,
+      generatedAt: new Date().toISOString(),
+    };
     return Response.json(
-      { error: "Thesis Pulse is limited. Try again in a bit." },
+      { report, headlines, degraded: true },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
     );
   }
@@ -145,27 +231,17 @@ export async function POST(req: Request) {
     return Response.json({ error: message }, { status: 503 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as Body;
-  const candidates = body.candidates ?? [];
-  if (candidates.length === 0) {
-    return Response.json(
-      { error: "No pulse candidates supplied" },
-      { status: 400 }
-    );
-  }
-
-  const tickers = candidates.map((c) => c.ticker);
-  const contexts = await fetchPulseContexts(tickers, { force: body.force });
-  const headlines: Record<string, PulseHeadline[]> = {};
-  for (const t of tickers) {
+  const uncachedTickers = uncachedCandidates.map((c) => c.ticker);
+  const contexts = await fetchPulseContexts(uncachedTickers, { force });
+  for (const t of uncachedTickers) {
     headlines[t.toUpperCase()] = contexts[t.toUpperCase()]?.news ?? [];
   }
 
   try {
     const prompt = buildPrompt(
-      candidates,
+      uncachedCandidates,
       contexts,
-      body.convictions ?? {},
+      convictions,
       body.fearGreed ?? null
     );
 
@@ -188,43 +264,83 @@ export async function POST(req: Request) {
     );
 
     const modelChecks = (object.checks ?? []) as PulseCheck[];
-    const byTicker = new Map<string, PulseCheck>();
+    const newlyGeneratedMap = new Map<string, PulseCheck>();
     for (const check of modelChecks) {
-      byTicker.set(check.ticker.toUpperCase(), check);
+      newlyGeneratedMap.set(check.ticker.toUpperCase(), check);
     }
 
+    // Cache the newly generated checks per ticker
+    for (const candidate of uncachedCandidates) {
+      const symbol = candidate.ticker.toUpperCase();
+      const fromModel = newlyGeneratedMap.get(symbol);
+      const check: PulseCheck = fromModel
+        ? {
+            ...fromModel,
+            ticker: symbol,
+            trimPct:
+              fromModel.action === "trim" ? (fromModel.trimPct ?? null) : null,
+          }
+        : buildFallbackPulseCheck(candidate);
+
+      const conv = convictions[symbol];
+      const cacheKey = getPulseCacheKey(
+        symbol,
+        candidate.effectivePct,
+        conv?.thesis,
+        conv?.level
+      );
+      setCachedPulseCheck(
+        cacheKey,
+        check,
+        headlines[symbol] ?? [],
+        candidate.effectivePct
+      );
+      cachedMap.set(symbol, { check, headlines: headlines[symbol] ?? [] });
+    }
+
+    if (object.summary?.trim()) {
+      setCachedPulseSummary(object.summary);
+    }
+
+    // Reconstruct checks in original candidate order
     const checks: PulseCheck[] = candidates.map((candidate) => {
       const key = candidate.ticker.toUpperCase();
-      const fromModel = byTicker.get(key);
-      if (fromModel) {
-        return {
-          ...fromModel,
-          ticker: key,
-          trimPct:
-            fromModel.action === "trim"
-              ? (fromModel.trimPct ?? null)
-              : null,
-        };
-      }
-      return buildFallbackPulseCheck(candidate);
+      const entry = cachedMap.get(key);
+      return entry ? entry.check : buildFallbackPulseCheck(candidate);
     });
 
     const report: PulseReport = humanizeMargusTree({
-      summary: object.summary,
+      summary: object.summary || getCachedPulseSummary() || "Thesis review complete.",
       checks,
       generatedAt: new Date().toISOString(),
     });
 
-    return Response.json({ report, headlines });
+    return Response.json(
+      {
+        report,
+        headlines,
+        cachedCount: cachedMap.size - uncachedCandidates.length,
+        freshCount: uncachedCandidates.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, s-maxage=300, stale-while-revalidate=1800",
+          "x-pulse-cache":
+            cachedMap.size > uncachedCandidates.length ? "PARTIAL_HIT" : "MISS",
+        },
+      }
+    );
   } catch (err) {
     console.error("Pulse report failed", err);
     const { message, status } = describeAdvisorError(err);
 
-    // Free-tier daily quota / transient rate-limit: degrade to the
+    // Free-tier daily quota / transient rate-limit: degrade to cached or
     // deterministic per-ticker read instead of blanking the whole page.
-    // Pulse still shows something useful, clearly labeled as rule-based.
     if (status === 429) {
-      const checks = candidates.map((c) => buildFallbackPulseCheck(c));
+      const checks = candidates.map((c) => {
+        const cached = cachedMap.get(c.ticker.toUpperCase());
+        return cached ? cached.check : buildFallbackPulseCheck(c);
+      });
       const report: PulseReport = {
         summary: humanizeMargusText(
           `${message} Showing rule-based reads below meanwhile.`

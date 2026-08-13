@@ -65,7 +65,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   const key = tickers.join(",");
   const lastKey = useRef<string>("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!key) {
       setRows([]);
       return;
@@ -76,7 +76,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       const res = await fetch("/api/trends", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tickers: key.split(",") }),
+        body: JSON.stringify({ tickers: key.split(","), force }),
       });
       const data = await readJsonOrThrow<{ rows: TrendRow[] }>(
         res,
@@ -121,7 +121,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           </div>
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={() => void load(true)}
             disabled={busy}
             className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
           >
