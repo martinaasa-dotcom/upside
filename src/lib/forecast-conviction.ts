@@ -37,22 +37,30 @@ export type ForecastStance = "bearish" | "base" | "bullish";
  * the agentic second-order trade, each with a digestion year rather than a
  * clean ramp. Sectors with no link to that thesis stay deliberately plain.
  *
- * Note these also seed the Compound sheet's default expected return via
- * impliedAnnualReturnForTheme, so an AI-heavy book will now default to a
- * hotter planning rate than an index-heavy one.
+ * The ladder is anchored so `index` compounds at ~10%/yr, matching the
+ * MARKET_ANNUAL_RETURN_PCT the CAPM alpha read uses in
+ * portfolio-personality. It used to sit at 5.7%, which meant the model
+ * quietly assumed an index fund returned about half the market it tracks
+ * and dragged every other theme down with it. Everything above index is a
+ * risk premium on that baseline, ordered by THEME_RISK_SCORE.
+ *
+ * These also seed the Compound sheet's default expected return via
+ * impliedAnnualReturnForTheme, so an AI-heavy book defaults to a much
+ * hotter planning rate than an index-heavy one. That is intentional, but
+ * it is a bull-case scenario rate, not a safe planning assumption.
  */
 const THEME_BASE_MULTS: Record<ForecastTheme, number[]> = {
-  ai_infra: [1.22, 1.55, 1.42, 1.95, 2.65],
-  ai_power: [1.18, 1.42, 1.35, 1.75, 2.3],
-  crypto: [1.35, 1.7, 1.15, 1.7, 2.3],
-  space: [1.1, 1.3, 1.2, 1.5, 1.9],
-  fintech: [1.16, 1.4, 1.28, 1.65, 2.15],
-  software: [1.14, 1.35, 1.25, 1.6, 2.05],
-  healthcare: [1.08, 1.2, 1.12, 1.35, 1.6],
-  drones: [1.1, 1.3, 1.2, 1.5, 1.9],
-  semi: [1.18, 1.45, 1.32, 1.8, 2.4],
-  index: [1.06, 1.13, 1.1, 1.2, 1.32],
-  other: [1.1, 1.25, 1.15, 1.45, 1.75],
+  ai_infra: [1.39, 1.98, 1.83, 2.57, 3.18], // ~26%/yr
+  crypto: [1.42, 1.97, 1.27, 2.12, 2.93], // ~24%/yr
+  semi: [1.27, 1.73, 1.56, 2.19, 2.7], // ~22%/yr
+  space: [1.22, 1.63, 1.49, 2.12, 2.7], // ~22%/yr
+  ai_power: [1.27, 1.63, 1.57, 2.06, 2.49], // ~20%/yr
+  drones: [1.19, 1.53, 1.43, 1.93, 2.39], // ~19%/yr
+  fintech: [1.21, 1.54, 1.45, 1.9, 2.29], // ~18%/yr
+  software: [1.18, 1.48, 1.41, 1.81, 2.19], // ~17%/yr
+  other: [1.14, 1.3, 1.46, 1.63, 1.8], // ~12.5%/yr
+  healthcare: [1.12, 1.26, 1.41, 1.56, 1.72], // ~11.5%/yr
+  index: [1.1, 1.23, 1.35, 1.48, 1.61], // ~10%/yr, the market baseline
 };
 
 /** Scale whole path vs BASE (bullish above, bearish below). */

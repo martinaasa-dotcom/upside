@@ -59,8 +59,23 @@ const DIVERSIFICATION_CEILING_N = 20;
  * local here to avoid a cross-import for two constants. */
 const RISK_FREE_ANNUAL_PCT = 4.5;
 const MARKET_ANNUAL_RETURN_PCT = 10;
-/** Risk score that maps to beta = 1.0 (an "average" book, theme "other"). */
-const BETA_NEUTRAL_RISK_SCORE = 50;
+
+/**
+ * Risk score to CAPM beta. This used to be `riskScore / 50`, which put a
+ * broad index fund (risk 15) at beta 0.3 when an index tracking the market
+ * is beta 1.0 by definition, so a plain index book showed a fake negative
+ * alpha and every risky book got an unfairly low hurdle to clear.
+ *
+ * Anchored instead so index lands at ~1.0 and the hottest themes land
+ * around 2.8, which is the right neighbourhood for a concentrated
+ * single-name growth book.
+ */
+function betaForRiskScore(riskScore: number): number {
+  const INDEX_RISK = 15;
+  const INDEX_BETA = 1.0;
+  const SLOPE = 0.0225; // risk 95 (crypto) lands at ~2.8
+  return Math.max(0.2, INDEX_BETA + (riskScore - INDEX_RISK) * SLOPE);
+}
 
 export type ScoreBand = { label: string; description: string };
 
@@ -360,7 +375,7 @@ export function buildPortfolioPersonality(
     }
   }
 
-  const beta = riskScore / BETA_NEUTRAL_RISK_SCORE;
+  const beta = betaForRiskScore(riskScore);
   const capmExpectedPct =
     RISK_FREE_ANNUAL_PCT + beta * (MARKET_ANNUAL_RETURN_PCT - RISK_FREE_ANNUAL_PCT);
   const modeledAlphaPct =
