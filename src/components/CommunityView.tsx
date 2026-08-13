@@ -1140,6 +1140,16 @@ export function CommunityView({ communityId }: Props) {
                                 <p className="text-xs leading-relaxed text-zinc-400">
                                   {m.personality.archetype.vibe}
                                 </p>
+                                {/* The line above describes the archetype and
+                                  * reads identically for everyone who lands on
+                                  * it. This one says why this book in
+                                  * particular did, using its own scores. */}
+                                <p className="rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-xs leading-relaxed text-zinc-300">
+                                  <span className="font-medium text-brand-bright">
+                                    Why {m.personality.animal}:
+                                  </span>{" "}
+                                  {m.personality.whyThisAnimal}
+                                </p>
                                 <div className="grid gap-3 sm:grid-cols-2">
                                   <ScoreBar
                                     label="Diversification"
@@ -1578,7 +1588,7 @@ export function CommunityView({ communityId }: Props) {
                                 {personality && (
                                   <span
                                     className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
-                                    title={`${personality.tagline} Diversification ${personality.diversificationScore}/100 · Risk ${personality.riskScore}/100.`}
+                                    title={personality.whyThisAnimal}
                                   >
                                     <span aria-hidden>
                                       {personality.animalEmoji}

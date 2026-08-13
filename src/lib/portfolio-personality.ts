@@ -93,6 +93,13 @@ export type PortfolioPersonality = {
   /** Full bestiary entry backing `animal` — the whole card, not just the
    * one-liner, so a UI can show strength/watchFor without a second lookup. */
   archetype: AnimalArchetype;
+  /**
+   * Why *this* book got *this* animal, quoting its own scores. The
+   * bestiary copy describes the archetype in the abstract and reads the
+   * same for everyone who lands on it; this is the part that connects the
+   * badge to the person looking at it.
+   */
+  whyThisAnimal: string;
   /** Blended forward-looking annual return of the actual picks (equity
    * only), from the same engine Forecast uses — a modeled expectation,
    * not a promise. */
@@ -319,23 +326,76 @@ function archetype(id: string): AnimalArchetype {
 }
 
 /** Same decision order as ANIMAL_BESTIARY — keep the two in sync. */
+/**
+ * Picks the archetype AND says why this particular book landed there.
+ *
+ * The static bestiary copy describes the animal in general; it never
+ * explains why *you* are one, which made the badge feel assigned at random.
+ * Every branch below has a specific numeric trigger, so the reason is
+ * already known at the moment of the decision. Returning it quotes the
+ * viewer's own scores back at them instead of a generic personality read.
+ */
 function pickAnimal(opts: {
   diversification: number;
   risk: number;
   theme: ForecastTheme;
   positionCount: number;
-}): AnimalArchetype {
+}): { archetype: AnimalArchetype; why: string } {
   const { diversification, risk, theme, positionCount } = opts;
+  const names = positionCount === 1 ? "1 name" : `${positionCount} names`;
 
-  if (positionCount === 0) return archetype("hatchling");
-  if (theme === "crypto" && risk >= 80) return archetype("dragon");
-  if (risk >= 75 && diversification < 30) return archetype("shark");
-  if (risk >= 75 && diversification >= 30) return archetype("wolf");
-  if (diversification >= 55) return archetype("elephant");
-  if (risk < 35 && diversification < 30) return archetype("turtle");
-  if (risk < 40) return archetype("owl");
-  if (positionCount <= 3) return archetype("falcon");
-  return archetype("fox");
+  if (positionCount === 0) {
+    return {
+      archetype: archetype("hatchling"),
+      why: "Nothing held yet, so there's nothing to read.",
+    };
+  }
+  if (theme === "crypto" && risk >= 80) {
+    return {
+      archetype: archetype("dragon"),
+      why: `Crypto is your heaviest theme and risk sits at ${risk}/100. Nothing else in the bestiary moves like that.`,
+    };
+  }
+  if (risk >= 75 && diversification < 30) {
+    return {
+      archetype: archetype("shark"),
+      why: `Risk ${risk}/100 with diversification only ${diversification}/100. Across ${names}, a couple of hot positions decide almost everything.`,
+    };
+  }
+  if (risk >= 75 && diversification >= 30) {
+    return {
+      archetype: archetype("wolf"),
+      why: `Risk ${risk}/100 is top-band, but ${diversification}/100 diversification across ${names} means no single position gets to decide your year. Aggressive and spread out at once is the rare combination.`,
+    };
+  }
+  if (diversification >= 55) {
+    return {
+      archetype: archetype("elephant"),
+      why: `Diversification ${diversification}/100 across ${names}, with risk at a manageable ${risk}/100. Spread this wide is hard to knock over.`,
+    };
+  }
+  if (risk < 35 && diversification < 30) {
+    return {
+      archetype: archetype("turtle"),
+      why: `Risk only ${risk}/100 and concentrated at ${diversification}/100. A short list of genuinely calm positions.`,
+    };
+  }
+  if (risk < 40) {
+    return {
+      archetype: archetype("owl"),
+      why: `Risk ${risk}/100 sits at the calm end of the scale. This book is built for patience, not adrenaline.`,
+    };
+  }
+  if (positionCount <= 3) {
+    return {
+      archetype: archetype("falcon"),
+      why: `Just ${names}. At that count every single one matters enormously, whichever way it goes.`,
+    };
+  }
+  return {
+    archetype: archetype("fox"),
+    why: `Risk ${risk}/100 and diversification ${diversification}/100 both land mid-table across ${names}. Adaptable rather than extreme in either direction.`,
+  };
 }
 
 export function buildPortfolioPersonality(
@@ -396,10 +456,11 @@ export function buildPortfolioPersonality(
     riskScore,
     riskBand: riskBandFor(riskScore),
     dominantTheme,
-    animal: picked.animal,
-    animalEmoji: picked.emoji,
-    tagline: `${picked.tagline} Mostly ${THEME_LABEL[dominantTheme]}.`,
-    archetype: picked,
+    animal: picked.archetype.animal,
+    animalEmoji: picked.archetype.emoji,
+    tagline: `${picked.archetype.tagline} Mostly ${THEME_LABEL[dominantTheme]}.`,
+    archetype: picked.archetype,
+    whyThisAnimal: picked.why,
     expectedAnnualReturnPct,
     maxDrawdownPct,
     modeledAlphaPct,
