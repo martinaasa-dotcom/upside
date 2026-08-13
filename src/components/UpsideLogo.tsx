@@ -72,6 +72,15 @@ export function UpsideLogo({
 
   // Wordmark: true vertical center — mark midline = UPSIDE cap midline.
   // Do not use items-baseline / positive top offsets (those drop the mark).
+  //
+  // `items-center` centers both children by full box height, but that's
+  // not quite the same as matching visual centers: the mark's triangle
+  // fills its square box symmetrically, while the text's line-height:1
+  // box reserves a bit more room below the cap-height (for a descender
+  // that this all-caps word never uses) than above it. Box-centering both
+  // therefore leaves the mark looking a hair low against the caps — a
+  // small upward nudge on the mark alone corrects the optical center
+  // without touching the text.
   return (
     <span
       className={cn(
@@ -81,7 +90,7 @@ export function UpsideLogo({
       role="img"
       aria-label={title}
     >
-      <UpsideMark className="h-[1em] w-[1em]" />
+      <UpsideMark className="h-[1em] w-[1em] -translate-y-[0.08em]" />
       <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
         Upside
       </span>
