@@ -220,6 +220,19 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   );
 }
 
+/** Fast enough that the page reads as live without hammering the free
+ * quote tiers. My book polls on a similar cadence. */
+const QUOTE_POLL_MS = 30_000;
+
+function freshnessLabel(quotesAt: number | null, nowMs: number): string {
+  if (quotesAt == null) return "Loading prices …";
+  const secs = Math.max(0, Math.round((nowMs - quotesAt) / 1000));
+  if (secs < 10) return "Live · just now";
+  if (secs < 90) return `Live · ${secs}s ago`;
+  const mins = Math.round(secs / 60);
+  return `Prices ${mins}m old`;
+}
+
 function FundStat({
   label,
   value,
@@ -265,6 +278,10 @@ export function UpsidePortfolioPage() {
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  /** When the currently displayed quotes landed. Null until the first
+   * successful fetch: a cached first paint is real data but not fresh
+   * data, and claiming otherwise would be a lie. */
+  const [quotesAt, setQuotesAt] = useState<number | null>(null);
 
   // "Compare your own portfolio" opt-in benchmark — entirely client-side
   // (localStorage), since it's a personal viewing preference, not shared
@@ -300,6 +317,7 @@ export function UpsidePortfolioPage() {
       setReports(data.reports ?? []);
       setWeeklyRecaps(data.weeklyRecaps ?? []);
       setQuotes(data.quotes ?? {});
+      setQuotesAt(Date.now());
       saveUpsidePortfolioCache({
         fund: data.fund,
         holdings: data.holdings ?? [],
@@ -562,17 +580,47 @@ export function UpsidePortfolioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [benchmark?.portfolioId]);
 
-  // Live quotes move all day — re-poll periodically (not just on manual
-  // refresh) so "Total value" actually tracks the market instead of
-  // freezing at whatever the last daily report happened to capture.
+  /**
+   * Live quotes move all day, so re-poll rather than freezing at whatever
+   * the last daily report captured.
+   *
+   * The callbacks go through a ref on purpose. refreshBenchmarkValue is
+   * keyed to `benchmark` and re-heals that object, so listing it as a
+   * dependency tore down and re-armed this interval every time the
+   * benchmark identity changed, restarting the countdown from zero. With a
+   * long interval that is a good way to never fire at all.
+   */
+  const pollRef = useRef({ load, refreshBenchmarkValue });
+  pollRef.current = { load, refreshBenchmarkValue };
+
+  useEffect(() => {
+    function tick() {
+      if (document.hidden) return;
+      void pollRef.current.load("background");
+      void pollRef.current.refreshBenchmarkValue();
+    }
+    const id = window.setInterval(tick, QUOTE_POLL_MS);
+    // Coming back to the tab shouldn't mean waiting out a full interval to
+    // see how far the market moved while you were away.
+    function onVisible() {
+      if (!document.hidden) tick();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  // Drives the "updated Ns ago" label. Only ticks while the tab is
+  // visible, so a backgrounded page isn't re-rendering once a second.
+  const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
     const id = window.setInterval(() => {
-      if (document.hidden) return;
-      void load("background");
-      void refreshBenchmarkValue();
-    }, 60_000);
+      if (!document.hidden) setNowMs(Date.now());
+    }, 1000);
     return () => window.clearInterval(id);
-  }, [load, refreshBenchmarkValue]);
+  }, []);
 
   const handleOpenPicker = useCallback(async () => {
     setBenchmarkError(null);
@@ -666,18 +714,32 @@ export function UpsidePortfolioPage() {
               <h1 className="text-2xl font-semibold tracking-tight text-white">
                 Upside Portfolio
               </h1>
-              <button
-                type="button"
-                onClick={() => {
-                  void load("manual");
-                  void refreshBenchmarkValue();
-                }}
-                disabled={refreshing}
-                className="touch-target inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
-              >
-                <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
-                Refresh
-              </button>
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-flex items-center gap-1.5 text-[11px] tabular-nums text-zinc-500"
+                  title={`Prices refresh automatically every ${QUOTE_POLL_MS / 1000}s while this tab is open`}
+                >
+                  {quotesAt != null && (
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
+                    />
+                  )}
+                  {freshnessLabel(quotesAt, nowMs)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void load("manual");
+                    void refreshBenchmarkValue();
+                  }}
+                  disabled={refreshing}
+                  className="touch-target inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+                  Refresh
+                </button>
+              </div>
             </div>
             <p className="mt-1 text-sm text-zinc-400">
               One decision a day, every trade with a stated thesis, timeline,
