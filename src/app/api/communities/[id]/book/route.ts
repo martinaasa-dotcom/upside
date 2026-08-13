@@ -29,13 +29,15 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const aliasMap = await loadAliasMap(supabase);
   const ownerFilter = req.nextUrl.searchParams.get("ownerId");
   const pendingKey = ownerFilter?.startsWith("pending:")
     ? ownerFilter.slice("pending:".length)
     : null;
 
-  const [{ data: members }, { data: pinned }] = await Promise.all([
+  // The alias map doesn't depend on members/pinned, so it rides along
+  // instead of costing its own serial round-trip before them.
+  const [aliasMap, { data: members }, { data: pinned }] = await Promise.all([
+    loadAliasMap(supabase),
     supabase
       .from(PORTFELL_TABLES.communityMembers)
       .select("user_id, role, joined_at")
@@ -97,14 +99,12 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     userIds = expanded;
   }
 
-  const [{ data: ownership }] = await Promise.all([
-    userIds.length
-      ? supabase
-          .from(PORTFELL_TABLES.portfolioOwners)
-          .select("portfolio_id, user_id")
-          .in("user_id", userIds)
-      : Promise.resolve({ data: [] as { portfolio_id: string; user_id: string }[] }),
-  ]);
+  const { data: ownership } = userIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id, user_id")
+        .in("user_id", userIds)
+    : { data: [] as { portfolio_id: string; user_id: string }[] };
 
   const pinnedIdsAll = ((pinned ?? []) as { portfolio_id: string }[]).map(
     (p) => p.portfolio_id
@@ -132,25 +132,26 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     ];
   }
 
+  // Sheets and their holdings both key off portfolioIds and don't depend
+  // on each other, so they go out together rather than back to back.
   let portfolios: unknown[] = [];
-  if (portfolioIds.length) {
-    const { data: p } = await supabase
-      .from(PORTFELL_TABLES.portfolios)
-      .select(
-        "id, name, slug, sort_order, cash_balance, owner_id, created_at, updated_at"
-      )
-      .in("id", portfolioIds)
-      .order("sort_order");
-    portfolios = p ?? [];
-  }
-
   let holdings: unknown[] = [];
   if (portfolioIds.length) {
-    const { data: h } = await supabase
-      .from(PORTFELL_TABLES.holdings)
-      .select("*")
-      .in("portfolio_id", portfolioIds)
-      .order("sort_order");
+    const [{ data: p }, { data: h }] = await Promise.all([
+      supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .select(
+          "id, name, slug, sort_order, cash_balance, owner_id, created_at, updated_at"
+        )
+        .in("id", portfolioIds)
+        .order("sort_order"),
+      supabase
+        .from(PORTFELL_TABLES.holdings)
+        .select("*")
+        .in("portfolio_id", portfolioIds)
+        .order("sort_order"),
+    ]);
+    portfolios = p ?? [];
     holdings = h ?? [];
   }
 

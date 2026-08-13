@@ -224,6 +224,7 @@ export function UpsidePortfolioPage() {
       (loadUpsidePortfolioCache()?.payload as FundPayload | undefined) ?? null;
   }
   const cached = cachedRef.current;
+  const loadCallIdRef = useRef(0);
 
   const [fund, setFund] = useState<FundRow | null>(cached?.fund ?? null);
   const [holdings, setHoldings] = useState<HoldingRow[]>(
@@ -254,6 +255,11 @@ export function UpsidePortfolioPage() {
   const [loadingMessage] = useState(pickLoadingMessage);
 
   const load = useCallback(async (mode: "initial" | "manual" | "background") => {
+    // Three sources can be in flight at once here (first load, the 60s
+    // poll, and manual refresh), so a slow one resolving last would
+    // otherwise overwrite fresher numbers with stale ones. Only the most
+    // recently started call is allowed to commit.
+    const callId = ++loadCallIdRef.current;
     if (mode === "manual") setRefreshing(true);
     // A cached paint means the first fetch is really a background refresh:
     // never swap a populated page back to a loading line.
@@ -263,6 +269,7 @@ export function UpsidePortfolioPage() {
       const res = await fetch("/api/upside-portfolio", { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Failed to load");
+      if (callId !== loadCallIdRef.current) return;
       setFund(data.fund);
       setHoldings(data.holdings ?? []);
       setReports(data.reports ?? []);
@@ -280,12 +287,17 @@ export function UpsidePortfolioPage() {
       // already-loaded page over one flaky tick. A cache-backed first load
       // counts as already-loaded for the same reason: showing an error
       // over a perfectly readable page helps nobody.
+      if (callId !== loadCallIdRef.current) return;
       if (mode !== "background" && !cachedRef.current) {
         setError(e instanceof Error ? e.message : "Failed to load");
       }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      // A superseded call must not clear the spinner belonging to the
+      // newer one that's still running.
+      if (callId === loadCallIdRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 

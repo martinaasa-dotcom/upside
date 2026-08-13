@@ -31,10 +31,13 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const aliasMap = await loadAliasMap(supabase);
-
-  const [{ data: community }, { data: members }, { data: pinned }] =
+  // None of these depend on each other, and isAdmin is only consumed much
+  // further down, so fetching it here costs nothing extra instead of an
+  // extra serial round-trip later.
+  const [aliasMap, isAdmin, { data: community }, { data: members }, { data: pinned }] =
     await Promise.all([
+      loadAliasMap(supabase),
+      userIsCommunityAdmin(auth.user.id, id),
       supabase
         .from(PORTFELL_TABLES.communities)
         .select("id, name, visibility, created_by, created_at, updated_at")
@@ -167,8 +170,6 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       };
     });
   }
-
-  const isAdmin = await userIsCommunityAdmin(auth.user.id, id);
 
   let join_requests: {
     id: string;

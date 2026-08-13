@@ -74,13 +74,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
+    // Cleared in `finally` so a fast auth check doesn't leave an 8s timer
+    // (and its rejected promise) dangling behind every single page load.
+    let timeoutId: number | undefined;
     try {
       // Session check only — don't block the sign-in gate on profile/claims.
       const result = await Promise.race([
         supabase.auth.getUser(),
-        new Promise<never>((_, reject) =>
-          window.setTimeout(() => reject(new Error("auth timeout")), 8000)
-        ),
+        new Promise<never>((_, reject) => {
+          timeoutId = window.setTimeout(
+            () => reject(new Error("auth timeout")),
+            8000
+          );
+        }),
       ]);
       setUser(result.data.user ?? null);
       setReady(true);
@@ -89,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setProfile(null);
       setReady(true);
+    } finally {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     }
   }, [loadProfile]);
 
