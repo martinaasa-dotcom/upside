@@ -60,7 +60,6 @@ import { loadCashflows } from "@/lib/cashflow";
 import { loadArena } from "@/lib/paper-arena";
 import { loadWatchlist } from "@/lib/watchlist";
 import {
-  dismissAlert,
   loadDismissedAlertIds,
   saveDismissedAlertIds,
 } from "@/lib/alert-dismiss";
@@ -151,7 +150,6 @@ import {
 import {
   loadStoredKnowsOptions,
   loadStoredTier,
-  NO_OPTIONS_HIDDEN_LAB_TABS,
   saveStoredKnowsOptions,
   saveStoredTier,
   TIER_HIDDEN_LAB_TABS,
@@ -2609,21 +2607,12 @@ export function Dashboard() {
             portfolios={portfolios}
             holdings={holdings}
             quotes={quotes}
-            coveredCallRows={bookCoveredCallRows}
-            alerts={bookAlerts}
-            lab={labBundle}
-            onLabChange={patchLab}
-            dismissedAlertIds={alertToastsSent}
-            onDismissAlert={(id) =>
-              setAlertToastsSent((prev) => dismissAlert(id, prev))
-            }
             convictions={convictionMap}
             intentTab={labIntent}
             onIntentConsumed={() => setLabIntent(null)}
-            hiddenTabs={[
-              ...(experienceTier ? TIER_HIDDEN_LAB_TABS[experienceTier] : []),
-              ...(hideOptionsUI ? NO_OPTIONS_HIDDEN_LAB_TABS : []),
-            ]}
+            hiddenTabs={
+              experienceTier ? TIER_HIDDEN_LAB_TABS[experienceTier] : []
+            }
           />
         ) : isCompound ? (
           <CompoundInterestSheet

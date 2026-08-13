@@ -109,7 +109,12 @@ export function saveStoredKnowsOptions(value: boolean) {
   }
 }
 
-/** Lab sub-tab ids hidden when the viewer has no options experience —
- * purely covered-call mechanics, unlike Cashflow (also tracks dividends,
- * still useful with zero premiums logged) which stays. */
-export const NO_OPTIONS_HIDDEN_LAB_TABS = ["season"];
+/**
+ * Lab has no options-specific sub-tabs left to hide: the CC income and
+ * Cashflow tabs were removed outright, so `knows_options === false` is now
+ * enforced entirely on the covered-call panel, strike alerts, the
+ * Target-call% field, and Margus's tool set. Kept as an empty list rather
+ * than deleted so the gating call site stays obvious if an options-only
+ * Lab tab ever comes back.
+ */
+export const NO_OPTIONS_HIDDEN_LAB_TABS: string[] = [];

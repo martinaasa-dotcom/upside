@@ -64,12 +64,7 @@ type FundTeaser = {
   headline: string | null;
 };
 
-export type LabDeepLink =
-  | "alerts"
-  | "watch"
-  | "season"
-  | "pulse"
-  | "seasonality";
+export type LabDeepLink = "pulse" | "seasonality";
 
 type EarningsEvent = { ticker: string; date: string; days: number };
 
@@ -678,15 +673,13 @@ export function OverviewDashboard({
   }
 
   function handleBriefingNavigate(link: BriefingLink) {
-    if (link.type === "lab") onOpenLab?.(link.tab);
-    else if (link.type === "pulse") onOpenPulse?.();
+    if (link.type === "pulse") onOpenPulse?.();
     else if (link.type === "compound") onOpenCompound?.();
     else if (link.type === "sheet") onOpenSheet(link.portfolioId);
   }
 
   function canFollowBriefingLink(link?: BriefingLink): boolean {
     if (!link) return false;
-    if (link.type === "lab") return !guest && Boolean(onOpenLab);
     if (link.type === "pulse") return Boolean(onOpenPulse);
     if (link.type === "compound") return Boolean(onOpenCompound);
     return Boolean(link.portfolioId);
@@ -807,15 +800,6 @@ export function OverviewDashboard({
                   {signedCurrency(totals.todayDollar)}
                 </span>
               </span>
-              {!guest && onOpenLab && (
-                <button
-                  type="button"
-                  onClick={() => onOpenLab("alerts")}
-                  className="rounded-lg border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-400 hover:border-brand/40 hover:text-brand-bright"
-                >
-                  Alerts
-                </button>
-              )}
             </div>
           </div>
 

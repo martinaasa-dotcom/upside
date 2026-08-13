@@ -1,6 +1,5 @@
 "use client";
 
-import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import {
   allocationBySector,
   allocationByTicker,
@@ -11,7 +10,6 @@ import {
   buildPortfolioPersonality,
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
-import type { UpsideAlert } from "@/lib/alerts";
 import {
   SHOCKS,
   getShockProfile,
@@ -19,102 +17,47 @@ import {
   shockedPrice,
   type ShockId,
 } from "@/lib/book-shock";
-import {
-  addCashflow,
-  alreadyLoggedPremium,
-  logPremiumFromCc,
-  netCashMoves,
-  removeCashflow,
-  trailingIncome,
-  type CashflowEntry,
-} from "@/lib/cashflow";
-import {
-  addWatchlistTicker,
-  loadWatchlist,
-  removeWatchlistTicker,
-} from "@/lib/watchlist";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
-import { buildCcSeason } from "@/lib/cc-season";
 import {
   correlationGrid,
   correlationMatrix,
 } from "@/lib/correlation";
 import { currency, percent, cn } from "@/lib/format";
-import type { LabBundle } from "@/lib/lab-bundle";
-import { loadDuelHistory, duelStats } from "@/lib/daily-duel";
-import { loadVisitStreak } from "@/lib/visit-streak";
-import { personalBadges } from "@/lib/personal-badges";
 import { PulsePage } from "@/components/PulsePage";
 import { SeasonalityPage } from "@/components/SeasonalityPage";
 import type { ConvictionMap } from "@/lib/conviction";
-import { buildWeeklyRecap } from "@/lib/weekly-recap";
 import type { OverviewModel } from "@/lib/overview";
-import type { CoveredCallRow, Holding, Portfolio, Quote } from "@/lib/types";
-import {
-  CalendarDays,
-  Copy,
-  FlaskConical,
-  Info,
-  Target,
-  Trophy,
-  Trash2,
-} from "lucide-react";
+import type { Holding, Portfolio, Quote } from "@/lib/types";
+import { FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   overview: OverviewModel;
   portfolios: Portfolio[];
+  /** Needed to re-scope the book down to a single sheet. */
   holdings: Holding[];
   quotes: Record<string, Quote>;
-  coveredCallRows: CoveredCallRow[];
-  /** Book-wide alert list — computed once in Dashboard and shared with
-   * Overview's briefing so there's exactly one place that decides what
-   * counts as an earnings/strike/margin/concentration alert. */
-  alerts: UpsideAlert[];
-  lab: LabBundle;
-  onLabChange: (patch: Partial<LabBundle>) => void;
-  guest?: boolean;
-  dismissedAlertIds?: Set<string>;
-  onDismissAlert?: (id: string) => void;
   /** Conviction notes, needed by the Pulse tab. */
   convictions: ConvictionMap;
-  /** Deep-link from Overview (alerts / watch / …). */
+  /** Deep-link from Overview (pulse / seasonality). */
   intentTab?: LabDeepLink | null;
   onIntentConsumed?: () => void;
-  /** Specific tab ids to hide, driven by the viewer's experience tier and
-   * options familiarity. */
+  /** Specific tab ids to hide, driven by the viewer's experience tier. */
   hiddenTabs?: string[];
 };
 
-type LabTab =
-  | "alloc"
-  | "risk"
-  | "pulse"
-  | "seasonality"
-  | "watch"
-  | "season"
-  | "cashflow"
-  | "alerts";
+type LabTab = "alloc" | "risk" | "pulse" | "seasonality";
 
 /** One flat row, ordered as a reading path: what you hold, how risky it
- * is, whether the thesis still holds, when it tends to move, what you're
- * eyeing next, then the income and review tools. Group headers used to
- * sit above this and only added a click. */
+ * is, whether the thesis still holds, and when it tends to move. */
 const TABS: { id: LabTab; label: string }[] = [
   { id: "alloc", label: "Allocation" },
   { id: "risk", label: "Risk" },
   { id: "pulse", label: "Pulse" },
   { id: "seasonality", label: "Seasonality" },
-  { id: "watch", label: "Watchlist" },
-  { id: "season", label: "CC income" },
-  { id: "cashflow", label: "Cashflow" },
-  { id: "alerts", label: "Alerts & recap" },
 ];
 
 const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
-  alerts: "alerts",
-  watch: "watch",
-  season: "season",
   pulse: "pulse",
   seasonality: "seasonality",
 };
@@ -148,13 +91,6 @@ export function LabSheet({
   portfolios,
   holdings,
   quotes,
-  coveredCallRows,
-  alerts: bookAlerts,
-  lab,
-  onLabChange,
-  guest,
-  dismissedAlertIds,
-  onDismissAlert,
   convictions,
   intentTab,
   onIntentConsumed,
@@ -173,61 +109,14 @@ export function LabSheet({
   const [shock, setShock] = useState<ShockId>("none");
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
-  const cashflows = lab.cashflows;
-  const badges = lab.badges ?? [];
-  // Personal engagement badges (visit streak, Daily Duel) — local to this
-  // device. Cheap synchronous localStorage reads, so just compute fresh on
-  // every render rather than risk a stale memo when the streak/duel state
-  // changes in a sibling tab (Overview) without this component re-mounting.
-  const myBadges = guest
-    ? []
-    : personalBadges(loadVisitStreak(), duelStats(loadDuelHistory()));
-  const [copied, setCopied] = useState(false);
-  const [cfAmount, setCfAmount] = useState(0);
-  const [cfNote, setCfNote] = useState("");
-  const [cfTicker, setCfTicker] = useState("");
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [watchDraft, setWatchDraft] = useState("");
-  const [watchQuotes, setWatchQuotes] = useState<Record<string, Quote>>({});
-  const [logFlash, setLogFlash] = useState<string | null>(null);
-
-  useEffect(() => {
-    setWatchlist(loadWatchlist());
-  }, []);
-
-  // Watchlist exists to track names OUTSIDE the book, so `quotes` (book-scoped)
-  // rarely covers them — fetch live price/move for whichever aren't already
-  // known, on add/mount and hourly while the tab is visible.
-  const watchKey = watchlist.join(",");
-  useEffect(() => {
-    if (!watchKey) return;
-    const need = watchlist.filter((t) => !quotes[t] && !watchQuotes[t]);
-    if (need.length === 0) return;
-    let cancelled = false;
-    void fetch(`/api/quotes?tickers=${encodeURIComponent(need.join(","))}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { quotes?: Record<string, Quote> } | null) => {
-        if (cancelled || !data?.quotes) return;
-        setWatchQuotes((prev) => ({ ...prev, ...data.quotes }));
-      })
-      .catch(() => {
-        // Watchlist prices are a nice-to-have — a blip just leaves the "—" placeholder.
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the ticker-list string, not quotes/watchQuotes identity churn
-  }, [watchKey]);
 
   function selectTab(id: LabTab) {
     setTab(id);
   }
 
-  // The tab row scrolls horizontally on phones (eight tabs never fit), so
-  // keep the active one on screen. Without this, arriving from a deep link
-  // or the command palette on a later tab (Alerts, Cashflow) left the
-  // highlight scrolled out of view and the page looked like it had opened
-  // on Allocation.
+  // The tab row can still scroll on a narrow phone, so keep the active tab
+  // on screen. Arriving from a deep link or the command palette otherwise
+  // left the highlight scrolled out of view.
   useEffect(() => {
     const el = tabRefs.current[tab];
     if (!el) return;
@@ -279,23 +168,6 @@ export function LabSheet({
     onIntentConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intentTab]);
-
-  function logRowPremium(r: CoveredCallRow, exp: string) {
-    if (r.premium == null || !(r.premium > 0)) return;
-    const { entries, already } = logPremiumFromCc(cashflows, {
-      ticker: r.holding.ticker,
-      amount: r.premium,
-      expiry: exp,
-      contracts: r.contracts,
-    });
-    if (already) {
-      setLogFlash(`${r.holding.ticker} already logged recently`);
-    } else {
-      onLabChange({ cashflows: entries });
-      setLogFlash(`Logged ${r.holding.ticker} premium → cashflow`);
-    }
-    window.setTimeout(() => setLogFlash(null), 2500);
-  }
 
   const scopedTickers = useMemo(() => {
     if (scopeId === "book") return overview.tickers;
@@ -349,8 +221,7 @@ export function LabSheet({
       ? "Entire book"
       : (portfolios.find((p) => p.id === scopeId)?.name ?? "Sheet");
 
-  const scopeApplies =
-    tab === "alloc" || tab === "risk" || tab === "season";
+  const scopeApplies = tab === "alloc" || tab === "risk";
 
   const sheetHoldings = useMemo(
     () =>
@@ -381,11 +252,6 @@ export function LabSheet({
       ),
     [sheetHoldings]
   );
-
-  const alerts: UpsideAlert[] = useMemo(() => {
-    if (!dismissedAlertIds?.size) return bookAlerts;
-    return bookAlerts.filter((a) => !dismissedAlertIds.has(a.id));
-  }, [bookAlerts, dismissedAlertIds]);
 
   const corrSeries = useMemo(
     () =>
@@ -432,34 +298,6 @@ export function LabSheet({
     const shocked = shockEquity + scopedCash;
     return { live, shocked, delta: shocked - live };
   }, [shockRows, scopedCash]);
-
-  const scopedCcRows = useMemo(() => {
-    if (scopeId === "book") return coveredCallRows;
-    return coveredCallRows.filter((r) => r.holding.portfolio_id === scopeId);
-  }, [coveredCallRows, scopeId]);
-
-  const ccSeason = useMemo(
-    () =>
-      buildCcSeason({
-        cashflows,
-        coveredCallRows: scopedCcRows,
-        equityValue: overview.totals.equityValue,
-      }),
-    [cashflows, scopedCcRows, overview.totals.equityValue]
-  );
-
-  const recap = useMemo(() => buildWeeklyRecap(overview), [overview]);
-
-  const ccByExpiry = useMemo(() => {
-    const map = new Map<string, CoveredCallRow[]>();
-    for (const r of scopedCcRows) {
-      const exp = r.expiration ?? "—";
-      const list = map.get(exp) ?? [];
-      list.push(r);
-      map.set(exp, list);
-    }
-    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [scopedCcRows]);
 
   return (
     <div className="space-y-4">
@@ -720,98 +558,6 @@ export function LabSheet({
         <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
       )}
 
-      {tab === "watch" && (
-        <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <p className="text-sm font-semibold text-white">Watchlist</p>
-          <p className="text-xs text-zinc-500">
-            Names Margus can talk about without polluting sheets: SaaS,
-            healthcare, drones, whatever’s on deck.
-          </p>
-          {!guest && (
-            <form
-              className="flex flex-wrap gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!watchDraft.trim()) return;
-                setWatchlist((prev) =>
-                  addWatchlistTicker(prev, watchDraft.trim())
-                );
-                setWatchDraft("");
-              }}
-            >
-              <input
-                value={watchDraft}
-                onChange={(e) => setWatchDraft(e.target.value.toUpperCase())}
-                placeholder="Ticker"
-                className="w-28 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              <button
-                type="submit"
-                className="rounded-lg border border-brand/40 bg-brand/10 px-3 py-1.5 text-xs font-medium text-brand-bright"
-              >
-                Add
-              </button>
-            </form>
-          )}
-          <ul className="space-y-1.5">
-            {watchlist.map((t) => {
-              const q = quotes[t] ?? watchQuotes[t];
-              const move = q?.changePercent ?? null;
-              return (
-                <li
-                  key={t}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-sm text-zinc-200"
-                >
-                  <span className="font-medium text-white">{t}</span>
-                  <span className="flex items-center gap-2.5">
-                    {q ? (
-                      <>
-                        <span className="tabular-nums text-zinc-300">
-                          {currency(q.price)}
-                        </span>
-                        <span
-                          className={cn(
-                            "tabular-nums text-xs font-medium",
-                            move == null
-                              ? "text-zinc-600"
-                              : move > 0
-                                ? "text-gain"
-                                : move < 0
-                                  ? "text-loss"
-                                  : "text-zinc-500"
-                          )}
-                        >
-                          {move != null ? percent(move) : "—"}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-xs text-zinc-600">loading …</span>
-                    )}
-                    {!guest && (
-                      <button
-                        type="button"
-                        className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800/60 hover:text-rose-300"
-                        onClick={() =>
-                          setWatchlist((prev) => removeWatchlistTicker(prev, t))
-                        }
-                        aria-label={`Remove ${t}`}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-            {watchlist.length === 0 && (
-              <li className="text-sm text-zinc-500">
-                Empty. Add tickers you’re curious about.
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-
       {tab === "risk" && (
         <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -933,263 +679,6 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "season" && (
-        <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-white">
-            <span className="inline-flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-brand" /> CC income
-            </span>
-            {scopedCcRows.some((r) => r.premium == null && r.contracts > 0) && (
-              <span className="text-[11px] font-normal text-zinc-500">
-                Scanning option premiums …
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-zinc-500">
-            {ccSeason.label} · soft target ~1% of equity (booked premium + 35% of
-            open modeled prem). One-tap Log premium below books the fill into
-            Cashflow.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-zinc-800 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                Booked
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-white">
-                {currency(ccSeason.bookedPremium)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-zinc-800 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                Open modeled
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-brand-bright">
-                {currency(ccSeason.openPremium)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-zinc-800 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                Target
-              </p>
-              <p className="text-lg font-semibold tabular-nums text-zinc-100">
-                {currency(ccSeason.target)}
-              </p>
-            </div>
-          </div>
-          <div>
-            <div className="mb-1 flex justify-between text-xs text-zinc-500">
-              <span>Season meter</span>
-              <span className="tabular-nums">
-                {Math.round(ccSeason.progress * 100)}%
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
-              <div
-                className="h-full rounded-full bg-brand"
-                style={{
-                  width: `${Math.min(100, ccSeason.progress * 100)}%`,
-                }}
-              />
-            </div>
-          </div>
-
-          {logFlash && (
-            <p className="text-xs text-brand-bright">{logFlash}</p>
-          )}
-          {ccByExpiry.length === 0 ? (
-            <p className="text-sm text-zinc-500">
-              No covered-call rows yet. Add holdings with enough shares for
-              contracts.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {ccByExpiry.map(([exp, rows]) => {
-                const prem = rows.reduce((s, r) => s + (r.premium ?? 0), 0);
-                const missing = rows.some(
-                  (r) => r.premium == null && r.contracts > 0
-                );
-                return (
-                  <div
-                    key={exp}
-                    className="rounded-lg border border-zinc-800 px-3 py-2"
-                  >
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-white">
-                        {exp === "—" ? "Awaiting expiry (options scan)" : exp}
-                      </span>
-                      <span className="tabular-nums text-brand-bright">
-                        {missing && prem === 0
-                          ? "…"
-                          : `~${currency(prem)} prem`}
-                      </span>
-                    </div>
-                    <ul className="mt-2 space-y-1.5 text-xs text-zinc-500">
-                      {rows.map((r) => {
-                        const logged =
-                          r.premium != null &&
-                          alreadyLoggedPremium(
-                            cashflows,
-                            r.holding.ticker,
-                            r.premium,
-                            exp
-                          );
-                        return (
-                          <li
-                            key={r.holding.id}
-                            className="flex flex-wrap items-center justify-between gap-2"
-                          >
-                            <span>
-                              {r.holding.ticker}
-                              {r.nextStrike != null
-                                ? ` · strike ${currency(r.nextStrike)}`
-                                : ""}
-                              {r.contracts > 0
-                                ? ` · ${r.contracts} ct`
-                                : " · <100 sh"}
-                            </span>
-                            <span className="inline-flex items-center gap-2">
-                              <span className="tabular-nums text-zinc-300">
-                                {r.premium != null
-                                  ? currency(r.premium)
-                                  : r.contracts > 0
-                                    ? "…"
-                                    : "—"}
-                              </span>
-                              {!guest &&
-                                r.premium != null &&
-                                r.premium > 0 && (
-                                  <button
-                                    type="button"
-                                    disabled={logged}
-                                    onClick={() => logRowPremium(r, exp)}
-                                    className="rounded border border-brand/40 px-1.5 py-0.5 text-[11px] font-medium text-brand-bright hover:bg-brand/15 disabled:cursor-default disabled:border-zinc-700 disabled:text-zinc-600"
-                                  >
-                                    {logged ? "Logged" : "Log premium"}
-                                  </button>
-                                )}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "cashflow" && (
-        <div className="space-y-3 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-          <div className="grid gap-2 text-sm sm:grid-cols-2">
-            <p className="text-zinc-300">
-              Trailing 12m income (div + premium):{" "}
-              <span className="font-semibold text-white">
-                {currency(trailingIncome(cashflows))}
-              </span>
-            </p>
-            <p className="text-zinc-300">
-              Net cash moves (12m):{" "}
-              <span className="font-semibold text-white">
-                {currency(netCashMoves(cashflows))}
-              </span>
-            </p>
-          </div>
-          {!guest && (
-            <div className="flex flex-wrap gap-2">
-              <FormattedNumberInput
-                kind="money"
-                currency="USD"
-                digits={2}
-                value={cfAmount}
-                onChange={setCfAmount}
-                className="w-36 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              <input
-                value={cfTicker}
-                onChange={(e) => setCfTicker(e.target.value.toUpperCase())}
-                placeholder="Ticker (opt)"
-                className="w-28 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              <input
-                value={cfNote}
-                onChange={(e) => setCfNote(e.target.value)}
-                placeholder="Note"
-                className="min-w-[8rem] flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white"
-              />
-              {(
-                [
-                  ["premium", "Premium"],
-                  ["dividend", "Dividend"],
-                  ["deposit", "Deposit"],
-                  ["withdrawal", "Withdrawal"],
-                ] as const
-              ).map(([kind, label]) => (
-                <button
-                  key={kind}
-                  type="button"
-                  className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300"
-                  onClick={() => {
-                    if (!(cfAmount > 0)) return;
-                    onLabChange({
-                      cashflows: addCashflow(cashflows, {
-                        kind,
-                        amount: cfAmount,
-                        ticker: cfTicker || undefined,
-                        note: cfNote || label,
-                      }),
-                    });
-                    setCfAmount(0);
-                    setCfNote("");
-                  }}
-                >
-                  + {label}
-                </button>
-              ))}
-            </div>
-          )}
-          <ul className="space-y-1 text-sm text-zinc-400">
-            {cashflows.slice(0, 30).map((e: CashflowEntry) => (
-              <li
-                key={e.id}
-                className="flex items-center justify-between gap-2 border-b border-zinc-900 py-1"
-              >
-                <span>
-                  {e.kind}
-                  {e.ticker ? ` · ${e.ticker}` : ""} · {e.note}
-                  <span className="ml-2 text-[11px] text-zinc-600">
-                    {new Date(e.at).toLocaleDateString()}
-                  </span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="tabular-nums text-zinc-200">
-                    {currency(e.amount)}
-                  </span>
-                  {!guest && (
-                    <button
-                      type="button"
-                      aria-label="Delete cashflow"
-                      className="rounded p-3.5 text-zinc-600 hover:bg-zinc-800 hover:text-rose-300 sm:p-1"
-                      onClick={() =>
-                        onLabChange({
-                          cashflows: removeCashflow(cashflows, e.id),
-                        })
-                      }
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </span>
-              </li>
-            ))}
-            {cashflows.length === 0 && (
-              <li className="text-zinc-500">No cashflows logged yet.</li>
-            )}
-          </ul>
-        </div>
-      )}
-
       {tab === "risk" && (
         <div className="space-y-4 rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
           <p className="text-sm font-semibold text-white">
@@ -1278,124 +767,7 @@ export function LabSheet({
           )}
         </div>
       )}
-
-      {tab === "alerts" && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-white">
-              <Target className="h-4 w-4 text-brand" /> Alerts
-            </div>
-            <p className="mb-3 text-xs text-zinc-500">
-              Things that may need a decision. Tap Dismiss when you’ve handled it
-              (or decided to ignore it).
-            </p>
-            {alerts.length === 0 ? (
-              <p className="text-sm text-zinc-500">
-                Quiet. No earnings ≤7d or strikes under pressure
-                {dismissedAlertIds?.size ? " (some dismissed)" : ""}.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {alerts.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-start justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-950/20 px-3 py-2"
-                  >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <AlertKindBadge kind={a.kind} />
-                        <p className="text-sm font-medium text-amber-100">
-                          {a.title}
-                        </p>
-                      </div>
-                      <p className="mt-0.5 text-xs text-amber-200/70">{a.detail}</p>
-                    </div>
-                    {onDismissAlert && !guest && (
-                      <button
-                        type="button"
-                        className="shrink-0 rounded px-2 py-1 text-[11px] text-amber-200/60 hover:bg-amber-900/40 hover:text-amber-100"
-                        onClick={() => onDismissAlert(a.id)}
-                      >
-                        Dismiss
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-white">Weekly postcard</p>
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(recap);
-                  setCopied(true);
-                  window.setTimeout(() => setCopied(false), 1500);
-                }}
-              >
-                <Copy className="h-3 w-3" />
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <pre className="whitespace-pre-wrap rounded-lg bg-zinc-950/80 px-3 py-3 text-sm leading-relaxed text-zinc-300">
-              {recap}
-            </pre>
-            {(badges.length > 0 || myBadges.length > 0) && (
-              <div className="mt-4">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  Badges
-                </p>
-                <ul className="flex flex-wrap gap-2">
-                  {badges.map((b) => (
-                    <li
-                      key={b.id}
-                      className="rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1 text-xs text-brand-bright"
-                      title={b.earnedAt}
-                    >
-                      {b.label}
-                    </li>
-                  ))}
-                  {myBadges.map((b) => (
-                    <li
-                      key={b.id}
-                      className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200"
-                      title={b.detail}
-                    >
-                      {b.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
-  );
-}
-
-function AlertKindBadge({ kind }: { kind: UpsideAlert["kind"] }) {
-  const meta = {
-    earnings: { label: "Earnings", icon: CalendarDays, cls: "text-violet-300" },
-    strike: { label: "Strike", icon: Target, cls: "text-sky-300" },
-    goal: { label: "Milestone", icon: Trophy, cls: "text-amber-300" },
-    info: { label: "Decision", icon: Info, cls: "text-zinc-300" },
-  }[kind];
-  const Icon = meta.icon;
-  return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1 rounded-md bg-black/20 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
-        meta.cls
-      )}
-    >
-      <Icon className="h-3 w-3" />
-      {meta.label}
-    </span>
   );
 }
 

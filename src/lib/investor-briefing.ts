@@ -8,7 +8,6 @@ import { buildPortfolioPersonality, THEME_LABEL } from "@/lib/portfolio-personal
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 
 export type BriefingLink =
-  | { type: "lab"; tab: "alerts" | "season" }
   | { type: "pulse" }
   | { type: "sheet"; portfolioId: string }
   | { type: "compound" };
@@ -176,7 +175,7 @@ export function buildInvestorBriefing(input: {
   canReachLab?: boolean;
 }): BriefingItem[] {
   const dayKey = input.dayKey ?? todayKeyInTz();
-  const { model, activeAlerts, coveredCallRows, cashflows } = input;
+  const { model, activeAlerts, coveredCallRows } = input;
   const hideOptions = Boolean(input.hideOptions);
   const canReachLab = input.canReachLab ?? true;
   const items: BriefingItem[] = [];
@@ -202,7 +201,11 @@ export function buildInvestorBriefing(input: {
     cta: canReachLab ? "Thesis pulse →" : undefined,
   });
 
-  if (activeAlerts.length > 0 && canReachLab) {
+  // Lab's Alerts tab is gone, so this card is the only place earnings,
+  // strike, margin and concentration warnings surface. It carries the
+  // detail inline and is shown to everyone rather than being gated on
+  // reaching Lab, which would have hidden alerts from novices entirely.
+  if (activeAlerts.length > 0) {
     const top = activeAlerts[0]!;
     items.push({
       id: `alerts-${dayKey}`,
@@ -219,51 +222,27 @@ export function buildInvestorBriefing(input: {
               .map((a) => a.title)
               .join(" · "),
       ticker: top.ticker,
-      link: { type: "lab", tab: "alerts" },
-      cta: "Open Alerts →",
     });
   }
 
-  // Covered-call premium tracking is pure options mechanics — hard-removed
-  // for no-options viewers, and pointless to show if Lab (where you'd
-  // actually log a fill) isn't reachable either.
-  if (!hideOptions && canReachLab) {
+  // Open covered-call premium, as a plain read. The nudge to "log the
+  // fill" that used to live here pointed at Lab's CC income and Cashflow
+  // tabs, both of which are gone, so there is nowhere to log a premium and
+  // no honest CTA to offer.
+  if (!hideOptions) {
     const openPrem = coveredCallRows.reduce((s, r) => s + (r.premium ?? 0), 0);
-    const monthPrem = cashflows
-      .filter((c) => {
-        if (c.kind !== "premium") return false;
-        const d = new Date(c.at);
-        const now = new Date();
-        return (
-          d.getUTCFullYear() === now.getUTCFullYear() &&
-          d.getUTCMonth() === now.getUTCMonth()
-        );
-      })
-      .reduce((s, c) => s + c.amount, 0);
-
-    if (openPrem > 0 || monthPrem > 0) {
+    if (openPrem > 0) {
       const rng = mulberry32(
-        hashSeed(`upside-briefing-cc|${Math.round(openPrem)}|${Math.round(monthPrem)}`)
+        hashSeed(`upside-briefing-cc|${Math.round(openPrem)}`)
       );
       items.push({
         id: `cc-season-${dayKey}`,
         kind: "watch",
-        title:
-          monthPrem > 0
-            ? `$${money(monthPrem)} premium booked this month`
-            : `~$${money(openPrem)} open CC premium modeled`,
-        detail:
-          openPrem > 0
-            ? pick(rng, [
-                "When you actually fill a call, tap Log premium on the CC income tab so the season meter counts it.",
-                "Modeled, not banked yet. Log the fill when it actually happens so the season meter matches reality.",
-              ])
-            : pick(rng, [
-                "Premium already logged in Cashflow. Season meter is current.",
-                "That's real, logged premium, the season meter already reflects it.",
-              ]),
-        link: { type: "lab", tab: "season" },
-        cta: openPrem > 0 ? "Log premium →" : "CC income →",
+        title: `~$${money(openPrem)} open CC premium modeled`,
+        detail: pick(rng, [
+          "Modeled on your current strikes, not money in the account yet.",
+          "That's what the open calls are worth on paper if they run to expiry.",
+        ]),
       });
     }
   }
