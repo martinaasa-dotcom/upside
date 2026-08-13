@@ -2499,12 +2499,20 @@ export function Dashboard() {
               onClick={() => setActiveId(OVERVIEW_TAB_ID)}
               title="Upside: go to Overview"
             />
+            {/* Same slot as every other page (Communities, Fund, Account,
+              * Admin) put it in. It used to live in the right-hand action
+              * cluster here and on the left everywhere else, so the primary
+              * nav swapped sides the moment you left My book. */}
+            {source === "supabase" && <WorkspaceSwitcher />}
             <span
               className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
               aria-hidden
             />
+            {/* Hidden on phones so the switcher (which collapses to icons
+              * there) has room. Nothing is lost: the sticky mobile summary
+              * bar already names the active sheet. */}
             <h1
-              className="min-w-0 truncate font-medium leading-none tracking-tight text-zinc-300"
+              className="hidden min-w-0 truncate font-medium leading-none tracking-tight text-zinc-300 sm:block"
               title={
                 source === "supabase"
                   ? "My book"
@@ -2523,9 +2531,6 @@ export function Dashboard() {
             </h1>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5">
-            {source === "supabase" && (
-              <WorkspaceSwitcher className="mr-0.5" />
-            )}
             <button
               type="button"
               onClick={() => {

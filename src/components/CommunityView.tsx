@@ -960,10 +960,16 @@ export function CommunityView({ communityId }: Props) {
     <SignInGate>
       <div className="min-h-dvh bg-[#121214] text-zinc-100">
         <header className="sticky top-0 z-40 border-b border-brand-deep/25 bg-[#121214]/95 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-            <HeaderBrand />
-            <WorkspaceSwitcher className="hidden sm:inline-flex" />
-            <div className="mx-auto flex min-w-0 items-center gap-2 sm:mx-0 sm:ml-auto">
+          {/* Stacks on phones so the workspace nav can stay visible here
+            * too. Side by side, the community name plus the admin gear left
+            * no room for it, which is why this page used to be the one
+            * place the nav vanished on mobile. */}
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex items-center gap-3">
+              <HeaderBrand />
+              <WorkspaceSwitcher />
+            </div>
+            <div className="flex min-w-0 items-center gap-2 sm:ml-auto">
               <Users className="hidden h-4 w-4 shrink-0 text-brand-bright/80 sm:block" />
               <span className="truncate text-sm font-medium">
                 {community?.name ?? "Community"}
