@@ -93,9 +93,14 @@ type Props = {
 };
 
 /** Default instruction sent with a screenshot import — same for both the
- * silent (picker) and interactive (typed-in-chat) paths. */
+ * silent (picker) and interactive (typed-in-chat) paths. Phrased as a
+ * standing command rather than relying purely on the API's tool_choice
+ * param — some providers in the fallback chain don't reliably honor a
+ * forced tool choice and will just describe the image in prose instead,
+ * so the prompt itself has to make "call the tool, don't just narrate"
+ * unambiguous. */
 const DEFAULT_SCREENSHOT_PROMPT =
-  "Read this broker screenshot carefully. If it is a single ticker (Shares + Avg buy), call addHolding with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call importSheet for every row. Then confirm what you saved.";
+  "Read this broker screenshot carefully, then take action — do not just describe it. If it is a single ticker (Shares + Avg buy), call the addHolding tool with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call the importSheet tool for every row. You must call one of these tools before replying; only after that, briefly confirm what you saved.";
 
 type ToolPart = {
   type: string;
@@ -126,10 +131,17 @@ function extractImages(
 }
 
 /** Shared with the silent-import status card so the two surfaces never
- * disagree on what a given error means. */
+ * disagree on what a given error means. Mirrors describeAdvisorError's
+ * provider-agnostic framing server-side — this used to hardcode
+ * OpenRouter specifically, which was actively misleading once Groq/
+ * Gemini/Cerebras fallbacks existed (it'd tell you to add a key you
+ * already have while the real issue was a different provider). */
 function describeChatUiError(message: string): string {
-  if (/OPENROUTER|GROQ|API key|503|LLM/i.test(message)) {
-    return "Add OPENROUTER_API_KEY to .env.local (https://openrouter.ai/keys), then restart the dev server.";
+  if (/free-models-per-day|models-per-day/i.test(message)) {
+    return "OpenRouter's free daily quota is used up for today. Add a Groq/Gemini/Cerebras free key for a fallback, or try again after it resets.";
+  }
+  if (/OPENROUTER|GROQ|GEMINI|CEREBRAS|API key|503|LLM/i.test(message)) {
+    return "Every configured AI provider failed or is rate-limited right now — wait a bit and try again, or add another free provider key (Groq/Gemini/Cerebras) in .env.local for a fallback.";
   }
   if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(message)) {
     return "Connection dropped (dev server restart or a long reply). Refresh the page and try again.";
@@ -585,7 +597,14 @@ export function CcAdvisorChat({
     if (toolNotes.length > 0) {
       setSilentSummary({ kind: "ok", lines: toolNotes });
     } else if (text) {
-      setSilentSummary({ kind: "info", lines: [text] });
+      // A screenshot import always asks for a forced tool call — text with
+      // no tool call means nothing was actually saved, even though the
+      // model answered normally (some providers in the fallback chain
+      // don't reliably honor a forced tool choice and just narrate the
+      // image instead). Flag it like "empty" so it reads as "this didn't
+      // work" rather than a neutral update, while still showing what
+      // Margus actually said.
+      setSilentSummary({ kind: "empty", lines: [text] });
     } else {
       setSilentSummary({
         kind: "empty",

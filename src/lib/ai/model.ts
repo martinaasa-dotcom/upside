@@ -255,6 +255,12 @@ const streamingProviderCache = new Map<
   { candidate: AdvisorProviderCandidate; at: number }
 >();
 const STREAMING_PROVIDER_CACHE_TTL_MS = 5 * 60 * 1000;
+// Vision requests (screenshot import) are rare enough that re-probing every
+// time is cheap, and a free vision model going degraded/rate-limited
+// upstream mid-window is common enough that trusting a 5-minute-old "this
+// one works" verdict risks silently eating a real user action (add this
+// holding) rather than just costing an extra second on a chat reply.
+const VISION_STREAMING_PROVIDER_CACHE_TTL_MS = 30 * 1000;
 
 export async function pickStreamingProvider(
   chain: AdvisorProviderCandidate[],
@@ -269,10 +275,13 @@ export async function pickStreamingProvider(
   // today (single provider configured) case pays zero extra latency.
   if (chain.length === 1) return chain[0]!;
 
+  const ttl = cacheKey.includes("vision")
+    ? VISION_STREAMING_PROVIDER_CACHE_TTL_MS
+    : STREAMING_PROVIDER_CACHE_TTL_MS;
   const cached = streamingProviderCache.get(cacheKey);
   if (
     cached &&
-    Date.now() - cached.at < STREAMING_PROVIDER_CACHE_TTL_MS &&
+    Date.now() - cached.at < ttl &&
     chain.some((c) => c.id === cached.candidate.id)
   ) {
     return cached.candidate;
