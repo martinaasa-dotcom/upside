@@ -11,14 +11,28 @@ import {
   loadCommunityCache,
   saveCommunityCache,
 } from "@/lib/community-cache";
-import { buildPortfolioPersonality } from "@/lib/portfolio-personality";
+import {
+  buildPortfolioPersonality,
+  type PortfolioPersonality,
+} from "@/lib/portfolio-personality";
+import { buildCommunityFunFacts } from "@/lib/community-fun-facts";
+import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
+import { todayKeyInTz } from "@/lib/timezone";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import {
   ArrowLeft,
   Check,
   Copy,
+  Gauge,
+  LayoutGrid,
+  Lightbulb,
   Link2,
+  Medal,
   Shield,
+  Shuffle,
+  Sparkles,
+  Target,
+  Trophy,
   UserMinus,
   Users,
 } from "lucide-react";
@@ -136,6 +150,13 @@ export function CommunityView({ communityId }: Props) {
       ? null
       : new URLSearchParams(window.location.search).get("portfolio")
   );
+  const [view, setView] = useState<"overview" | "members">(() =>
+    typeof window === "undefined"
+      ? "overview"
+      : new URLSearchParams(window.location.search).get("view") === "members"
+        ? "members"
+        : "overview"
+  );
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -223,6 +244,7 @@ export function CommunityView({ communityId }: Props) {
       const params = new URLSearchParams(window.location.search);
       setSelectedOwnerId(params.get("member"));
       setSelectedPortfolioId(params.get("portfolio"));
+      setView(params.get("view") === "members" ? "members" : "overview");
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -235,6 +257,8 @@ export function CommunityView({ communityId }: Props) {
     else url.searchParams.delete("member");
     if (selectedPortfolioId) url.searchParams.set("portfolio", selectedPortfolioId);
     else url.searchParams.delete("portfolio");
+    if (view === "members") url.searchParams.set("view", "members");
+    else url.searchParams.delete("view");
     const href = `${url.pathname}${url.search}`;
 
     if (!bootstrappedRef.current) {
@@ -248,7 +272,7 @@ export function CommunityView({ communityId }: Props) {
       return;
     }
     window.history.pushState(null, "", href);
-  }, [selectedOwnerId, selectedPortfolioId]);
+  }, [selectedOwnerId, selectedPortfolioId, view]);
 
   // A ?member=/?portfolio= link can go stale (member left, sheet deleted) or
   // just be wrong — once real data is in, drop selections that don't
@@ -331,6 +355,123 @@ export function CommunityView({ communityId }: Props) {
   const overview = useMemo(
     () => buildOverview(portfolios, holdings, quotes),
     [portfolios, holdings, quotes]
+  );
+
+  // One combined per-person stat, computed once and reused by the power
+  // animals grid, leaderboard, risk comparison, and fun facts — instead of
+  // each section re-deriving its own copy of "which sheets does this
+  // person own".
+  type MemberStat = {
+    id: string;
+    name: string;
+    isYou: boolean;
+    isPending: boolean;
+    sheetCount: number;
+    totalValue: number;
+    todayDollar: number;
+    todayPct: number | null;
+    roiPct: number;
+    personality: PortfolioPersonality | null;
+  };
+  const memberStats = useMemo<MemberStat[]>(() => {
+    const statFor = (
+      id: string,
+      name: string,
+      sheetIds: Set<string>,
+      isYou: boolean,
+      isPending: boolean
+    ): MemberStat => {
+      const sheets = portfolios.filter((p) => sheetIds.has(p.id));
+      const scores = sheets
+        .map((p) => overview.sheets.find((s) => s.portfolio.id === p.id))
+        .filter((s): s is (typeof overview.sheets)[number] => Boolean(s));
+      const totalValue = scores.reduce((s, sc) => s + sc.totalValue, 0);
+      const todayDollar = scores.reduce((s, sc) => s + sc.todayDollar, 0);
+      const buyValue = scores.reduce((s, sc) => s + sc.buyValue, 0);
+      const roiDollar = scores.reduce((s, sc) => s + sc.roiDollar, 0);
+      const roiPct = buyValue > 0 ? roiDollar / buyValue : 0;
+      const previousTotal = totalValue - todayDollar;
+      const todayPct = previousTotal > 0 ? todayDollar / previousTotal : null;
+      const tickerValues = holdings
+        .filter((h) => sheetIds.has(h.portfolio_id))
+        .map((h) => ({
+          ticker: h.ticker,
+          value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
+        }));
+      const personality =
+        tickerValues.length > 0 ? buildPortfolioPersonality(tickerValues) : null;
+      return {
+        id,
+        name,
+        isYou,
+        isPending,
+        sheetCount: sheets.length,
+        totalValue,
+        todayDollar,
+        todayPct,
+        roiPct,
+        personality,
+      };
+    };
+
+    const list: MemberStat[] = members.map((m) => {
+      const sheetIds = new Set(
+        ownership.filter((o) => o.user_id === m.user_id).map((o) => o.portfolio_id)
+      );
+      return statFor(
+        m.user_id,
+        profileName(m.user_id),
+        sheetIds,
+        Boolean(m.is_you),
+        false
+      );
+    });
+    for (const p of pendingMembers) {
+      const sheetIds = new Set(p.portfolio_ids);
+      list.push(statFor(`pending:${p.key}`, p.label, sheetIds, false, true));
+    }
+    return list;
+  }, [members, pendingMembers, ownership, portfolios, overview, holdings, quotes, profileName]);
+
+  const membersWithBooks = useMemo(
+    () => memberStats.filter((m) => m.sheetCount > 0),
+    [memberStats]
+  );
+
+  const communityMilestones = useMemo(() => {
+    const total = overview.totals.totalValue;
+    const hitCount = COMPOUND_MILESTONE_GOALS.filter((g) => total >= g).length;
+    const next = COMPOUND_MILESTONE_GOALS.find((g) => total < g) ?? null;
+    const lastGoal =
+      [...COMPOUND_MILESTONE_GOALS].reverse().find((g) => total >= g) ?? 0;
+    // Progress WITHIN the current bracket (lastGoal -> next), so the bar
+    // fill actually lines up with the lastGoal/next labels shown below it
+    // instead of always reading against zero.
+    const bracketSize = next != null ? next - lastGoal : 1;
+    const progress =
+      next != null && bracketSize > 0
+        ? Math.min(1, (total - lastGoal) / bracketSize)
+        : 1;
+    return {
+      total,
+      hitCount,
+      goalCount: COMPOUND_MILESTONE_GOALS.length,
+      next,
+      remaining: next != null ? next - total : 0,
+      progress,
+      lastGoal,
+    };
+  }, [overview.totals.totalValue]);
+
+  const [funFactsShuffle, setFunFactsShuffle] = useState(0);
+  const communityFunFacts = useMemo(
+    () =>
+      buildCommunityFunFacts(
+        membersWithBooks,
+        funFactsShuffle === 0 ? todayKeyInTz() : `shuffle-${funFactsShuffle}`,
+        6
+      ),
+    [membersWithBooks, funFactsShuffle]
   );
 
   const selectedPortfolio = selectedPortfolioId
@@ -468,300 +609,614 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               </section>
 
-              {overview.topHoldings.length > 0 && (
-                <section className="space-y-3">
-                  <h2 className="text-sm font-medium text-zinc-200">
-                    What the community is holding
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {overview.topHoldings.slice(0, 10).map((t) => (
-                      <div
-                        key={t.ticker}
-                        className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2"
-                      >
-                        <span className="text-sm font-semibold text-white">
-                          {t.ticker}
-                        </span>
-                        <span className="text-xs text-zinc-500">
-                          {currency(t.currentValue, 0)}
-                        </span>
-                        {t.todayPct != null && (
-                          <span
-                            className={cn(
-                              "text-xs tabular-nums",
-                              t.todayPct >= 0 ? "text-emerald-400" : "text-red-400"
-                            )}
-                          >
-                            {percent(t.todayPct)}
-                          </span>
-                        )}
-                        {t.portfolios.length > 1 && (
-                          <span
-                            className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright"
-                            title={`Held in ${t.portfolios.join(", ")}`}
-                          >
-                            ×{t.portfolios.length} books
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+              <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 w-fit">
+                {(
+                  [
+                    ["overview", "Overview", LayoutGrid],
+                    ["members", "Members", Users],
+                  ] as const
+                ).map(([id, label, Icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setView(id)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition",
+                      view === id
+                        ? "bg-brand/20 text-brand-bright"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-              <section className="space-y-3">
-                <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
-                  <Users className="h-4 w-4 text-zinc-500" />
-                  Members
-                </h2>
-                <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
-                  {members.map((m) => {
-                    const sheetIds = new Set(
-                      ownership
-                        .filter((o) => o.user_id === m.user_id)
-                        .map((o) => o.portfolio_id)
-                    );
-                    const sheets = portfolios.filter((p) => sheetIds.has(p.id));
-                    const sheetValue = sheets.reduce((sum, p) => {
-                      const score = overview.sheets.find(
-                        (s) => s.portfolio.id === p.id
-                      );
-                      return sum + (score?.totalValue ?? 0);
-                    }, 0);
-                    const sheetToday = sheets.reduce((sum, p) => {
-                      const score = overview.sheets.find(
-                        (s) => s.portfolio.id === p.id
-                      );
-                      return sum + (score?.todayDollar ?? 0);
-                    }, 0);
-                    const memberTickerValues = holdings
-                      .filter((h) => sheetIds.has(h.portfolio_id))
-                      .map((h) => ({
-                        ticker: h.ticker,
-                        value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
-                      }));
-                    const personality =
-                      memberTickerValues.length > 0
-                        ? buildPortfolioPersonality(memberTickerValues)
-                        : null;
-                    const emails = memberEmails(m);
-                    return (
-                      <li
-                        key={m.user_id}
-                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedOwnerId(m.user_id);
-                            setSelectedPortfolioId(null);
-                          }}
-                          className="text-left"
-                        >
-                          <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
-                            {profileName(m.user_id)}
-                            {m.is_you && (
-                              <span className="text-xs text-zinc-500">(you)</span>
-                            )}
-                            {personality && (
+              {view === "overview" && (
+                <>
+                  <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+                          <Target className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            Family milestone tracker
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            {communityMilestones.hitCount} of{" "}
+                            {communityMilestones.goalCount} cleared, combined
+                          </p>
+                        </div>
+                      </div>
+                      {communityMilestones.next != null && (
+                        <p className="text-sm text-zinc-300">
+                          Next: <span className="font-semibold text-white">
+                            {currency(communityMilestones.next, 0)}
+                          </span>
+                          <span className="text-zinc-500">
+                            {" "}
+                            · {currency(communityMilestones.remaining, 0)} to go
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-zinc-900">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand to-brand-bright transition-all"
+                        style={{
+                          width: `${Math.round(communityMilestones.progress * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-2 flex justify-between text-xs text-zinc-500">
+                      <span>{currency(communityMilestones.lastGoal, 0)}</span>
+                      <span className="tabular-nums text-brand-bright">
+                        {currency(communityMilestones.total, 0)}
+                      </span>
+                      <span>
+                        {communityMilestones.next != null
+                          ? currency(communityMilestones.next, 0)
+                          : "🎉 all cleared"}
+                      </span>
+                    </div>
+                  </section>
+
+                  {membersWithBooks.length > 0 && (
+                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                      <div className="mb-5 flex items-center gap-2.5">
+                        <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
+                          <Sparkles className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            Power animals
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            Diversification + risk, turned into a spirit animal
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {membersWithBooks.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedOwnerId(m.id);
+                              setSelectedPortfolioId(null);
+                            }}
+                            className="flex items-start gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-3.5 text-left transition hover:border-brand/40"
+                          >
+                            <span className="text-3xl" aria-hidden>
+                              {m.personality?.animalEmoji ?? "❔"}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {m.name}
+                                {m.isYou && (
+                                  <span className="ml-1.5 text-xs font-normal text-zinc-500">
+                                    (you)
+                                  </span>
+                                )}
+                                {m.isPending && (
+                                  <span className="ml-1.5 text-xs font-normal text-amber-500/90">
+                                    awaiting sign-in
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-xs font-medium text-brand-bright">
+                                {m.personality?.animal ?? "No book yet"}
+                              </p>
+                              {m.personality && (
+                                <div className="mt-2 space-y-1">
+                                  <MiniBar
+                                    label="Diversified"
+                                    value={m.personality.diversificationScore}
+                                    color="#38bdf8"
+                                  />
+                                  <MiniBar
+                                    label="Risk"
+                                    value={m.personality.riskScore}
+                                    color="#f472b6"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {membersWithBooks.length > 0 && (
+                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                      <div className="mb-4 flex items-center gap-2.5">
+                        <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
+                          <Trophy className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            Today&apos;s leaderboard
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            Ranked by today&apos;s move
+                          </p>
+                        </div>
+                      </div>
+                      <ul className="space-y-2">
+                        {[...membersWithBooks]
+                          .sort((a, b) => (b.todayPct ?? -1) - (a.todayPct ?? -1))
+                          .map((m, i) => (
+                            <li
+                              key={m.id}
+                              className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-2.5"
+                            >
+                              <span className="w-6 shrink-0 text-center">
+                                {i === 0 ? (
+                                  <Medal className="mx-auto h-4 w-4 text-amber-400" />
+                                ) : i === 1 ? (
+                                  <Medal className="mx-auto h-4 w-4 text-zinc-400" />
+                                ) : i === 2 ? (
+                                  <Medal className="mx-auto h-4 w-4 text-amber-700" />
+                                ) : (
+                                  <span className="text-xs text-zinc-600">
+                                    {i + 1}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
+                                {m.name}
+                                {m.isYou && (
+                                  <span className="ml-1.5 text-xs text-zinc-500">
+                                    (you)
+                                  </span>
+                                )}
+                              </span>
                               <span
-                                className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
-                                title={`${personality.tagline} Diversification ${personality.diversificationScore}/100 · Risk ${personality.riskScore}/100.`}
+                                className={cn(
+                                  "shrink-0 text-sm font-semibold tabular-nums",
+                                  (m.todayDollar ?? 0) >= 0
+                                    ? "text-emerald-400"
+                                    : "text-red-400"
+                                )}
                               >
-                                <span aria-hidden>{personality.animalEmoji}</span>
-                                {personality.animal}
+                                {m.todayPct != null ? percent(m.todayPct) : "—"}
+                              </span>
+                              <span className="hidden shrink-0 text-xs tabular-nums text-zinc-500 sm:inline">
+                                {signedCurrency(m.todayDollar)}
+                              </span>
+                            </li>
+                          ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {overview.topHoldings.length > 0 && (
+                    <section className="space-y-3">
+                      <h2 className="text-sm font-medium text-zinc-200">
+                        What the community is holding
+                      </h2>
+                      <div className="flex flex-wrap gap-2">
+                        {overview.topHoldings.slice(0, 10).map((t) => (
+                          <div
+                            key={t.ticker}
+                            className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2"
+                          >
+                            <span className="text-sm font-semibold text-white">
+                              {t.ticker}
+                            </span>
+                            <span className="text-xs text-zinc-500">
+                              {currency(t.currentValue, 0)}
+                            </span>
+                            {t.todayPct != null && (
+                              <span
+                                className={cn(
+                                  "text-xs tabular-nums",
+                                  t.todayPct >= 0
+                                    ? "text-emerald-400"
+                                    : "text-red-400"
+                                )}
+                              >
+                                {percent(t.todayPct)}
+                              </span>
+                            )}
+                            {t.portfolios.length > 1 && (
+                              <span
+                                className="rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] font-medium text-brand-bright"
+                                title={`Held in ${t.portfolios.join(", ")}`}
+                              >
+                                ×{t.portfolios.length} books
                               </span>
                             )}
                           </div>
-                          {m.profile?.bio ? (
-                            <div className="text-xs text-zinc-400">
-                              {m.profile.bio}
-                            </div>
-                          ) : null}
-                          {emails.length > 1 ? (
-                            <div className="text-xs text-zinc-500">
-                              {emails.join(" · ")}
-                            </div>
-                          ) : null}
-                          <div className="text-xs text-zinc-500">
-                            {m.role}
-                            {" · "}
-                            {sheets.length} portfolio
-                            {sheets.length === 1 ? "" : "s"}
-                            {" · "}
-                            {currency(sheetValue)}
-                            {sheets.length > 0 && (
-                              <>
-                                {" · today "}
-                                <span
-                                  className={
-                                    sheetToday >= 0
-                                      ? "text-emerald-400"
-                                      : "text-red-400"
-                                  }
-                                >
-                                  {signedCurrency(sheetToday)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </button>
-                        {isAdmin && !m.is_you && (
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                void setRole(
-                                  m.user_id,
-                                  m.role === "admin" ? "member" : "admin"
-                                )
-                              }
-                              className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200"
-                            >
-                              <Shield className="h-3 w-3" />
-                              {m.role === "admin" ? "Demote" : "Make admin"}
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                setRemoveTarget({
-                                  userId: m.user_id,
-                                  name: profileName(m.user_id),
-                                })
-                              }
-                              className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-red-300"
-                            >
-                              <UserMinus className="h-3 w-3" />
-                              Remove
-                            </button>
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                  {pendingMembers.map((p) => {
-                    const sheets = portfolios.filter((x) =>
-                      p.portfolio_ids.includes(x.id)
-                    );
-                    const sheetValue = sheets.reduce((sum, sheet) => {
-                      const score = overview.sheets.find(
-                        (s) => s.portfolio.id === sheet.id
-                      );
-                      return sum + (score?.totalValue ?? 0);
-                    }, 0);
-                    const sheetToday = sheets.reduce((sum, sheet) => {
-                      const score = overview.sheets.find(
-                        (s) => s.portfolio.id === sheet.id
-                      );
-                      return sum + (score?.todayDollar ?? 0);
-                    }, 0);
-                    const ownerKey = `pending:${p.key}`;
-                    return (
-                      <li
-                        key={ownerKey}
-                        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedOwnerId(ownerKey);
-                            setSelectedPortfolioId(null);
-                          }}
-                          className="text-left"
-                        >
-                          <div className="text-sm font-medium text-zinc-100">
-                            {p.label}
-                            <span className="ml-2 text-xs font-normal text-amber-500/90">
-                              awaiting sign-in
-                            </span>
-                          </div>
-                          {p.emails.length ? (
-                            <div className="text-xs text-zinc-500">
-                              {p.emails.join(" · ")}
-                            </div>
-                          ) : null}
-                          <div className="text-xs text-zinc-500">
-                            {sheets.length} portfolio
-                            {sheets.length === 1 ? "" : "s"}
-                            {" · "}
-                            {currency(sheetValue)}
-                            {sheets.length > 0 && (
-                              <>
-                                {" · today "}
-                                <span
-                                  className={
-                                    sheetToday >= 0
-                                      ? "text-emerald-400"
-                                      : "text-red-400"
-                                  }
-                                >
-                                  {signedCurrency(sheetToday)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
-              {isAdmin && (
-                <section className="space-y-3 rounded-xl border border-zinc-800 p-4">
-                  <h2 className="text-sm font-medium text-zinc-200">
-                    Admin · invite
-                  </h2>
-                  <p className="text-xs text-zinc-500">
-                    Invites join the community; members share their whole book
-                    read-only.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="Email (optional)"
-                      className="min-w-[12rem] flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
-                    />
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void createInvite()}
-                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-                    >
-                      <Link2 className="h-3.5 w-3.5" />
-                      Create invite link
-                    </button>
-                  </div>
-                  {inviteUrl && (
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-900/50 bg-emerald-950/20 px-3 py-2">
-                      <p className="min-w-0 flex-1 break-all text-xs text-emerald-300/90">
-                        {inviteUrl}
-                      </p>
+                  {membersWithBooks.length > 0 && (
+                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                      <div className="mb-5 flex items-center gap-2.5">
+                        <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
+                          <Gauge className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            Risk &amp; diversification
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            Not advice — just a fun comparison of how each book
+                            is built
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {membersWithBooks
+                          .filter((m) => m.personality)
+                          .map((m) => (
+                            <div key={m.id} className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-medium text-zinc-200">
+                                  {m.personality?.animalEmoji} {m.name}
+                                </span>
+                                <span className="text-zinc-500">
+                                  Diversified {m.personality?.diversificationScore}{" "}
+                                  · Risk {m.personality?.riskScore}
+                                </span>
+                              </div>
+                              <MiniBar
+                                label="Diversified"
+                                value={m.personality?.diversificationScore ?? 0}
+                                color="#38bdf8"
+                                hideLabel
+                              />
+                              <MiniBar
+                                label="Risk"
+                                value={m.personality?.riskScore ?? 0}
+                                color="#f472b6"
+                                hideLabel
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    </section>
+                  )}
+
+                  <section className="overview-fade rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-7">
+                    <div className="mb-5 flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
+                          <Lightbulb className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            Community fun facts
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            {funFactsShuffle > 0
+                              ? "Shuffled — reload for the daily batch"
+                              : "New batch every day"}
+                          </p>
+                        </div>
+                      </div>
                       <button
                         type="button"
-                        onClick={async () => {
-                          await navigator.clipboard
-                            .writeText(inviteUrl)
-                            .catch(() => undefined);
-                          setInviteCopied(true);
-                          window.setTimeout(() => setInviteCopied(false), 1500);
-                        }}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-700/60 px-2 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-900/40"
+                        onClick={() => setFunFactsShuffle((n) => n + 1)}
+                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:border-amber-400/60 hover:bg-amber-500/10 active:scale-95"
+                        title="Get a fresh random batch"
                       >
-                        {inviteCopied ? (
-                          <Check className="h-3 w-3" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                        {inviteCopied ? "Copied" : "Copy"}
+                        <Shuffle className="h-3.5 w-3.5" />
+                        Shuffle
                       </button>
                     </div>
+                    <ul className="space-y-3">
+                      {communityFunFacts.length === 0 ? (
+                        <li className="text-sm text-zinc-500">
+                          Not enough data yet — check back once books load.
+                        </li>
+                      ) : (
+                        communityFunFacts.map((fact, i) => (
+                          <li
+                            key={`${i}-${fact.slice(0, 24)}`}
+                            className="rounded-2xl border border-zinc-800/70 bg-zinc-950/50 px-4 py-3.5 text-sm leading-relaxed text-zinc-200"
+                          >
+                            {fact}
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </section>
+                </>
+              )}
+
+              {view === "members" && (
+                <>
+                  <section className="space-y-3">
+                    <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
+                      <Users className="h-4 w-4 text-zinc-500" />
+                      Members
+                    </h2>
+                    <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
+                      {members.map((m) => {
+                        const sheetIds = new Set(
+                          ownership
+                            .filter((o) => o.user_id === m.user_id)
+                            .map((o) => o.portfolio_id)
+                        );
+                        const sheets = portfolios.filter((p) => sheetIds.has(p.id));
+                        const sheetValue = sheets.reduce((sum, p) => {
+                          const score = overview.sheets.find(
+                            (s) => s.portfolio.id === p.id
+                          );
+                          return sum + (score?.totalValue ?? 0);
+                        }, 0);
+                        const sheetToday = sheets.reduce((sum, p) => {
+                          const score = overview.sheets.find(
+                            (s) => s.portfolio.id === p.id
+                          );
+                          return sum + (score?.todayDollar ?? 0);
+                        }, 0);
+                        const memberTickerValues = holdings
+                          .filter((h) => sheetIds.has(h.portfolio_id))
+                          .map((h) => ({
+                            ticker: h.ticker,
+                            value:
+                              h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
+                          }));
+                        const personality =
+                          memberTickerValues.length > 0
+                            ? buildPortfolioPersonality(memberTickerValues)
+                            : null;
+                        const emails = memberEmails(m);
+                        return (
+                          <li
+                            key={m.user_id}
+                            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOwnerId(m.user_id);
+                                setSelectedPortfolioId(null);
+                              }}
+                              className="text-left"
+                            >
+                              <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
+                                {profileName(m.user_id)}
+                                {m.is_you && (
+                                  <span className="text-xs text-zinc-500">
+                                    (you)
+                                  </span>
+                                )}
+                                {personality && (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-bright"
+                                    title={`${personality.tagline} Diversification ${personality.diversificationScore}/100 · Risk ${personality.riskScore}/100.`}
+                                  >
+                                    <span aria-hidden>
+                                      {personality.animalEmoji}
+                                    </span>
+                                    {personality.animal}
+                                  </span>
+                                )}
+                              </div>
+                              {m.profile?.bio ? (
+                                <div className="text-xs text-zinc-400">
+                                  {m.profile.bio}
+                                </div>
+                              ) : null}
+                              {emails.length > 1 ? (
+                                <div className="text-xs text-zinc-500">
+                                  {emails.join(" · ")}
+                                </div>
+                              ) : null}
+                              <div className="text-xs text-zinc-500">
+                                {m.role}
+                                {" · "}
+                                {sheets.length} portfolio
+                                {sheets.length === 1 ? "" : "s"}
+                                {" · "}
+                                {currency(sheetValue)}
+                                {sheets.length > 0 && (
+                                  <>
+                                    {" · today "}
+                                    <span
+                                      className={
+                                        sheetToday >= 0
+                                          ? "text-emerald-400"
+                                          : "text-red-400"
+                                      }
+                                    >
+                                      {signedCurrency(sheetToday)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                            {isAdmin && !m.is_you && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void setRole(
+                                      m.user_id,
+                                      m.role === "admin" ? "member" : "admin"
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200"
+                                >
+                                  <Shield className="h-3 w-3" />
+                                  {m.role === "admin" ? "Demote" : "Make admin"}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    setRemoveTarget({
+                                      userId: m.user_id,
+                                      name: profileName(m.user_id),
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-red-300"
+                                >
+                                  <UserMinus className="h-3 w-3" />
+                                  Remove
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                      {pendingMembers.map((p) => {
+                        const sheets = portfolios.filter((x) =>
+                          p.portfolio_ids.includes(x.id)
+                        );
+                        const sheetValue = sheets.reduce((sum, sheet) => {
+                          const score = overview.sheets.find(
+                            (s) => s.portfolio.id === sheet.id
+                          );
+                          return sum + (score?.totalValue ?? 0);
+                        }, 0);
+                        const sheetToday = sheets.reduce((sum, sheet) => {
+                          const score = overview.sheets.find(
+                            (s) => s.portfolio.id === sheet.id
+                          );
+                          return sum + (score?.todayDollar ?? 0);
+                        }, 0);
+                        const ownerKey = `pending:${p.key}`;
+                        return (
+                          <li
+                            key={ownerKey}
+                            className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOwnerId(ownerKey);
+                                setSelectedPortfolioId(null);
+                              }}
+                              className="text-left"
+                            >
+                              <div className="text-sm font-medium text-zinc-100">
+                                {p.label}
+                                <span className="ml-2 text-xs font-normal text-amber-500/90">
+                                  awaiting sign-in
+                                </span>
+                              </div>
+                              {p.emails.length ? (
+                                <div className="text-xs text-zinc-500">
+                                  {p.emails.join(" · ")}
+                                </div>
+                              ) : null}
+                              <div className="text-xs text-zinc-500">
+                                {sheets.length} portfolio
+                                {sheets.length === 1 ? "" : "s"}
+                                {" · "}
+                                {currency(sheetValue)}
+                                {sheets.length > 0 && (
+                                  <>
+                                    {" · today "}
+                                    <span
+                                      className={
+                                        sheetToday >= 0
+                                          ? "text-emerald-400"
+                                          : "text-red-400"
+                                      }
+                                    >
+                                      {signedCurrency(sheetToday)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+
+                  {isAdmin && (
+                    <section className="space-y-3 rounded-xl border border-zinc-800 p-4">
+                      <h2 className="text-sm font-medium text-zinc-200">
+                        Admin · invite
+                      </h2>
+                      <p className="text-xs text-zinc-500">
+                        Invites join the community; members share their whole
+                        book read-only.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="Email (optional)"
+                          className="min-w-[12rem] flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+                        />
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void createInvite()}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                          Create invite link
+                        </button>
+                      </div>
+                      {inviteUrl && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-900/50 bg-emerald-950/20 px-3 py-2">
+                          <p className="min-w-0 flex-1 break-all text-xs text-emerald-300/90">
+                            {inviteUrl}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await navigator.clipboard
+                                .writeText(inviteUrl)
+                                .catch(() => undefined);
+                              setInviteCopied(true);
+                              window.setTimeout(
+                                () => setInviteCopied(false),
+                                1500
+                              );
+                            }}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-700/60 px-2 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-900/40"
+                          >
+                            {inviteCopied ? (
+                              <Check className="h-3 w-3" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                            {inviteCopied ? "Copied" : "Copy"}
+                          </button>
+                        </div>
+                      )}
+                    </section>
                   )}
-                </section>
+                </>
               )}
             </>
           )}
@@ -880,6 +1335,40 @@ export function CommunityView({ communityId }: Props) {
         }}
       />
     </SignInGate>
+  );
+}
+
+function MiniBar({
+  label,
+  value,
+  color,
+  hideLabel = false,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  hideLabel?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {!hideLabel && (
+        <span className="w-16 shrink-0 text-[10px] text-zinc-500">{label}</span>
+      )}
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{
+            width: `${Math.max(0, Math.min(100, value))}%`,
+            backgroundColor: color,
+          }}
+        />
+      </div>
+      {!hideLabel && (
+        <span className="w-7 shrink-0 text-right text-[10px] tabular-nums text-zinc-500">
+          {Math.round(value)}
+        </span>
+      )}
+    </div>
   );
 }
 
