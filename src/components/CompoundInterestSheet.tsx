@@ -1261,15 +1261,32 @@ export function CompoundInterestSheet({
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[32rem] text-left text-sm">
+            <table className="w-full min-w-[40rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-zinc-800 text-[11px] uppercase tracking-wide text-zinc-500">
                   <th className="px-4 py-2.5 font-medium">Year</th>
-                  <th className="px-4 py-2.5 font-medium">Interest</th>
-                  <th className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300">
+                  <th
+                    className="px-4 py-2.5 font-medium"
+                    title="Your own money in the balance: what you started with plus everything you've paid in, before any growth"
+                  >
+                    Principal
+                  </th>
+                  <th
+                    className="px-4 py-2.5 font-medium"
+                    title="Interest earned during this year alone"
+                  >
+                    Interest
+                  </th>
+                  <th
+                    className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300"
+                    title="Every year's interest added together so far"
+                  >
                     Accrued interest
                   </th>
-                  <th className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300">
+                  <th
+                    className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300"
+                    title="Principal plus accrued interest"
+                  >
                     Balance
                   </th>
                 </tr>
@@ -1277,6 +1294,16 @@ export function CompoundInterestSheet({
               <tbody>
                 {result.yearly.map((row, i) => {
                   const isLast = i === result.yearly.length - 1;
+                  // Derived from balance rather than summing contributions so
+                  // the three money columns always reconcile on screen
+                  // (principal + accrued interest = balance). Summing
+                  // contributions drifts once withdrawals drain the account,
+                  // because those keep accumulating past what was actually
+                  // there and the balance floors at zero.
+                  const principal = Math.max(
+                    0,
+                    row.balance - row.accruedInterest
+                  );
                   return (
                     <tr
                       key={row.index}
@@ -1284,6 +1311,9 @@ export function CompoundInterestSheet({
                     >
                       <td className="px-4 py-2 tabular-nums text-zinc-300">
                         {row.index}
+                      </td>
+                      <td className="px-4 py-2 tabular-nums text-zinc-400">
+                        {show(principal, 2)}
                       </td>
                       <td className="px-4 py-2 tabular-nums text-zinc-300">
                         {row.index === 0
