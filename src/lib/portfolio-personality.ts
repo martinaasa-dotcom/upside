@@ -71,6 +71,13 @@ function pickAnimal(opts: {
 }): { animal: string; emoji: string; tagline: string } {
   const { diversification, risk, theme, positionCount } = opts;
 
+  if (positionCount === 0) {
+    return {
+      animal: "Hatchling",
+      emoji: "🥚",
+      tagline: "All cash, no positions yet — every book starts here.",
+    };
+  }
   if (theme === "crypto" && risk >= 80) {
     return {
       animal: "Dragon",

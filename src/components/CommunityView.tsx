@@ -170,8 +170,15 @@ export function CommunityView({ communityId }: Props) {
   // successful load) — a ref so `load` doesn't need `community` etc. in
   // its own dependency array just to decide whether to show a spinner.
   const hasDataRef = useRef(Boolean(initialCacheRef.current.meta));
+  // Mount + visibility-regain can both trigger `load()` in quick succession
+  // (e.g. flip tabs away and back before the first request lands). Without
+  // this, whichever request happens to resolve last wins, even if it was
+  // the older/stale one — a classic out-of-order response race. Only the
+  // most-recently-started call is allowed to commit state.
+  const loadCallIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    const callId = ++loadCallIdRef.current;
     const isBackgroundRefresh = hasDataRef.current;
     if (!isBackgroundRefresh) setLoading(true);
     if (!isBackgroundRefresh) setError(null);
@@ -194,6 +201,7 @@ export function CommunityView({ communityId }: Props) {
       }
       const meta = await metaRes.json();
       const book = await bookRes.json();
+      if (callId !== loadCallIdRef.current) return;
       setCommunity(meta.community);
       setMembers(meta.members ?? []);
       setPendingMembers(meta.pending_members ?? []);
@@ -205,6 +213,7 @@ export function CommunityView({ communityId }: Props) {
       hasDataRef.current = true;
       saveCommunityCache(communityId, { meta, book });
     } catch (e) {
+      if (callId !== loadCallIdRef.current) return;
       // A background refresh failing behind already-visible cached
       // content shouldn't slap an error over it — only surface the error
       // when there was nothing on screen to begin with.
@@ -212,7 +221,7 @@ export function CommunityView({ communityId }: Props) {
         setError(e instanceof Error ? e.message : "Failed to load community");
       }
     } finally {
-      setLoading(false);
+      if (callId === loadCallIdRef.current) setLoading(false);
     }
   }, [communityId]);
 

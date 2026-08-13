@@ -324,7 +324,7 @@ export function UpsidePortfolioPage() {
     const firstPrice =
       chronological.find((r) => r.spy_price != null)?.spy_price ?? null;
     const historical =
-      firstPrice == null
+      !firstPrice
         ? []
         : chronological.map((r) =>
             r.spy_price != null ? (r.spy_price - firstPrice) / firstPrice : 0
