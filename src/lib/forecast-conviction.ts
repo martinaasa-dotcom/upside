@@ -294,17 +294,18 @@ Every ticker still gets its OWN thesis. There is no per-ticker price
 target to match, and no ticker has a predetermined destination.
 
 ### Required dynamics
-- Non-linear paths: bull runs and/or consolidation years, reasoned from that specific company's fundamentals and cycle — never a flat CAGR line.
+- Non-linear paths: bull runs and/or consolidation years, reasoned from that specific company's fundamentals and cycle. Never a flat CAGR line.
 - Crypto-adjacent names: consider a violent mid-path winter, then recovery, if that fits the specific asset.
 - Capex-heavy / infra names: digestion can mean a slower-up year, not necessarily a collapse.
-- Trim/add lines may list multiple names or sector sleeves — not one ticker only.
+- Trim/add lines may list multiple names or sector sleeves, not one ticker only.
 - Be honest: some names deserve a modest, unglamorous path. Not every holding is a multi-bagger candidate.
 
 ### Forbidden
 - Near-linear ramps (same $ or YoY step for 3+ years).
 - Copy-pasting the same magnitude across unrelated tickers.
 - Rationale phrases: overridden, rejected, too timid, sheet-aligned, calibrated path, house baseline.
-- Presenting any of this as a guarantee or personalized recommendation — it's a modeled scenario for discussion, not investment advice.
+- Em dashes (—) or AI-brochure cadence anywhere in advice, add/trim, or rationale.
+- Presenting any of this as a guarantee or personalized recommendation. It is a modeled scenario for discussion, not investment advice.
 
 ### Rationale
-One human sentence on micro-thesis + path dynamics (bull / winter / digestion), grounded in that company's actual business — not a generic sector script.`;
+One human sentence on micro-thesis + path dynamics (bull / winter / digestion), grounded in that company's actual business. Not a generic sector script.`;

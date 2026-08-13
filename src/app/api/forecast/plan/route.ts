@@ -3,6 +3,7 @@ import {
   describeAdvisorError,
   withAdvisorFallback,
 } from "@/lib/ai/model";
+import { humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import {
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
@@ -103,16 +104,16 @@ export async function POST(req: Request) {
       stance
     );
 
-    return Response.json({
-      plan: {
-        ...object,
-        eoyTargets,
-        generatedAt: new Date().toISOString(),
-        portfolioId,
-        portfolioName,
-        stance: DEFAULT_FORECAST_STANCE,
-      },
+    const plan = humanizeMargusTree({
+      ...object,
+      eoyTargets,
+      generatedAt: new Date().toISOString(),
+      portfolioId,
+      portfolioName,
+      stance: DEFAULT_FORECAST_STANCE,
     });
+
+    return Response.json({ plan });
   } catch (err) {
     console.error("[forecast/plan]", err);
     const { message, status } = describeAdvisorError(err);

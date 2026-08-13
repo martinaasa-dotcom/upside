@@ -4,6 +4,7 @@
 import type { z } from "zod";
 import type { forecastPlanSchema } from "@/lib/forecast-plan-schema";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import { humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
 import {
@@ -155,11 +156,11 @@ export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
     const parsed = JSON.parse(raw) as StoredForecastPlans;
     const plan = parsed?.[portfolioId];
     if (!plan?.periods?.length) return null;
-    return {
+    return humanizeMargusTree({
       ...plan,
       stance: plan.stance ?? "base",
       eoyTargets: plan.eoyTargets ?? [],
-    };
+    });
   } catch {
     return null;
   }
@@ -168,9 +169,10 @@ export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
 export function saveForecastPlan(plan: ForecastPlan) {
   if (typeof window === "undefined") return;
   try {
+    const cleaned = humanizeMargusTree(plan);
     const raw = localStorage.getItem(FORECAST_PLAN_STORAGE_KEY);
     const parsed = (raw ? JSON.parse(raw) : {}) as StoredForecastPlans;
-    parsed[plan.portfolioId] = plan;
+    parsed[cleaned.portfolioId] = cleaned;
     localStorage.setItem(FORECAST_PLAN_STORAGE_KEY, JSON.stringify(parsed));
   } catch {
     /* ignore */
@@ -391,22 +393,23 @@ Requirements:
 1. periods MUST include:
    - Next quarter (label like "Next quarter (Q${nextQuarter.q} ${nextQuarter.y})")
    - Next year (label "${year + 1}" or "Next year (${year + 1})")
-   - Then 2–3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful — not more than 6 total.
+   - Then 2-3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful. Not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
-3. Add and Trim are SEPARATE action lines — multiple names/sectors allowed. Write like a PM sizing a real book, not a headline generator:
-   - Reference each name's CURRENT weight (given above) and state the size of the move — a target weight or a rough trim/add fraction (e.g. "trim RKLB from 14% to ~9%", "add ~3-5% of book into SaaS"), not just a direction with no size.
-   - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing) — never a generic sector vibe that could be pasted onto any ticker in the theme.
-   - Name the trigger/condition when it isn't "do this now" — a level, an earnings date, a macro print — so it reads as a plan, not a headline.
-   - add: up to ~40 words. "NAME (weight → target) — specific why + trigger" OR sector sleeves e.g. "SaaS / healthcare / drones — why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
-   - trim: up to ~40 words. Multiple tickers OK ("TICKER (weight → target) — specific why") or a sleeve ("fintech sleeve — liquidity fade").
-   - If nothing to do: "Hold — no add" / "Hold — no trim" (never leave blank)
-4. sectorRotation: talk through plausible rotations — AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc. Do not stay stuck in one box.
-5. generalAdvice: sizing, CC overlap risk, cash, and what NOT to do.
+3. Add and Trim are SEPARATE action lines. Multiple names/sectors allowed. Write like a PM sizing a real book, not a headline generator:
+   - Reference each name's CURRENT weight (given above) and state the size of the move: a target weight or a rough trim/add fraction (e.g. "trim $RKLB from 14% to ~9%", "add ~3-5% of book into SaaS"), not just a direction with no size.
+   - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing). Never a generic sector vibe that could be pasted onto any ticker in the theme.
+   - Name the trigger/condition when it isn't "do this now": a level, an earnings date, a macro print. So it reads as a plan, not a headline.
+   - add: up to ~40 words. Format: "NAME (weight -> target): specific why + trigger" OR sector sleeves e.g. "SaaS / healthcare / drones: why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
+   - trim: up to ~40 words. Multiple tickers OK ("TICKER (weight -> target): specific why") or a sleeve ("fintech sleeve: liquidity fade").
+   - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
+   - Never use em dashes (—) or en-dash clause breaks in add/trim lines.
+4. sectorRotation: talk through plausible rotations (AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc.). Do not stay stuck in one box. Plain speech, no em dashes.
+5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
-   - Provide a positive price for EACH of years ${yearsList} — all five required, no omissions.
+   - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
    - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude. Space: digestion year.
-   - rationale: one human sentence on micro-thesis + dynamics. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path.
-7. Consistency: if macro / company / sector thesis is unchanged from a prior run, keep EOY magnitudes in a similar neighborhood — do not randomly reshuffle for no reason.
+   - rationale: one human sentence on micro-thesis + dynamics. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes.
+7. Consistency: if macro / company / sector thesis is unchanged from a prior run, keep EOY magnitudes in a similar neighborhood. Do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.
 9. Be concise.
 10. Frame everything as a modeled scenario for the user's own thinking, never as a personalized recommendation or a guarantee.`;

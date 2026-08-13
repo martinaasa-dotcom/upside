@@ -26,12 +26,12 @@ export const forecastPlanSchema = z.object({
   generalAdvice: z
     .string()
     .describe(
-      "2–4 sentences of actionable book-level advice (risk, concentration, CC overlap, cash)."
+      "2-4 short sentences of book-level advice (risk, concentration, cash). Plain spoken English like a PM Slack note. No em dashes. No stacked jargon slogans."
     ),
   sectorRotation: z
     .string()
     .describe(
-      "What sector / factor rotation looks plausible over the next quarter and year, tied to this book."
+      "What sector / factor rotation looks plausible over the next quarter and year, tied to this book. Plain speech, no em dashes."
     ),
   periods: z
     .array(
@@ -39,7 +39,7 @@ export const forecastPlanSchema = z.object({
         label: z
           .string()
           .describe(
-            'Horizon label, e.g. "Next quarter (Q4 2026)", "2027", "2028–2029"'
+            'Horizon label, e.g. "Next quarter (Q4 2026)", "2027", "2028-2029"'
           ),
         theme: z.string().describe("Short memorable theme name for the period"),
         add: z
@@ -75,11 +75,11 @@ export const forecastPlanSchema = z.object({
           .string()
           .optional()
           .describe(
-            "Human thesis in one sentence: micro-thesis + path dynamics (bull run / winter / digestion). Never say overridden, rejected, calibrated, or sheet-aligned."
+            "Human thesis in one sentence: micro-thesis + path dynamics (bull run / winter / digestion). No em dashes. Never say overridden, rejected, calibrated, or sheet-aligned."
           ),
       })
     )
     .describe(
-      "EOY SP for EVERY holding, all years 2026–2030. High-conviction AI infra / AI power / crypto magnitudes. Never paste spot across years. Never draw a straight line."
+      "EOY SP for EVERY holding, all years 2026-2030. High-conviction AI infra / AI power / crypto magnitudes. Never paste spot across years. Never draw a straight line."
     ),
 });

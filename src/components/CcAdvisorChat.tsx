@@ -1,6 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
+import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
 import { STRATEGY } from "@/lib/calculations";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
@@ -110,10 +111,12 @@ type ToolPart = {
 };
 
 function extractText(parts: Array<{ type: string; text?: string }>) {
-  return parts
-    .filter((p) => p.type === "text" && p.text)
-    .map((p) => p.text)
-    .join("");
+  return humanizeMargusText(
+    parts
+      .filter((p) => p.type === "text" && p.text)
+      .map((p) => p.text)
+      .join("")
+  );
 }
 
 function extractImages(

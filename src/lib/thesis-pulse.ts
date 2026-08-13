@@ -1,3 +1,4 @@
+import { humanizeMargusText, humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import { TICKER_SECTORS } from "@/lib/forecast-plan";
 import type { OverviewModel, TickerScore } from "@/lib/overview";
 import type { Quote } from "@/lib/types";
@@ -254,7 +255,10 @@ export function loadPulseTickerCache(
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PulseTickerCacheEntry | null;
     if (!parsed?.check || !parsed?.cachedAt) return null;
-    return parsed;
+    return {
+      ...parsed,
+      check: humanizeMargusTree(parsed.check),
+    };
   } catch {
     return null;
   }
@@ -266,7 +270,13 @@ export function savePulseTickerCache(
 ) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(pulseTickerCacheKey(ticker), JSON.stringify(entry));
+    localStorage.setItem(
+      pulseTickerCacheKey(ticker),
+      JSON.stringify({
+        ...entry,
+        check: humanizeMargusTree(entry.check),
+      })
+    );
   } catch {
     /* ignore */
   }
@@ -279,7 +289,10 @@ export function loadPulseSummary(): PulseSummaryCacheEntry | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PulseSummaryCacheEntry | null;
     if (!parsed?.summary) return null;
-    return parsed;
+    return {
+      ...parsed,
+      summary: humanizeMargusText(parsed.summary),
+    };
   } catch {
     return null;
   }
@@ -290,7 +303,10 @@ export function savePulseSummary(summary: string) {
   try {
     localStorage.setItem(
       PULSE_SUMMARY_CACHE_KEY,
-      JSON.stringify({ summary, cachedAt: new Date().toISOString() })
+      JSON.stringify({
+        summary: humanizeMargusText(summary),
+        cachedAt: new Date().toISOString(),
+      })
     );
   } catch {
     /* ignore */

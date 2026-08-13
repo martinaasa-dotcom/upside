@@ -6,6 +6,7 @@ import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed";
 import { buildAdvisorProviderChain, withAdvisorFallback } from "@/lib/ai/model";
+import { humanizeMargusText, humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import {
   buildFundSystemPrompt,
   buildFundUserPrompt,
@@ -101,7 +102,7 @@ async function maybeGenerateWeeklyRecap(
     const chain = buildAdvisorProviderChain({ reasoning: true });
     if (chain.length === 0) return;
 
-    const { object: recap } = await withAdvisorFallback(chain, (model) =>
+    const { object: rawRecap } = await withAdvisorFallback(chain, (model) =>
       generateObject({
         model,
         schema: weeklyRecapSchema,
@@ -117,6 +118,7 @@ async function maybeGenerateWeeklyRecap(
         }),
       })
     );
+    const recap = humanizeMargusTree(rawRecap);
 
     await supabase.from(PORTFELL_TABLES.margusFundWeeklyRecaps).insert({
       week_ending: weekEnding,
@@ -238,7 +240,7 @@ export async function GET(req: Request) {
       throw new Error("No LLM provider configured for Upside Portfolio");
     }
 
-    const { object: decision } = await withAdvisorFallback(chain, (model) =>
+    const { object: rawDecision } = await withAdvisorFallback(chain, (model) =>
       generateObject({
         model,
         schema: fundDecisionSchema,
@@ -254,6 +256,7 @@ export async function GET(req: Request) {
         }),
       })
     );
+    const decision = humanizeMargusTree(rawDecision);
 
     const actions: FundAction[] = [];
     // Running share count per still-open holding, updated as each decision
@@ -472,8 +475,8 @@ export async function GET(req: Request) {
       .insert({
         report_date: today,
         headline: decision.headline,
-        body: bodyLines.join("\n"),
-        actions,
+        body: humanizeMargusText(bodyLines.join("\n")),
+        actions: humanizeMargusTree(actions),
         portfolio_value: totalValueAfter,
         cash,
         day_change_dollar: dayChangeDollar,

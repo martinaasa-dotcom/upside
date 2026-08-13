@@ -3,6 +3,7 @@
 import { AppHeader } from "@/components/AppHeader";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
+import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
@@ -261,7 +262,7 @@ function ReportDetail({ r }: { r: ReportRow }) {
         </div>
       )}
       <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-400">
-        {r.body}
+        {humanizeMargusText(r.body)}
       </p>
     </>
   );
@@ -1145,9 +1146,11 @@ export function UpsidePortfolioPage() {
                           </p>
                         )}
                       </div>
-                      <h3 className="text-base font-semibold text-white">{r.headline}</h3>
+                      <h3 className="text-base font-semibold text-white">
+                        {humanizeMargusText(r.headline)}
+                      </h3>
                       <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">
-                        {r.body}
+                        {humanizeMargusText(r.body)}
                       </p>
                     </article>
                   ))}
@@ -1182,7 +1185,7 @@ export function UpsidePortfolioPage() {
                           <ReportMeta r={r} />
                         </div>
                         <h3 className="text-sm font-semibold text-white">
-                          {r.headline}
+                          {humanizeMargusText(r.headline)}
                         </h3>
                         <ReportDetail r={r} />
                       </article>
@@ -1197,7 +1200,7 @@ export function UpsidePortfolioPage() {
                             className="h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform group-open:rotate-90"
                           />
                           <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
-                            {r.headline}
+                            {humanizeMargusText(r.headline)}
                           </span>
                           <span className="flex shrink-0 items-center gap-2">
                             <ReportMeta r={r} />

@@ -3,6 +3,7 @@ import {
   describeAdvisorError,
   withAdvisorFallback,
 } from "@/lib/ai/model";
+import { humanizeMargusTree, humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -208,11 +209,11 @@ export async function POST(req: Request) {
       return buildFallbackPulseCheck(candidate);
     });
 
-    const report: PulseReport = {
+    const report: PulseReport = humanizeMargusTree({
       summary: object.summary,
       checks,
       generatedAt: new Date().toISOString(),
-    };
+    });
 
     return Response.json({ report, headlines });
   } catch (err) {
@@ -220,12 +221,14 @@ export async function POST(req: Request) {
     const { message, status } = describeAdvisorError(err);
 
     // Free-tier daily quota / transient rate-limit: degrade to the
-    // deterministic per-ticker read instead of blanking the whole page —
+    // deterministic per-ticker read instead of blanking the whole page.
     // Pulse still shows something useful, clearly labeled as rule-based.
     if (status === 429) {
       const checks = candidates.map((c) => buildFallbackPulseCheck(c));
       const report: PulseReport = {
-        summary: `${message} Showing rule-based reads below meanwhile.`,
+        summary: humanizeMargusText(
+          `${message} Showing rule-based reads below meanwhile.`
+        ),
         checks,
         generatedAt: new Date().toISOString(),
       };

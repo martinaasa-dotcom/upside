@@ -38,10 +38,12 @@ ones.
 
 ## Where this is already enforced
 
-`MARGUS_PERSONA` in `src/lib/ai/margus-persona.ts` already carries this exact
-instruction, and it's shared by chat, Forecast, Thesis Pulse, and the Upside
-Portfolio fund/recap prompts. Do not remove or soften that instruction. When
-adding a brand-new generated-copy string anywhere (a new fun fact, a new
-briefing card, a new toast, a new AI surface), write it dash-free and
-human-sounding from the start, and hold new AI prompts to the same voice bar
-Margus already gets.
+`MARGUS_PERSONA` in `src/lib/ai/margus-persona.ts` carries a hard Voice ban
+(no em dashes, no AI-brochure cadence, speak like a PM Slack note). That is
+not enough on its own: models still emit dashes. Every Margus surface also
+runs generated strings through `humanizeMargusText` /
+`humanizeMargusTree` in `src/lib/ai/humanize-copy.ts` before save/display
+(Forecast plan API + localStorage, Thesis Pulse API + cache, Upside Portfolio
+cron writes, chat markdown). Do not remove the persona ban or the sanitizer.
+When adding a new generated-copy string or AI surface, write it dash-free
+from the start and pipe it through the sanitizer on the way out.
