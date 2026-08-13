@@ -52,7 +52,10 @@ export type ConcentrationRead = {
   /** Largest single position as a share of the book. */
   topWeightPct: number;
   topWeightTicker: string | null;
-  /** Combined weight of the five largest positions. */
+  /** Combined weight of the three and five largest positions. Which one is
+   * worth showing depends on how many names you hold: "top 5" is
+   * tautologically 100% for a book of five or fewer. */
+  topThreePct: number;
   topFivePct: number;
 };
 
@@ -67,6 +70,7 @@ export function concentrationRead(
       positionCount: 0,
       topWeightPct: 0,
       topWeightTicker: null,
+      topThreePct: 0,
       topFivePct: 0,
     };
   }
@@ -75,13 +79,15 @@ export function concentrationRead(
     const w = h.currentValue / total;
     return s + w * w;
   }, 0);
-  const topFive = sorted.slice(0, 5).reduce((s, h) => s + h.currentValue, 0);
+  const sumTop = (n: number) =>
+    sorted.slice(0, n).reduce((s, h) => s + h.currentValue, 0) / total;
   return {
     effectivePositions: hhi > 0 ? 1 / hhi : 0,
     positionCount: sorted.length,
     topWeightPct: sorted[0]!.currentValue / total,
     topWeightTicker: sorted[0]!.ticker,
-    topFivePct: topFive / total,
+    topThreePct: sumTop(3),
+    topFivePct: sumTop(5),
   };
 }
 

@@ -553,7 +553,7 @@ export function LabSheet({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-white">
-                      Concentration
+                      Diversification
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-500">
                       {personality.diversificationBand.description} ·{" "}
@@ -571,11 +571,32 @@ export function LabSheet({
                   </div>
                 </div>
 
+                {/* A bare score gives no clue which end is which, so show the
+                 * position on the scale and name both ends. */}
+                <div className="mt-3">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-brand/70 transition-all"
+                      style={{
+                        width: `${Math.max(2, Math.min(100, personality.diversificationScore))}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+                    <span>0 · all in one name</span>
+                    <span>100 · index-broad</span>
+                  </div>
+                </div>
+
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <StatCell
                     label="Behaves like"
                     value={`${concentration.effectivePositions.toFixed(1)} names`}
-                    hint={`You hold ${concentration.positionCount}. Uneven weights make it act like fewer.`}
+                    hint={
+                      concentration.positionCount === 1
+                        ? "Your only position."
+                        : `You hold ${concentration.positionCount}. Uneven weights make it act like fewer.`
+                    }
                   />
                   <StatCell
                     label="Largest position"
@@ -585,16 +606,33 @@ export function LabSheet({
                       concentration.topWeightPct >= 0.25 ? "warn" : "neutral"
                     }
                   />
-                  <StatCell
-                    label="Top 5 combined"
-                    value={`${(concentration.topFivePct * 100).toFixed(1)}%`}
-                    hint={
-                      concentration.topFivePct >= 0.8
-                        ? "Most of the book rides on five names."
-                        : "Rest of the book carries real weight."
-                    }
-                    tone={concentration.topFivePct >= 0.8 ? "warn" : "neutral"}
-                  />
+                  {/* "Top 5" is tautologically 100% for a book of five or
+                   * fewer, which reads as broken. Fall back to top 3, and
+                   * drop the cell entirely when even that says nothing. */}
+                  {concentration.positionCount > 3 && (
+                    <StatCell
+                      label={
+                        concentration.positionCount > 5
+                          ? "Top 5 combined"
+                          : "Top 3 combined"
+                      }
+                      value={`${((concentration.positionCount > 5 ? concentration.topFivePct : concentration.topThreePct) * 100).toFixed(1)}%`}
+                      hint={
+                        (concentration.positionCount > 5
+                          ? concentration.topFivePct
+                          : concentration.topThreePct) >= 0.8
+                          ? "The rest barely moves the needle."
+                          : "The rest of the book carries real weight."
+                      }
+                      tone={
+                        (concentration.positionCount > 5
+                          ? concentration.topFivePct
+                          : concentration.topThreePct) >= 0.8
+                          ? "warn"
+                          : "neutral"
+                      }
+                    />
+                  )}
                 </div>
 
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
