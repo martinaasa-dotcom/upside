@@ -251,7 +251,7 @@ export function buildActionSignals(input: {
   return [
     {
       stance: "hold",
-      headline: `${curMonth.label} is mixed — no strong seasonal edge`,
+      headline: `${curMonth.label} is mixed, no strong seasonal edge`,
       detail: `Cycle-phase ${curMonth.label}s average ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (n=${curMonth.samples}).`,
     },
   ];

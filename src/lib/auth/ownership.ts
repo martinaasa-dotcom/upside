@@ -90,7 +90,7 @@ export async function addCoOwnerToPortfolio(
   if (!userId) {
     return {
       error:
-        "No Upside profile for that email yet — they must sign in with Google first",
+        "No Upside profile for that email yet. They need to sign in with Google first.",
       status: 404,
     };
   }

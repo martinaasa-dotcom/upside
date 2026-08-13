@@ -8,6 +8,7 @@ import {
   percent,
   signedCurrency,
   cn,
+  plural,
 } from "@/lib/format";
 import { buildDailyFunFacts } from "@/lib/fun-facts";
 import { buildInvestorBriefing, type BriefingLink } from "@/lib/investor-briefing";
@@ -430,7 +431,7 @@ function PortfolioLane({
             {sheet.portfolio.name}
           </p>
           <p className="mt-1 text-sm text-zinc-400">
-            {sheet.holdingCount} names · cash{" "}
+            {plural(sheet.holdingCount, "name")} · cash{" "}
             {currency(sheet.portfolio.cash_balance, 0)}
           </p>
         </div>
@@ -843,7 +844,7 @@ export function OverviewDashboard({
               {
                 label: "Book",
                 value: currency(totals.totalValue, 0),
-                sub: `${totals.sheetCount} sheets`,
+                sub: plural(totals.sheetCount, "sheet"),
                 explain:
                   "Everything in this sheet is worth right now: your holdings plus cash, at today's prices.",
               },

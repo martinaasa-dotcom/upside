@@ -156,7 +156,7 @@ export function CommunitiesList() {
               Communities
             </h1>
             <p className="mt-1 text-sm text-zinc-400">
-              Live books from every member — read-only. Edits stay in My book.
+              Live books from every member, read-only. Edits stay in My book.
             </p>
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
@@ -219,7 +219,7 @@ export function CommunitiesList() {
                 </h2>
               </div>
               <p className="mb-3 text-xs text-zinc-500">
-                Anyone can ask to join — an admin still has to approve before
+                Anyone can ask to join. An admin still has to approve before
                 you see any books.
               </p>
               <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
@@ -285,8 +285,8 @@ export function CommunitiesList() {
             <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 sm:w-fit">
               {(
                 [
-                  ["private", Lock, "Private — invite only"],
-                  ["public", Globe, "Public — anyone can request to join"],
+                  ["private", Lock, "Private: invite only"],
+                  ["public", Globe, "Public: anyone can request to join"],
                 ] as const
               ).map(([id, Icon, label]) => (
                 <button

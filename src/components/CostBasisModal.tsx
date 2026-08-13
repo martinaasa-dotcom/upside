@@ -44,8 +44,8 @@ export function CostBasisModal({
               Cost basis pass
             </h3>
             <p className="text-xs text-zinc-500">
-              Import used market marks as cost. Edit true average buys (USD),
-              then apply — ROI becomes meaningful.
+              Import used market marks as cost. Put in your real average buy
+              price (USD) and apply, then ROI actually means something.
             </p>
           </div>
           <button

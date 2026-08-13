@@ -90,7 +90,7 @@ export function CommunitiesSpotlight({ className }: { className?: string }) {
                   Join the circle
                 </h2>
                 <p className="mt-0.5 text-sm text-zinc-400">
-                  See everyone’s book in one place — invite partners when you’re
+                  See everyone’s book in one place. Invite partners when you’re
                   ready.
                 </p>
               </>

@@ -60,8 +60,8 @@ export default function GlobalError({
               color: "#a1a1aa",
             }}
           >
-            Your book is safe — this was a rendering error in the app shell.
-            Reload to get back in.
+            Your book is safe. This was a rendering error in the app shell,
+            so reload to get back in.
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>

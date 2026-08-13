@@ -1,6 +1,7 @@
 import { todayKeyInTz } from "@/lib/timezone";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import { hashSeed, mulberry32, pick, shuffleInPlace } from "@/lib/seeded-rng";
+import { plural } from "@/lib/format";
 
 type FactCtx = {
   sheets: SheetScore[];
@@ -180,9 +181,9 @@ const MAKERS: FactMaker[] = [
     const busy = [...sheets].sort((a, b) => b.holdingCount - a.holdingCount)[0];
     if (!busy) return null;
     return pick(rng, [
-      `${busy.portfolio.name} has the fullest toy box: ${busy.holdingCount} holdings.`,
-      `Most positions: ${busy.portfolio.name} with ${busy.holdingCount} line items.`,
-      `${busy.portfolio.name} collected ${busy.holdingCount} stamps in the ticker passport.`,
+      `${busy.portfolio.name} has the fullest toy box: ${plural(busy.holdingCount, "holding")}.`,
+      `Most positions: ${busy.portfolio.name} with ${plural(busy.holdingCount, "line item")}.`,
+      `${busy.portfolio.name} collected ${plural(busy.holdingCount, "stamp")} in the ticker passport.`,
     ]);
   },
 
@@ -190,9 +191,9 @@ const MAKERS: FactMaker[] = [
     const lean = [...sheets].sort((a, b) => a.holdingCount - b.holdingCount)[0];
     if (!lean) return null;
     return pick(rng, [
-      `${lean.portfolio.name} keeps it tight, only ${lean.holdingCount} holdings.`,
-      `Minimalist award: ${lean.portfolio.name} (${lean.holdingCount} positions).`,
-      `${lean.portfolio.name} said “fewer, better”: ${lean.holdingCount} holdings.`,
+      `${lean.portfolio.name} keeps it tight, only ${plural(lean.holdingCount, "holding")}.`,
+      `Minimalist award: ${lean.portfolio.name} (${plural(lean.holdingCount, "position")}).`,
+      `${lean.portfolio.name} said “fewer, better”: ${plural(lean.holdingCount, "holding")}.`,
     ]);
   },
 
@@ -289,9 +290,9 @@ const MAKERS: FactMaker[] = [
       totals.sheetCount > 0 ? totals.totalValue / totals.sheetCount : 0;
     if (perSheet <= 0) return null;
     return pick(rng, [
-      `Average book size: ~$${money(perSheet)} across ${totals.sheetCount} sheets.`,
+      `Average book size: ~$${money(perSheet)} across ${plural(totals.sheetCount, "sheet")}.`,
       `If you split the pie evenly: ~$${money(perSheet)} per book (you won’t).`,
-      `${totals.sheetCount} books · ~$${money(perSheet)} average. Inequality is the spice.`,
+      `${plural(totals.sheetCount, "book")} · ~$${money(perSheet)} average. Inequality is the spice.`,
     ]);
   },
 
@@ -304,9 +305,9 @@ const MAKERS: FactMaker[] = [
       ]);
     }
     return pick(rng, [
-      `${multi.length} tickers are shared across 2+ books. Family consensus (or copy-paste).`,
-      `Overlap count: ${multi.length} names appear in multiple portfolios.`,
-      `Groupthink index: ${multi.length} multi-owned ticker${multi.length === 1 ? "" : "s"}.`,
+      `${plural(multi.length, "ticker")} shared across 2+ books. Family consensus (or copy-paste).`,
+      `Overlap count: ${plural(multi.length, "name")} appearing in multiple portfolios.`,
+      `Groupthink index: ${plural(multi.length, "multi-owned ticker")}.`,
     ]);
   },
 
@@ -352,7 +353,7 @@ const MAKERS: FactMaker[] = [
   ({ sheets, rng }) => {
     const s = pick(rng, sheets);
     return pick(rng, [
-      `${s.portfolio.name} flashcard: $${money(s.totalValue)} NAV · ${pct1(s.roiPct)} ROI · ${s.holdingCount} holdings.`,
+      `${s.portfolio.name} flashcard: $${money(s.totalValue)} NAV · ${pct1(s.roiPct)} ROI · ${plural(s.holdingCount, "holding")}.`,
       `Sheet of the RNG: ${s.portfolio.name} is ${s.roiPct >= 0 ? "up" : "down"} ${pct1(Math.abs(s.roiPct))} lifetime.`,
       `${s.portfolio.name} today: ${s.todayPct == null ? "quotes pending" : pct1(s.todayPct)} / $${money(s.todayDollar)}.`,
     ]);
@@ -360,9 +361,9 @@ const MAKERS: FactMaker[] = [
 
   ({ totals, rng }) => {
     return pick(rng, [
-      `Census: ${totals.sheetCount} books · ${totals.uniqueTickers} unique tickers · ${totals.positionCount} positions.`,
-      `The empire counts ${totals.positionCount} line items across ${totals.sheetCount} sheets.`,
-      `${totals.uniqueTickers} distinct tickers is either diversification or a snack drawer.`,
+      `Census: ${plural(totals.sheetCount, "book")} · ${plural(totals.uniqueTickers, "unique ticker")} · ${plural(totals.positionCount, "position")}.`,
+      `The empire counts ${plural(totals.positionCount, "line item")} across ${plural(totals.sheetCount, "sheet")}.`,
+      `${plural(totals.uniqueTickers, "distinct ticker")} is either diversification or a snack drawer.`,
     ]);
   },
 

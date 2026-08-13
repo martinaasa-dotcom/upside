@@ -6,6 +6,7 @@ import {
   percent,
   signedCurrency,
   cn,
+  plural,
 } from "@/lib/format";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
@@ -800,7 +801,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 {attention.length > 0
                   ? "Rest of big book"
-                  : `Big book · top ${rest.length} positions`}
+                  : `Big book · top ${plural(rest.length, "position")}`}
               </h3>
               <ul className="space-y-3">
                 {rest.map((c) => (

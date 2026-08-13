@@ -107,7 +107,7 @@ export function displayToUsd(
 }
 
 export function formatEurUsdHint(eurUsd: number | null, detail?: EurUsdQuote | null): string {
-  if (!eurUsd || eurUsd <= 0) return "EURUSD unavailable — showing USD 1:1";
+  if (!eurUsd || eurUsd <= 0) return "EURUSD unavailable, showing USD 1:1";
   const bits = [`EURUSD ${eurUsd.toFixed(4)}`];
   if (detail?.open && detail.open > 0) bits.push(`O ${detail.open.toFixed(4)}`);
   if (detail?.previousClose && detail.previousClose > 0) {

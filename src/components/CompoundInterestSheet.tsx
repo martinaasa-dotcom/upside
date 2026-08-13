@@ -1047,7 +1047,7 @@ export function CompoundInterestSheet({
                   </th>
                   <th
                     className="pb-2 font-medium"
-                    title="The annual rate dialed into this calculator — what's driving the Target date"
+                    title="The annual rate dialed into this calculator, which is what drives the Target date"
                   >
                     Est. growth
                   </th>

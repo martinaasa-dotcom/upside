@@ -46,6 +46,19 @@ export function signedCurrency(value: number | null | undefined): string {
   return formatted;
 }
 
+/**
+ * "1 sheet" / "2 sheets". Pass an explicit plural for irregular words.
+ * Counts here are small and human-scale (sheets, holdings, members), so
+ * the naive s-suffix covers everything we actually label.
+ */
+export function plural(
+  count: number,
+  singular: string,
+  pluralForm = `${singular}s`
+): string {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
