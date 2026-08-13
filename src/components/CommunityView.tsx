@@ -41,6 +41,7 @@ import {
   Lock,
   LogOut,
   Medal,
+  Layers,
   PieChart,
   Settings,
   Shield,
@@ -1359,10 +1360,21 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {overview.topHoldings.length > 0 && (
-                    <section className="space-y-3">
-                      <h2 className="text-sm font-medium text-zinc-200">
-                        What the community is holding
-                      </h2>
+                    <section className="overview-fade rounded-3xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-7">
+                      <div className="mb-5 flex items-center gap-2.5">
+                        <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
+                          <Layers className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            What the community is holding
+                          </h3>
+                          <p className="mt-0.5 text-sm text-zinc-400">
+                            Biggest combined positions, and how many books
+                            each one turns up in
+                          </p>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {overview.topHoldings.slice(0, 10).map((t) => (
                           <div
