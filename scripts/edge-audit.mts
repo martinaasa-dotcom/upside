@@ -309,6 +309,56 @@ for (const regime of REGIMES) {
   }
 }
 
+// The actual bug report this guards against: a name that just blew out
+// earnings and ripped +75% in two weeks must not get told "weakening" /
+// "trend rolling over" just because its slow 40-week average hasn't
+// caught up yet. The sharp recent move has to win the headline.
+{
+  const surging = buildTrendStory({
+    ticker: "CRWV",
+    regime: "weakening",
+    aboveLongMa: true,
+    rsi: 55,
+    macdBuilding: true,
+    divergence: null,
+    rs13: -0.099,
+    rs26: 0.1,
+    chg2w: 0.75,
+    chg4w: 0.9,
+  });
+  check(
+    "trendStory(surge-overrides-weakening).tone",
+    surging.tone,
+    (v) => v === "gain",
+    "gain, not warn, despite weakening long-term regime"
+  );
+  check(
+    "trendStory(surge-overrides-weakening).headline",
+    surging.headline,
+    (v) => typeof v === "string" && !/weaken|rolling over/i.test(v),
+    "does not call it weakening/rolling over"
+  );
+
+  const crashing = buildTrendStory({
+    ticker: "ZZZZ",
+    regime: "strong-up",
+    aboveLongMa: true,
+    rsi: 45,
+    macdBuilding: false,
+    divergence: null,
+    rs13: -0.2,
+    rs26: -0.1,
+    chg2w: -0.3,
+    chg4w: -0.35,
+  });
+  check(
+    "trendStory(surge-overrides-strong-up).tone",
+    crashing.tone,
+    (v) => v === "loss",
+    "loss, not gain, despite still-intact long-term uptrend"
+  );
+}
+
 // Every formatter is the last line of defence before a bad number reaches
 // the screen, so all of them must degrade to a dash rather than printing
 // "$∞", "Infinity%" or "$NaN".
