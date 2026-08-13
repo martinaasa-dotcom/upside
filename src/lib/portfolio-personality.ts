@@ -94,7 +94,7 @@ export type PortfolioPersonality = {
   modeledAlphaPct: number;
 };
 
-const THEME_LABEL: Record<ForecastTheme, string> = {
+export const THEME_LABEL: Record<ForecastTheme, string> = {
   ai_infra: "AI infra",
   ai_power: "AI power",
   crypto: "crypto",

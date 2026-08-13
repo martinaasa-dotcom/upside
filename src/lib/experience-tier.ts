@@ -4,6 +4,8 @@
  * per-feature toggles: the goal is "this looks simpler," not a settings
  * page with 30 checkboxes.
  */
+import { LAB_TAB_ID, PULSE_TAB_ID, SEASONALITY_TAB_ID } from "@/lib/overview";
+
 export type ExperienceTier = "novice" | "investor" | "advanced";
 
 export const EXPERIENCE_TIERS: {
@@ -49,9 +51,14 @@ export function saveStoredTier(tier: ExperienceTier) {
   }
 }
 
-/** Meta-tab ids hidden per tier — matches OVERVIEW_TAB_ID etc. from lib/overview. */
+/**
+ * Meta-tab ids hidden per tier — must be the actual `__xxx__` tab id
+ * constants from lib/overview (matches PortfolioTabs' MODES[i].id), not
+ * plain labels. These were previously plain strings ("pulse", "lab", …)
+ * that never matched, so novice-tier tab hiding silently did nothing.
+ */
 export const TIER_HIDDEN_META_TABS: Record<ExperienceTier, string[]> = {
-  novice: ["pulse", "seasonality", "lab"],
+  novice: [PULSE_TAB_ID, SEASONALITY_TAB_ID, LAB_TAB_ID],
   investor: [],
   advanced: [],
 };

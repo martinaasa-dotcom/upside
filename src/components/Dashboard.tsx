@@ -476,6 +476,13 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experienceTier]);
 
+  const hiddenMetaTabIds = useMemo(
+    () => (experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : []),
+    [experienceTier]
+  );
+  const labHiddenForTier = hiddenMetaTabIds.includes(LAB_TAB_ID);
+  const pulseHiddenForTier = hiddenMetaTabIds.includes(PULSE_TAB_ID);
+
   const isOverview = activeId === OVERVIEW_TAB_ID;
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
@@ -2576,11 +2583,17 @@ export function Dashboard() {
               marketState={marketState}
               showCommunities={source === "supabase"}
               hideOptions={hideOptionsUI}
-              onOpenLab={(tab) => {
-                if (tab) setLabIntent(tab);
-                setActiveId(LAB_TAB_ID);
-              }}
-              onOpenPulse={() => setActiveId(PULSE_TAB_ID)}
+              onOpenLab={
+                labHiddenForTier
+                  ? undefined
+                  : (tab) => {
+                      if (tab) setLabIntent(tab);
+                      setActiveId(LAB_TAB_ID);
+                    }
+              }
+              onOpenPulse={
+                pulseHiddenForTier ? undefined : () => setActiveId(PULSE_TAB_ID)
+              }
               onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
             />
           </>
@@ -2653,7 +2666,7 @@ export function Dashboard() {
         onChange={setActiveId}
         onAdd={handleAddSheet}
         sheetTodayTone={sheetTodayTone}
-        hiddenModeIds={experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : []}
+        hiddenModeIds={hiddenMetaTabIds}
         onOpenCommunities={
           source === "supabase"
             ? () => router.push("/communities")

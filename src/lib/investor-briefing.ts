@@ -4,6 +4,8 @@ import type { CashflowEntry } from "@/lib/cashflow";
 import type { UpsideAlert } from "@/lib/alerts";
 import { todayKeyInTz } from "@/lib/timezone";
 import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
+import { buildPortfolioPersonality, THEME_LABEL } from "@/lib/portfolio-personality";
+import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 
 export type BriefingLink =
   | { type: "lab"; tab: "alerts" | "versus" | "season" }
@@ -42,6 +44,122 @@ function sheetMostCash(model: OverviewModel): string | undefined {
 }
 
 /**
+ * Rotating "what's the play today" card — one per day, deterministic per
+ * dayKey. The pool is built fresh from whatever's actually eligible (has
+ * options experience? can reach Lab? is there a real mover today?) instead
+ * of a fixed 2-item list, so novices and no-options viewers never see a
+ * play that references a hidden feature or covered-call mechanics, and
+ * everyone else gets real variety instead of a coin flip between two
+ * options.
+ */
+function buildPlays(opts: {
+  model: OverviewModel;
+  dayKey: string;
+  hideOptions: boolean;
+  canReachLab: boolean;
+}): BriefingItem[] {
+  const { model, dayKey, hideOptions, canReachLab } = opts;
+  const plays: BriefingItem[] = [];
+
+  plays.push({
+    id: `play-wait-${dayKey}`,
+    kind: "play",
+    title: "Most days, the job is just watching",
+    detail:
+      "Nothing here needs action right now. Checking in daily is the habit worth keeping — trading daily isn't.",
+  });
+
+  if (!hideOptions) {
+    plays.push({
+      id: `play-cc-wait-${dayKey}`,
+      kind: "play",
+      title: "Hold, and only write when it's worth it",
+      detail:
+        "Own the shares. Sell a call only when the premium's actually rich enough to bother — otherwise there's nothing to do today.",
+    });
+  }
+
+  if (canReachLab) {
+    plays.push({
+      id: `play-versus-${dayKey}`,
+      kind: "play",
+      title: "Family scoreboard is live",
+      detail: "Glance Versus in Lab if you want the family sheet rankings.",
+      link: { type: "lab", tab: "versus" },
+      cta: "Scoreboard →",
+    });
+  }
+
+  // Dominant-theme / concentration read — genuinely different per person,
+  // reuses the same engine as Communities' "power animal" scoring.
+  const equityHoldings = model.tickers
+    .filter((t) => t.currentValue > 0)
+    .map((t) => ({ ticker: t.ticker, value: t.currentValue }));
+  if (equityHoldings.length > 0) {
+    const personality = buildPortfolioPersonality(equityHoldings);
+    const rng = mulberry32(
+      hashSeed(`upside-briefing-theme|${dayKey}|${personality.dominantTheme}`)
+    );
+    plays.push({
+      id: `play-theme-${dayKey}`,
+      kind: "play",
+      title: `${personality.animalEmoji} Mostly ${THEME_LABEL[personality.dominantTheme]} — ${personality.diversificationBand.label.toLowerCase()}`,
+      detail: pick(rng, [
+        `${personality.diversificationBand.description} Risk read: ${personality.riskBand.label.toLowerCase()}.`,
+        `That's ${personality.animal} energy — ${personality.riskBand.description.toLowerCase()}`,
+      ]),
+    });
+  }
+
+  // Milestone proximity — same ladder Compound uses, framed as a patience
+  // reminder rather than a goal to chase.
+  const total = model.totals.totalValue;
+  const next = COMPOUND_MILESTONE_GOALS.find((g) => total < g) ?? null;
+  if (next != null && total > 0) {
+    const remaining = next - total;
+    const rng = mulberry32(hashSeed(`upside-briefing-milestone|${dayKey}|${next}`));
+    plays.push({
+      id: `play-milestone-${dayKey}`,
+      kind: "play",
+      title: `$${money(remaining)} to your next milestone`,
+      detail: pick(rng, [
+        `$${money(next)} is the next line on the ladder. No action needed — just time.`,
+        `Crossing $${money(next)} doesn't need a trade, just patience.`,
+      ]),
+      link: { type: "compound" },
+      cta: "See the ladder →",
+    });
+  }
+
+  // Today's biggest real mover — only when it's a genuine move, not noise.
+  const topMover = [...model.tickers]
+    .filter((t) => t.todayPct != null)
+    .sort((a, b) => Math.abs(b.todayPct ?? 0) - Math.abs(a.todayPct ?? 0))[0];
+  if (topMover && Math.abs(topMover.todayPct ?? 0) >= 0.02) {
+    const pct = topMover.todayPct!;
+    const rng = mulberry32(
+      hashSeed(`upside-briefing-mover|${dayKey}|${topMover.ticker}`)
+    );
+    plays.push({
+      id: `play-mover-${dayKey}`,
+      kind: "play",
+      title: `${topMover.ticker} is today's biggest mover, ${pct >= 0 ? "+" : ""}${pct1(pct)}`,
+      detail: pick(rng, [
+        "Worth knowing why before you assume it's noise.",
+        "One name doing most of the day's talking — worth a glance.",
+      ]),
+      ticker: topMover.ticker,
+      link: topMover.portfolioIds[0]
+        ? { type: "sheet", portfolioId: topMover.portfolioIds[0] }
+        : undefined,
+      cta: topMover.portfolioIds[0] ? "Open sheet →" : undefined,
+    });
+  }
+
+  return plays;
+}
+
+/**
  * Daily investor briefing — what to know when you open Upside.
  *
  * Earnings-soon / near-strike / margin / concentration used to be
@@ -52,6 +170,13 @@ function sheetMostCash(model: OverviewModel): string | undefined {
  * from; this briefing just points at that same list. Everything below is
  * genuinely unique to the daily-glance narrative (today's $, CC season,
  * dry powder, rotating "what to do" plays).
+ *
+ * `hideOptions` hard-removes covered-call content (not just de-emphasizes
+ * it), matching the same rule used everywhere else options are gated.
+ * `canReachLab` should be false whenever the viewer's experience tier
+ * hides the Lab meta-tab (novice) — plays that name Lab-only features are
+ * dropped from the rotation instead of pointing at something that isn't
+ * there for them to click.
  */
 export function buildInvestorBriefing(input: {
   model: OverviewModel;
@@ -59,9 +184,13 @@ export function buildInvestorBriefing(input: {
   coveredCallRows: CoveredCallRow[];
   cashflows: CashflowEntry[];
   dayKey?: string;
+  hideOptions?: boolean;
+  canReachLab?: boolean;
 }): BriefingItem[] {
   const dayKey = input.dayKey ?? todayKeyInTz();
   const { model, activeAlerts, coveredCallRows, cashflows } = input;
+  const hideOptions = Boolean(input.hideOptions);
+  const canReachLab = input.canReachLab ?? true;
   const items: BriefingItem[] = [];
 
   const today$ = model.totals.todayDollar;
@@ -105,43 +234,48 @@ export function buildInvestorBriefing(input: {
     });
   }
 
-  const openPrem = coveredCallRows.reduce((s, r) => s + (r.premium ?? 0), 0);
-  const monthPrem = cashflows
-    .filter((c) => {
-      if (c.kind !== "premium") return false;
-      const d = new Date(c.at);
-      const now = new Date();
-      return (
-        d.getUTCFullYear() === now.getUTCFullYear() &&
-        d.getUTCMonth() === now.getUTCMonth()
-      );
-    })
-    .reduce((s, c) => s + c.amount, 0);
+  // Covered-call premium tracking is pure options mechanics — hard-removed
+  // for no-options viewers, and pointless to show if Lab (where you'd
+  // actually log a fill) isn't reachable either.
+  if (!hideOptions && canReachLab) {
+    const openPrem = coveredCallRows.reduce((s, r) => s + (r.premium ?? 0), 0);
+    const monthPrem = cashflows
+      .filter((c) => {
+        if (c.kind !== "premium") return false;
+        const d = new Date(c.at);
+        const now = new Date();
+        return (
+          d.getUTCFullYear() === now.getUTCFullYear() &&
+          d.getUTCMonth() === now.getUTCMonth()
+        );
+      })
+      .reduce((s, c) => s + c.amount, 0);
 
-  if (openPrem > 0 || monthPrem > 0) {
-    const rng = mulberry32(
-      hashSeed(`upside-briefing-cc|${Math.round(openPrem)}|${Math.round(monthPrem)}`)
-    );
-    items.push({
-      id: `cc-season-${dayKey}`,
-      kind: "watch",
-      title:
-        monthPrem > 0
-          ? `$${money(monthPrem)} premium booked this month`
-          : `~$${money(openPrem)} open CC premium modeled`,
-      detail:
-        openPrem > 0
-          ? pick(rng, [
-              "When you actually fill a call, tap Log premium on the CC income tab so the season meter counts it.",
-              "Modeled, not banked yet — log the fill when it actually happens so the season meter matches reality.",
-            ])
-          : pick(rng, [
-              "Premium already logged in Cashflow — season meter is current.",
-              "That's real, logged premium — the season meter already reflects it.",
-            ]),
-      link: { type: "lab", tab: "season" },
-      cta: openPrem > 0 ? "Log premium →" : "CC income →",
-    });
+    if (openPrem > 0 || monthPrem > 0) {
+      const rng = mulberry32(
+        hashSeed(`upside-briefing-cc|${Math.round(openPrem)}|${Math.round(monthPrem)}`)
+      );
+      items.push({
+        id: `cc-season-${dayKey}`,
+        kind: "watch",
+        title:
+          monthPrem > 0
+            ? `$${money(monthPrem)} premium booked this month`
+            : `~$${money(openPrem)} open CC premium modeled`,
+        detail:
+          openPrem > 0
+            ? pick(rng, [
+                "When you actually fill a call, tap Log premium on the CC income tab so the season meter counts it.",
+                "Modeled, not banked yet — log the fill when it actually happens so the season meter matches reality.",
+              ])
+            : pick(rng, [
+                "Premium already logged in Cashflow — season meter is current.",
+                "That's real, logged premium — the season meter already reflects it.",
+              ]),
+        link: { type: "lab", tab: "season" },
+        cta: openPrem > 0 ? "Log premium →" : "CC income →",
+      });
+    }
   }
 
   // Margin-in-play and concentration are Alerts conditions (see the pointer
@@ -165,24 +299,10 @@ export function buildInvestorBriefing(input: {
     });
   }
 
-  const plays: BriefingItem[] = [
-    {
-      id: `play-wait-${dayKey}`,
-      kind: "play",
-      title: "The job today is waiting",
-      detail: "Own the names, write calls when it’s fat, otherwise close the laptop.",
-    },
-    {
-      id: `play-versus-${dayKey}`,
-      kind: "play",
-      title: "Family scoreboard is live",
-      detail: "Glance Versus if you want the family sheet rankings.",
-      link: { type: "lab", tab: "versus" },
-      cta: "Scoreboard →",
-    },
-  ];
-  const play = plays[Math.abs(hash(dayKey)) % plays.length]!;
-  items.push(play);
+  const plays = buildPlays({ model, dayKey, hideOptions, canReachLab });
+  if (plays.length > 0) {
+    items.push(plays[Math.abs(hash(dayKey)) % plays.length]!);
+  }
 
   const seen = new Set<string>();
   const out: BriefingItem[] = [];

@@ -509,8 +509,10 @@ export function OverviewDashboard({
         activeAlerts,
         coveredCallRows,
         cashflows,
+        hideOptions,
+        canReachLab: !guest && Boolean(onOpenLab),
       }),
-    [model, activeAlerts, coveredCallRows, cashflows]
+    [model, activeAlerts, coveredCallRows, cashflows, hideOptions, guest, onOpenLab]
   );
 
   const rivalry = useMemo(() => buildSheetRivalry(model), [model]);
