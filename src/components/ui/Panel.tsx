@@ -124,7 +124,7 @@ export function PanelHeader({
           <span
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-              subtitle && "mt-0.5",
+              subtitle ? "mt-0.5" : undefined,
               iconTones[iconTone]
             )}
             aria-hidden
