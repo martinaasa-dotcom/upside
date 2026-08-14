@@ -1010,7 +1010,7 @@ export function CommunityView({ communityId }: Props) {
           )}
         </AppHeader>
 
-        <main className="mx-auto max-w-6xl space-y-8 px-4 py-6">
+        <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           {loading && (
             <p className="text-sm text-zinc-400">Loading community …</p>
           )}
@@ -1996,7 +1996,7 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
           />
-          <div className="relative w-full max-w-sm rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:rounded-2xl">
+          <div className="relative w-full max-w-sm rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5">
             <div className="mb-4 flex items-start justify-between gap-3">
               <h3 className="text-base font-semibold text-white">
                 Community settings
@@ -2110,7 +2110,7 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setBestiaryOpen(false)}
           />
-          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:max-w-lg sm:rounded-2xl">
+          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5">
             <div className="mb-1 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold text-white">
@@ -2284,7 +2284,50 @@ function ReadOnlyHoldings({
           tone={totalPnl > 0 ? "up" : totalPnl < 0 ? "down" : undefined}
         />
       </div>
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
+      <div className="space-y-2 md:hidden">
+        {sortedHoldings.map((h) => {
+          const price = quotes[h.ticker]?.price ?? 0;
+          const value = price * h.shares;
+          const cost = h.buy_price * h.shares;
+          const pnl = value - cost;
+          const roiPct = cost > 0 ? pnl / cost : 0;
+          const todayPct = quotes[h.ticker]?.changePercent ?? null;
+          const pctBook = totalValue > 0 ? value / totalValue : 0;
+          return (
+            <div
+              key={h.id}
+              className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-3 py-3"
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="font-semibold text-white">{cashtag(h.ticker)}</p>
+                <p className="text-sm tabular-nums text-zinc-100">
+                  {currency(value)}
+                </p>
+              </div>
+              <p className="mt-0.5 text-xs text-zinc-400">
+                {percent(pctBook)} of book · {h.shares} sh · {currency(price)}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
+                <span className={signedTone(todayPct, "text-zinc-400")}>
+                  {todayPct != null ? percent(todayPct) : "—"} today
+                </span>
+                <span className={signedTone(roiPct)}>{percent(roiPct)}</span>
+                <span className={signedTone(pnl)}>{signedCurrency(pnl)}</span>
+              </div>
+            </div>
+          );
+        })}
+        {holdings.length === 0 && (
+          <p className="rounded-xl border border-dashed border-zinc-800 px-3 py-6 text-center text-sm text-zinc-400">
+            No holdings on this sheet.
+          </p>
+        )}
+        <div className="flex items-center justify-between rounded-xl border border-zinc-800 px-3 py-3 text-sm">
+          <span className="text-zinc-400">Cash</span>
+          <span className="tabular-nums text-zinc-100">{currency(cash)}</span>
+        </div>
+      </div>
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-800 md:block">
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead className="border-b border-zinc-800 text-xs text-zinc-400">
             <tr>

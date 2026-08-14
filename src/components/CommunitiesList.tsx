@@ -142,7 +142,7 @@ export function CommunitiesList() {
     <SignInGate>
       <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
         <AppHeader title="Communities" />
-        <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+        <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-white">
               Communities

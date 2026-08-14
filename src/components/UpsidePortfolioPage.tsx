@@ -754,6 +754,7 @@ export function UpsidePortfolioPage() {
         <span
           className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
           title="Prices follow the live print, including pre-market and after hours"
+          aria-label={freshnessLabel(quotesAt, nowMs)}
         >
           {quotesAt != null && (
             <span
@@ -761,7 +762,9 @@ export function UpsidePortfolioPage() {
               className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
             />
           )}
-          {freshnessLabel(quotesAt, nowMs)}
+          <span className="hidden tabular-nums xs:inline">
+            {freshnessLabel(quotesAt, nowMs)}
+          </span>
         </span>
         <button
           type="button"
@@ -771,7 +774,7 @@ export function UpsidePortfolioPage() {
           }}
           disabled={refreshing}
           aria-label="Refresh prices"
-          className="touch-target inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
           <span className="hidden sm:inline">Refresh</span>

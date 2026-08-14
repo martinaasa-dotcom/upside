@@ -67,7 +67,7 @@ export function ConfirmModal({
         onClick={onClose}
         disabled={busy}
       />
-      <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl sm:max-w-md sm:rounded-2xl">
+      <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-white">{title}</h3>
           <button

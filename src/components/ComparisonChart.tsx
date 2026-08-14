@@ -99,13 +99,11 @@ export function ComparisonChart({
   }
 
   return (
-    <div className={className}>
+    <div className={className ? `min-w-0 max-w-full ${className}` : "min-w-0 max-w-full"}>
       <div className="relative">
         <svg
-          width={width}
-          height={height}
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full touch-pan-y"
+          className="h-auto w-full touch-pan-y"
           onPointerMove={(e) => {
             setHover(indexFromClientX(e.clientX, e.currentTarget));
           }}

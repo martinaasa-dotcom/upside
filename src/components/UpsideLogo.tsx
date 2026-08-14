@@ -91,7 +91,7 @@ export function UpsideLogo({
       aria-label={title}
     >
       <UpsideMark className="h-[1em] w-[1em] -translate-y-[0.08em]" />
-      <span className="-mr-[0.22em] font-semibold uppercase leading-none tracking-[0.22em]">
+      <span className="-mr-[0.22em] hidden font-semibold uppercase leading-none tracking-[0.22em] xs:inline">
         Upside
       </span>
     </span>

@@ -8,8 +8,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Rooms you leave the book for. Labels stay visible so a first visit
- * is not a row of mystery icons.
+ * Rooms you leave the book for. Icons on phones, labels from md up
+ * so the header doesn't overflow.
  */
 export function WorkspaceSwitcher({ className }: { className?: string }) {
   const pathname = usePathname();
@@ -31,15 +31,16 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
     <Link
       href={href}
       title={title}
+      aria-label={label}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition sm:px-2.5",
+        "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition md:px-2.5 md:py-1.5 md:justify-start",
         active
           ? "bg-brand/20 text-brand-bright shadow-sm shadow-black/20"
           : "text-zinc-400 hover:text-zinc-300"
       )}
     >
-      <Icon className="h-3.5 w-3.5" />
-      <span>{label}</span>
+      <Icon className="h-4 w-4 md:h-3.5 md:w-3.5" />
+      <span className="hidden md:inline">{label}</span>
     </Link>
   );
 
@@ -47,7 +48,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
     <nav
       aria-label="Upside rooms"
       className={cn(
-        "inline-flex max-w-[min(100%,22rem)] overflow-x-auto rounded-lg border border-brand-deep/40 bg-zinc-950/60 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "inline-flex max-w-full overflow-x-auto rounded-lg border border-brand-deep/40 bg-zinc-950/60 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
     >

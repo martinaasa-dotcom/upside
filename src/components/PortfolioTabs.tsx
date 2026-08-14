@@ -23,14 +23,6 @@ type Props = {
   guest?: boolean;
   /** Meta-tab ids to hide, driven by the viewer's experience tier. */
   hiddenModeIds?: string[];
-  /** Compact book/sheet totals shown above tabs on phone. */
-  mobileSummary?: {
-    title: string;
-    totalValue: string;
-    todayValue: string;
-    todayPct: string | null;
-    todayPositive: boolean;
-  };
   /** Today's $ direction per portfolio id — glanceable dot per sheet tab. */
   sheetTodayTone?: Record<string, "up" | "down" | null>;
 };
@@ -78,7 +70,6 @@ export function PortfolioTabs({
   onDeleteRequest,
   guest = false,
   hiddenModeIds = [],
-  mobileSummary,
   sheetTodayTone,
 }: Props) {
   const [adding, setAdding] = useState(false);
@@ -199,40 +190,9 @@ export function PortfolioTabs({
   }
 
   return (
-    <nav className="sticky bottom-0 z-30 border-t border-zinc-800/80 bg-[#121214]/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-3 py-2 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2.5">
-        {mobileSummary && (
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-800/70 pb-2 md:hidden">
-            <div className="min-w-0">
-              <p className="truncate text-xs uppercase tracking-wide text-zinc-400">
-                {mobileSummary.title}
-              </p>
-              <p className="truncate text-sm font-semibold tabular-nums text-white">
-                {mobileSummary.totalValue}
-              </p>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-xs uppercase tracking-wide text-zinc-400">
-                Today
-              </p>
-              <p
-                className={cn(
-                  "text-sm font-semibold tabular-nums",
-                  mobileSummary.todayPositive ? "text-gain" : "text-loss"
-                )}
-              >
-                {mobileSummary.todayValue}
-                {mobileSummary.todayPct ? (
-                  <span className="ml-1 text-xs font-normal opacity-80">
-                    {mobileSummary.todayPct}
-                  </span>
-                ) : null}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* App modes — one segmented control, equal cells (Lab isn't tiny) */}
+    <nav className="sticky bottom-0 z-30 border-t border-zinc-800/80 bg-[#121214]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="mx-auto flex max-w-[1400px] flex-col-reverse gap-1.5 px-3 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2">
+        {/* App modes — sits at the thumb edge on phones */}
         <div className="flex shrink-0 items-end gap-2 md:min-w-0">
           <div className="min-w-0 flex-1 sm:flex-none">
             <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-zinc-400 sm:block">
@@ -242,7 +202,7 @@ export function PortfolioTabs({
               role="tablist"
               aria-label="In your book"
               className={cn(
-                "grid h-11 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35",
+                "grid h-12 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:h-11",
                 modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
                 modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
                 modeCols === 4 && "grid-cols-4 sm:w-[28rem]",
@@ -269,7 +229,7 @@ export function PortfolioTabs({
                         : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                    <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />
                     <span className="max-w-full truncate text-xs leading-none sm:hidden">
                       {shortLabel}
                     </span>
@@ -285,14 +245,14 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 hidden text-xs font-medium uppercase tracking-[0.14em] text-zinc-400 sm:block">
+          <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-zinc-400 sm:block">
             Sheets
           </p>
           <div
             role="tablist"
             aria-label="Portfolio sheets"
             className={cn(
-              "scrollbar-none flex h-11 items-stretch gap-0.5 overflow-x-auto border-b border-zinc-800/90 snap-x snap-mandatory",
+              "scrollbar-none flex h-10 items-stretch gap-0.5 overflow-x-auto border-b border-zinc-800/90 snap-x snap-mandatory sm:h-11",
               sheetActive ? "border-zinc-700" : "border-zinc-800/60"
             )}
           >
@@ -378,7 +338,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="inline-flex shrink-0 items-center gap-1 px-2.5 text-[12px] text-zinc-400 hover:text-zinc-300"
+                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-xs text-zinc-400 hover:text-zinc-300"
                 aria-label="Add sheet"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -402,7 +362,7 @@ export function PortfolioTabs({
             <button
               type="button"
               role="menuitem"
-              className="block w-full px-3 py-2 text-left text-sm text-zinc-200 hover:bg-zinc-900"
+              className="block w-full px-3 py-3 text-left text-sm text-zinc-200 hover:bg-zinc-900 sm:py-2"
               onClick={() => {
                 const id = menu.id;
                 const sheetName = menu.name;
@@ -416,7 +376,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-sm text-rose-300 hover:bg-zinc-900"
+                className="block w-full px-3 py-3 text-left text-sm text-rose-300 hover:bg-zinc-900 sm:py-2"
                 onClick={() => {
                   const id = menu.id;
                   const sheetName = menu.name;

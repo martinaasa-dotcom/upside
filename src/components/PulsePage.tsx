@@ -762,7 +762,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           <button
             type="submit"
             disabled={!searchInput.trim() || pinnedLoading}
-            className="shrink-0 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40 sm:py-2"
+              className="w-full shrink-0 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40 sm:w-auto sm:py-2"
           >
             {pinnedLoading ? "Checking …" : "Check"}
           </button>

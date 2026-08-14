@@ -2355,6 +2355,13 @@ export function Dashboard() {
       });
     }
     if (!isMetaTab) {
+      if (source === "supabase" && activePortfolio) {
+        items.push({
+          id: "invite",
+          label: "Invite a partner",
+          onSelect: () => setInviteOpen(true),
+        });
+      }
       if (!hideOptionsUI) {
         items.push({
           id: "cc",
@@ -2470,7 +2477,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
+    <div className="flex min-h-dvh flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100 [--dock-pad:7.25rem] sm:[--dock-pad:5.5rem]">
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}
@@ -2530,7 +2537,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setInviteOpen(true)}
-                className="inline-flex h-8 items-center gap-1 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+                className="hidden h-8 items-center gap-1 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white md:inline-flex"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Invite</span>
@@ -2559,7 +2566,7 @@ export function Dashboard() {
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
       <div className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4 sm:py-2">
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
             quotesDelayed={quotesDelayed}
@@ -2571,7 +2578,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-5 pb-[calc(13rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6 sm:pb-28 md:pb-24">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-4 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6">
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
@@ -2730,47 +2737,6 @@ export function Dashboard() {
         onDeleteRequest={(id, name) =>
           setConfirmDelete({ kind: "sheet", id, label: name })
         }
-        mobileSummary={{
-          title: isMetaTab ? "Book" : (activePortfolio?.name ?? "Sheet"),
-          totalValue: (() => {
-            const usdAmt = isMetaTab
-              ? overview.totals.totalValue
-              : (snapshot?.totals.currentValue ?? overview.totals.totalValue);
-            const code =
-              activePortfolio != null
-                ? getDisplayCurrency(
-                    displayCurrencyByPortfolio,
-                    activePortfolio.id
-                  )
-                : "USD";
-            return currency(usdToDisplay(usdAmt, code, eurUsd), 2, code);
-          })(),
-          todayValue: (() => {
-            const usdAmt = isMetaTab
-              ? overview.totals.todayDollar
-              : (overview.sheets.find((s) => s.portfolio.id === activeId)
-                  ?.todayDollar ?? 0);
-            const code =
-              activePortfolio != null
-                ? getDisplayCurrency(
-                    displayCurrencyByPortfolio,
-                    activePortfolio.id
-                  )
-                : "USD";
-            return currency(usdToDisplay(usdAmt, code, eurUsd), 2, code);
-          })(),
-          todayPct: (() => {
-            const pct = isMetaTab
-              ? overview.totals.todayPct
-              : overview.sheets.find((s) => s.portfolio.id === activeId)
-                  ?.todayPct;
-            return pct != null ? percent(pct) : null;
-          })(),
-          todayPositive: (isMetaTab
-            ? overview.totals.todayDollar
-            : (overview.sheets.find((s) => s.portfolio.id === activeId)
-                ?.todayDollar ?? 0)) >= 0,
-        }}
       />
 
       <HoldingModal

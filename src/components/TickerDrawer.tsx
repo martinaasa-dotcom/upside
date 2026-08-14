@@ -176,7 +176,7 @@ export function TickerDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
+            className="touch-target shrink-0 rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>

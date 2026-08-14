@@ -138,7 +138,7 @@ export function HeaderOverflowMenu({
                   item.onSelect();
                 }}
                 className={cn(
-                  "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs",
+                  "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-xs sm:py-2",
                   item.disabled
                     ? // Dimmed via opacity rather than a darker grey: WCAG
                       // exempts disabled controls from the contrast floor,

@@ -38,8 +38,8 @@ export function AppHeader({
 }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-brand-deep/25 bg-[#121214]/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-3 px-3 sm:px-4">
-        <div className="flex min-w-0 items-center gap-3 text-[15px] leading-none">
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2 text-[15px] leading-none sm:gap-3">
           <HeaderBrand
             onClick={onBrandClick}
             {...(brandTitle ? { title: brandTitle } : {})}
@@ -61,7 +61,7 @@ export function AppHeader({
             </>
           )}
         </div>
-        <div className="flex shrink-0 items-center justify-end gap-1.5">
+        <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-1.5">
           {children}
           {showWorkspaceNav && <WorkspaceSwitcher />}
         </div>
