@@ -5,7 +5,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { currency, percent, signedCurrency, cn, cashtag } from "@/lib/format";
+import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
 import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
@@ -1021,13 +1021,25 @@ export function CommunityView({ communityId }: Props) {
                         ? percent(overview.totals.todayPct)
                         : undefined
                     }
-                    tone={overview.totals.todayDollar >= 0 ? "up" : "down"}
+                    tone={
+                      overview.totals.todayDollar > 0
+                        ? "up"
+                        : overview.totals.todayDollar < 0
+                          ? "down"
+                          : undefined
+                    }
                   />
                   <Stat
                     label="All-time"
                     value={signedCurrency(overview.totals.roiDollar)}
                     sub={percent(overview.totals.roiPct)}
-                    tone={overview.totals.roiDollar >= 0 ? "up" : "down"}
+                    tone={
+                      overview.totals.roiDollar > 0
+                        ? "up"
+                        : overview.totals.roiDollar < 0
+                          ? "down"
+                          : undefined
+                    }
                   />
                 </div>
               </section>
@@ -1337,9 +1349,7 @@ export function CommunityView({ communityId }: Props) {
                                 <span
                                   className={cn(
                                     "w-16 shrink-0 text-right text-sm font-semibold tabular-nums",
-                                    (pct ?? 0) >= 0
-                                      ? "text-emerald-400"
-                                      : "text-red-400"
+                                    signedTone(pct, "text-zinc-400")
                                   )}
                                 >
                                   {pct != null ? percent(pct) : "—"}
@@ -1348,7 +1358,12 @@ export function CommunityView({ communityId }: Props) {
                                   * leaderboard, and at two decimals a
                                   * seven-figure book overflows the column. */}
                                 {leaderboardRange === "today" && (
-                                  <span className="hidden w-24 shrink-0 text-right text-xs tabular-nums text-zinc-400 sm:inline-block">
+                                  <span
+                                    className={cn(
+                                      "hidden w-24 shrink-0 text-right text-xs tabular-nums sm:inline-block",
+                                      signedTone(m.todayDollar, "text-zinc-400")
+                                    )}
+                                  >
                                     {signedCurrency(m.todayDollar, 0)}
                                   </span>
                                 )}
@@ -1391,9 +1406,7 @@ export function CommunityView({ communityId }: Props) {
                               <span
                                 className={cn(
                                   "text-xs tabular-nums",
-                                  t.todayPct >= 0
-                                    ? "text-emerald-400"
-                                    : "text-red-400"
+                                  signedTone(t.todayPct, "text-zinc-400")
                                 )}
                               >
                                 {percent(t.todayPct)}
@@ -1602,11 +1615,10 @@ export function CommunityView({ communityId }: Props) {
                                   <>
                                     {" · today "}
                                     <span
-                                      className={
-                                        sheetToday >= 0
-                                          ? "text-emerald-400"
-                                          : "text-red-400"
-                                      }
+                                      className={signedTone(
+                                        sheetToday,
+                                        "text-zinc-400"
+                                      )}
                                     >
                                       {signedCurrency(sheetToday)}
                                     </span>
@@ -1710,11 +1722,10 @@ export function CommunityView({ communityId }: Props) {
                                   <>
                                     {" · today "}
                                     <span
-                                      className={
-                                        sheetToday >= 0
-                                          ? "text-emerald-400"
-                                          : "text-red-400"
-                                      }
+                                      className={signedTone(
+                                        sheetToday,
+                                        "text-zinc-400"
+                                      )}
                                     >
                                       {signedCurrency(sheetToday)}
                                     </span>
@@ -2185,8 +2196,9 @@ function Stat({
       <div
         className={cn(
           "mt-1 text-xl font-semibold tabular-nums",
-          tone === "up" && "text-emerald-400",
-          tone === "down" && "text-red-400"
+          tone === "up" && "text-gain",
+          tone === "down" && "text-loss",
+          !tone && "text-white"
         )}
       >
         {value}
@@ -2285,11 +2297,7 @@ function ReadOnlyHoldings({
                   <td
                     className={cn(
                       "px-3 py-2 tabular-nums",
-                      todayPct == null
-                        ? "text-zinc-400"
-                        : todayPct >= 0
-                          ? "text-emerald-400"
-                          : "text-red-400"
+                      signedTone(todayPct, "text-zinc-400")
                     )}
                   >
                     {todayPct != null ? percent(todayPct) : "—"}
@@ -2298,7 +2306,7 @@ function ReadOnlyHoldings({
                   <td
                     className={cn(
                       "px-3 py-2 tabular-nums",
-                      roiPct >= 0 ? "text-emerald-400" : "text-red-400"
+                      signedTone(roiPct)
                     )}
                   >
                     {percent(roiPct)}
@@ -2306,7 +2314,7 @@ function ReadOnlyHoldings({
                   <td
                     className={cn(
                       "px-3 py-2 tabular-nums",
-                      pnl >= 0 ? "text-emerald-400" : "text-red-400"
+                      signedTone(pnl)
                     )}
                   >
                     {signedCurrency(pnl)}

@@ -635,6 +635,8 @@ export function OverviewDashboard({
               label="Cash"
               value={currency(totals.cash, 0)}
               sub={totals.cash < 0 ? "Borrowed" : "Ready to use"}
+              valueClassName={totals.cash < 0 ? "text-loss" : undefined}
+              subClassName={totals.cash < 0 ? "text-loss" : undefined}
               explain={
                 totals.cash < 0
                   ? "Negative cash means you've borrowed from your broker against what you hold. That magnifies both gains and losses."

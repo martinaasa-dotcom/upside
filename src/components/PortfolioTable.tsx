@@ -441,7 +441,7 @@ export function PortfolioTable({
               <span
                 className={cn(
                   "text-sm font-semibold tabular-nums",
-                  signedTone(portfolio.cash_balance)
+                  portfolio.cash_balance < 0 ? "text-loss" : "text-zinc-200"
                 )}
               >
                 {money(portfolio.cash_balance)}

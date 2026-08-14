@@ -266,14 +266,14 @@ export function Stat({
       </MicroLabel>
       <p
         className={cn(
-          "mt-1 text-base font-semibold tabular-nums text-white sm:text-lg",
-          valueClassName
+          "mt-1 text-base font-semibold tabular-nums sm:text-lg",
+          valueClassName ?? "text-white"
         )}
       >
         {value}
       </p>
       {sub != null && (
-        <p className={cn("mt-0.5 text-xs text-zinc-400", subClassName)}>
+        <p className={cn("mt-0.5 text-xs", subClassName ?? "text-zinc-400")}>
           {sub}
         </p>
       )}

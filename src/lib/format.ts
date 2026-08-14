@@ -1,3 +1,5 @@
+import { twMerge } from "tailwind-merge";
+
 /**
  * Every formatter rejects non-finite input, not just NaN. Division by a
  * zero cost basis (a gifted share, a fully written-down position, a
@@ -102,5 +104,5 @@ export function plural(
 }
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
+  return twMerge(parts.filter(Boolean).join(" "));
 }
