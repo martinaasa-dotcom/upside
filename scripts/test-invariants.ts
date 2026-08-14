@@ -913,6 +913,25 @@ run("Pulse never nags that it is guessing", () => {
   assert.doesNotMatch(model, /The model provider is overloaded/);
 });
 
+run("panel copy is not pinched to a reading measure", () => {
+  const files = [
+    "src/components/ui/Panel.tsx",
+    "src/components/LabSheet.tsx",
+    "src/components/PulsePage.tsx",
+    "src/components/SeasonalityPage.tsx",
+    "src/components/OverviewDashboard.tsx",
+    "src/components/ForecastPanel.tsx",
+  ];
+  for (const rel of files) {
+    const src = readFileSync(join(process.cwd(), rel), "utf8");
+    assert.doesNotMatch(
+      src,
+      /max-w-(?:xl|2xl|prose)/,
+      `${rel} still caps in-panel copy so it wraps short of the card`
+    );
+  }
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

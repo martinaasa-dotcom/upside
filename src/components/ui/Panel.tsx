@@ -23,6 +23,9 @@ import { useState, type ReactNode } from "react";
  *   Micro      text-xs uppercase tracking-wide text-zinc-400
  *   Body       text-sm leading-relaxed text-zinc-400
  *   Floor      nothing below text-xs. Ever.
+ *   Measure    copy inside a panel fills the panel. Do not pinch it to a
+ *              reading column. That leaves a dead strip of empty card and
+ *              wraps a sentence for no reason.
  *
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
  * consultant's slide; "Price path" reads like a person wrote it.
@@ -106,7 +109,7 @@ export function PanelHeader({
         className
       )}
     >
-      <div className="flex min-w-0 items-start gap-2.5">
+      <div className="flex min-w-0 flex-1 items-start gap-2.5">
         {icon && (
           <span
             className={cn(
@@ -118,7 +121,7 @@ export function PanelHeader({
             {icon}
           </span>
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2
             className={cn(
               "font-heading font-bold tracking-tight text-white",
@@ -127,7 +130,7 @@ export function PanelHeader({
           >
             {title}
           </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-300">
+          <p className="mt-1 text-sm leading-relaxed text-zinc-300">
             {subtitle}
           </p>
         </div>

@@ -357,7 +357,7 @@ export function LabSheet({
         {/* Says what the tab you just picked actually does. A label like
           * "Shock" or "Risk" means nothing on its own. */}
         {activeTabMeta && (
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
             {activeTabMeta.blurb}
           </p>
         )}

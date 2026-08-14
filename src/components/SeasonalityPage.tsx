@@ -470,7 +470,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Seasonality</h2>
-          <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-zinc-400">
+          <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">
             Which months and days have historically been kind to the market,
             and which have not. Patterns from the past, nothing about your own
             holdings and no claim about what happens next.

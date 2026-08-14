@@ -153,7 +153,7 @@ function EmptyBook({
       <h2 className="text-lg font-semibold tracking-tight text-white sm:text-2xl">
         Your book is empty. Let&apos;s fix that.
       </h2>
-      <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
+      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
         Add what you own. {PRODUCT_SENTENCE} Then you&apos;ll see what moved,
         and what to look at.
       </p>

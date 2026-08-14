@@ -744,7 +744,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) 
             </button>
           }
         />
-        <p className="mt-3 max-w-2xl text-xs leading-relaxed text-zinc-400">
+        <p className="mt-3 text-xs leading-relaxed text-zinc-400">
           {ADVICE_DISCLAIMER_LONG}
         </p>
 
