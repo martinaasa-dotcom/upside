@@ -154,12 +154,6 @@ type SortKey =
 const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   { label: "Ticker", key: "ticker" },
   {
-    label: "Today",
-    key: "today",
-    explain:
-      "What this position made or lost today, in dollars, versus yesterday's close",
-  },
-  {
     label: "% Total",
     key: "pct",
     explain: "Share of your whole book's value this position takes up",
@@ -191,6 +185,12 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
     explain: "Total dollars you put in: shares × buy price",
   },
   { label: "90d", explain: "Price trend over the last ~90 days" },
+  {
+    label: "Today",
+    key: "today",
+    explain:
+      "What this position made or lost today, in dollars, versus yesterday's close",
+  },
   { label: "" },
 ];
 
@@ -644,17 +644,6 @@ export function PortfolioTable({
                     h.ticker
                   )}
                 </div>
-                <div
-                  className={cn(
-                    cellBase,
-                    "tabular-nums font-medium",
-                    h.quote
-                      ? signedTone(h.quote.changePercent)
-                      : "text-zinc-400"
-                  )}
-                >
-                  {h.quote ? money(rowToday(h), 0) : "—"}
-                </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
                   {percent(h.pctOfTotal)}
                 </div>
@@ -698,6 +687,17 @@ export function PortfolioTable({
                     height={24}
                   />
                 </div>
+                <div
+                  className={cn(
+                    cellBase,
+                    "tabular-nums font-medium",
+                    h.quote
+                      ? signedTone(h.quote.changePercent)
+                      : "text-zinc-400"
+                  )}
+                >
+                  {h.quote ? money(rowToday(h), 0) : "—"}
+                </div>
                 <div className={cellBase}>
                   <button
                     type="button"
@@ -713,7 +713,6 @@ export function PortfolioTable({
 
             <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
               <div className={cn(cellBase, "py-2.5 text-white")}>PORTFOLIO</div>
-              <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-400")}>
                 100%
               </div>
@@ -735,6 +734,7 @@ export function PortfolioTable({
               <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-300")}>
                 {money(totals.buyValue)}
               </div>
+              <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
             </FluidRow>
