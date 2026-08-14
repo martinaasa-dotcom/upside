@@ -222,9 +222,9 @@ export function CommunityView({ communityId }: Props) {
         ? "members"
         : "overview"
   );
-  const [leaderboardRange, setLeaderboardRange] = useState<"today" | "lifetime">(
-    "today"
-  );
+  const [leaderboardRange, setLeaderboardRange] = useState<
+    "today" | "lifetime" | "spread" | "risk" | "conviction"
+  >("today");
   const [bestiaryOpen, setBestiaryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsName, setSettingsName] = useState("");
@@ -534,6 +534,7 @@ export function CommunityView({ communityId }: Props) {
       const roiPct = buyValue > 0 ? roiDollar / buyValue : 0;
       const previousTotal = totalValue - todayDollar;
       const todayPct = previousTotal > 0 ? todayDollar / previousTotal : null;
+      const cash = sheets.reduce((s, p) => s + p.cash_balance, 0);
       const tickerValues = holdings
         .filter((h) => sheetIds.has(h.portfolio_id))
         .map((h) => ({
@@ -541,7 +542,9 @@ export function CommunityView({ communityId }: Props) {
           value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
         }));
       const personality =
-        tickerValues.length > 0 ? buildPortfolioPersonality(tickerValues) : null;
+        tickerValues.length > 0
+          ? buildPortfolioPersonality(tickerValues, cash)
+          : null;
       return {
         id,
         name,
@@ -664,6 +667,67 @@ export function CommunityView({ communityId }: Props) {
       description: "Calmest, most defensive book in the group.",
     });
 
+    const mostConviction = [...withPersonality].sort(
+      (a, b) => b.personality!.convictionScore - a.personality!.convictionScore
+    )[0]!;
+    if (mostConviction.personality!.convictionScore >= 30) {
+      out.push({
+        id: "conviction",
+        emoji: "🎯",
+        title: "Highest conviction",
+        winner: mostConviction.name,
+        stat: `${mostConviction.personality!.convictionScore}%${
+          mostConviction.personality!.topTicker
+            ? ` ${cashtag(mostConviction.personality!.topTicker)}`
+            : ""
+        }`,
+        description: "Biggest single name relative to the rest of the book.",
+      });
+    }
+
+    const mostThemes = [...withPersonality].sort(
+      (a, b) => b.personality!.themeCount - a.personality!.themeCount
+    )[0]!;
+    if (mostThemes.personality!.themeCount >= 2) {
+      out.push({
+        id: "themes",
+        emoji: "🐙",
+        title: "Most habitats",
+        winner: mostThemes.name,
+        stat: `${mostThemes.personality!.themeCount} themes`,
+        description: "The book with a tentacle in the most ponds.",
+      });
+    }
+
+    const mostCash = [...withPersonality].sort(
+      (a, b) => b.personality!.cashPct - a.personality!.cashPct
+    )[0]!;
+    if (mostCash.personality!.cashPct >= 8) {
+      out.push({
+        id: "dry-powder",
+        emoji: "🐿️",
+        title: "Driest powder",
+        winner: mostCash.name,
+        stat: `${mostCash.personality!.cashPct}% cash`,
+        description: "Largest cash stash relative to the book.",
+      });
+    }
+
+    const mostSpecialist = [...withPersonality]
+      .filter((m) => m.personality!.specialistScore >= 55)
+      .sort(
+        (a, b) => b.personality!.specialistScore - a.personality!.specialistScore
+      )[0];
+    if (mostSpecialist) {
+      out.push({
+        id: "specialist",
+        emoji: "🐼",
+        title: "One-theme diet",
+        winner: mostSpecialist.name,
+        stat: `${mostSpecialist.personality!.specialistScore}%`,
+        description: "Heaviest bet on a single theme.",
+      });
+    }
     const biggestBook = [...membersWithBooks].sort(
       (a, b) => b.totalValue - a.totalValue
     )[0]!;
@@ -1183,7 +1247,7 @@ export function CommunityView({ communityId }: Props) {
 
                             {m.personality && (
                               <div className="mt-4 space-y-3">
-                                <div className="grid grid-cols-2 gap-x-6">
+                                <div className="grid grid-cols-3 gap-x-3">
                                   <div>
                                     <p className="text-xs text-zinc-400">Spread</p>
                                     <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
@@ -1210,7 +1274,33 @@ export function CommunityView({ communityId }: Props) {
                                       {m.personality.riskBand.label}
                                     </p>
                                   </div>
+                                  <div>
+                                    <p className="text-xs text-zinc-400">
+                                      Conviction
+                                    </p>
+                                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
+                                      {m.personality.convictionScore}
+                                      <span className="text-xs font-normal text-zinc-500">
+                                        %
+                                      </span>
+                                    </p>
+                                    <p className="truncate text-xs text-zinc-500">
+                                      {m.personality.topTicker
+                                        ? cashtag(m.personality.topTicker)
+                                        : m.personality.convictionBand.label}
+                                    </p>
+                                  </div>
                                 </div>
+
+                                <p className="text-xs text-zinc-500">
+                                  {m.personality.themeCount}{" "}
+                                  {m.personality.themeCount === 1
+                                    ? "theme"
+                                    : "themes"}
+                                  {m.personality.cashPct >= 5
+                                    ? ` · cash ${m.personality.cashPct}%`
+                                    : ""}
+                                </p>
 
                                 <div className="grid grid-cols-3 gap-x-3 border-t border-zinc-800/80 pt-3">
                                   <div>
@@ -1338,15 +1428,24 @@ export function CommunityView({ communityId }: Props) {
                             <p className="mt-0.5 text-sm text-zinc-400">
                               {leaderboardRange === "today"
                                 ? "Ranked by today's move"
-                                : "Ranked by all-time return"}
+                                : leaderboardRange === "lifetime"
+                                  ? "Ranked by all-time return"
+                                  : leaderboardRange === "spread"
+                                    ? "Ranked by how spread out the book is"
+                                    : leaderboardRange === "risk"
+                                      ? "Ranked by theme heat"
+                                      : "Ranked by the largest single name"}
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+                        <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                           {(
                             [
                               ["today", "Today"],
                               ["lifetime", "All-time"],
+                              ["spread", "Spread"],
+                              ["risk", "Risk"],
+                              ["conviction", "Conviction"],
                             ] as const
                           ).map(([id, label]) => (
                             <button
@@ -1367,14 +1466,43 @@ export function CommunityView({ communityId }: Props) {
                       </div>
                       <ul className="space-y-2">
                         {[...membersWithBooks]
-                          .sort((a, b) =>
-                            leaderboardRange === "today"
-                              ? (b.todayPct ?? -1) - (a.todayPct ?? -1)
-                              : b.roiPct - a.roiPct
-                          )
+                          .sort((a, b) => {
+                            if (leaderboardRange === "today")
+                              return (b.todayPct ?? -1) - (a.todayPct ?? -1);
+                            if (leaderboardRange === "lifetime")
+                              return b.roiPct - a.roiPct;
+                            if (leaderboardRange === "spread")
+                              return (
+                                (b.personality?.diversificationScore ?? -1) -
+                                (a.personality?.diversificationScore ?? -1)
+                              );
+                            if (leaderboardRange === "risk")
+                              return (
+                                (b.personality?.riskScore ?? -1) -
+                                (a.personality?.riskScore ?? -1)
+                              );
+                            return (
+                              (b.personality?.convictionScore ?? -1) -
+                              (a.personality?.convictionScore ?? -1)
+                            );
+                          })
                           .map((m, i) => {
+                            const built =
+                              leaderboardRange === "spread" ||
+                              leaderboardRange === "risk" ||
+                              leaderboardRange === "conviction";
                             const pct =
-                              leaderboardRange === "today" ? m.todayPct : m.roiPct;
+                              leaderboardRange === "today"
+                                ? m.todayPct
+                                : leaderboardRange === "lifetime"
+                                  ? m.roiPct
+                                  : null;
+                            const builtScore =
+                              leaderboardRange === "spread"
+                                ? m.personality?.diversificationScore
+                                : leaderboardRange === "risk"
+                                  ? m.personality?.riskScore
+                                  : m.personality?.convictionScore;
                             return (
                               <li
                                 key={m.id}
@@ -1410,10 +1538,20 @@ export function CommunityView({ communityId }: Props) {
                                 <span
                                   className={cn(
                                     "w-16 shrink-0 text-right text-sm font-semibold tabular-nums",
-                                    signedTone(pct, "text-zinc-400")
+                                    built
+                                      ? "text-white"
+                                      : signedTone(pct, "text-zinc-400")
                                   )}
                                 >
-                                  {pct != null ? percent(pct) : "—"}
+                                  {built
+                                    ? builtScore != null
+                                      ? leaderboardRange === "conviction"
+                                        ? `${builtScore}%`
+                                        : `${builtScore}`
+                                      : "—"
+                                    : pct != null
+                                      ? percent(pct)
+                                      : "—"}
                                 </span>
                                 {/* Whole dollars: cents are noise on a
                                   * leaderboard, and at two decimals a
@@ -1611,6 +1749,10 @@ export function CommunityView({ communityId }: Props) {
                           );
                           return sum + (score?.todayDollar ?? 0);
                         }, 0);
+                        const memberCash = sheets.reduce(
+                          (sum, p) => sum + p.cash_balance,
+                          0
+                        );
                         const memberTickerValues = holdings
                           .filter((h) => sheetIds.has(h.portfolio_id))
                           .map((h) => ({
@@ -1620,7 +1762,10 @@ export function CommunityView({ communityId }: Props) {
                           }));
                         const personality =
                           memberTickerValues.length > 0
-                            ? buildPortfolioPersonality(memberTickerValues)
+                            ? buildPortfolioPersonality(
+                                memberTickerValues,
+                                memberCash
+                              )
                             : null;
                         const emails = memberEmails(m);
                         return (
@@ -2153,9 +2298,10 @@ export function CommunityView({ communityId }: Props) {
                   The power animal field guide
                 </h3>
                 <p className="mt-1 text-xs text-zinc-400">
-                  Every book gets scored on diversification and risk, then
-                  matched to whichever archetype fits best. A fun lens, not
-                  an investing verdict.
+                  Every book gets scored on spread, risk, conviction, cash,
+                  and how many themes it actually lives in, then matched to
+                  whichever animal fits best. A fun lens, not an investing
+                  verdict.
                 </p>
               </div>
               <button

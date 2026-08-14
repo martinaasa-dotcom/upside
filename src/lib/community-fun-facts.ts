@@ -24,7 +24,11 @@ function money(n: number): string {
   return Math.round(n).toLocaleString("en-US");
 }
 
-const IRREGULAR_PLURALS: Record<string, string> = { Wolf: "Wolves" };
+const IRREGULAR_PLURALS: Record<string, string> = {
+  Wolf: "Wolves",
+  Fox: "Foxes",
+  Octopus: "Octopuses",
+};
 
 function pluralAnimal(animal: string, n: number): string {
   if (n === 1) return animal;
@@ -181,6 +185,57 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${f.name} is a Falcon: small book, sharp aim, ${pct1(f.roiPct)} lifetime.`,
       `Don't underestimate ${f.name}'s Falcon book, few positions, high conviction.`,
+    ]);
+  },
+  // Octopus: most habitats.
+  ({ members, rng }) => {
+    const octopi = members.filter((m) => m.personality?.animal === "Octopus");
+    if (octopi.length === 0) return null;
+    const o = pick(rng, octopi);
+    return pick(rng, [
+      `${o.name} is an Octopus: ${o.personality!.themeCount} live themes, a tentacle in every pond.`,
+      `Most habitats in the circle: ${o.name} the Octopus (${o.personality!.themeCount} themes).`,
+    ]);
+  },
+  // Squirrel cash stash.
+  ({ members, rng }) => {
+    const withCash = members.filter(
+      (m) => m.personality && m.personality.cashPct >= 8
+    );
+    if (withCash.length === 0) return null;
+    const top = [...withCash].sort(
+      (a, b) => (b.personality?.cashPct ?? 0) - (a.personality?.cashPct ?? 0)
+    )[0]!;
+    return pick(rng, [
+      `${top.name} is sitting on ${top.personality!.cashPct}% cash. Squirrel energy, whether the badge says so or not.`,
+      `Biggest dry-powder stash: ${top.name} at ${top.personality!.cashPct}% cash.`,
+    ]);
+  },
+  // Highest conviction name.
+  ({ members, rng }) => {
+    const withTop = members.filter(
+      (m) => m.personality && m.personality.convictionScore >= 30
+    );
+    if (withTop.length === 0) return null;
+    const top = [...withTop].sort(
+      (a, b) =>
+        (b.personality?.convictionScore ?? 0) -
+        (a.personality?.convictionScore ?? 0)
+    )[0]!;
+    const name = top.personality!.topTicker ?? "one name";
+    return pick(rng, [
+      `${top.name}'s largest position is ${top.personality!.convictionScore}% (${name}). That's conviction.`,
+      `Highest conviction in the circle: ${top.name}, ${top.personality!.convictionScore}% in ${name}.`,
+    ]);
+  },
+  // Panda specialist.
+  ({ members, rng }) => {
+    const pandas = members.filter((m) => m.personality?.animal === "Panda");
+    if (pandas.length === 0) return null;
+    const p = pick(rng, pandas);
+    return pick(rng, [
+      `${p.name} is a Panda: ${p.personality!.specialistScore}% in one theme. When that bamboo moves, the whole book moves.`,
+      `One-theme diet: ${p.name} the Panda, ${p.personality!.specialistScore}% specialist.`,
     ]);
   },
 ];

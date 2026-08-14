@@ -86,6 +86,17 @@ export type PortfolioPersonality = {
   /** 0-100, higher = hotter/more volatile theme mix. */
   riskScore: number;
   riskBand: ScoreBand;
+  /** 0-100, weight of the single largest position. */
+  convictionScore: number;
+  convictionBand: ScoreBand;
+  /** Ticker behind convictionScore, if any. */
+  topTicker: string | null;
+  /** 0-100, weight sitting in the heaviest forecast theme. */
+  specialistScore: number;
+  /** Themes that actually move the needle (>= 8% of equity). */
+  themeCount: number;
+  /** Cash as a % of NAV. Negative cash (margin) stays negative. */
+  cashPct: number;
   dominantTheme: ForecastTheme;
   animal: string;
   animalEmoji: string;
@@ -145,57 +156,87 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     id: "hatchling",
     animal: "Hatchling",
     emoji: "🥚",
-    criteria: "All cash, no positions yet",
-    tagline: "All cash, no positions yet. Every book starts here.",
+    criteria: "No positions yet",
+    tagline: "No positions yet. Every book starts here.",
     vibe: "Pure potential and zero commitments. Every other animal on this list started right here, deciding what to hatch into.",
     strength: "Nothing to lose, no bad habits to unlearn, a completely clean slate.",
     watchFor: "Sitting in cash forever isn't a strategy either. Hatch when you're ready.",
   },
   {
+    id: "squirrel",
+    animal: "Squirrel",
+    emoji: "🐿️",
+    criteria: "Cash is at least ~28% of the book",
+    tagline: "Keeps a fat cash stash so a dry season doesn't starve the book.",
+    vibe: "Positions exist, but dry powder is the real personality. Ready to pounce, or just nervously hoarding.",
+    strength: "Can buy the dip without selling something else first.",
+    watchFor: "Cash that never gets deployed is just a savings account with extra steps.",
+  },
+  {
     id: "dragon",
     animal: "Dragon",
     emoji: "🐉",
-    criteria: "Crypto-heavy and high risk",
-    tagline: "Hoards volatile treasure, breathes fire on rallies (and dips).",
+    criteria: "Crypto is the heaviest theme, and it is a real slice of the book",
+    tagline: "Hoards volatile treasure, breathes fire on rallies and dips.",
     vibe: "Lives and dies by the crypto cycle, and wouldn't have it any other way. When the hoard is up, nothing moves faster.",
     strength: "First in line for the biggest, fastest moves in the market.",
     watchFor: "Dragons sleep on hoards that can lose half their value by morning.",
   },
   {
+    id: "panda",
+    animal: "Panda",
+    emoji: "🐼",
+    criteria: "Two thirds or more in a single non-crypto, non-index theme",
+    tagline: "Eats one thing. When that theme moves, the whole book moves.",
+    vibe: "Not random concentration. A chosen diet. Space pandas, AI pandas, semi pandas. Same animal, different bamboo.",
+    strength: "Gets the full ride when the one theme is right.",
+    watchFor: "A panda with no bamboo left has nothing else to eat.",
+  },
+  {
+    id: "octopus",
+    animal: "Octopus",
+    emoji: "🐙",
+    criteria: "Three or more live themes",
+    tagline: "A tentacle in every pond. Many habitats, no single bet on the weather.",
+    vibe: "Rotated, collected, or just curious. The book is not one story. It is several, running in parallel.",
+    strength: "A bad year in one habitat does not empty the tank.",
+    watchFor: "Eight tentacles can become eight half-finished theses.",
+  },
+  {
     id: "shark",
     animal: "Shark",
     emoji: "🦈",
-    criteria: "High risk, few names",
+    criteria: "Hot themes and a fat largest position",
     tagline: "A few high-conviction bets, hunted with total focus.",
     vibe: "No wasted motion and no hedge. Every position earned its spot through conviction, not comfort.",
     strength: "Maximum upside when the thesis is right, with nothing diluting the payoff.",
-    watchFor: "One bad call and there's no diversification net underneath to catch it.",
+    watchFor: "One bad call and there's no net underneath to catch it.",
   },
   {
     id: "wolf",
     animal: "Wolf",
     emoji: "🐺",
-    criteria: "High risk, decent spread",
+    criteria: "Hot themes, spread across a pack",
     tagline: "Runs with a pack of aggressive names across several fronts.",
-    vibe: "Bold, but never betting the whole den on one hunt. The rare combination of aggressive AND spread out.",
-    strength: "Chases growth on multiple fronts at once instead of picking just one.",
-    watchFor: "A pack of hot names can still all go cold together if they're more correlated than they look.",
+    vibe: "Bold, but never betting the whole den on one hunt. Aggressive and spread at once is the rare combination.",
+    strength: "Chases growth on more than one front instead of picking just one.",
+    watchFor: "A pack of hot names can still all go cold together if they are more correlated than they look.",
   },
   {
-    id: "elephant",
-    animal: "Elephant",
-    emoji: "🐘",
-    criteria: "Very diversified",
-    tagline: "Broad, steady, and hard to spook. Never one bad day away from trouble.",
-    vibe: "Built to survive any single name's worst day. Slow to startle, and remembers every cycle it's lived through.",
-    strength: "Resilient, no single ticker can sink this book on its own.",
-    watchFor: "Broad can drift into bland, worth checking the spread is on purpose, not just default.",
+    id: "falcon",
+    animal: "Falcon",
+    emoji: "🦅",
+    criteria: "Three names or fewer",
+    tagline: "Small, sharp-eyed, and diving hard on very few targets.",
+    vibe: "Precision over volume. Every position was picked, not just added, and there's nowhere for a bad call to hide.",
+    strength: "Laser focus on the highest-conviction ideas, no clutter.",
+    watchFor: "A falcon with a bad target has nowhere else to turn.",
   },
   {
     id: "turtle",
     animal: "Turtle",
     emoji: "🐢",
-    criteria: "Low risk, concentrated",
+    criteria: "Calm themes, still concentrated",
     tagline: "A small, well-armored shell, slow and steady on purpose.",
     vibe: "Concentrated by choice, not by accident, in names calm enough that the shell rarely needs to close.",
     strength: "Low-drama compounding, calm under pressure, on purpose.",
@@ -205,27 +246,27 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     id: "owl",
     animal: "Owl",
     emoji: "🦉",
-    criteria: "Low risk, spread wide",
-    tagline: "Watchful and risk-aware, spread wide across the board.",
-    vibe: "Sees what's coming before it happens, and spreads the bets wide enough that no single surprise really lands.",
+    criteria: "Calm themes, and actually spread out",
+    tagline: "Watchful and risk-aware, with the spread to match.",
+    vibe: "Sees what's coming, and is not all-in on one perch while watching. Calm plus breadth, not calm plus a single name.",
     strength: "Rarely surprised, rarely rattled, a genuinely calm book.",
     watchFor: "All that watching can turn into missed swoops. Calm isn't the same as complacent.",
   },
   {
-    id: "falcon",
-    animal: "Falcon",
-    emoji: "🦅",
-    criteria: "Very few positions",
-    tagline: "Small, sharp-eyed, and diving hard on very few targets.",
-    vibe: "Precision over volume. Every position was picked, not just added, and there's nowhere for a bad call to hide.",
-    strength: "Laser focus on the highest-conviction ideas, no clutter.",
-    watchFor: "A falcon with a bad target has nowhere else to turn.",
+    id: "elephant",
+    animal: "Elephant",
+    emoji: "🐘",
+    criteria: "Index-broad, or an index fund doing the spreading",
+    tagline: "Broad, steady, and hard to spook. Never one bad day away from trouble.",
+    vibe: "Built to survive any single name's worst day. Slow to startle, and remembers every cycle it's lived through.",
+    strength: "Resilient. No single ticker can sink this book on its own.",
+    watchFor: "Broad can drift into bland. Worth checking the spread is on purpose, not just default.",
   },
   {
     id: "fox",
     animal: "Fox",
     emoji: "🦊",
-    criteria: "The flexible middle ground",
+    criteria: "The flexible middle. Not extreme on cash, diet, heat, or spread",
     tagline: "Clever and adaptable, some offense, some defense, no dogma.",
     vibe: "Some offense, some defense. Doesn't need a label.",
     strength: "Adaptable, ready to lean either way as the market shifts.",
@@ -302,6 +343,28 @@ function riskBandFor(score: number): ScoreBand {
   return { label: "High-octane", description: "Concentrated in the hottest, most volatile themes." };
 }
 
+function convictionBandFor(score: number): ScoreBand {
+  if (score >= 50)
+    return {
+      label: "All-in",
+      description: "One name is half the book or more.",
+    };
+  if (score >= 35)
+    return {
+      label: "High conviction",
+      description: "The largest position really decides the year.",
+    };
+  if (score >= 20)
+    return {
+      label: "Leaning",
+      description: "A favourite, but not the whole story.",
+    };
+  return {
+    label: "No single name",
+    description: "Nothing dominates. The book moves as a group.",
+  };
+}
+
 /** Herfindahl-style concentration → effective position count → 0-100
  * diversification score. Index-themed tickers get credit for the spread
  * already inside the fund via INDEX_LOOKTHROUGH_SLOTS. */
@@ -329,9 +392,8 @@ function archetype(id: string): AnimalArchetype {
   return found;
 }
 
-/** Same decision order as ANIMAL_BESTIARY — keep the two in sync. */
 /**
- * Picks the archetype AND says why this particular book landed there.
+ * Same decision order as ANIMAL_BESTIARY. Keep the two in sync.
  *
  * The static bestiary copy describes the animal in general; it never
  * explains why *you* are one, which made the badge feel assigned at random.
@@ -343,10 +405,24 @@ function pickAnimal(opts: {
   diversification: number;
   risk: number;
   theme: ForecastTheme;
+  specialistScore: number;
+  themeCount: number;
+  conviction: number;
+  cashPct: number;
   positionCount: number;
 }): { archetype: AnimalArchetype; why: string } {
-  const { diversification, risk, theme, positionCount } = opts;
+  const {
+    diversification,
+    risk,
+    theme,
+    specialistScore,
+    themeCount,
+    conviction,
+    cashPct,
+    positionCount,
+  } = opts;
   const names = positionCount === 1 ? "1 name" : `${positionCount} names`;
+  const top = `largest position ${conviction}%`;
 
   if (positionCount === 0) {
     return {
@@ -354,40 +430,47 @@ function pickAnimal(opts: {
       why: "Nothing held yet, so there's nothing to read.",
     };
   }
-  if (theme === "crypto" && risk >= 80) {
+  if (cashPct >= 28) {
+    return {
+      archetype: archetype("squirrel"),
+      why: `Cash is ${cashPct}% of the book. That stash is doing more work than any single ticker right now.`,
+    };
+  }
+  if (theme === "crypto" && specialistScore >= 35) {
     return {
       archetype: archetype("dragon"),
-      why: `Crypto is your heaviest theme and risk sits at ${risk}/100. Nothing else in the bestiary moves like that.`,
+      why: `Crypto is ${specialistScore}% of equity, with risk at ${risk}/100. Nothing else in the bestiary moves like that.`,
     };
   }
-  if (risk >= 75 && diversification < 30) {
+  if (
+    specialistScore >= 68 &&
+    theme !== "crypto" &&
+    theme !== "index"
+  ) {
+    return {
+      archetype: archetype("panda"),
+      why: `${specialistScore}% of the book sits in ${THEME_LABEL[theme]}. One diet, on purpose.`,
+    };
+  }
+  if (themeCount >= 3) {
+    return {
+      archetype: archetype("octopus"),
+      why: `${themeCount} live themes across ${names}. This is not one habitat. It is a handful running in parallel.`,
+    };
+  }
+  if (
+    risk >= 72 &&
+    (conviction >= 38 || (diversification < 28 && positionCount <= 6))
+  ) {
     return {
       archetype: archetype("shark"),
-      why: `Risk ${risk}/100 with diversification only ${diversification}/100. Across ${names}, a couple of hot positions decide almost everything.`,
+      why: `Risk ${risk}/100 with ${top}. Across ${names}, a couple of hot positions decide almost everything.`,
     };
   }
-  if (risk >= 75 && diversification >= 30) {
+  if (risk >= 72) {
     return {
       archetype: archetype("wolf"),
-      why: `Risk ${risk}/100 is top-band, but ${diversification}/100 diversification across ${names} means no single position gets to decide your year. Aggressive and spread out at once is the rare combination.`,
-    };
-  }
-  if (diversification >= 55) {
-    return {
-      archetype: archetype("elephant"),
-      why: `Diversification ${diversification}/100 across ${names}, with risk at a manageable ${risk}/100. Spread this wide is hard to knock over.`,
-    };
-  }
-  if (risk < 35 && diversification < 30) {
-    return {
-      archetype: archetype("turtle"),
-      why: `Risk only ${risk}/100 and concentrated at ${diversification}/100. A short list of genuinely calm positions.`,
-    };
-  }
-  if (risk < 40) {
-    return {
-      archetype: archetype("owl"),
-      why: `Risk ${risk}/100 sits at the calm end of the scale. This book is built for patience, not adrenaline.`,
+      why: `Risk ${risk}/100 is top-band, but ${diversification}/100 diversification across ${names} means no single position gets to decide your year.`,
     };
   }
   if (positionCount <= 3) {
@@ -396,14 +479,33 @@ function pickAnimal(opts: {
       why: `Just ${names}. At that count every single one matters enormously, whichever way it goes.`,
     };
   }
+  if (risk < 38 && (conviction >= 40 || diversification < 35)) {
+    return {
+      archetype: archetype("turtle"),
+      why: `Risk only ${risk}/100 and concentrated (${top}). A short list of genuinely calm positions.`,
+    };
+  }
+  if (risk < 42 && diversification >= 40) {
+    return {
+      archetype: archetype("owl"),
+      why: `Risk ${risk}/100 sits at the calm end, and diversification ${diversification}/100 means the watching actually has breadth behind it.`,
+    };
+  }
+  if (diversification >= 68 || (theme === "index" && specialistScore >= 50)) {
+    return {
+      archetype: archetype("elephant"),
+      why: `Diversification ${diversification}/100 across ${names}. Spread this wide is hard to knock over.`,
+    };
+  }
   return {
     archetype: archetype("fox"),
-    why: `Risk ${risk}/100 and diversification ${diversification}/100 both land mid-table across ${names}. Adaptable rather than extreme in either direction.`,
+    why: `Risk ${risk}/100, diversification ${diversification}/100, ${themeCount} themes, ${top}. Mid-table on every axis, which is its own kind of choice.`,
   };
 }
 
 export function buildPortfolioPersonality(
-  holdings: Array<{ ticker: string; value: number }>
+  holdings: Array<{ ticker: string; value: number }>,
+  cash = 0
 ): PortfolioPersonality {
   const positive = holdings.filter((h) => h.value > 0);
   const diversificationScore = diversificationScoreFromHoldings(positive);
@@ -412,11 +514,14 @@ export function buildPortfolioPersonality(
   let riskScore = 50;
   let expectedAnnualReturnPct = 0;
   let maxDrawdownPct = 0;
+  let convictionScore = 0;
+  let topTicker: string | null = null;
   const themeWeights = new Map<ForecastTheme, number>();
   if (total > 0) {
     let weightedRisk = 0;
     let weightedReturn = 0;
     let weightedDrawdown = 0;
+    let topValue = -1;
     for (const h of positive) {
       const theme = forecastThemeForTicker(h.ticker);
       const weight = h.value / total;
@@ -424,6 +529,11 @@ export function buildPortfolioPersonality(
       weightedReturn += weight * impliedAnnualReturnForTheme(theme) * 100;
       weightedDrawdown += weight * (THEME_MAX_DRAWDOWN_PCT[theme] ?? 40);
       themeWeights.set(theme, (themeWeights.get(theme) ?? 0) + weight);
+      if (h.value > topValue) {
+        topValue = h.value;
+        topTicker = h.ticker;
+        convictionScore = Math.round(weight * 100);
+      }
     }
     riskScore = Math.round(weightedRisk);
     expectedAnnualReturnPct = Math.round(weightedReturn * 10) / 10;
@@ -438,6 +548,13 @@ export function buildPortfolioPersonality(
       dominantTheme = theme;
     }
   }
+  const specialistScore =
+    bestWeight > 0 ? Math.round(bestWeight * 100) : 0;
+  const themeCount = [...themeWeights.values()].filter((w) => w >= 0.08).length;
+
+  const nav = total + cash;
+  const cashPct =
+    Math.abs(nav) > 1e-9 ? Math.round((cash / nav) * 100) : cash > 0 ? 100 : 0;
 
   const beta = betaForRiskScore(riskScore);
   const capmExpectedPct =
@@ -451,6 +568,10 @@ export function buildPortfolioPersonality(
     diversification: diversificationScore,
     risk: riskScore,
     theme: dominantTheme,
+    specialistScore,
+    themeCount,
+    conviction: convictionScore,
+    cashPct,
     positionCount: positive.length,
   });
 
@@ -459,6 +580,12 @@ export function buildPortfolioPersonality(
     diversificationBand: diversificationBandFor(diversificationScore),
     riskScore,
     riskBand: riskBandFor(riskScore),
+    convictionScore,
+    convictionBand: convictionBandFor(convictionScore),
+    topTicker,
+    specialistScore,
+    themeCount,
+    cashPct,
     dominantTheme,
     animal: picked.archetype.animal,
     animalEmoji: picked.archetype.emoji,

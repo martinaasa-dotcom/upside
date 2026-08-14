@@ -520,9 +520,10 @@ export function UpsidePortfolioPage() {
   const fundPersonality = useMemo(
     () =>
       buildPortfolioPersonality(
-        fundValued.map((h) => ({ ticker: h.ticker, value: h.currentValue }))
+        fundValued.map((h) => ({ ticker: h.ticker, value: h.currentValue })),
+        cash
       ),
-    [fundValued]
+    [fundValued, cash]
   );
   const totalReturnDollar = totalValue - (fund?.starting_capital ?? 0);
   const totalReturnPct =

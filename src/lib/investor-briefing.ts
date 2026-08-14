@@ -90,7 +90,10 @@ function buildPlays(opts: {
     .filter((t) => t.currentValue > 0)
     .map((t) => ({ ticker: t.ticker, value: t.currentValue }));
   if (equityHoldings.length > 0) {
-    const personality = buildPortfolioPersonality(equityHoldings);
+    const personality = buildPortfolioPersonality(
+      equityHoldings,
+      model.totals.cash
+    );
     const rng = mulberry32(
       hashSeed(`upside-briefing-theme|${dayKey}|${personality.dominantTheme}`)
     );

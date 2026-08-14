@@ -235,9 +235,10 @@ export function LabSheet({
   const personality = useMemo(
     () =>
       buildPortfolioPersonality(
-        sheetHoldings.map((h) => ({ ticker: h.ticker, value: h.currentValue }))
+        sheetHoldings.map((h) => ({ ticker: h.ticker, value: h.currentValue })),
+        scopedCash
       ),
-    [sheetHoldings]
+    [sheetHoldings, scopedCash]
   );
 
   const corrSeries = useMemo(

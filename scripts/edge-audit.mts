@@ -107,8 +107,34 @@ for (const [name, holdings] of Object.entries(CASES)) {
   check(`personality(${name}).expectedAnnualReturnPct`, p.expectedAnnualReturnPct, finite, "finite");
   check(`personality(${name}).maxDrawdownPct`, p.maxDrawdownPct, inRange(0, 100), "0..100");
   check(`personality(${name}).modeledAlphaPct`, p.modeledAlphaPct, finite, "finite");
+  check(`personality(${name}).convictionScore`, p.convictionScore, inRange(0, 100), "0..100");
+  check(`personality(${name}).specialistScore`, p.specialistScore, inRange(0, 100), "0..100");
+  check(`personality(${name}).themeCount`, p.themeCount, (v) => finite(v) && v >= 0 && v <= 20, "0..20");
+  check(`personality(${name}).cashPct`, p.cashPct, finite, "finite");
   check(`personality(${name}).animal`, p.animal, (v) => typeof v === "string" && v.length > 0, "an animal");
   check(`personality(${name}).tagline`, p.tagline, (v) => typeof v === "string" && !v.includes("undefined") && !v.includes("NaN"), "clean tagline");
+}
+
+{
+  const empty = buildPortfolioPersonality([]);
+  check("animal(empty)", empty.animal, (v) => v === "Hatchling", "Hatchling");
+  const squirrel = buildPortfolioPersonality([{ ticker: "VOO", value: 70 }], 30);
+  check("animal(cash-heavy)", squirrel.animal, (v) => v === "Squirrel", "Squirrel");
+  const dragon = buildPortfolioPersonality([{ ticker: "BMNR", value: 100 }]);
+  check("animal(crypto)", dragon.animal, (v) => v === "Dragon", "Dragon");
+  const panda = buildPortfolioPersonality([
+    { ticker: "NBIS", value: 80 },
+    { ticker: "CRWV", value: 20 },
+  ]);
+  check("animal(ai-diet)", panda.animal, (v) => v === "Panda", "Panda");
+  const octopus = buildPortfolioPersonality([
+    { ticker: "NBIS", value: 25 },
+    { ticker: "RKLB", value: 25 },
+    { ticker: "NVDA", value: 20 },
+    { ticker: "VOO", value: 15 },
+    { ticker: "BMNR", value: 15 },
+  ]);
+  check("animal(many-themes)", octopus.animal, (v) => v === "Octopus", "Octopus");
 }
 
 // --- Compound engine ------------------------------------------------------
