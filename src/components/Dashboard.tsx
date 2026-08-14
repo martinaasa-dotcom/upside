@@ -2502,7 +2502,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_52%)] text-zinc-100 [--dock-pad:7.25rem] sm:[--dock-pad:5.5rem]">
+    <div className="flex min-h-dvh flex-col bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_52%)] text-zinc-100 [--dock-pad:7.25rem] sm:[--dock-pad:5.5rem]">
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}

@@ -48,7 +48,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
     <nav
       aria-label="Upside Lab rooms"
       className={cn(
-        "inline-flex max-w-full overflow-x-auto rounded-lg border border-white/10 bg-card p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "inline-flex max-w-full overflow-x-auto rounded-lg border border-brand/25 bg-card p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
     >

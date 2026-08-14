@@ -46,7 +46,7 @@ export function SignInGate({ children }: Props) {
   if (!needsAuth) return <>{children}</>;
   if (!ready) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-400">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)] text-zinc-400">
         <UpsideLogo
           variant="mark"
           className="h-10 w-10 animate-pulse opacity-70"
@@ -126,7 +126,7 @@ export function SignInGate({ children }: Props) {
               type="button"
               disabled={busy}
               onClick={() => void onSignIn()}
-              className="btn-primary signin-rise-3 mt-8 h-12 w-full max-w-sm gap-2.5 md:w-auto md:min-w-[16rem]"
+              className="btn-primary signin-rise-3 mt-8 h-12 w-full max-w-sm rounded-full gap-2.5 md:w-auto md:min-w-[16rem]"
             >
               <GoogleMark />
               {busy ? "Redirecting …" : "Continue with Google"}

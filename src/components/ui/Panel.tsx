@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-white/10 on bg-card
- *   Card       border-white/10 on bg-card/60
+ *   Shell      border-brand/20 on bg-card
+ *   Card       border-white/10 on bg-card
  *   Headings   text-base font-semibold (hero: text-lg) · sentence case
  *   Micro      text-xs uppercase tracking-wide text-zinc-400
  *   Body       text-sm leading-relaxed text-zinc-400
@@ -29,9 +29,9 @@ import { useState, type ReactNode } from "react";
  */
 
 const SHELL_TONES = {
-  default: "border-white/10 bg-card/80",
+  default: "border-brand/20 bg-card/80",
   plain: "border-white/10 bg-card/80",
-  brand: "border-brand/30 bg-brand/[0.07]",
+  brand: "border-brand/35 bg-brand/[0.07]",
   warn: "border-amber-500/30 bg-amber-500/[0.07]",
   danger: "border-rose-500/30 bg-rose-950/20",
 } as const;
@@ -121,7 +121,7 @@ export function PanelHeader({
         <div className="min-w-0">
           <h2
             className={cn(
-              "font-semibold tracking-tight text-white",
+              "font-heading font-bold tracking-tight text-white",
               hero ? "text-lg sm:text-xl" : "text-base"
             )}
           >

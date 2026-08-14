@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono, Montserrat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
@@ -11,10 +11,15 @@ import {
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["600", "700"],
 });
 
 const jetbrains = JetBrains_Mono({
@@ -27,7 +32,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#08090C",
+  themeColor: "#0C1014",
   colorScheme: "dark",
 };
 
@@ -80,7 +85,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-timezone="Europe/Tallinn">
       <body
-        className={`${plusJakarta.variable} ${jetbrains.variable} antialiased`}
+        className={`${inter.variable} ${montserrat.variable} ${jetbrains.variable} antialiased`}
       >
         <Providers>{children}</Providers>
         <Analytics />

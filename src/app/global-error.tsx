@@ -41,7 +41,7 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#08090C",
+          background: "#0C1014",
           color: "#f5f2eb",
           fontFamily:
             "ui-sans-serif, system-ui, -apple-system, sans-serif",

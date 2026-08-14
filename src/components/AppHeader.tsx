@@ -37,7 +37,7 @@ export function AppHeader({
   showWorkspaceNav = true,
 }: Props) {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-app/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-brand/25 bg-app/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2 text-[15px] leading-none sm:gap-3">
           <HeaderBrand

@@ -55,8 +55,10 @@ export function UpsideLogo({
         role="img"
         aria-label={title}
       >
-        <UpsideMark className="h-[4.5rem] w-[4.5rem]" />
-        <span className="-mr-[0.2em] text-center text-[0.95rem] font-semibold uppercase leading-none tracking-[0.28em] text-white">
+        <span className="flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-[1.2rem] border border-brand bg-[#0C1014] p-2.5">
+          <UpsideMark className="h-full w-full" />
+        </span>
+        <span className="-mr-[0.18em] text-center font-heading text-[0.95rem] font-bold uppercase leading-none tracking-[0.22em] text-white">
           Upside Lab
         </span>
       </span>
@@ -83,8 +85,8 @@ export function UpsideLogo({
       role="img"
       aria-label={title}
     >
-      <UpsideMark className="h-[1em] w-[1em] -translate-y-[0.08em]" />
-      <span className="-mr-[0.14em] hidden font-semibold uppercase leading-none tracking-[0.14em] xs:inline">
+      <UpsideMark className="h-[1.15em] w-[1.15em] -translate-y-[0.06em]" />
+      <span className="-mr-[0.18em] hidden font-heading font-bold uppercase leading-none tracking-[0.18em] xs:inline">
         Upside Lab
       </span>
     </span>

@@ -757,7 +757,7 @@ export function UpsidePortfolioPage() {
   }, [benchmark, benchmarkLiveValue, totalValue, myPortfolios, myHoldings]);
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-100">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)] text-zinc-100">
       <AppHeader title="Upside Fund">
         <span
           className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
