@@ -12,67 +12,6 @@ import type { CoveredCallRow } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 
-type WriteLevelState = "near-strike" | "at-target" | "approaching";
-
-/**
- * Where spot actually sits against the plan. "At write level" has to mean
- * spot reached the target, not merely got within 2% of it: a row sitting
- * 1.9% BELOW its write level was getting the same badge as one 4% past it,
- * which reads as "you can write this now" when you can't. The at-target
- * threshold matches buildStrikeAlerts in lib/alerts.ts, so the badge and
- * the briefing alerts fire on the same condition.
- */
-function writeLevelState(r: CoveredCallRow): WriteLevelState | null {
-  const spot = r.spot;
-  if (spot == null || !(spot > 0)) return null;
-  if (r.nextStrike != null && r.nextStrike > 0 && spot / r.nextStrike >= 0.98) {
-    return "near-strike";
-  }
-  if (r.stockTarget == null) return null;
-  if (spot >= r.stockTarget) return "at-target";
-  if (spot >= r.stockTarget * 0.98) return "approaching";
-  return null;
-}
-
-const WRITE_LEVEL_BADGE: Record<
-  WriteLevelState,
-  { label: string; className: string; title: string }
-> = {
-  "near-strike": {
-    label: "Near strike",
-    className: "bg-rose-500/20 text-rose-200",
-    title: "Spot is within 2% of the strike you'd be selling, so assignment is live",
-  },
-  "at-target": {
-    label: "At write level",
-    className: "bg-amber-500/20 text-amber-200",
-    title: "Spot reached your stock target, this is the level you planned to write at",
-  },
-  approaching: {
-    label: "Almost at write level",
-    className: "bg-zinc-700/60 text-zinc-300",
-    title: "Spot is within 2% below your stock target, not there yet",
-  },
-};
-
-/** Same line as Distance so the chip never stretches a row. */
-function WriteLevelBadge({ row }: { row: CoveredCallRow }) {
-  const state = writeLevelState(row);
-  if (!state) return null;
-  const badge = WRITE_LEVEL_BADGE[state];
-  return (
-    <span
-      title={badge.title}
-                    className={cn(
-        "inline-flex h-5 shrink-0 items-center rounded-md px-1.5 text-xs font-medium leading-none normal-case",
-        badge.className
-      )}
-    >
-      {badge.label}
-    </span>
-  );
-}
-
 type Props = {
   rows: CoveredCallRow[];
   yield2wAvg: number;
@@ -289,20 +228,17 @@ export function CoveredCallPanel({
                 </div>
                 <div>
                   <p className="text-zinc-400">Still to go</p>
-                  <p className="inline-flex items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "tabular-nums font-medium",
-                        r.targetDistance != null
-                          ? signedTone(r.targetDistance)
-                          : "text-zinc-400"
-                      )}
-                    >
-                      {r.targetDistance != null
-                        ? percent(r.targetDistance)
-                        : "—"}
-                    </span>
-                    <WriteLevelBadge row={r} />
+                  <p
+                    className={cn(
+                      "tabular-nums font-medium",
+                      r.targetDistance != null
+                        ? signedTone(r.targetDistance)
+                        : "text-zinc-400"
+                    )}
+                  >
+                    {r.targetDistance != null
+                      ? percent(r.targetDistance)
+                      : "—"}
                   </p>
                 </div>
                 <div>
@@ -408,22 +344,16 @@ export function CoveredCallPanel({
                   onCommit={(price) => onPatchStockTarget(r.holding.id, price)}
                 />
               </div>
-              <div className={cellBase}>
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "tabular-nums font-medium",
-                      r.targetDistance != null
-                        ? signedTone(r.targetDistance)
-                        : "text-zinc-400"
-                    )}
-                  >
-                    {r.targetDistance != null
-                      ? percent(r.targetDistance)
-                      : "—"}
-                  </span>
-                  <WriteLevelBadge row={r} />
-                </span>
+              <div
+                className={cn(
+                  cellBase,
+                  "tabular-nums font-medium",
+                  r.targetDistance != null
+                    ? signedTone(r.targetDistance)
+                    : "text-zinc-400"
+                )}
+              >
+                {r.targetDistance != null ? percent(r.targetDistance) : "—"}
               </div>
               <div
                 className={cn(
