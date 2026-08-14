@@ -20,6 +20,9 @@ import {
   saveForecastPlan,
   shouldAutoRefreshForecast,
   forecastHoldingsKey,
+  bookConvictionKey,
+  cachedEoyPathsFor,
+  cachedTickersFor,
   type ForecastPlan,
 } from "@/lib/forecast-plan";
 import type { ConvictionMap } from "@/lib/conviction";
@@ -71,16 +74,22 @@ function isCurrentYear(year: number) {
 }
 
 function YearColHeader({ year }: { year: number }) {
-  return (
-    <>
-      {yearLabel(year)}
-      {isCurrentYear(year) && (
-        <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
-          this year
-        </span>
-      )}
-    </>
-  );
+  return yearLabel(year);
+}
+
+function mergeEoyPaths(
+  ...lists: { ticker: string; prices: Partial<Record<ForecastYear, number>> }[][]
+) {
+  const map = new Map<
+    string,
+    { ticker: string; prices: Partial<Record<ForecastYear, number>> }
+  >();
+  for (const list of lists) {
+    for (const p of list) {
+      map.set(p.ticker.toUpperCase(), p);
+    }
+  }
+  return [...map.values()];
 }
 
 function horizonTabLabel(label: string): string {
@@ -405,9 +414,20 @@ export function ForecastPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [appliedFlash, setAppliedFlash] = useState(false);
+  const [planHydrated, setPlanHydrated] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
   const holdingsKey = forecastHoldingsKey(model.rows.map((r) => r.ticker));
+  const convictionKey = bookConvictionKey(
+    model.rows.map((r) => r.ticker),
+    convictions
+  );
+  const cachedTickers = planHydrated
+    ? cachedTickersFor(
+        model.rows.map((r) => r.ticker),
+        convictions
+      )
+    : [];
   const fullyCovered = isForecastFullyCovered(
     model.rows.map((r) => r.ticker),
     overrides
@@ -416,7 +436,6 @@ export function ForecastPanel({
   const reappliedRef = useRef<string>("");
   const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
-  const [planHydrated, setPlanHydrated] = useState(false);
   const [prevPlan, setPrevPlan] = useState<ForecastPlan | null>(null);
   const [horizon, setHorizon] = useState(0);
   const planAt = plan?.generatedAt ?? "";
@@ -467,9 +486,14 @@ export function ForecastPanel({
         res,
         "Failed to generate plan"
       );
+      const convictionKey = bookConvictionKey(
+        model.rows.map((r) => r.ticker),
+        convictions
+      );
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,
+        convictionKey,
         stance: DEFAULT_FORECAST_STANCE,
       };
       const { eoyTargets, paths } = calibratedPaths(next, model);
@@ -478,7 +502,7 @@ export function ForecastPanel({
         eoyTargets,
         stance: DEFAULT_FORECAST_STANCE,
       };
-      saveForecastPlan(calibrated);
+      saveForecastPlan(calibrated, convictions);
       setPlan(calibrated);
 
       if (paths.length > 0) {
@@ -518,7 +542,7 @@ export function ForecastPanel({
       return;
     }
     const next: ForecastPlan = { ...plan, eoyTargets, holdingsKey };
-    saveForecastPlan(next);
+    saveForecastPlan(next, convictions);
     setPlan(next);
     if (paths.length > 0) {
       onApplyMargusPaths(paths);
@@ -528,19 +552,28 @@ export function ForecastPanel({
   }, [portfolioId, holdingsKey, plan, model.rows.length, flatCount]);
 
   // Restore saved Margus prices into the grid without calling the model.
+  // Shared ticker cache fills another sheet's empty cells (Anu gets Aasad's
+  // NBIS path) so opening a second book does not fire a new run.
   useEffect(() => {
     if (model.rows.length === 0) return;
     if (flatCount === 0) return;
-    if (!plan || (plan.eoyTargets?.length ?? 0) === 0) return;
     const key = `${portfolioId}:${holdingsKey}:reapply`;
     if (reappliedRef.current === key) return;
     reappliedRef.current = key;
-    const { paths } = calibratedPaths(plan, model);
-    if (paths.length > 0) onApplyMargusPaths(paths);
+    const planPaths = plan
+      ? calibratedPaths(plan, model).paths
+      : [];
+    const cachePaths = cachedEoyPathsFor(
+      model.rows.map((r) => r.ticker),
+      convictions
+    );
+    const merged = mergeEoyPaths(cachePaths, planPaths);
+    if (merged.length > 0) onApplyMargusPaths(merged);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
   }, [portfolioId, holdingsKey, flatCount, plan]);
 
-  // Auto cadence: first run, then monthly. New holdings are filled locally.
+  // Auto: first run with nothing cached, a new ticker with no shared path,
+  // or a thesis change. Cached reasoning is reused across sheets.
   useEffect(() => {
     if (!planHydrated || model.rows.length === 0) return;
     if (askInFlight.current || busy) return;
@@ -548,6 +581,8 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
+      cachedTickers,
+      convictionKey,
     });
     if (!decision.run) return;
     const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
@@ -555,12 +590,11 @@ export function ForecastPanel({
     autoKeyRef.current = key;
     void askMargus({ auto: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
-  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy]);
+  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, convictionKey, cachedTickers.join("|")]);
 
-  // Safety net for the brief window between "you sold this" and the
-  // auto-refresh above actually landing (or if it fails/gets rate
-  // limited) — the add/trim playbook is free text, so a stale plan can
-  // keep naming a ticker that's no longer in the book.
+  // If a sold ticker is still named in the playbook, say so. The model
+  // does not auto-rerun for that; use "Work it out again" when you want
+  // the writeup to drop the old name.
   const soldTickersInPlan = useMemo(() => {
     if (!plan) return [];
     const planKey =
@@ -607,21 +641,20 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
+      cachedTickers,
+      convictionKey,
     });
     if (decision.run && decision.reason === "first-run") {
       return "First time on this sheet, Margus is working out the prices …";
     }
-    if (decision.run && decision.reason === "monthly") {
-      return "Monthly check, Margus is seeing whether anything has changed …";
+    if (decision.run && decision.reason === "new-holding") {
+      return "New holding, Margus is working out a path …";
     }
-    if (decision.run && decision.reason === "sold-holding") {
-      return "You sold something this covered, Margus is redoing it …";
-    }
-    if (decision.run && decision.reason === "rebase") {
-      return "Updating this to the base case …";
+    if (decision.run && decision.reason === "thesis-changed") {
+      return "Thesis changed, Margus is updating the path …";
     }
     return null;
-  }, [planHydrated, model.rows, plan, fullyCovered, busy]);
+  }, [planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, convictionKey]);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
@@ -664,11 +697,6 @@ export function ForecastPanel({
         </p>
         {statusHint && (
           <p className="mt-1 text-xs text-amber-200/80">{statusHint}</p>
-        )}
-        {flatCount > 0 && !busy && !plan && !statusHint && (
-          <p className="mt-1 text-xs text-amber-200/80">
-            No forecast saved yet. Margus is working on it.
-          </p>
         )}
         {busy && (
           <p className="mt-1 text-xs text-amber-200/80">

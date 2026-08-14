@@ -149,7 +149,8 @@ type SortKey =
   | "cost"
   | "value"
   | "roiDollar"
-  | "today";
+  | "today"
+  | "todayDollar";
 
 const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   { label: "Ticker", key: "ticker" },
@@ -191,37 +192,17 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   },
   { label: "90d", explain: "Price trend over the last ~90 days" },
   {
-    label: "Today",
+    label: "Today %",
     key: "today",
-    explain:
-      "Move since yesterday's close. Percent is the share-price move; dollars are what that did to this position.",
+    explain: "Share-price move since yesterday's close",
+  },
+  {
+    label: "Today $",
+    key: "todayDollar",
+    explain: "What today's share-price move did to this position, in dollars",
   },
   { label: "" },
 ];
-
-function TodayMove({
-  pct,
-  dollar,
-  money,
-}: {
-  pct: number | null;
-  dollar: number;
-  money: (n: number, digits?: number) => string;
-}) {
-  if (pct === null) {
-    return <span className="text-zinc-400">—</span>;
-  }
-  return (
-    <span className="flex flex-col items-center gap-0.5 leading-none">
-      <span className={cn("tabular-nums font-medium", signedTone(pct))}>
-        {percent(pct, 2)}
-      </span>
-      <span className={cn("text-[11px] tabular-nums", signedTone(dollar))}>
-        {money(dollar, 0)}
-      </span>
-    </span>
-  );
-}
 
 function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   switch (key) {
@@ -248,11 +229,16 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
       return todayDollarFor(h.currentValue, h.quote.changePercent).pct ??
         Number.NEGATIVE_INFINITY;
     }
+    case "todayDollar": {
+      if (!h.quote) return Number.NEGATIVE_INFINITY;
+      const t = todayDollarFor(h.currentValue, h.quote.changePercent);
+      return t.pct === null ? Number.NEGATIVE_INFINITY : t.dollar;
+    }
   }
 }
 
 const TEMPLATE =
-  "repeat(11, minmax(max-content, 1fr)) minmax(2.25rem, 2.25rem)";
+  "repeat(12, minmax(max-content, 1fr)) minmax(2.25rem, 2.25rem)";
 
 export function PortfolioTable({
   portfolio,
@@ -315,19 +301,16 @@ export function PortfolioTable({
     let dollar = 0;
     let weighted = 0;
     let weight = 0;
-    let priced = 0;
     for (const h of holdings) {
       const t = todayDollarFor(h.currentValue, h.quote?.changePercent);
       if (t.pct === null) continue;
       dollar += t.dollar;
       weighted += t.pct * h.currentValue;
       weight += h.currentValue;
-      priced += 1;
     }
     return {
       dollar,
       pct: weight > 0 ? weighted / weight : null,
-      priced,
     };
   }, [holdings]);
 
@@ -407,38 +390,7 @@ export function PortfolioTable({
             </div>
           )}
         </div>
-        {/* Two distinct chips, not one dense strip — Today is the fact you
-          * check daily, Cash (plus import) is book upkeep. Separating them
-          * with their own borders reads as two things, not a wall of numbers. */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {today.priced > 0 && (
-            <div
-              className="flex items-center gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/40 px-3 py-1.5"
-              title="Move since yesterday's close, across priced positions. Cash is excluded."
-            >
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Today
-              </span>
-              <span
-                className={cn(
-                  "text-sm font-semibold tabular-nums",
-                  signedTone(today.dollar)
-                )}
-              >
-                {money(today.dollar)}
-              </span>
-              {today.pct !== null && (
-                <span
-                  className={cn(
-                    "text-xs font-medium tabular-nums",
-                    signedTone(today.pct)
-                  )}
-                >
-                  {percent(today.pct, 2)}
-                </span>
-              )}
-            </div>
-          )}
           <div className="flex items-center gap-1 rounded-lg border border-zinc-800/60 bg-zinc-900/40 py-1 pl-1 pr-1">
             {onImportCsv && holdings.length > 0 && (
               <button
@@ -504,17 +456,6 @@ export function PortfolioTable({
                   <p className="text-sm text-zinc-400">
                     {percent(h.pctOfTotal)} of book
                   </p>
-                  {h.quote && (
-                    <p className="text-sm font-medium tabular-nums">
-                      <span className={signedTone(h.quote.changePercent)}>
-                        {percent(h.quote.changePercent, 2)}
-                      </span>
-                      <span className="text-zinc-500"> today </span>
-                      <span className={signedTone(rowToday(h).dollar)}>
-                        {money(rowToday(h).dollar, 0)}
-                      </span>
-                    </p>
-                  )}
                 </div>
                 <button
                   type="button"
@@ -580,6 +521,36 @@ export function PortfolioTable({
                     {money(h.roiDollar)}
                   </p>
                 </div>
+                <div>
+                  <p className="text-zinc-400">Today %</p>
+                  <p
+                    className={cn(
+                      "tabular-nums font-medium",
+                      rowToday(h).pct != null
+                        ? signedTone(rowToday(h).pct!)
+                        : "text-zinc-400"
+                    )}
+                  >
+                    {rowToday(h).pct != null
+                      ? percent(rowToday(h).pct!, 2)
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-zinc-400">Today $</p>
+                  <p
+                    className={cn(
+                      "tabular-nums font-medium",
+                      rowToday(h).pct != null
+                        ? signedTone(rowToday(h).dollar)
+                        : "text-zinc-400"
+                    )}
+                  >
+                    {rowToday(h).pct != null
+                      ? money(rowToday(h).dollar, 0)
+                      : "—"}
+                  </p>
+                </div>
               </div>
               <div className="mt-2">
                 <Sparkline
@@ -609,8 +580,14 @@ export function PortfolioTable({
                 {money(totals.roiDollar)}
               </span>
               {today.pct !== null && (
-                <span className={cn("tabular-nums", signedTone(today.pct))}>
-                  {percent(today.pct, 2)} today
+                <span className="tabular-nums">
+                  <span className={signedTone(today.pct)}>
+                    {percent(today.pct, 2)}
+                  </span>
+                  <span className="text-zinc-500"> </span>
+                  <span className={signedTone(today.dollar)}>
+                    {money(today.dollar, 0)}
+                  </span>
                 </span>
               )}
             </div>
@@ -736,12 +713,31 @@ export function PortfolioTable({
                     height={24}
                   />
                 </div>
-                <div className={cellBase}>
-                  <TodayMove
-                    pct={rowToday(h).pct}
-                    dollar={rowToday(h).dollar}
-                    money={money}
-                  />
+                <div
+                  className={cn(
+                    cellBase,
+                    "tabular-nums font-medium",
+                    rowToday(h).pct != null
+                      ? signedTone(rowToday(h).pct!)
+                      : "text-zinc-400"
+                  )}
+                >
+                  {rowToday(h).pct != null
+                    ? percent(rowToday(h).pct!, 2)
+                    : "—"}
+                </div>
+                <div
+                  className={cn(
+                    cellBase,
+                    "tabular-nums font-medium",
+                    rowToday(h).pct != null
+                      ? signedTone(rowToday(h).dollar)
+                      : "text-zinc-400"
+                  )}
+                >
+                  {rowToday(h).pct != null
+                    ? money(rowToday(h).dollar, 0)
+                    : "—"}
                 </div>
                 <div className={cellBase}>
                   <button
@@ -789,8 +785,23 @@ export function PortfolioTable({
                 {money(totals.roiDollar)}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")}>
-                <TodayMove pct={today.pct} dollar={today.dollar} money={money} />
+              <div
+                className={cn(
+                  cellBase,
+                  "py-2.5 tabular-nums font-medium",
+                  today.pct != null ? signedTone(today.pct) : "text-zinc-400"
+                )}
+              >
+                {today.pct != null ? percent(today.pct, 2) : "—"}
+              </div>
+              <div
+                className={cn(
+                  cellBase,
+                  "py-2.5 tabular-nums font-medium",
+                  today.pct != null ? signedTone(today.dollar) : "text-zinc-400"
+                )}
+              >
+                {today.pct != null ? money(today.dollar, 0) : "—"}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
             </FluidRow>

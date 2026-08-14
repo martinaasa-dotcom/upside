@@ -68,83 +68,199 @@ export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
   stance: ForecastStance;
   /** Sorted ticker fingerprint when the plan was generated */
   holdingsKey?: string;
+  /** Per-ticker conviction/thesis fingerprint when the plan was generated */
+  convictionKey?: string;
 };
 
 export type StoredForecastPlans = Record<string, ForecastPlan>;
 
-export const FORECAST_AUTO_REFRESH_MS = 30 * 24 * 60 * 60 * 1000; // monthly thesis check
+/** Shared EOY paths, keyed by ticker, so Anu/MaryAnn reuse Aasad's reasoning
+ * instead of calling the model every time a sheet is opened. */
+export const FORECAST_TICKER_CACHE_KEY = "portfell-forecast-ticker-paths";
+
+export type CachedTickerPath = {
+  prices: Partial<Record<ForecastYear, number>>;
+  rationale?: string;
+  generatedAt: string;
+  convictionKey: string;
+};
+
+export type StoredTickerPaths = Record<string, CachedTickerPath>;
+
+type ConvictionLike = Record<string, { level: number; thesis: string }>;
 
 export function forecastHoldingsKey(tickers: string[]): string {
   return [...new Set(tickers.map((t) => t.toUpperCase()))].sort().join("|");
+}
+
+export function tickerConvictionKey(
+  ticker: string,
+  convictions?: ConvictionLike
+): string {
+  if (!convictions) return "";
+  const c =
+    convictions[ticker] ??
+    convictions[ticker.toUpperCase()] ??
+    convictions[ticker.split(".")[0]!.toUpperCase()];
+  if (!c) return "";
+  return `${c.level}:${(c.thesis ?? "").trim()}`;
+}
+
+export function bookConvictionKey(
+  tickers: string[],
+  convictions?: ConvictionLike
+): string {
+  return [...new Set(tickers.map((t) => t.toUpperCase()))]
+    .sort()
+    .map((t) => `${t}=${tickerConvictionKey(t, convictions)}`)
+    .join("|");
+}
+
+function tickerCacheIsFresh(
+  cached: CachedTickerPath | undefined,
+  ticker: string,
+  convictions?: ConvictionLike
+): boolean {
+  if (!cached?.prices || Object.keys(cached.prices).length === 0) return false;
+  const nowKey = tickerConvictionKey(ticker, convictions);
+  // Harvested pre-fingerprint entries stay usable so opening a sheet after
+  // this ships does not fire a model run. A later explicit regenerate stamps
+  // a real key; thesis edits after that do trigger a refresh.
+  if (!cached.convictionKey) return true;
+  return cached.convictionKey === nowKey;
+}
+
+function harvestPlansIntoTickerCache(
+  cache: StoredTickerPaths
+): StoredTickerPaths {
+  if (typeof window === "undefined") return cache;
+  try {
+    const raw = localStorage.getItem(FORECAST_PLAN_STORAGE_KEY);
+    if (!raw) return cache;
+    const parsed = JSON.parse(raw) as StoredForecastPlans;
+    for (const plan of Object.values(parsed ?? {})) {
+      for (const t of plan.eoyTargets ?? []) {
+        const key = t.ticker.toUpperCase();
+        if (cache[key] || !t.prices) continue;
+        cache[key] = {
+          prices: t.prices,
+          rationale: t.rationale,
+          generatedAt: plan.generatedAt ?? "",
+          convictionKey: "",
+        };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return cache;
+}
+
+export function loadTickerPathCache(): StoredTickerPaths {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(FORECAST_TICKER_CACHE_KEY);
+    const parsed = (raw ? JSON.parse(raw) : {}) as StoredTickerPaths;
+    return harvestPlansIntoTickerCache(parsed ?? {});
+  } catch {
+    return harvestPlansIntoTickerCache({});
+  }
+}
+
+function persistTickerPathCache(cache: StoredTickerPaths) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(FORECAST_TICKER_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function upsertTickerPathsFromPlan(
+  plan: ForecastPlan,
+  convictions?: ConvictionLike
+) {
+  if (typeof window === "undefined") return;
+  const cache = loadTickerPathCache();
+  for (const t of plan.eoyTargets ?? []) {
+    if (!t.prices) continue;
+    cache[t.ticker.toUpperCase()] = {
+      prices: t.prices,
+      rationale: t.rationale,
+      generatedAt: plan.generatedAt ?? cache[t.ticker.toUpperCase()]?.generatedAt ?? "",
+      convictionKey: convictions
+        ? tickerConvictionKey(t.ticker, convictions)
+        : cache[t.ticker.toUpperCase()]?.convictionKey ?? "",
+    };
+  }
+  persistTickerPathCache(cache);
+}
+
+export function cachedEoyPathsFor(
+  tickers: string[],
+  convictions?: ConvictionLike
+): { ticker: string; prices: Partial<Record<ForecastYear, number>> }[] {
+  const cache = loadTickerPathCache();
+  const out: { ticker: string; prices: Partial<Record<ForecastYear, number>> }[] =
+    [];
+  for (const ticker of tickers) {
+    const hit = cache[ticker.toUpperCase()];
+    if (!tickerCacheIsFresh(hit, ticker, convictions) || !hit) continue;
+    out.push({ ticker, prices: hit.prices });
+  }
+  return out;
+}
+
+export function cachedTickersFor(
+  tickers: string[],
+  convictions?: ConvictionLike
+): string[] {
+  return cachedEoyPathsFor(tickers, convictions).map((p) =>
+    p.ticker.toUpperCase()
+  );
 }
 
 export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "monthly" | "sold-holding" | "rebase";
+      reason: "first-run" | "new-holding" | "thesis-changed";
     };
 
-/** Auto API refresh for first run, then monthly (not daily) — plus
- * immediately whenever a holding the plan referenced has been sold, since
- * the quarterly add/trim playbook is free text that can (and does) keep
- * naming a ticker you no longer own until the plan is actually
- * regenerated. Old cautious/optimistic caches get rewritten onto base. */
+/** Auto-run the model only when there is no reusable path yet: first visit
+ * with nothing cached, a newly added ticker with no shared path, or a
+ * thesis/conviction change. Opening another sheet that already has those
+ * tickers reasoned (on any sheet) must not call the model. Manual
+ * "Work it out again" is the user's override. */
 export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
   fullyCovered: boolean;
-  nowMs?: number;
+  cachedTickers?: string[];
+  convictionKey?: string;
 }): ForecastAutoRefresh {
   const tickers = input.tickers.map((t) => t.toUpperCase());
   if (tickers.length === 0) return { run: false, reason: "empty" };
 
   const plan = input.plan;
-
-  if (!plan) {
-    if (!input.fullyCovered) return { run: true, reason: "first-run" };
-    return { run: false, reason: "ok" };
+  if (
+    plan?.convictionKey &&
+    input.convictionKey &&
+    plan.convictionKey !== input.convictionKey
+  ) {
+    return { run: true, reason: "thesis-changed" };
   }
 
-  if (!plan.generatedAt && !input.fullyCovered) {
-    return { run: true, reason: "first-run" };
-  }
+  if (input.fullyCovered) return { run: false, reason: "ok" };
 
-  if ((plan.stance ?? DEFAULT_FORECAST_STANCE) !== "base") {
-    return { run: true, reason: "rebase" };
-  }
-
-  const planKey =
-    plan.holdingsKey ??
-    forecastHoldingsKey((plan.eoyTargets ?? []).map((t) => t.ticker));
-  const planSet = new Set(
-    planKey
-      ? planKey.split("|").filter(Boolean)
-      : (plan.eoyTargets ?? []).map((t) => t.ticker.toUpperCase())
+  const cached = new Set(
+    (input.cachedTickers ?? []).map((t) => t.toUpperCase())
   );
-  const tickerSet = new Set(tickers);
-  // A ticker the plan was built around is gone from the book — its EOY
-  // targets/rationale and any add/trim playbook lines that name it are
-  // now describing a position that doesn't exist. Regenerate now rather
-  // than waiting up to 30 days for the monthly cadence.
-  const sold = [...planSet].some((t) => !tickerSet.has(t));
-  if (sold) return { run: true, reason: "sold-holding" };
+  const uncovered = tickers.filter((t) => !cached.has(t));
+  if (uncovered.length === 0) return { run: false, reason: "ok" };
 
-  const hasNew = tickers.some((t) => !planSet.has(t));
-  // New holdings are filled via local calibration merge; skip full-model rerun.
-  if (hasNew) return { run: false, reason: "ok" };
-
-  if (plan.generatedAt) {
-    const age =
-      (input.nowMs ?? Date.now()) - new Date(plan.generatedAt).getTime();
-    if (Number.isFinite(age) && age >= FORECAST_AUTO_REFRESH_MS) {
-      return { run: true, reason: "monthly" };
-    }
-  } else if (!input.fullyCovered) {
-    return { run: true, reason: "first-run" };
-  }
-
-  return { run: false, reason: "ok" };
+  if (!plan) return { run: true, reason: "first-run" };
+  return { run: true, reason: "new-holding" };
 }
 
 export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
@@ -179,7 +295,10 @@ export function loadPreviousForecastPlan(portfolioId: string): ForecastPlan | nu
   }
 }
 
-export function saveForecastPlan(plan: ForecastPlan) {
+export function saveForecastPlan(
+  plan: ForecastPlan,
+  convictions?: ConvictionLike
+) {
   if (typeof window === "undefined") return;
   try {
     const cleaned = humanizeMargusTree({
@@ -197,6 +316,7 @@ export function saveForecastPlan(plan: ForecastPlan) {
     }
     parsed[cleaned.portfolioId] = cleaned;
     localStorage.setItem(FORECAST_PLAN_STORAGE_KEY, JSON.stringify(parsed));
+    upsertTickerPathsFromPlan(cleaned, convictions);
   } catch {
     /* ignore */
   }

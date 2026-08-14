@@ -1,7 +1,7 @@
 "use client";
 
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
-import { Card, EmptyState, Panel, PanelHeader, Pill } from "@/components/ui/Panel";
+import { Card, EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
 import {
   blockWheelChange,
@@ -119,7 +119,7 @@ function InlineStockTarget({
   );
 }
 
-const TEMPLATE = "repeat(10, minmax(max-content, 1fr))";
+const TEMPLATE = "repeat(11, minmax(max-content, 1fr))";
 
 const HEADERS = [
   "Ticker",
@@ -127,10 +127,11 @@ const HEADERS = [
   "Call %",
   "Stock target",
   "Distance",
+  "Write",
   "Next strike",
   "Expires",
   "Contracts",
-  "2-week rent",
+  "2-week %",
   "Premium",
 ] as const;
 
@@ -139,11 +140,31 @@ const HEADER_HINTS: Partial<Record<(typeof HEADERS)[number], string>> = {
   "Call %": "How far above your target you set the strike. Further out pays less but is less likely to be called away",
   "Stock target": "The price you would be happy to sell at",
   Distance: "How far the price still has to travel to reach your target. Negative means it is already there",
+  Write: "How close the stock is to the price you would write the call at",
   "Next strike": "The strike this plan points at, rounded to one you can actually trade",
   Contracts: "One contract covers 100 shares",
-  "2-week rent": "The cash you would collect over roughly two weeks, as a percent of the shares tied up",
+  "2-week %": "Premium as a percent of the shares tied up, over roughly two weeks",
   Premium: "The cash you would collect for selling these calls",
 };
+
+function writeProximity(distance: number | null): {
+  label: string;
+  className: string;
+} {
+  if (distance == null || !Number.isFinite(distance)) {
+    return { label: "—", className: "text-zinc-400" };
+  }
+  if (distance <= 0) {
+    return { label: "At write level", className: "text-brand-bright" };
+  }
+  if (distance < 0.04) {
+    return { label: "Close", className: "text-amber-200" };
+  }
+  if (distance < 0.12) {
+    return { label: "Getting near", className: "text-zinc-200" };
+  }
+  return { label: "Far from write", className: "text-zinc-400" };
+}
 
 /** Anchor Home uses to land on this table from "Open covered calls". */
 export const COVERED_CALLS_ANCHOR = "covered-calls";
@@ -163,21 +184,7 @@ export function CoveredCallPanel({
       className="scroll-mt-28 overflow-hidden"
     >
       <div className="border-b border-zinc-800/80 p-5 sm:p-8">
-        <PanelHeader
-          title="Covered calls"
-          actions={
-            rows.length > 0 ? (
-              <>
-                <Pill tone="info" title="Cash you would collect for selling these calls">
-                  {currency(premiumTotal)} in rent
-                </Pill>
-                <Pill title="That rent as a percent of the shares tied up, over roughly two weeks">
-                  {percent(yield2wAvg)} over 2 weeks
-                </Pill>
-              </>
-            ) : undefined
-          }
-        />
+        <PanelHeader title="Covered calls" />
       </div>
 
       {/* Mobile cards */}
@@ -185,7 +192,7 @@ export function CoveredCallPanel({
         {rows.length === 0 ? (
           <EmptyState
             title="Nothing to write calls on yet"
-            detail="You need shares before you can rent them out. Add a holding and this fills in."
+            detail="You need shares before you can write calls on them. Add a holding and this fills in."
             action={
               onAddHolding && (
                 <button
@@ -242,19 +249,30 @@ export function CoveredCallPanel({
                   </p>
                 </div>
                 <div>
+                  <p className="text-zinc-400">Write</p>
+                  <p
+                    className={cn(
+                      "font-medium",
+                      writeProximity(r.targetDistance).className
+                    )}
+                  >
+                    {writeProximity(r.targetDistance).label}
+                  </p>
+                </div>
+                <div>
                   <p className="text-zinc-400">Strike</p>
                   <p className="tabular-nums font-semibold text-brand">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">2-week rent</p>
+                  <p className="text-zinc-400">2-week %</p>
                   <p className="tabular-nums font-medium text-sky-400">
                     {r.yield2w != null ? percent(r.yield2w) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Cash now</p>
+                  <p className="text-zinc-400">Premium</p>
                   <p className="tabular-nums text-zinc-100">
                     {r.premium != null ? currency(r.premium) : "—"}
                   </p>
@@ -278,7 +296,7 @@ export function CoveredCallPanel({
               </span>
             </div>
             <p className="mt-1 tabular-nums text-zinc-300">
-              {currency(premiumTotal)} in rent
+              {currency(premiumTotal)} in premium
             </p>
           </Card>
         )}
@@ -303,7 +321,7 @@ export function CoveredCallPanel({
             <div className="col-span-full p-4 sm:p-6">
               <EmptyState
                 title="Nothing to write calls on yet"
-                detail="You need shares before you can rent them out. Add a holding and this fills in."
+                detail="You need shares before you can write calls on them. Add a holding and this fills in."
                 action={
                   onAddHolding && (
                     <button
@@ -358,6 +376,15 @@ export function CoveredCallPanel({
               <div
                 className={cn(
                   cellBase,
+                  "whitespace-nowrap font-medium",
+                  writeProximity(r.targetDistance).className
+                )}
+              >
+                {writeProximity(r.targetDistance).label}
+              </div>
+              <div
+                className={cn(
+                  cellBase,
                   "tabular-nums font-semibold text-brand"
                 )}
               >
@@ -385,6 +412,7 @@ export function CoveredCallPanel({
           {rows.length > 0 && (
             <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
               <div className={cn(cellBase, "py-2.5 text-white")}>All</div>
+              <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
