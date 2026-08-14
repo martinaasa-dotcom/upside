@@ -680,20 +680,20 @@ run("Montserrat headings and Inter body, no third face", () => {
   assert.doesNotMatch(code(logo), /tracking-\[0\./);
 });
 
-run("mover rows are a labeled table, not a stretched sparkline", () => {
+run("movers are compact tiles, not a stretched table or sparkline", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"
   );
   const row = src.slice(
-    src.indexOf("function MoverRow"),
+    src.indexOf("function MoverTile"),
     src.indexOf("function PortfolioLane")
   );
   assert.doesNotMatch(row, /Sparkline/);
+  assert.doesNotMatch(src, /MOVER_GRID/);
   assert.match(row, /percent\(pct/);
   assert.match(row, /signedCurrency\(dollars\)/);
-  assert.match(src, /<MicroLabel>Ticker<\/MicroLabel>/);
-  assert.match(src, /<MicroLabel>P&L<\/MicroLabel>/);
+  assert.match(src, /sm:grid-cols-2/);
   assert.doesNotMatch(row, /label="Price"/);
   assert.doesNotMatch(row, />Recent</);
 });
