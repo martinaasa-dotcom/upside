@@ -24,7 +24,7 @@ import {
   type ForecastTheme,
 } from "@/lib/forecast-conviction";
 import { buildCommunityFunFacts } from "@/lib/community-fun-facts";
-import { loadCachedQuotes, saveCachedQuotes } from "@/lib/quote-cache";
+import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 import { todayKeyInTz } from "@/lib/timezone";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
@@ -57,7 +57,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { quotesUrl } from "@/lib/market/session";
+import { quotePollMs, quotesUrl } from "@/lib/market/session";
 
 type Profile = {
   id: string;
@@ -388,24 +388,42 @@ export function CommunityView({ communityId }: Props) {
     ];
     if (!tickers.length) return;
     let cancelled = false;
-    void (async () => {
+    let timer = 0;
+    const tick = async () => {
+      if (cancelled || document.hidden) return;
       try {
-        const res = await fetch(
-          quotesUrl(tickers),
-          { cache: "no-store" }
-        );
+        const res = await fetch(quotesUrl(tickers), { cache: "no-store" });
         if (!res.ok || cancelled) return;
         const data = await res.json();
         if (cancelled) return;
         const fresh = (data.quotes ?? {}) as Record<string, Quote>;
-        setQuotes(fresh);
-        saveCachedQuotes(fresh);
+        let merged = fresh;
+        setQuotes((prev) => {
+          merged = mergeQuotes(prev, fresh);
+          return merged;
+        });
+        saveCachedQuotes(merged);
       } catch {
         /* ignore */
       }
-    })();
+    };
+    const schedule = () => {
+      timer = window.setTimeout(() => {
+        void tick().then(() => {
+          if (!cancelled) schedule();
+        });
+      }, quotePollMs());
+    };
+    void tick();
+    schedule();
+    const onVisible = () => {
+      if (!document.hidden) void tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [holdings]);
 

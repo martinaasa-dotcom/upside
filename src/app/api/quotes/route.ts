@@ -6,25 +6,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * How long a quote response may be reused. Prices only move while New York is
- * open, so a 15-second window out of hours just means every tab in the world
- * takes its own turn through the free-tier provider chain to be told the same
- * close. Widening it after the bell is the cheapest protection that chain has.
+ * How long the CDN may reuse a quote response. Browsers always revalidate
+ * (max-age=0) so a tab that opened overnight cannot keep serving a
+ * flattened close after pre-market starts.
  */
 function cacheSeconds(): number {
   switch (marketSession()) {
     case "open":
-      return 15;
     case "extended":
-      return 60;
+      return 15;
     case "closed":
-      return 300;
+      return 60;
   }
 }
 
 function cacheHeaders(seconds: number) {
   return {
-    "Cache-Control": `public, max-age=${seconds}, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`,
+    "Cache-Control": `public, max-age=0, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`,
   };
 }
 

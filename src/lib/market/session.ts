@@ -1,13 +1,9 @@
 /**
  * Where the US market is in its day, for anything that polls.
  *
- * Every open tab used to hit the quote chain every 45 seconds around the
- * clock. Outside 09:30-16:00 New York the numbers cannot change, so that was
- * roughly 1,900 requests a day per tab spent re-fetching yesterday's close
- * against free-tier rate limits shared by every user.
- *
- * Pre-market and after-hours still move, just thinly, so they get a slower
- * poll rather than none.
+ * Pre-market (04:00) through after-hours (20:00) still prints, so those
+ * windows poll as often as the regular session. Nights and weekends slow
+ * down; they do not freeze on a flattened close.
  */
 
 const US_TZ = "America/New_York";
@@ -47,14 +43,11 @@ export function marketSession(at: Date = new Date()): MarketSession {
 
 /** How often live prices are worth re-fetching right now, in ms. */
 export function quotePollMs(at: Date = new Date()): number {
-  switch (marketSession(at)) {
-    case "open":
-      return 45_000;
-    case "extended":
-      return 5 * 60_000;
-    case "closed":
-      return 20 * 60_000;
-  }
+  const session = marketSession(at);
+  if (session === "open" || session === "extended") return 45_000;
+  const { weekday } = nyClock(at);
+  if (weekday === 0 || weekday === 6) return 15 * 60_000;
+  return 2 * 60_000;
 }
 
 /**

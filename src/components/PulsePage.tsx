@@ -342,7 +342,8 @@ function PulseCard({
 async function fetchQuote(ticker: string): Promise<Quote | null> {
   try {
     const res = await fetch(
-      `/api/quotes?tickers=${encodeURIComponent(ticker)}`
+      `/api/quotes?tickers=${encodeURIComponent(ticker)}`,
+      { cache: "no-store" }
     );
     if (!res.ok) return null;
     const data = await res.json();

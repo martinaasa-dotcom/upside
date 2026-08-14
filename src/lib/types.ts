@@ -28,7 +28,7 @@ export type Holding = {
 
 export type Quote = {
   ticker: string;
-  /** Regular-session last (or best available when session closed) */
+  /** Newest print: pre-market, after-hours, or regular last */
   price: number;
   change: number;
   /** Fraction, e.g. 0.015 = +1.5% */

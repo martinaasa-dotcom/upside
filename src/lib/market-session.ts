@@ -5,11 +5,10 @@ export type SessionKind = "open" | "pre" | "ah" | "closed" | "unknown";
 /**
  * Live mark and "yesterday's close" for today's P&L.
  *
- * Price is the newest print we have: after-hours leftover still counts
- * after Yahoo flips to CLOSED, until a real pre-market tick starts the
- * next session. Today's change is that mark vs yesterday's official
- * close. Never flatten the baseline to the live price: that zeros Today
- * overnight once after-hours ends.
+ * Price is the newest print we have: pre-market, leftover after-hours, or
+ * the regular close. Today's change is that mark vs the last regular
+ * close that applies to this session. Never flatten the baseline to the
+ * live price: that zeros Today overnight once after-hours ends.
  *
  * Pre-market is the one special case. Yahoo's regularMarketPrice is
  * still yesterday's close until the open, so that is the baseline, not
@@ -24,26 +23,40 @@ export function sessionMark(input: {
 }): { price: number; previousClose: number } {
   const state = (input.marketState ?? "").toUpperCase();
   const { regularPrice, postPrice, prePrice, previousClose } = input;
+  const inPre = state === "PRE" || state === "PREPRE";
+  const near = (a: number, b: number) =>
+    Math.abs(a - b) <= 1e-4 * Math.max(1, Math.abs(b));
 
-  const usingPost =
-    postPrice != null &&
-    (state === "POST" ||
-      state === "POSTPOST" ||
-      ((state === "CLOSED" || state === "PREPRE") && prePrice == null));
-  const usingPre =
-    !usingPost &&
-    prePrice != null &&
-    (state === "PRE" || state === "PREPRE");
+  // Newest print: pre-market, leftover after-hours, then the regular close.
+  // Closed overnight prefers leftover AH over a morning pre print, which is
+  // older than the regular session that already happened.
+  const price = inPre
+    ? (prePrice ?? postPrice ?? regularPrice ?? 0)
+    : (postPrice ?? regularPrice ?? prePrice ?? 0);
 
-  const price = usingPost
-    ? postPrice
-    : usingPre
-      ? prePrice
-      : (regularPrice ?? postPrice ?? prePrice ?? 0);
-
-  const baseline = usingPre
-    ? (regularPrice ?? price)
+  let baseline = inPre
+    ? (regularPrice ?? previousClose ?? price)
     : (previousClose ?? regularPrice ?? price);
+
+  // Yahoo sometimes copies the live mark into previousClose overnight,
+  // which zeros Today. Fall back to the other close we still have.
+  if (price > 0 && near(baseline, price)) {
+    if (
+      inPre &&
+      previousClose != null &&
+      previousClose > 0 &&
+      !near(previousClose, price)
+    ) {
+      baseline = previousClose;
+    } else if (
+      !inPre &&
+      regularPrice != null &&
+      regularPrice > 0 &&
+      !near(regularPrice, price)
+    ) {
+      baseline = regularPrice;
+    }
+  }
 
   return { price, previousClose: baseline };
 }

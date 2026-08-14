@@ -25,6 +25,8 @@ import {
   sessionReaction,
 } from "../src/lib/earnings-brief";
 import { sessionMark } from "../src/lib/market-session";
+import { quotePollMs } from "../src/lib/market/session";
+import { mergeQuotes } from "../src/lib/quote-cache";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 
@@ -240,6 +242,110 @@ run("closed session keeps last print vs yesterday close, including leftover afte
   });
   assert.equal(pre.price, 101);
   assert.equal(pre.previousClose, 100);
+
+  const preBeforeFirstTick = sessionMark({
+    marketState: "PRE",
+    regularPrice: 100,
+    postPrice: 102,
+    prePrice: null,
+    previousClose: 90,
+  });
+  assert.equal(preBeforeFirstTick.price, 102);
+  assert.equal(preBeforeFirstTick.previousClose, 100);
+
+  const closedPrefersAhOverMorningPre = sessionMark({
+    marketState: "CLOSED",
+    regularPrice: 100,
+    postPrice: 102,
+    prePrice: 103,
+    previousClose: 90,
+  });
+  assert.equal(closedPrefersAhOverMorningPre.price, 102);
+  assert.equal(closedPrefersAhOverMorningPre.previousClose, 90);
+
+  const closedIgnoresStaleMorningPre = sessionMark({
+    marketState: "CLOSED",
+    regularPrice: 100,
+    postPrice: null,
+    prePrice: 103,
+    previousClose: 90,
+  });
+  assert.equal(closedIgnoresStaleMorningPre.price, 100);
+  assert.equal(closedIgnoresStaleMorningPre.previousClose, 90);
+
+  const closedUnflattenAh = sessionMark({
+    marketState: "CLOSED",
+    regularPrice: 100,
+    postPrice: 102,
+    prePrice: null,
+    previousClose: 102,
+  });
+  assert.equal(closedUnflattenAh.price, 102);
+  assert.equal(closedUnflattenAh.previousClose, 100);
+
+  const preUnflatten = sessionMark({
+    marketState: "PRE",
+    regularPrice: 101,
+    postPrice: null,
+    prePrice: 101,
+    previousClose: 100,
+  });
+  assert.equal(preUnflatten.price, 101);
+  assert.equal(preUnflatten.previousClose, 100);
+});
+
+run("flat overnight quotes keep the last real previous close", () => {
+  const prev = {
+    NVDA: {
+      ticker: "NVDA",
+      price: 225.3,
+      change: 1.21,
+      changePercent: 0.0054,
+      previousClose: 224.09,
+      sparkline: [],
+      marketState: "CLOSED",
+      preMarketPrice: null,
+      preMarketChange: null,
+      preMarketChangePercent: null,
+      postMarketPrice: null,
+      postMarketChange: null,
+      postMarketChangePercent: null,
+    },
+  };
+  const incoming = {
+    NVDA: {
+      ...prev.NVDA,
+      price: 225.3,
+      change: 0,
+      changePercent: 0,
+      previousClose: 225.3,
+    },
+  };
+  const merged = mergeQuotes(prev, incoming);
+  assert.equal(merged.NVDA?.previousClose, 224.09);
+  assert.ok((merged.NVDA?.change ?? 0) > 1);
+
+  const regularIncoming = {
+    NVDA: {
+      ...prev.NVDA,
+      marketState: "REGULAR",
+      price: 225.3,
+      change: 0,
+      changePercent: 0,
+      previousClose: 225.3,
+    },
+  };
+  const regularMerged = mergeQuotes(prev, regularIncoming);
+  assert.equal(regularMerged.NVDA?.previousClose, 225.3);
+});
+
+run("quote polls stay live through pre-market and after hours", () => {
+  // Friday 14 Aug 2026, America/New_York is EDT (UTC-4).
+  assert.equal(quotePollMs(new Date("2026-08-14T12:00:00Z")), 45_000); // 08:00 ET pre
+  assert.equal(quotePollMs(new Date("2026-08-14T15:00:00Z")), 45_000); // 11:00 ET open
+  assert.equal(quotePollMs(new Date("2026-08-14T21:00:00Z")), 45_000); // 17:00 ET AH
+  assert.equal(quotePollMs(new Date("2026-08-15T01:30:00Z")), 2 * 60_000); // 21:30 ET Fri
+  assert.equal(quotePollMs(new Date("2026-08-15T14:00:00Z")), 15 * 60_000); // 10:00 ET Sat
 });
 
 run("fund today move is live NAV minus last snapshot", () => {
@@ -475,7 +581,12 @@ run("live price polls back off when New York is closed", () => {
   // A flat setInterval on quotes burns the shared free-tier rate limit all
   // night re-fetching the same close. Anything that polls prices has to ask
   // marketSession/quotePollMs what the right cadence is right now.
-  const pollers = ["Dashboard.tsx", "UpsidePortfolioPage.tsx", "MacroStrip.tsx"];
+  const pollers = [
+    "Dashboard.tsx",
+    "UpsidePortfolioPage.tsx",
+    "MacroStrip.tsx",
+    "CommunityView.tsx",
+  ];
   const offenders = pollers.filter((name) => {
     const found = sources.find(({ file }) => file.endsWith(name));
     return !found || !/marketSession|quotePollMs/.test(found.src);

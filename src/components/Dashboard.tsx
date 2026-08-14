@@ -149,7 +149,7 @@ import { DashboardLoading } from "@/components/DashboardLoading";
 import { DashboardWelcome } from "@/components/DashboardWelcome";
 import { useLabSync } from "@/components/use-lab-sync";
 import { pickLoadingMessage } from "@/lib/loading-messages";
-import { loadCachedQuotes, saveCachedQuotes } from "@/lib/quote-cache";
+import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 
 /**
  * Margus is a collapsed floating panel almost nobody opens on first paint,
@@ -979,9 +979,9 @@ export function Dashboard() {
       try {
         let nextQuotes = existingQuotes;
         if (!nextQuotes || Object.keys(nextQuotes).length === 0) {
-          const quotesRes = await fetch(
-            quotesUrl(tickers)
-          );
+          const quotesRes = await fetch(quotesUrl(tickers), {
+            cache: "no-store",
+          });
           if (!quotesRes.ok) {
             setQuotesDelayed(true);
             throw new Error(`Quotes request failed (${quotesRes.status})`);
@@ -989,12 +989,13 @@ export function Dashboard() {
           const quotesJson = await quotesRes.json();
           const incoming = (quotesJson.quotes ?? {}) as Record<string, Quote>;
           const missing = (quotesJson.missing ?? []) as string[];
+          let merged = incoming;
           setQuotes((prev) => {
-            const merged = { ...prev, ...incoming };
+            merged = mergeQuotes(prev, incoming);
             nextQuotes = merged;
             return merged;
           });
-          saveCachedQuotes(incoming);
+          saveCachedQuotes(merged);
           setQuotesUpdatedAt(Date.now());
           setQuotesDelayed(Boolean(quotesJson.delayed) || missing.length > 0);
           setMissingTickers(missing);
@@ -1334,6 +1335,7 @@ export function Dashboard() {
         schedule();
       }, quotePollMs());
     };
+    tick();
     schedule();
 
     const onVisibility = () => {

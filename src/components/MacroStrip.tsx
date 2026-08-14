@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { cn } from "@/lib/format";
-import { marketSession } from "@/lib/market/session";
+import { quotePollMs } from "@/lib/market/session";
 
 type Macro = {
   vix: number | null;
@@ -16,7 +16,8 @@ type Macro = {
 async function fetchMacro(): Promise<Macro> {
   try {
     const res = await fetch(
-      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX"
+      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX",
+      { cache: "no-store" }
     );
     if (!res.ok) throw new Error("macro failed");
     const data = await res.json();
@@ -68,7 +69,7 @@ export function MacroStrip() {
       if (alive) setFearGreed(fg);
     });
     // Bitcoin trades all night but the VIX and the 10-year do not, so the
-    // whole strip slows down once New York closes.
+    // whole strip slows down overnight and on weekends.
     let timer = 0;
     const schedule = () => {
       timer = window.setTimeout(
@@ -83,7 +84,7 @@ export function MacroStrip() {
           }
           schedule();
         },
-        marketSession() === "closed" ? 15 * 60_000 : 120_000
+        quotePollMs()
       );
     };
     schedule();

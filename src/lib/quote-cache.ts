@@ -49,14 +49,66 @@ export function loadCachedQuotes(): {
   }
 }
 
+/**
+ * Yahoo sometimes rolls previousClose up to the live mark overnight, which
+ * zeros Today even though the last regular session moved. If a new quote
+ * is flat but we already know a real baseline, keep it.
+ */
+export function mergeQuotes(
+  prev: Record<string, Quote>,
+  incoming: Record<string, Quote>
+): Record<string, Quote> {
+  const merged = { ...prev };
+  for (const [ticker, q] of Object.entries(incoming)) {
+    const old = prev[ticker];
+    const incomingFlat =
+      q.previousClose > 0 &&
+      Math.abs(q.price - q.previousClose) < 1e-6 * Math.max(1, q.price);
+    const oldHasMove =
+      Boolean(old) &&
+      old!.previousClose > 0 &&
+      Math.abs(old!.price - old!.previousClose) >
+        1e-6 * Math.max(1, old!.previousClose);
+    const yahooRolledBaseline =
+      Boolean(old) &&
+      Math.abs(q.previousClose - old!.previousClose) >
+        1e-6 * Math.max(1, old!.previousClose);
+    const sameMark =
+      Boolean(old) &&
+      old!.price > 0 &&
+      Math.abs(q.price - old!.price) / old!.price < 0.05;
+    const liveRegular =
+      (q.marketState ?? "").toUpperCase() === "REGULAR";
+    // During the regular session a flat print can be a real $0 day.
+    // Overnight, Yahoo rolling previousClose onto the last print is not.
+    if (
+      !liveRegular &&
+      incomingFlat &&
+      oldHasMove &&
+      yahooRolledBaseline &&
+      sameMark
+    ) {
+      const previousClose = old!.previousClose;
+      const change = q.price - previousClose;
+      merged[ticker] = {
+        ...q,
+        previousClose,
+        change,
+        changePercent: previousClose > 0 ? change / previousClose : 0,
+      };
+    } else {
+      merged[ticker] = q;
+    }
+  }
+  return merged;
+}
+
 /** Merge freshly fetched quotes over whatever's already cached. */
 export function saveCachedQuotes(next: Record<string, Quote>) {
   if (typeof window === "undefined") return;
   if (!next || Object.keys(next).length === 0) return;
   try {
-    const merged = { ...loadCachedQuotes().quotes, ...next };
-    // Newly written tickers are the ones being looked at, so drop from the
-    // front (oldest insertion) if the blob grows past the cap.
+    const merged = mergeQuotes(loadCachedQuotes().quotes, next);
     const keys = Object.keys(merged);
     const trimmed =
       keys.length > MAX_TICKERS

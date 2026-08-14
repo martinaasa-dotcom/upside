@@ -6,7 +6,7 @@ import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
-import { marketSession, quotesUrl } from "@/lib/market/session";
+import { quotePollMs, quotesUrl } from "@/lib/market/session";
 import { concentrationRead, themeBreakdown } from "@/lib/allocation";
 import {
   buildPortfolioPersonality,
@@ -227,11 +227,6 @@ function ActionBadge({ action }: { action: FundActionRow }) {
     </span>
   );
 }
-
-/** Fast enough that the page reads as live without hammering the free
- * quote tiers. My book polls on a similar cadence. */
-const QUOTE_POLL_MS = 30_000;
-const CLOSED_POLL_MS = 20 * 60_000;
 
 /** Date + closing value + day move. Shared by the open latest report and
  * the collapsed summary row of every older one, so the two can't drift. */
@@ -656,9 +651,10 @@ export function UpsidePortfolioPage() {
           tick();
           schedule();
         },
-        marketSession() === "closed" ? CLOSED_POLL_MS : QUOTE_POLL_MS
+        quotePollMs()
       );
     }
+    tick();
     schedule();
     // Coming back to the tab shouldn't mean waiting out a full interval to
     // see how far the market moved while you were away.
@@ -770,7 +766,7 @@ export function UpsidePortfolioPage() {
               <div className="flex items-center gap-2">
                 <span
                   className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
-                  title={`Prices refresh every ${QUOTE_POLL_MS / 1000}s while the market is open, and slowly after the close`}
+                  title="Prices follow the live print, including pre-market and after hours"
                 >
                   {quotesAt != null && (
                     <span
