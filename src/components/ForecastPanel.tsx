@@ -28,6 +28,7 @@ import { readJsonOrThrow } from "@/lib/http";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { isForecastFullyCovered } from "@/lib/forecast";
+import { playbookBullets, type PlaybookBullet } from "@/lib/forecast-playbook";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -69,6 +70,58 @@ function yearLabel(year: number) {
  * target doesn't blend into the same-looking longer-horizon columns. */
 function isCurrentYear(year: number) {
   return year === new Date().getFullYear();
+}
+
+function PlaybookList({
+  text,
+  empty,
+  tone,
+}: {
+  text: string | undefined;
+  empty: string;
+  tone: "add" | "trim";
+}) {
+  const items = playbookBullets(text);
+  if (items.length === 0) {
+    return <p className="mt-1.5 text-sm text-zinc-500">{empty}</p>;
+  }
+  return (
+    <ul className="mt-1.5 space-y-2.5">
+      {items.map((item, i) => (
+        <PlaybookItem key={`${item.head}-${i}`} item={item} tone={tone} />
+      ))}
+    </ul>
+  );
+}
+
+function PlaybookItem({
+  item,
+  tone,
+}: {
+  item: PlaybookBullet;
+  tone: "add" | "trim";
+}) {
+  return (
+    <li className="flex gap-2.5">
+      <span
+        aria-hidden
+        className={cn(
+          "mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full",
+          tone === "add" ? "bg-brand-bright" : "bg-rose-400"
+        )}
+      />
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-snug text-zinc-100">
+          {item.head}
+        </p>
+        {item.detail && (
+          <p className="mt-0.5 text-sm leading-snug text-zinc-400">
+            {item.detail}
+          </p>
+        )}
+      </div>
+    </li>
+  );
 }
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
@@ -775,26 +828,30 @@ export function ForecastPanel({
                   <p className="mt-1 text-sm font-semibold text-white">
                     {s.theme}
                   </p>
-                  <div className="mt-3 space-y-2">
-                    <div className="rounded-lg border border-brand/25 bg-brand/10 px-2.5 py-2">
+                  <div className="mt-4 space-y-4">
+                    <div>
                       <MicroLabel className="text-brand-bright">
                         Worth adding
                       </MicroLabel>
-                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-relaxed text-zinc-100">
-                        {s.add?.trim() || "Nothing, just hold"}
-                      </p>
+                      <PlaybookList
+                        text={s.add}
+                        empty="Nothing to add"
+                        tone="add"
+                      />
                     </div>
-                    <div className="rounded-lg border border-rose-500/25 bg-rose-950/30 px-2.5 py-2">
+                    <div>
                       <MicroLabel className="text-rose-300">
                         Worth trimming
                       </MicroLabel>
-                      <p className="mt-0.5 whitespace-normal break-words text-xs leading-relaxed text-zinc-100">
-                        {s.trim?.trim() || "Nothing, just hold"}
-                      </p>
+                      <PlaybookList
+                        text={s.trim}
+                        empty="Nothing to trim"
+                        tone="trim"
+                      />
                     </div>
                   </div>
                   {s.notes?.trim() && (
-                    <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    <p className="mt-4 text-sm leading-relaxed text-zinc-500">
                       {s.notes}
                     </p>
                   )}

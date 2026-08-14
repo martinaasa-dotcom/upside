@@ -13,6 +13,7 @@ import {
 import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { fundCopyBullets } from "../src/lib/fund-copy";
+import { playbookBullets } from "../src/lib/forecast-playbook";
 import { reconcilePulseCheck, statusLabel, type PulseCheck } from "../src/lib/thesis-pulse";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
@@ -418,6 +419,30 @@ run("fund thesis and exit plans split into short bullets", () => {
     "Product revenue growth below 25% YoY for two quarters",
     "Adjusted FCF margin below 20% by FY28",
   ]);
+});
+
+run("forecast add/trim lines split into bullets", () => {
+  assert.deepEqual(playbookBullets("Hold, no add"), []);
+  assert.deepEqual(playbookBullets("Nothing, just hold"), []);
+  const sleeve = playbookBullets(
+    "AI power / $CEG or $VST (~0% to 5%): initiate on pullbacks to build exposure before next grid interconnect auctions."
+  );
+  assert.equal(sleeve.length, 1);
+  assert.equal(sleeve[0]?.head, "AI power / $CEG or $VST (~0% to 5%)");
+  assert.match(sleeve[0]?.detail ?? "", /Initiate on pullbacks/);
+  const packed = playbookBullets(
+    "$NBIS (40.5% -> 35%) / $CRWV (36.8% -> 32%): trim into pre-earnings run-ups above $285 and $120 to curb cluster concentration."
+  );
+  assert.equal(packed.length, 2);
+  assert.equal(packed[0]?.head, "$NBIS · 40.5% → 35%");
+  assert.equal(packed[1]?.head, "$CRWV · 36.8% → 32%");
+  assert.match(packed[0]?.detail ?? "", /Trim into pre-earnings/);
+  const listed = playbookBullets(
+    "$RKLB (14% -> 9%): fade the launch print; SaaS sleeve (~3%): start a small sleeve on a red day"
+  );
+  assert.equal(listed.length, 2);
+  assert.equal(listed[0]?.head, "$RKLB · 14% → 9%");
+  assert.equal(listed[1]?.head, "SaaS sleeve (~3%)");
 });
 
 run("Pulse CTA is omitted when Pulse is not reachable", () => {

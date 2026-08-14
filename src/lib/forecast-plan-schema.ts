@@ -45,12 +45,12 @@ export const forecastPlanSchema = z.object({
         add: z
           .string()
           .describe(
-            'Actionable adds, multiple OK. Format: "NAME / NAME: why" or "SaaS / drones: why". Names can be book tickers, new tickers, or sectors (SaaS, healthcare, drones, AI power…). Max ~40 words. Never empty; say "Hold, no add" if nothing.'
+            'Bullet list, semicolon-separated. ONE name or sleeve per item: "TICKER (current% -> target%): why + trigger" or "AI power sleeve (~0% to 5%): why". Never pack two tickers with a slash into one item. Never empty; say "Hold, no add" if nothing.'
           ),
         trim: z
           .string()
           .describe(
-            'Actionable trims, multiple OK. Format: "TICKER / TICKER: why" or "fintech sleeve: why". Max ~40 words. Never empty; say "Hold, no trim" if nothing.'
+            'Bullet list, semicolon-separated. ONE ticker per item: "TICKER (current% -> target%): why + trigger". Never pack two tickers with a slash into one item. Never empty; say "Hold, no trim" if nothing.'
           ),
         notes: z
           .string()

@@ -406,14 +406,13 @@ Requirements:
    - Next year (label "${year + 1}" or "Next year (${year + 1})")
    - Then 2-3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful. Not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
-3. Add and Trim are SEPARATE action lines. Multiple names/sectors allowed. Write like a PM sizing a real book, not a headline generator:
+3. Add and Trim are SEPARATE bullet lists. Semicolon-separated. ONE name or sleeve per item, never two tickers packed with a slash.
    - Reference each name's CURRENT weight (given above) and state the size of the move: a target weight or a rough trim/add fraction (e.g. "trim $RKLB from 14% to ~9%", "add ~3-5% of book into SaaS"), not just a direction with no size.
    - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing). Never a generic sector vibe that could be pasted onto any ticker in the theme.
    - Name the trigger/condition when it isn't "do this now": a level, an earnings date, a macro print. So it reads as a plan, not a headline.
-   - add: up to ~40 words. Format: "NAME (weight -> target): specific why + trigger" OR sector sleeves e.g. "SaaS / healthcare / drones: why". Book tickers preferred; NEW tickers and sectors (SaaS, healthcare, drones, AI power, fintech…) are welcome when the thesis needs them.
-   - trim: up to ~40 words. Multiple tickers OK ("TICKER (weight -> target): specific why") or a sleeve ("fintech sleeve: liquidity fade").
+   - Each item: "TICKER (current% -> target%): specific why + trigger". Sleeves: "AI power sleeve (~0% to 5%): why + size". Book tickers preferred; NEW tickers and sectors are welcome when the thesis needs them.
    - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
-   - Never use em dashes (—) or en-dash clause breaks in add/trim lines.
+   - Never use em dashes or en-dash clause breaks in add/trim lines.
 4. sectorRotation: talk through plausible rotations (AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc.). Do not stay stuck in one box. Plain speech, no em dashes.
 5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
