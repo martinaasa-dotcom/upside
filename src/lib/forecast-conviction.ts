@@ -244,6 +244,38 @@ export function liftPathToThemeMagnitude(
   return { prices: enforcePathRules(out, spot), lifted: true };
 }
 
+/**
+ * The first forecast year is often the calendar year we are already in.
+ * Models paste today's spot into that cell because "2026" feels like now.
+ * That column is still December 31. If the printed EOY hugs spot while the
+ * theme still has a real remaining-year move, replace just that year with
+ * the leftover fraction of the theme's first-year multiple. Later years
+ * are untouched.
+ */
+export function restoreCurrentYearDestination(
+  prices: Record<ForecastYear, number>,
+  fallback: Record<ForecastYear, number>,
+  spot: number,
+  now: Date = new Date()
+): Record<ForecastYear, number> {
+  const y = now.getFullYear();
+  if (!(FORECAST_YEARS as readonly number[]).includes(y)) return prices;
+  const year = y as ForecastYear;
+  const eoy = prices[year];
+  const themeEoy = fallback[year];
+  if (!(spot > 0) || !(eoy > 0) || !(themeEoy > 0)) return prices;
+  const themeMult = themeEoy / spot;
+  if (themeMult < 1.08) return prices;
+  if (Math.abs(eoy / spot - 1) >= 0.02) return prices;
+
+  const start = Date.UTC(y, 0, 1);
+  const end = Date.UTC(y, 11, 31);
+  const elapsed = (now.getTime() - start) / (end - start);
+  const remaining = Math.max(0.15, Math.min(1, 1 - elapsed));
+  const remainingMult = Math.pow(themeMult, remaining);
+  return { ...prices, [year]: roundPx(spot * remainingMult) };
+}
+
 /** Light sanity net — only guarantees every year is a positive number. */
 export function enforcePathRules(
   prices: Record<ForecastYear, number>,
@@ -329,6 +361,7 @@ target to match, and no ticker has a predetermined destination.
 ### Required dynamics
 - Non-linear paths: bull runs and/or consolidation years, reasoned from that specific company's fundamentals and cycle. Never a flat CAGR line.
 - Crypto-adjacent names: consider a violent mid-path winter, then recovery, if that fits the specific asset.
+- The first forecast year is this calendar year. That cell is December 31, not today's print. There are still months left. Do not paste spot into it as a default. A name can finish the year close to spot only when that company's own remaining-year setup is genuinely dead; most AI infra, crypto, power and space names still have a year-end move.
 - Capex-heavy / infra names: digestion can mean a slower-up year, not necessarily a collapse.
 - Trim/add lines may list multiple names or sector sleeves, not one ticker only.
 - Be honest: some names deserve a modest, unglamorous path. Not every holding is a multi-bagger candidate.

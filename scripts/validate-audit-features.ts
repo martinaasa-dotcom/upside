@@ -18,6 +18,10 @@ import { correlationMatrix, pearson } from "../src/lib/correlation";
 import { estimateGreenStreak } from "../src/lib/streaks";
 import { isForecastFullyCovered, FORECAST_YEARS } from "../src/lib/forecast";
 import { ensureCompleteEoyTargets } from "../src/lib/forecast-plan";
+import {
+  restoreCurrentYearDestination,
+  shapedFallbackPath,
+} from "../src/lib/forecast-conviction";
 import type { ForecastModel } from "../src/lib/forecast";
 import { roundMoney, safeDiv } from "../src/lib/money";
 import { enrichHoldings } from "../src/lib/calculations";
@@ -230,6 +234,20 @@ assert(
   /gpu cloud/i.test(timidLifted[0]?.rationale ?? ""),
   "lift keeps the model's rationale"
 );
+const hugNow = restoreCurrentYearDestination(
+  {
+    2026: 100.4,
+    2027: 230,
+    2028: 310,
+    2029: 391,
+    2030: 483,
+  },
+  shapedFallbackPath(100, "ai_infra"),
+  100,
+  new Date("2026-08-14T12:00:00Z")
+);
+assert(hugNow[2026]! > 110 && hugNow[2026]! < 140, "current-year hug is a remaining-year move, not spot");
+assert(hugNow[2030] === 483, "current-year restore leaves later years alone");
 const cryptoFill = ensureCompleteEoyTargets(
   {
     ...forecastStub,

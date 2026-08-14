@@ -12,6 +12,7 @@ import {
   fillMissingForecastYears,
   forecastThemeForTicker,
   liftPathToThemeMagnitude,
+  restoreCurrentYearDestination,
   shapedFallbackPath,
 } from "@/lib/forecast-conviction";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -261,7 +262,9 @@ function fallbackRationale(input: {
  * Guarantee every holding has every FORECAST_YEAR filled. Gaps and
  * boringly-linear ramps use the theme shape. A non-linear path whose 2030
  * multiple still sits below the theme band is lifted (shape kept, destination
- * restored). A path already at or above the band is never lowered.
+ * restored). A path already at or above the band is never lowered. If the
+ * current calendar year is hugging today's spot, that cell is rewritten as
+ * the remaining-year move, not a restatement of now.
  */
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
@@ -291,7 +294,7 @@ export function ensureCompleteEoyTargets(
     }
 
     const lifted = liftPathToThemeMagnitude(prices, shaped, spot);
-    prices = lifted.prices;
+    prices = restoreCurrentYearDestination(lifted.prices, shaped, spot);
 
     out.push({
       ticker: row.ticker,
@@ -420,6 +423,7 @@ Requirements:
 5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
+   - Year ${year} is December 31 ${year}, not today's spot. Do not paste the current print into that cell.
    - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude. Space: digestion year.
    - rationale: one human sentence on micro-thesis + dynamics. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes.
 7. Consistency: if macro / company / sector thesis is unchanged from a prior run, keep EOY magnitudes in a similar neighborhood. Do not randomly reshuffle for no reason.

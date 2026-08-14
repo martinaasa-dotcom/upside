@@ -65,10 +65,22 @@ function yearLabel(year: number) {
   return `End ${year}`;
 }
 
-/** Current calendar year gets a "this year" cue so the nearest, most-actionable
- * target doesn't blend into the same-looking longer-horizon columns. */
+/** Current calendar year is still an EOY column (Dec 31), not "now". */
 function isCurrentYear(year: number) {
   return year === new Date().getFullYear();
+}
+
+function YearColHeader({ year }: { year: number }) {
+  return (
+    <>
+      {yearLabel(year)}
+      {isCurrentYear(year) && (
+        <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal text-zinc-500">
+          this year
+        </span>
+      )}
+    </>
+  );
 }
 
 function horizonTabLabel(label: string): string {
@@ -722,8 +734,7 @@ export function ForecastPanel({
                           isCurrentYear(y) && "text-brand-bright"
                         )}
                       >
-                        {yearLabel(y)}
-                        {isCurrentYear(y) && " · now"}
+                        <YearColHeader year={y} />
                       </p>
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
@@ -752,8 +763,7 @@ export function ForecastPanel({
                         isCurrentYear(y) && "text-brand-bright"
                       )}
                     >
-                      {yearLabel(y)}
-                      {isCurrentYear(y) && " · now"}
+                      <YearColHeader year={y} />
                     </p>
                     <p className="tabular-nums text-zinc-100">
                       {currency(model.eoyTotals[y])}
@@ -787,10 +797,9 @@ export function ForecastPanel({
                       cellNum,
                       isCurrentYear(y) && "text-brand-bright"
                     )}
-                    title={isCurrentYear(y) ? "This year" : undefined}
+                    title={isCurrentYear(y) ? "Year-end, not today's price" : undefined}
                   >
-                    {yearLabel(y)}
-                    {isCurrentYear(y) && " · now"}
+                    <YearColHeader year={y} />
                   </div>
                 ))}
                 <div className={cellNum}>Change</div>
