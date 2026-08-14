@@ -277,6 +277,21 @@ function DayHistoryTable({
   );
 }
 
+function dayCellBg(v: number, mag: number, empty: boolean): string {
+  if (empty) return "bg-white/[0.03]";
+  if (v > 0.05) {
+    if (mag > 0.66) return "bg-gain/40";
+    if (mag > 0.33) return "bg-gain/25";
+    return "bg-gain/15";
+  }
+  if (v < -0.05) {
+    if (mag > 0.66) return "bg-loss/40";
+    if (mag > 0.33) return "bg-loss/25";
+    return "bg-loss/15";
+  }
+  return "bg-white/[0.04]";
+}
+
 function DayOfMonthChart({
   rows,
   monthLabel,
@@ -294,17 +309,11 @@ function DayOfMonthChart({
 
   return (
     <div className="space-y-3">
-      <div className="-mx-1 overflow-x-auto px-1">
-      <div
-        className="relative grid gap-px rounded-lg border border-zinc-800/80 bg-zinc-950/40 p-2"
-        style={{
-          gridTemplateColumns: `repeat(${rows.length}, minmax(1.4rem, 1fr))`,
-        }}
-      >
-        <div className="pointer-events-none absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-zinc-700/80" />
+      <div className="grid grid-cols-8 gap-1 md:grid-cols-11">
         {rows.map((row) => {
           const v = row.avgReturnPct;
-          const h = Math.max(8, (Math.abs(v) / maxAbs) * 46);
+          const mag = Math.min(1, Math.abs(v) / maxAbs);
+          const empty = row.samples === 0;
           const isSelected = selectedDay === row.day;
           const isToday = todayDay === row.day;
           return (
@@ -313,54 +322,42 @@ function DayOfMonthChart({
               type="button"
               onClick={() => onSelectDay(row.day)}
               aria-pressed={isSelected}
-              className={cn(
-                "relative flex min-w-0 flex-col items-center gap-1 rounded px-0.5 py-1 transition hover:bg-zinc-800/50",
-                isSelected
-                  ? "bg-brand/25 ring-2 ring-brand shadow-[0_0_10px_0_rgba(197,160,89,0.4)]"
-                  : isToday && "ring-1 ring-brand/30"
-              )}
               title={`Day ${row.day}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · ${row.winRate}% up · n=${row.samples}`}
+              className={cn(
+                "flex min-h-11 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
+                dayCellBg(v, mag, empty),
+                isSelected
+                  ? "ring-2 ring-brand"
+                  : isToday
+                    ? "ring-1 ring-brand/40 hover:brightness-110"
+                    : "hover:brightness-110"
+              )}
             >
-              <div className="relative flex h-48 w-full items-center justify-center">
-                <div
-                  className={cn(
-                    "absolute w-[85%] max-w-full rounded-sm",
-                    retBarColor(v),
-                    row.samples === 0 && "opacity-30"
-                  )}
-                  style={{
-                    height: `${h}%`,
-                    ...(v >= 0 ? { bottom: "50%" } : { top: "50%" }),
-                  }}
-                />
-              </div>
               <span
                 className={cn(
                   "text-xs tabular-nums",
                   isSelected || isToday
                     ? "font-bold text-brand-bright"
-                    : "text-zinc-400"
+                    : "text-zinc-300"
                 )}
               >
                 {row.day}
               </span>
               <span
                 className={cn(
-                  "text-xs leading-none tabular-nums",
-                  row.samples === 0 ? "text-zinc-400" : retText(v)
+                  "mt-0.5 text-xs font-semibold tabular-nums",
+                  empty ? "text-zinc-500" : retText(v)
                 )}
               >
-                {row.samples === 0 ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}`}
+                {empty ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}`}
               </span>
             </button>
           );
         })}
       </div>
-      </div>
-      <p className="text-xs text-zinc-400">
-        Each bar = average session return on that calendar day in {monthLabel}{" "}
-        (cycle-filtered). Click a day for year-by-year history. Swipe
-        sideways on phone if the month has more days than fit.
+      <p className="text-xs text-muted">
+        Average session return on that calendar day in {monthLabel}. Click a
+        day for the years behind it.
       </p>
     </div>
   );
@@ -572,7 +569,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
           <Section
             title="Daily rhythm within the month"
-            subtitle="Defaults to today. Click a day for its hourly pattern, independent from the monthly chart above."
+            subtitle="Defaults to today. Click a day for prior years, independent from the monthly chart above."
           >
             <div className="mb-4 flex items-center justify-between gap-2">
               <button
@@ -609,7 +606,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="mb-3 flex flex-wrap gap-1">
+            <div className="mb-3 grid grid-cols-6 gap-1 sm:grid-cols-12">
               {MONTH_SHORT.map((label, idx) => {
                 const m = idx + 1;
                 return (
@@ -618,12 +615,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     type="button"
                     onClick={() => setViewMonth(m)}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition",
+                      "rounded-lg px-1 py-1.5 text-center text-xs font-medium transition",
                       viewMonth === m
-                        ? "bg-white text-black"
+                        ? "bg-brand/25 text-brand-bright ring-1 ring-brand"
                         : m === marketToday.month
                           ? "text-brand-bright ring-1 ring-brand/40 hover:bg-brand/15"
-                          : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+                          : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
                     )}
                   >
                     {label}
