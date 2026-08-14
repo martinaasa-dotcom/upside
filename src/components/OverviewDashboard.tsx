@@ -73,7 +73,7 @@ type EarningsEvent = { ticker: string; date: string; days: number };
 
 type Props = {
   model: OverviewModel;
-  onOpenSheet: (portfolioId: string) => void;
+  onOpenSheet: (portfolioId: string, focus?: "covered-calls") => void;
   coveredCallRows?: CoveredCallRow[];
   /** Book-wide, not-yet-dismissed alerts (earnings/strike/margin/concentration). */
   activeAlerts?: UpsideAlert[];
@@ -539,7 +539,7 @@ export function OverviewDashboard({
   function handleBriefingNavigate(link: BriefingLink) {
     if (link.type === "pulse") onOpenPulse?.();
     else if (link.type === "compound") onOpenCompound?.();
-    else if (link.type === "sheet") onOpenSheet(link.portfolioId);
+    else if (link.type === "sheet") onOpenSheet(link.portfolioId, link.focus);
   }
 
   function canFollowBriefingLink(link?: BriefingLink): boolean {

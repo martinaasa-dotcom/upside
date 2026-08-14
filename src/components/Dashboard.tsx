@@ -7,7 +7,7 @@ import type { AdvisorAction } from "@/components/CcAdvisorChat";
 import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
-import { CoveredCallPanel } from "@/components/CoveredCallPanel";
+import { CoveredCallPanel, COVERED_CALLS_ANCHOR } from "@/components/CoveredCallPanel";
 import { ExperienceOnboardingModal } from "@/components/ExperienceOnboardingModal";
 import { ForecastPanel, ForecastOffStub } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
@@ -438,6 +438,8 @@ export function Dashboard() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
+  /** Home "Open covered calls" should land on the options table, not holdings. */
+  const sheetFocusRef = useRef<"covered-calls" | null>(null);
   const { labBundle, patchLab } = useLabSync();
   /** Browser Back/Forward: sync sheet from history without pushing again. */
   const historyFromPopRef = useRef(false);
@@ -604,6 +606,23 @@ export function Dashboard() {
       saveVisibilityMap(CC_VISIBLE_KEY, next);
       return next;
     });
+  }
+
+  function openSheet(id: string, focus?: "covered-calls") {
+    if (focus === "covered-calls" && !hideOptionsUI) {
+      const p = portfolios.find((x) => x.id === id);
+      if (p) {
+        setCcVisibleByPortfolio((prev) => {
+          const next = setPanelVisible(prev, p, true);
+          saveVisibilityMap(CC_VISIBLE_KEY, next);
+          return next;
+        });
+        sheetFocusRef.current = "covered-calls";
+      }
+    } else {
+      sheetFocusRef.current = null;
+    }
+    setActiveId(id);
   }
 
   function toggleForecastVisible() {
@@ -1102,8 +1121,21 @@ export function Dashboard() {
       return;
     }
     if (historyFromPopRef.current) return;
+    if (sheetFocusRef.current) return;
     window.scrollTo({ top: 0 });
   }, [activeId]);
+
+  useEffect(() => {
+    if (sheetFocusRef.current !== "covered-calls") return;
+    if (!ccVisible) return;
+    const t = window.setTimeout(() => {
+      document
+        .getElementById(COVERED_CALLS_ANCHOR)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      sheetFocusRef.current = null;
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [activeId, ccVisible]);
 
   useEffect(() => {
     saveActiveSheetId(activeId);
@@ -2592,7 +2624,7 @@ export function Dashboard() {
             <OverviewDashboard
               model={overview}
               visitStreak={visitStreak}
-              onOpenSheet={(id) => setActiveId(id)}
+              onOpenSheet={openSheet}
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}
               marketState={marketState}

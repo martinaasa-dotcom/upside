@@ -188,6 +188,9 @@ const HEADER_HINTS: Partial<Record<(typeof HEADERS)[number], string>> = {
   Premium: "The cash you would collect for selling these calls",
 };
 
+/** Anchor Home uses to land on this table from "Open covered calls". */
+export const COVERED_CALLS_ANCHOR = "covered-calls";
+
 export function CoveredCallPanel({
   rows,
   yield2wAvg,
@@ -197,7 +200,11 @@ export function CoveredCallPanel({
   onAddHolding,
 }: Props) {
   return (
-    <Panel padded={false} className="overflow-hidden">
+    <Panel
+      padded={false}
+      id={COVERED_CALLS_ANCHOR}
+      className="scroll-mt-28 overflow-hidden"
+    >
       <div className="border-b border-zinc-800/80 p-4 sm:p-6">
         <PanelHeader
           title="Covered calls"

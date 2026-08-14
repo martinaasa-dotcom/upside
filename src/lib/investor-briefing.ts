@@ -9,7 +9,7 @@ import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 
 export type BriefingLink =
   | { type: "pulse" }
-  | { type: "sheet"; portfolioId: string }
+  | { type: "sheet"; portfolioId: string; focus?: "covered-calls" }
   | { type: "compound" };
 
 export type BriefingItem = {
@@ -245,7 +245,9 @@ export function buildInvestorBriefing(input: {
           "From the strikes you set. Not in the account yet.",
           "What those calls would be worth at expiry. On paper, not banked.",
         ]),
-        link: ccSheetId ? { type: "sheet", portfolioId: ccSheetId } : undefined,
+        link: ccSheetId
+          ? { type: "sheet", portfolioId: ccSheetId, focus: "covered-calls" }
+          : undefined,
         cta: ccSheetId ? "Open covered calls" : undefined,
       });
     }

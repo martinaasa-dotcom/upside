@@ -123,6 +123,47 @@ run("Home briefing never rotates a covered-call pep talk", () => {
   }
 });
 
+run("covered-call briefing opens the options table, not just the sheet", () => {
+  const items = buildInvestorBriefing({
+    model: emptyModel(),
+    activeAlerts: [],
+    coveredCallRows: [
+      {
+        holding: {
+          id: "h1",
+          portfolio_id: "sheet-a",
+          ticker: "NBIS",
+          shares: 100,
+          buy_price: 10,
+          eoy_target: null,
+          target_call_pct: 0.15,
+          stock_target_override: null,
+          sort_order: 0,
+        },
+        spot: 100,
+        totalValue: 10_000,
+        yield2w: 0.01,
+        premium: 18_404,
+        targetCall: 0.15,
+        stockTarget: 120,
+        targetDistance: 0.2,
+        nextStrike: 138,
+        expiration: "2026-09-01",
+        contracts: 1,
+        option: null,
+      },
+    ],
+    hideOptions: false,
+    canReachPulse: true,
+    dayKey: "2026-08-14",
+  });
+  const cc = items.find((i) => i.id.startsWith("cc-season-"));
+  assert.ok(cc, "premium card exists when options are on");
+  assert.equal(cc?.link?.type, "sheet");
+  assert.equal(cc?.link && cc.link.type === "sheet" ? cc.link.portfolioId : null, "sheet-a");
+  assert.equal(cc?.link && cc.link.type === "sheet" ? cc.link.focus : null, "covered-calls");
+});
+
 run("closed session keeps last print vs yesterday close, including leftover after-hours", () => {
   const closedAh = sessionMark({
     marketState: "CLOSED",
