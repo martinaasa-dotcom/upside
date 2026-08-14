@@ -389,7 +389,7 @@ export function LabSheet({
                       <span className="text-sm text-zinc-400">/100</span>
                     </p>
                     <p className="text-xs font-medium text-brand-bright">
-                      {personality.diversificationBand.label}
+                      Diversified
                     </p>
                   </div>
                 </div>
