@@ -44,7 +44,7 @@ export default function GlobalError({
           background: "#0C1014",
           color: "#f5f2eb",
           fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, sans-serif",
+            '"Iowan Old Style", Palatino, Georgia, serif',
         }}
       >
         <div>

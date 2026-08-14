@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Montserrat } from "next/font/google";
+import { Newsreader } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
@@ -11,21 +11,12 @@ import {
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["600", "700"],
-});
-
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  display: "swap",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
 });
 
 export const viewport: Viewport = {
@@ -85,7 +76,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-timezone="Europe/Tallinn">
       <body
-        className={`${inter.variable} ${montserrat.variable} ${jetbrains.variable} antialiased`}
+        className={`${newsreader.variable} antialiased`}
       >
         <Providers>{children}</Providers>
         <Analytics />

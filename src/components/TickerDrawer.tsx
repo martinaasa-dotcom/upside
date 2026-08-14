@@ -150,7 +150,7 @@ export function TickerDrawer({
         <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold tracking-tight text-white">
+              <h2 className="text-lg font-semibold text-white">
                 {cashtag(ticker)}
               </h2>
               <Pill tone="neutral">{THEME_LABELS[theme] ?? "Equities"}</Pill>

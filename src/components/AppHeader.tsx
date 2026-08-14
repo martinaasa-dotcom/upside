@@ -55,7 +55,7 @@ export function AppHeader({
               />
               <span
                 className={cn(
-                  "min-w-0 truncate font-medium leading-none tracking-tight",
+                  "min-w-0 truncate font-medium leading-none",
                   "text-zinc-300"
                 )}
               >

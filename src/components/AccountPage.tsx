@@ -239,7 +239,7 @@ export function AccountPage() {
 
         <main className="mx-auto max-w-3xl space-y-8 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">My account</h1>
+            <h1 className="text-2xl font-semibold">My account</h1>
             <p className="mt-1 text-sm text-zinc-400">
               How you appear, your data, and the danger zone.
             </p>

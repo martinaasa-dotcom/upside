@@ -254,7 +254,7 @@ export function DailyDuelCard({
                 isPick && "ring-2 ring-sky-400/60"
               )}
             >
-              <p className="text-2xl font-bold tracking-tight text-white">
+              <p className="text-2xl font-semibold text-white">
                 {cashtag(ticker)}
               </p>
               {isPick && (

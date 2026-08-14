@@ -639,6 +639,21 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
+run("one editorial serif, not a stacked tech type stack", () => {
+  const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  const logo = readFileSync(
+    join(process.cwd(), "src/components/UpsideLogo.tsx"),
+    "utf8"
+  );
+  assert.match(layout, /Newsreader/);
+  assert.doesNotMatch(layout, /Inter|Montserrat|JetBrains/);
+  assert.match(css, /font-newsreader/);
+  assert.doesNotMatch(css, /font-inter|font-montserrat|font-jetbrains/);
+  assert.doesNotMatch(code(logo), /uppercase/);
+  assert.doesNotMatch(code(logo), /tracking-\[0\./);
+});
+
 run("rounded-2xl is the panel radius, nothing rounder", () => {
   const offenders = offendersOf(/rounded-3xl/);
   assert.deepEqual(

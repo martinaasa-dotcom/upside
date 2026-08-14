@@ -150,7 +150,7 @@ function EmptyBook({
 
   return (
     <Panel tone="brand" className="overview-fade">
-      <h2 className="text-lg font-semibold tracking-tight text-white sm:text-2xl">
+      <h2 className="text-lg font-semibold text-white sm:text-2xl">
         Your book is empty. Let&apos;s fix that.
       </h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-400">
@@ -367,7 +367,7 @@ function PortfolioLane({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-heading text-lg font-bold text-white group-hover:text-brand-bright">
+          <p className="truncate font-heading text-lg font-semibold text-white group-hover:text-brand-bright">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1 text-sm text-zinc-300">
@@ -375,7 +375,7 @@ function PortfolioLane({
             {currency(sheet.portfolio.cash_balance, 0)} cash
           </p>
         </div>
-        <p className="shrink-0 text-right font-heading text-lg font-bold tabular-nums text-white">
+        <p className="shrink-0 text-right font-heading text-lg font-semibold tabular-nums text-white">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>

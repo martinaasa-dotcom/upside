@@ -144,7 +144,7 @@ export function CommunitiesList() {
         <AppHeader title="Communities" />
         <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">
+            <h1 className="text-2xl font-semibold text-white">
               Communities
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">

@@ -5,7 +5,7 @@ import { PRODUCT_NAME } from "@/lib/product";
 
 type Props = {
   className?: string;
-  /** `mark` = faceted delta only; `wordmark` = mark + UPSIDE LAB; `icon` = stacked lockup */
+  /** `mark` = faceted delta only; `wordmark` = mark + name; `icon` = stacked lockup */
   variant?: "mark" | "wordmark" | "icon";
   title?: string;
 };
@@ -58,7 +58,7 @@ export function UpsideLogo({
         <span className="flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-[1.2rem] border border-brand bg-[#0C1014] p-2.5">
           <UpsideMark className="h-full w-full" />
         </span>
-        <span className="-mr-[0.18em] text-center font-heading text-[0.95rem] font-bold uppercase leading-none tracking-[0.22em] text-white">
+        <span className="text-center font-heading text-[0.95rem] font-semibold leading-none text-white">
           Upside Lab
         </span>
       </span>
@@ -73,9 +73,7 @@ export function UpsideLogo({
     );
   }
 
-  // Wordmark: true vertical center — mark midline = cap midline.
-  // `items-center` plus a small upward nudge on the mark corrects the
-  // optical center (the all-caps line-box has unused descender room).
+  // Wordmark: mark sits on the same midline as the title-case name.
   return (
     <span
       className={cn(
@@ -85,8 +83,8 @@ export function UpsideLogo({
       role="img"
       aria-label={title}
     >
-      <UpsideMark className="h-[1.15em] w-[1.15em] -translate-y-[0.06em]" />
-      <span className="-mr-[0.18em] hidden font-heading font-bold uppercase leading-none tracking-[0.18em] xs:inline">
+      <UpsideMark className="h-[1.15em] w-[1.15em]" />
+      <span className="hidden font-heading font-semibold leading-none xs:inline">
         Upside Lab
       </span>
     </span>

@@ -20,6 +20,8 @@ import { useState, type ReactNode } from "react";
  *   Shell      border-brand/20 on bg-card
  *   Card       border-white/10 on bg-card
  *   Headings   text-base font-semibold (hero: text-lg) · sentence case
+ *   Type       one editorial serif for UI and titles. Not a tech sans
+ *              stacked on a second display face.
  *   Micro      text-xs uppercase tracking-wide text-zinc-400
  *   Body       text-sm leading-relaxed text-zinc-400
  *   Floor      nothing below text-xs. Ever.
@@ -124,7 +126,7 @@ export function PanelHeader({
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
-              "font-heading font-bold tracking-tight text-white",
+              "font-heading font-semibold text-white",
               hero ? "text-lg sm:text-xl" : "text-base"
             )}
           >
