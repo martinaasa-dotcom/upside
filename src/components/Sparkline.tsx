@@ -7,6 +7,8 @@ type Props = {
   className?: string;
   width?: number;
   height?: number;
+  /** Stretch to the parent width. ViewBox still uses width/height. */
+  fill?: boolean;
 };
 
 export function Sparkline({
@@ -14,12 +16,13 @@ export function Sparkline({
   className,
   width = 96,
   height = 28,
+  fill = false,
 }: Props) {
   if (!points.length) {
     return (
       <div
         className={cn("text-xs text-zinc-400", className)}
-        style={{ width, height }}
+        style={fill ? { height } : { width, height }}
       >
         —
       </div>
@@ -41,10 +44,11 @@ export function Sparkline({
 
   return (
     <svg
-      width={width}
-      height={height}
       viewBox={`0 0 ${width} ${height}`}
-      className={className}
+      preserveAspectRatio={fill ? "none" : "xMidYMid meet"}
+      width={fill ? "100%" : width}
+      height={height}
+      className={cn(fill && "block", className)}
       aria-hidden
     >
       <polyline

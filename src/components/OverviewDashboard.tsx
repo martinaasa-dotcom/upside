@@ -4,6 +4,7 @@ import { Sparkline } from "@/components/Sparkline";
 import { HomeWorld } from "@/components/HomeWorld";
 import {
   Card,
+  Metric,
   MicroLabel,
   Panel,
   PanelHeader,
@@ -267,23 +268,6 @@ function BriefingCard({
   return <Card tone={cardTone}>{body}</Card>;
 }
 
-/** Which of your sheets hold this name. Pointless when you only have one. */
-function PortfolioChips({ names }: { names: string[] }) {
-  if (names.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {names.map((name) => (
-        <span
-          key={name}
-          className="rounded-md bg-zinc-800/90 px-2 py-0.5 text-xs text-zinc-300"
-        >
-          {name}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function MoverRow({
   ticker,
   mode,
@@ -297,51 +281,56 @@ function MoverRow({
 }) {
   const isUp = mode === "win" || mode === "today-win";
   const lifetime = mode === "win" || mode === "loss";
-  const metric = lifetime ? ticker.roiPct : (ticker.todayPct ?? 0);
-  const dollar = lifetime ? ticker.roiDollar : ticker.todayDollar;
+  const bookHint = [
+    `${ticker.shares.toLocaleString("en-US")} sh`,
+    showSheets && ticker.portfolios.length > 0
+      ? ticker.portfolios.join(", ")
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition hover:brightness-110",
-        isUp
-          ? "border-emerald-500/25 bg-emerald-500/[0.07]"
-          : "border-rose-500/25 bg-rose-500/[0.07]"
-      )}
-    >
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-baseline gap-2">
-          <span className="text-base font-semibold text-white">
+    <button type="button" onClick={onOpen} className="w-full text-left">
+      <Card tone={isUp ? "good" : "bad"} interactive>
+        <div className="flex items-end gap-3">
+          <span className="shrink-0 text-base font-semibold text-white">
             {cashtag(ticker.ticker)}
           </span>
-          <span className="text-xs text-zinc-400">
-            {ticker.shares.toLocaleString("en-US")} sh ·{" "}
+          <div className="min-w-0 flex-1">
+            <MicroLabel>Recent</MicroLabel>
+            <Sparkline
+              points={ticker.sparkline}
+              fill
+              width={160}
+              height={22}
+            />
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+          <Metric label="Price">{currency(ticker.price)}</Metric>
+          <Metric
+            label="Today"
+            hint={signedCurrency(ticker.todayDollar)}
+            valueClassName={cn(
+              tone(ticker.todayPct),
+              !lifetime && "text-base"
+            )}
+          >
+            {ticker.todayPct != null ? percent(ticker.todayPct) : "—"}
+          </Metric>
+          <Metric
+            label="Lifetime"
+            hint={signedCurrency(ticker.roiDollar)}
+            valueClassName={cn(tone(ticker.roiPct), lifetime && "text-base")}
+          >
+            {percent(ticker.roiPct)}
+          </Metric>
+          <Metric label="Book" hint={bookHint}>
             {currency(ticker.currentValue, 0)}
-          </span>
+          </Metric>
         </div>
-        {showSheets && <PortfolioChips names={ticker.portfolios} />}
-        <Sparkline points={ticker.sparkline} width={64} height={18} />
-      </div>
-      <div className="shrink-0 text-right">
-        <div
-          className={cn("text-lg font-semibold tabular-nums", tone(metric))}
-        >
-          {percent(metric)}
-        </div>
-        <div className="mt-0.5 text-xs tabular-nums text-zinc-400">
-          {currency(ticker.price)}
-        </div>
-        <div
-          className={cn(
-            "text-xs tabular-nums",
-            Math.abs(dollar) > 0.005 ? tone(dollar) : "text-zinc-400"
-          )}
-        >
-          {signedCurrency(dollar)}
-        </div>
-      </div>
+      </Card>
     </button>
   );
 }
@@ -390,31 +379,23 @@ function PortfolioLane({
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-            Lifetime
-          </p>
-          <p className={cn("mt-0.5 font-medium tabular-nums", tone(sheet.roiPct))}>
-            {percent(sheet.roiPct)} · {signedCurrency(sheet.roiDollar)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-            Today
-          </p>
-          <p
-            className={cn(
-              "mt-0.5 font-medium tabular-nums",
-              tone(sheet.todayDollar)
-            )}
-          >
-            {signedCurrency(sheet.todayDollar)}
-            {sheet.todayPct !== null && (
-              <span className="ml-1.5">{percent(sheet.todayPct)}</span>
-            )}
-          </p>
-        </div>
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        <Metric
+          label="Lifetime"
+          hint={signedCurrency(sheet.roiDollar)}
+          valueClassName={tone(sheet.roiPct)}
+        >
+          {percent(sheet.roiPct)}
+        </Metric>
+        <Metric
+          label="Today"
+          hint={
+            sheet.todayPct !== null ? percent(sheet.todayPct) : undefined
+          }
+          valueClassName={tone(sheet.todayDollar)}
+        >
+          {signedCurrency(sheet.todayDollar)}
+        </Metric>
       </div>
     </button>
   );

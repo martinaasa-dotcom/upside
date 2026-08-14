@@ -12,6 +12,7 @@ import {
 import {
   Card,
   EmptyState,
+  Metric,
   MicroLabel,
   Panel,
   PanelHeader,
@@ -64,7 +65,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   model: OverviewModel;
@@ -80,28 +81,6 @@ function PulseHistory({ ticker }: { ticker: string }) {
     <p className="mt-2 text-xs text-zinc-500">
       Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus).toLowerCase()}
     </p>
-  );
-}
-
-function PulseStat({
-  label,
-  children,
-  hint,
-}: {
-  label: string;
-  children: ReactNode;
-  hint?: string;
-}) {
-  return (
-    <div className="min-w-0">
-      <MicroLabel>{label}</MicroLabel>
-      <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100">
-        {children}
-      </p>
-      {hint ? (
-        <p className="mt-0.5 truncate text-xs text-zinc-500">{hint}</p>
-      ) : null}
-    </div>
   );
 }
 
@@ -259,25 +238,27 @@ function PulseCard({
 
       {c.inBook ? (
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          <PulseStat label="Price" hint={currency(c.currentValue)}>
+          <Metric label="Price" hint={currency(c.currentValue)}>
             {currency(c.price)}
-          </PulseStat>
-          <PulseStat label="Today">
-            <span className={signedTone(c.todayDollar, "text-zinc-100")}>
-              {signedCurrency(c.todayDollar)}
-            </span>
-          </PulseStat>
-          <PulseStat label="Lifetime">
-            <span className={signedTone(c.roiPct, "text-zinc-100")}>
-              {percent(c.roiPct)}
-            </span>
-          </PulseStat>
-          <PulseStat
+          </Metric>
+          <Metric
+            label="Today"
+            valueClassName={signedTone(c.todayDollar, "text-zinc-100")}
+          >
+            {signedCurrency(c.todayDollar)}
+          </Metric>
+          <Metric
+            label="Lifetime"
+            valueClassName={signedTone(c.roiPct, "text-zinc-100")}
+          >
+            {percent(c.roiPct)}
+          </Metric>
+          <Metric
             label="Book"
             hint={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
           >
             {percent(c.bookPct)}
-          </PulseStat>
+          </Metric>
         </div>
       ) : (
         <p className="mt-2 text-xs text-zinc-500">

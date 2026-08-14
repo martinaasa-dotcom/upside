@@ -23,6 +23,8 @@ import { useState, type ReactNode } from "react";
  *   Type       one editorial serif for UI and titles. Not a tech sans
  *              stacked on a second display face.
  *   Micro      text-xs uppercase tracking-wide text-zinc-400
+ *   Metrics    inside a card, a 2/4-col grid of Metric (label over figure).
+ *              Do not park unlabeled numbers on the far right of a row.
  *   Body       text-sm leading-relaxed text-zinc-400
  *   Floor      nothing below text-xs. Ever.
  *   Measure    copy inside a panel fills the panel. Do not pinch it to a
@@ -204,6 +206,38 @@ export function MicroLabel({
     >
       {children}
     </p>
+  );
+}
+
+/** Label over a figure. Use in a grid inside a card, never as a lonely right-edge stack. */
+export function Metric({
+  label,
+  children,
+  hint,
+  className,
+  valueClassName,
+}: {
+  label: ReactNode;
+  children: ReactNode;
+  hint?: ReactNode;
+  className?: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <MicroLabel>{label}</MicroLabel>
+      <p
+        className={cn(
+          "mt-0.5 text-sm font-semibold tabular-nums text-zinc-100",
+          valueClassName
+        )}
+      >
+        {children}
+      </p>
+      {hint != null && hint !== "" ? (
+        <p className="mt-0.5 truncate text-xs text-zinc-500">{hint}</p>
+      ) : null}
+    </div>
   );
 }
 
