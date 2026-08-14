@@ -802,7 +802,7 @@ run("fund stats speak in percent and dollars, not points", () => {
     join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
     "utf8"
   );
-  assert.doesNotMatch(code(src), /\dpt\b|pt vs SPY|ahead by .*pt/);
+  assert.doesNotMatch(code(src), /\dpt\b|pt vs SPY|ahead by|vs cost|Dead even over this window/);
 });
 
 run("fund watchlist drops names he already holds", () => {

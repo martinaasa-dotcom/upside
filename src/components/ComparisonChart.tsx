@@ -1,6 +1,7 @@
 "use client";
 
-import { percent } from "@/lib/format";
+import { Metric } from "@/components/ui/Panel";
+import { cn, percent, signedTone } from "@/lib/format";
 import { useMemo, useState } from "react";
 
 export type ComparisonSeries = {
@@ -8,6 +9,8 @@ export type ComparisonSeries = {
   color: string;
   /** Fractional return series, e.g. 0.05 = +5%, aligned/same length across series. */
   points: number[];
+  /** Extra line under the % in the legend, usually a dollar move. */
+  hint?: string;
 };
 
 type Props = {
@@ -27,47 +30,58 @@ function formatDayLabel(raw: string) {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
+function uniqueTicks(rawMin: number, rawMax: number): number[] {
+  const raw = [rawMax, 0, rawMin];
+  const out: number[] = [];
+  for (const v of raw) {
+    if (out.some((t) => Math.abs(t - v) < 0.0005)) continue;
+    out.push(v);
+  }
+  return out;
+}
+
 /**
- * Small multi-line % return comparison chart (Margus vs SPY vs, optionally,
- * a user's own sheet). Deliberately plots RETURN (fractional, zero-based)
- * rather than raw dollar value so series with different starting capital
- * are directly comparable on one axis.
+ * Multi-line % return chart (Margus vs SPY vs, optionally, a user's sheet).
+ * Plots return, not dollars, so different starting capital can share an axis.
  */
 export function ComparisonChart({
   series,
   labels,
   width = 640,
-  height = 160,
+  height = 132,
   className,
 }: Props) {
   const usable = series.filter((s) => s.points.length >= 2);
   const [hover, setHover] = useState<number | null>(null);
 
   const len = usable[0]?.points.length ?? 0;
-  const padX = 4;
+  const padLeft = 42;
+  const padRight = 6;
+  const padTop = 10;
+  const padBottom = 8;
 
   const xAt = (i: number) =>
-    len > 1 ? (i / (len - 1)) * (width - padX * 2) + padX : width / 2;
+    len > 1
+      ? padLeft + (i / (len - 1)) * (width - padLeft - padRight)
+      : width / 2;
 
   const geometry = useMemo(() => {
     if (usable.length === 0) return null;
     const allValues = usable.flatMap((s) => s.points);
     const rawMin = Math.min(...allValues, 0);
     const rawMax = Math.max(...allValues, 0);
-    const pad = Math.max((rawMax - rawMin) * 0.12, 0.01);
+    const span = rawMax - rawMin || 0.01;
+    const pad = Math.max(span * 0.06, 0.001);
     const min = rawMin - pad;
     const max = rawMax + pad;
     const range = max - min || 1;
+    const yAt = (v: number) =>
+      padTop + (1 - (v - min) / range) * (height - padTop - padBottom);
     const toXY = (points: number[]) =>
       points
-        .map((v, i) => {
-          const x = xAt(i);
-          const y = height - 4 - ((v - min) / range) * (height - 8);
-          return `${x.toFixed(1)},${y.toFixed(1)}`;
-        })
+        .map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`)
         .join(" ");
-    const zeroY = height - 4 - ((0 - min) / range) * (height - 8);
-    return { min, range, toXY, zeroY };
+    return { min, max, range, toXY, yAt, rawMin, rawMax };
     // xAt closes over len/width; those are the real deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usable, width, height, len]);
@@ -75,7 +89,7 @@ export function ComparisonChart({
   if (usable.length === 0 || !geometry) {
     return (
       <div
-        className="flex items-center justify-center text-xs text-zinc-400"
+        className="flex items-center justify-center text-sm text-zinc-400"
         style={{ height }}
       >
         History builds up day by day. Check back tomorrow.
@@ -83,47 +97,68 @@ export function ComparisonChart({
     );
   }
 
-  const { toXY, zeroY, min, range } = geometry;
+  const { toXY, yAt, rawMin, rawMax } = geometry;
   const active = hover != null && hover >= 0 && hover < len ? hover : null;
   const dayLabel =
     active != null
       ? formatDayLabel(labels?.[active] ?? labels?.[labels.length - 1] ?? "Live")
       : null;
+  const startLabel = formatDayLabel(labels?.[0] ?? "");
+  const endLabel = formatDayLabel(labels?.[len - 1] ?? "Live");
+  const ticks = uniqueTicks(rawMin, rawMax);
+  const cols =
+    usable.length >= 3 ? "grid-cols-3" : usable.length === 1 ? "grid-cols-1" : "grid-cols-2";
 
   function indexFromClientX(clientX: number, target: SVGSVGElement) {
     const rect = target.getBoundingClientRect();
     if (rect.width <= 0 || len <= 1) return 0;
     const x = ((clientX - rect.left) / rect.width) * width;
-    const t = (x - padX) / (width - padX * 2);
+    const t = (x - padLeft) / (width - padLeft - padRight);
     return Math.max(0, Math.min(len - 1, Math.round(t * (len - 1))));
   }
 
   return (
-    <div className={className ? `min-w-0 max-w-full ${className}` : "min-w-0 max-w-full"}>
+    <div className={cn("min-w-0 max-w-full", className)}>
       <div className="relative">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="h-auto w-full touch-pan-y"
+          role="img"
+          aria-label="Return comparison. Hover or drag to read a day."
           onPointerMove={(e) => {
             setHover(indexFromClientX(e.clientX, e.currentTarget));
           }}
           onPointerLeave={() => setHover(null)}
         >
-          <line
-            x1={0}
-            x2={width}
-            y1={zeroY}
-            y2={zeroY}
-            stroke="currentColor"
-            strokeOpacity={0.15}
-            strokeDasharray="4 4"
-          />
+          {ticks.map((t) => (
+            <g key={t}>
+              <line
+                x1={padLeft}
+                x2={width - padRight}
+                y1={yAt(t)}
+                y2={yAt(t)}
+                stroke="currentColor"
+                strokeOpacity={t === 0 ? 0.22 : 0.08}
+                strokeDasharray={t === 0 ? "4 4" : undefined}
+              />
+              <text
+                x={padLeft - 6}
+                y={yAt(t) + 3.5}
+                textAnchor="end"
+                fill="currentColor"
+                opacity={0.45}
+                fontSize="11"
+              >
+                {percent(t)}
+              </text>
+            </g>
+          ))}
           {usable.map((s) => (
             <polyline
               key={s.label}
               fill="none"
               stroke={s.color}
-              strokeWidth={2}
+              strokeWidth={2.25}
               strokeLinejoin="round"
               strokeLinecap="round"
               points={toXY(s.points)}
@@ -133,8 +168,8 @@ export function ComparisonChart({
             <line
               x1={xAt(active)}
               x2={xAt(active)}
-              y1={4}
-              y2={height - 4}
+              y1={padTop}
+              y2={height - padBottom}
               stroke="currentColor"
               strokeOpacity={0.35}
             />
@@ -142,12 +177,11 @@ export function ComparisonChart({
           {active != null &&
             usable.map((s) => {
               const v = s.points[active] ?? 0;
-              const y = height - 4 - ((v - min) / range) * (height - 8);
               return (
                 <circle
                   key={s.label}
                   cx={xAt(active)}
-                  cy={y}
+                  cy={yAt(v)}
                   r={3.5}
                   fill={s.color}
                 />
@@ -173,28 +207,40 @@ export function ComparisonChart({
           </div>
         )}
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+      <div className="mt-1 flex justify-between text-xs text-zinc-500">
+        <span>{startLabel}</span>
+        <span>{endLabel}</span>
+      </div>
+      <div className={`mt-3 grid gap-2 ${cols}`}>
         {usable.map((s) => {
           const last = s.points[s.points.length - 1] ?? 0;
           return (
-            <div key={s.label} className="flex items-center gap-1.5 text-xs">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: s.color }}
-              />
-              <span className="text-zinc-400">{s.label}</span>
-              <span
-                className={`font-semibold tabular-nums ${last >= 0 ? "text-gain" : "text-loss"}`}
-              >
-                {percent(last)}
-              </span>
-            </div>
+            <Metric
+              key={s.label}
+              label={
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: s.color }}
+                    aria-hidden
+                  />
+                  <span className="truncate">{s.label}</span>
+                </span>
+              }
+              hint={
+                s.hint ? (
+                  <span className={signedTone(last, "text-zinc-500")}>
+                    {s.hint}
+                  </span>
+                ) : undefined
+              }
+              valueClassName={signedTone(last, "text-zinc-100")}
+            >
+              {percent(last)}
+            </Metric>
           );
         })}
       </div>
-      <p className="mt-1 text-xs text-zinc-500">
-        Hover or drag for the exact day.
-      </p>
     </div>
   );
 }

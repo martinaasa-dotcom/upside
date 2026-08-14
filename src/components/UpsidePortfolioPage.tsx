@@ -30,7 +30,6 @@ import {
 import { todayKeyInTz } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
-  portfolioCostValue,
   portfolioLiveValue,
   portfolioValueOnDate,
   priorNySessionKey,
@@ -43,10 +42,8 @@ import {
   Minus,
   Plus,
   RefreshCw,
-  Scale,
   TrendingDown,
   TrendingUp,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -572,8 +569,10 @@ export function UpsidePortfolioPage() {
 
   const youReturnSeries = useMemo(() => {
     if (!benchmark || benchmarkLiveValue == null) return null;
-    const meta = myPortfolios?.find((p) => p.id === benchmark.portfolioId);
-    if (!meta) return null;
+    const meta = myPortfolios?.find((p) => p.id === benchmark.portfolioId) ?? {
+      id: benchmark.portfolioId,
+      cash_balance: 0,
+    };
     const points = sheetReturnPathSince({
       labels: comparisonLabels,
       baselineDate: benchmark.baselineDate,
@@ -599,14 +598,24 @@ export function UpsidePortfolioPage() {
       { label: "SPY", color: SERIES_COLOR.spy, points: spyReturnSeries },
     ];
     if (benchmark && youReturnSeries) {
+      const youDollar = benchmarkLiveValue != null
+        ? benchmarkLiveValue - benchmark.userBaselineValue
+        : null;
       rows.splice(1, 0, {
         label: benchmark.portfolioName,
         color: SERIES_COLOR.you,
         points: youReturnSeries,
+        hint: youDollar != null ? signedCurrency(youDollar, 0) : undefined,
       });
     }
     return rows;
-  }, [benchmark, margusReturnSeries, spyReturnSeries, youReturnSeries]);
+  }, [
+    benchmark,
+    benchmarkLiveValue,
+    margusReturnSeries,
+    spyReturnSeries,
+    youReturnSeries,
+  ]);
 
   const fetchMyPortfolios = useCallback(async (): Promise<{
     portfolios: MyPortfolioMeta[];
@@ -864,33 +873,6 @@ export function UpsidePortfolioPage() {
     setPickerSelection("");
   }, []);
 
-  const benchmarkCompare = useMemo(() => {
-    if (!benchmark || benchmarkLiveValue == null) return null;
-    const youDollar = benchmarkLiveValue - benchmark.userBaselineValue;
-    const youPct =
-      benchmark.userBaselineValue > 0
-        ? youDollar / benchmark.userBaselineValue
-        : 0;
-    const margusDollar = totalValue - benchmark.margusBaselineValue;
-    const margusPct =
-      benchmark.margusBaselineValue > 0
-        ? margusDollar / benchmark.margusBaselineValue
-        : 0;
-    const meta = myPortfolios?.find((p) => p.id === benchmark.portfolioId);
-    const vsCost =
-      meta != null
-        ? benchmarkLiveValue - portfolioCostValue(meta, myHoldings)
-        : null;
-    return {
-      youPct,
-      youDollar,
-      margusPct,
-      margusDollar,
-      deltaPts: margusPct - youPct,
-      vsCost,
-    };
-  }, [benchmark, benchmarkLiveValue, totalValue, myPortfolios, myHoldings]);
-
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)] text-zinc-100">
       <AppHeader title="Upside Fund">
@@ -978,177 +960,92 @@ export function UpsidePortfolioPage() {
               </div>
             </section>
 
-            <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-400">
-                  <Scale className="h-3.5 w-3.5" />
-                  {benchmark
-                    ? `${benchmark.portfolioName} vs Margus vs SPY`
-                    : "Margus vs SPY"}
-                </h2>
+            <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold text-white">
+                    {benchmark
+                      ? `${benchmark.portfolioName}, Margus, and SPY`
+                      : "Margus vs SPY"}
+                  </h2>
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                    {benchmark
+                      ? `${benchmark.portfolioName} since ${fmtDate(benchmark.baselineDate)}. Percent from that day, not vs what you paid.`
+                      : "How the fund has moved versus the S&P 500, as a percent."}
+                  </p>
+                </div>
+                {benchmark ? (
+                  <button
+                    type="button"
+                    onClick={handleClearBenchmark}
+                    className="shrink-0 text-xs text-zinc-400 hover:text-zinc-200"
+                  >
+                    Remove
+                  </button>
+                ) : !pickerOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleOpenPicker()}
+                    className="shrink-0 text-xs font-medium text-brand-bright hover:text-brand"
+                  >
+                    Add your book
+                  </button>
+                ) : null}
               </div>
-              <ComparisonChart
-                series={comparisonSeries}
-                labels={comparisonLabels}
-                height={160}
-              />
 
-              <div className="border-t border-zinc-800/80 pt-3">
-                {!benchmark ? (
-                  pickerOpen ? (
-                    <div className="space-y-2">
-                      {myPortfolios === null ? (
-                        <p className="text-xs text-zinc-400">Loading your sheets …</p>
-                      ) : myPortfolios.length === 0 ? (
-                        <p className="text-xs text-zinc-400">
-                          You don&apos;t have any sheets to compare yet.
-                        </p>
-                      ) : (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="relative">
-                            <select
-                              value={pickerSelection}
-                              onChange={(e) => setPickerSelection(e.target.value)}
-                              className="touch-target appearance-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pr-8 text-xs text-zinc-200 focus:border-brand-mid focus:outline-none"
-                            >
-                              <option value="">Choose a sheet …</option>
-                              {myPortfolios.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.name}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => void handleSetBenchmark()}
-                            disabled={!pickerSelection || benchmarkBusy}
-                            className="touch-target rounded-md bg-brand/20 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/30 disabled:opacity-50"
-                          >
-                            {benchmarkBusy ? "Setting …" : "Set as benchmark"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPickerOpen(false)}
-                            className="touch-target rounded-md px-2 py-1.5 text-xs text-zinc-400 hover:text-zinc-300"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                      {benchmarkError && (
-                        <p className="text-xs text-red-400">{benchmarkError}</p>
-                      )}
-                    </div>
+              {!benchmark && pickerOpen && (
+                <div className="mt-3 space-y-2">
+                  {myPortfolios === null ? (
+                    <p className="text-sm text-zinc-400">Loading your sheets …</p>
+                  ) : myPortfolios.length === 0 ? (
+                    <p className="text-sm text-zinc-400">
+                      You don&apos;t have any sheets to compare yet.
+                    </p>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => void handleOpenPicker()}
-                      className="touch-target flex items-center text-xs font-semibold text-brand-bright hover:underline"
-                    >
-                      + Compare against your own portfolio
-                    </button>
-                  )
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xs text-zinc-400">
-                          <span className="font-semibold text-zinc-200">
-                            {benchmark.portfolioName}
-                          </span>{" "}
-                          vs Margus
-                        </p>
-                        <p className="mt-0.5 text-xs text-zinc-500">
-                          Move since {fmtDate(benchmark.baselineDate)}, not vs
-                          what you paid.
-                        </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative">
+                        <select
+                          value={pickerSelection}
+                          onChange={(e) => setPickerSelection(e.target.value)}
+                          className="touch-target appearance-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pr-8 text-sm text-zinc-200 focus:border-brand-mid focus:outline-none"
+                        >
+                          <option value="">Choose a sheet …</option>
+                          {myPortfolios.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
                       </div>
                       <button
                         type="button"
-                        onClick={handleClearBenchmark}
-                        className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-zinc-400 hover:text-zinc-300"
-                        aria-label="Remove benchmark"
+                        onClick={() => void handleSetBenchmark()}
+                        disabled={!pickerSelection || benchmarkBusy}
+                        className="touch-target rounded-md bg-brand/20 px-3 py-1.5 text-sm font-semibold text-brand-bright hover:bg-brand/30 disabled:opacity-50"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        {benchmarkBusy ? "Adding …" : "Add"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPickerOpen(false)}
+                        className="touch-target rounded-md px-2 py-1.5 text-sm text-zinc-400 hover:text-zinc-300"
+                      >
+                        Cancel
                       </button>
                     </div>
-                    {benchmarkCompare ? (
-                      <div className="space-y-1.5 text-xs">
-                        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                          <span>
-                            <span style={{ color: SERIES_COLOR.you }}>●</span>{" "}
-                            You:{" "}
-                            <span
-                              className={cn(
-                                "font-semibold tabular-nums",
-                                signedTone(benchmarkCompare.youDollar)
-                              )}
-                            >
-                              {signedCurrency(benchmarkCompare.youDollar, 0)}
-                            </span>{" "}
-                            <span
-                              className={cn(
-                                "tabular-nums",
-                                signedTone(benchmarkCompare.youPct, "text-zinc-500")
-                              )}
-                            >
-                              ({percent(benchmarkCompare.youPct)})
-                            </span>
-                          </span>
-                          <span>
-                            <span style={{ color: SERIES_COLOR.margus }}>●</span>{" "}
-                            Margus:{" "}
-                            <span
-                              className={cn(
-                                "font-semibold tabular-nums",
-                                signedTone(benchmarkCompare.margusDollar)
-                              )}
-                            >
-                              {signedCurrency(benchmarkCompare.margusDollar, 0)}
-                            </span>{" "}
-                            <span
-                              className={cn(
-                                "tabular-nums",
-                                signedTone(
-                                  benchmarkCompare.margusPct,
-                                  "text-zinc-500"
-                                )
-                              )}
-                            >
-                              ({percent(benchmarkCompare.margusPct)})
-                            </span>
-                          </span>
-                        </div>
-                        <p className="font-semibold text-zinc-300">
-                          {Math.abs(benchmarkCompare.deltaPts) < 0.001
-                            ? "Dead even over this window"
-                            : benchmarkCompare.deltaPts > 0
-                              ? `Margus is ahead by ${percent(benchmarkCompare.deltaPts)}`
-                              : `You're ahead by ${percent(Math.abs(benchmarkCompare.deltaPts))}`}
-                        </p>
-                        {benchmarkCompare.vsCost != null && (
-                          <p className="text-zinc-500">
-                            {benchmark.portfolioName} is{" "}
-                            <span
-                              className={cn(
-                                "tabular-nums",
-                                signedTone(benchmarkCompare.vsCost)
-                              )}
-                            >
-                              {signedCurrency(benchmarkCompare.vsCost, 0)}
-                            </span>{" "}
-                            vs cost.
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-zinc-400">Calculating …</p>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                  {benchmarkError && (
+                    <p className="text-sm text-red-400">{benchmarkError}</p>
+                  )}
+                </div>
+              )}
+
+              <ComparisonChart
+                className="mt-4"
+                series={comparisonSeries}
+                labels={comparisonLabels}
+              />
             </section>
 
             {bettingSlices.length > 0 && (
