@@ -8,7 +8,6 @@ import {
   EmptyState,
   MicroLabel,
   PanelHeader,
-  Segmented,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
@@ -23,7 +22,6 @@ import {
   shouldAutoRefreshForecast,
   forecastHoldingsKey,
   type ForecastPlan,
-  type ForecastStance,
 } from "@/lib/forecast-plan";
 import type { ConvictionMap } from "@/lib/conviction";
 import { readJsonOrThrow } from "@/lib/http";
@@ -50,19 +48,15 @@ type Props = {
   convictions?: ConvictionMap;
 };
 
-function calibratedPaths(
-  plan: ForecastPlan,
-  model: ForecastModel,
-  stance: ForecastStance = DEFAULT_FORECAST_STANCE
-) {
-  const eoyTargets = ensureCompleteEoyTargets(
-    model,
-    plan.eoyTargets ?? [],
-    stance
-  );
+function calibratedPaths(plan: ForecastPlan, model: ForecastModel) {
+  const eoyTargets = ensureCompleteEoyTargets(model, plan.eoyTargets ?? []);
   return {
     eoyTargets,
-    paths: planEoyPaths({ ...plan, eoyTargets, stance }),
+    paths: planEoyPaths({
+      ...plan,
+      eoyTargets,
+      stance: DEFAULT_FORECAST_STANCE,
+    }),
   };
 }
 
@@ -70,12 +64,6 @@ function calibratedPaths(
 function yearLabel(year: number) {
   return `End ${year}`;
 }
-
-const STANCES = [
-  { id: "bearish" as const, label: "Cautious", title: "Assume things go badly" },
-  { id: "base" as const, label: "Base", title: "Margus's honest best guess" },
-  { id: "bullish" as const, label: "Optimistic", title: "Assume things go well" },
-];
 
 /** Current calendar year gets a "this year" cue so the nearest, most-actionable
  * target doesn't blend into the same-looking longer-horizon columns. */
@@ -215,7 +203,6 @@ export function ForecastPanel({
   const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
   const [planHydrated, setPlanHydrated] = useState(false);
-  const [stance, setStance] = useState<ForecastStance>(DEFAULT_FORECAST_STANCE);
   const [prevPlan, setPrevPlan] = useState<ForecastPlan | null>(null);
   const planAt = plan?.generatedAt ?? "";
   useEffect(() => {
@@ -230,7 +217,6 @@ export function ForecastPanel({
     setPlanHydrated(false);
     const loaded = loadForecastPlan(portfolioId);
     setPlan(loaded);
-    setStance(loaded?.stance ?? DEFAULT_FORECAST_STANCE);
     setError(null);
     setAppliedFlash(false);
     autoKeyRef.current = "";
@@ -239,10 +225,9 @@ export function ForecastPanel({
     setPlanHydrated(true);
   }, [portfolioId]);
 
-  async function askMargus(opts?: { auto?: boolean; stance?: ForecastStance }) {
+  async function askMargus(opts?: { auto?: boolean }) {
     if (askInFlight.current) return;
     askInFlight.current = true;
-    const usedStance = opts?.stance ?? stance;
     if (!opts?.auto) track("forecast_plan_requested");
     setBusy(true);
     setError(null);
@@ -256,7 +241,6 @@ export function ForecastPanel({
           portfolioName,
           cashBalance,
           forecast: model,
-          stance: usedStance,
           convictions,
         }),
       });
@@ -267,13 +251,13 @@ export function ForecastPanel({
       const next: ForecastPlan = {
         ...(data.plan as ForecastPlan),
         holdingsKey,
-        stance: usedStance,
+        stance: DEFAULT_FORECAST_STANCE,
       };
-      const { eoyTargets, paths } = calibratedPaths(next, model, usedStance);
+      const { eoyTargets, paths } = calibratedPaths(next, model);
       const calibrated: ForecastPlan = {
         ...next,
         eoyTargets,
-        stance: usedStance,
+        stance: DEFAULT_FORECAST_STANCE,
       };
       saveForecastPlan(calibrated);
       setPlan(calibrated);
@@ -345,15 +329,14 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
-      stance,
     });
     if (!decision.run) return;
     const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
     if (autoKeyRef.current === key) return;
     autoKeyRef.current = key;
-    void askMargus({ auto: true, stance });
+    void askMargus({ auto: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
-  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, stance]);
+  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy]);
 
   // Safety net for the brief window between "you sold this" and the
   // auto-refresh above actually landing (or if it fails/gets rate
@@ -376,7 +359,6 @@ export function ForecastPanel({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
-      stance,
     });
     if (decision.run && decision.reason === "first-run") {
       return "First time on this sheet, Margus is working out the prices …";
@@ -387,11 +369,11 @@ export function ForecastPanel({
     if (decision.run && decision.reason === "sold-holding") {
       return "You sold something this covered, Margus is redoing it …";
     }
-    if (decision.run && decision.reason === "stance-changed") {
-      return "Rethinking it with your new setting …";
+    if (decision.run && decision.reason === "rebase") {
+      return "Updating this to the base case …";
     }
     return null;
-  }, [planHydrated, model.rows, plan, fullyCovered, busy, stance]);
+  }, [planHydrated, model.rows, plan, fullyCovered, busy]);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
@@ -401,17 +383,6 @@ export function ForecastPanel({
           subtitle="A price for each holding at the end of every year to 2030, and why. Rechecks monthly. New buys get filled in without starting over."
           actions={
             <>
-              <Segmented
-                options={STANCES}
-                value={stance}
-                onChange={(id) => {
-                  if (id === stance) return;
-                  setStance(id);
-                  void askMargus({ stance: id });
-                }}
-                disabled={busy || model.rows.length === 0}
-                ariaLabel="How optimistic the forecast should be"
-              />
               {overrideCount > 0 && (
                 <button
                   type="button"

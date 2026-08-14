@@ -20,7 +20,7 @@ const FORECAST_PLAN_PREV_KEY = "portfell-forecast-plan-prev-by-portfolio";
 
 export type ForecastStance = "bearish" | "base" | "bullish";
 
-/** Default stance — reasonable base case. No user stance toggle yet. */
+/** Default (and only) stance. Cautious/optimistic toggles are gone. */
 export const DEFAULT_FORECAST_STANCE: ForecastStance = "base";
 
 /** Rough sector tags so Margus can talk rotation without inventing holdings. */
@@ -80,22 +80,18 @@ export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "monthly" | "sold-holding" | "stance-changed";
+      reason: "first-run" | "monthly" | "sold-holding" | "rebase";
     };
 
 /** Auto API refresh for first run, then monthly (not daily) — plus
  * immediately whenever a holding the plan referenced has been sold, since
  * the quarterly add/trim playbook is free text that can (and does) keep
  * naming a ticker you no longer own until the plan is actually
- * regenerated. */
+ * regenerated. Old cautious/optimistic caches get rewritten onto base. */
 export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
   fullyCovered: boolean;
-  /** Currently selected stance. A cached plan reasoned under a different
-   * stance is stale by definition: flipping to Bullish has to actually
-   * re-reason the paths, not just relabel the old ones. */
-  stance?: ForecastStance;
   nowMs?: number;
 }): ForecastAutoRefresh {
   const tickers = input.tickers.map((t) => t.toUpperCase());
@@ -112,8 +108,8 @@ export function shouldAutoRefreshForecast(input: {
     return { run: true, reason: "first-run" };
   }
 
-  if (input.stance && (plan.stance ?? DEFAULT_FORECAST_STANCE) !== input.stance) {
-    return { run: true, reason: "stance-changed" };
+  if ((plan.stance ?? DEFAULT_FORECAST_STANCE) !== "base") {
+    return { run: true, reason: "rebase" };
   }
 
   const planKey =
@@ -184,7 +180,10 @@ export function loadPreviousForecastPlan(portfolioId: string): ForecastPlan | nu
 export function saveForecastPlan(plan: ForecastPlan) {
   if (typeof window === "undefined") return;
   try {
-    const cleaned = humanizeMargusTree(plan);
+    const cleaned = humanizeMargusTree({
+      ...plan,
+      stance: DEFAULT_FORECAST_STANCE,
+    });
     const raw = localStorage.getItem(FORECAST_PLAN_STORAGE_KEY);
     const parsed = (raw ? JSON.parse(raw) : {}) as StoredForecastPlans;
     const prev = parsed[cleaned.portfolioId];
@@ -201,15 +200,8 @@ export function saveForecastPlan(plan: ForecastPlan) {
   }
 }
 
-function stanceGuidance(stance: ForecastStance): string {
-  switch (stance) {
-    case "bearish":
-      return `STANCE = BEARISH. The macro thesis above is the backdrop you are stress-testing, not discarding: assume the buildout slows, digestion years run longer, and multiples compress before earnings catch up. Softer paths and deeper winters are fine. Still non-linear and reasoned per-ticker, and do not invent a uniform "everything dips" book, since some names hold up far better than others.`;
-    case "bullish":
-      return `STANCE = BULLISH. Take the macro thesis above closer to its upside case rather than its midpoint. Where a company is a direct beneficiary of the compute buildout, the inference/agentic demand curve, or the agentic payments layer, let the path reflect demand staying ahead of supply for longer than consensus models: durable pricing power, upgraded capacity plans, and multiple expansion on top of earnings growth, not just earnings growth alone. Digestion years still appear, they are shallower and shorter. This is not a blanket multiplier: a name with no credible link to those drivers should still get an ordinary path, and the gap between your best and worst holding should widen under this stance, not narrow.`;
-    default:
-      return `BASE CASE (the only case; there is no cautious or bullish variant to hedge toward). Reason each ticker's path from its own fundamentals, sector cycle and volatility, against the macro thesis and the magnitude calibration above. Do not drift back toward consensus single-digit returns for names that genuinely sit in the AI buildout: that would contradict the thesis you were given. No per-ticker price target to match. Consistency: if the macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when the thesis meaningfully changes.`;
-  }
+function stanceGuidance(): string {
+  return `BASE CASE (the only case; there is no cautious or bullish variant to hedge toward). Reason each ticker's path from its own fundamentals, sector cycle and volatility, against the macro thesis and the magnitude calibration above. Do not drift back toward consensus single-digit returns for names that genuinely sit in the AI buildout: that would contradict the thesis you were given. No per-ticker price target to match. Consistency: if the macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when the thesis meaningfully changes.`;
 }
 
 function isJunkRationale(text: string | undefined): boolean {
@@ -271,8 +263,7 @@ function fallbackRationale(input: {
  */
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
-  eoyTargets: ForecastPlan["eoyTargets"],
-  stance: ForecastStance = DEFAULT_FORECAST_STANCE
+  eoyTargets: ForecastPlan["eoyTargets"]
 ): ForecastPlan["eoyTargets"] {
   const byTicker = new Map<string, ForecastPlan["eoyTargets"][number]>();
   for (const t of eoyTargets ?? []) {
@@ -289,7 +280,7 @@ export function ensureCompleteEoyTargets(
     const existing = byTicker.get(key);
     const spot = row.currentPrice > 0 ? row.currentPrice : 1;
     const theme = forecastThemeForTicker(row.ticker);
-    const shaped = shapedFallbackPath(spot, theme, stance);
+    const shaped = shapedFallbackPath(spot, theme);
     let prices = fillMissingForecastYears(existing?.prices, shaped);
 
     // Only reshape when the model's path is a boring straight line —
@@ -348,7 +339,6 @@ export function buildForecastPlanPrompt(input: {
   portfolioName: string;
   cashBalance: number;
   forecast: ForecastModel;
-  stance?: ForecastStance;
   /** The owner's own per-ticker conviction level and written thesis. This
    * is where a personal view belongs (the engine itself stays generic and
    * ticker-agnostic), so it's passed through and weighted explicitly. */
@@ -391,7 +381,6 @@ OWNER CONVICTION: some holdings carry the owner's own conviction level (1-5) and
     : "";
 
   const yearsList = FORECAST_YEARS.join(", ");
-  const stance = input.stance ?? DEFAULT_FORECAST_STANCE;
 
   return `${MARGUS_PERSONA}
 
@@ -403,7 +392,7 @@ CRITICAL: Reason every price from each company's micro-thesis + the conviction b
 
 Today (Europe/Tallinn): ${todayKeyInTz()} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
-${stanceGuidance(stance)}
+${stanceGuidance()}
 ${convictionGuidance}
 Cash: ${input.cashBalance}
 Current portfolio value (equity+cash): ${input.forecast.currentTotal.toFixed(0)}

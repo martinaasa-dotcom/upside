@@ -813,6 +813,28 @@ run("Account is not a workspace room", () => {
   assert.match(header, /\{showWorkspaceNav && <WorkspaceSwitcher \/>\}\s*\{end\}/);
 });
 
+run("Forecast is always the base case", () => {
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ForecastPanel.tsx"),
+    "utf8"
+  );
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/forecast/plan/route.ts"),
+    "utf8"
+  );
+  const plan = readFileSync(
+    join(process.cwd(), "src/lib/forecast-plan.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(panel, /Cautious/);
+  assert.doesNotMatch(panel, /Optimistic/);
+  assert.doesNotMatch(panel, /<Segmented/);
+  assert.doesNotMatch(route, /requestedStance/);
+  assert.doesNotMatch(route, /body\.stance/);
+  assert.doesNotMatch(plan, /STANCE = BEARISH/);
+  assert.doesNotMatch(plan, /STANCE = BULLISH/);
+});
+
 run("Daily Duel is not on Home", () => {
   const home = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),

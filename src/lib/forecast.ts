@@ -165,7 +165,7 @@ export function resolveTickerForecastPath(
 ): TickerForecastSummary {
   const normTicker = ticker.toUpperCase();
   const theme = forecastThemeForTicker(normTicker);
-  const fallback = shapedFallbackPath(spot > 0 ? spot : 1, theme, "base");
+  const fallback = shapedFallbackPath(spot > 0 ? spot : 1, theme);
 
   const eoyPrices = {} as Record<ForecastYear, number>;
   const eoyGains = {} as Record<ForecastYear, number>;

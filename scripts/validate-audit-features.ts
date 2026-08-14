@@ -160,13 +160,12 @@ const forecastStub = {
 
 const complete = ensureCompleteEoyTargets(
   forecastStub,
-  [{ ticker: "NBIS", prices: { 2026: 120 } as never, rationale: "partial" }],
-  "bullish"
+  [{ ticker: "NBIS", prices: { 2026: 120 } as never, rationale: "partial" }]
 );
 assert(complete[0]?.prices?.[2030], "ensureComplete fills years");
 assert(
   (complete[0]?.prices?.[2030] ?? 0) > 100 * 3,
-  "bullish AI infra fill is multi-bagger"
+  "base AI infra fill is multi-bagger"
 );
 // Timid model path (classic 182 bug) must be rejected on BASE
 const timidRejected = ensureCompleteEoyTargets(
@@ -183,8 +182,7 @@ const timidRejected = ensureCompleteEoyTargets(
       },
       rationale: "bad",
     },
-  ],
-  "base"
+  ]
 );
 assert(
   (timidRejected[0]?.prices?.[2026] ?? 0) > 100 * 1.2,
@@ -203,7 +201,6 @@ const cryptoFill = ensureCompleteEoyTargets(
     ],
   },
   [],
-  "bullish"
 );
 const cPrices = cryptoFill[0]!.prices;
 assert(

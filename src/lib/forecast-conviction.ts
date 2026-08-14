@@ -24,8 +24,6 @@ export type ForecastTheme =
   | "index"
   | "other";
 
-export type ForecastStance = "bearish" | "base" | "bullish";
-
 /**
  * Illustrative path as multiples of today's spot for EOY 2026…2030, per
  * sector theme. Intentionally non-linear (a straight CAGR line is detected
@@ -61,13 +59,6 @@ const THEME_BASE_MULTS: Record<ForecastTheme, number[]> = {
   other: [1.14, 1.32, 1.48, 1.66, 1.84], // ~13%/yr
   healthcare: [1.12, 1.27, 1.43, 1.59, 1.76], // ~12%/yr
   index: [1.1, 1.23, 1.35, 1.48, 1.61], // ~10%/yr, the market baseline
-};
-
-/** Scale whole path vs BASE (bullish above, bearish below). */
-const STANCE_PATH_SCALE: Record<ForecastStance, number> = {
-  bearish: 0.6,
-  base: 1,
-  bullish: 1.2,
 };
 
 /** Implied annualized return from the generic fallback shape's final year,
@@ -178,23 +169,20 @@ function roundPx(n: number) {
 }
 
 /**
- * Build a stance-scaled fallback path from the generic theme shape.
+ * Build a fallback path from the generic theme shape (base case only).
  * Used only to fill gaps the model left empty — never to override a valid
- * model-produced number. Bullish > base > bearish scales the same shape.
+ * model-produced number.
  */
 export function shapedFallbackPath(
   spot: number,
-  theme: ForecastTheme,
-  stance: ForecastStance
+  theme: ForecastTheme
 ): Record<ForecastYear, number> {
   const mults = THEME_BASE_MULTS[theme];
-  const scale = STANCE_PATH_SCALE[stance];
   const out = {} as Record<ForecastYear, number>;
   for (let i = 0; i < FORECAST_YEARS.length; i++) {
     const year = FORECAST_YEARS[i]!;
     const baseMult = mults[i] ?? mults[mults.length - 1]!;
-    const scaledMult = 1 + (baseMult - 1) * scale;
-    out[year] = roundPx(Math.max(0.01, spot * scaledMult));
+    out[year] = roundPx(Math.max(0.01, spot * baseMult));
   }
   return enforcePathRules(out, spot);
 }

@@ -283,8 +283,8 @@ export function Stat({
 
 /**
  * The one segmented toggle. Overview's today/lifetime, the drawer's 3y/5y,
- * Forecast's bear/base/bull and the scenario picker were four hand-rolled
- * copies with three different active states.
+ * and the scenario picker used to be four hand-rolled copies with three
+ * different active states.
  */
 export function Segmented<T extends string>({
   options,
