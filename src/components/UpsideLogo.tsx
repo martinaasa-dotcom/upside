@@ -70,10 +70,10 @@ function UpsideMark({
 
 /**
  * Side-by-side lockup: the A is a triangle in a square viewBox, so its
- * mass sits low. Caps sit high in the em. Center the boxes and the mark
- * reads sunk. This is an optical nudge, not a layout shift.
+ * mass sits low. A small lift lines it up with the caps. Too much and
+ * the peak sits above UPSIDE.
  */
-const LOCKUP_MARK_NUDGE = "-translate-y-[0.2em]";
+const LOCKUP_MARK_NUDGE = "-translate-y-[0.1em]";
 
 /** Lockup type: UPSIDE bold, LAB regular. Same Montserrat as every heading. */
 function LogoType({ className }: { className?: string }) {
