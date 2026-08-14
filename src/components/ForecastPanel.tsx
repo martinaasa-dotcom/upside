@@ -4,10 +4,10 @@ import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
 import { Sparkline } from "@/components/Sparkline";
 import {
-  Card,
   EmptyState,
   MicroLabel,
   PanelHeader,
+  Segmented,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
@@ -70,6 +70,18 @@ function yearLabel(year: number) {
  * target doesn't blend into the same-looking longer-horizon columns. */
 function isCurrentYear(year: number) {
   return year === new Date().getFullYear();
+}
+
+function horizonTabLabel(label: string): string {
+  const q = label.match(/Q([1-4])/i);
+  if (/quarter/i.test(label) && q) return `Q${q[1]}`;
+  const range = label.match(/(\d{4})\s*[–-]\s*(\d{2,4})/);
+  if (range?.[1] && range[2]) {
+    const end = range[2].length === 4 ? range[2].slice(2) : range[2];
+    return `${range[1].slice(2)}-${end}`;
+  }
+  const y = label.match(/(20\d{2})/);
+  return y?.[1] ?? label;
 }
 
 function PlaybookList({
@@ -257,6 +269,7 @@ export function ForecastPanel({
   const askInFlight = useRef(false);
   const [planHydrated, setPlanHydrated] = useState(false);
   const [prevPlan, setPrevPlan] = useState<ForecastPlan | null>(null);
+  const [horizon, setHorizon] = useState(0);
   const planAt = plan?.generatedAt ?? "";
   useEffect(() => {
     if (!planHydrated) {
@@ -265,6 +278,10 @@ export function ForecastPanel({
     }
     setPrevPlan(loadPreviousForecastPlan(portfolioId));
   }, [planHydrated, portfolioId, planAt]);
+
+  useEffect(() => {
+    setHorizon(0);
+  }, [planAt]);
 
   useEffect(() => {
     setPlanHydrated(false);
@@ -405,6 +422,35 @@ export function ForecastPanel({
     const current = new Set(model.rows.map((r) => r.ticker.toUpperCase()));
     return planTickers.filter((t) => !current.has(t));
   }, [plan, model.rows]);
+
+  const lastPlanDiffs = useMemo(() => {
+    if (!plan || !prevPlan?.eoyTargets?.length) return [];
+    const lastYear = yearCols[yearCols.length - 1];
+    if (lastYear == null) return [];
+    const out: { ticker: string; from: number; to: number }[] = [];
+    for (const t of plan.eoyTargets) {
+      const old = prevPlan.eoyTargets.find(
+        (p) => p.ticker.toUpperCase() === t.ticker.toUpperCase()
+      );
+      if (!old) continue;
+      const nextP = t.prices?.[lastYear];
+      const oldP = old.prices?.[lastYear];
+      if (
+        typeof nextP !== "number" ||
+        typeof oldP !== "number" ||
+        Math.abs(nextP - oldP) < 0.5
+      ) {
+        continue;
+      }
+      out.push({ ticker: t.ticker, from: oldP, to: nextP });
+    }
+    return out;
+  }, [plan, prevPlan, yearCols]);
+
+  const activePeriod =
+    plan && plan.periods.length > 0
+      ? plan.periods[Math.min(horizon, plan.periods.length - 1)]
+      : null;
 
   const statusHint = useMemo(() => {
     if (!planHydrated || model.rows.length === 0 || busy) return null;
@@ -698,12 +744,8 @@ export function ForecastPanel({
           <h3 className="text-base font-semibold text-white">
             What Margus makes of it
           </h3>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-            His reasoning behind those numbers, and where he&apos;d put money in
-            or take it out. Educational, not a recommendation.
-          </p>
           {plan?.generatedAt && (
-            <p className="mt-1 text-xs text-zinc-400">
+            <p className="mt-1 text-xs text-zinc-500">
               Worked out {formatGeneratedAt(plan.generatedAt)}
               {appliedFlash ? " · prices updated" : ""}
             </p>
@@ -731,71 +773,52 @@ export function ForecastPanel({
           </div>
         )}
         {plan && (
-          <div className="mt-4 space-y-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <Card tone="raised">
-                <MicroLabel>The short version</MicroLabel>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
-                  {plan.generalAdvice}
-                </p>
-              </Card>
-              <Card tone="raised">
-                <MicroLabel>Where money is moving</MicroLabel>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
-                  {plan.sectorRotation}
-                </p>
-              </Card>
-            </div>
+          <div className="mt-5 space-y-8">
+            {(plan.generalAdvice || plan.sectorRotation) && (
+              <div className="space-y-2 text-sm leading-relaxed">
+                {plan.generalAdvice && (
+                  <p className="text-zinc-200">{plan.generalAdvice}</p>
+                )}
+                {plan.sectorRotation && (
+                  <p className="text-zinc-400">{plan.sectorRotation}</p>
+                )}
+              </div>
+            )}
 
             {(plan.eoyTargets?.length ?? 0) > 0 && (
-              <Card tone="raised">
+              <div>
                 <MicroLabel>Why each number</MicroLabel>
-                <ul className="mt-2 space-y-1.5">
+                <ul className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                   {plan.eoyTargets.map((t) => (
-                    <li
-                      key={t.ticker}
-                      className="text-xs leading-relaxed text-zinc-400"
-                    >
-                      <span className="font-semibold text-zinc-200">
+                    <li key={t.ticker} className="min-w-0">
+                      <p className="text-sm font-semibold text-zinc-100">
                         {cashtag(t.ticker)}
-                      </span>
-                      {t.rationale ? `: ${t.rationale}` : ": price set"}
+                      </p>
+                      {t.rationale ? (
+                        <p className="mt-0.5 text-sm leading-snug text-zinc-400">
+                          {t.rationale}
+                        </p>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
-              </Card>
+              </div>
             )}
 
-            {prevPlan?.eoyTargets && prevPlan.eoyTargets.length > 0 && (
-              <Card tone="raised">
+            {lastPlanDiffs.length > 0 && (
+              <div>
                 <MicroLabel>Vs last plan</MicroLabel>
-                <ul className="mt-2 space-y-1 text-xs leading-relaxed text-zinc-400">
-                  {plan.eoyTargets.flatMap((t) => {
-                    const old = prevPlan.eoyTargets.find(
-                      (p) => p.ticker.toUpperCase() === t.ticker.toUpperCase()
-                    );
-                    if (!old) return [];
-                    const lastYear = yearCols[yearCols.length - 1];
-                    const nextP = t.prices?.[lastYear];
-                    const oldP = old.prices?.[lastYear];
-                    if (
-                      typeof nextP !== "number" ||
-                      typeof oldP !== "number" ||
-                      Math.abs(nextP - oldP) < 0.5
-                    ) {
-                      return [];
-                    }
-                    return [
-                      <li key={t.ticker}>
-                        <span className="font-semibold text-zinc-200">
-                          {cashtag(t.ticker)}
-                        </span>
-                        {` end ${lastYear}: ${currency(oldP, 0)} to ${currency(nextP, 0)}`}
-                      </li>,
-                    ];
-                  })}
+                <ul className="mt-2 space-y-1 text-sm text-zinc-400">
+                  {lastPlanDiffs.map((d) => (
+                    <li key={d.ticker}>
+                      <span className="font-semibold text-zinc-200">
+                        {cashtag(d.ticker)}
+                      </span>
+                      {` end ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}
+                    </li>
+                  ))}
                 </ul>
-              </Card>
+              </div>
             )}
 
             {soldTickersInPlan.length > 0 && (
@@ -817,24 +840,40 @@ export function ForecastPanel({
               </div>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {plan.periods.map((s) => (
-                <Card
-                  key={`${s.label}-${s.theme}`}
-                  tone="raised"
-                  className="flex flex-col"
-                >
-                  <MicroLabel className="text-brand/90">{s.label}</MicroLabel>
-                  <p className="mt-1 text-sm font-semibold text-white">
-                    {s.theme}
+            {activePeriod && (
+              <div>
+                <MicroLabel>Where he&apos;d add or trim</MicroLabel>
+                {plan.periods.length > 1 && (
+                  <div className="mt-3">
+                    <Segmented
+                      options={plan.periods.map((p, i) => ({
+                        id: String(i),
+                        label: horizonTabLabel(p.label),
+                        title: p.label,
+                      }))}
+                      value={String(
+                        Math.min(horizon, plan.periods.length - 1)
+                      )}
+                      onChange={(id) => setHorizon(Number(id))}
+                      ariaLabel="Forecast horizon"
+                      className="max-w-full flex-wrap"
+                    />
+                  </div>
+                )}
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-white">
+                    {activePeriod.theme}
                   </p>
-                  <div className="mt-4 space-y-4">
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    {activePeriod.label}
+                  </p>
+                  <div className="mt-4 grid gap-6 sm:grid-cols-2">
                     <div>
                       <MicroLabel className="text-brand-bright">
                         Worth adding
                       </MicroLabel>
                       <PlaybookList
-                        text={s.add}
+                        text={activePeriod.add}
                         empty="Nothing to add"
                         tone="add"
                       />
@@ -844,20 +883,20 @@ export function ForecastPanel({
                         Worth trimming
                       </MicroLabel>
                       <PlaybookList
-                        text={s.trim}
+                        text={activePeriod.trim}
                         empty="Nothing to trim"
                         tone="trim"
                       />
                     </div>
                   </div>
-                  {s.notes?.trim() && (
+                  {activePeriod.notes?.trim() && (
                     <p className="mt-4 text-sm leading-relaxed text-zinc-500">
-                      {s.notes}
+                      {activePeriod.notes}
                     </p>
                   )}
-                </Card>
-              ))}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
