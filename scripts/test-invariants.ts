@@ -796,6 +796,14 @@ run("own-book compare also draws on the Margus vs SPY chart", () => {
   assert.match(chart, /SERIES_COLOR\.you/);
 });
 
+run("fund stats speak in percent and dollars, not points", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(code(src), /\dpt\b|pt vs SPY|ahead by .*pt/);
+});
+
 run("first-run is import, not an empty named sheet", () => {
   const dash = readFileSync(
     join(process.cwd(), "src/components/Dashboard.tsx"),

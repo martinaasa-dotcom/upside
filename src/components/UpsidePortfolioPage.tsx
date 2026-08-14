@@ -2,7 +2,7 @@
 
 import { AppHeader } from "@/components/AppHeader";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
-import { Metric, MicroLabel } from "@/components/ui/Panel";
+import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
@@ -498,7 +498,6 @@ export function UpsidePortfolioPage() {
     spyInceptionPrice && spyLivePrice
       ? (spyLivePrice - spyInceptionPrice) / spyInceptionPrice
       : 0;
-  const alphaVsSpy = totalReturnPct - spyReturnPct;
 
   // Both series end with a live point, not the last daily snapshot — the
   // chart's rightmost edge moves with the market intraday, then "locks
@@ -904,72 +903,29 @@ export function UpsidePortfolioPage() {
           <>
             <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">
-                    Total value
-                  </p>
-                  <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
-                    {currency(totalValue, 0)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">
-                    Today
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-0.5 text-lg font-semibold tabular-nums sm:text-xl",
-                      signedTone(todayDollar, "text-white")
-                    )}
-                  >
-                    {signedCurrency(todayDollar)}
-                  </p>
-                  {todayPct != null && (
-                    <p
-                      className={cn(
-                        "text-xs tabular-nums",
-                        signedTone(todayPct, "text-zinc-400")
-                      )}
-                    >
-                      {percent(todayPct)}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">
-                    Total return
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-0.5 text-lg font-semibold tabular-nums sm:text-xl",
-                      totalReturnDollar > 0
-                        ? "text-gain"
-                        : totalReturnDollar < 0
-                          ? "text-loss"
-                          : "text-white"
-                    )}
-                  >
-                    {percent(totalReturnPct)}
-                  </p>
-                  <p className="text-xs text-zinc-400">
-                    {signedCurrency(totalReturnDollar)} ·{" "}
-                    <span className={alphaVsSpy >= 0 ? "text-gain" : "text-loss"}>
-                      {alphaVsSpy >= 0 ? "+" : ""}
-                      {(alphaVsSpy * 100).toFixed(1)}pt vs SPY
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-zinc-400">
-                    Cash
-                  </p>
-                  <p className="mt-0.5 text-lg font-semibold tabular-nums text-white sm:text-xl">
-                    {currency(cash, 0)}
-                  </p>
-                  <p className="text-xs text-zinc-400">
-                    of {currency(fund?.starting_capital ?? 0, 0)} start
-                  </p>
-                </div>
+                <Stat
+                  label="Total value"
+                  value={currency(totalValue, 0)}
+                />
+                <Stat
+                  label="Today"
+                  value={signedCurrency(todayDollar, 0)}
+                  sub={todayPct != null ? percent(todayPct) : undefined}
+                  valueClassName={signedTone(todayDollar, "text-white")}
+                  subClassName={signedTone(todayDollar, "text-zinc-400")}
+                />
+                <Stat
+                  label="Total return"
+                  value={percent(totalReturnPct)}
+                  sub={signedCurrency(totalReturnDollar, 0)}
+                  valueClassName={signedTone(totalReturnDollar, "text-white")}
+                  subClassName={signedTone(totalReturnDollar, "text-zinc-400")}
+                />
+                <Stat
+                  label="Cash"
+                  value={currency(cash, 0)}
+                  sub={`of ${currency(fund?.starting_capital ?? 0, 0)} start`}
+                />
               </div>
             </section>
 
@@ -1120,8 +1076,8 @@ export function UpsidePortfolioPage() {
                           {Math.abs(benchmarkCompare.deltaPts) < 0.001
                             ? "Dead even over this window"
                             : benchmarkCompare.deltaPts > 0
-                              ? `Margus is ahead by ${(benchmarkCompare.deltaPts * 100).toFixed(1)}pt`
-                              : `You're ahead by ${(Math.abs(benchmarkCompare.deltaPts) * 100).toFixed(1)}pt`}
+                              ? `Margus is ahead by ${percent(benchmarkCompare.deltaPts)}`
+                              : `You're ahead by ${percent(Math.abs(benchmarkCompare.deltaPts))}`}
                         </p>
                         {benchmarkCompare.vsCost != null && (
                           <p className="text-zinc-500">
