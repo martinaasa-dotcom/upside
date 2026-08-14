@@ -46,12 +46,11 @@ export function SignInGate({ children }: Props) {
   if (!needsAuth) return <>{children}</>;
   if (!ready) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)] text-zinc-400">
-        <UpsideLogo
-          variant="mark"
-          className="h-10 w-10 animate-pulse opacity-70"
-        />
-        <p className="text-sm text-zinc-400">Checking sign-in …</p>
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-app px-6">
+        <UpsideLogo variant="stack" />
+        <p className="sr-only" role="status">
+          Checking sign-in
+        </p>
       </div>
     );
   }

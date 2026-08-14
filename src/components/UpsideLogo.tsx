@@ -6,8 +6,8 @@ import { useId } from "react";
 
 type Props = {
   className?: string;
-  /** `mark` = faceted A only; `wordmark` = mark + name; `icon` = large lockup */
-  variant?: "mark" | "wordmark" | "icon";
+  /** `mark` = A only; `wordmark` = inline lockup; `icon` = large inline; `stack` = splash */
+  variant?: "mark" | "wordmark" | "icon" | "stack";
   title?: string;
 };
 
@@ -85,6 +85,24 @@ export function UpsideLogo({
     return (
       <span className={cn("inline-flex", className)} role="img" aria-label={title}>
         <UpsideMark className="h-full w-full" />
+      </span>
+    );
+  }
+
+  if (variant === "stack") {
+    return (
+      <span
+        className={cn("inline-flex flex-col items-center", className)}
+        role="img"
+        aria-label={title}
+      >
+        <UpsideMark className="h-16 w-16" />
+        <span className="mt-5 font-logo text-4xl font-bold uppercase leading-none tracking-wide text-white">
+          Upside
+        </span>
+        <span className="mt-2.5 font-logo text-sm font-normal uppercase leading-none tracking-wide text-white">
+          Lab
+        </span>
       </span>
     );
   }
