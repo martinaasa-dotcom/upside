@@ -61,6 +61,13 @@ function UpsideMark({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Side-by-side lockup: the A is a triangle in a square viewBox, so its
+ * mass sits low. Caps sit high in the em. Center the boxes and the mark
+ * reads sunk. This is an optical nudge, not a layout shift.
+ */
+const LOCKUP_MARK_NUDGE = "-translate-y-[0.2em]";
+
 /** Lockup type: UPSIDE bold, LAB regular. Same Montserrat as every heading. */
 function LogoType({ className }: { className?: string }) {
   return (
@@ -117,7 +124,7 @@ export function UpsideLogo({
         role="img"
         aria-label={title}
       >
-        <UpsideMark className="h-[1.15em] w-[1.15em]" />
+        <UpsideMark className={cn("h-[1.35em] w-[1.35em]", LOCKUP_MARK_NUDGE)} />
         <LogoType />
       </span>
     );
@@ -129,7 +136,7 @@ export function UpsideLogo({
       role="img"
       aria-label={title}
     >
-      <UpsideMark className="h-[1.25em] w-[1.25em]" />
+      <UpsideMark className={cn("h-[1.4em] w-[1.4em]", LOCKUP_MARK_NUDGE)} />
       <LogoType className="hidden xs:inline" />
     </span>
   );
