@@ -1,18 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Upside Lab">
-  <rect x="2.5" y="2.5" width="123" height="123" rx="24" ry="24" fill="#0C1014" stroke="#D6AD69" stroke-width="3"/>
-  <g transform="translate(16, 16) scale(0.96)">
-  <polygon points="50.00,4.00 34.67,34.67 50.00,28.00" fill="#D6AD69"/>
-  <polygon points="50.00,4.00 50.00,28.00 65.33,34.67" fill="#EED7B5"/>
-  <polygon points="34.67,34.67 37.00,40.00 50.00,28.00" fill="#9C723F"/>
-  <polygon points="50.00,28.00 37.00,40.00 63.00,40.00" fill="#D6AD69"/>
-  <polygon points="50.00,28.00 63.00,40.00 65.33,34.67" fill="#DCAD55"/>
-  <polygon points="34.67,34.67 19.33,65.33 37.00,40.00" fill="#9C723F"/>
-  <polygon points="37.00,40.00 19.33,65.33 50.00,62.00" fill="#7A5A32"/>
-  <polygon points="65.33,34.67 63.00,40.00 80.67,65.33" fill="#EED7B5"/>
-  <polygon points="63.00,40.00 50.00,62.00 80.67,65.33" fill="#D6AD69"/>
-  <polygon points="19.33,65.33 4.00,96.00 28.00,96.00" fill="#7A5A32"/>
-  <polygon points="19.33,65.33 28.00,96.00 50.00,62.00" fill="#9C723F"/>
-  <polygon points="80.67,65.33 72.00,96.00 96.00,96.00" fill="#DCAD55"/>
-  <polygon points="80.67,65.33 50.00,62.00 72.00,96.00" fill="#D6AD69"/>
-  </g>
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F0D7A4"/>
+      <stop offset="0.45" stop-color="#D6AD69"/>
+      <stop offset="1" stop-color="#9C723F"/>
+    </linearGradient>
+    <linearGradient id="f0" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dfc59a"/>
+      <stop offset="1" stop-color="#a6875d"/>
+    </linearGradient>
+    <linearGradient id="f1" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ead6ab"/>
+      <stop offset="1" stop-color="#b29a6f"/>
+    </linearGradient>
+    <linearGradient id="f2" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#caac7a"/>
+      <stop offset="1" stop-color="#8f6b3a"/>
+    </linearGradient>
+    <linearGradient id="f3" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dfc59b"/>
+      <stop offset="1" stop-color="#a5875e"/>
+    </linearGradient>
+    <linearGradient id="f4" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dec59b"/>
+      <stop offset="1" stop-color="#a5875e"/>
+    </linearGradient>
+    <linearGradient id="f5" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#caaa77"/>
+      <stop offset="1" stop-color="#8e6937"/>
+    </linearGradient>
+    <linearGradient id="f6" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b38e62"/>
+      <stop offset="1" stop-color="#764b1f"/>
+    </linearGradient>
+    <linearGradient id="f7" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#cbad7b"/>
+      <stop offset="1" stop-color="#906d3b"/>
+    </linearGradient>
+    <linearGradient id="f8" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#caab79"/>
+      <stop offset="1" stop-color="#8f6b39"/>
+    </linearGradient>
+    <linearGradient id="f9" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#b38e61"/>
+      <stop offset="1" stop-color="#764b1e"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="122" height="122" rx="28" ry="28" fill="#0C1014" stroke="url(#rim)" stroke-width="3.5"/>
+  <polygon points="62.61,20.27 62.72,56.43 40.43,56.53" fill="url(#f0)"/>
+  <polygon points="65.71,20.27 87.89,56.53 65.60,56.43" fill="url(#f1)"/>
+  <polygon points="40.75,59.52 62.93,59.52 52.37,78.93" fill="url(#f2)"/>
+  <polygon points="65.39,59.52 87.47,59.63 76.37,79.04" fill="url(#f3)"/>
+  <polygon points="90.35,60.48 102.08,80.32 79.36,80.32" fill="url(#f4)"/>
+  <polygon points="37.97,60.59 49.28,80.32 26.35,80.32" fill="url(#f5)"/>
+  <polygon points="26.77,83.41 49.81,83.41 38.40,103.25" fill="url(#f6)"/>
+  <polygon points="78.72,83.41 101.55,83.41 90.24,103.15" fill="url(#f7)"/>
+  <polygon points="104.43,84.27 116.59,104.64 93.23,104.64" fill="url(#f8)"/>
+  <polygon points="23.89,84.37 35.41,104.64 11.84,104.64" fill="url(#f9)"/>
 </svg>

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/format";
 import { PRODUCT_NAME } from "@/lib/product";
+import { useId } from "react";
 
 type Props = {
   className?: string;
@@ -14,8 +15,22 @@ type Props = {
 export const UPSIDE_HEADER_WORDMARK_CLASS =
   "text-[15px] leading-none text-white";
 
-/** Faceted gold delta — light from upper-right. Gold lives on the mark. */
+/** Ten-facet gold A, traced from the source mark. Light from upper-right. */
+const MARK_FACETS: { points: string; hi: string; lo: string }[] = [
+  { points: "48.56,12.14 48.66,44.59 28.65,44.69", hi: "#dfc59a", lo: "#a6875d" },
+  { points: "51.34,12.14 71.25,44.69 51.24,44.59", hi: "#ead6ab", lo: "#b29a6f" },
+  { points: "28.94,47.37 48.85,47.37 39.37,64.79", hi: "#caac7a", lo: "#8f6b3a" },
+  { points: "51.05,47.37 70.87,47.46 60.91,64.88", hi: "#dfc59b", lo: "#a5875e" },
+  { points: "73.45,48.23 83.98,66.03 63.59,66.03", hi: "#dec59b", lo: "#a5875e" },
+  { points: "26.45,48.32 36.60,66.03 16.02,66.03", hi: "#caaa77", lo: "#8e6937" },
+  { points: "16.40,68.81 37.08,68.81 26.84,86.61", hi: "#b38e62", lo: "#764b1f" },
+  { points: "63.02,68.81 83.50,68.81 73.36,86.52", hi: "#cbad7b", lo: "#906d3b" },
+  { points: "86.09,69.58 97.00,87.86 76.04,87.86", hi: "#caab79", lo: "#8f6b39" },
+  { points: "13.82,69.67 24.15,87.86 3.00,87.86", hi: "#b38e61", lo: "#764b1e" },
+];
+
 function UpsideMark({ className }: { className?: string }) {
+  const uid = useId().replace(/:/g, "");
   return (
     <svg
       viewBox="0 0 100 100"
@@ -23,19 +38,25 @@ function UpsideMark({ className }: { className?: string }) {
       fill="none"
       aria-hidden
     >
-      <polygon points="50.00,4.00 34.67,34.67 50.00,28.00" fill="#D6AD69" />
-      <polygon points="50.00,4.00 50.00,28.00 65.33,34.67" fill="#EED7B5" />
-      <polygon points="34.67,34.67 37.00,40.00 50.00,28.00" fill="#9C723F" />
-      <polygon points="50.00,28.00 37.00,40.00 63.00,40.00" fill="#D6AD69" />
-      <polygon points="50.00,28.00 63.00,40.00 65.33,34.67" fill="#D6AD69" />
-      <polygon points="34.67,34.67 19.33,65.33 37.00,40.00" fill="#7A5A32" />
-      <polygon points="37.00,40.00 19.33,65.33 50.00,62.00" fill="#5C4328" />
-      <polygon points="65.33,34.67 63.00,40.00 80.67,65.33" fill="#EED7B5" />
-      <polygon points="63.00,40.00 50.00,62.00 80.67,65.33" fill="#D6AD69" />
-      <polygon points="19.33,65.33 4.00,96.00 28.00,96.00" fill="#5C4328" />
-      <polygon points="19.33,65.33 28.00,96.00 50.00,62.00" fill="#7A5A32" />
-      <polygon points="80.67,65.33 72.00,96.00 96.00,96.00" fill="#9C723F" />
-      <polygon points="80.67,65.33 50.00,62.00 72.00,96.00" fill="#D6AD69" />
+      <defs>
+        {MARK_FACETS.map((f, i) => (
+          <linearGradient
+            key={i}
+            id={`${uid}m${i}`}
+            x1="72"
+            y1="10"
+            x2="18"
+            y2="90"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0" stopColor={f.hi} />
+            <stop offset="1" stopColor={f.lo} />
+          </linearGradient>
+        ))}
+      </defs>
+      {MARK_FACETS.map((f, i) => (
+        <polygon key={i} points={f.points} fill={`url(#${uid}m${i})`} />
+      ))}
     </svg>
   );
 }

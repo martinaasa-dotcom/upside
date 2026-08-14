@@ -40,7 +40,11 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   icons: {
-    icon: [{ url: "/upside-icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/upside-icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "16x16 32x32" },
+    ],
     shortcut: "/upside-icon.svg",
     apple: "/icons/icon-192.png",
   },
