@@ -18,6 +18,7 @@ import {
   liveFundTodayMove,
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
+import { fundCopyBullets } from "@/lib/fund-copy";
 import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
@@ -1090,6 +1091,8 @@ export function UpsidePortfolioPage() {
                     const pnlPct =
                       h.cost_basis > 0 ? (price - h.cost_basis) / h.cost_basis : 0;
                     const marketValue = price * h.shares;
+                    const thesis = fundCopyBullets(h.thesis);
+                    const exits = fundCopyBullets(h.exit_plan);
                     return (
                       <div
                         key={h.id}
@@ -1117,21 +1120,42 @@ export function UpsidePortfolioPage() {
                           {currency(marketValue, 0)} · entered {fmtDate(h.entry_date)} at{" "}
                           {currency(h.cost_basis)}, now {currency(price)}
                         </p>
-                        <p className="text-xs leading-relaxed text-zinc-400">
-                          {h.thesis}
-                        </p>
-                        <div className="flex flex-wrap gap-1.5 text-xs text-zinc-400">
-                          {h.target_timeframe && (
-                            <span className="rounded-md bg-zinc-800/80 px-1.5 py-0.5">
-                              Timeline: {h.target_timeframe}
-                            </span>
-                          )}
-                          {h.exit_plan && (
-                            <span className="rounded-md bg-zinc-800/80 px-1.5 py-0.5">
-                              Exit: {h.exit_plan}
-                            </span>
-                          )}
-                        </div>
+                        {thesis.length > 0 && (
+                          <ul className="space-y-1 text-xs leading-relaxed text-zinc-400">
+                            {thesis.map((b) => (
+                              <li key={b} className="flex gap-2">
+                                <span
+                                  aria-hidden
+                                  className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500"
+                                />
+                                <span>{b}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {h.target_timeframe && (
+                          <p className="text-xs text-zinc-500">
+                            Timeline · {h.target_timeframe}
+                          </p>
+                        )}
+                        {exits.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                              Exit
+                            </p>
+                            <ul className="space-y-1 text-xs leading-relaxed text-zinc-400">
+                              {exits.map((b) => (
+                                <li key={b} className="flex gap-2">
+                                  <span
+                                    aria-hidden
+                                    className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500"
+                                  />
+                                  <span>{b}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

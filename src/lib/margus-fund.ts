@@ -89,7 +89,7 @@ const fundDecisionSchema = z.object({
         thesis: z
           .string()
           .describe(
-            "2-3 sentences: the specific growth driver, moat, or mispricing. Not momentum, not hype, not 'everyone is talking about it.'"
+            "2-4 short bullets, semicolon-separated. Each bullet is one fact, under 14 words. Not a paragraph."
           ),
         targetTimeframe: z
           .string()
@@ -97,7 +97,7 @@ const fundDecisionSchema = z.object({
         exitPlan: z
           .string()
           .describe(
-            "The concrete condition that ends this trade: a price/return target, a thesis-break condition, or a timeframe -- stated specifically, not vaguely."
+            "1-3 concrete sell conditions, semicolon-separated. No 'Sell if' preamble. Each under 14 words."
           ),
         allocationDollars: z
           .number()
@@ -145,7 +145,8 @@ You run a single, fully simulated (paper money) portfolio that started at ${mone
 - Review EVERY currently open holding, every day, even when the action is "hold." When it's hold, say specifically why the original thesis and timeline still stand, not a generic "staying the course" line.
 - Position sizing discipline: don't let any single new position exceed roughly 25% of total portfolio value, and don't deploy all available cash even on a great idea. Leave room to be wrong and to add later.
 - Most days should have zero or one action. A portfolio that trades every single day isn't disciplined, it's noisy. Only act when something genuinely changed (thesis progressed/broke, timeline elapsed, price hit your own stated level) or a new idea truly clears the bar.
-- Keep every field SHORT. This report gets read daily; nobody wants a wall of text. 1-3 sentences per field, always.`;
+- Keep every field SHORT. This report gets read daily; nobody wants a wall of text. 1-3 sentences per field, always.
+- thesis and exitPlan are bullet lists, not paragraphs. Semicolon-separated. Each bullet is one fact, under 14 words.`;
 }
 
 const weeklyRecapSchema = z.object({

@@ -12,6 +12,7 @@ import {
 } from "../src/lib/investor-briefing";
 import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
+import { fundCopyBullets } from "../src/lib/fund-copy";
 import { reconcilePulseCheck, type PulseCheck } from "../src/lib/thesis-pulse";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
 import { TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
@@ -99,6 +100,25 @@ run("fund today move is live NAV minus last snapshot", () => {
   const missing = liveFundTodayMove({ liveTotal: 110, lastReportValue: null });
   assert.equal(missing.todayDollar, 0);
   assert.equal(missing.todayPct, null);
+});
+
+run("fund thesis and exit plans split into short bullets", () => {
+  const thesis = fundCopyBullets(
+    "Data cloud consumption accelerating with GenAI workloads; remaining performance obligations (RPO) up >50% YoY, signaling durable multi-year expansion as enterprises unify analytics and AI pipelines."
+  );
+  assert.deepEqual(thesis, [
+    "Data cloud consumption accelerating with GenAI workloads",
+    "RPO up >50% YoY",
+    "Durable multi-year expansion",
+    "Enterprises unify analytics and AI pipelines",
+  ]);
+  const exit = fundCopyBullets(
+    "Sell if product revenue growth decelerates below 25% YoY for two quarters or if adjusted FCF margin fails to exceed 20% by FY28."
+  );
+  assert.deepEqual(exit, [
+    "Product revenue growth below 25% YoY for two quarters",
+    "Adjusted FCF margin below 20% by FY28",
+  ]);
 });
 
 run("Pulse CTA is omitted when Pulse is not reachable", () => {
