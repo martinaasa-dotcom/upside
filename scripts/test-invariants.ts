@@ -17,6 +17,13 @@ import { reconcilePulseCheck, statusLabel, type PulseCheck } from "../src/lib/th
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
 import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
+import {
+  asSurpriseFraction,
+  buildEarningsNote,
+  medianAbs,
+  priceRange,
+  sessionReaction,
+} from "../src/lib/earnings-brief";
 import { sessionMark } from "../src/lib/market-session";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
@@ -162,6 +169,45 @@ run("covered-call briefing opens the options table, not just the sheet", () => {
   assert.equal(cc?.link?.type, "sheet");
   assert.equal(cc?.link && cc.link.type === "sheet" ? cc.link.portfolioId : null, "sheet-a");
   assert.equal(cc?.link && cc.link.type === "sheet" ? cc.link.focus : null, "covered-calls");
+});
+
+run("earnings surprise parses both fractions and percent points", () => {
+  assert.equal(asSurpriseFraction(0.041), 0.041);
+  assert.ok(Math.abs((asSurpriseFraction("4.1") ?? 0) - 0.041) < 1e-10);
+  assert.ok(Math.abs((asSurpriseFraction(4.1) ?? 0) - 0.041) < 1e-10);
+});
+
+run("earnings range is spot plus or minus the expected move", () => {
+  const { low, high } = priceRange(200, 0.1);
+  assert.equal(low, 180);
+  assert.ok(Math.abs(high - 220) < 1e-9);
+  assert.equal(medianAbs([-0.02, 0.08, -0.01, 0.04]), 0.03);
+});
+
+run("after-hours earnings reaction uses the next session", () => {
+  const bars = [
+    { date: "2026-05-19", close: 220 },
+    { date: "2026-05-20", close: 223 },
+    { date: "2026-05-21", close: 219 },
+  ];
+  const afterHours = new Date("2026-05-20T20:20:00.000Z");
+  const move = sessionReaction(bars, afterHours);
+  assert.ok(move != null);
+  assert.equal(Math.round(move! * 1000) / 1000, Math.round((219 / 223 - 1) * 1000) / 1000);
+});
+
+run("earnings note flags a stretched run-in without sounding like a slogan", () => {
+  const note = buildEarningsNote({
+    expectedMovePct: 0.07,
+    runupPct: 0.18,
+    beatCount: 4,
+    printCount: 4,
+    typicalAbsMovePct: 0.05,
+  });
+  assert.match(note, /Up 18%/);
+  assert.match(note, /±7%/);
+  assert.match(note, /lighten/);
+  assert.doesNotMatch(note, /—/);
 });
 
 run("closed session keeps last print vs yesterday close, including leftover after-hours", () => {

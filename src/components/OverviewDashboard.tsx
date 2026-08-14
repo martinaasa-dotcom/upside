@@ -36,6 +36,7 @@ import {
 import { sessionLabel, sessionShort, sessionKind } from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CoveredCallRow } from "@/lib/types";
+import type { EarningsEvent } from "@/lib/market/yahoo";
 import {
   calendarDaysBetweenKeys,
   formatRelativeDays,
@@ -69,8 +70,6 @@ const EARNINGS_HORIZON_DAYS = 30;
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;
 
-type EarningsEvent = { ticker: string; date: string; days: number };
-
 type Props = {
   model: OverviewModel;
   onOpenSheet: (portfolioId: string, focus?: "covered-calls") => void;
@@ -94,6 +93,107 @@ type Props = {
   onImportCsv?: () => void;
   onAskMargus?: () => void;
 };
+
+function signedPct(fraction: number, digits = 0): string {
+  const n = fraction * 100;
+  const body = Math.abs(n).toFixed(digits);
+  if (n > 0) return `+${body}%`;
+  if (n < 0) return `-${body}%`;
+  return `${body}%`;
+}
+
+function EarningsRow({ e }: { e: EarningsEvent }) {
+  const soon = e.days <= 7;
+  const digits = e.spot != null && e.spot >= 20 ? 0 : 2;
+  const moves = (e.prints ?? [])
+    .map((p) => p.movePct)
+    .filter((v): v is number => v != null);
+  const surprises = (e.prints ?? [])
+    .map((p) => p.surprisePct)
+    .filter((v): v is number => v != null);
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg border px-3 py-3",
+        soon
+          ? "border-amber-500/30 bg-amber-500/[0.07]"
+          : "border-zinc-800/80 bg-zinc-950/40"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-sm font-semibold text-white">
+          {cashtag(e.ticker)}
+        </span>
+        <span
+          className={cn(
+            "shrink-0 text-sm tabular-nums",
+            soon ? "text-amber-200" : "text-zinc-400"
+          )}
+          title={e.date}
+        >
+          {formatRelativeDays(e.days)}
+          {e.dateIsEstimate ? " (around then)" : ""}
+        </span>
+      </div>
+
+      {e.expectedMovePct != null && (
+        <div className="mt-2.5 grid grid-cols-2 gap-3">
+          <div>
+            <MicroLabel>Expected</MicroLabel>
+            <p className="mt-0.5 text-sm tabular-nums text-zinc-100">
+              ±{Math.round(e.expectedMovePct * 100)}%
+            </p>
+            <p className="text-xs text-zinc-500">
+              {e.expectedMoveSource === "implied"
+                ? "What's priced in"
+                : "Typical of the last prints"}
+            </p>
+          </div>
+          {e.rangeLow != null && e.rangeHigh != null && (
+            <div>
+              <MicroLabel>Range</MicroLabel>
+              <p className="mt-0.5 text-sm tabular-nums text-zinc-100">
+                {currency(e.rangeLow, digits)} to {currency(e.rangeHigh, digits)}
+              </p>
+              <p className="text-xs text-zinc-500">If it moves that much</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(surprises.length > 0 || moves.length > 0) && (
+        <div className="mt-2.5 space-y-0.5 text-sm text-zinc-300">
+          {surprises.length > 0 && (
+            <p>
+              EPS:{" "}
+              {surprises.map((s, i) => (
+                <span key={`s-${i}`}>
+                  {i > 0 ? ", " : ""}
+                  <span className={tone(s)}>{signedPct(s)}</span>
+                </span>
+              ))}
+            </p>
+          )}
+          {moves.length > 0 && (
+            <p>
+              Day:{" "}
+              {moves.map((m, i) => (
+                <span key={`m-${i}`}>
+                  {i > 0 ? ", " : ""}
+                  <span className={tone(m)}>{signedPct(m)}</span>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      )}
+      {e.note && (
+        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{e.note}</p>
+      )}
+    </div>
+  );
+}
 
 /**
  * What a brand-new account sees instead of a hero reading $0 followed by a
@@ -438,7 +538,9 @@ export function OverviewDashboard({
     let cancelled = false;
 
     const load = () => {
-      void fetch(`/api/market/events?tickers=${encodeURIComponent(tickerKey)}`)
+      void fetch(
+        `/api/market/events?tickers=${encodeURIComponent(tickerKey)}&brief=1`
+      )
         .then((r) => r.json())
         .then((data: { earnings?: EarningsEvent[] }) => {
           if (!cancelled) setEarnings(data.earnings ?? []);
@@ -786,44 +888,20 @@ export function OverviewDashboard({
             icon={<CalendarDays className="h-4 w-4" />}
             iconTone="violet"
             title="Results coming up"
-            subtitle={`Companies you hold that report in the next ${EARNINGS_HORIZON_DAYS} days. Prices often move more than usual on these days.`}
+            subtitle="Next 30 days. Last prints, the swing that's priced in, and a range."
           />
-          <div className="mt-4 space-y-1.5">
+          <div className="mt-4 space-y-2">
             {upcomingEarnings === null
               ? [0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="h-11 animate-pulse rounded-lg bg-zinc-900/40"
+                    className="h-28 animate-pulse rounded-lg bg-zinc-900/40"
                     aria-hidden
                   />
                 ))
-              : upcomingEarnings.slice(0, 6).map((e) => {
-                  const soon = e.days <= 7;
-                  return (
-                    <div
-                      key={e.ticker}
-                      className={cn(
-                        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5",
-                        soon
-                          ? "border-amber-500/30 bg-amber-500/[0.07]"
-                          : "border-zinc-800/80 bg-zinc-950/40"
-                      )}
-                    >
-                      <span className="text-sm font-semibold text-white">
-                        {cashtag(e.ticker)}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-sm tabular-nums",
-                          soon ? "text-amber-200" : "text-zinc-400"
-                        )}
-                        title={e.date}
-                      >
-                        {formatRelativeDays(e.days)}
-                      </span>
-                    </div>
-                  );
-                })}
+              : upcomingEarnings
+                  .slice(0, 6)
+                  .map((e) => <EarningsRow key={e.ticker} e={e} />)}
           </div>
         </Panel>
       )}

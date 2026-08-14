@@ -2,6 +2,7 @@ import type { Quote } from "@/lib/types";
 import { sessionMark } from "@/lib/market-session";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
+import type { EarningsPrint } from "@/lib/earnings-brief";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -336,6 +337,16 @@ export type EarningsEvent = {
   ticker: string;
   date: string;
   days: number;
+  dateIsEstimate?: boolean;
+  spot?: number | null;
+  expectedMovePct?: number | null;
+  expectedMoveSource?: "implied" | "history" | null;
+  rangeLow?: number | null;
+  rangeHigh?: number | null;
+  runupPct?: number | null;
+  prints?: EarningsPrint[];
+  beatCount?: number;
+  note?: string;
 };
 
 export type CatalystEvent = {
