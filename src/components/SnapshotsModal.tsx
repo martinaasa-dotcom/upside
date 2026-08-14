@@ -172,7 +172,7 @@ export function SnapshotsModal({
             type="button"
             onClick={() => void createManual()}
             disabled={loading}
-            className="rounded-md bg-brand-bright px-3 py-1.5 text-xs font-semibold text-[#1a1510] disabled:opacity-50"
+            className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
           >
             Save snapshot now
           </button>

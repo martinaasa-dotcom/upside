@@ -1,15 +1,16 @@
 import { HeaderBrand } from "@/components/HeaderBrand";
+import { PRODUCT_CONTACT_EMAIL } from "@/lib/product";
 import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy: Upside",
+  title: "Privacy Policy: Upside Lab",
 };
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-      <header className="border-b border-brand-deep/25 bg-[#121214]/90 backdrop-blur">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-100">
+      <header className="border-b border-white/10 bg-app/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />
           <Link
@@ -134,9 +135,9 @@ export default function PrivacyPage() {
           permanently delete your account: your profile, any sheet you solely
           own, and your sign-in credential itself (sheets you share with a
           co-owner stay with them). If for any reason the sign-in credential
-          can&apos;t be removed at the same time, your Upside data is still
+          can&apos;t be removed at the same time, your Upside Lab data is still
           fully wiped immediately. You&apos;d just want to also revoke
-          Upside&apos;s access from your Google account if you want that
+          Upside Lab&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
           (access, rectification, erasure, portability, objection); the
           export/delete tools cover most of these directly; email us for
@@ -152,7 +153,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="9. Children">
-          Upside isn&apos;t directed at children and isn&apos;t intended for
+          Upside Lab isn&apos;t directed at children and isn&apos;t intended for
           use by anyone below the age required to hold a brokerage account or
           enter a binding agreement in their jurisdiction.
         </Section>
@@ -165,10 +166,10 @@ export default function PrivacyPage() {
         <Section title="11. Contact">
           Questions, data requests, or concerns:{" "}
           <a
-            href="mailto:privacy@upthink.ee"
+            href={`mailto:${PRODUCT_CONTACT_EMAIL}`}
             className="underline hover:text-white"
           >
-            privacy@upthink.ee
+            {PRODUCT_CONTACT_EMAIL}
           </a>
           .
         </Section>

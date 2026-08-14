@@ -757,7 +757,7 @@ export function UpsidePortfolioPage() {
   }, [benchmark, benchmarkLiveValue, totalValue, myPortfolios, myHoldings]);
 
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-100">
       <AppHeader title="Upside Fund">
         <span
           className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
@@ -812,7 +812,7 @@ export function UpsidePortfolioPage() {
           <p className="text-sm text-red-400">{error}</p>
         ) : (
           <>
-            <section className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+            <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-zinc-400">
@@ -883,7 +883,7 @@ export function UpsidePortfolioPage() {
               </div>
             </section>
 
-            <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+            <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-400">
                   <Scale className="h-3.5 w-3.5" />
@@ -1059,7 +1059,7 @@ export function UpsidePortfolioPage() {
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
                   What he&apos;s betting on
                 </h2>
-                <div className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4">
+                <div className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4">
                   <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
                     {fundThemes.map((t) => (
                       <div
@@ -1134,7 +1134,7 @@ export function UpsidePortfolioPage() {
                     return (
                       <div
                         key={h.id}
-                        className="space-y-2 rounded-xl border border-brand-deep/30 bg-[#161618]/70 p-3.5"
+                        className="space-y-2 rounded-xl border border-brand-deep/30 bg-card/80 p-3.5"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-white">
@@ -1246,7 +1246,7 @@ export function UpsidePortfolioPage() {
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 px-4 py-6 text-center text-sm text-zinc-400">
+                <p className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1262,7 +1262,7 @@ export function UpsidePortfolioPage() {
                     i === 0 ? (
                       <article
                         key={r.id}
-                        className="space-y-2 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4"
+                        className="space-y-2 rounded-2xl border border-brand-deep/30 bg-card/80 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1275,7 +1275,7 @@ export function UpsidePortfolioPage() {
                     ) : (
                       <details
                         key={r.id}
-                        className="group overflow-hidden rounded-2xl border border-zinc-800 bg-[#161618]/40"
+                        className="group overflow-hidden rounded-2xl border border-zinc-800 bg-card/50"
                       >
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-zinc-900/40 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
@@ -1304,7 +1304,7 @@ export function UpsidePortfolioPage() {
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
                   Closed positions · {closedHoldings.length}
                 </h2>
-                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
                   {closedHoldings.map((h) => (
                     <li key={h.id} className="px-4 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-2">

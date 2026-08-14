@@ -51,7 +51,7 @@ function JoinInner() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] px-4 text-zinc-100">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] px-4 text-zinc-100">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="w-full max-w-sm space-y-4 text-center">
           <h1 className="text-xl font-semibold">Join a portfolio</h1>
@@ -74,7 +74,7 @@ function JoinInner() {
               />
               <button
                 type="submit"
-                className="rounded-lg bg-brand-bright px-4 py-2.5 text-sm font-semibold text-[#1a1510]"
+                className="btn-primary py-2.5"
               >
                 Join sheet
               </button>
@@ -92,7 +92,7 @@ export default function AccountJoinPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-[#121214] text-zinc-400">
+        <div className="flex min-h-dvh items-center justify-center bg-app text-zinc-400">
           Loading …
         </div>
       }

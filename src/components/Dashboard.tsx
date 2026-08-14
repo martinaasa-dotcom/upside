@@ -319,33 +319,42 @@ function normalizeMetaTabId(id: string): string | null {
 function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
-  const sheetParam = params.get("sheet")?.trim().toLowerCase();
-  if (!sheetParam) return null;
-  if (sheetParam === "compound" || sheetParam === COMPOUND_TAB_ID) {
+  const tabParam = params.get("tab")?.trim().toLowerCase() || "";
+  const portfolioParam = params.get("portfolio")?.trim().toLowerCase() || "";
+  const sheetParam = params.get("sheet")?.trim().toLowerCase() || "";
+  // `tab=book` is a sheet view; the actual sheet is `portfolio` / `sheet`.
+  // `tab=forecast` is a panel on a sheet, not a meta tab.
+  const metaTab =
+    tabParam && tabParam !== "book" && tabParam !== "forecast"
+      ? tabParam
+      : "";
+  const raw = metaTab || portfolioParam || sheetParam;
+  if (!raw) return null;
+  if (raw === "compound" || raw === COMPOUND_TAB_ID) {
     return COMPOUND_TAB_ID;
   }
-  if (sheetParam === "lab" || sheetParam === LAB_TAB_ID) return LAB_TAB_ID;
-  if (sheetParam === "pulse" || sheetParam === PULSE_TAB_ID) {
+  if (raw === "lab" || raw === LAB_TAB_ID) return LAB_TAB_ID;
+  if (raw === "pulse" || raw === PULSE_TAB_ID) {
     return PULSE_TAB_ID;
   }
   // Seasonality is a Lab sub-tab. Old links still resolve, they just land
   // on Lab with the right sub-tab selected via ?labtab= below.
   if (
-    sheetParam === "statistics" ||
-    sheetParam === "stats" ||
-    sheetParam === "seasonality" ||
-    sheetParam === SEASONALITY_TAB_ID
+    raw === "statistics" ||
+    raw === "stats" ||
+    raw === "seasonality" ||
+    raw === SEASONALITY_TAB_ID
   ) {
     return LAB_TAB_ID;
   }
-  if (sheetParam === "overview" || sheetParam === OVERVIEW_TAB_ID) {
+  if (raw === "overview" || raw === OVERVIEW_TAB_ID) {
     return OVERVIEW_TAB_ID;
   }
   const bySlugOrId = list.find(
     (p) =>
-      p.id === sheetParam ||
-      p.slug?.toLowerCase() === sheetParam ||
-      p.name.toLowerCase() === sheetParam
+      p.id === raw ||
+      p.slug?.toLowerCase() === raw ||
+      p.name.toLowerCase() === raw
   );
   return bySlugOrId?.id ?? null;
 }
@@ -1157,18 +1166,22 @@ export function Dashboard() {
     saveActiveSheetId(activeId);
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
+    url.searchParams.delete("sheet");
+    url.searchParams.delete("tab");
+    url.searchParams.delete("portfolio");
     if (activeId === OVERVIEW_TAB_ID) {
-      url.searchParams.delete("sheet");
+      /* overview is the default; keep the URL clean */
     } else if (activeId === COMPOUND_TAB_ID) {
-      url.searchParams.set("sheet", "compound");
+      url.searchParams.set("tab", "compound");
     } else if (activeId === LAB_TAB_ID) {
-      url.searchParams.set("sheet", "lab");
+      url.searchParams.set("tab", "lab");
     } else if (activeId === PULSE_TAB_ID) {
-      url.searchParams.set("sheet", "pulse");
+      url.searchParams.set("tab", "pulse");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
-      if (p?.slug) url.searchParams.set("sheet", p.slug);
-      else url.searchParams.set("sheet", activeId);
+      url.searchParams.set("tab", "book");
+      url.searchParams.set("portfolio", p?.slug || activeId);
+      url.searchParams.set("sheet", p?.slug || activeId);
     }
     // Drop legacy guest/share query params if present.
     url.searchParams.delete("share");
@@ -2476,11 +2489,20 @@ export function Dashboard() {
   }
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
-    return <DashboardLoading message="Opening the sheet …" />;
+    return (
+      <div className="flex min-h-dvh flex-col bg-app text-zinc-100">
+        <AppHeader
+          onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
+          brandTitle="Upside Lab: go to Overview"
+          showWorkspaceNav={source === "supabase"}
+          title="Overview"
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100 [--dock-pad:7.25rem] sm:[--dock-pad:5.5rem]">
+    <div className="flex min-h-dvh flex-col bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_52%)] text-zinc-100 [--dock-pad:7.25rem] sm:[--dock-pad:5.5rem]">
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}
@@ -2488,7 +2510,7 @@ export function Dashboard() {
       />
       <AppHeader
         onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
-        brandTitle="Upside: go to Overview"
+        brandTitle="Upside Lab: go to Overview"
         showWorkspaceNav={source === "supabase"}
         title={
           isOverview
@@ -2529,7 +2551,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex h-8 items-center gap-1 rounded-md bg-brand px-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright"
+                className="btn-primary h-8 min-h-8 rounded-md px-2.5 text-xs"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Add holding</span>
@@ -2568,7 +2590,7 @@ export function Dashboard() {
 
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
-      <div className="border-b border-brand-deep/25 bg-[#121214]/80 backdrop-blur-sm">
+      <div className="border-b border-brand-deep/25 bg-app/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4 sm:py-2">
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}

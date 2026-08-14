@@ -1,4 +1,8 @@
-/** Prefixed tables on the shared Upthink Platform Supabase project. */
+/**
+ * Prefixed tables. Names stay `portfell_*` so existing rows, localStorage
+ * locks, and RLS policies survive a move onto a dedicated Upside Lab
+ * Supabase project. Isolation is env (URL + keys), not a rename.
+ */
 export const PORTFELL_TABLES = {
   portfolios: "portfell_portfolios",
   holdings: "portfell_holdings",

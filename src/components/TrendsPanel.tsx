@@ -82,7 +82,7 @@ function TickerStoryCard({
   const story = useMemo(() => buildTrendStory(row), [row]);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
+    <div className="rounded-xl border border-zinc-800 bg-card/80 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-white">
@@ -238,7 +238,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
+      <div className="rounded-xl border border-zinc-800 bg-card/80 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-white">
@@ -334,13 +334,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       )}
 
       {rows == null && !error && (
-        <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 px-4 py-10 text-center text-sm text-zinc-400">
+        <div className="rounded-xl border border-zinc-800 bg-card/80 px-4 py-10 text-center text-sm text-zinc-400">
           Reading four years of weekly bars …
         </div>
       )}
 
       {rows != null && rows.length === 0 && !error && (
-        <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 px-4 py-10 text-center text-sm text-zinc-400">
+        <div className="rounded-xl border border-zinc-800 bg-card/80 px-4 py-10 text-center text-sm text-zinc-400">
           Add a holding, or watch a ticker above, and its trend read shows up
           here.
         </div>
@@ -365,7 +365,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           </div>
 
           {leaders.length > 1 && (
-            <div className="rounded-xl border border-zinc-800 bg-[#161618]/80 p-4 sm:p-5">
+            <div className="rounded-xl border border-zinc-800 bg-card/80 p-4 sm:p-5">
               <p className="text-sm font-semibold text-white">
                 Who&apos;s leading, who&apos;s fading
               </p>

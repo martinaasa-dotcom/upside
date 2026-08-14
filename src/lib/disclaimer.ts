@@ -22,4 +22,4 @@ export const FORECAST_DISCLAIMER =
  * followable daily feed like this), then the same "not real, not advice"
  * emphasis used everywhere else. */
 export const UPSIDE_PORTFOLIO_DISCLAIMER =
-  "Managed autonomously by Margus, Upside's AI strategist. 100% simulated with paper money. Not a real fund, not a track record, and not a signal to copy trade-for-trade. Margus doesn't know your situation, risk tolerance, or timeline. Educational entertainment only.";
+  "Managed autonomously by Margus, Upside Lab's AI strategist. 100% simulated with paper money. Not a real fund, not a track record, and not a signal to copy trade-for-trade. Margus doesn't know your situation, risk tolerance, or timeline. Educational entertainment only.";

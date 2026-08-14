@@ -394,7 +394,7 @@ export function ForecastPanel({
   }, [planHydrated, model.rows, plan, fullyCovered, busy, stance]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
       <header className="border-b border-zinc-800/80 p-4 sm:p-6">
         <PanelHeader
           title="Forecast"

@@ -1,36 +1,48 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const DEFAULT_CANONICAL_HOST = "upside-upthink-solutions.vercel.app";
+import {
+  isLegacyHost,
+  isLocalHost,
+  isVercelPreviewHost,
+  siteHost,
+} from "@/lib/site-url";
+import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
 function canonicalHost(): string {
-  return (
-    process.env.UPSIDE_CANONICAL_HOST?.trim() || DEFAULT_CANONICAL_HOST
-  );
+  return siteHost();
 }
 
-/** Legacy host redirects + Supabase session refresh. */
+/**
+ * Legacy host redirects + Supabase session refresh.
+ *
+ * Document navigations to a known legacy host 301 to upsidelab.app, path
+ * and query intact. `/api/*` stays on the incoming host so cron jobs and
+ * signed webhooks do not drop a body on a redirect.
+ */
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const target = canonicalHost();
-  const legacy =
-    host.startsWith("portfolio-") ||
-    host === "portfolio.vercel.app" ||
-    host === "upside-upthink1.vercel.app" ||
-    host === "upside-git-main-upthink1.vercel.app";
-  if (legacy && host !== target) {
+  const path = request.nextUrl.pathname;
+  const isApi = path.startsWith("/api/");
+
+  if (
+    !isLocalHost(host) &&
+    host.split(":")[0].toLowerCase() !== target &&
+    !isApi &&
+    (isLegacyHost(host) || !isVercelPreviewHost(host))
+  ) {
     const url = request.nextUrl.clone();
     url.host = target;
     url.protocol = "https";
     url.port = "";
-    return NextResponse.redirect(url, 308);
+    return NextResponse.redirect(url, 301);
   }
 
   let response = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = supabaseUrl();
+  const key = supabaseAnonKey();
   if (url && key) {
     const supabase = createServerClient(url, key, {
       cookies: {

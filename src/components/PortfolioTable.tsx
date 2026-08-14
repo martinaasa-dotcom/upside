@@ -334,7 +334,7 @@ export function PortfolioTable({
           <button
             type="button"
             onClick={onAddHolding}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+            className="inline-flex items-center gap-1.5 btn-primary px-3"
           >
             <Plus className="h-4 w-4" />
             Add holding manually
@@ -349,7 +349,7 @@ export function PortfolioTable({
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800/80 px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-white">Holdings</h2>

@@ -397,7 +397,7 @@ OWNER CONVICTION: some holdings carry the owner's own conviction level (1-5) and
 
 ${FORECAST_CONVICTION_PROMPT}
 
-Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis for Upside portfolio "${input.portfolioName}".
+Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis for Upside Lab portfolio "${input.portfolioName}".
 
 CRITICAL: Reason every price from each company's micro-thesis + the conviction bands above. Do NOT paste sell-side targets. Do NOT draw straight lines. Never leave a ticker or year empty. Never paste the same spot across all years unless cash-like (say so).
 

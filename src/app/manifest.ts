@@ -1,15 +1,15 @@
 import type { MetadataRoute } from "next";
+import { PRODUCT_BLURB, PRODUCT_NAME } from "@/lib/product";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Upside - Portfolio Tracker",
-    short_name: "Upside",
-    description:
-      "Live portfolio book with Assistant Margus.",
+    name: PRODUCT_NAME,
+    short_name: PRODUCT_NAME,
+    description: PRODUCT_BLURB,
     start_url: "/",
     display: "standalone",
-    background_color: "#121214",
-    theme_color: "#121214",
+    background_color: "#08090C",
+    theme_color: "#08090C",
     icons: [
       {
         src: "/icons/icon-192.png",

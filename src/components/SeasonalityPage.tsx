@@ -55,7 +55,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-brand-deep/30 bg-[#161618]/80 p-4 sm:p-5">
+    <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-white">{title}</h3>
       {subtitle ? (
         <p className="mt-1 text-xs text-zinc-400">{subtitle}</p>
@@ -620,7 +620,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     className={cn(
                       "rounded-md px-2 py-1 text-xs font-medium transition",
                       viewMonth === m
-                        ? "bg-brand text-[#121214]"
+                        ? "bg-white text-black"
                         : m === marketToday.month
                           ? "text-brand-bright ring-1 ring-brand/40 hover:bg-brand/15"
                           : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"

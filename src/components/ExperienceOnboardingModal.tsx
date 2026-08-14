@@ -81,7 +81,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-brand-deep/40 bg-[#161618] p-5 shadow-2xl sm:p-6">
+      <div className="w-full max-w-md rounded-2xl border border-brand-deep/40 bg-card p-5 shadow-2xl sm:p-6">
         {step !== 3 ? (
           <>
             <div className="mb-4">
@@ -165,7 +165,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
             <button
               type="button"
               onClick={() => result && onDone(result, resultKnowsOptions)}
-              className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+              className="w-full btn-primary"
             >
               Got it
             </button>

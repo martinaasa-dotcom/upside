@@ -1,8 +1,8 @@
-# Upside
+# Upside Lab
 
 A daily read of your book, with Margus to think it through. Live prices, Thesis Pulse, and an open paper fund (Upside Fund). Communities are optional.
 
-Production: [https://upside-upthink-solutions.vercel.app](https://upside-upthink-solutions.vercel.app)
+Production: [https://upsidelab.app](https://upsidelab.app)
 
 ## Quick start
 
@@ -28,13 +28,15 @@ Not financial advice. Pulse, Forecast, and Margus are educational scenario tools
 
 Google SSO. Shared books use co-ownership (`portfell_portfolio_owners`). Communities are opt-in only: invite or an admin-approved join request. Never auto-join on sign-in.
 
-Production data lives on the shared Upthink Platform Supabase project (`portfell_*` tables).
+Production data belongs on a dedicated Upside Lab Supabase project (`portfell_*` tables). Isolation is env (URL + keys), not a table rename. See `docs/UPSIDE_LAB_CUTOVER.md` and `scripts/export-upside-schema.sql`.
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 OPENROUTER_API_KEY=...
+UPSIDE_CANONICAL_HOST=upsidelab.app
+NEXT_PUBLIC_SITE_URL=https://upsidelab.app
 ```
 
 See `.env.example` for the full list. Market data uses Yahoo first, then optional Twelve Data / Finnhub keys. If every provider misses a ticker, the last cached price stays on screen. We do not invent a mark.

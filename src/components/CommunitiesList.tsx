@@ -140,7 +140,7 @@ export function CommunitiesList() {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
+      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-100">
         <AppHeader title="Communities" />
         <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
           <div>
@@ -159,12 +159,12 @@ export function CommunitiesList() {
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="h-[3.75rem] animate-pulse rounded-2xl border border-brand-deep/20 bg-[#161618]/70"
+                  className="h-[3.75rem] animate-pulse rounded-2xl border border-brand-deep/20 bg-card/80"
                 />
               ))}
             </div>
           ) : (
-            <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+            <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
               {communities.length === 0 && (
                 <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                   <Users className="h-6 w-6 text-zinc-400" />
@@ -217,7 +217,7 @@ export function CommunitiesList() {
                 Anyone can ask to join. An admin still has to approve before
                 you see any books.
               </p>
-              <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+              <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -258,7 +258,7 @@ export function CommunitiesList() {
 
           <form
             onSubmit={(e) => void createCommunity(e)}
-            className="space-y-2.5 rounded-2xl border border-brand-deep/20 bg-[#161618]/50 p-4"
+            className="space-y-2.5 rounded-2xl border border-brand-deep/20 bg-card/60 p-4"
           >
             <p className="text-sm font-medium text-zinc-200">
               Create a community
@@ -272,7 +272,7 @@ export function CommunitiesList() {
               />
               <button
                 type="submit"
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+                className="btn-primary"
               >
                 Create community
               </button>

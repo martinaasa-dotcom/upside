@@ -12,7 +12,7 @@ export default function Error({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error("Unhandled Upside render error", error);
+    console.error("Unhandled Upside Lab render error", error);
     void fetch("/api/internal/log-error", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -28,7 +28,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_52%)] px-4 text-center">
       <UpsideLogo variant="icon" />
       <div className="max-w-sm space-y-2">
         <h1 className="text-lg font-semibold text-white">
@@ -46,7 +46,7 @@ export default function Error({
         <button
           type="button"
           onClick={() => retry()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+          className="inline-flex items-center gap-1.5 btn-primary"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Try again

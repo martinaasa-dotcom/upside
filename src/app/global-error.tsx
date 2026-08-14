@@ -13,7 +13,7 @@ export default function GlobalError({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error("Unhandled Upside layout error", error);
+    console.error("Unhandled Upside Lab layout error", error);
     void fetch("/api/internal/log-error", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,7 +41,7 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#121214",
+          background: "#08090C",
           color: "#f5f2eb",
           fontFamily:
             "ui-sans-serif, system-ui, -apple-system, sans-serif",
@@ -49,7 +49,7 @@ export default function GlobalError({
       >
         <div>
           <h1 style={{ fontSize: "1.1rem", fontWeight: 600, margin: 0 }}>
-            Upside hit a snag
+            Upside Lab hit a snag
           </h1>
           <p
             style={{
@@ -71,8 +71,8 @@ export default function GlobalError({
             style={{
               borderRadius: "0.5rem",
               border: "none",
-              background: "#c5a059",
-              color: "#121214",
+              background: "#ffffff",
+              color: "#0a0a0a",
               fontWeight: 600,
               fontSize: "0.875rem",
               padding: "0.5rem 1rem",

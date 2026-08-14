@@ -35,7 +35,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       className={cn(
         "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition md:px-2.5 md:py-1.5 md:justify-start",
         active
-          ? "bg-brand/20 text-brand-bright shadow-sm shadow-black/20"
+          ? "bg-white/10 text-white shadow-sm shadow-black/20"
           : "text-zinc-400 hover:text-zinc-300"
       )}
     >
@@ -46,9 +46,9 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
 
   return (
     <nav
-      aria-label="Upside rooms"
+      aria-label="Upside Lab rooms"
       className={cn(
-        "inline-flex max-w-full overflow-x-auto rounded-lg border border-brand-deep/40 bg-zinc-950/60 p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "inline-flex max-w-full overflow-x-auto rounded-lg border border-white/10 bg-card p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className
       )}
     >

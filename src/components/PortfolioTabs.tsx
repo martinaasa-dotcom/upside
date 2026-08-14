@@ -190,7 +190,7 @@ export function PortfolioTabs({
   }
 
   return (
-    <nav className="sticky bottom-0 z-30 border-t border-zinc-800/80 bg-[#121214]/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur">
+    <nav className="sticky bottom-0 z-30 border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] flex-col-reverse gap-1.5 px-3 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2">
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex shrink-0 items-end gap-2 md:min-w-0">
@@ -225,7 +225,7 @@ export function PortfolioTabs({
                     className={cn(
                       "touch-target flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition sm:flex-row sm:gap-1.5 sm:px-2",
                       active
-                        ? "bg-brand text-[#121214] shadow-sm"
+                        ? "bg-white text-black shadow-sm"
                         : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
                     )}
                   >

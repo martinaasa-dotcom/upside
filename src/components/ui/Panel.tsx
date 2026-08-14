@@ -5,7 +5,7 @@ import { Info } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 /**
- * The Upside design system, in one file.
+ * The Upside Lab design system, in one file.
  *
  * Before this existed every panel rolled its own shell, and the app drifted
  * into three visual dialects: Overview on rounded-3xl with text-xl headings,
@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-brand-deep/30 on bg-[#161618]/70
- *   Card       border-zinc-800/80 on bg-zinc-950/40
+ *   Shell      border-white/10 on bg-card
+ *   Card       border-white/10 on bg-card/60
  *   Headings   text-base font-semibold (hero: text-lg) · sentence case
  *   Micro      text-xs uppercase tracking-wide text-zinc-400
  *   Body       text-sm leading-relaxed text-zinc-400
@@ -29,8 +29,8 @@ import { useState, type ReactNode } from "react";
  */
 
 const SHELL_TONES = {
-  default: "border-brand-deep/30 bg-[#161618]/70",
-  plain: "border-zinc-800/80 bg-[#161618]/70",
+  default: "border-white/10 bg-card/80",
+  plain: "border-white/10 bg-card/80",
   brand: "border-brand/30 bg-brand/[0.07]",
   warn: "border-amber-500/30 bg-amber-500/[0.07]",
   danger: "border-rose-500/30 bg-rose-950/20",
@@ -142,8 +142,8 @@ export function PanelHeader({
 }
 
 const CARD_TONES = {
-  default: "border-zinc-800/80 bg-zinc-950/40",
-  raised: "border-zinc-800/80 bg-zinc-900/40",
+  default: "border-white/10 bg-card",
+  raised: "border-white/10 bg-hover",
   brand: "border-brand/30 bg-brand/10",
   good: "border-emerald-500/25 bg-emerald-500/[0.07]",
   warn: "border-amber-500/30 bg-amber-500/[0.07]",
@@ -172,7 +172,7 @@ export function Card({
         "rounded-xl border px-3.5 py-3",
         CARD_TONES[tone],
         interactive &&
-          "transition hover:border-brand/40 active:scale-[0.995]",
+          "transition hover:border-white/20 hover:bg-hover active:scale-[0.995]",
         className
       )}
       {...rest}

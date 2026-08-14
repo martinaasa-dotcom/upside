@@ -99,7 +99,7 @@ export function ConfirmModal({
             className={
               destructive
                 ? "rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-40"
-                : "rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
+                : "btn-primary disabled:opacity-40"
             }
           >
             {busy ? "…" : confirmLabel}

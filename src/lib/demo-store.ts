@@ -1,4 +1,5 @@
 import type { Holding, Portfolio } from "./types";
+import { supabaseIsConfigured } from "@/lib/supabase/env";
 
 /** Yahoo-friendly symbols for non-US listings */
 function yf(ticker: string) {
@@ -326,8 +327,5 @@ export function resetDemoStore(): DemoStore {
 }
 
 export function isSupabaseConfigured() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  return supabaseIsConfigured();
 }

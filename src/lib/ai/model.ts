@@ -180,7 +180,7 @@ export function buildAdvisorProviderChain(options?: {
         "HTTP-Referer":
           process.env.OPENROUTER_HTTP_REFERER ?? siteUrl(),
         "X-Title":
-          process.env.OPENROUTER_APP_TITLE ?? "Upside Assistant Margus",
+          process.env.OPENROUTER_APP_TITLE ?? "Upside Lab Assistant Margus",
       },
       fetch: openRouterFetchWithFallbacks(fallbacks),
     });

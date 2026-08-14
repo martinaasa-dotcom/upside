@@ -235,7 +235,7 @@ export function CoveredCallPanel({
                 <button
                   type="button"
                   onClick={onAddHolding}
-                  className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+                  className="btn-primary px-3"
                 >
                   Add holding
                 </button>
@@ -369,7 +369,7 @@ export function CoveredCallPanel({
                     <button
                       type="button"
                       onClick={onAddHolding}
-                      className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+                      className="btn-primary px-3"
                     >
                       Add holding
                     </button>

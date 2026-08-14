@@ -258,8 +258,8 @@ function DualPathChart({
       >
         <defs>
           <linearGradient id="dualPathGap" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34d399" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#34d399" stopOpacity="0.03" />
+            <stop offset="0%" stopColor="#10B981" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#10B981" stopOpacity="0.03" />
           </linearGradient>
         </defs>
 
@@ -311,7 +311,7 @@ function DualPathChart({
               x2={xAt(tippingYear)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#34d399"
+              stroke="#10B981"
               strokeWidth="1"
               strokeDasharray="3 3"
               opacity="0.6"
@@ -322,7 +322,7 @@ function DualPathChart({
               textAnchor="middle"
               fontSize="9"
               fontWeight="600"
-              fill="#34d399"
+              fill="#10B981"
             >
               Tip Y{tippingYear}
             </text>
@@ -339,7 +339,7 @@ function DualPathChart({
         <polyline
           points={toPoints(active)}
           fill="none"
-          stroke="#34d399"
+          stroke="#10B981"
           strokeWidth="2.5"
         />
 
@@ -359,7 +359,7 @@ function DualPathChart({
               cx={xAt(hoverIdx)}
               cy={yAt(active[hoverIdx] ?? 0)}
               r="4"
-              fill="#34d399"
+              fill="#10B981"
               stroke="#0a0a0b"
               strokeWidth="1.5"
             />
@@ -1230,7 +1230,7 @@ Optimistic (25%)
             className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-zinc-800"
           >
             <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
-              <thead className="sticky top-0 z-10 bg-[#161618]">
+              <thead className="sticky top-0 z-10 bg-card">
                 <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
                   <th className="py-2.5 px-3 font-medium">Milestone</th>
                   <th className="py-2.5 px-3 font-medium">On this plan</th>

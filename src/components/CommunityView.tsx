@@ -965,7 +965,7 @@ export function CommunityView({ communityId }: Props) {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-[#121214] text-zinc-100">
+      <div className="min-h-dvh bg-app text-zinc-100">
         {/* The community's own name is "where you are", so it belongs on the
           * left with the wordmark. Only the admin gear is a control. */}
         <AppHeader
@@ -1097,7 +1097,7 @@ export function CommunityView({ communityId }: Props) {
               {view === "overview" && (
                 <div className="flex flex-col gap-8">
                   {membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
+                    <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
@@ -1246,7 +1246,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
+                    <section className="overview-fade order-2 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
@@ -1290,7 +1290,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
+                    <section className="overview-fade order-1 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
@@ -1401,7 +1401,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {overview.topHoldings.length > 0 && (
-                    <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
+                    <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
                           <Layers className="h-4 w-4" />
@@ -1453,7 +1453,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-6">
+                    <section className="overview-fade order-5 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
                           <PieChart className="h-4 w-4" />
@@ -2035,7 +2035,7 @@ export function CommunityView({ communityId }: Props) {
                   !settingsName.trim() ||
                   settingsName.trim() === community?.name
                 }
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40"
+                className="btn-primary disabled:opacity-40"
               >
                 {settingsBusy ? "Saving …" : "Save name"}
               </button>

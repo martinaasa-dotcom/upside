@@ -160,7 +160,7 @@ export function InvitePartnerModal({
           type="button"
           disabled={busy}
           onClick={() => void createInvite()}
-          className="mt-3 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-60"
+          className="mt-3 btn-primary disabled:opacity-60"
         >
           {busy ? "Working …" : "Create invite"}
         </button>

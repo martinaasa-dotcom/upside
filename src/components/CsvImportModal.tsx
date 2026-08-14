@@ -135,7 +135,7 @@ export function CsvImportModal({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+              className="inline-flex items-center gap-1.5 btn-primary px-3"
             >
               <FileUp className="h-4 w-4" />
               Choose CSV file
@@ -251,7 +251,7 @@ export function CsvImportModal({
             disabled={rows.length === 0 && cash == null}
             onClick={confirm}
             className={cn(
-              "rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright",
+              "btn-primary",
               rows.length === 0 && cash == null && "cursor-not-allowed opacity-40"
             )}
           >

@@ -4,6 +4,13 @@
  *
  * Fund and Communities are rooms you can visit. They are not the product.
  */
+
+export const PRODUCT_NAME = "Upside Lab";
+
+export const PRODUCT_DOMAIN = "upsidelab.app";
+
+export const PRODUCT_ORIGIN = `https://${PRODUCT_DOMAIN}`;
+
 export const PRODUCT_SENTENCE =
   "A daily read of your book, with Margus to think it through.";
 
@@ -23,3 +30,5 @@ export const SIGNIN_POINTS = [
   "Margus can read the sheet and edit it with you.",
   "Invite a partner when you want company. Optional.",
 ] as const;
+
+export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";

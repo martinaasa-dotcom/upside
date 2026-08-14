@@ -93,7 +93,7 @@ export function CostBasisModal({
           <button
             type="button"
             onClick={onApply}
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright"
+            className="btn-primary"
           >
             Apply costs
           </button>

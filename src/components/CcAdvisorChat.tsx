@@ -805,7 +805,7 @@ export function CcAdvisorChat({
       {showSilentCard && (
         <div
           role="status"
-          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-brand-deep/40 bg-[#161618] shadow-2xl shadow-black/60"
+          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-brand-deep/40 bg-card shadow-2xl shadow-black/60"
           onClick={() => setOpen(true)}
         >
           <div className="flex items-start gap-2.5 px-3.5 py-3">
@@ -898,7 +898,7 @@ export function CcAdvisorChat({
       {open && (
         <section
           ref={panelRef}
-          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-[#161618] shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
+          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-card shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
             wide
               ? "w-[min(56rem,calc(100vw-1.5rem))]"
               : "w-[min(26rem,calc(100vw-1.5rem))]"
@@ -1220,7 +1220,7 @@ export function CcAdvisorChat({
               <button
                 type="submit"
                 disabled={!canSend}
-                className="inline-flex items-center justify-center rounded-lg bg-brand px-3 text-[#121214] hover:bg-brand-bright disabled:opacity-40"
+                className="btn-primary px-3 disabled:opacity-40"
                 aria-label="Send"
               >
                 <Send className="h-4 w-4" />

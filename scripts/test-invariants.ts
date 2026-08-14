@@ -540,9 +540,23 @@ run("home keeps Fund and Communities in view", () => {
   const world = readFileSync("src/components/HomeWorld.tsx", "utf8");
   assert.ok(overview.includes("HomeWorld"));
   assert.ok(!overview.includes("CommunitiesSpotlight"));
-  assert.ok(world.includes("Around Upside"));
+  assert.ok(world.includes("Around Upside Lab"));
   assert.ok(world.includes("Upside Fund"));
   assert.ok(world.includes("Communities"));
+});
+
+run("product is Upside Lab on upsidelab.app", () => {
+  const product = readFileSync("src/lib/product.ts", "utf8");
+  assert.match(product, /PRODUCT_NAME = "Upside Lab"/);
+  assert.match(product, /PRODUCT_DOMAIN = "upsidelab.app"/);
+  const site = readFileSync("src/lib/site-url.ts", "utf8");
+  assert.match(site, /PRODUCT_DOMAIN/);
+  assert.match(site, /LEGACY_HOSTS/);
+  const layout = readFileSync("src/app/layout.tsx", "utf8");
+  assert.match(layout, /PRODUCT_NAME/);
+  const envEx = readFileSync(".env.example", "utf8");
+  assert.match(envEx, /upsidelab\.app/);
+  assert.doesNotMatch(envEx, /jwjezdgggrgdgfsovgtx/);
 });
 
 /* ---------- design system ---------- */

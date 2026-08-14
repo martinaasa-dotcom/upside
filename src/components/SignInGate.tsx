@@ -4,10 +4,12 @@ import { useAuth } from "@/components/AuthProvider";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import {
   PRODUCT_BLURB,
+  PRODUCT_NAME,
   PRODUCT_SENTENCE,
   SIGNIN_POINTS,
   SIGNIN_WHO,
 } from "@/lib/product";
+import { supabaseIsConfigured } from "@/lib/supabase/env";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -29,10 +31,7 @@ export function SignInGate({ children }: Props) {
   const [deletedNotice, setDeletedNotice] = useState<"full" | "data" | null>(
     null
   );
-  const needsAuth = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  const needsAuth = supabaseIsConfigured();
 
   useEffect(() => {
     const kind = new URLSearchParams(window.location.search).get(
@@ -47,7 +46,7 @@ export function SignInGate({ children }: Props) {
   if (!needsAuth) return <>{children}</>;
   if (!ready) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-400">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-400">
         <UpsideLogo
           variant="mark"
           className="h-10 w-10 animate-pulse opacity-70"
@@ -70,13 +69,13 @@ export function SignInGate({ children }: Props) {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#121214] text-zinc-100">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-app text-zinc-100">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 90% 70% at 50% -10%, #2a2218 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 80% 110%, rgba(212,184,122,0.08) 0%, transparent 50%)",
+            "radial-gradient(ellipse 90% 70% at 50% -10%, #1a1612 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 80% 110%, rgba(214,173,105,0.06) 0%, transparent 50%)",
         }}
       />
       <div
@@ -97,7 +96,7 @@ export function SignInGate({ children }: Props) {
               <p className="signin-rise-2 mb-4 max-w-sm rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm leading-relaxed text-emerald-200">
                 {deletedNotice === "full"
                   ? "Account deleted. Your data and sign-in are both gone."
-                  : "Your Upside data has been deleted. Signing in again starts a brand-new account."}
+                  : `Your ${PRODUCT_NAME} data has been deleted. Signing in again starts a brand-new account.`}
               </p>
             )}
 
@@ -127,7 +126,7 @@ export function SignInGate({ children }: Props) {
               type="button"
               disabled={busy}
               onClick={() => void onSignIn()}
-              className="signin-rise-3 mt-8 inline-flex h-12 w-full max-w-sm items-center justify-center gap-2.5 rounded-lg border border-brand-mid/40 bg-brand-bright px-4 text-sm font-semibold text-[#1a1510] shadow-[0_12px_40px_-12px_rgba(212,184,122,0.5)] transition hover:bg-[#F0E4C8] hover:shadow-[0_16px_48px_-12px_rgba(212,184,122,0.6)] active:scale-[0.985] disabled:opacity-60 md:w-auto md:min-w-[16rem]"
+              className="btn-primary signin-rise-3 mt-8 h-12 w-full max-w-sm gap-2.5 md:w-auto md:min-w-[16rem]"
             >
               <GoogleMark />
               {busy ? "Redirecting …" : "Continue with Google"}
@@ -164,7 +163,7 @@ export function SignInGate({ children }: Props) {
 function BookStill() {
   return (
     <div
-      className="signin-rise-3 hidden w-full rounded-2xl border border-brand-deep/40 bg-[#161618]/80 p-4 md:block"
+      className="signin-rise-3 hidden w-full rounded-2xl border border-white/10 bg-card/80 p-4 md:block"
       aria-hidden
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright/80">

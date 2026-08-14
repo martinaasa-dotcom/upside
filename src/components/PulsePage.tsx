@@ -175,7 +175,7 @@ function PulseCard({
             ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30"
             : c.needsAttention
               ? "border-rose-500/30 bg-rose-950/15"
-              : "border-zinc-800 bg-[#161618]/60"
+              : "border-zinc-800 bg-card/70"
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -776,7 +776,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) 
           <button
             type="submit"
             disabled={!searchInput.trim() || pinnedLoading}
-              className="w-full shrink-0 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-40 sm:w-auto sm:py-2"
+              className="btn-primary w-full shrink-0 px-3 text-xs disabled:opacity-40 sm:w-auto sm:py-2"
           >
             {pinnedLoading ? "Checking …" : "Check"}
           </button>

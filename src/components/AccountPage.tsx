@@ -40,7 +40,7 @@ function VisitStreakCard() {
   }, []);
   if (!streak || streak.totalVisits <= 0) return null;
   return (
-    <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+    <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
       <h2 className="text-sm font-semibold text-white">Showing up</h2>
       <p className="text-xs text-zinc-400">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
@@ -221,7 +221,7 @@ export function AccountPage() {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
+      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-100">
         <AppHeader title="Account">
           <button
             type="button"
@@ -248,7 +248,7 @@ export function AccountPage() {
           <VisitStreakCard />
 
           {/* Profile / community appearance */}
-          <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <UserRound className="h-4 w-4" />
@@ -350,7 +350,7 @@ export function AccountPage() {
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-[#121214] hover:bg-brand-bright disabled:opacity-60"
+                className="btn-primary disabled:opacity-60"
               >
                 {savingProfile ? "Saving …" : "Save profile"}
               </button>
@@ -358,7 +358,7 @@ export function AccountPage() {
           </section>
 
           {/* Experience level */}
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <Gauge className="h-4 w-4" />
@@ -436,7 +436,7 @@ export function AccountPage() {
           </section>
 
           {/* Sheet invites live next to the sheet, not here. */}
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <Link2 className="h-4 w-4" />
@@ -461,7 +461,7 @@ export function AccountPage() {
           </section>
 
           {/* Data & privacy */}
-          <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <ShieldCheck className="h-4 w-4" />
@@ -551,7 +551,7 @@ export function AccountPage() {
               the sole owner of (holdings included). Shared sheets stay for
               your co-owner. Where possible this also removes your sign-in
               itself, so the account can&apos;t be used again; if it can&apos;t
-              be removed from here, revoke Upside&apos;s access from your
+              be removed from here, revoke Upside Lab&apos;s access from your
               Google account separately if you want that severed too.
             </p>
             <label className="mt-4 block space-y-1">

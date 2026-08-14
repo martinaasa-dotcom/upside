@@ -1,4 +1,5 @@
 import { twMerge } from "tailwind-merge";
+import { roundMoney } from "@/lib/money";
 
 /**
  * Every formatter rejects non-finite input, not just NaN. Division by a
@@ -22,7 +23,7 @@ export function currency(
     currency: code,
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  }).format(value);
+  }).format(roundMoney(value, digits));
 }
 
 /** `value` is a fraction (0.123 → 12.3%). Default: 1 decimal place. */
@@ -37,7 +38,7 @@ export function number(value: number | null | undefined, digits = 0): string {
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  }).format(value);
+  }).format(roundMoney(value, digits));
 }
 
 export function signedCurrency(

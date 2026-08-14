@@ -45,7 +45,7 @@ function JoinInner() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#121214] px-4 text-zinc-100">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-app px-4 text-zinc-100">
         <UpsideLogo variant="mark" className="h-10 w-10" />
         {error ? (
           <p className="text-sm text-red-400">{error}</p>
@@ -63,7 +63,7 @@ export default function JoinCommunityPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-[#121214] text-zinc-400">
+        <div className="flex min-h-dvh items-center justify-center bg-app text-zinc-400">
           Loading …
         </div>
       }

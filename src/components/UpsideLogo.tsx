@@ -1,10 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { PRODUCT_NAME } from "@/lib/product";
 
 type Props = {
   className?: string;
-  /** `mark` = faceted A only; `wordmark` = mark + UPSIDE; `icon` = stacked lockup */
+  /** `mark` = faceted delta only; `wordmark` = mark + UPSIDE LAB; `icon` = stacked lockup */
   variant?: "mark" | "wordmark" | "icon";
   title?: string;
 };
@@ -13,7 +14,7 @@ type Props = {
 export const UPSIDE_HEADER_WORDMARK_CLASS =
   "text-[15px] leading-none text-white";
 
-/** Faceted geometric A — champagne → bronze, light from upper-right. */
+/** Faceted gold delta — light from upper-right. Gold lives on the mark. */
 function UpsideMark({ className }: { className?: string }) {
   return (
     <svg
@@ -22,19 +23,19 @@ function UpsideMark({ className }: { className?: string }) {
       fill="none"
       aria-hidden
     >
-      <polygon points="50.00,4.00 34.67,34.67 50.00,28.00" fill="#D4B87A" />
-      <polygon points="50.00,4.00 50.00,28.00 65.33,34.67" fill="#E8D5B5" />
-      <polygon points="34.67,34.67 37.00,40.00 50.00,28.00" fill="#A87E3A" />
-      <polygon points="50.00,28.00 37.00,40.00 63.00,40.00" fill="#C5A059" />
-      <polygon points="50.00,28.00 63.00,40.00 65.33,34.67" fill="#D4B87A" />
-      <polygon points="34.67,34.67 19.33,65.33 37.00,40.00" fill="#825E2D" />
-      <polygon points="37.00,40.00 19.33,65.33 50.00,62.00" fill="#6B4A22" />
-      <polygon points="65.33,34.67 63.00,40.00 80.67,65.33" fill="#E8D5B5" />
-      <polygon points="63.00,40.00 50.00,62.00 80.67,65.33" fill="#C5A059" />
-      <polygon points="19.33,65.33 4.00,96.00 28.00,96.00" fill="#6B4A22" />
-      <polygon points="19.33,65.33 28.00,96.00 50.00,62.00" fill="#825E2D" />
-      <polygon points="80.67,65.33 72.00,96.00 96.00,96.00" fill="#A87E3A" />
-      <polygon points="80.67,65.33 50.00,62.00 72.00,96.00" fill="#D4B87A" />
+      <polygon points="50.00,4.00 34.67,34.67 50.00,28.00" fill="#D6AD69" />
+      <polygon points="50.00,4.00 50.00,28.00 65.33,34.67" fill="#EED7B5" />
+      <polygon points="34.67,34.67 37.00,40.00 50.00,28.00" fill="#9C723F" />
+      <polygon points="50.00,28.00 37.00,40.00 63.00,40.00" fill="#D6AD69" />
+      <polygon points="50.00,28.00 63.00,40.00 65.33,34.67" fill="#D6AD69" />
+      <polygon points="34.67,34.67 19.33,65.33 37.00,40.00" fill="#7A5A32" />
+      <polygon points="37.00,40.00 19.33,65.33 50.00,62.00" fill="#5C4328" />
+      <polygon points="65.33,34.67 63.00,40.00 80.67,65.33" fill="#EED7B5" />
+      <polygon points="63.00,40.00 50.00,62.00 80.67,65.33" fill="#D6AD69" />
+      <polygon points="19.33,65.33 4.00,96.00 28.00,96.00" fill="#5C4328" />
+      <polygon points="19.33,65.33 28.00,96.00 50.00,62.00" fill="#7A5A32" />
+      <polygon points="80.67,65.33 72.00,96.00 96.00,96.00" fill="#9C723F" />
+      <polygon points="80.67,65.33 50.00,62.00 72.00,96.00" fill="#D6AD69" />
     </svg>
   );
 }
@@ -42,7 +43,7 @@ function UpsideMark({ className }: { className?: string }) {
 export function UpsideLogo({
   className,
   variant = "wordmark",
-  title = "Upside",
+  title = PRODUCT_NAME,
 }: Props) {
   if (variant === "icon") {
     return (
@@ -55,8 +56,8 @@ export function UpsideLogo({
         aria-label={title}
       >
         <UpsideMark className="h-[4.5rem] w-[4.5rem]" />
-        <span className="-mr-[0.35em] text-center text-[0.95rem] font-semibold uppercase leading-none tracking-[0.35em] text-white">
-          Upside
+        <span className="-mr-[0.2em] text-center text-[0.95rem] font-semibold uppercase leading-none tracking-[0.28em] text-white">
+          Upside Lab
         </span>
       </span>
     );
@@ -70,17 +71,9 @@ export function UpsideLogo({
     );
   }
 
-  // Wordmark: true vertical center — mark midline = UPSIDE cap midline.
-  // Do not use items-baseline / positive top offsets (those drop the mark).
-  //
-  // `items-center` centers both children by full box height, but that's
-  // not quite the same as matching visual centers: the mark's triangle
-  // fills its square box symmetrically, while the text's line-height:1
-  // box reserves a bit more room below the cap-height (for a descender
-  // that this all-caps word never uses) than above it. Box-centering both
-  // therefore leaves the mark looking a hair low against the caps — a
-  // small upward nudge on the mark alone corrects the optical center
-  // without touching the text.
+  // Wordmark: true vertical center — mark midline = cap midline.
+  // `items-center` plus a small upward nudge on the mark corrects the
+  // optical center (the all-caps line-box has unused descender room).
   return (
     <span
       className={cn(
@@ -91,8 +84,8 @@ export function UpsideLogo({
       aria-label={title}
     >
       <UpsideMark className="h-[1em] w-[1em] -translate-y-[0.08em]" />
-      <span className="-mr-[0.22em] hidden font-semibold uppercase leading-none tracking-[0.22em] xs:inline">
-        Upside
+      <span className="-mr-[0.14em] hidden font-semibold uppercase leading-none tracking-[0.14em] xs:inline">
+        Upside Lab
       </span>
     </span>
   );

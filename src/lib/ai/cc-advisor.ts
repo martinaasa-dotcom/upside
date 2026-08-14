@@ -780,7 +780,7 @@ ${ccTable}`;
 
   return `${MARGUS_PERSONA}
 
-This chat thread is for Upside portfolio "${ctx.portfolioName}" only.
+This chat thread is for Upside Lab portfolio "${ctx.portfolioName}" only.
 Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
 
 ${writeBlock}

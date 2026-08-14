@@ -19,7 +19,7 @@ const CNN_URL =
 
 const CNN_HEADERS = {
   "User-Agent":
-    "Mozilla/5.0 (compatible; Upside/1.0; +" + siteUrl() + ")",
+    "Mozilla/5.0 (compatible; UpsideLab/1.0; +" + siteUrl() + ")",
   Accept: "application/json, text/plain, */*",
   Referer: "https://www.cnn.com/markets/fear-and-greed",
   Origin: "https://www.cnn.com",

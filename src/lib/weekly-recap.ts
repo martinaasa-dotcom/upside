@@ -21,7 +21,7 @@ const SIGN_OFFS = [
 export function buildWeeklyRecap(model: OverviewModel): string {
   const lines: string[] = [];
   const d = new Date();
-  lines.push(`Upside weekly recap · ${d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`);
+  lines.push(`Upside Lab weekly recap · ${d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`);
   lines.push("");
   lines.push(
     `Book value ${fmt(model.totals.totalValue)} · ROI ${pct(model.totals.roiPct)} (${fmt(model.totals.roiDollar)}) · cash ${fmt(model.totals.cash)}`

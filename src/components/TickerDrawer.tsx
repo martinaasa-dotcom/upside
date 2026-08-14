@@ -146,7 +146,7 @@ export function TickerDrawer({
         aria-label="Close drawer"
         onClick={onClose}
       />
-      <div className="relative flex h-full w-full max-w-none flex-col border-l border-zinc-700/80 bg-[#121214] shadow-2xl sm:max-w-md">
+      <div className="relative flex h-full w-full max-w-none flex-col border-l border-zinc-700/80 bg-app shadow-2xl sm:max-w-md">
         <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -200,7 +200,7 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4">
+          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-white">

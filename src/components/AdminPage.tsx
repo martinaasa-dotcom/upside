@@ -159,7 +159,7 @@ export function AdminPage() {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
+      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#14110e_0%,_#08090C_55%)] text-zinc-100">
         <AppHeader title="Admin" />
 
         <main className="mx-auto max-w-4xl space-y-8 px-4 py-8">
@@ -208,7 +208,7 @@ export function AdminPage() {
                     ).map(([label, n]) => (
                       <div
                         key={label}
-                        className="rounded-xl border border-brand-deep/30 bg-[#161618]/70 px-3 py-3"
+                        className="rounded-xl border border-brand-deep/30 bg-card/80 px-3 py-3"
                       >
                         <p className="text-lg font-semibold tabular-nums text-white">
                           {n}
@@ -260,7 +260,7 @@ export function AdminPage() {
                     Nothing logged, all clear.
                   </p>
                 ) : (
-                  <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+                  <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-brand-deep/30 bg-card/80">
                     {errorLog.map((e) => {
                       const open = expandedError === e.id;
                       return (
@@ -347,7 +347,7 @@ export function AdminPage() {
                     />
                   </div>
                 )}
-                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-[#161618]/70">
+                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
                   {filteredUsers.length === 0 ? (
                     <li className="px-4 py-6 text-center text-sm text-zinc-400">
                       {users.length === 0
@@ -424,14 +424,14 @@ export function AdminPage() {
                 </div>
                 <div className="space-y-3">
                   {communities.length === 0 ? (
-                    <p className="rounded-2xl border border-brand-deep/30 bg-[#161618]/70 px-4 py-6 text-center text-sm text-zinc-400">
+                    <p className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
                       No communities yet.
                     </p>
                   ) : (
                     communities.map((c) => (
                       <article
                         key={c.id}
-                        className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4"
+                        className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>
