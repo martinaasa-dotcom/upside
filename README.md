@@ -28,7 +28,7 @@ Not financial advice. Pulse, Forecast, and Margus are educational scenario tools
 
 Google SSO. Shared books use co-ownership (`portfell_portfolio_owners`). Communities are opt-in only: invite or an admin-approved join request. Never auto-join on sign-in.
 
-Production data belongs on a dedicated Upside Lab Supabase project (`portfell_*` tables). Isolation is env (URL + keys), not a table rename. See `docs/UPSIDE_LAB_CUTOVER.md` and `scripts/export-upside-schema.sql`.
+Production data belongs on the dedicated Upside Lab Supabase project (`uzrnybyggznpvgxgrvgl`, `portfell_*` tables). Isolation is env (URL + keys), not a table rename. See `docs/UPSIDE_LAB_CUTOVER.md` and `scripts/export-upside-schema.sql`.
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=...
