@@ -64,7 +64,7 @@ import {
   loadConvictionMap,
   setConviction,
 } from "@/lib/conviction";
-import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
+import { PULSE_REFRESH_MS, effectiveMove } from "@/lib/thesis-pulse";
 import {
   milestoneToast,
   recordVisitToday,
@@ -117,6 +117,7 @@ import {
   PULSE_TAB_ID,
   SEASONALITY_TAB_ID,
   buildOverview,
+  todayDollarFor,
 } from "@/lib/overview";
 import type {
   Holding,
@@ -697,16 +698,26 @@ export function Dashboard() {
     [bookAlerts, alertToastsSent]
   );
 
-  // Glanceable up/down dot per sheet tab — null while today's move is 0/unknown
-  // so the tab stays neutral rather than defaulting to a misleading color.
+  // Glanceable up/down dot per sheet tab. Uses the same live move Pulse
+  // does (regular, pre-market, or after-hours), so the dots don't vanish
+  // the moment the regular session prints $0.
   const sheetTodayTone = useMemo(() => {
     const map: Record<string, "up" | "down" | null> = {};
     for (const s of overview.sheets) {
+      let dollar = 0;
+      for (const h of holdings) {
+        if (h.portfolio_id !== s.portfolio.id) continue;
+        const q = quotes[h.ticker];
+        const pct = effectiveMove(q).pct;
+        if (pct == null) continue;
+        const value = h.shares * (q?.price ?? h.buy_price);
+        dollar += todayDollarFor(value, pct).dollar;
+      }
       map[s.portfolio.id] =
-        s.todayDollar > 0 ? "up" : s.todayDollar < 0 ? "down" : null;
+        dollar > 0 ? "up" : dollar < 0 ? "down" : null;
     }
     return map;
-  }, [overview.sheets]);
+  }, [overview.sheets, holdings, quotes]);
 
   const forecast = useMemo(() => {
     if (!activePortfolio) return null;

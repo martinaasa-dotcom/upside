@@ -331,7 +331,7 @@ export function PortfolioTabs({
                       <span
                         aria-hidden
                         className={cn(
-                          "h-1.5 w-1.5 shrink-0 rounded-full",
+                          "h-2 w-2 shrink-0 rounded-full",
                           tone === "up" ? "bg-gain" : "bg-loss"
                         )}
                         title={
