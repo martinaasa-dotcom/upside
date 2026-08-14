@@ -48,7 +48,6 @@ import {
   Shield,
   Shuffle,
   Sparkles,
-  Target,
   Trash2,
   Trophy,
   UserCheck,
@@ -1147,132 +1146,131 @@ export function CommunityView({ communityId }: Props) {
                               setSelectedOwnerId(m.id);
                               setSelectedPortfolioId(null);
                             }}
-                            className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 text-left transition hover:border-brand/40 sm:p-5"
+                            className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 text-left transition hover:border-brand/40"
                           >
                             <div className="flex items-start gap-3">
-                              <span className="text-3xl" aria-hidden>
+                              <span className="text-2xl leading-none" aria-hidden>
                                 {m.personality?.animalEmoji ?? "❔"}
                               </span>
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold text-white">
-                                  {m.name}
-                                  {m.isYou && (
-                                    <span className="ml-1.5 text-xs font-normal text-zinc-400">
-                                      (you)
-                                    </span>
-                                  )}
-                                  {m.isPending && (
-                                    <span className="ml-1.5 text-xs font-normal text-amber-500/90">
-                                      awaiting sign-in
-                                    </span>
-                                  )}
-                                </p>
-                                <p className="text-xs font-medium text-brand-bright">
+                                <div className="flex items-baseline justify-between gap-3">
+                                  <p className="truncate text-sm font-semibold text-white">
+                                    {m.name}
+                                    {m.isYou && (
+                                      <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                                        (you)
+                                      </span>
+                                    )}
+                                    {m.isPending && (
+                                      <span className="ml-1.5 text-xs font-normal text-amber-500/90">
+                                        awaiting sign-in
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className="shrink-0 text-sm font-semibold tabular-nums text-white">
+                                    {currency(m.totalValue, 0)}
+                                  </p>
+                                </div>
+                                <p
+                                  className="mt-0.5 text-sm text-brand-bright"
+                                  title={m.personality?.whyThisAnimal}
+                                >
                                   {m.personality?.animal ?? "No book yet"}
                                 </p>
                               </div>
-                              <p className="shrink-0 text-sm font-semibold tabular-nums text-zinc-200">
-                                {currency(m.totalValue, 0)}
-                              </p>
                             </div>
 
                             {m.personality && (
-                              <div className="mt-4 space-y-4">
-                                <p className="text-xs leading-relaxed text-zinc-400">
-                                  {m.personality.archetype.vibe}
-                                </p>
-                                {/* The line above describes the archetype and
-                                  * reads identically for everyone who lands on
-                                  * it. This one says why this book in
-                                  * particular did, using its own scores. */}
-                                <p className="rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-xs leading-relaxed text-zinc-300">
-                                  <span className="font-medium text-brand-bright">
-                                    Why {m.personality.animal}:
-                                  </span>{" "}
-                                  {m.personality.whyThisAnimal}
-                                </p>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                  <ScoreBar
-                                    label="Diversification"
-                                    score={m.personality.diversificationScore}
-                                    band={m.personality.diversificationBand.label}
-                                    color="#38bdf8"
-                                  />
-                                  <ScoreBar
-                                    label="Risk"
-                                    score={m.personality.riskScore}
-                                    band={m.personality.riskBand.label}
-                                    color="#f472b6"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-3 gap-x-3 gap-y-2">
-                                  <PersonalityMetric
-                                    label="Expected growth"
-                                    value={`${m.personality.expectedAnnualReturnPct.toFixed(1)}%`}
-                                    hint="a year, modeled"
-                                  />
-                                  <PersonalityMetric
-                                    label="Max drawdown"
-                                    value={`${m.personality.maxDrawdownPct}%`}
-                                    hint="bad stretch"
-                                    tone="down"
-                                  />
-                                  <PersonalityMetric
-                                    label="Modeled alpha"
-                                    value={signedPctPoints(m.personality.modeledAlphaPct)}
-                                    hint="vs same-risk index"
-                                    tone={
-                                      m.personality.modeledAlphaPct > 0
-                                        ? "up"
-                                        : m.personality.modeledAlphaPct < 0
-                                          ? "down"
-                                          : undefined
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <div className="flex items-center justify-between gap-2 text-xs">
-                                    <span className="inline-flex items-center gap-1 text-zinc-400">
-                                      <Target className="h-3 w-3 shrink-0" />
-                                      {m.milestone.next != null ? (
-                                        <>
-                                          Next{" "}
-                                          <span className="font-medium text-zinc-300">
-                                            {currency(m.milestone.next, 0)}
-                                          </span>
-                                        </>
-                                      ) : (
-                                        "🎉 top of the ladder"
+                              <div className="mt-4 space-y-3">
+                                <div className="grid grid-cols-2 gap-x-6">
+                                  <div>
+                                    <p className="text-xs text-zinc-400">Spread</p>
+                                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
+                                      {Math.round(
+                                        m.personality.diversificationScore
                                       )}
-                                    </span>
-                                    {m.milestone.next != null && (
-                                      <span className="tabular-nums text-zinc-400">
-                                        {Math.round(m.milestone.progress * 100)}%
-                                        there
+                                      <span className="text-xs font-normal text-zinc-500">
+                                        /100
                                       </span>
-                                    )}
+                                    </p>
+                                    <p className="text-xs text-zinc-500">
+                                      {m.personality.diversificationBand.label}
+                                    </p>
                                   </div>
-                                  {m.milestone.next != null && (
-                                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800">
+                                  <div>
+                                    <p className="text-xs text-zinc-400">Risk</p>
+                                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
+                                      {Math.round(m.personality.riskScore)}
+                                      <span className="text-xs font-normal text-zinc-500">
+                                        /100
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-zinc-500">
+                                      {m.personality.riskBand.label}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-x-3 border-t border-zinc-800/80 pt-3">
+                                  <div>
+                                    <p className="text-sm font-semibold tabular-nums text-white">
+                                      {m.personality.expectedAnnualReturnPct.toFixed(1)}%
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-zinc-500">
+                                      a year
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold tabular-nums text-loss">
+                                      {m.personality.maxDrawdownPct}%
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-zinc-500">
+                                      stretch
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p
+                                      className={cn(
+                                        "text-sm font-semibold tabular-nums",
+                                        signedTone(
+                                          m.personality.modeledAlphaPct,
+                                          "text-white"
+                                        )
+                                      )}
+                                    >
+                                      {signedPctPoints(
+                                        m.personality.modeledAlphaPct
+                                      )}
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-zinc-500">
+                                      vs index
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {m.milestone.next != null && (
+                                  <div className="border-t border-zinc-800/80 pt-3">
+                                    <div className="flex items-baseline justify-between gap-2 text-xs text-zinc-400">
+                                      <span>
+                                        Next{" "}
+                                        <span className="font-medium text-zinc-300">
+                                          {currency(m.milestone.next, 0)}
+                                        </span>
+                                      </span>
+                                      <span className="tabular-nums">
+                                        {Math.round(m.milestone.progress * 100)}%
+                                      </span>
+                                    </div>
+                                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-zinc-800">
                                       <div
-                                        className="h-full rounded-full bg-gradient-to-r from-brand to-brand-bright"
+                                        className="h-full rounded-full bg-brand"
                                         style={{
                                           width: `${Math.round(m.milestone.progress * 100)}%`,
                                         }}
                                       />
                                     </div>
-                                  )}
-                                </div>
-                                <div className="space-y-1.5 rounded-lg border border-zinc-800/60 bg-zinc-950/40 p-2.5 text-xs leading-relaxed">
-                                  <p className="flex gap-1.5 text-emerald-300/90">
-                                    <Shield className="mt-0.5 h-3 w-3 shrink-0" />
-                                    <span>{m.personality.archetype.strength}</span>
-                                  </p>
-                                  <p className="flex gap-1.5 text-amber-300/90">
-                                    <span className="shrink-0">⚠️</span>
-                                    <span>{m.personality.archetype.watchFor}</span>
-                                  </p>
-                                </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </button>
@@ -2206,74 +2204,11 @@ export function CommunityView({ communityId }: Props) {
   );
 }
 
-/** Score + qualitative band + bar, with real breathing room — replaces the
- * old cramped label/bar/number row that had nowhere to put the band text. */
 function signedPctPoints(n: number): string {
   const abs = Math.abs(n).toFixed(1);
   if (n > 0) return `+${abs}%`;
   if (n < 0) return `-${abs}%`;
   return `${abs}%`;
-}
-
-function PersonalityMetric({
-  label,
-  value,
-  hint,
-  tone,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: "up" | "down";
-}) {
-  return (
-    <div className="min-w-0">
-      <p className="text-xs uppercase tracking-wide text-zinc-400">{label}</p>
-      <p
-        className={cn(
-          "mt-0.5 text-sm font-semibold tabular-nums",
-          tone === "up" && "text-gain",
-          tone === "down" && "text-loss",
-          !tone && "text-zinc-100"
-        )}
-      >
-        {value}
-      </p>
-      {hint ? <p className="mt-0.5 text-xs text-zinc-500">{hint}</p> : null}
-    </div>
-  );
-}
-
-function ScoreBar({
-  label,
-  score,
-  band,
-  color,
-}: {
-  label: string;
-  score: number;
-  band: string;
-  color: string;
-}) {
-  return (
-    <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/30 p-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs text-zinc-400">{label}</span>
-        <span className="text-xs font-medium text-zinc-300">
-          {band} <span className="text-zinc-400">· {Math.round(score)}</span>
-        </span>
-      </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-zinc-800">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{
-            width: `${Math.max(0, Math.min(100, score))}%`,
-            backgroundColor: color,
-          }}
-        />
-      </div>
-    </div>
-  );
 }
 
 function Stat({
