@@ -12,7 +12,6 @@ import {
   MicroLabel,
   Panel,
   PanelHeader,
-  Pill,
   Segmented,
   Stat,
 } from "@/components/ui/Panel";
@@ -30,7 +29,7 @@ import {
   type BriefingLink,
 } from "@/lib/investor-briefing";
 import type { UpsideAlert } from "@/lib/alerts";
-import { sessionLabel, sessionShort, sessionKind } from "@/lib/market-session";
+import { sessionLabel, sessionKind } from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CoveredCallRow } from "@/lib/types";
 import {
@@ -551,6 +550,23 @@ export function OverviewDashboard({
             title="Today"
             actions={
               <>
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400"
+                  title={sessionLabel(marketState)}
+                >
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 shrink-0 rounded-full",
+                      kind === "open"
+                        ? "bg-gain"
+                        : kind === "pre" || kind === "ah"
+                          ? "bg-amber-400"
+                          : "bg-zinc-500"
+                    )}
+                    aria-hidden
+                  />
+                  {sessionLabel(marketState)}
+                </span>
                 {onAskMargus && (
                   <button
                     type="button"
@@ -561,18 +577,6 @@ export function OverviewDashboard({
                     Ask Margus
                   </button>
                 )}
-                <Pill
-                  tone={
-                    kind === "open"
-                      ? "good"
-                      : kind === "pre" || kind === "ah"
-                        ? "warn"
-                        : "neutral"
-                  }
-                  title={sessionLabel(marketState)}
-                >
-                  {sessionShort(marketState)}
-                </Pill>
               </>
             }
           />
