@@ -84,7 +84,6 @@ export function PortfolioTabs({
     if (hiddenModeIds.includes(m.id)) return false;
     return true;
   });
-  const modeCols = modes.length;
 
   useEffect(() => {
     setMounted(true);
@@ -201,13 +200,7 @@ export function PortfolioTabs({
             <div
               role="tablist"
               aria-label="In your book"
-              className={cn(
-                "grid h-12 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:h-11",
-                modeCols === 2 && "grid-cols-2 sm:w-[14rem]",
-                modeCols === 3 && "grid-cols-3 sm:w-[21rem]",
-                modeCols === 4 && "grid-cols-4 sm:w-[28rem]",
-                modeCols >= 5 && "grid-cols-5 sm:w-[35rem]"
-              )}
+              className="flex h-12 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:h-11 sm:w-auto"
             >
               {modes.map(({ id, label, shortLabel, Icon }) => {
                 const active = activeId === id;
@@ -223,17 +216,19 @@ export function PortfolioTabs({
                       onChange(id);
                     }}
                     className={cn(
-                      "touch-target flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 font-medium transition sm:flex-row sm:gap-1.5 sm:px-2",
+                      "touch-target flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
+                      "sm:flex-none sm:flex-row sm:gap-1.5 sm:px-3.5",
+                      "first:pl-2 last:pr-2.5 sm:first:pl-4 sm:last:pr-4",
                       active
                         ? "bg-white text-black shadow-sm"
                         : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />
-                    <span className="max-w-full truncate text-xs leading-none sm:hidden">
+                    <span className="max-w-full text-xs leading-none sm:hidden">
                       {shortLabel}
                     </span>
-                    <span className="hidden truncate text-[13px] sm:inline">
+                    <span className="hidden whitespace-nowrap text-[13px] sm:inline">
                       {label}
                     </span>
                   </button>
