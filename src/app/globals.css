@@ -40,6 +40,7 @@
   --color-border: var(--border);
   --font-sans: var(--font-newsreader);
   --font-heading: var(--font-newsreader);
+  --font-logo: var(--font-outfit);
   --font-mono: ui-monospace, Menlo, Consolas, monospace;
   /* Tailwind ships no xs breakpoint, and WorkspaceSwitcher was already
      using xs:inline to show nav labels on larger phones. Without this the

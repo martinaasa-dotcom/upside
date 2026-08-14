@@ -663,10 +663,15 @@ run("one editorial serif, not a stacked tech type stack", () => {
     "utf8"
   );
   assert.match(layout, /Newsreader/);
+  assert.match(layout, /Outfit/);
   assert.doesNotMatch(layout, /Inter|Montserrat|JetBrains/);
   assert.match(css, /font-newsreader/);
+  assert.match(css, /font-logo/);
   assert.doesNotMatch(css, /font-inter|font-montserrat|font-jetbrains/);
-  assert.doesNotMatch(code(logo), /uppercase/);
+  assert.match(code(logo), /font-logo/);
+  assert.match(code(logo), /uppercase/);
+  assert.match(code(logo), /Upside/);
+  assert.match(code(logo), /Lab/);
   assert.doesNotMatch(code(logo), /tracking-\[0\./);
 });
 

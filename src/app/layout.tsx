@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader } from "next/font/google";
+import { Newsreader, Outfit } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
@@ -17,6 +17,13 @@ const newsreader = Newsreader({
   display: "swap",
   style: ["normal", "italic"],
   axes: ["opsz"],
+});
+
+/** Lockup only. UI copy stays on Newsreader. */
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -80,7 +87,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-timezone="Europe/Tallinn">
       <body
-        className={`${newsreader.variable} antialiased`}
+        className={`${newsreader.variable} ${outfit.variable} antialiased`}
       >
         <Providers>{children}</Providers>
         <Analytics />

@@ -36,7 +36,7 @@ const BRAND_INTERACTION_CLASS = cn(
 );
 
 /**
- * App-chrome brand lockup. Always the same centered mark + Upside Lab wordmark.
+ * App-chrome brand lockup. Gold mark plus UPSIDE LAB, same as the board.
  */
 export function HeaderBrand({
   className,

@@ -6,14 +6,14 @@ import { useId } from "react";
 
 type Props = {
   className?: string;
-  /** `mark` = faceted delta only; `wordmark` = mark + name; `icon` = stacked lockup */
+  /** `mark` = faceted A only; `wordmark` = mark + name; `icon` = large lockup */
   variant?: "mark" | "wordmark" | "icon";
   title?: string;
 };
 
 /** Canonical header chrome size — keep every app bar on the same lockup. */
 export const UPSIDE_HEADER_WORDMARK_CLASS =
-  "text-[15px] leading-none text-white";
+  "text-[14px] leading-none text-white";
 
 /** Ten-facet gold A, traced from the source mark. Light from upper-right. */
 const MARK_FACETS: { points: string; hi: string; lo: string }[] = [
@@ -61,31 +61,26 @@ function UpsideMark({ className }: { className?: string }) {
   );
 }
 
+/** Brand-board type: UPSIDE bold, LAB regular. CSS caps, spoken name stays title case. */
+function LogoType({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "font-logo uppercase leading-none tracking-wide text-white",
+        className
+      )}
+    >
+      <span className="font-bold">Upside</span>
+      <span className="font-normal"> Lab</span>
+    </span>
+  );
+}
+
 export function UpsideLogo({
   className,
   variant = "wordmark",
   title = PRODUCT_NAME,
 }: Props) {
-  if (variant === "icon") {
-    return (
-      <span
-        className={cn(
-          "inline-flex flex-col items-center justify-center gap-3",
-          className
-        )}
-        role="img"
-        aria-label={title}
-      >
-        <span className="flex h-[4.75rem] w-[4.75rem] items-center justify-center rounded-[1.2rem] border border-brand bg-[#0C1014] p-2.5">
-          <UpsideMark className="h-full w-full" />
-        </span>
-        <span className="text-center font-heading text-[0.95rem] font-semibold leading-none text-white">
-          Upside Lab
-        </span>
-      </span>
-    );
-  }
-
   if (variant === "mark") {
     return (
       <span className={cn("inline-flex", className)} role="img" aria-label={title}>
@@ -94,20 +89,30 @@ export function UpsideLogo({
     );
   }
 
-  // Wordmark: mark sits on the same midline as the title-case name.
+  if (variant === "icon") {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-3.5 text-[1.75rem] leading-none",
+          className
+        )}
+        role="img"
+        aria-label={title}
+      >
+        <UpsideMark className="h-[1.15em] w-[1.15em]" />
+        <LogoType />
+      </span>
+    );
+  }
+
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1.5 leading-none text-white",
-        className
-      )}
+      className={cn("inline-flex items-center gap-2.5 leading-none", className)}
       role="img"
       aria-label={title}
     >
-      <UpsideMark className="h-[1.15em] w-[1.15em]" />
-      <span className="hidden font-heading font-semibold leading-none xs:inline">
-        Upside Lab
-      </span>
+      <UpsideMark className="h-[1.25em] w-[1.25em]" />
+      <LogoType className="hidden xs:inline" />
     </span>
   );
 }
