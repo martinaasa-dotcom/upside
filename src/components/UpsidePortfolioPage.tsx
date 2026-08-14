@@ -20,6 +20,10 @@ import {
 } from "@/lib/margus-fund-mark";
 import { fundCopyBullets } from "@/lib/fund-copy";
 import {
+  sanitizeFundWatchlist,
+  type FundWatchItem,
+} from "@/lib/fund-watchlist";
+import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
 } from "@/lib/upside-portfolio-cache";
@@ -112,6 +116,8 @@ type FundRow = {
   cash: number;
   starting_capital: number;
   inception_date: string;
+  watchlist?: FundWatchItem[] | null;
+  cash_purpose?: string | null;
 };
 
 type HoldingRow = {
@@ -468,6 +474,46 @@ export function UpsidePortfolioPage() {
     [openHoldings, quotes]
   );
   const fundThemes = useMemo(() => themeBreakdown(fundValued), [fundValued]);
+  const fundWatchlist = useMemo(
+    () =>
+      sanitizeFundWatchlist(
+        fund?.watchlist,
+        openHoldings.map((h) => h.ticker)
+      ),
+    [fund?.watchlist, openHoldings]
+  );
+  const watchingNote = useMemo(() => {
+    const body = latestReport?.body;
+    if (!body) return null;
+    const parts = body
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const last = parts.at(-1);
+    return last && last.length >= 12 ? last : null;
+  }, [latestReport?.body]);
+  const bettingSlices = useMemo(() => {
+    const slices: {
+      key: string;
+      label: string;
+      pct: number;
+      color: string;
+    }[] = fundThemes.map((t) => ({
+      key: t.theme,
+      label: t.label,
+      pct: totalValue > 0 ? t.value / totalValue : t.pct,
+      color: THEME_COLOR[t.theme],
+    }));
+    if (cash > 0 && totalValue > 0) {
+      slices.push({
+        key: "cash",
+        label: "Cash",
+        pct: cash / totalValue,
+        color: "#71717a",
+      });
+    }
+    return slices;
+  }, [fundThemes, cash, totalValue]);
   const fundConcentration = useMemo(
     () => concentrationRead(fundValued),
     [fundValued]
@@ -924,7 +970,10 @@ export function UpsidePortfolioPage() {
                 <Stat
                   label="Cash"
                   value={currency(cash, 0)}
-                  sub={`of ${currency(fund?.starting_capital ?? 0, 0)} start`}
+                  sub={
+                    fund?.cash_purpose?.trim() ||
+                    `of ${currency(fund?.starting_capital ?? 0, 0)} start`
+                  }
                 />
               </div>
             </section>
@@ -1102,34 +1151,34 @@ export function UpsidePortfolioPage() {
               </div>
             </section>
 
-            {fundThemes.length > 0 && (
+            {bettingSlices.length > 0 && (
               <section className="space-y-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
                   What he&apos;s betting on
                 </h2>
                 <div className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4">
                   <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
-                    {fundThemes.map((t) => (
+                    {bettingSlices.map((t) => (
                       <div
-                        key={t.theme}
+                        key={t.key}
                         style={{
                           width: `${Math.max(1.5, t.pct * 100)}%`,
-                          backgroundColor: THEME_COLOR[t.theme],
+                          backgroundColor: t.color,
                         }}
                         title={`${t.label}: ${Math.round(t.pct * 100)}%`}
                       />
                     ))}
                   </div>
                   <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {fundThemes.map((t) => (
+                    {bettingSlices.map((t) => (
                       <div
-                        key={t.theme}
+                        key={t.key}
                         className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
                       >
                         <span className="flex items-center gap-2 text-xs text-zinc-300">
                           <span
                             className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: THEME_COLOR[t.theme] }}
+                            style={{ backgroundColor: t.color }}
                           />
                           {t.label}
                         </span>
@@ -1158,8 +1207,44 @@ export function UpsidePortfolioPage() {
                     <FundStat
                       label="Cash"
                       value={`${totalValue > 0 ? Math.round((cash / totalValue) * 100) : 0}%`}
-                      hint="Dry powder he's holding back"
+                      hint={
+                        fund?.cash_purpose?.trim() ||
+                        `of ${currency(fund?.starting_capital ?? 0, 0)} start`
+                      }
                     />
+                  </div>
+                  {fund?.cash_purpose?.trim() ? (
+                    <div className="mt-4 border-t border-zinc-800/60 pt-4">
+                      <MicroLabel>Cash is sitting for</MicroLabel>
+                      <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+                        {fund.cash_purpose.trim()}
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="mt-4 border-t border-zinc-800/60 pt-4">
+                    <MicroLabel>Watching</MicroLabel>
+                    {fundWatchlist.length > 0 ? (
+                      <ul className="mt-2 space-y-2">
+                        {fundWatchlist.map((w) => (
+                          <li
+                            key={w.ticker}
+                            className="flex items-start justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                          >
+                            <span className="shrink-0 text-sm font-semibold text-white">
+                              {cashtag(w.ticker)}
+                            </span>
+                            <span className="min-w-0 text-right text-sm leading-relaxed text-zinc-400">
+                              {w.waitFor}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
+                        {watchingNote ??
+                          "He'll name names in the next daily report."}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>

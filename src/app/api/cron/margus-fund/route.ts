@@ -18,6 +18,7 @@ import {
   type FundHolding,
   type PricedHolding,
 } from "@/lib/margus-fund";
+import { sanitizeFundWatchlist } from "@/lib/fund-watchlist";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/error-log";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -32,6 +33,59 @@ function daysBetween(fromIso: string, toIso: string): number {
   const from = new Date(`${fromIso}T00:00:00Z`).getTime();
   const to = new Date(`${toIso}T00:00:00Z`).getTime();
   return Math.max(0, Math.round((to - from) / 86_400_000));
+}
+
+const fundIntentSchema = fundDecisionSchema.pick({
+  watchlist: true,
+  cashPurpose: true,
+});
+
+/** When today's report already exists, still fill watchlist/cash purpose
+ * once so the public page isn't blank until tomorrow's trade run. */
+async function maybeFillFundIntent(
+  supabase: SupabaseClient,
+  fundRow: {
+    cash: number;
+    watchlist?: unknown;
+    cash_purpose?: string | null;
+  },
+  holdings: FundHolding[]
+): Promise<boolean> {
+  const watchlistEmpty =
+    !Array.isArray(fundRow.watchlist) || fundRow.watchlist.length === 0;
+  const purposeEmpty = !String(fundRow.cash_purpose ?? "").trim();
+  if (!watchlistEmpty && !purposeEmpty) return false;
+
+  const chain = buildAdvisorProviderChain({ reasoning: true });
+  if (chain.length === 0) return false;
+
+  const held = holdings.map((h) => h.ticker);
+  const { object: raw } = await withAdvisorFallback(chain, (model) =>
+    generateObject({
+      model,
+      schema: fundIntentSchema,
+      system: buildFundSystemPrompt(),
+      prompt: `Today's trades already happened. Do not open, add, trim, or exit anything. Fill watchlist (1-4 names you do not hold, each with a concrete wait) and cashPurpose (one sentence on why undeployed cash is sitting).
+
+Cash: $${Math.round(Number(fundRow.cash)).toLocaleString("en-US")}
+Open holdings: ${held.join(", ") || "none"}`,
+    })
+  );
+  const intent = humanizeMargusTree(raw);
+  const watchlist = sanitizeFundWatchlist(intent.watchlist, held).map((w) => ({
+    ticker: w.ticker,
+    waitFor: humanizeMargusText(w.waitFor),
+  }));
+  const cashPurpose = humanizeMargusText(intent.cashPurpose ?? "").trim();
+  await supabase
+    .from(PORTFELL_TABLES.margusFund)
+    .update({
+      watchlist,
+      cash_purpose: cashPurpose || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", "main");
+  return true;
 }
 
 /**
@@ -180,7 +234,41 @@ export async function GET(req: Request) {
       .eq("report_date", today)
       .maybeSingle();
     if (existingReport) {
-      return NextResponse.json({ ok: true, skipped: "already ran today" });
+      try {
+        const { data: fundRow } = await supabase
+          .from(PORTFELL_TABLES.margusFund)
+          .select("*")
+          .eq("id", "main")
+          .maybeSingle();
+        const { data: holdingRows } = await supabase
+          .from(PORTFELL_TABLES.margusFundHoldings)
+          .select("*")
+          .eq("status", "open");
+        const filled = fundRow
+          ? await maybeFillFundIntent(
+              supabase,
+              fundRow,
+              (holdingRows ?? []) as FundHolding[]
+            )
+          : false;
+        return NextResponse.json({
+          ok: true,
+          skipped: "already ran today",
+          filledIntent: filled,
+        });
+      } catch (err) {
+        await logError({
+          source: "server",
+          message: `Upside Portfolio intent fill failed: ${err instanceof Error ? err.message : String(err)}`,
+          stack: err instanceof Error ? err.stack : undefined,
+          path: "/api/cron/margus-fund",
+        });
+        return NextResponse.json({
+          ok: true,
+          skipped: "already ran today",
+          filledIntent: false,
+        });
+      }
     }
 
     const { data: fundRow, error: fundErr } = await supabase
@@ -253,6 +341,14 @@ export async function GET(req: Request) {
           spyMovePct,
           fearGreed,
           recentHeadlines,
+          currentWatchlist: sanitizeFundWatchlist(
+            Array.isArray(fundRow.watchlist) ? fundRow.watchlist : [],
+            holdings.map((h) => h.ticker)
+          ),
+          currentCashPurpose:
+            typeof fundRow.cash_purpose === "string"
+              ? fundRow.cash_purpose
+              : null,
         }),
       })
     );
@@ -429,9 +525,29 @@ export async function GET(req: Request) {
     }, 0);
     const totalValueAfter = cash + finalHoldingsValue + newPositionsValue;
 
+    const stillHeld = [
+      ...pricedHoldings
+        .filter((h) => currentShares.has(h.id))
+        .map((h) => h.ticker),
+      ...actions.filter((a) => a.type === "buy").map((a) => a.ticker),
+    ];
+    const watchlist = sanitizeFundWatchlist(
+      decision.watchlist,
+      stillHeld
+    ).map((w) => ({
+      ticker: w.ticker,
+      waitFor: humanizeMargusText(w.waitFor),
+    }));
+    const cashPurpose = humanizeMargusText(decision.cashPurpose ?? "").trim();
+
     await supabase
       .from(PORTFELL_TABLES.margusFund)
-      .update({ cash, updated_at: new Date().toISOString() })
+      .update({
+        cash,
+        watchlist,
+        cash_purpose: cashPurpose || null,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", "main");
 
     const dayChangeDollar =

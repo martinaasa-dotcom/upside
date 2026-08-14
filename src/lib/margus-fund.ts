@@ -1,4 +1,5 @@
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import type { FundWatchItem } from "@/lib/fund-watchlist";
 import { z } from "zod";
 
 export const MARGUS_FUND_START_CAPITAL = 50_000;
@@ -117,11 +118,34 @@ const fundDecisionSchema = z.object({
     .describe(
       "1-2 sentences closing today's report -- what you're watching next. Short."
     ),
+  watchlist: z
+    .array(
+      z.object({
+        ticker: z.string(),
+        waitFor: z
+          .string()
+          .describe(
+            "One concrete sentence: the price, dip, or print you are waiting for. Not a thesis paragraph."
+          ),
+      })
+    )
+    .max(4)
+    .describe(
+      "1-4 names you do NOT already hold. Empty only if you genuinely have nobody on deck."
+    ),
+  cashPurpose: z
+    .string()
+    .describe(
+      "One sentence on why undeployed cash is sitting. If you are nearly fully invested, say you are keeping a small buffer."
+    ),
 });
 
 export type FundDecision = z.infer<typeof fundDecisionSchema>;
 
 export { fundDecisionSchema };
+
+export type { FundWatchItem } from "@/lib/fund-watchlist";
+export { sanitizeFundWatchlist } from "@/lib/fund-watchlist";
 
 function money(n: number): string {
   return `$${Math.round(n).toLocaleString("en-US")}`;
@@ -146,7 +170,9 @@ You run a single, fully simulated (paper money) portfolio that started at ${mone
 - Position sizing discipline: don't let any single new position exceed roughly 25% of total portfolio value, and don't deploy all available cash even on a great idea. Leave room to be wrong and to add later.
 - Most days should have zero or one action. A portfolio that trades every single day isn't disciplined, it's noisy. Only act when something genuinely changed (thesis progressed/broke, timeline elapsed, price hit your own stated level) or a new idea truly clears the bar.
 - Keep every field SHORT. This report gets read daily; nobody wants a wall of text. 1-3 sentences per field, always.
-- thesis and exitPlan are bullet lists, not paragraphs. Semicolon-separated. Each bullet is one fact, under 14 words.`;
+- thesis and exitPlan are bullet lists, not paragraphs. Semicolon-separated. Each bullet is one fact, under 14 words.
+- Always fill watchlist with 1-4 names you do not already hold, each with a concrete wait (a price, a dip, a print). Not "keeping an eye on tech."
+- Always fill cashPurpose in one sentence: what the undeployed cash is waiting for. Sitting in cash without saying why is hiding the ball.`;
 }
 
 const weeklyRecapSchema = z.object({
@@ -227,9 +253,20 @@ export function buildFundUserPrompt(input: {
   spyMovePct: number | null;
   fearGreed: { score: number; rating: string } | null;
   recentHeadlines: string[];
+  currentWatchlist?: FundWatchItem[];
+  currentCashPurpose?: string | null;
 }): string {
-  const { today, cash, holdings, totalValue, spyMovePct, fearGreed, recentHeadlines } =
-    input;
+  const {
+    today,
+    cash,
+    holdings,
+    totalValue,
+    spyMovePct,
+    fearGreed,
+    recentHeadlines,
+    currentWatchlist,
+    currentCashPurpose,
+  } = input;
 
   const holdingsBlock =
     holdings.length === 0
@@ -261,16 +298,31 @@ export function buildFundUserPrompt(input: {
     ? `Recent days, for continuity (don't repeat, don't contradict without explaining why):\n${recentHeadlines.map((h) => `- ${h}`).join("\n")}`
     : "No prior reports yet, this may be day one.";
 
+  const watchBlock =
+    currentWatchlist && currentWatchlist.length > 0
+      ? `Public watchlist yesterday (keep a name if nothing changed, swap it if your view did):\n${currentWatchlist
+          .map((w) => `- ${w.ticker}: ${w.waitFor}`)
+          .join("\n")}`
+      : "No public watchlist yet. Name 1-4 names you do not hold.";
+
+  const cashBlock = currentCashPurpose
+    ? `What you last said cash was for: ${currentCashPurpose}`
+    : "You have not said what undeployed cash is for yet. Fill cashPurpose.";
+
   return `${contextLines.join("\n")}
 
 Cash available: ${money(cash)}
 Total portfolio value: ${money(totalValue)}
+${cashBlock}
 
 ## Current holdings
 ${holdingsBlock}
 
+## Watchlist
+${watchBlock}
+
 ## Recent history
 ${recapBlock}
 
-Decide today's actions. Review every open holding above. Only add a new position if something genuinely clears your bar today; most days that's zero new positions.`;
+Decide today's actions. Review every open holding above. Only add a new position if something genuinely clears your bar today; most days that's zero new positions. Fill watchlist and cashPurpose even on a no-trade day.`;
 }

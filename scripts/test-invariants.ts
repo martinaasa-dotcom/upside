@@ -36,6 +36,7 @@ import {
   quotesCoverDate,
   sheetReturnPathSince,
 } from "../src/lib/sheet-mark";
+import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 
@@ -802,6 +803,33 @@ run("fund stats speak in percent and dollars, not points", () => {
     "utf8"
   );
   assert.doesNotMatch(code(src), /\dpt\b|pt vs SPY|ahead by .*pt/);
+});
+
+run("fund watchlist drops names he already holds", () => {
+  const cleaned = sanitizeFundWatchlist(
+    [
+      { ticker: "$SNOW", waitFor: "A 10% dip off the highs" },
+      { ticker: "snow", waitFor: "duplicate" },
+      { ticker: "AVGO", waitFor: "Wait for a cleaner print" },
+      { ticker: "!!!", waitFor: "junk" },
+      { ticker: "PLTR", waitFor: "   " },
+    ],
+    ["SNOW"]
+  );
+  assert.deepEqual(
+    cleaned.map((w) => w.ticker),
+    ["AVGO"]
+  );
+});
+
+run("fund page names cash purpose and the watchlist", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.match(src, /Watching/);
+  assert.match(src, /Cash is sitting for/);
+  assert.doesNotMatch(code(src), /Dry powder/);
 });
 
 run("first-run is import, not an empty named sheet", () => {
