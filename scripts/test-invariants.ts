@@ -889,6 +889,30 @@ run("nightly snapshots can store mark-to-market", () => {
   assert.match(cron, /payload.marks = computeSnapshotMarks/);
 });
 
+run("Pulse never nags that it is guessing", () => {
+  const pulse = readFileSync(
+    join(process.cwd(), "src/components/PulsePage.tsx"),
+    "utf8"
+  );
+  const chat = readFileSync(
+    join(process.cwd(), "src/app/api/chat/route.ts"),
+    "utf8"
+  );
+  const model = readFileSync(
+    join(process.cwd(), "src/lib/ai/model.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(pulse, /Pulse is guessing/);
+  assert.doesNotMatch(pulse, /Write why you own/);
+  assert.doesNotMatch(pulse, /Pulling news/);
+  assert.match(pulse, /buildFallbackPulseCheck/);
+  assert.match(pulse, /<ActionBadge action=\{action\} \/>/);
+  assert.doesNotMatch(chat, /backup on your next/);
+  assert.doesNotMatch(chat, /The model provider is overloaded/);
+  assert.match(chat, /fallbackChatResponse/);
+  assert.doesNotMatch(model, /The model provider is overloaded/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

@@ -183,7 +183,7 @@ export function TickerDrawer({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <Card className={!thesisDraft.trim() ? "border-amber-500/30 bg-amber-950/15" : undefined}>
+          <Card>
             <MicroLabel>Why you own it</MicroLabel>
             <textarea
               value={thesisDraft}
@@ -194,7 +194,7 @@ export function TickerDrawer({
               className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500 focus:border-brand focus:ring-1 focus:ring-brand/40"
             />
             <p className="mt-1.5 text-xs text-zinc-400">
-              Pulse reads this first. Empty means it is guessing from headlines.
+              Pulse reads this first. Leave it blank and it still works off headlines and the tape.
             </p>
           </Card>
 

@@ -5,8 +5,8 @@ import {
 } from "@/lib/ai/cc-advisor";
 import {
   buildAdvisorProviderChain,
-  describeAdvisorError,
   invalidateStreamingProvider,
+  isTransientAdvisorFailure,
   markProviderUnhealthy,
   pickStreamingProvider,
 } from "@/lib/ai/model";
@@ -14,13 +14,22 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
   stepCountIs,
   streamText,
+  toUIMessageStream,
+  type TextStreamPart,
+  type ToolSet,
   type UIMessage,
 } from "ai";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 120;
+
+const FALLBACK_CHAT_TEXT = "Didn't land. Send it again.";
+
+type StreamPart = { type: string };
 
 function messagesHaveImages(messages: UIMessage[]): boolean {
   return messages.some((m) =>
@@ -32,6 +41,69 @@ function messagesHaveImages(messages: UIMessage[]): boolean {
         p.mediaType.startsWith("image/")
     )
   );
+}
+
+function fallbackChatResponse(): Response {
+  const id = "text-fallback";
+  const stream = createUIMessageStream({
+    execute({ writer }) {
+      writer.write({ type: "text-start", id });
+      writer.write({ type: "text-delta", id, delta: FALLBACK_CHAT_TEXT });
+      writer.write({ type: "text-end", id });
+    },
+  });
+  return createUIMessageStreamResponse({ stream });
+}
+
+const USEFUL_PART = new Set([
+  "text-delta",
+  "reasoning-delta",
+  "tool-call",
+  "tool-input-start",
+  "tool-call-streaming-start",
+  "tool-input-delta",
+]);
+
+async function peekUntilUseful(stream: AsyncIterable<StreamPart>): Promise<
+  | { ok: true; prefix: StreamPart[]; iterator: AsyncIterator<StreamPart> }
+  | { ok: false }
+> {
+  const iterator = stream[Symbol.asyncIterator]();
+  const prefix: StreamPart[] = [];
+  for (let i = 0; i < 40; i++) {
+    const step = await iterator.next();
+    if (step.done) return { ok: false };
+    const part = step.value;
+    prefix.push(part);
+    if (part.type === "error") return { ok: false };
+    if (USEFUL_PART.has(part.type)) {
+      return { ok: true, prefix, iterator };
+    }
+  }
+  return { ok: true, prefix, iterator };
+}
+
+function replayParts(
+  prefix: StreamPart[],
+  iterator: AsyncIterator<StreamPart>
+): ReadableStream<TextStreamPart<ToolSet>> {
+  return new ReadableStream({
+    async start(controller) {
+      try {
+        for (const part of prefix) {
+          controller.enqueue(part as TextStreamPart<ToolSet>);
+        }
+        while (true) {
+          const step = await iterator.next();
+          if (step.done) break;
+          controller.enqueue(step.value as TextStreamPart<ToolSet>);
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
 }
 
 export async function POST(req: Request) {
@@ -79,59 +151,77 @@ export async function POST(req: Request) {
 
     const providerChain = buildAdvisorProviderChain({ vision });
     if (providerChain.length === 0) {
-      const { message } = describeAdvisorError(
-        new Error("No LLM key configured")
-      );
-      return Response.json({ error: message }, { status: 503 });
+      return fallbackChatResponse();
     }
     const cacheKey = vision ? "chat:vision" : "chat:text";
-    const provider = await pickStreamingProvider(providerChain, cacheKey);
+    const modelMessages = await convertToModelMessages(messages, { tools });
+    const tried = new Set<string>();
 
-    const result = streamText({
-      model: provider.model,
-      system: buildCcSystemPrompt(ccContext),
-      messages: await convertToModelMessages(messages, {
-        tools,
-      }),
-      tools,
-      // Vision+tools: keep reasoning short so free omni models don't burn the budget and go silent
-      ...(vision
-        ? {
-            providerOptions: {
-              openrouter: {
-                reasoning: { effort: "low", max_tokens: 400 },
-              },
-            },
-            // Force at least one tool when the user sent an image (import / add holding)
-            ...(adviseOnly
-              ? {}
-              : { toolChoice: "required" as const }),
-          }
-        : {}),
-      stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 12),
-      // Retrying a rate-limited provider three more times just deepens the
-      // limit and makes the user wait for four identical failures. One
-      // retry covers a genuine blip; anything worse should move providers,
-      // which the cooldown below arranges for the next message.
-      maxRetries: 1,
-      abortSignal: req.signal,
-      onError: ({ error }) => {
-        console.error(`[chat] provider "${provider.id}" stream error`, error);
+    while (tried.size < providerChain.length) {
+      let provider;
+      try {
+        provider = await pickStreamingProvider(providerChain, cacheKey);
+      } catch (err) {
+        console.error("[chat] no streaming provider available", err);
+        break;
+      }
+      if (tried.has(provider.id)) break;
+      tried.add(provider.id);
+
+      try {
+        const result = streamText({
+          model: provider.model,
+          system: buildCcSystemPrompt(ccContext),
+          messages: modelMessages,
+          tools,
+          ...(vision
+            ? {
+                providerOptions: {
+                  openrouter: {
+                    reasoning: { effort: "low", max_tokens: 400 },
+                  },
+                },
+                ...(adviseOnly ? {} : { toolChoice: "required" as const }),
+              }
+            : {}),
+          stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 12),
+          maxRetries: 1,
+          abortSignal: req.signal,
+          onError: ({ error }) => {
+            console.error(`[chat] provider "${provider.id}" stream error`, error);
+            invalidateStreamingProvider(cacheKey);
+            if (isTransientAdvisorFailure(error)) {
+              markProviderUnhealthy(provider.id);
+            }
+          },
+        });
+
+        const peeked = await peekUntilUseful(result.fullStream);
+        if (!peeked.ok) {
+          console.error(`[chat] provider "${provider.id}" died before the first token`);
+          invalidateStreamingProvider(cacheKey);
+          markProviderUnhealthy(provider.id);
+          continue;
+        }
+
+        return createUIMessageStreamResponse({
+          stream: toUIMessageStream({
+            stream: replayParts(peeked.prefix, peeked.iterator),
+            tools,
+            onError: () => FALLBACK_CHAT_TEXT,
+          }),
+        });
+      } catch (err) {
+        console.error(`[chat] provider "${provider.id}" failed to start`, err);
         invalidateStreamingProvider(cacheKey);
-        // The probe is a 4-token ping that a rate-limited provider still
-        // answers, so without this the same exhausted provider gets
-        // re-picked on the retry and fails again.
-        const { status } = describeAdvisorError(error);
-        if (status === 429 || status === 503) markProviderUnhealthy(provider.id);
-      },
-    });
+        markProviderUnhealthy(provider.id);
+        if (req.signal.aborted) throw err;
+      }
+    }
 
-    return result.toUIMessageStreamResponse({
-      onError: (error) => describeAdvisorError(error).message,
-    });
+    return fallbackChatResponse();
   } catch (err) {
     console.error("[chat]", err);
-    const { message, status } = describeAdvisorError(err);
-    return Response.json({ error: message }, { status });
+    return fallbackChatResponse();
   }
 }

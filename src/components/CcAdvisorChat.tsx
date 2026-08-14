@@ -146,20 +146,20 @@ function extractImages(
  * advice for someone running the app locally, not for Liina on 4G.
  * Only genuinely client-side failures get rewritten now.
  */
+function isQuietChatFailure(message: string): boolean {
+  return /couldn't get a reply|overloaded|unavailable|timed out|timeout|rate.?limit|quota|too many requests|backup on your next/i.test(
+    message
+  );
+}
+
 function describeChatUiError(message: string): string {
   if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(message)) {
     return "The connection dropped before Margus finished. Check your signal and try again.";
   }
-  if (/rate.?limit|quota|used up|too many requests/i.test(message)) {
-    return "Margus is out of replies for a bit. Wait a minute, then try again. He switches models on his own when he can.";
+  if (isQuietChatFailure(message)) {
+    return "Didn't land that time. Send it again.";
   }
-  if (/overloaded|unavailable|timed out|timeout/i.test(message)) {
-    return "The model is overloaded. Try again in a few seconds. Margus will use a backup if he has one.";
-  }
-  if (/AI_[A-Za-z]*Error|Failed after \d+ attempts/i.test(message)) {
-    return "Margus couldn't reach a working model just then. Give it a few seconds and try again.";
-  }
-  return message;
+  return "Couldn't get a reply just then. Send it again.";
 }
 
 function isMdSepCell(cell: string): boolean {
@@ -554,11 +554,22 @@ export function CcAdvisorChat({
     []
   );
 
-  const { messages, sendMessage, status, error, clearError, stop } = useChat({
+  const { messages, sendMessage, status, error, clearError, stop, regenerate } = useChat({
     id: `margus-${portfolioId}`,
     messages: initialMessages,
     transport,
   });
+
+  const chatRetryRef = useRef(false);
+  useEffect(() => {
+    if (!error) return;
+    if (chatRetryRef.current) return;
+    if (!isQuietChatFailure(error.message)) return;
+    if (awaitingSilentSettleRef.current) return;
+    chatRetryRef.current = true;
+    clearError();
+    void regenerate();
+  }, [error, clearError, regenerate]);
 
   useEffect(() => {
     saveChatHistory(portfolioId, messages);
@@ -746,6 +757,7 @@ export function CcAdvisorChat({
     const files = pendingImages;
     setPendingImages([]);
     clearError();
+    chatRetryRef.current = false;
     track("margus_message", {
       has_image: files.length > 0,
       guest: context.adviseOnly,
@@ -1139,19 +1151,19 @@ export function CcAdvisorChat({
               </div>
             )}
 
-            {lastIsEmptyAssistant && !error && (
-              <div className="rounded-lg border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-                Margus returned an empty reply (often a free-model rate limit or
-                a long screenshot import). Wait a few seconds and ask again.
-                For broker sheets, say “import this portfolio breakdown”.
+            {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-400">
+                Didn&apos;t land that time. Send it again.
               </div>
-            )}
-
-            {error && (
-              <div className="rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-xs text-rose-300">
+            ) : error && !isQuietChatFailure(error.message) ? (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-400">
                 {describeChatUiError(error.message)}
               </div>
-            )}
+            ) : lastIsEmptyAssistant && !error ? (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-400">
+                Didn&apos;t land that time. Send it again.
+              </div>
+            ) : null}
           </div>
 
           <form

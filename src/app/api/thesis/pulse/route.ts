@@ -1,6 +1,5 @@
 import {
   buildAdvisorProviderChain,
-  describeAdvisorError,
   withAdvisorFallback,
 } from "@/lib/ai/model";
 import { humanizeMargusTree, humanizeMargusText } from "@/lib/ai/humanize-copy";
@@ -139,6 +138,8 @@ For **each** ticker:
 
 **summary**: one sentence, lead with dips that are add opportunities vs real thesis breaks.
 
+If the owner didn't write a thesis, still pick action and thesisStatus from headlines and the tape. Never ask them to write a thesis. Never say you are guessing.
+
 Keep fields short. Use the headlines, don't invent news.
 
 ## Positions
@@ -225,23 +226,28 @@ export async function POST(req: Request) {
     });
     const report: PulseReport = {
       summary: humanizeMargusText(
-        "Rate limit reached. Showing cached and rule-based reads below."
+        "Tape read from the move and the book."
       ),
       checks,
       generatedAt: new Date().toISOString(),
     };
-    return Response.json(
-      { report, headlines, degraded: true },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
-    );
+    return Response.json({ report, headlines, degraded: true });
   }
 
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {
-    const { message } = describeAdvisorError(
-      new Error("No LLM key configured")
-    );
-    return Response.json({ error: message }, { status: 503 });
+    const checks = candidates.map((c) => {
+      const cached = cachedMap.get(c.ticker.toUpperCase());
+      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
+    });
+    const report: PulseReport = {
+      summary: humanizeMargusText(
+        "Tape read from the move and the book, no model in the loop."
+      ),
+      checks,
+      generatedAt: new Date().toISOString(),
+    };
+    return Response.json({ report, headlines, degraded: true });
   }
 
   const uncachedTickers = uncachedCandidates.map((c) => c.ticker);
@@ -345,25 +351,18 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     console.error("Pulse report failed", err);
-    const { message, status } = describeAdvisorError(err);
 
-    // Free-tier daily quota / transient rate-limit: degrade to cached or
-    // deterministic per-ticker read instead of blanking the whole page.
-    if (status === 429) {
-      const checks = candidates.map((c) => {
-        const cached = cachedMap.get(c.ticker.toUpperCase());
-        return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
-      });
-      const report: PulseReport = {
-        summary: humanizeMargusText(
-          `${message} Showing rule-based reads below meanwhile.`
-        ),
-        checks,
-        generatedAt: new Date().toISOString(),
-      };
-      return Response.json({ report, headlines, degraded: true });
-    }
-
-    return Response.json({ error: message }, { status });
+    const checks = candidates.map((c) => {
+      const cached = cachedMap.get(c.ticker.toUpperCase());
+      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
+    });
+    const report: PulseReport = {
+      summary: humanizeMargusText(
+        "Tape read from the move and the book while the model was busy."
+      ),
+      checks,
+      generatedAt: new Date().toISOString(),
+    };
+    return Response.json({ report, headlines, degraded: true });
   }
 }

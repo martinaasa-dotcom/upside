@@ -35,7 +35,10 @@ const DEFAULT_VISION_MODEL = "google/gemma-4-31b-it:free";
  * tool call but took 101s to do it, which is worse for the user than
  * failing fast and letting the provider chain move to Groq.
  */
-const DEFAULT_TEXT_FALLBACKS = ["nvidia/nemotron-3-super-120b-a12b:free"];
+const DEFAULT_TEXT_FALLBACKS = [
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "openai/gpt-oss-120b:free",
+];
 
 const DEFAULT_VISION_FALLBACKS = ["google/gemma-4-26b-a4b-it:free"];
 
@@ -358,7 +361,9 @@ export async function withAdvisorFallback<T>(
       // A rate limit or outage won't clear in the seconds before the next
       // request, so park this provider instead of leading with it again.
       const { status } = describeAdvisorError(err);
-      if (status === 429 || status === 503) markProviderUnhealthy(candidate.id);
+      if (status === 429 || status === 503 || status === 504) {
+        markProviderUnhealthy(candidate.id);
+      }
       lastErr = err;
     }
   }
@@ -426,6 +431,10 @@ export async function pickStreamingProvider(
     } catch (err) {
       console.error(`[ai] streaming probe for "${candidate.id}" failed`, err);
       lastErr = err;
+      const { status } = describeAdvisorError(err);
+      if (status === 429 || status === 503 || status === 504) {
+        markProviderUnhealthy(candidate.id);
+      }
     }
   }
   throw lastErr;
@@ -481,8 +490,7 @@ export function describeAdvisorError(err: unknown): {
 
   if (/free-models-per-day|models-per-day/i.test(msg)) {
     return {
-      message:
-        "Margus is out of free replies for today. That cap is shared across the free models. Try again tomorrow.",
+      message: "Couldn't get a reply just then. Send it again.",
       status: 429,
     };
   }
@@ -491,14 +499,13 @@ export function describeAdvisorError(err: unknown): {
     /rate.?limit|429|too many requests|quota|temporar/i.test(msg)
   ) {
     return {
-      message:
-        "Margus is rate-limited right now. Wait a few seconds and send again. He'll switch to a backup if he can.",
+      message: "Couldn't get a reply just then. Send it again.",
       status: 429,
     };
   }
   if (code === 504 || code === 408 || /timeout|504|timed out/i.test(msg)) {
     return {
-      message: "The model timed out. Try again. Free models get flaky under load.",
+      message: "Couldn't get a reply just then. Send it again.",
       status: 504,
     };
   }
@@ -520,8 +527,7 @@ export function describeAdvisorError(err: unknown): {
   }
   if (code === 503 || code === 502 || /overloaded|unavailable/i.test(msg)) {
     return {
-      message:
-        "The model provider is overloaded right now. Margus will try a backup on your next message.",
+      message: "Couldn't get a reply just then. Send it again.",
       status: 503,
     };
   }
@@ -531,7 +537,16 @@ export function describeAdvisorError(err: unknown): {
       status: 502,
     };
   }
-  return { message: msg || "AI request failed", status: 500 };
+  return { message: msg || "Couldn't get a reply just then. Send it again.", status: 500 };
+}
+
+/** Rate limit, overload, timeout: try another provider in this same request. */
+export function isTransientAdvisorFailure(err: unknown): boolean {
+  const { status, message } = describeAdvisorError(err);
+  if (/could not start|api key was rejected|keys on this server/i.test(message)) {
+    return false;
+  }
+  return status === 429 || status === 503 || status === 504;
 }
 
 export function advisorProviderLabel(): string {

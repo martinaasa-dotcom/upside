@@ -26,6 +26,7 @@ import type { Quote } from "@/lib/types";
 import {
   PULSE_DOWN_THRESHOLD,
   PULSE_REFRESH_MS,
+  buildFallbackPulseCheck,
   buildPulseCandidate,
   buildPulseCandidates,
   formatMovePct,
@@ -45,6 +46,7 @@ import {
   type PulseCandidate,
   type ThesisStatus,
 } from "@/lib/thesis-pulse";
+import { fundCopyBullets } from "@/lib/fund-copy";
 import {
   loadPulseHistory,
   recordPulseHistory,
@@ -89,6 +91,12 @@ function PulseHistory({ ticker }: { ticker: string }) {
       ))}
     </ol>
   );
+}
+
+function thesisDisplayBullets(text: string | undefined): string[] {
+  const sentences = normalizePulseSituation(text ?? "");
+  if (sentences.length > 0) return sentences.slice(0, 6);
+  return fundCopyBullets(text);
 }
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
@@ -160,22 +168,19 @@ function PulseCard({
   // an already-cached "broken" + "hold" contradiction from before this
   // guardrail existed, or from a stale server/localStorage entry, clears
   // immediately instead of waiting out the cache window.
-  const reconciled = check ? reconcilePulseCheck(check) : check;
-  const status = reconciled?.thesisStatus ?? (c.needsAttention ? "watch" : "intact");
-  const action = reconciled?.action;
+  const shown = reconcilePulseCheck(check ?? buildFallbackPulseCheck(c));
+  const status = shown.thesisStatus;
+  const action = shown.action;
+  const writtenThesis = thesisDisplayBullets(convictionThesis);
+  const situation = normalizePulseSituation(shown.situation);
+  const thesisBullets = writtenThesis.length > 0 ? writtenThesis : situation;
 
   return (
     <li
       id={`pulse-card-${c.ticker}`}
       className={cn(
         "rounded-xl border px-4 py-4 scroll-mt-28",
-        check
-          ? statusBorder(status, c.needsAttention, pinned)
-          : pinned
-            ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30"
-            : c.needsAttention
-              ? "border-rose-500/30 bg-rose-950/15"
-              : "border-zinc-800 bg-card/70"
+        statusBorder(status, c.needsAttention, pinned)
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -211,7 +216,7 @@ function PulseCard({
               {formatMovePct(c.effectivePct)}
             </span>
             <span className="text-xs text-zinc-400">{c.moveLabel}</span>
-            {loading && check && (
+            {loading && (
               <span
                 className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-zinc-400"
                 title="Refreshing in the background. This result stays on screen until the new one lands"
@@ -240,9 +245,8 @@ function PulseCard({
             </p>
           )}
         </div>
-        {check && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {action && <ActionBadge action={action} />}
+        <div className="flex flex-wrap items-center gap-1.5">
+            <ActionBadge action={action} />
             <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
               <StatusIcon status={status} />
               {statusLabel(status)}
@@ -263,10 +267,9 @@ function PulseCard({
               </button>
             )}
           </div>
-        )}
       </div>
 
-      {check && checkedAt && (
+      {checkedAt && (
         <p className="mt-1.5 text-xs text-zinc-400">
           Checked {formatRelativeTime(checkedAt)}
         </p>
@@ -292,64 +295,84 @@ function PulseCard({
         </ul>
       )}
 
-      {loading && !check ? (
-        <p className="mt-3 text-sm text-zinc-400">Pulling news & checking thesis …</p>
-      ) : reconciled ? (
-        <div className="mt-3 space-y-2 text-sm leading-relaxed text-zinc-300">
-          <ul className="space-y-1 text-zinc-100">
-            {normalizePulseSituation(reconciled.situation).map((point, i) => (
-              <li key={i} className="flex gap-2">
-                <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500" />
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
+      <div className="mt-3 space-y-3 text-sm leading-relaxed text-zinc-300">
+        {thesisBullets.length > 0 && (
+          <div>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                Thesis
+              </p>
+              {onWriteThesis && (
+                <button
+                  type="button"
+                  onClick={onWriteThesis}
+                  className="text-xs text-zinc-500 hover:text-zinc-300"
+                >
+                  {writtenThesis.length > 0 ? "Edit" : "Add yours"}
+                </button>
+              )}
+            </div>
+            <ul className="mt-1.5 space-y-1.5 text-zinc-100">
+              {thesisBullets.map((point, i) => (
+                <li key={i} className="flex gap-2">
+                  <span
+                    aria-hidden
+                    className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
+                  />
+                  <span className="leading-snug">{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {writtenThesis.length > 0 && situation.length > 0 && (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+              Today
+            </p>
+            <ul className="mt-1.5 space-y-1.5">
+              {situation.map((point, i) => (
+                <li key={i} className="flex gap-2">
+                  <span
+                    aria-hidden
+                    className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500"
+                  />
+                  <span className="leading-snug text-zinc-300">{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {shown.moveReason ? (
           <p>
             <span className="font-medium text-zinc-200">Move:</span>{" "}
-            {reconciled.moveReason}
+            {shown.moveReason}
           </p>
-          {reconciled.earningsNote ? (
-            <p>
-              <span className="font-medium text-zinc-200">Earnings:</span>{" "}
-              {reconciled.earningsNote}
-            </p>
-          ) : null}
-          {reconciled.action === "trim" && reconciled.trimPct ? (
-            <p className="font-medium text-amber-300">
-              One option worth weighing: trimming ~{reconciled.trimPct}% of the
-              position.
-            </p>
-          ) : null}
-          {reconciled.addLevel ? (
-            <p className="font-medium text-brand-bright">{reconciled.addLevel}</p>
-          ) : null}
-          {reconciled.thesisBreak ? (
-            <p>
-              <span className="font-medium text-zinc-200">What would break it:</span>{" "}
-              {reconciled.thesisBreak}
-            </p>
-          ) : null}
-          <p className="text-zinc-100">{reconciled.verdict}</p>
-        </div>
-      ) : null}
-
-      {convictionThesis ? (
-        <p className="mt-3 border-t border-zinc-800/80 pt-2 text-xs text-zinc-400">
-          Your thesis: {convictionThesis}
-        </p>
-      ) : onWriteThesis ? (
-        <button
-          type="button"
-          onClick={onWriteThesis}
-          className="mt-3 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-left text-xs leading-relaxed text-amber-100/90 hover:border-amber-400/50"
-        >
-          Pulse is guessing. Write why you own {cashtag(c.ticker)}, two sentences, and this check gets real.
-        </button>
-      ) : (
-        <p className="mt-3 border-t border-zinc-800/80 pt-2 text-xs text-zinc-400">
-          No thesis on file. Pulse is reading the tape, not your view.
-        </p>
-      )}
+        ) : null}
+        {shown.earningsNote ? (
+          <p>
+            <span className="font-medium text-zinc-200">Earnings:</span>{" "}
+            {shown.earningsNote}
+          </p>
+        ) : null}
+        {shown.action === "trim" && shown.trimPct ? (
+          <p className="font-medium text-violet-200">
+            Trim about {shown.trimPct}% into this strength.
+          </p>
+        ) : null}
+        {shown.addLevel ? (
+          <p className="font-medium text-brand-bright">{shown.addLevel}</p>
+        ) : null}
+        {shown.thesisBreak ? (
+          <p>
+            <span className="font-medium text-zinc-200">What would break it:</span>{" "}
+            {shown.thesisBreak}
+          </p>
+        ) : null}
+        {shown.verdict ? (
+          <p className="text-zinc-100">{shown.verdict}</p>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -631,8 +654,15 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) 
           savePulseSummary(newReport.summary);
         }
         setLastGeneratedAt(now);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Pulse check failed");
+      } catch {
+        setChecksByTicker((prev) => {
+          const next = { ...prev };
+          for (const c of stale) {
+            const key = c.ticker.toUpperCase();
+            if (!next[key]) next[key] = buildFallbackPulseCheck(c);
+          }
+          return next;
+        });
       } finally {
         for (const key of staleKeys) inFlightRef.current.delete(key);
         setCheckingTickers((prev) => {
