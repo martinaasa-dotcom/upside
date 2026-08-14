@@ -55,6 +55,24 @@ const WRITE_LEVEL_BADGE: Record<
   },
 };
 
+/** Same line as Distance so the chip never stretches a row. */
+function WriteLevelBadge({ row }: { row: CoveredCallRow }) {
+  const state = writeLevelState(row);
+  if (!state) return null;
+  const badge = WRITE_LEVEL_BADGE[state];
+  return (
+    <span
+      title={badge.title}
+                    className={cn(
+        "inline-flex h-5 shrink-0 items-center rounded-md px-1.5 text-xs font-medium leading-none normal-case",
+        badge.className
+      )}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
 type Props = {
   rows: CoveredCallRow[];
   yield2wAvg: number;
@@ -272,34 +290,21 @@ export function CoveredCallPanel({
                 </div>
                 <div>
                   <p className="text-zinc-400">Still to go</p>
-                  <p
-                    className={cn(
-                      "tabular-nums font-medium",
-                      r.targetDistance != null
-                        ? signedTone(r.targetDistance)
-                        : "text-zinc-400"
-                    )}
-                  >
-                    {r.targetDistance != null
-                      ? percent(r.targetDistance)
-                      : "—"}
+                  <p className="inline-flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "tabular-nums font-medium",
+                        r.targetDistance != null
+                          ? signedTone(r.targetDistance)
+                          : "text-zinc-400"
+                      )}
+                    >
+                      {r.targetDistance != null
+                        ? percent(r.targetDistance)
+                        : "—"}
+                    </span>
+                    <WriteLevelBadge row={r} />
                   </p>
-                  {(() => {
-                    const state = writeLevelState(r);
-                    if (!state) return null;
-                    const badge = WRITE_LEVEL_BADGE[state];
-                    return (
-                      <span
-                        title={badge.title}
-                        className={cn(
-                          "mt-1 inline-block rounded-md px-1.5 py-0.5 text-xs font-medium",
-                          badge.className
-                        )}
-                      >
-                        {badge.label}
-                      </span>
-                    );
-                  })()}
                 </div>
                 <div>
                   <p className="text-zinc-400">Strike</p>
@@ -380,7 +385,7 @@ export function CoveredCallPanel({
           )}
 
           {rows.map((r) => (
-            <FluidRow key={r.holding.id} className="hover:bg-zinc-900/40">
+            <FluidRow key={r.holding.id} className="min-h-10 hover:bg-zinc-900/40">
               <div
                 className={cn(
                   cellBase,
@@ -404,37 +409,21 @@ export function CoveredCallPanel({
                   onCommit={(price) => onPatchStockTarget(r.holding.id, price)}
                 />
               </div>
-              <div
-                className={cn(
-                  cellBase,
-                  "tabular-nums font-medium",
-                  r.targetDistance != null
-                    ? signedTone(r.targetDistance)
-                    : "text-zinc-400"
-                )}
-              >
-                <span className="flex flex-col items-center gap-0.5">
-                  <span>
+              <div className={cellBase}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "tabular-nums font-medium",
+                      r.targetDistance != null
+                        ? signedTone(r.targetDistance)
+                        : "text-zinc-400"
+                    )}
+                  >
                     {r.targetDistance != null
                       ? percent(r.targetDistance)
                       : "—"}
                   </span>
-                  {(() => {
-                    const state = writeLevelState(r);
-                    if (!state) return null;
-                    const badge = WRITE_LEVEL_BADGE[state];
-                    return (
-                      <span
-                        title={badge.title}
-                        className={cn(
-                          "rounded-md px-1.5 py-0.5 text-xs font-medium normal-case",
-                          badge.className
-                        )}
-                      >
-                        {badge.label}
-                      </span>
-                    );
-                  })()}
+                  <WriteLevelBadge row={r} />
                 </span>
               </div>
               <div
