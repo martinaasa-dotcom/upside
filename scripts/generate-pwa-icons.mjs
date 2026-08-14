@@ -5,7 +5,7 @@
 // SVG favicon (public/upside-icon.svg, src/app/icon.svg) is traced from
 // the same source and edited by hand when the geometry changes.
 import sharp from "sharp";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -52,7 +52,7 @@ function rimSvg(size) {
   );
 }
 
-async function framedPng(size, out) {
+async function framedPngBuffer(size) {
   const base = await sharp(src)
     .resize(size, size, { fit: "fill" })
     .flatten({ background: BG })
@@ -62,11 +62,40 @@ async function framedPng(size, out) {
     .composite([{ input: maskSvg(size), blend: "dest-in" }])
     .png()
     .toBuffer();
-  await sharp(rounded)
+  return sharp(rounded)
     .composite([{ input: rimSvg(size), blend: "over" }])
     .png()
-    .toFile(out);
+    .toBuffer();
+}
+
+async function framedPng(size, out) {
+  const buf = await framedPngBuffer(size);
+  writeFileSync(out, buf);
   console.log(`wrote ${out} (${size}x${size} framed)`);
+  return buf;
+}
+
+/** PNG-in-ICO so Chrome's default /favicon.ico request is the gold mark. */
+function packIco(pngs) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(pngs.length, 4);
+  const entries = Buffer.alloc(16 * pngs.length);
+  let offset = 6 + 16 * pngs.length;
+  const blobs = [];
+  pngs.forEach((p, i) => {
+    const o = i * 16;
+    entries.writeUInt8(p.width >= 256 ? 0 : p.width, o);
+    entries.writeUInt8(p.height >= 256 ? 0 : p.height, o + 1);
+    entries.writeUInt16LE(1, o + 4);
+    entries.writeUInt16LE(32, o + 6);
+    entries.writeUInt32LE(p.data.length, o + 8);
+    entries.writeUInt32LE(offset, o + 12);
+    offset += p.data.length;
+    blobs.push(p.data);
+  });
+  return Buffer.concat([header, entries, ...blobs]);
 }
 
 async function squarePng(size, out) {
@@ -79,7 +108,20 @@ async function squarePng(size, out) {
 }
 
 await framedPng(180, join(root, "src", "app", "apple-icon.png"));
-await framedPng(32, join(root, "public", "icons", "icon-32.png"));
+const png16 = await framedPngBuffer(16);
+const png32 = await framedPng(32, join(root, "public", "icons", "icon-32.png"));
 await framedPng(192, join(root, "public", "icons", "icon-192.png"));
 await framedPng(512, join(root, "public", "icons", "icon-512.png"));
 await squarePng(512, join(root, "public", "icons", "icon-512-maskable.png"));
+
+const ico = packIco([
+  { width: 16, height: 16, data: png16 },
+  { width: 32, height: 32, data: png32 },
+]);
+for (const out of [
+  join(root, "src", "app", "favicon.ico"),
+  join(root, "public", "favicon.ico"),
+]) {
+  writeFileSync(out, ico);
+  console.log(`wrote ${out} (ico)`);
+}
