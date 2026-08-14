@@ -889,7 +889,7 @@ Optimistic (25%)
                   const val = parseInt(e.target.value, 10);
                   patchDraft("years", Number.isNaN(val) ? 1 : Math.min(50, Math.max(1, val)));
                 }}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
+                className="no-spinner w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 pr-14 text-sm font-semibold text-white outline-none focus:border-brand focus:ring-1 focus:ring-brand/40"
               />
               <span className="pointer-events-none absolute right-3 top-2.5 text-xs text-zinc-400">
                 years
