@@ -304,6 +304,9 @@ function MoverTile({
       <span className="min-w-0 font-heading text-base font-bold text-white">
         {cashtag(ticker.ticker)}
       </span>
+      <span className="min-w-0 flex-1 text-center font-heading text-base font-bold tabular-nums text-white">
+        {currency(ticker.price)}
+      </span>
       <span className="shrink-0 text-right">
         <span
           className={cn(
