@@ -449,9 +449,11 @@ run("forecast add/trim lines split into bullets", () => {
   const packed = playbookBullets(
     "$NBIS (40.5% -> 35%) / $CRWV (36.8% -> 32%): trim into pre-earnings run-ups above $285 and $120 to curb cluster concentration."
   );
-  assert.equal(packed.length, 2);
-  assert.equal(packed[0]?.head, "$NBIS · 40.5% → 35%");
-  assert.equal(packed[1]?.head, "$CRWV · 36.8% → 32%");
+  assert.equal(packed.length, 1);
+  assert.equal(
+    packed[0]?.head,
+    "$NBIS · 40.5% → 35% · $CRWV · 36.8% → 32%"
+  );
   assert.match(packed[0]?.detail ?? "", /Trim into pre-earnings/);
   const listed = playbookBullets(
     "$RKLB (14% -> 9%): fade the launch print; SaaS sleeve (~3%): start a small sleeve on a red day"

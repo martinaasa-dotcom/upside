@@ -42,6 +42,10 @@ function toBullet(name: string, why: string | null): PlaybookBullet {
   };
 }
 
+function priceMentions(s: string): number {
+  return (s.match(/\$\d[\d,]*(?:\.\d+)?/g) ?? []).length;
+}
+
 function splitChunk(chunk: string): PlaybookBullet[] {
   const colon = chunk.indexOf(":");
   if (colon <= 0 || colon > 90) {
@@ -56,6 +60,16 @@ function splitChunk(chunk: string): PlaybookBullet[] {
     .map((s) => s.trim())
     .filter(Boolean);
   if (names.length >= 2 && names.every(isTickerish)) {
+    // One rationale naming prices ($285 and $120) is about the cluster,
+    // not each name. Copying it onto $NBIS made those look like NBIS levels.
+    if (priceMentions(why) > 0) {
+      return [
+        {
+          head: names.map(formatHead).join(" · "),
+          detail: sentenceCase(why),
+        },
+      ];
+    }
     return names.map((n) => toBullet(n, why));
   }
   return [toBullet(namesPart, why)];
