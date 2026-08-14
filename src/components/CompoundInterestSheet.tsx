@@ -756,28 +756,26 @@ export function CompoundInterestSheet({
           </p>
 
           {/* Portfolio Sync Badge / Button */}
-          <div className="flex items-center justify-between rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1.5 text-xs">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-brand-bright" />
-              <span className="text-xs text-zinc-300">
-                Your book&apos;s own pace:{" "}
-                <strong className="text-brand-bright tabular-nums">
-                  {portfolioExpectedRatePct.toFixed(1)}% a year
-                </strong>
-              </span>
-            </div>
-            {!isRateMatchedToPortfolio && (
+          <div className="flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1.5 text-xs">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
+            <span className="min-w-0 flex-1 text-xs leading-snug text-zinc-300">
+              Your book&apos;s own pace:{" "}
+              <strong className="whitespace-nowrap text-brand-bright tabular-nums">
+                {portfolioExpectedRatePct.toFixed(1)}% a year
+              </strong>
+            </span>
+            {!isRateMatchedToPortfolio ? (
               <button
                 type="button"
                 onClick={syncToPortfolioRate}
-                className="rounded bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright hover:bg-brand/30 transition"
+                className="shrink-0 rounded bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright transition hover:bg-brand/30"
               >
                 Use it
               </button>
-            )}
-            {isRateMatchedToPortfolio && (
-              <span className="text-xs font-medium text-gain flex items-center gap-0.5">
-                <CheckCircle2 className="h-3 w-3" /> In use
+            ) : (
+              <span className="inline-flex shrink-0 items-center gap-1 font-medium text-gain">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                In use
               </span>
             )}
           </div>
