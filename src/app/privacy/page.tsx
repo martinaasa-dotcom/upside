@@ -48,7 +48,7 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-zinc-200">What you enter:</strong>{" "}
               holdings, cash balances, notes, targets, forecast overrides,
-              journal entries, and anything you send Assistant Margus in
+              and anything you send Assistant Margus in
               chat.
             </li>
             <li>

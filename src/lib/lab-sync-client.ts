@@ -1,7 +1,4 @@
-import {
-  emptyLabBundle,
-  type LabBundle,
-} from "@/lib/lab-bundle";
+import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { saveConvictionMap } from "@/lib/conviction";
 
 export type LabFetchResult = {
@@ -9,11 +6,6 @@ export type LabFetchResult = {
   bundle: LabBundle;
 };
 
-/**
- * Conviction is the only Lab piece that still syncs across devices.
- * Arena, cashflow, badges, and journal have no UI. Stop writing them
- * locally from the server so a ghost payload cannot resurrect.
- */
 export function mirrorLabLocal(bundle: LabBundle) {
   saveConvictionMap(bundle.conviction ?? {});
 }
@@ -31,7 +23,7 @@ export async function fetchLabBundle(): Promise<LabFetchResult> {
     const bundle = data.bundle ?? emptyLabBundle();
     if (data.source === "supabase") {
       mirrorLabLocal(bundle);
-      return { source: "supabase", bundle: { ...bundle, journal: [] } };
+      return { source: "supabase", bundle };
     }
   } catch {
     /* fall through */

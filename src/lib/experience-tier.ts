@@ -116,11 +116,9 @@ export function saveStoredKnowsOptions(value: boolean) {
 }
 
 /**
- * Lab has no options-specific sub-tabs left to hide: the CC income and
- * Cashflow tabs were removed outright, so `shouldHideOptions` is now
- * enforced entirely on the covered-call panel, strike alerts, the
- * Target-call% field, briefing copy, and Margus's tool set. Kept as an
- * empty list rather than deleted so the gating call site stays obvious
- * if an options-only Lab tab ever comes back.
+ * Lab has no options-specific sub-tabs left to hide. `shouldHideOptions`
+ * is enforced on the covered-call panel, strike alerts, the Target-call%
+ * field, briefing copy, and Margus's tool set. Kept as an empty list so
+ * the gating call site stays obvious if an options-only Lab tab comes back.
  */
 export const NO_OPTIONS_HIDDEN_LAB_TABS: string[] = [];

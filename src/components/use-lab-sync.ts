@@ -1,8 +1,6 @@
 "use client";
 
 import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
-import { loadCashflows } from "@/lib/cashflow";
-import { loadArena } from "@/lib/paper-arena";
 import { loadConvictionMap } from "@/lib/conviction";
 import {
   fetchLabBundle,
@@ -12,10 +10,7 @@ import {
 import { useToast } from "@/components/ui/Toast";
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Conviction is the only Lab field that still round-trips to Supabase.
- * Arena / cashflow / badges stay on this device.
- */
+/** Conviction is the only Lab field that round-trips to Supabase. */
 export function useLabSync() {
   const { push: toast } = useToast();
   const [labBundle, setLabBundle] = useState<LabBundle>(() => emptyLabBundle());
@@ -25,23 +20,16 @@ export function useLabSync() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const local: LabBundle = {
-        conviction: loadConvictionMap(),
-        journal: [],
-        cashflows: loadCashflows(),
-        arena: loadArena(),
-        badges: [],
-      };
+      const local: LabBundle = { conviction: loadConvictionMap() };
       const remote = await fetchLabBundle();
       if (cancelled) return;
       if (remote.source === "supabase") {
         const merged: LabBundle = {
-          ...local,
           conviction:
             Object.keys(remote.bundle.conviction ?? {}).length > 0
               ? remote.bundle.conviction
               : local.conviction,
-          journal: [],
+          updatedAt: remote.bundle.updatedAt,
         };
         setLabBundle(merged);
         mirrorLabLocal(merged);

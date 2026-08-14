@@ -1,9 +1,6 @@
 /**
  * Engagement badges derived from local, per-device state (visit streak +
- * Daily Duel). Deliberately NOT part of the synced `LabBundle.badges` —
- * those are book-wide performance badges everyone on the shared sheet sees
- * the same way; a visit streak is personal to whoever is holding this
- * browser, so it's computed fresh at render time instead of persisted.
+ * Daily Duel). Computed fresh at render time instead of persisted.
  */
 import { STREAK_MILESTONES, type VisitStreakState } from "@/lib/visit-streak";
 import type { DuelStats } from "@/lib/daily-duel";

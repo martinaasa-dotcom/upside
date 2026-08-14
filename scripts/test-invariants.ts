@@ -444,9 +444,16 @@ run("lab sync writes conviction only", () => {
     join(process.cwd(), "src/lib/lab-sync-client.ts"),
     "utf8"
   );
+  const bundle = readFileSync(
+    join(process.cwd(), "src/lib/lab-bundle.ts"),
+    "utf8"
+  );
+  const api = readFileSync(join(process.cwd(), "src/app/api/lab/route.ts"), "utf8");
   assert.match(client, /conviction: bundle.conviction/);
   assert.doesNotMatch(client, /cashflows: bundle.cashflows/);
   assert.doesNotMatch(client, /arena: bundle.arena/);
+  assert.doesNotMatch(bundle, /journal|cashflows|arena|badges/);
+  assert.doesNotMatch(api, /journal|cashflows|defaultArena|badges/);
 });
 
 if (failed > 0) {

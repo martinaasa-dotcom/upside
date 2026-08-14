@@ -3,21 +3,15 @@ import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { defaultArena } from "@/lib/paper-arena";
 
 export const dynamic = "force-dynamic";
+
+const LAB_COLS = "id, owner_id, conviction, updated_at";
 
 function rowToBundle(row: Record<string, unknown> | null): LabBundle {
   if (!row) return emptyLabBundle();
   return {
     conviction: (row.conviction as LabBundle["conviction"]) ?? {},
-    journal: [],
-    cashflows: Array.isArray(row.cashflows) ? row.cashflows : [],
-    arena:
-      row.arena && typeof row.arena === "object"
-        ? { ...defaultArena(), ...(row.arena as object) }
-        : defaultArena(),
-    badges: Array.isArray(row.badges) ? row.badges : [],
     updatedAt: typeof row.updated_at === "string" ? row.updated_at : undefined,
   };
 }
@@ -36,7 +30,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.labState)
-    .select("*")
+    .select(LAB_COLS)
     .eq("owner_id", auth.user.id)
     .maybeSingle();
 
@@ -79,11 +73,10 @@ export async function PUT(req: NextRequest) {
       .from(PORTFELL_TABLES.labState)
       .update({
         conviction: body.conviction ?? {},
-        journal: [],
         updated_at: now,
       })
       .eq("owner_id", auth.user.id)
-      .select("*")
+      .select(LAB_COLS)
       .single();
     data = updated.data as Record<string, unknown> | null;
     error = updated.error;
@@ -94,13 +87,9 @@ export async function PUT(req: NextRequest) {
         id: auth.user.id,
         owner_id: auth.user.id,
         conviction: body.conviction ?? {},
-        journal: [],
-        cashflows: [],
-        arena: defaultArena(),
-        badges: [],
         updated_at: now,
       })
-      .select("*")
+      .select(LAB_COLS)
       .single();
     data = inserted.data as Record<string, unknown> | null;
     error = inserted.error;

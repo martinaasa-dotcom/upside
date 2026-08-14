@@ -150,10 +150,6 @@ async function claimWithServiceRole(user: User): Promise<{
         id: user.id,
         owner_id: user.id,
         conviction: {},
-        journal: [],
-        cashflows: [],
-        arena: {},
-        badges: [],
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" }

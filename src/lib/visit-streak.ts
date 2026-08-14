@@ -1,8 +1,7 @@
 /**
  * Personal daily-visit streak (Duolingo-style) — purely local to this
- * browser/device. Distinct from the shared-book `LabBundle` (which is
- * synced across everyone on the sheet): different family members opening
- * the same book from different devices each get their own streak.
+ * browser/device. Different people opening the same book from different
+ * devices each get their own streak.
  */
 import { todayKeyInTz } from "@/lib/timezone";
 

@@ -44,8 +44,8 @@ where lower(u.email) = 'martin.aasa@upthink.ee'
   and p.slug in ('aasad', 'anu', 'maryann')
 on conflict do nothing;
 
-insert into public.portfell_lab_state (id, owner_id, conviction, journal, cashflows, arena, badges, updated_at)
-select u.id, u.id, '{}'::jsonb, '[]'::jsonb, '[]'::jsonb, '{}'::jsonb, '[]'::jsonb, now()
+insert into public.portfell_lab_state (id, owner_id, conviction, updated_at)
+select u.id, u.id, '{}'::jsonb, now()
 from auth.users u
 where lower(u.email) = 'martin.aasa@upthink.ee'
 on conflict (id) do update set owner_id = excluded.owner_id;

@@ -14,13 +14,7 @@ import {
   popUndoSnapshot,
   pushUndoSnapshot,
 } from "../src/lib/book-undo";
-import { trailingIncome, type CashflowEntry } from "../src/lib/cashflow";
 import { correlationMatrix, pearson } from "../src/lib/correlation";
-import {
-  arenaValue,
-  defaultArena,
-  seedArenaFromLive,
-} from "../src/lib/paper-arena";
 import { estimateGreenStreak } from "../src/lib/streaks";
 import { isForecastFullyCovered, FORECAST_YEARS } from "../src/lib/forecast";
 import { ensureCompleteEoyTargets } from "../src/lib/forecast-plan";
@@ -118,33 +112,6 @@ assert(
   "corr matrix"
 );
 
-const cfs: CashflowEntry[] = [
-  {
-    id: "1",
-    at: new Date().toISOString(),
-    kind: "premium",
-    amount: 25,
-    note: "test",
-  },
-];
-assert(trailingIncome(cfs) === 25, "cashflow trailing");
-
-const arena = defaultArena();
-assert(arenaValue(arena, {}) === 10_000, "arena cash");
-const seeded = seedArenaFromLive(500, [
-  {
-    id: "h1",
-    portfolio_id: "p",
-    ticker: "NBIS",
-    shares: 2,
-    buy_price: 100,
-    eoy_target: null,
-    target_call_pct: 0.2,
-    stock_target_override: null,
-    sort_order: 1,
-  },
-]);
-assert(seeded.holdings.length === 1, "arena seed");
 assert(estimateGreenStreak([1, 2, 3, 4]).greenDays >= 3, "streak");
 
 const forecastStub = {
