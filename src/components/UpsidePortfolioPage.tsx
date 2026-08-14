@@ -1,7 +1,6 @@
 "use client";
 
 import { AppHeader } from "@/components/AppHeader";
-import { BookBottomNav } from "@/components/BookBottomNav";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
@@ -758,7 +757,7 @@ export function UpsidePortfolioPage() {
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
       <AppHeader title="Upside Fund" />
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+      <main className="mx-auto max-w-4xl space-y-6 px-4 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
             <Bot className="h-5 w-5" />
@@ -1299,7 +1298,6 @@ export function UpsidePortfolioPage() {
           </>
         )}
       </main>
-      <BookBottomNav />
     </div>
   );
 }

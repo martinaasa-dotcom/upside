@@ -1,7 +1,6 @@
 "use client";
 
 import { SignInGate } from "@/components/SignInGate";
-import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { cn } from "@/lib/format";
 import { prefetchCommunity } from "@/lib/community-cache";
@@ -303,7 +302,6 @@ export function CommunitiesList() {
             </div>
           </form>
         </main>
-        <BookBottomNav />
       </div>
     </SignInGate>
   );

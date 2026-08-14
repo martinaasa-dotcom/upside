@@ -2,7 +2,6 @@
 
 import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { SignInGate } from "@/components/SignInGate";
-import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -1936,7 +1935,6 @@ export function CommunityView({ communityId }: Props) {
             </section>
           )}
         </main>
-        <BookBottomNav />
       </div>
 
       <ConfirmModal
