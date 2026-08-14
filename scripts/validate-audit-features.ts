@@ -62,6 +62,26 @@ assert(buildGoalAlert(true, "Hit 100k"), "goal alert");
 assert(Math.abs(shockedPrice("NBIS", 100, "ai_down20") - 80) < 1e-9, "ai shock nbis");
 assert(Math.abs(shockedPrice("VST", 100, "ai_down20") - 83) < 1e-9, "ai shock vst");
 assert(Math.abs(shockedPrice("PWR", 100, "ai_down20") - 84) < 1e-9, "ai shock pwr");
+assert(shockedPrice("SMH", 100, "ai_down20") < 85, "semi ETF takes the AI hit");
+assert(shockedPrice("VOO", 100, "ai_down20") > 92, "S&P ETF is not an AI name");
+assert(
+  shockedPrice("SMH", 100, "ai_down20") < shockedPrice("VOO", 100, "ai_down20") - 8,
+  "SMH falls much harder than VOO in an AI shock"
+);
+assert(
+  Math.abs(shockedPrice("VOO", 100, "ai_down20") - shockedPrice("SPY", 100, "ai_down20")) < 1,
+  "VOO tracks SPY"
+);
+assert(
+  shockedPrice("QTUM", 100, "ai_down20") < shockedPrice("VOO", 100, "ai_down20") - 5,
+  "quantum ETF is not an S&P proxy"
+);
+assert(
+  shockedPrice("SMH", 100, "broad_down15") < shockedPrice("VOO", 100, "broad_down15"),
+  "high-beta semis fall more in a flash crash"
+);
+assert(shockedPrice("XOM", 100, "oil_shock25") > 100, "oil majors rally in an oil shock");
+assert(shockedPrice("NVDA", 100, "oil_shock25") < 100, "tech eats the oil bill");
 assert(Math.abs(shockedPrice("BMNR", 100, "btc_winter35") - 65) < 1e-9, "crypto bmnr");
 assert(
   Math.abs(shockedPrice("NBIS", 100, "btc_winter35") - 82.5) < 1e-9,

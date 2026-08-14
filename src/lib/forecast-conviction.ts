@@ -113,18 +113,20 @@ const THEME_TICKERS: [ForecastTheme, string[]][] = [
   // Generation and grid feeding those datacenters.
   ["ai_power", ["VST", "PWR", "CEG", "NRG", "TLN", "GEV", "ETN", "OKLO", "SMR", "BWXT"]],
   ["crypto", ["BMNR", "MSTR", "COIN", "MARA", "RIOT", "CLSK", "HUT", "BITF", "GLXY"]],
-  ["space", ["RKLB", "ASTS", "LUNR", "RDW", "PL", "SPCE"]],
+  ["space", ["RKLB", "ASTS", "LUNR", "RDW", "PL", "SPCE", "NASA", "UFO"]],
   [
     "semi",
     ["NVDA", "AVGO", "TSM", "ASML", "AMD", "INTC", "MU", "QCOM", "TXN", "ADI",
-     "LRCX", "AMAT", "KLAC", "ARM", "MRVL", "NXPI", "ON", "MCHP", "SWKS", "TER"],
+     "LRCX", "AMAT", "KLAC", "ARM", "MRVL", "NXPI", "ON", "MCHP", "SWKS", "TER",
+     "SMH", "SOXX", "XSD", "PSI", "DRAM", "QTUM"],
   ],
   ["fintech", ["SOFI", "HOOD", "AFRM", "UPST", "PYPL", "SQ", "XYZ", "NU", "TOST", "MELI", "V", "MA"]],
   [
     "software",
     ["PLTR", "NOW", "GOOGL", "GOOG", "CRM", "DDOG", "SNOW", "MSFT", "ORCL",
      "ADBE", "TEAM", "WDAY", "ZS", "CRWD", "PANW", "NET", "MDB", "HUBS",
-     "SHOP", "TTD", "APP", "U", "RBLX", "META", "AMZN", "IBM", "SAP"],
+     "SHOP", "TTD", "APP", "U", "RBLX", "META", "AMZN", "IBM", "SAP",
+     "QQQ", "QQQM", "XLK"],
   ],
   [
     "healthcare",
@@ -134,8 +136,8 @@ const THEME_TICKERS: [ForecastTheme, string[]][] = [
   ["drones", ["AVAV", "KTOS", "RCAT", "ONDS", "UMAC", "LMT", "RTX", "NOC", "GD", "LHX"]],
   [
     "index",
-    ["SPY", "VOO", "IVV", "QQQ", "VTI", "VT", "CSPX", "VWCE", "VUSA", "SMH",
-     "SOXX", "EX13", "JEDI", "ARKK", "SCHD", "IWM", "DIA", "EEM", "VXUS"],
+    ["SPY", "VOO", "IVV", "VTI", "VT", "CSPX", "VWCE", "VUSA", "EX13",
+     "SCHD", "DIA", "EEM", "VXUS"],
   ],
 ];
 
@@ -156,6 +158,9 @@ export function forecastThemeForTicker(ticker: string): ForecastTheme {
 
   // Name-shaped guesses for tickers not on the list above.
   if (/BTC|ETH|CRYPTO|MINE/.test(base)) return "crypto";
+  if (/SEMI|SOXX|SMH|DRAM|QTUM/.test(base)) return "semi";
+  if (/NASA|SPACE|UFO/.test(base)) return "space";
+  if (/QQQ|XLK/.test(base)) return "software";
   if (/CLOUD|GPU|AI/.test(base)) return "ai_infra";
   if (/HEALTH|PHARMA|BIO/.test(base)) return "healthcare";
   if (/DRONE|UAV|DEFENSE/.test(base)) return "drones";

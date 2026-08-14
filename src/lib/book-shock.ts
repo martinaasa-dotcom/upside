@@ -1,3 +1,5 @@
+import { forecastThemeForTicker } from "@/lib/forecast-conviction";
+
 /**
  * Macro shock scenarios with per-ticker thematic and factor sensitivities.
  * Betas and factor sensitivities reflect asset-specific drivers (valuation duration,
@@ -80,14 +82,14 @@ export const SHOCKS: ShockDefinition[] = [
     tagline: "Commodities surge; power producers gain while consumer tech absorbs cost drag.",
     driver: "Commodities",
     headlinePct: 0.25,
-    mechanism: "Supply constraints drive oil and energy higher. Power generation assets like VST and PWR benefit, while tech and consumer discretionary face input cost inflation.",
+    mechanism: "Supply constraints drive oil and energy higher. Grid power and producers catch a bid. Tech and consumer discretionary eat the input-cost hit.",
     tacticalAction: "Energy and grid power serve as natural shock absorbers. Monitor consumer tech margin compression.",
   },
   {
     id: "ai_down20",
     label: "AI −20%",
     shortLabel: "AI −20%",
-    tagline: "GPU cloud, semis, AI software, and AI power (VST/PWR), sized by AI beta.",
+    tagline: "GPU cloud and chip names take the headline hit. A semi ETF is not an S&P fund.",
     driver: "AI Infrastructure",
     headlinePct: -0.20,
     mechanism: "CapEx digestion or enterprise AI monetization pause hits GPU cloud, chip fabricators, AI software, and data center power demand.",
@@ -107,10 +109,10 @@ export const SHOCKS: ShockDefinition[] = [
     id: "broad_down15",
     label: "Broad −15%",
     shortLabel: "Flash −15%",
-    tagline: "Uniform mark-down across the selected book.",
+    tagline: "Risk-off hit, sized by beta. Semis and crypto fall harder than the S&P. Staples and bonds less so.",
     driver: "Liquidity",
     headlinePct: -0.15,
-    mechanism: "Systemic risk-off liquidity squeeze where correlation moves toward 1 across all equity holdings.",
+    mechanism: "Systemic risk-off. Correlation rises, but high-beta names still fall further than defensives and the broad index.",
     tacticalAction: "Cash buffer preserves nominal capital and expands purchasing power for rebound deployment.",
   },
   {
@@ -235,7 +237,7 @@ const PROFILES: Record<string, TickerShockProfile> = {
   "BRK.B": { label: "Conglomerate / value", ai: 0.15, crypto: 0.05, rates: 0.1, energy: 0.3, fx: -0.2, beta: 0.65, supplyChain: 0.15 },
 
   // Indexes / broad
-  SPY: { label: "US large-cap index", ai: 0.25, crypto: 0.22, rates: -0.4, energy: -0.2, fx: -0.35, beta: 1.0, supplyChain: 0.3 },
+  SPY: { label: "US large-cap index", ai: 0.28, crypto: 0.18, rates: -0.4, energy: -0.15, fx: -0.35, beta: 1.0, supplyChain: 0.28 },
   QQQ: { label: "US tech index", ai: 0.65, crypto: 0.28, rates: -0.65, energy: -0.25, fx: -0.45, beta: 1.2, supplyChain: 0.45 },
   IWM: { label: "US small-cap index", ai: 0.2, crypto: 0.35, rates: -0.85, energy: -0.35, fx: -0.1, beta: 1.25, supplyChain: 0.25 },
   TLT: { label: "US 20Y treasury ETF", ai: 0.0, crypto: 0.0, rates: -1.2, energy: -0.1, fx: 0.0, beta: 0.3, supplyChain: 0.0 },
@@ -246,16 +248,139 @@ const PROFILES: Record<string, TickerShockProfile> = {
   "EX13.VI": { label: "European equity ETF", ai: 0.15, crypto: 0.18, rates: -0.35, energy: -0.2, fx: -0.85, beta: 0.9, supplyChain: 0.3 },
 };
 
-const FALLBACK: TickerShockProfile = {
-  label: "Unclassified growth",
-  ai: 0.35,
-  crypto: 0.3,
-  rates: -0.5,
-  energy: -0.2,
-  fx: -0.3,
-  beta: 1.0,
-  supplyChain: 0.3,
+const KIND_PROFILES: Record<string, TickerShockProfile> = {
+  ai_infra: { label: "AI infra / GPU cloud", ai: 1, crypto: 0.5, rates: -1, energy: -0.35, fx: -0.2, beta: 1.7, supplyChain: 0.5 },
+  semi_stock: { label: "Semis", ai: 0.92, crypto: 0.34, rates: -0.85, energy: -0.28, fx: -0.5, beta: 1.5, supplyChain: 0.85 },
+  semi_etf: { label: "Semis ETF", ai: 0.9, crypto: 0.3, rates: -0.8, energy: -0.25, fx: -0.35, beta: 1.45, supplyChain: 0.85 },
+  quantum: { label: "Quantum / AI compute", ai: 0.82, crypto: 0.32, rates: -0.85, energy: -0.2, fx: -0.3, beta: 1.5, supplyChain: 0.55 },
+  ai_power: { label: "AI power / generation", ai: 0.85, crypto: 0.3, rates: -0.25, energy: 0.7, fx: -0.1, beta: 1.2, supplyChain: 0.2 },
+  nasdaq: { label: "US tech index", ai: 0.65, crypto: 0.28, rates: -0.65, energy: -0.25, fx: -0.45, beta: 1.2, supplyChain: 0.45 },
+  software: { label: "Software / platforms", ai: 0.62, crypto: 0.24, rates: -0.62, energy: -0.18, fx: -0.4, beta: 1.15, supplyChain: 0.22 },
+  broad_us: { label: "US large-cap index", ai: 0.28, crypto: 0.18, rates: -0.4, energy: -0.15, fx: -0.3, beta: 1.0, supplyChain: 0.28 },
+  small_cap: { label: "US small-cap index", ai: 0.2, crypto: 0.35, rates: -0.85, energy: -0.35, fx: -0.1, beta: 1.25, supplyChain: 0.25 },
+  intl: { label: "International equity", ai: 0.18, crypto: 0.18, rates: -0.35, energy: -0.2, fx: -0.85, beta: 0.95, supplyChain: 0.35 },
+  em: { label: "Emerging markets", ai: 0.22, crypto: 0.22, rates: -0.45, energy: -0.15, fx: -0.7, beta: 1.05, supplyChain: 0.45 },
+  thematic: { label: "Thematic growth ETF", ai: 0.55, crypto: 0.35, rates: -0.75, energy: -0.25, fx: -0.35, beta: 1.35, supplyChain: 0.4 },
+  crypto: { label: "Crypto proxy", ai: 0.2, crypto: 1, rates: -0.75, energy: -0.3, fx: -0.2, beta: 2.2, supplyChain: 0.2 },
+  space: { label: "Space / aerospace", ai: 0.22, crypto: 0.42, rates: -0.85, energy: -0.3, fx: -0.2, beta: 1.8, supplyChain: 0.5 },
+  fintech: { label: "Fintech", ai: 0.25, crypto: 0.5, rates: -0.65, energy: -0.2, fx: -0.2, beta: 1.5, supplyChain: 0.1 },
+  consumer: { label: "Consumer internet", ai: 0.3, crypto: 0.28, rates: -0.55, energy: -0.15, fx: -0.25, beta: 1.25, supplyChain: 0.1 },
+  ev: { label: "EV / autonomy", ai: 0.7, crypto: 0.5, rates: -0.8, energy: -0.35, fx: -0.5, beta: 1.85, supplyChain: 0.65 },
+  energy: { label: "Energy", ai: 0.05, crypto: 0.1, rates: 0.1, energy: 1.0, fx: -0.3, beta: 0.8, supplyChain: 0.2 },
+  healthcare: { label: "Healthcare", ai: 0.1, crypto: 0.05, rates: -0.22, energy: -0.1, fx: -0.3, beta: 0.55, supplyChain: 0.2 },
+  defense: { label: "Defense", ai: 0.15, crypto: 0.12, rates: -0.25, energy: 0.25, fx: -0.4, beta: 0.85, supplyChain: 0.4 },
+  banks: { label: "Banks", ai: 0.22, crypto: 0.15, rates: 0.2, energy: 0.1, fx: -0.25, beta: 1.05, supplyChain: 0.1 },
+  payments: { label: "Payments", ai: 0.3, crypto: 0.2, rates: -0.45, energy: -0.15, fx: -0.5, beta: 0.9, supplyChain: 0.1 },
+  staples: { label: "Consumer staples", ai: 0.08, crypto: 0.05, rates: -0.15, energy: -0.25, fx: -0.25, beta: 0.55, supplyChain: 0.15 },
+  industrials: { label: "Industrials", ai: 0.2, crypto: 0.12, rates: -0.35, energy: -0.15, fx: -0.35, beta: 1.05, supplyChain: 0.4 },
+  utilities: { label: "Utilities", ai: 0.25, crypto: 0.08, rates: -0.2, energy: 0.35, fx: -0.1, beta: 0.6, supplyChain: 0.15 },
+  reit: { label: "REITs", ai: 0.12, crypto: 0.1, rates: -0.85, energy: -0.15, fx: -0.1, beta: 0.85, supplyChain: 0.1 },
+  bond: { label: "Bonds", ai: 0, crypto: 0, rates: -1.15, energy: -0.08, fx: 0, beta: 0.25, supplyChain: 0 },
+  gold: { label: "Gold / metals", ai: 0.05, crypto: 0.15, rates: -0.35, energy: 0.1, fx: 0.2, beta: 0.2, supplyChain: 0.1 },
+  cyber: { label: "Cybersecurity", ai: 0.45, crypto: 0.2, rates: -0.6, energy: -0.12, fx: -0.3, beta: 1.2, supplyChain: 0.15 },
+  solar: { label: "Clean energy", ai: 0.35, crypto: 0.25, rates: -0.7, energy: 0.2, fx: -0.35, beta: 1.35, supplyChain: 0.45 },
+  levered_growth: { label: "Levered growth ETF", ai: 1.55, crypto: 0.7, rates: -1.2, energy: -0.4, fx: -0.5, beta: 2.6, supplyChain: 0.9 },
+  inverse: { label: "Inverse equity ETF", ai: -0.45, crypto: -0.25, rates: 0.25, energy: 0.05, fx: 0.1, beta: -1.0, supplyChain: -0.3 },
+  other: { label: "Single-stock equity", ai: 0.22, crypto: 0.2, rates: -0.45, energy: -0.18, fx: -0.3, beta: 1.05, supplyChain: 0.25 },
 };
+
+function kindEntries(kind: string, tickers: string[]): [string, string][] {
+  return tickers.map((t) => [t, kind]);
+}
+
+const TICKER_KIND: Record<string, string> = Object.fromEntries([
+  ...kindEntries("broad_us", ["SPY", "VOO", "IVV", "VTI", "ITOT", "SPTM", "CSPX", "VUSA", "VUAA", "DIA", "SCHD", "VIG", "OEF"]),
+  ...kindEntries("nasdaq", ["QQQ", "QQQM", "XLK", "VGT", "IYW", "FTEC"]),
+  ...kindEntries("semi_etf", ["SMH", "SOXX", "XSD", "PSI", "SHOC", "SOXQ"]),
+  ...kindEntries("quantum", ["QTUM", "BOTZ", "ROBO", "IRBO", "ARKQ"]),
+  ...kindEntries("small_cap", ["IWM", "IJR", "VB", "SCHA", "IWO"]),
+  ...kindEntries("intl", ["EFA", "VEA", "VXUS", "IEFA", "VWCE", "VT", "ANX", "EX13"]),
+  ...kindEntries("em", ["EEM", "VWO", "IEMG", "SCHE"]),
+  ...kindEntries("thematic", ["ARKK", "ARKW", "ARKF", "JEDI", "WCLD"]),
+  ...kindEntries("energy", ["XLE", "VDE", "XOP", "OIH", "USO", "XOM", "CVX", "COP"]),
+  ...kindEntries("healthcare", ["XLV", "VHT", "IHI"]),
+  ...kindEntries("banks", ["XLF", "KRE", "KBE", "BAC", "WFC", "GS", "MS", "C"]),
+  ...kindEntries("utilities", ["XLU", "VPU"]),
+  ...kindEntries("reit", ["VNQ", "XLRE", "IYR"]),
+  ...kindEntries("bond", ["TLT", "IEF", "BND", "AGG", "LQD", "TIP", "SHY", "GOVT", "BNDX", "HYG", "JNK"]),
+  ...kindEntries("gold", ["GLD", "IAU", "SLV", "GDX", "GDXJ"]),
+  ...kindEntries("crypto", ["IBIT", "FBTC", "BITO", "BITX", "GBTC", "ETHE", "ETHA"]),
+  ...kindEntries("space", ["UFO", "ARKX", "NASA"]),
+  ...kindEntries("cyber", ["HACK", "CIBR", "BUG", "IHAK"]),
+  ...kindEntries("solar", ["TAN", "ICLN", "PBW", "QCLN"]),
+  ...kindEntries("staples", ["KO", "PG", "PEP", "WMT", "COST", "MCD", "TGT", "CL", "MDLZ", "XLP"]),
+  ...kindEntries("industrials", ["CAT", "BA", "GE", "HON", "UNP", "DE", "XLI"]),
+  ...kindEntries("levered_growth", ["SOXL", "TQQQ", "UPRO", "TNA", "UDOW", "FAS", "TECL"]),
+  ...kindEntries("inverse", ["SQQQ", "SPXU", "SDOW", "SH", "PSQ", "SDS", "SPXS"]),
+  ...kindEntries("semi_stock", ["DRAM"]),
+]);
+
+function kindFromName(base: string): string | null {
+  if (/SOXL|TQQQ|UPRO|TNA|UDOW|^FAS$|TECL/.test(base)) return "levered_growth";
+  if (/SQQQ|SPXU|SDOW|^SH$|^PSQ$|^SDS$|SPXS/.test(base)) return "inverse";
+  if (/TLT|IEF|^BND$|^AGG$|^LQD$|^TIP$|^SHY$|GOVT|BNDX|^HYG$/.test(base)) return "bond";
+  if (/^GLD$|^IAU$|^SLV$|^GDX/.test(base)) return "gold";
+  if (/IBIT|FBTC|BITO|BITX|GBTC|ETHE|ETHA/.test(base)) return "crypto";
+  if (/SMH|SOXX|^XSD$|SEMI/.test(base)) return "semi_etf";
+  if (/DRAM|NAND/.test(base)) return "semi_stock";
+  if (/QTUM|BOTZ|ROBO|IRBO/.test(base)) return "quantum";
+  if (/QQQ|XLK|^VGT$|^IYW$/.test(base)) return "nasdaq";
+  if (/XLE|VDE|XOP|^USO$|^OIH$/.test(base)) return "energy";
+  if (/UFO|ARKX|NASA|SPACE/.test(base)) return "space";
+  if (/HACK|CIBR|^BUG$/.test(base)) return "cyber";
+  if (/TAN|ICLN|^PBW$/.test(base)) return "solar";
+  if (/XLF|^KRE$|^KBE$/.test(base)) return "banks";
+  if (/XLV|^VHT$/.test(base)) return "healthcare";
+  if (/XLU|^VPU$/.test(base)) return "utilities";
+  if (/VNQ|XLRE|^IYR$/.test(base)) return "reit";
+  if (/IWM|^IJR$|^VB$/.test(base)) return "small_cap";
+  if (/EEM|^VWO$|IEMG/.test(base)) return "em";
+  if (/EFA|^VEA$|VXUS|IEFA|VWCE/.test(base)) return "intl";
+  if (/VOO|^IVV$|^VTI$|^ITOT$|^DIA$|CSPX|VUSA/.test(base)) return "broad_us";
+  if (/ARKK|ARKW|ARKF|JEDI/.test(base)) return "thematic";
+  return null;
+}
+
+function kindFromTheme(ticker: string): string {
+  const theme = forecastThemeForTicker(ticker);
+  switch (theme) {
+    case "ai_infra":
+      return "ai_infra";
+    case "ai_power":
+      return "ai_power";
+    case "crypto":
+      return "crypto";
+    case "space":
+      return "space";
+    case "semi":
+      return "semi_stock";
+    case "fintech":
+      return "fintech";
+    case "software":
+      return "software";
+    case "healthcare":
+      return "healthcare";
+    case "drones":
+      return "defense";
+    case "index":
+      return "broad_us";
+    default:
+      return "other";
+  }
+}
+
+function resolveKind(raw: string, base: string): string {
+  return (
+    TICKER_KIND[raw] ??
+    TICKER_KIND[base] ??
+    kindFromName(base) ??
+    kindFromTheme(raw)
+  );
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, n));
+}
 
 export function tickerBase(ticker: string): string {
   return ticker.split(".")[0]!.toUpperCase();
@@ -263,38 +388,37 @@ export function tickerBase(ticker: string): string {
 
 export function getShockProfile(ticker: string): TickerShockProfile {
   const raw = ticker.trim();
-  const base = tickerBase(raw);
+  const upper = raw.toUpperCase();
+  const base = tickerBase(upper);
   const found =
-    PROFILES[raw.toUpperCase()] ??
+    PROFILES[upper] ??
     PROFILES[raw] ??
     PROFILES[base];
-
   if (found) return found;
 
-  // Dynamic heuristic fallback for non-canonical tickers
-  const isEuropean = raw.includes(".");
-  return {
-    ...FALLBACK,
-    label: isEuropean ? "International equity" : "Unclassified equity",
-    fx: isEuropean ? -0.85 : -0.3,
-  };
+  const kind = resolveKind(upper, base);
+  const profile = KIND_PROFILES[kind] ?? KIND_PROFILES.other!;
+  if (raw.includes(".") && kind === "other") {
+    return KIND_PROFILES.intl!;
+  }
+  return profile;
 }
 
 /** Fraction of the headline move applied to this ticker (0–1+). */
 export function shockBeta(ticker: string, shock: ShockId): number {
   if (shock === "none") return 0;
-  if (shock === "broad_down15") return 1;
   const p = getShockProfile(ticker);
   switch (shock) {
+    case "broad_down15":
+      return clamp(p.beta ?? 1, -1.2, 2.6);
     case "ai_down20":
       return p.ai;
     case "btc_winter35":
       return p.crypto;
     case "rates_up":
-      // rates factor is signed: map −1..0 onto 0..1 hurt intensity for headline
       return Math.max(0, -p.rates);
     case "tech_pullback10":
-      return Math.max(0.1, (p.ai * 0.75 + Math.max(0, -p.rates) * 0.25) * (p.beta ?? 1.0));
+      return Math.max(0.08, (p.ai * 0.75 + Math.max(0, -p.rates) * 0.25) * (p.beta ?? 1.0));
     case "oil_shock25": {
       const e = p.energy ?? -0.2;
       return e > 0 ? e * 0.48 : Math.abs(e) * 0.2 * (p.beta ?? 1.0);
@@ -305,11 +429,15 @@ export function shockBeta(ticker: string, shock: ShockId): number {
       return p.supplyChain ?? (p.ai > 0.7 ? 0.8 : 0.2);
     case "soft_landing_rally": {
       const beta = p.beta ?? 1.0;
-      return Math.max(0.3, beta * 0.6 + p.ai * 0.25 + p.crypto * 0.15);
+      return Math.max(0.15, beta * 0.6 + p.ai * 0.25 + p.crypto * 0.15);
     }
     default:
       return 0;
   }
+}
+
+function boundedMove(pct: number): number {
+  return clamp(pct, -0.55, 0.45);
 }
 
 export function shockedPct(ticker: string, shock: ShockId): number {
@@ -317,50 +445,22 @@ export function shockedPct(ticker: string, shock: ShockId): number {
   const meta = SHOCKS.find((s) => s.id === shock);
   if (!meta) return 0;
 
-  if (shock === "broad_down15") return meta.headlinePct;
-
-  if (shock === "rates_up") {
-    const p = getShockProfile(ticker);
-    return meta.headlinePct * Math.max(0, -p.rates);
-  }
-
   if (shock === "oil_shock25") {
     const p = getShockProfile(ticker);
     const energySens = p.energy ?? -0.2;
     if (energySens > 0) {
-      // Energy & power rally
-      return 0.12 * energySens;
+      return boundedMove(0.12 * energySens);
     }
-    // High energy input consumers & tech face margin drag
-    return -0.05 * Math.max(0.2, -energySens) * (p.beta ?? 1.0);
-  }
-
-  if (shock === "tech_pullback10") {
-    const p = getShockProfile(ticker);
-    const factor = Math.max(0.1, (p.ai * 0.75 + Math.max(0, -p.rates) * 0.25) * (p.beta ?? 1.0));
-    return meta.headlinePct * factor;
+    return boundedMove(-0.05 * Math.max(0.2, -energySens) * (p.beta ?? 1.0));
   }
 
   if (shock === "usd_surge7") {
     const p = getShockProfile(ticker);
     const fxSens = p.fx ?? (ticker.includes(".") ? -0.85 : -0.3);
-    return -0.07 * Math.abs(fxSens);
+    return boundedMove(-0.07 * Math.abs(fxSens));
   }
 
-  if (shock === "china_supply_shock") {
-    const p = getShockProfile(ticker);
-    const scSens = p.supplyChain ?? (p.ai > 0.7 ? 0.8 : 0.2);
-    return meta.headlinePct * scSens;
-  }
-
-  if (shock === "soft_landing_rally") {
-    const p = getShockProfile(ticker);
-    const beta = p.beta ?? 1.0;
-    const factor = Math.max(0.3, beta * 0.6 + p.ai * 0.25 + p.crypto * 0.15);
-    return meta.headlinePct * factor;
-  }
-
-  return meta.headlinePct * shockBeta(ticker, shock);
+  return boundedMove(meta.headlinePct * shockBeta(ticker, shock));
 }
 
 export function shockedPrice(
