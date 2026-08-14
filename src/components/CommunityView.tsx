@@ -1189,11 +1189,31 @@ export function CommunityView({ communityId }: Props) {
                                     color="#f472b6"
                                   />
                                 </div>
-                                <p className="rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-3 py-2 text-xs leading-relaxed text-zinc-400">
-                                  Spirit animal and risk band are a read of the
-                                  mix. The leaderboard above is the actual
-                                  score.
-                                </p>
+                                <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+                                  <PersonalityMetric
+                                    label="Expected growth"
+                                    value={`${m.personality.expectedAnnualReturnPct.toFixed(1)}%`}
+                                    hint="a year, modeled"
+                                  />
+                                  <PersonalityMetric
+                                    label="Max drawdown"
+                                    value={`${m.personality.maxDrawdownPct}%`}
+                                    hint="bad stretch"
+                                    tone="down"
+                                  />
+                                  <PersonalityMetric
+                                    label="Modeled alpha"
+                                    value={signedPctPoints(m.personality.modeledAlphaPct)}
+                                    hint="vs same-risk index"
+                                    tone={
+                                      m.personality.modeledAlphaPct > 0
+                                        ? "up"
+                                        : m.personality.modeledAlphaPct < 0
+                                          ? "down"
+                                          : undefined
+                                    }
+                                  />
+                                </div>
                                 <div>
                                   <div className="flex items-center justify-between gap-2 text-xs">
                                     <span className="inline-flex items-center gap-1 text-zinc-400">
@@ -2172,6 +2192,42 @@ export function CommunityView({ communityId }: Props) {
 
 /** Score + qualitative band + bar, with real breathing room — replaces the
  * old cramped label/bar/number row that had nowhere to put the band text. */
+function signedPctPoints(n: number): string {
+  const abs = Math.abs(n).toFixed(1);
+  if (n > 0) return `+${abs}%`;
+  if (n < 0) return `-${abs}%`;
+  return `${abs}%`;
+}
+
+function PersonalityMetric({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "up" | "down";
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs uppercase tracking-wide text-zinc-400">{label}</p>
+      <p
+        className={cn(
+          "mt-0.5 text-sm font-semibold tabular-nums",
+          tone === "up" && "text-gain",
+          tone === "down" && "text-loss",
+          !tone && "text-zinc-100"
+        )}
+      >
+        {value}
+      </p>
+      {hint ? <p className="mt-0.5 text-xs text-zinc-500">{hint}</p> : null}
+    </div>
+  );
+}
+
 function ScoreBar({
   label,
   score,
