@@ -20,7 +20,9 @@ RLS is enabled on every `portfell_*` table. Holdings and portfolios are scoped t
 
 ## Domain
 
-Canonical host: `upsidelab.app`. Known legacy hosts 301 to it (path + query kept). `/api/*` is not redirected, so Vercel cron and signed callbacks do not drop a body.
+Canonical host: `upsidelab.app` once that domain is attached on Vercel. Known legacy hosts then 301 to it (path + query kept). `/api/*` is not redirected, so Vercel cron and signed callbacks do not drop a body.
+
+Redirects stay off until you set `UPSIDE_CANONICAL_HOST=upsidelab.app` in Vercel. Shipping the 301 against a parking page on ZoneOS took the live alias down; do not set that env until the domain's nameservers point at this project.
 
 ### DNS / Vercel (do this before the 301 matters)
 

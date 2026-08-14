@@ -5,12 +5,18 @@ import {
   isLegacyHost,
   isLocalHost,
   isVercelPreviewHost,
-  siteHost,
 } from "@/lib/site-url";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
-function canonicalHost(): string {
-  return siteHost();
+function redirectTarget(): string | null {
+  // Only 301 when production has an explicit canonical host. The code
+  // default (upsidelab.app) is for OG/sitemap; flipping traffic there
+  // before the domain is attached on Vercel black-holes the live app.
+  const explicit =
+    process.env.UPSIDE_CANONICAL_HOST?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!explicit) return null;
+  return explicit.replace(/^https?:\/\//, "").replace(/\/+$/, "").toLowerCase();
 }
 
 /**
@@ -22,11 +28,12 @@ function canonicalHost(): string {
  */
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
-  const target = canonicalHost();
+  const target = redirectTarget();
   const path = request.nextUrl.pathname;
   const isApi = path.startsWith("/api/");
 
   if (
+    target &&
     !isLocalHost(host) &&
     host.split(":")[0].toLowerCase() !== target &&
     !isApi &&
