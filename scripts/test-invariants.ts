@@ -27,6 +27,13 @@ import {
 import { sessionMark } from "../src/lib/market-session";
 import { quotePollMs } from "../src/lib/market/session";
 import { mergeQuotes } from "../src/lib/quote-cache";
+import {
+  closeOnDate,
+  portfolioCostValue,
+  portfolioValueOnDate,
+  priorNySessionKey,
+  quotesCoverDate,
+} from "../src/lib/sheet-mark";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 
@@ -346,6 +353,43 @@ run("quote polls stay live through pre-market and after hours", () => {
   assert.equal(quotePollMs(new Date("2026-08-14T21:00:00Z")), 45_000); // 17:00 ET AH
   assert.equal(quotePollMs(new Date("2026-08-15T01:30:00Z")), 2 * 60_000); // 21:30 ET Fri
   assert.equal(quotePollMs(new Date("2026-08-15T14:00:00Z")), 15 * 60_000); // 10:00 ET Sat
+});
+
+run("sheet mark as-of a pin date uses that session's close, not last night's", () => {
+  assert.equal(priorNySessionKey("2026-08-12"), "2026-08-11");
+  assert.equal(priorNySessionKey("2026-08-10"), "2026-08-07");
+
+  const q = {
+    ticker: "NBIS",
+    price: 260,
+    change: 5,
+    changePercent: 0.02,
+    previousClose: 255,
+    sparkline: [],
+    marketState: "PRE",
+    preMarketPrice: 260,
+    preMarketChange: 5,
+    preMarketChangePercent: 0.02,
+    postMarketPrice: null,
+    postMarketChange: null,
+    postMarketChangePercent: null,
+    dailyCloses: [
+      { date: "2026-08-11", close: 200 },
+      { date: "2026-08-12", close: 250 },
+      { date: "2026-08-13", close: 255 },
+    ],
+  };
+  assert.equal(closeOnDate(q, "2026-08-11"), 200);
+  const meta = { id: "aasad", cash_balance: 0 };
+  const holdings = [
+    { portfolio_id: "aasad", ticker: "NBIS", shares: 500, buy_price: 110 },
+  ];
+  const asOf = portfolioValueOnDate(meta, holdings, { NBIS: q }, "2026-08-11");
+  assert.equal(asOf, 100_000);
+  const liveCost = portfolioCostValue(meta, holdings);
+  assert.equal(liveCost, 55_000);
+  assert.equal(quotesCoverDate({ NBIS: q }, holdings, "aasad", "2026-08-11"), true);
+  assert.equal(quotesCoverDate({ NBIS: q }, holdings, "aasad", "2026-01-01"), false);
 });
 
 run("fund today move is live NAV minus last snapshot", () => {

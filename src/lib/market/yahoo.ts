@@ -213,6 +213,27 @@ export async function fetchQuotesYahoo(
                   .filter((c): c is number => typeof c === "number")
                   .map((c) => priceToUsd(c, currency, fx))
               : synthesizeSparkline(price, changePercent * 100);
+          const dailyCloses = (chart.quotes ?? [])
+            .map((row) => {
+              const close = row.close;
+              const rawDate = row.date;
+              if (typeof close !== "number" || !rawDate) return null;
+              const when =
+                rawDate instanceof Date
+                  ? rawDate
+                  : new Date(
+                      typeof rawDate === "number" && rawDate < 1e12
+                        ? rawDate * 1000
+                        : rawDate
+                    );
+              if (Number.isNaN(when.getTime())) return null;
+              return {
+                date: dateKeyInTz(when, "America/New_York"),
+                close: priceToUsd(close, currency, fx),
+              };
+            })
+            .filter((b): b is { date: string; close: number } => b != null)
+            .slice(-15);
 
           const preMarketPrice = scaleMoney(
             typeof quote.preMarketPrice === "number"
@@ -269,6 +290,7 @@ export async function fetchQuotesYahoo(
               postMarketPrice,
               postMarketChange,
               postMarketChangePercent,
+              dailyCloses,
             } satisfies Quote,
           ] as const;
         } catch (err) {

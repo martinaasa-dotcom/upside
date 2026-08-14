@@ -22,7 +22,15 @@ import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
 } from "@/lib/upside-portfolio-cache";
+import { todayKeyInTz } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
+import {
+  portfolioCostValue,
+  portfolioLiveValue,
+  portfolioValueOnDate,
+  priorNySessionKey,
+  quotesCoverDate,
+} from "@/lib/sheet-mark";
 import {
   ChevronDown,
   ChevronRight,
@@ -86,44 +94,16 @@ type MyHolding = {
   buy_price: number;
 };
 
-function portfolioValueAt(
-  meta: MyPortfolioMeta,
-  holdings: MyHolding[],
-  quotes: Record<string, Quote>,
-  priceOf: (q: Quote | undefined, fallback: number) => number
+function margusValueBefore(
+  pinDate: string,
+  reports: { report_date: string; portfolio_value: number }[],
+  startingCapital: number | null | undefined,
+  fallback: number
 ): number {
-  const equity = holdings
-    .filter((h) => h.portfolio_id === meta.id)
-    .reduce((sum, h) => sum + h.shares * priceOf(quotes[h.ticker], h.buy_price), 0);
-  return meta.cash_balance + equity;
-}
-
-function portfolioLiveValue(
-  meta: MyPortfolioMeta,
-  holdings: MyHolding[],
-  quotes: Record<string, Quote>
-): number {
-  return portfolioValueAt(meta, holdings, quotes, (q, fallback) => q?.price ?? fallback);
-}
-
-/** Yesterday's close ≈ today's open — used so a benchmark set up mid-day
- * still reflects the day's full move instead of reading ~0% just because
- * you clicked "set benchmark" a few hours after the open. */
-function portfolioValueAtPreviousClose(
-  meta: MyPortfolioMeta,
-  holdings: MyHolding[],
-  quotes: Record<string, Quote>
-): number {
-  return portfolioValueAt(
-    meta,
-    holdings,
-    quotes,
-    (q, fallback) => q?.previousClose ?? fallback
-  );
-}
-
-function todayDateKey(): string {
-  return new Date().toISOString().slice(0, 10);
+  const prior = reports.find((r) => r.report_date < pinDate);
+  if (prior && prior.portfolio_value > 0) return prior.portfolio_value;
+  if (startingCapital != null && startingCapital > 0) return startingCapital;
+  return fallback;
 }
 
 type FundRow = {
@@ -407,12 +387,10 @@ export function UpsidePortfolioPage() {
   );
 
   const latestReport = reports[0] ?? null;
-  // Read inside refreshBenchmarkValue without adding `reports` to its
-  // dependency array (that callback is intentionally only keyed off
-  // benchmark identity so the 60s poll effect doesn't get torn down and
-  // rebuilt every time a new report or quote tick comes in).
-  const latestReportRef = useRef(latestReport);
-  latestReportRef.current = latestReport;
+  const reportsRef = useRef(reports);
+  reportsRef.current = reports;
+  const fundRef = useRef(fund);
+  fundRef.current = fund;
   const oldestReport = reports[reports.length - 1] ?? null;
   const cash = latestReport?.cash ?? fund?.cash ?? 0;
   // Live, not frozen at the last daily snapshot — same formula as the
@@ -537,7 +515,11 @@ export function UpsidePortfolioPage() {
       portfolioId: string,
       portfolios: MyPortfolioMeta[],
       holdingsList: MyHolding[]
-    ): Promise<{ live: number; atPreviousClose: number }> => {
+    ): Promise<{
+      meta: MyPortfolioMeta;
+      live: number;
+      quotes: Record<string, Quote>;
+    }> => {
       const meta = portfolios.find((p) => p.id === portfolioId);
       if (!meta) throw new Error("Sheet not found");
       const tickers = [
@@ -549,21 +531,15 @@ export function UpsidePortfolioPage() {
       ];
       let liveQuotes: Record<string, Quote> = {};
       if (tickers.length > 0) {
-        const res = await fetch(
-          quotesUrl(tickers),
-          { cache: "no-store" }
-        );
+        const res = await fetch(quotesUrl(tickers), { cache: "no-store" });
         if (!res.ok) throw new Error(`Quotes fetch failed (${res.status})`);
         const data = await res.json();
         liveQuotes = data.quotes ?? {};
       }
       return {
+        meta,
         live: portfolioLiveValue(meta, holdingsList, liveQuotes),
-        atPreviousClose: portfolioValueAtPreviousClose(
-          meta,
-          holdingsList,
-          liveQuotes
-        ),
+        quotes: liveQuotes,
       };
     },
     []
@@ -578,43 +554,51 @@ export function UpsidePortfolioPage() {
         saveStoredBenchmark(null);
         return;
       }
-      const { live, atPreviousClose } = await valueForPortfolio(
+      const { meta, live, quotes: liveQuotes } = await valueForPortfolio(
         benchmark.portfolioId,
         portfolios,
         holdingsList
       );
       setBenchmarkLiveValue(live);
 
-      // Self-heal a benchmark set up earlier today: it originally anchored
-      // to "value at the exact moment you clicked set benchmark", which
-      // reads as ~0% dead-even for hours after a real intraday move
-      // (Margus's side has the same issue, anchored to "current totalValue
-      // right then" instead of his own start-of-day report). Re-anchor
-      // both sides to today's open once, so the comparison actually
-      // reflects the day instead of just "since I opened this page".
-      if (benchmark.baselineDate === todayDateKey()) {
-        const healedMargusBaseline =
-          latestReportRef.current?.portfolio_value ??
-          benchmark.margusBaselineValue;
-        const needsHeal =
-          Math.abs(benchmark.userBaselineValue - atPreviousClose) > 0.01 ||
-          Math.abs(benchmark.margusBaselineValue - healedMargusBaseline) >
-            0.01;
-        if (needsHeal) {
-          const healed: MyPortfolioBenchmark = {
-            ...benchmark,
-            userBaselineValue: atPreviousClose,
-            margusBaselineValue: healedMargusBaseline,
-          };
-          saveStoredBenchmark(healed);
-          setBenchmark(healed);
-        }
+      // Re-value the start from dated daily bars so a pin on Aug 12 still
+      // includes that day's move. The old path kept rewriting previousClose
+      // overnight and swallowed the session.
+      const startSession = priorNySessionKey(benchmark.baselineDate);
+      const covered = quotesCoverDate(
+        liveQuotes,
+        holdingsList,
+        meta.id,
+        startSession
+      );
+      const atStart = covered
+        ? portfolioValueOnDate(meta, holdingsList, liveQuotes, startSession)
+        : 0;
+      const margusStart = margusValueBefore(
+        benchmark.baselineDate,
+        reportsRef.current,
+        fundRef.current?.starting_capital,
+        benchmark.margusBaselineValue
+      );
+      if (
+        (covered &&
+          atStart > 0 &&
+          Math.abs(atStart - benchmark.userBaselineValue) > 1) ||
+        Math.abs(margusStart - benchmark.margusBaselineValue) > 1
+      ) {
+        const healed: MyPortfolioBenchmark = {
+          ...benchmark,
+          userBaselineValue:
+            covered && atStart > 0 ? atStart : benchmark.userBaselineValue,
+          margusBaselineValue: margusStart,
+        };
+        saveStoredBenchmark(healed);
+        setBenchmark(healed);
       }
     } catch {
       /* keep last-known value on transient failure, non-critical */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [benchmark]);
+  }, [benchmark, valueForPortfolio]);
 
   // Refresh the live value of an already-set benchmark whenever it loads.
   useEffect(() => {
@@ -694,21 +678,30 @@ export function UpsidePortfolioPage() {
     setBenchmarkBusy(true);
     setBenchmarkError(null);
     try {
-      const meta = myPortfolios.find((p) => p.id === pickerSelection);
-      if (!meta) throw new Error("Sheet not found");
-      const { live, atPreviousClose } = await valueForPortfolio(
+      const { meta, live, quotes: liveQuotes } = await valueForPortfolio(
         pickerSelection,
         myPortfolios,
         myHoldings
       );
+      const pinDate = todayKeyInTz();
+      const startSession = priorNySessionKey(pinDate);
+      const atStart = portfolioValueOnDate(
+        meta,
+        myHoldings,
+        liveQuotes,
+        startSession
+      );
       const next: MyPortfolioBenchmark = {
         portfolioId: pickerSelection,
         portfolioName: meta.name,
-        baselineDate: todayDateKey(),
-        // Anchor to today's open, not "right now" — otherwise a benchmark
-        // set up mid-day reads ~0% for hours even on a big move day.
-        userBaselineValue: atPreviousClose,
-        margusBaselineValue: latestReport?.portfolio_value ?? totalValue,
+        baselineDate: pinDate,
+        userBaselineValue: atStart > 0 ? atStart : live,
+        margusBaselineValue: margusValueBefore(
+          pinDate,
+          reports,
+          fund?.starting_capital,
+          totalValue
+        ),
       };
       saveStoredBenchmark(next);
       setBenchmark(next);
@@ -725,7 +718,8 @@ export function UpsidePortfolioPage() {
     myHoldings,
     valueForPortfolio,
     totalValue,
-    latestReport,
+    reports,
+    fund?.starting_capital,
   ]);
 
   const handleClearBenchmark = useCallback(() => {
@@ -737,16 +731,30 @@ export function UpsidePortfolioPage() {
 
   const benchmarkCompare = useMemo(() => {
     if (!benchmark || benchmarkLiveValue == null) return null;
+    const youDollar = benchmarkLiveValue - benchmark.userBaselineValue;
     const youPct =
       benchmark.userBaselineValue > 0
-        ? (benchmarkLiveValue - benchmark.userBaselineValue) / benchmark.userBaselineValue
+        ? youDollar / benchmark.userBaselineValue
         : 0;
+    const margusDollar = totalValue - benchmark.margusBaselineValue;
     const margusPct =
       benchmark.margusBaselineValue > 0
-        ? (totalValue - benchmark.margusBaselineValue) / benchmark.margusBaselineValue
+        ? margusDollar / benchmark.margusBaselineValue
         : 0;
-    return { youPct, margusPct, deltaPts: margusPct - youPct };
-  }, [benchmark, benchmarkLiveValue, totalValue]);
+    const meta = myPortfolios?.find((p) => p.id === benchmark.portfolioId);
+    const vsCost =
+      meta != null
+        ? benchmarkLiveValue - portfolioCostValue(meta, myHoldings)
+        : null;
+    return {
+      youPct,
+      youDollar,
+      margusPct,
+      margusDollar,
+      deltaPts: margusPct - youPct,
+      vsCost,
+    };
+  }, [benchmark, benchmarkLiveValue, totalValue, myPortfolios, myHoldings]);
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
@@ -946,55 +954,97 @@ export function UpsidePortfolioPage() {
                     </button>
                   )
                 ) : (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs text-zinc-400">
-                        <span className="font-semibold text-zinc-200">
-                          {benchmark.portfolioName}
-                        </span>{" "}
-                        vs Margus, since {fmtDate(benchmark.baselineDate)}
-                      </p>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xs text-zinc-400">
+                          <span className="font-semibold text-zinc-200">
+                            {benchmark.portfolioName}
+                          </span>{" "}
+                          vs Margus
+                        </p>
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          Move since {fmtDate(benchmark.baselineDate)}, not vs
+                          what you paid.
+                        </p>
+                      </div>
                       <button
                         type="button"
                         onClick={handleClearBenchmark}
-                        className="touch-target flex shrink-0 items-center justify-center rounded-md text-zinc-400 hover:text-zinc-300"
+                        className="flex shrink-0 items-center justify-center rounded-md p-1.5 text-zinc-400 hover:text-zinc-300"
                         aria-label="Remove benchmark"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                     {benchmarkCompare ? (
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                        <span>
-                          <span style={{ color: SERIES_COLOR.you }}>●</span> You:{" "}
-                          <span
-                            className={cn(
-                              "font-semibold tabular-nums",
-                              benchmarkCompare.youPct >= 0 ? "text-gain" : "text-loss"
-                            )}
-                          >
-                            {percent(benchmarkCompare.youPct)}
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                          <span>
+                            <span style={{ color: SERIES_COLOR.you }}>●</span>{" "}
+                            You:{" "}
+                            <span
+                              className={cn(
+                                "font-semibold tabular-nums",
+                                signedTone(benchmarkCompare.youDollar)
+                              )}
+                            >
+                              {signedCurrency(benchmarkCompare.youDollar, 0)}
+                            </span>{" "}
+                            <span
+                              className={cn(
+                                "tabular-nums",
+                                signedTone(benchmarkCompare.youPct, "text-zinc-500")
+                              )}
+                            >
+                              ({percent(benchmarkCompare.youPct)})
+                            </span>
                           </span>
-                        </span>
-                        <span>
-                          <span style={{ color: SERIES_COLOR.margus }}>●</span> Margus (same
-                          window):{" "}
-                          <span
-                            className={cn(
-                              "font-semibold tabular-nums",
-                              benchmarkCompare.margusPct >= 0 ? "text-gain" : "text-loss"
-                            )}
-                          >
-                            {percent(benchmarkCompare.margusPct)}
+                          <span>
+                            <span style={{ color: SERIES_COLOR.margus }}>●</span>{" "}
+                            Margus:{" "}
+                            <span
+                              className={cn(
+                                "font-semibold tabular-nums",
+                                signedTone(benchmarkCompare.margusDollar)
+                              )}
+                            >
+                              {signedCurrency(benchmarkCompare.margusDollar, 0)}
+                            </span>{" "}
+                            <span
+                              className={cn(
+                                "tabular-nums",
+                                signedTone(
+                                  benchmarkCompare.margusPct,
+                                  "text-zinc-500"
+                                )
+                              )}
+                            >
+                              ({percent(benchmarkCompare.margusPct)})
+                            </span>
                           </span>
-                        </span>
-                        <span className="font-semibold text-zinc-300">
+                        </div>
+                        <p className="font-semibold text-zinc-300">
                           {Math.abs(benchmarkCompare.deltaPts) < 0.001
-                            ? "Dead even"
+                            ? "Dead even over this window"
                             : benchmarkCompare.deltaPts > 0
                               ? `Margus is ahead by ${(benchmarkCompare.deltaPts * 100).toFixed(1)}pt`
                               : `You're ahead by ${(Math.abs(benchmarkCompare.deltaPts) * 100).toFixed(1)}pt`}
-                        </span>
+                        </p>
+                        {benchmarkCompare.vsCost != null && (
+                          <p className="text-zinc-500">
+                            {benchmark.portfolioName} is{" "}
+                            <span
+                              className={cn(
+                                "tabular-nums",
+                                signedTone(benchmarkCompare.vsCost)
+                              )}
+                            >
+                              {signedCurrency(benchmarkCompare.vsCost, 0)}
+                            </span>{" "}
+                            vs cost.
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <p className="text-xs text-zinc-400">Calculating …</p>

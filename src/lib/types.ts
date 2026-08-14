@@ -45,6 +45,8 @@ export type Quote = {
   postMarketChange: number | null;
   /** Fraction */
   postMarketChangePercent: number | null;
+  /** Dated regular-session closes, newest last. Used to value a book as-of a day. */
+  dailyCloses?: { date: string; close: number }[];
 };
 
 export type OptionCandidate = {
