@@ -1,11 +1,12 @@
 /**
  * Margus forecast conviction — generic, sector-based fallback shapes.
  *
- * These fill in a gap ONLY when the model didn't produce a usable price for
- * a given ticker/year, or produced a suspiciously flat/linear path. They are
- * intentionally modest, illustrative curves, not a promise or a target —
- * every real forecast is reasoned per-ticker by the model, not assigned from
- * a fixed lookup table.
+ * Two jobs, both theme-level (never a per-ticker price table):
+ * 1. Fill a gap when the model skipped a year, or replace a boringly linear ramp.
+ * 2. Lift a path whose 2030 multiple sits below its theme band. Models keep
+ *    "splitting the difference" toward sell-side 2-3x five-year targets;
+ *    that quietly contradicts the constructive base case. We never lower a
+ *    path that already beats the band.
  */
 
 import type { ForecastYear } from "@/lib/forecast";
@@ -175,8 +176,8 @@ function roundPx(n: number) {
 
 /**
  * Build a fallback path from the generic theme shape (base case only).
- * Used only to fill gaps the model left empty — never to override a valid
- * model-produced number.
+ * Used to fill gaps, replace linear ramps, and as the magnitude floor
+ * when the model's terminal undershoots the theme.
  */
 export function shapedFallbackPath(
   spot: number,
@@ -194,8 +195,8 @@ export function shapedFallbackPath(
 
 /**
  * Fill any year the model left empty/invalid with the generic fallback
- * shape. Unlike a "floor", this never overrides a valid model-produced
- * price — every ticker's real forecast is reasoned by the model itself.
+ * shape. Valid model prices are kept here; magnitude lift happens in
+ * `liftPathToThemeMagnitude`.
  */
 export function fillMissingForecastYears(
   prices: Partial<Record<ForecastYear, number>> | undefined,
@@ -209,6 +210,38 @@ export function fillMissingForecastYears(
     }
   }
   return out;
+}
+
+/**
+ * If the model's last-year multiple sits below the theme band, scale the
+ * whole path up so 2030 matches. Winter / digestion years keep their shape.
+ * Paths already at or above the band are left alone (never lowered).
+ */
+export function liftPathToThemeMagnitude(
+  prices: Record<ForecastYear, number>,
+  fallback: Record<ForecastYear, number>,
+  spot: number
+): { prices: Record<ForecastYear, number>; lifted: boolean } {
+  const last = FORECAST_YEARS[FORECAST_YEARS.length - 1]!;
+  const modelTerm = prices[last];
+  const themeTerm = fallback[last];
+  if (!(spot > 0) || !(modelTerm > 0) || !(themeTerm > 0)) {
+    return { prices, lifted: false };
+  }
+  if (modelTerm < spot) {
+    return { prices: { ...fallback }, lifted: true };
+  }
+  const modelMult = modelTerm / spot;
+  const themeMult = themeTerm / spot;
+  if (modelMult >= themeMult * 0.98) {
+    return { prices, lifted: false };
+  }
+  const scale = themeMult / modelMult;
+  const out = { ...prices };
+  for (const y of FORECAST_YEARS) {
+    out[y] = roundPx(Math.max(0.01, prices[y]! * scale));
+  }
+  return { prices: enforcePathRules(out, spot), lifted: true };
 }
 
 /** Light sanity net — only guarantees every year is a positive number. */
@@ -275,6 +308,13 @@ Treat those as the centre of gravity for a name that genuinely fits its
 theme, then move up or down from there on that specific company's
 economics, balance sheet and competitive position. A dominant compounder
 can beat its theme; a weak operator inside a hot theme should not.
+
+The failure mode to avoid is landing 20%+ below the theme CAGR on a name
+that fits. Models do this by "staying disciplined" or splitting the
+difference toward sell-side 2-3x five-year targets. That is wrong. A
+digestion or winter year changes the PATH, not the 2030 destination:
+after the down year, re-accelerate so the terminal still sits near the
+band. Do not quietly kneecap the multiple to look prudent.
 
 Two honesty checks so this stays a thesis and not a ramp: the path is
 violent, not smooth (digestion years, crowded-trade drawdowns and multiple

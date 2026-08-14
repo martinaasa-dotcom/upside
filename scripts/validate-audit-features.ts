@@ -206,7 +206,29 @@ const timidRejected = ensureCompleteEoyTargets(
 );
 assert(
   (timidRejected[0]?.prices?.[2026] ?? 0) > 100 * 1.2,
-  "base rejects NBIS EOY2026 below sheet floor"
+  "hot AI infra path is not lowered"
+);
+// Classic undershoot: ~3.6x by 2030 vs ~4.8x theme band. Lift, don't keep.
+const timidLifted = ensureCompleteEoyTargets(forecastStub, [
+  {
+    ticker: "NBIS",
+    prices: {
+      2026: 115,
+      2027: 160,
+      2028: 188,
+      2029: 267,
+      2030: 364,
+    },
+    rationale: "gpu cloud compounding with a digestion year in 2028",
+  },
+]);
+assert(
+  (timidLifted[0]?.prices?.[2030] ?? 0) >= 100 * 4.5,
+  "undershoot AI infra terminal is lifted to the theme band"
+);
+assert(
+  /gpu cloud/i.test(timidLifted[0]?.rationale ?? ""),
+  "lift keeps the model's rationale"
 );
 const cryptoFill = ensureCompleteEoyTargets(
   {

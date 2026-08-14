@@ -11,6 +11,7 @@ import {
   FORECAST_CONVICTION_PROMPT,
   fillMissingForecastYears,
   forecastThemeForTicker,
+  liftPathToThemeMagnitude,
   shapedFallbackPath,
 } from "@/lib/forecast-conviction";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -201,7 +202,7 @@ export function saveForecastPlan(plan: ForecastPlan) {
 }
 
 function stanceGuidance(): string {
-  return `BASE CASE (the only case; there is no cautious or bullish variant to hedge toward). Reason each ticker's path from its own fundamentals, sector cycle and volatility, against the macro thesis and the magnitude calibration above. Do not drift back toward consensus single-digit returns for names that genuinely sit in the AI buildout: that would contradict the thesis you were given. No per-ticker price target to match. Consistency: if the macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when the thesis meaningfully changes.`;
+  return `BASE CASE (the only case; there is no cautious or bullish variant to hedge toward). Reason each ticker's path from its own fundamentals, sector cycle and volatility, against the macro thesis and the magnitude calibration above. Do not drift back toward consensus 2-3x five-year targets for names that genuinely sit in the AI buildout: that would contradict the thesis you were given. A digestion year is shape, not a smaller destination. No per-ticker price target to match. Consistency: if the macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when the thesis meaningfully changes. Never lower a prior run's terminal just to look more conservative.`;
 }
 
 function isJunkRationale(text: string | undefined): boolean {
@@ -257,9 +258,10 @@ function fallbackRationale(input: {
 }
 
 /**
- * Guarantee every holding has every FORECAST_YEAR filled. The model's own
- * numbers are always respected when present and reasonable; the generic
- * theme-shaped path only fills gaps or replaces a boringly-linear ramp.
+ * Guarantee every holding has every FORECAST_YEAR filled. Gaps and
+ * boringly-linear ramps use the theme shape. A non-linear path whose 2030
+ * multiple still sits below the theme band is lifted (shape kept, destination
+ * restored). A path already at or above the band is never lowered.
  */
 export function ensureCompleteEoyTargets(
   forecast: ForecastModel,
@@ -283,12 +285,13 @@ export function ensureCompleteEoyTargets(
     const shaped = shapedFallbackPath(spot, theme);
     let prices = fillMissingForecastYears(existing?.prices, shaped);
 
-    // Only reshape when the model's path is a boring straight line —
-    // never because it's "too timid" vs some target.
     const reshape = isNearLinear(prices, spot) && theme !== "index";
     if (reshape) {
       prices = { ...shaped };
     }
+
+    const lifted = liftPathToThemeMagnitude(prices, shaped, spot);
+    prices = lifted.prices;
 
     out.push({
       ticker: row.ticker,
