@@ -118,26 +118,24 @@ ${fg}
 - Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis. Never use **hold** for a broken thesis either: that's what puts a Hold badge next to "Thesis at risk".
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
-### thesisStatus — be conservative, this should rarely be "broken"
-- **intact**: the reason you own it hasn't changed. A normal red day, sector-wide
-  weakness, profit-taking after a run, or "priced in" digestion are NOT thesis
-  breaks — they're noise. Most red days on a name whose story is still true are intact.
-- **watch**: something worth tracking emerged (a soft quarter, a competitive wrinkle,
-  a guidance nuance) but it hasn't invalidated the core story yet.
-- **broken**: the actual reason you bought this is gone. Guidance genuinely cut,
-  the moat/thesis is disproven, fraud or a restatement, the multi-year story is over.
-  This is rare. **broken must pair with action=sell, nothing else.** If you'd still
-  hold it, the thesis isn't broken, it's at most "watch".
+### thesisStatus — start from intact. Watch and broken have to be earned
+- First write **thesisBreak**: the concrete thing that would invalidate the reason this is in the book. Falsifiable. Not "the price drops."
+- Then look at today's headlines and the move. **intact** unless those facts actually match the break list (watch) or show the break already happened (broken).
+- **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT thesis breaks. If your situation bullets say there's no stress / normal monitoring, thesisStatus MUST be intact.
+- **watch**: something on the break list is starting to show up (a soft quarter, a competitive wrinkle, a guidance nuance) but the core story still holds.
+- **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the moat/thesis is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the thesis isn't broken, it's at most "watch".
+- Do not mark watch or broken just because you mentioned a risk. The risk has to be happening now.
 
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
 2. **moveReason**: one sentence (cite headline when possible).
-3. **thesisStatus**: intact / watch / broken, per the definitions above.
-4. **action**: add / hold / trim / sell / watch per rules above.
-5. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.
-6. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim/sell).
-7. **earningsNote**: if relevant; else empty string.
-8. **verdict**: one sentence tying **action + addLevel/trimPct** to the thesis.
+3. **thesisBreak**: one or two short sentences, concrete, what would actually break the thesis.
+4. **thesisStatus**: intact / watch / broken, scored against thesisBreak and today's facts. Default intact.
+5. **action**: add / hold / trim / sell / watch per rules above.
+6. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.
+7. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim/sell).
+8. **earningsNote**: if relevant; else empty string.
+9. **verdict**: one sentence tying **action + addLevel/trimPct** to the thesis.
 
 **summary**: one sentence, lead with dips that are add opportunities vs real thesis breaks.
 

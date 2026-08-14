@@ -56,11 +56,23 @@ const AI_OPENERS: Array<[RegExp, string]> = [
 export function scrubAiPhrases(text: string): string {
   if (!text) return text;
   let s = text;
+  let strippedLead = false;
   for (const [re, rep] of AI_OPENERS) {
-    s = s.replace(re, rep);
+    const next = s.replace(re, rep);
+    if (next !== s) {
+      s = next;
+      if (re.source.startsWith("^")) strippedLead = true;
+    }
   }
   if (!s) return text;
-  return s.replace(/^[a-z]/, (c) => c.toUpperCase());
+  // Only recapitalize when we actually ate a leading opener. Doing this
+  // to every string turned Pulse enums (`intact`, `hold`) into `Intact` /
+  // `Hold`, which the badge code then treated as unknown and painted
+  // "Thesis at risk" on a fully intact Hold card.
+  if (strippedLead) {
+    return s.replace(/^[a-z]/, (c) => c.toUpperCase());
+  }
+  return s;
 }
 
 /** Full pass for a single Margus string. */
@@ -68,6 +80,24 @@ export function humanizeMargusText(text: string): string {
   if (!text) return text;
   return scrubAiPhrases(stripAiDashes(text));
 }
+
+/**
+ * Keys that are codes, not prose. Running the sentence sanitizer on them
+ * title-cases enums and breaks every `=== "intact"` check downstream.
+ */
+const LEAVE_ALONE = new Set([
+  "thesisStatus",
+  "action",
+  "ticker",
+  "id",
+  "kind",
+  "type",
+  "generatedAt",
+  "cachedAt",
+  "publishedAt",
+  "link",
+  "url",
+]);
 
 /**
  * Recursively humanize every string in a plain object / array tree
@@ -83,7 +113,7 @@ export function humanizeMargusTree<T>(value: T): T {
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = humanizeMargusTree(v);
+      out[k] = LEAVE_ALONE.has(k) ? v : humanizeMargusTree(v);
     }
     return out as T;
   }

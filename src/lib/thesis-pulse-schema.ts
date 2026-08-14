@@ -64,6 +64,11 @@ export const pulseReportSchema = z.object({
         .describe(
           "One sentence tying action + addLevel to the thesis, not generic hold language."
         ),
+      thesisBreak: z
+        .string()
+        .describe(
+          "One or two short sentences. Concrete and falsifiable: what would actually invalidate the reason this name is in the book. Not 'the stock goes down'. Example: capacity bookings stall for two quarters, or the core contract gets cancelled. Required on every ticker."
+        ),
     })
   ),
 });

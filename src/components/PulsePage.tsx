@@ -91,10 +91,9 @@ function PulseHistory({ ticker }: { ticker: string }) {
 }
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
-  if (status === "intact")
-    return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
   if (status === "watch") return <Eye className="h-4 w-4 text-amber-400" />;
-  return <XCircle className="h-4 w-4 text-rose-400" />;
+  if (status === "broken") return <XCircle className="h-4 w-4 text-rose-400" />;
+  return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
 }
 
 function ActionBadge({ action }: { action: PulseAction }) {
@@ -320,6 +319,12 @@ function PulseCard({
           ) : null}
           {reconciled.addLevel ? (
             <p className="font-medium text-brand-bright">{reconciled.addLevel}</p>
+          ) : null}
+          {reconciled.thesisBreak ? (
+            <p>
+              <span className="font-medium text-zinc-200">What would break it:</span>{" "}
+              {reconciled.thesisBreak}
+            </p>
           ) : null}
           <p className="text-zinc-100">{reconciled.verdict}</p>
         </div>
@@ -586,7 +591,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         setChecksByTicker((prev) => {
           const next = { ...prev };
           for (const check of newReport.checks ?? []) {
-            next[check.ticker.toUpperCase()] = check;
+            next[check.ticker.toUpperCase()] = reconcilePulseCheck(check);
           }
           return next;
         });
@@ -598,12 +603,13 @@ export function PulsePage({ model, quotes, convictions }: Props) {
         });
         for (const check of newReport.checks ?? []) {
           const key = check.ticker.toUpperCase();
+          const reconciled = reconcilePulseCheck(check);
           savePulseTickerCache(key, {
-            check,
+            check: reconciled,
             headlines: newHeadlines[key] ?? [],
             cachedAt: now,
           });
-          recordPulseHistory(check, now);
+          recordPulseHistory(reconciled, now);
         }
         if (newReport.summary?.trim()) {
           setSummary(newReport.summary);

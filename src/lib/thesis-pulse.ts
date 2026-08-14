@@ -82,6 +82,12 @@ export type PulseCheck = {
   /** When to add — "Add now ~$X" or "Add now · more below ~$Y". Empty if trim. */
   addLevel: string;
   verdict: string;
+  /**
+   * Concrete, falsifiable: what would actually invalidate the reason this
+   * is in the book. Status can only leave intact if today's facts match
+   * this bar (watch) or have already cleared it (broken).
+   */
+  thesisBreak?: string;
 };
 
 export type PulseReport = {
@@ -165,7 +171,10 @@ function toCandidate(
     currentValue,
     roiPct: row?.roiPct ?? 0,
     roiDollar: row?.roiDollar ?? 0,
-    todayDollar: row?.todayDollar ?? 0,
+    todayDollar:
+      effectivePct != null && Number.isFinite(effectivePct) && effectivePct > -1
+        ? currentValue - currentValue / (1 + effectivePct)
+        : 0,
     bookPct,
     portfolios: row?.portfolios ?? [],
     price: quote?.price ?? row?.price ?? 0,
@@ -264,7 +273,7 @@ export function loadPulseTickerCache(
     if (!parsed?.check || !parsed?.cachedAt) return null;
     return {
       ...parsed,
-      check: humanizeMargusTree(parsed.check),
+      check: normalizePulseCheck(humanizeMargusTree(parsed.check)),
     };
   } catch {
     return null;
@@ -281,7 +290,7 @@ export function savePulseTickerCache(
       pulseTickerCacheKey(ticker),
       JSON.stringify({
         ...entry,
-        check: humanizeMargusTree(entry.check),
+        check: normalizePulseCheck(humanizeMargusTree(entry.check)),
       })
     );
   } catch {
@@ -330,17 +339,19 @@ export function isPulseCacheFresh(
   return Date.now() - ts < maxAgeMs;
 }
 
-export function statusLabel(status: ThesisStatus): string {
-  if (status === "intact") return "Thesis intact";
-  if (status === "watch") return "Watch";
-  return "Thesis at risk";
+export function statusLabel(status: ThesisStatus | string): string {
+  const s = String(status ?? "").trim().toLowerCase();
+  if (s === "watch") return "Watch";
+  if (s === "broken") return "Thesis at risk";
+  return "Thesis intact";
 }
 
-export function actionLabel(action: PulseAction): string {
-  if (action === "add") return "Add";
-  if (action === "trim") return "Trim";
-  if (action === "sell") return "Sell";
-  if (action === "watch") return "Wait";
+export function actionLabel(action: PulseAction | string): string {
+  const a = String(action ?? "").trim().toLowerCase();
+  if (a === "add") return "Add";
+  if (a === "trim") return "Trim";
+  if (a === "sell") return "Sell";
+  if (a === "watch") return "Wait";
   return "Hold";
 }
 
@@ -353,6 +364,41 @@ export function formatMovePct(pct: number | null): string {
   return `${pct >= 0 ? "+" : ""}${(pct * 100).toFixed(1)}%`;
 }
 
+const THESIS_STATUSES: ThesisStatus[] = ["intact", "watch", "broken"];
+const PULSE_ACTIONS: PulseAction[] = ["add", "hold", "trim", "sell", "watch"];
+
+function asEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T {
+  const key = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return (allowed as readonly string[]).includes(key) ? (key as T) : fallback;
+}
+
+const DEFAULT_THESIS_BREAK =
+  "The story breaks if the reason you own this is gone: lost the customer, a restatement, or guidance that kills the multi-year case. A quiet session in either direction is not that.";
+
+/**
+ * Cached Pulse rows went through a sanitizer that title-cased enums
+ * (`intact` → `Intact`). Badges then missed the lowercase checks and
+ * painted every intact Hold as "Thesis at risk". Lowercase on the way in.
+ */
+export function normalizePulseCheck(check: PulseCheck): PulseCheck {
+  return {
+    ...check,
+    ticker: String(check.ticker ?? "").toUpperCase(),
+    thesisStatus: asEnum(check.thesisStatus, THESIS_STATUSES, "intact"),
+    action: asEnum(check.action, PULSE_ACTIONS, "hold"),
+    thesisBreak:
+      typeof check.thesisBreak === "string" && check.thesisBreak.trim()
+        ? check.thesisBreak.trim()
+        : DEFAULT_THESIS_BREAK,
+  };
+}
+
 /**
  * Keeps thesisStatus and action honest against each other. The model
  * doesn't always respect the pairing rules, and the mismatch is what
@@ -362,19 +408,42 @@ export function formatMovePct(pct: number | null): string {
  *   the thesis isn't actually broken; soften to watch.
  * - broken + trim is a wording bug, not a take-profit. Trim means
  *   cutting a winner that ran too hot. Convert to sell.
+ * - Copy that says nothing is wrong cannot wear watch/broken.
  *
  * Only ever downgrades or relabels toward the more conservative reading.
  * Never invents a new alarm that wasn't already there.
  */
 export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
-  if (check.thesisStatus !== "broken") return check;
-  if (check.action === "trim") {
-    return { ...check, action: "sell", trimPct: null };
+  const n = normalizePulseCheck(check);
+  const copy = [
+    ...normalizePulseSituation(n.situation),
+    n.verdict,
+    n.moveReason,
+  ]
+    .join(" ")
+    .toLowerCase();
+  const soundsIntact =
+    /no stress signal/.test(copy) && /normal monitoring/.test(copy);
+
+  let thesisStatus = n.thesisStatus;
+  let action = n.action;
+
+  if (soundsIntact) {
+    thesisStatus = "intact";
+    if (action === "sell") action = "hold";
   }
-  if (check.action !== "sell") {
-    return { ...check, thesisStatus: "watch" };
+
+  if (thesisStatus === "broken" && action === "trim") {
+    return { ...n, thesisStatus, action: "sell", trimPct: null };
   }
-  return check;
+  if (thesisStatus === "broken" && action !== "sell") {
+    thesisStatus = "watch";
+  }
+  if (thesisStatus === "intact" && action === "sell") {
+    action = "hold";
+  }
+
+  return { ...n, thesisStatus, action };
 }
 
 /**
@@ -402,6 +471,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       trimPct,
       addLevel: "",
       verdict: `Take profit discipline: trim ${trimPct}% into strength and keep the core position for the long thesis.`,
+      thesisBreak: DEFAULT_THESIS_BREAK,
     };
   }
 
@@ -423,13 +493,14 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       ).toFixed(2)}`,
       verdict:
         "If the thesis is intact, treat this as a buyable dip instead of an auto-sell signal.",
+      thesisBreak: DEFAULT_THESIS_BREAK,
     };
   }
 
   return {
     ticker: candidate.ticker,
     situation: [
-      "No stress signal from today\u2019s move.",
+      "No stress signal from today's move.",
       "Position stays in normal monitoring mode.",
     ],
     moveReason: `${candidate.moveLabel} move is ${movePct}.`,
@@ -439,5 +510,6 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     trimPct: null,
     addLevel: "",
     verdict: "Hold and reassess on new catalysts, earnings, or thesis-changing news.",
+    thesisBreak: DEFAULT_THESIS_BREAK,
   };
 }

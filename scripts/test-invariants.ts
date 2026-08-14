@@ -13,7 +13,8 @@ import {
 import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { fundCopyBullets } from "../src/lib/fund-copy";
-import { reconcilePulseCheck, type PulseCheck } from "../src/lib/thesis-pulse";
+import { reconcilePulseCheck, statusLabel, type PulseCheck } from "../src/lib/thesis-pulse";
+import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
 import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
 import { sessionMark } from "../src/lib/market-session";
@@ -246,6 +247,43 @@ run("broken + add becomes watch", () => {
     check({ thesisStatus: "broken", action: "add" })
   );
   assert.equal(next.thesisStatus, "watch");
+});
+
+run("title-cased Pulse enums no longer paint intact as at-risk", () => {
+  const next = reconcilePulseCheck(
+    check({
+      thesisStatus: "Intact" as PulseCheck["thesisStatus"],
+      action: "Hold" as PulseCheck["action"],
+      situation: [
+        "No stress signal from today's move.",
+        "Position stays in normal monitoring mode.",
+      ],
+      verdict: "Hold and reassess on new catalysts, earnings, or thesis-changing news.",
+    })
+  );
+  assert.equal(next.thesisStatus, "intact");
+  assert.equal(next.action, "hold");
+  assert.equal(statusLabel(next.thesisStatus), "Thesis intact");
+  assert.equal(statusLabel("Intact"), "Thesis intact");
+  assert.equal(statusLabel("broken"), "Thesis at risk");
+});
+
+run("humanize does not title-case Pulse enums", () => {
+  const tree = humanizeMargusTree({
+    thesisStatus: "intact",
+    action: "hold",
+    verdict: "it's important to note that the dip is noise.",
+  });
+  assert.equal(tree.thesisStatus, "intact");
+  assert.equal(tree.action, "hold");
+  assert.equal(tree.verdict, "The dip is noise.");
+});
+
+run("humanize still recapitalizes after stripping a leading opener", () => {
+  assert.equal(
+    humanizeMargusText("it's important to note that the dip is noise."),
+    "The dip is noise."
+  );
 });
 
 run("novice hides Lab, not Pulse", () => {
