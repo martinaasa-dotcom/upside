@@ -40,38 +40,12 @@ type Props = {
 
 type LabTab = "alloc" | "risk" | "trends" | "seasonality";
 
-/** One flat row, ordered as a reading path: what you hold, how risky it
- * is, and when it tends to move. Pulse used to sit here but earns its own
- * top-level tab.
- *
- * Every tab carries a blurb because none of these names explain
- * themselves. "Shock" in particular told you nothing about what it did.
- */
-const TABS: { id: LabTab; label: string; blurb: string }[] = [
-  {
-    id: "alloc",
-    label: "Allocation",
-    blurb:
-      "What you own and how lopsided it is. Shows whether a few names quietly decide your whole year.",
-  },
-  {
-    id: "risk",
-    label: "Risk",
-    blurb:
-      "What a bad day would actually cost you. Pick a crash scenario to see the damage, and check whether your names tend to fall together.",
-  },
-  {
-    id: "trends",
-    label: "Trends",
-    blurb:
-      "Whether each holding is still in its trend, and which ones have started disagreeing with their own momentum. Weekly bars, so it reads regime changes rather than daily noise.",
-  },
-  {
-    id: "seasonality",
-    label: "Seasonality",
-    blurb:
-      "How the market has typically behaved at this time of year. History, not a prediction.",
-  },
+/** One flat row: what you hold, how risky it is, and when it tends to move. */
+const TABS: { id: LabTab; label: string }[] = [
+  { id: "alloc", label: "Allocation" },
+  { id: "risk", label: "Risk" },
+  { id: "trends", label: "Trends" },
+  { id: "seasonality", label: "Seasonality" },
 ];
 
 const INTENT_TO_TAB: Record<LabDeepLink, LabTab> = {
@@ -122,8 +96,6 @@ export function LabSheet({
   const [tabOverflow, setTabOverflow] = useState({ left: false, right: false });
   /** What-if scope: full book or a single sheet */
   const [scopeId, setScopeId] = useState<string>("book");
-
-  const activeTabMeta = TABS.find((t) => t.id === tab);
 
   function selectTab(id: LabTab) {
     setTab(id);
@@ -283,12 +255,11 @@ export function LabSheet({
   const corrHeat = useMemo(() => correlationGrid(corrSeries), [corrSeries]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Panel>
         <PanelHeader
           icon={<FlaskConical className="h-4 w-4" />}
           title="Lab"
-          subtitle="Different looks at what you already own. None of this places a trade."
           actions={
             <label className="flex items-center gap-2">
               <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
@@ -354,13 +325,6 @@ export function LabSheet({
             <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#161618] to-transparent" />
           )}
         </div>
-        {/* Says what the tab you just picked actually does. A label like
-          * "Shock" or "Risk" means nothing on its own. */}
-        {activeTabMeta && (
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            {activeTabMeta.blurb}
-          </p>
-        )}
       </Panel>
 
       {tab === "alloc" && (

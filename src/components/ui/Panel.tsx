@@ -28,6 +28,8 @@ import { useState, type ReactNode } from "react";
  *              Do not park unlabeled numbers on the far right of a row.
  *   Body       text-sm leading-relaxed text-muted
  *   Floor      nothing below text-xs. Ever.
+ *   Air        padding and gaps do the explaining. Do not stack a subtitle,
+ *              a blurb, and a hint that all say the same thing.
  *   Measure    copy inside a panel fills the panel. Do not pinch it to a
  *              reading column. That leaves a dead strip of empty card and
  *              wraps a sentence for no reason.
@@ -65,7 +67,7 @@ export function Panel({
       className={cn(
         "rounded-2xl border",
         SHELL_TONES[tone],
-        padded && "p-4 sm:p-6",
+        padded && "p-5 sm:p-8",
         className
       )}
       {...rest}
@@ -76,11 +78,8 @@ export function Panel({
 }
 
 /**
- * Title, one line of what-this-is, and controls on the right.
- *
- * The subtitle is required rather than optional on purpose: every panel in
- * this app has to answer "what am I looking at" for someone who does not
- * already know what a covered call or a drawdown is.
+ * Title and controls on the right. A subtitle only when the title is not
+ * enough on its own. Most panels should skip it.
  */
 export function PanelHeader({
   title,
@@ -92,7 +91,7 @@ export function PanelHeader({
   className,
 }: {
   title: ReactNode;
-  subtitle: ReactNode;
+  subtitle?: ReactNode;
   icon?: ReactNode;
   iconTone?: "brand" | "violet" | "emerald" | "zinc";
   /** Slightly larger, for the one panel that opens a page. */
@@ -110,15 +109,22 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-start justify-between gap-x-4 gap-y-3",
+        "flex flex-wrap justify-between gap-x-4 gap-y-3",
+        subtitle ? "items-start" : "items-center",
         className
       )}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-2.5">
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 gap-3",
+          subtitle ? "items-start" : "items-center"
+        )}
+      >
         {icon && (
           <span
             className={cn(
-              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+              subtitle && "mt-0.5",
               iconTones[iconTone]
             )}
             aria-hidden
@@ -135,9 +141,11 @@ export function PanelHeader({
           >
             {title}
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted">
-            {subtitle}
-          </p>
+          {subtitle ? (
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+              {subtitle}
+            </p>
+          ) : null}
         </div>
       </div>
       {actions && (
@@ -177,7 +185,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border px-3.5 py-3",
+        "rounded-xl border px-4 py-4",
         CARD_TONES[tone],
         interactive &&
           "transition hover:border-white/20 hover:bg-hover active:scale-[0.995]",
@@ -229,7 +237,7 @@ export function Metric({
       <MicroLabel>{label}</MicroLabel>
       <p
         className={cn(
-          "mt-0.5 font-heading text-sm font-bold tabular-nums text-zinc-100",
+          "mt-1 font-heading text-sm font-bold tabular-nums text-zinc-100",
           valueClassName
         )}
       >
@@ -296,7 +304,7 @@ export function Stat({
   return (
     <div
       className={cn(
-        "rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-3 py-2.5",
+        "rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-4 py-3.5",
         className
       )}
     >
@@ -425,7 +433,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center",
+        "rounded-xl border border-dashed border-zinc-800 px-5 py-10 text-center",
         className
       )}
     >

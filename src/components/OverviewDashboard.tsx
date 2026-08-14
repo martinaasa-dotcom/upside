@@ -6,7 +6,6 @@ import { CashAlertCard } from "@/components/mobile/CashAlertCard";
 import { GoldNavChart, useBookNavHistory } from "@/components/mobile/GoldNavChart";
 import {
   Card,
-  Metric,
   MicroLabel,
   Panel,
   PanelHeader,
@@ -24,7 +23,6 @@ import {
   cashtag,
 } from "@/lib/format";
 import {
-  BRIEFING_KIND_LABEL,
   buildInvestorBriefing,
   type BriefingLink,
 } from "@/lib/investor-briefing";
@@ -39,7 +37,6 @@ import {
   saveVisitSnapshot,
   type VisitDiff,
 } from "@/lib/visit-diff";
-import { PRODUCT_SENTENCE } from "@/lib/product";
 import { ArrowRight, MessageCircle, Radar } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -91,8 +88,8 @@ function MobileHomeHero({
   const up = totals.roiPct >= 0;
   return (
     <div className="md:hidden">
-      <p className="text-sm text-muted">Total growth</p>
-      <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+      <p className="text-sm text-muted">Book</p>
+      <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
         <p className="font-logo text-4xl font-bold tabular-nums leading-none text-white">
           {currency(totals.totalValue, 0)}
         </p>
@@ -105,17 +102,16 @@ function MobileHomeHero({
           {up ? "▲" : "▼"} {percent(Math.abs(totals.roiPct))}
         </p>
       </div>
-      <div className="mt-5">
+      <div className="mt-8">
         <GoldNavChart points={points} />
       </div>
-      <div className="mt-5">
-        <CashAlertCard
-          cash={totals.cash}
-          alerts={alerts}
-          onOpenCash={onOpenCash}
-          onOpenAlerts={onOpenAlerts}
-        />
-      </div>
+      <CashAlertCard
+        className="mt-8"
+        cash={totals.cash}
+        alerts={alerts}
+        onOpenCash={onOpenCash}
+        onOpenAlerts={onOpenAlerts}
+      />
     </div>
   );
 }
@@ -173,25 +169,18 @@ function EmptyBook({
     {
       key: "csv",
       label: "Upload a CSV",
-      detail: "Most brokers export one. The reliable way in, even if Margus is down.",
-      hint: "Reliable",
       onClick: onImportCsv,
       primary: true,
     },
     {
       key: "screenshot",
       label: "Import a screenshot",
-      detail:
-        "Snap your broker's holdings page. Margus reads it when the model is up.",
-      hint: "Fast when it works",
       onClick: onImportScreenshot,
       primary: true,
     },
     {
       key: "manual",
       label: "Add one by hand",
-      detail: "Ticker, shares, what you paid. Takes about ten seconds.",
-      hint: "Just trying it out",
       onClick: onAddHolding,
       primary: false,
     },
@@ -200,41 +189,30 @@ function EmptyBook({
   return (
     <Panel tone="brand" className="overview-fade">
       <h2 className="text-lg font-semibold text-white sm:text-2xl">
-        Your book is empty. Let&apos;s fix that.
+        Your book is empty.
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-        Add what you own. {PRODUCT_SENTENCE} Then you&apos;ll see what moved,
-        and what to look at.
-      </p>
+      <p className="mt-3 text-sm text-muted">Add what you own.</p>
 
       {routes.length > 0 && (
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {routes.map((r) => (
             <button
               key={r.key}
               type="button"
               onClick={r.onClick}
               className={cn(
-                "group rounded-xl border p-4 text-left transition active:scale-[0.99]",
+                "group rounded-xl border p-5 text-left transition active:scale-[0.99]",
                 r.primary
                   ? "border-brand/40 bg-brand/10 hover:border-brand/70 hover:bg-brand/15"
                   : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700 hover:bg-zinc-900/70"
               )}
             >
-              <MicroLabel
-                className={r.primary ? "text-brand-bright" : undefined}
-              >
-                {r.hint}
-              </MicroLabel>
-              <p className="mt-1.5 flex items-center gap-1.5 text-base font-semibold text-white">
+              <p className="flex items-center gap-1.5 text-base font-semibold text-white">
                 {r.label}
                 <ArrowRight
                   className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100"
                   aria-hidden
                 />
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                {r.detail}
               </p>
             </button>
           ))}
@@ -245,17 +223,12 @@ function EmptyBook({
         <button
           type="button"
           onClick={onAskMargus}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-brand/50 hover:text-white"
+          className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-brand/50 hover:text-white"
         >
           <MessageCircle className="h-3.5 w-3.5" />
           Ask Margus first
         </button>
       )}
-
-      <p className="mt-5 text-sm text-zinc-400">
-        Nothing here is advice, and nothing you add is shared until you invite
-        someone.
-      </p>
     </Panel>
   );
 }
@@ -266,7 +239,6 @@ function BriefingCard({
   title,
   detail,
   link,
-  cta,
   navigable,
   onNavigate,
 }: {
@@ -275,7 +247,6 @@ function BriefingCard({
   title: string;
   detail: string;
   link?: BriefingLink;
-  cta?: string;
   navigable?: boolean;
   onNavigate?: (link: BriefingLink) => void;
 }) {
@@ -283,17 +254,13 @@ function BriefingCard({
 
   const body = (
     <>
-      <MicroLabel>
-        {BRIEFING_KIND_LABEL[kind]}
-        {ticker ? ` · ${cashtag(ticker)}` : ""}
-      </MicroLabel>
-      <p className="mt-1 text-sm font-medium text-white sm:text-[15px]">
+      <p className="text-sm font-medium text-white sm:text-[15px]">
+        {ticker ? (
+          <span className="mr-1.5 text-muted">{cashtag(ticker)}</span>
+        ) : null}
         {title}
       </p>
-      <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">{detail}</p>
-      {canNavigate && cta && (
-        <p className="mt-2 text-xs font-medium text-brand-bright">{cta}</p>
-      )}
+      <p className="mt-1 text-sm text-muted">{detail}</p>
     </>
   );
 
@@ -319,64 +286,40 @@ function BriefingCard({
 function MoverRow({
   ticker,
   mode,
-  showSheets,
   onOpen,
 }: {
   ticker: TickerScore;
   mode: "win" | "loss" | "today-win" | "today-loss";
-  showSheets: boolean;
   onOpen: () => void;
 }) {
   const isUp = mode === "win" || mode === "today-win";
   const lifetime = mode === "win" || mode === "loss";
-  const bookHint = [
-    `${ticker.shares.toLocaleString("en-US")} sh`,
-    showSheets && ticker.portfolios.length > 0
-      ? ticker.portfolios.join(", ")
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const pct = lifetime ? ticker.roiPct : ticker.todayPct;
+  const dollars = lifetime ? ticker.roiDollar : ticker.todayDollar;
 
   return (
     <button type="button" onClick={onOpen} className="w-full text-left">
       <Card tone={isUp ? "good" : "bad"} interactive>
-        <div className="flex items-end gap-3">
-          <span className="shrink-0 text-base font-semibold text-white">
+        <div className="flex items-center gap-4">
+          <span className="w-16 shrink-0 font-heading text-base font-bold text-white">
             {cashtag(ticker.ticker)}
           </span>
           <div className="min-w-0 flex-1">
-            <MicroLabel>Recent</MicroLabel>
-            <Sparkline
-              points={ticker.sparkline}
-              fill
-              width={160}
-              height={22}
-            />
+            <Sparkline points={ticker.sparkline} fill width={160} height={28} />
           </div>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          <Metric label="Price">{currency(ticker.price)}</Metric>
-          <Metric
-            label="Today"
-            hint={signedCurrency(ticker.todayDollar)}
-            valueClassName={cn(
-              tone(ticker.todayPct),
-              !lifetime && "text-base"
-            )}
-          >
-            {ticker.todayPct != null ? percent(ticker.todayPct) : "—"}
-          </Metric>
-          <Metric
-            label="Lifetime"
-            hint={signedCurrency(ticker.roiDollar)}
-            valueClassName={cn(tone(ticker.roiPct), lifetime && "text-base")}
-          >
-            {percent(ticker.roiPct)}
-          </Metric>
-          <Metric label="Book" hint={bookHint}>
-            {currency(ticker.currentValue, 0)}
-          </Metric>
+          <div className="shrink-0 text-right">
+            <p
+              className={cn(
+                "font-heading text-base font-bold tabular-nums",
+                tone(pct)
+              )}
+            >
+              {pct != null ? percent(pct) : "—"}
+            </p>
+            <p className={cn("mt-0.5 text-xs tabular-nums", tone(dollars))}>
+              {signedCurrency(dollars)}
+            </p>
+          </div>
         </div>
       </Card>
     </button>
@@ -400,16 +343,18 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-white/10 bg-hover/60 px-3.5 py-3.5 text-left transition hover:border-brand/35 hover:bg-hover sm:px-4"
+      className="group w-full min-h-11 rounded-xl border border-white/10 bg-hover/60 px-4 py-4 text-left transition hover:border-brand/35 hover:bg-hover sm:px-5 sm:py-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate font-heading text-lg font-bold text-white group-hover:text-brand-bright">
             {sheet.portfolio.name}
           </p>
-          <p className="mt-1 text-sm text-zinc-300">
-            {plural(sheet.holdingCount, "holding")} ·{" "}
-            {currency(sheet.portfolio.cash_balance, 0)} cash
+          <p className="mt-1.5 text-sm text-muted">
+            {plural(sheet.holdingCount, "holding")}
+            {sheet.portfolio.cash_balance !== 0
+              ? ` · ${currency(sheet.portfolio.cash_balance, 0)} cash`
+              : ""}
           </p>
         </div>
         <p className="shrink-0 text-right font-heading text-lg font-bold tabular-nums text-white">
@@ -417,7 +362,7 @@ function PortfolioLane({
         </p>
       </div>
 
-      <div className="mt-3 h-3 overflow-hidden rounded-full bg-zinc-800">
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
         <div
           className={cn(
             "overview-bar h-full rounded-full",
@@ -427,24 +372,19 @@ function PortfolioLane({
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-        <Metric
-          label="Lifetime"
-          hint={signedCurrency(sheet.roiDollar)}
-          valueClassName={tone(sheet.roiPct)}
-        >
-          {percent(sheet.roiPct)}
-        </Metric>
-        <Metric
-          label="Today"
-          hint={
-            sheet.todayPct !== null ? percent(sheet.todayPct) : undefined
-          }
-          valueClassName={tone(sheet.todayDollar)}
-        >
-          {signedCurrency(sheet.todayDollar)}
-        </Metric>
-      </div>
+      <p className="mt-3 text-sm tabular-nums text-muted">
+        <span className={tone(sheet.roiPct)}>{percent(sheet.roiPct)}</span>
+        {" all time"}
+        {sheet.todayDollar !== 0 ? (
+          <>
+            {" · "}
+            <span className={tone(sheet.todayDollar)}>
+              {signedCurrency(sheet.todayDollar)}
+            </span>
+            {" today"}
+          </>
+        ) : null}
+      </p>
     </button>
   );
 }
@@ -566,7 +506,7 @@ export function OverviewDashboard({
 
   if (bookIsEmpty) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
@@ -578,7 +518,7 @@ export function OverviewDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <MobileHomeHero
         totals={totals}
         alerts={activeAlerts}
@@ -596,8 +536,7 @@ export function OverviewDashboard({
           <PanelHeader
             hero
             icon={<Radar className="h-4 w-4" />}
-            title="Today’s briefing"
-            subtitle="How the book is doing, in a few lines."
+            title="Today"
             actions={
               <>
                 {onAskMargus && (
@@ -627,13 +566,12 @@ export function OverviewDashboard({
           />
 
           {/* The only place today's dollar move is stated. */}
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
               <Stat
                 label="Book"
                 value={currency(totals.totalValue, 0)}
                 sub={plural(totals.sheetCount, "sheet")}
-                explain="Everything you hold plus your cash, at today's prices."
               />
               <BookNavSpark liveNav={totals.totalValue} />
             </div>
@@ -643,7 +581,6 @@ export function OverviewDashboard({
               sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
               valueClassName={tone(totals.todayDollar)}
               subClassName={tone(totals.todayDollar)}
-              explain="How much you moved just today. This resets every morning, it isn't your total gain."
             />
             <Stat
               label="All time"
@@ -651,23 +588,17 @@ export function OverviewDashboard({
               sub={percent(totals.roiPct)}
               valueClassName={tone(totals.roiDollar)}
               subClassName={tone(totals.roiDollar)}
-              explain="Profit or loss since you started, on everything you've ever put in."
             />
             <Stat
               label="Cash"
               value={currency(totals.cash, 0)}
-              sub={totals.cash < 0 ? "Borrowed" : "Ready to use"}
+              sub={totals.cash < 0 ? "Borrowed" : undefined}
               valueClassName={totals.cash < 0 ? "text-loss" : undefined}
               subClassName={totals.cash < 0 ? "text-loss" : undefined}
-              explain={
-                totals.cash < 0
-                  ? "Negative cash means you've borrowed from your broker against what you hold. That magnifies both gains and losses."
-                  : "Money sitting uninvested, ready whenever you want it."
-              }
             />
           </div>
 
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-6 space-y-3">
             {briefing.map((b) => (
               <li key={b.id}>
                 <BriefingCard
@@ -676,7 +607,6 @@ export function OverviewDashboard({
                   title={b.title}
                   detail={b.detail}
                   link={b.link}
-                  cta={b.cta}
                   navigable={canFollowBriefingLink(b.link)}
                   onNavigate={handleBriefingNavigate}
                 />
@@ -685,7 +615,7 @@ export function OverviewDashboard({
           </ul>
 
           {visitDiff && visitDiff.lines.length > 0 && (
-            <Card className="mt-4">
+            <Card className="mt-6">
               <MicroLabel>While you were away</MicroLabel>
               <p className="mt-0.5 text-xs text-zinc-400">
                 Since{" "}
@@ -720,7 +650,6 @@ export function OverviewDashboard({
       <Panel className="overview-fade">
         <PanelHeader
           title="Movers"
-          subtitle="What moved the most."
           actions={
             <Segmented
               options={[
@@ -733,7 +662,7 @@ export function OverviewDashboard({
             />
           }
         />
-        <div className="mt-4 space-y-2">
+        <div className="mt-6 space-y-3">
           {movers.length === 0 ? (
             <p className="py-5 text-center text-sm text-zinc-400">
               Waiting on prices.
@@ -744,7 +673,6 @@ export function OverviewDashboard({
                 key={`${mode}-${t.ticker}`}
                 ticker={t}
                 mode={mode}
-                showSheets={multiSheet}
                 onOpen={() => openFirstPortfolio(t)}
               />
             ))
@@ -754,11 +682,8 @@ export function OverviewDashboard({
 
       {multiSheet && (
         <Panel className="overview-fade">
-          <PanelHeader
-            title="Your sheets"
-            subtitle="Bigger bar, bigger book. Color is all-time return."
-          />
-          <div className="mt-4 space-y-3">
+          <PanelHeader title="Your sheets" />
+          <div className="mt-6 space-y-4">
             {sheets.map((sheet) => (
               <PortfolioLane
                 key={sheet.portfolio.id}

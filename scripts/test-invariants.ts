@@ -678,7 +678,7 @@ run("Montserrat headings and Inter body, no third face", () => {
   assert.doesNotMatch(code(logo), /tracking-\[0\./);
 });
 
-run("mover rows label price, today, lifetime, and book", () => {
+run("mover rows are a ticker, a sparkline, and one figure", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"
@@ -687,12 +687,11 @@ run("mover rows label price, today, lifetime, and book", () => {
     src.indexOf("function MoverRow"),
     src.indexOf("function PortfolioLane")
   );
-  assert.match(row, /label="Price"/);
-  assert.match(row, /label="Today"/);
-  assert.match(row, /label="Lifetime"/);
-  assert.match(row, /label="Book"/);
-  assert.match(row, />Recent</);
-  assert.doesNotMatch(row, /justify-between/);
+  assert.match(row, /Sparkline/);
+  assert.match(row, /percent\(pct\)/);
+  assert.match(row, /signedCurrency\(dollars\)/);
+  assert.doesNotMatch(row, /label="Price"/);
+  assert.doesNotMatch(row, />Recent</);
 });
 
 run("rounded-2xl is the panel radius, nothing rounder", () => {

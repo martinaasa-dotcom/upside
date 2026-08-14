@@ -703,13 +703,12 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) 
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <Panel>
         <PanelHeader
           hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
-          subtitle="Not every name. Your ten biggest, plus anything down 5% or more. Smaller names that aren't falling stay off unless you search them."
           actions={
             <button
               type="button"

@@ -476,10 +476,10 @@ export function ForecastPanel({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
-      <header className="border-b border-zinc-800/80 p-4 sm:p-6">
+      <header className="border-b border-zinc-800/80 p-5 sm:p-8">
         <PanelHeader
           title="Forecast"
-          subtitle="A price for each holding at the end of every year to 2030, and why. Rechecks monthly. New buys get filled in without starting over."
+          subtitle="A yearly price for each holding, to 2030."
           actions={
             <>
               {overrideCount > 0 && (

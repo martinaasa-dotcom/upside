@@ -278,9 +278,8 @@ export function buildInvestorBriefing(input: {
     items.push(plays[Math.abs(hash(dayKey)) % plays.length]!);
   }
 
-  // Four, not six. Six stacked cards under a scoreboard is a feed, and a
-  // feed is the thing you scroll past. A briefing you actually read has to
-  // fit on one screen with the numbers it's explaining.
+  // Three, not a feed. A briefing you actually read has to sit under the
+  // numbers without turning the page into a wall of cards.
   const seen = new Set<string>();
   const out: BriefingItem[] = [];
   for (const kind of ["action", "watch", "play"] as const) {
@@ -288,7 +287,7 @@ export function buildInvestorBriefing(input: {
       if (seen.has(it.id)) continue;
       seen.add(it.id);
       out.push(it);
-      if (out.length >= 4) return out;
+      if (out.length >= 3) return out;
     }
   }
   return out;

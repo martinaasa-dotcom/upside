@@ -652,14 +652,13 @@ export function CompoundInterestSheet({
   const isRateMatchedToPortfolio = Math.abs(draft.ratePercent - portfolioExpectedRatePct) < 0.05;
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(320px,380px)_1fr]">
       {/* min-h-0: grid items won't shrink below content, so overflow never starts. */}
       <div className="min-h-0 lg:sticky lg:top-[4.25rem] lg:max-h-[calc(100dvh-4.25rem-7.5rem-env(safe-area-inset-bottom))] lg:overflow-y-auto lg:overscroll-y-contain [-webkit-overflow-scrolling:touch]">
         <Panel className="space-y-4 pb-8 lg:pb-4">
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}
           title="Growth calculator"
-          subtitle="Four numbers in. Everything below is just the math."
           actions={
             <Segmented
               ariaLabel="Show amounts in"
@@ -683,9 +682,6 @@ export function CompoundInterestSheet({
               {show(draft.principal, 0)}
             </span>
           </div>
-          <p className="text-xs text-zinc-400">
-            The money already invested on day one.
-          </p>
 
           {/* Quick Source Dropdown */}
           <select
@@ -751,9 +747,6 @@ export function CompoundInterestSheet({
               {draft.ratePercent.toFixed(1)}% a year
             </span>
           </div>
-          <p className="text-xs text-zinc-400">
-            Nobody knows this number. Pick something you would defend out loud.
-          </p>
 
           {/* Portfolio Sync Badge / Button */}
           <div className="flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1.5 text-xs">
@@ -872,9 +865,6 @@ Optimistic (25%)
               {durationLabel}
             </span>
           </div>
-          <p className="text-xs text-zinc-400">
-            How long you leave it alone. This is the input that does the most work.
-          </p>
 
           {/* Direct Punch-in Box */}
           <div className="flex items-center gap-2">
@@ -949,9 +939,6 @@ Optimistic (25%)
                 </span>
               )}
           </div>
-          <p className="text-xs text-zinc-400">
-            Money you keep putting in, or taking out.
-          </p>
 
           <Segmented
             ariaLabel="Deposits or withdrawals"
@@ -1095,13 +1082,12 @@ Optimistic (25%)
       </div>
 
       {/* Results & Projections Section */}
-      <section className="space-y-5">
+      <section className="space-y-8">
         {/* Hero KPI Summary */}
         <Panel>
           <PanelHeader
             hero
             title={`Where ${durationLabel} of this gets you`}
-            subtitle="The answer to the numbers on the left. Change any of them and this moves."
             actions={
               <button
                 type="button"
@@ -1191,7 +1177,6 @@ Optimistic (25%)
         <Panel>
           <PanelHeader
             title="What paying in does to the curve"
-            subtitle="The solid line is your plan. The dashed line is the same money left alone with nothing added, so the gap between them is what your deposits bought."
             actions={
               tipping != null ? (
                 <Pill tone="good" title="From here on, growth adds more each year than you do">
@@ -1216,7 +1201,6 @@ Optimistic (25%)
           <PanelHeader
             icon={<Target className="h-4 w-4" />}
             title="When you cross each round number"
-            subtitle="Dates at the growth rate you set. Fill in the right-hand column when one actually happens and it stays ticked."
           />
           {milestoneTakeaway && (
             <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm leading-relaxed text-brand-bright">
@@ -1319,7 +1303,6 @@ Optimistic (25%)
         <Panel>
           <PanelHeader
             title="Any single year, in words"
-            subtitle="Pick a year to see what the pot looks like then and what happened to it that year."
           />
           <div className="mt-3 flex flex-wrap gap-1.5">
             {storyOpts.map((y, i) => (
@@ -1411,7 +1394,6 @@ Optimistic (25%)
           <PanelHeader
             icon={<Zap className="h-4 w-4" />}
             title="The same money, invested differently"
-            subtitle="Same starting money, different rates. That's why the rate you pick matters."
           />
           {compareTakeaway && (
             <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm leading-relaxed text-brand-bright">
@@ -1445,7 +1427,6 @@ Optimistic (25%)
           <PanelHeader
             icon={<Sparkles className="h-4 w-4" />}
             title="What this actually tells you"
-            subtitle="What the numbers are saying."
           />
           <ul className="mt-3 space-y-2">
             {narrative.map((line) => (

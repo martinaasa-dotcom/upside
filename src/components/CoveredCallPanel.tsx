@@ -223,10 +223,9 @@ export function CoveredCallPanel({
       id={COVERED_CALLS_ANCHOR}
       className="scroll-mt-28 overflow-hidden"
     >
-      <div className="border-b border-zinc-800/80 p-4 sm:p-6">
+      <div className="border-b border-zinc-800/80 p-5 sm:p-8">
         <PanelHeader
           title="Covered calls"
-          subtitle="Selling a call rents out shares you already own. You collect cash today and agree to sell at the strike if the price gets there."
           actions={
             rows.length > 0 ? (
               <>

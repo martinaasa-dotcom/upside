@@ -123,17 +123,16 @@ export function HomeWorld({ className }: { className?: string }) {
       : primary.name
     : "Start a circle";
   const communityDetail = primary
-    ? "Live books, read-only. See who is winning today."
-    : "Invite people you trust, or ask to join a public circle.";
+    ? "Live books, read-only."
+    : "Invite people you trust.";
 
   return (
     <Panel className={cn("overview-fade", className)}>
       <PanelHeader
         title="Around Upside Lab"
-        subtitle="The Fund Margus runs in public, and circles you share with. Side rooms, not your sheets."
         icon={<Users className="h-4 w-4" />}
       />
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Link href="/upside-portfolio" className="group block">
           <Card
             tone="brand"
@@ -164,9 +163,9 @@ export function HomeWorld({ className }: { className?: string }) {
                     : ""}
                   {` · day ${fund.dayNumber}`}
                 </p>
-                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-400">
+                <p className="mt-3 line-clamp-2 text-sm text-muted">
                   {fund.headline ??
-                    "Paper money. One decision a day. Watch it, don't copy it."}
+                    "Paper money. One decision a day."}
                 </p>
               </>
             ) : (
@@ -174,15 +173,11 @@ export function HomeWorld({ className }: { className?: string }) {
                 <p className="mt-2 text-base font-semibold text-white">
                   Watch Margus trade
                 </p>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-                  A paper-money book run in public. One decision a day, every
-                  trade with a thesis.
+                <p className="mt-3 text-sm text-muted">
+                  A paper book run in public.
                 </p>
               </>
             )}
-            <p className="mt-3 text-xs font-medium text-brand-bright">
-              Open the Fund
-            </p>
           </Card>
         </Link>
 
@@ -201,13 +196,10 @@ export function HomeWorld({ className }: { className?: string }) {
             <p className="mt-2 text-base font-semibold text-white">
               {communities === null ? "Your circles" : communityTitle}
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-3 text-sm text-muted">
               {communities === null
                 ? "Compare books with people you actually know."
                 : communityDetail}
-            </p>
-            <p className="mt-3 text-xs font-medium text-brand-bright">
-              {primary ? "Open your circle" : "Browse communities"}
             </p>
           </Card>
         </Link>

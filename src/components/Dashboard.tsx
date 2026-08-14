@@ -2692,7 +2692,7 @@ export function Dashboard() {
         </div>
       )}
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-4 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-8 sm:px-6 sm:py-8">
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
@@ -2708,7 +2708,7 @@ export function Dashboard() {
         )}
 
         {isAlerts ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {activeAlerts.length === 0 ? (
               <p className="py-10 text-center text-sm text-zinc-400">
                 Nothing waiting. That&apos;s a good hour.

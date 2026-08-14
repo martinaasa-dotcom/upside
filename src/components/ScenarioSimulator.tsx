@@ -48,7 +48,7 @@ const DRIVER_ICONS: Record<string, typeof Activity> = {
   "Risk Expansion": Layers,
 };
 
-export function ScenarioSimulator({ holdings, cash, scopeLabel }: Props) {
+export function ScenarioSimulator({ holdings, cash }: Props) {
   const [selectedShock, setSelectedShock] = useState<ShockId>("ai_down20");
   const [sortField, setSortField] = useState<SortField>("delta");
   const [sortAsc, setSortAsc] = useState(true);
@@ -83,12 +83,11 @@ export function ScenarioSimulator({ holdings, cash, scopeLabel }: Props) {
   const DriverIcon = DRIVER_ICONS[activeScenario.driver] ?? Activity;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Panel>
         <PanelHeader
           icon={<Shield className="h-4 w-4" />}
           title="What a bad day costs you"
-          subtitle={`Pick something that could go wrong and see the damage to ${scopeLabel.toLowerCase()}. Each holding reacts differently, so this is not a flat percentage off the top.`}
         />
 
         <div className="mt-4 flex flex-wrap gap-1.5">
