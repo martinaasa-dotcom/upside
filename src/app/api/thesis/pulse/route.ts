@@ -114,8 +114,8 @@ ${fg}
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
   - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
   - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
-- Use **hold** only when you would not deploy (max concentration, broken narrative, no cash story) but aren't ready to sell either.
-- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis, that's what makes "Trim" and "Thesis at risk" contradict each other on screen.
+- Use **hold** only when you would not deploy (max concentration, no cash story) but aren't ready to sell either. Hold never pairs with a broken thesis.
+- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis. Never use **hold** for a broken thesis either: that's what puts a Hold badge next to "Thesis at risk".
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 ### thesisStatus — be conservative, this should rarely be "broken"
@@ -124,10 +124,10 @@ ${fg}
   breaks — they're noise. Most red days on a name whose story is still true are intact.
 - **watch**: something worth tracking emerged (a soft quarter, a competitive wrinkle,
   a guidance nuance) but it hasn't invalidated the core story yet.
-- **broken**: the actual reason you bought this is gone — guidance genuinely cut,
+- **broken**: the actual reason you bought this is gone. Guidance genuinely cut,
   the moat/thesis is disproven, fraud or a restatement, the multi-year story is over.
-  This is rare. **broken must pair with action=sell or hold, never add or trim** — if
-  you'd still hold it, the thesis isn't broken, it's at most "watch".
+  This is rare. **broken must pair with action=sell, nothing else.** If you'd still
+  hold it, the thesis isn't broken, it's at most "watch".
 
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
   if (uncachedCandidates.length === 0) {
     const checks: PulseCheck[] = candidates.map((c) => {
       const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? cached.check : buildFallbackPulseCheck(c);
+      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
     });
 
     const summary =
@@ -223,7 +223,7 @@ export async function POST(req: Request) {
     // If rate limited, return cached checks if possible or fallback reads
     const checks = candidates.map((c) => {
       const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? cached.check : buildFallbackPulseCheck(c);
+      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
     });
     const report: PulseReport = {
       summary: humanizeMargusText(
@@ -321,7 +321,7 @@ export async function POST(req: Request) {
     const checks: PulseCheck[] = candidates.map((candidate) => {
       const key = candidate.ticker.toUpperCase();
       const entry = cachedMap.get(key);
-      return entry ? entry.check : buildFallbackPulseCheck(candidate);
+      return entry ? reconcilePulseCheck(entry.check) : buildFallbackPulseCheck(candidate);
     });
 
     const report: PulseReport = humanizeMargusTree({
@@ -354,7 +354,7 @@ export async function POST(req: Request) {
     if (status === 429) {
       const checks = candidates.map((c) => {
         const cached = cachedMap.get(c.ticker.toUpperCase());
-        return cached ? cached.check : buildFallbackPulseCheck(c);
+        return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
       });
       const report: PulseReport = {
         summary: humanizeMargusText(

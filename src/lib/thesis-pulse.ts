@@ -354,29 +354,25 @@ export function formatMovePct(pct: number | null): string {
 }
 
 /**
- * Keeps thesisStatus and action honest against each other, since the model
- * doesn't always respect the prompt's pairing rules and the mismatch is
- * exactly what makes the badges meaningless:
+ * Keeps thesisStatus and action honest against each other. The model
+ * doesn't always respect the pairing rules, and the mismatch is what
+ * makes the badges meaningless (Hold next to a red "Thesis at risk").
  *
- * - broken + trim is a contradiction of the word "trim" itself. Trim means
- *   disciplined profit-taking on a winner that ran too hot; it has nothing
- *   to do with a broken thesis. If the model calls something broken and
- *   wants out, that's a sell, full stop.
- * - broken + add makes no sense either way (you wouldn't deploy new money
- *   into a thesis you just called broken), so soften the status to "watch"
- *   instead of second-guessing the add call.
+ * - broken only survives with sell. If you'd still hold, add, or wait,
+ *   the thesis isn't actually broken; soften to watch.
+ * - broken + trim is a wording bug, not a take-profit. Trim means
+ *   cutting a winner that ran too hot. Convert to sell.
  *
- * Only ever downgrades/relabels toward the safer, more conservative
- * reading — never invents a new alarm that wasn't already there.
+ * Only ever downgrades or relabels toward the more conservative reading.
+ * Never invents a new alarm that wasn't already there.
  */
 export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
-  if (check.thesisStatus === "broken") {
-    if (check.action === "trim") {
-      return { ...check, action: "sell", trimPct: null };
-    }
-    if (check.action === "add") {
-      return { ...check, thesisStatus: "watch" };
-    }
+  if (check.thesisStatus !== "broken") return check;
+  if (check.action === "trim") {
+    return { ...check, action: "sell", trimPct: null };
+  }
+  if (check.action !== "sell") {
+    return { ...check, thesisStatus: "watch" };
   }
   return check;
 }

@@ -152,6 +152,14 @@ run("broken + trim becomes sell", () => {
   assert.equal(next.trimPct, null);
 });
 
+run("broken + hold becomes watch", () => {
+  const next = reconcilePulseCheck(
+    check({ thesisStatus: "broken", action: "hold" })
+  );
+  assert.equal(next.thesisStatus, "watch");
+  assert.equal(next.action, "hold");
+});
+
 run("broken + add becomes watch", () => {
   const next = reconcilePulseCheck(
     check({ thesisStatus: "broken", action: "add" })

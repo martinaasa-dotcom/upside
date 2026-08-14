@@ -406,6 +406,25 @@ const baseCheck = {
     "softened to watch, broken shouldn't pair with add"
   );
 
+  const brokenHold = reconcilePulseCheck({
+    ...baseCheck,
+    thesisStatus: "broken" as const,
+    action: "hold" as const,
+    trimPct: null,
+  });
+  check(
+    "reconcile(broken+hold).thesisStatus",
+    brokenHold.thesisStatus,
+    (v) => v === "watch",
+    "softened to watch, Hold next to Thesis at risk is the original bug"
+  );
+  check(
+    "reconcile(broken+hold).action",
+    brokenHold.action,
+    (v) => v === "hold",
+    "hold stays hold, we don't invent a sell"
+  );
+
   const brokenSell = reconcilePulseCheck({
     ...baseCheck,
     thesisStatus: "broken" as const,

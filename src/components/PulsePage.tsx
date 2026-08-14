@@ -265,10 +265,10 @@ function PulseCard({
 
       {loading && !check ? (
         <p className="mt-3 text-sm text-zinc-400">Pulling news & checking thesis …</p>
-      ) : check ? (
+      ) : reconciled ? (
         <div className="mt-3 space-y-2 text-sm leading-relaxed text-zinc-300">
           <ul className="space-y-1 text-zinc-100">
-            {normalizePulseSituation(check.situation).map((point, i) => (
+            {normalizePulseSituation(reconciled.situation).map((point, i) => (
               <li key={i} className="flex gap-2">
                 <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500" />
                 <span>{point}</span>
@@ -277,24 +277,24 @@ function PulseCard({
           </ul>
           <p>
             <span className="font-medium text-zinc-200">Move:</span>{" "}
-            {check.moveReason}
+            {reconciled.moveReason}
           </p>
-          {check.earningsNote ? (
+          {reconciled.earningsNote ? (
             <p>
               <span className="font-medium text-zinc-200">Earnings:</span>{" "}
-              {check.earningsNote}
+              {reconciled.earningsNote}
             </p>
           ) : null}
-          {check.action === "trim" && check.trimPct ? (
+          {reconciled.action === "trim" && reconciled.trimPct ? (
             <p className="font-medium text-amber-300">
-              One option worth weighing: trimming ~{check.trimPct}% of the
+              One option worth weighing: trimming ~{reconciled.trimPct}% of the
               position.
             </p>
           ) : null}
-          {check.addLevel ? (
-            <p className="font-medium text-brand-bright">{check.addLevel}</p>
+          {reconciled.addLevel ? (
+            <p className="font-medium text-brand-bright">{reconciled.addLevel}</p>
           ) : null}
-          <p className="text-zinc-100">{check.verdict}</p>
+          <p className="text-zinc-100">{reconciled.verdict}</p>
         </div>
       ) : null}
 
