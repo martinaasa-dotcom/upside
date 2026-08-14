@@ -148,7 +148,8 @@ function shortLabel(raw: string, i: number, len: number): string {
 }
 
 /**
- * Gold bar + line chart for the iOS dashboard. Plots book NAV, not return.
+ * Book NAV as a gold line, same language as Forecast's path chart.
+ * Axis copy lives in HTML so it stays text-xs instead of scaling with the SVG.
  */
 export function GoldNavChart({
   points,
@@ -158,12 +159,12 @@ export function GoldNavChart({
   className?: string;
 }) {
   const gid = useId().replace(/:/g, "");
-  const width = 360;
+  const width = 640;
   const height = 168;
-  const padL = 36;
-  const padR = 12;
+  const padL = 8;
+  const padR = 10;
   const padT = 10;
-  const padB = 22;
+  const padB = 10;
   const usable = points.filter((p) => Number.isFinite(p.nav));
 
   if (usable.length < 2) {
@@ -185,110 +186,86 @@ export function GoldNavChart({
   const dataMax = Math.max(...vals);
   const mid = (dataMin + dataMax) / 2;
   const rawSpan = dataMax - dataMin;
-  // Keep a quiet book from looking like a mountain: at least ~4% of NAV.
   const floorSpan = Math.max(Math.abs(mid) * 0.04, 1);
   const span = Math.max(rawSpan, floorSpan);
-  const pad = span * 0.12;
+  const pad = span * 0.1;
   const min = dataMin - pad;
   const max = dataMax + pad;
   const axisSpan = max - min || 1;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
-  const gap = innerW / usable.length;
-  const barW = Math.max(6, Math.min(22, gap * 0.55));
-  const xAt = (i: number) => padL + gap * i + gap / 2;
+  const lastIdx = usable.length - 1;
+  const xAt = (i: number) =>
+    padL + (lastIdx === 0 ? innerW / 2 : (i / lastIdx) * innerW);
   const yAt = (v: number) => padT + (1 - (v - min) / axisSpan) * innerH;
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => min + axisSpan * t);
+  const ticks = [dataMax, mid, dataMin];
   const line = usable
     .map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.nav).toFixed(1)}`)
     .join(" ");
-  const last = usable[usable.length - 1];
-  const lastX = xAt(usable.length - 1);
-  const lastY = yAt(last.nav);
+  const area = `${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} ${line} ${xAt(lastIdx).toFixed(1)},${(padT + innerH).toFixed(1)}`;
+  const last = usable[lastIdx]!;
+  const startLabel = shortLabel(usable[0]!.date, 0, usable.length) || usable[0]!.date;
+  const midLabel = shortLabel(
+    usable[Math.floor(lastIdx / 2)]!.date,
+    Math.floor(lastIdx / 2),
+    usable.length
+  );
+  const endLabel = "Now";
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className={className ? `h-auto w-full ${className}` : "h-auto w-full"}
-      role="img"
-      aria-label="Book value over the year"
-    >
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#F0D7A4" />
-          <stop offset="0.55" stopColor="#D6AD69" />
-          <stop offset="1" stopColor="#7A5A32" />
-        </linearGradient>
-      </defs>
-      {ticks.map((t) => (
-        <g key={t}>
-          <line
-            x1={padL}
-            x2={width - padR}
-            y1={yAt(t)}
-            y2={yAt(t)}
-            stroke="currentColor"
-            strokeOpacity={0.12}
-            strokeDasharray="3 4"
+    <div className={className}>
+      <div className="flex gap-3">
+        <div className="flex w-10 shrink-0 flex-col justify-between py-1 text-right text-xs tabular-nums text-zinc-500">
+          {ticks.map((t, i) => (
+            <span key={i}>{compactAxis(t)}</span>
+          ))}
+        </div>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-auto min-w-0 flex-1"
+          role="img"
+          aria-label="Book value over the year"
+        >
+          <defs>
+            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#D6AD69" stopOpacity="0.28" />
+              <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {ticks.map((t, i) => (
+            <line
+              key={i}
+              x1={padL}
+              x2={width - padR}
+              y1={yAt(t)}
+              y2={yAt(t)}
+              stroke="currentColor"
+              strokeOpacity={0.1}
+            />
+          ))}
+          <polygon points={area} fill={`url(#${gid})`} />
+          <polyline
+            fill="none"
+            stroke="#D6AD69"
+            strokeWidth={2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            points={line}
           />
-          <text
-            x={padL - 6}
-            y={yAt(t) + 3.5}
-            textAnchor="end"
-            fill="currentColor"
-            opacity={0.4}
-            fontSize="11"
-          >
-            {compactAxis(t)}
-          </text>
-        </g>
-      ))}
-      {usable.map((p, i) => {
-        const x = xAt(i);
-        const y = yAt(p.nav);
-        const h = innerH - (y - padT);
-        return (
-          <rect
-            key={`${p.date}-${i}`}
-            x={x - barW / 2}
-            y={y}
-            width={barW}
-            height={Math.max(2, h)}
-            rx={3}
-            fill={`url(#${gid})`}
+          <circle
+            cx={xAt(lastIdx)}
+            cy={yAt(last.nav)}
+            r={4}
+            fill="#E8C989"
           />
-        );
-      })}
-      <polyline
-        fill="none"
-        stroke="#E8C989"
-        strokeWidth={2}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        points={line}
-      />
-      <polygon
-        points={`${lastX},${lastY - 5} ${lastX + 7},${lastY} ${lastX},${lastY + 5}`}
-        fill="#E8C989"
-      />
-      {usable.map((p, i) => {
-        const label = shortLabel(p.date, i, usable.length);
-        if (!label) return null;
-        return (
-          <text
-            key={`l-${i}`}
-            x={xAt(i)}
-            y={height - 6}
-            textAnchor="middle"
-            fill="currentColor"
-            opacity={0.4}
-            fontSize="11"
-          >
-            {label}
-          </text>
-        );
-      })}
-    </svg>
+        </svg>
+      </div>
+      <div className="mt-1.5 flex justify-between pl-[3.25rem] text-xs text-zinc-500">
+        <span>{startLabel}</span>
+        {midLabel ? <span>{midLabel}</span> : <span />}
+        <span>{endLabel}</span>
+      </div>
+    </div>
   );
 }
 

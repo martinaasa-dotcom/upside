@@ -4,7 +4,6 @@ import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import type { BookSnapshotPayload } from "@/lib/book-snapshot";
 import {
-  downsampleToWeeks,
   reconstructAssumedNav,
   type AssumedPosition,
 } from "@/lib/market/assumed-nav";
@@ -130,8 +129,7 @@ export async function POST(req: Request) {
   }
 
   const closes = await fetchYtdDailyCloses(positions.map((p) => p.ticker));
-  const daily = reconstructAssumedNav(cash, positions, closes);
-  const points = downsampleToWeeks(daily);
+  const points = reconstructAssumedNav(cash, positions, closes);
 
   if (points.length < 2) {
     return NextResponse.json({
