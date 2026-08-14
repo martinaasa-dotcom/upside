@@ -2,7 +2,6 @@
 
 import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
-import { Sparkline } from "@/components/Sparkline";
 import {
   EmptyState,
   MicroLabel,
@@ -31,7 +30,7 @@ import { isForecastFullyCovered } from "@/lib/forecast";
 import { playbookBullets, type PlaybookBullet } from "@/lib/forecast-playbook";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 type Props = {
   model: ForecastModel;
@@ -232,6 +231,144 @@ const cellLabel =
   "flex min-w-0 w-full flex-col items-center justify-center whitespace-nowrap px-3 py-2 text-center";
 const cellNum =
   "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-3 py-2 text-center tabular-nums";
+
+type SheetPathPoint = { label: string; value: number };
+
+function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
+  const gid = useId().replace(/:/g, "");
+  const width = 640;
+  const height = 148;
+  const padX = 10;
+  const padT = 14;
+  const padB = 10;
+  const usable = points.filter((p) => Number.isFinite(p.value));
+  if (usable.length < 2) return null;
+
+  const vals = usable.map((p) => p.value);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  const innerW = width - padX * 2;
+  const innerH = height - padT - padB;
+  const xAt = (i: number) =>
+    padX + (usable.length === 1 ? innerW / 2 : (i / (usable.length - 1)) * innerW);
+  const yAt = (v: number) => padT + (1 - (v - min) / span) * innerH;
+  const line = usable
+    .map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.value).toFixed(1)}`)
+    .join(" ");
+  const area = `${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} ${line} ${xAt(usable.length - 1).toFixed(1)},${(padT + innerH).toFixed(1)}`;
+  const last = usable[usable.length - 1];
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-auto w-full"
+      role="img"
+      aria-label="Modeled sheet value from now through the last forecast year"
+    >
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#D6AD69" stopOpacity="0.32" />
+          <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={area} fill={`url(#${gid})`} />
+      <polyline
+        fill="none"
+        stroke="#D6AD69"
+        strokeWidth={2}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        points={line}
+      />
+      {usable.map((p, i) => (
+        <circle
+          key={p.label}
+          cx={xAt(i)}
+          cy={yAt(p.value)}
+          r={3.5}
+          fill="#0c1014"
+          stroke="#E8C989"
+          strokeWidth={2}
+        />
+      ))}
+      <circle
+        cx={xAt(usable.length - 1)}
+        cy={yAt(last.value)}
+        r={5}
+        fill="#E8C989"
+      />
+    </svg>
+  );
+}
+
+function SheetPath({
+  now,
+  years,
+  totals,
+  gainPct,
+}: {
+  now: number;
+  years: readonly ForecastYear[];
+  totals: Record<ForecastYear, number>;
+  gainPct: number | null;
+}) {
+  const points: SheetPathPoint[] = [
+    { label: "Now", value: now },
+    ...years.map((y) => ({ label: String(y), value: totals[y] })),
+  ];
+  const end = points[points.length - 1];
+
+  return (
+    <div className="mt-8 border-t border-white/5 pt-8">
+      <div className="flex items-end justify-between gap-6">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            Now
+          </p>
+          <p className="mt-2 font-heading text-2xl font-bold tabular-nums text-white sm:text-3xl">
+            {currency(now, 0)}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            {end.label}
+          </p>
+          <p className="mt-2 font-heading text-2xl font-bold tabular-nums text-white sm:text-3xl">
+            {currency(end.value, 0)}
+          </p>
+          {gainPct != null && (
+            <p
+              className={cn(
+                "mt-1.5 text-sm font-medium tabular-nums",
+                signedTone(gainPct)
+              )}
+            >
+              {percent(gainPct)}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <SheetPathChart points={points} />
+      </div>
+
+      <div className="mt-6 grid grid-cols-3 gap-x-4 gap-y-5 sm:grid-cols-6">
+        {points.map((p) => (
+          <div key={p.label}>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              {p.label}
+            </p>
+            <p className="mt-1.5 font-heading text-sm font-bold tabular-nums text-zinc-100 sm:text-base">
+              {currency(p.value, 0)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function ForecastPanel({
   model,
@@ -527,27 +664,12 @@ export function ForecastPanel({
           </p>
         )}
         {model.rows.length > 0 && (
-          <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/40 px-3 py-3">
-            <MicroLabel>Sheet path</MicroLabel>
-            <div className="mt-2 flex flex-wrap items-end gap-3">
-              <Sparkline
-                points={[
-                  model.currentTotal,
-                  ...yearCols.map((y) => model.eoyTotals[y]),
-                ]}
-                width={140}
-                height={40}
-              />
-              <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 text-xs tabular-nums text-zinc-400">
-                <span>Now {currency(model.currentTotal, 0)}</span>
-                {yearCols.map((y) => (
-                  <span key={y}>
-                    {y} {currency(model.eoyTotals[y], 0)}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
+          <SheetPath
+            now={model.currentTotal}
+            years={yearCols}
+            totals={model.eoyTotals}
+            gainPct={model.gainPct}
+          />
         )}
       </header>
 
