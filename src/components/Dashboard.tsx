@@ -2482,6 +2482,21 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- menu chrome deps only
   }, [source]);
 
+  const accountEnd =
+    source === "supabase" ? (
+      <HeaderOverflowMenu
+        items={accountMenuItems}
+        label={profile?.display_name || user?.email || "Account"}
+        avatar={{
+          url: profile?.avatar_url,
+          initial: (profile?.display_name || user?.email || "?")
+            .trim()
+            .charAt(0)
+            .toUpperCase(),
+        }}
+      />
+    ) : null;
+
   const missingQuoteTickers = missingTickers;
 
   if (loading) {
@@ -2496,6 +2511,7 @@ export function Dashboard() {
           brandTitle="Upside Lab: go to Overview"
           showWorkspaceNav={source === "supabase"}
           title="Overview"
+          end={accountEnd}
         />
       </div>
     );
@@ -2523,6 +2539,7 @@ export function Dashboard() {
                   ? "Pulse"
                   : activePortfolio!.name
         }
+        end={accountEnd}
       >
             <button
               type="button"
@@ -2573,19 +2590,6 @@ export function Dashboard() {
               label="View"
               icon={SlidersHorizontal}
             />
-            {source === "supabase" && (
-              <HeaderOverflowMenu
-                items={accountMenuItems}
-                label={profile?.display_name || user?.email || "Account"}
-                avatar={{
-                  url: profile?.avatar_url,
-                  initial: (profile?.display_name || user?.email || "?")
-                    .trim()
-                    .charAt(0)
-                    .toUpperCase(),
-                }}
-              />
-            )}
       </AppHeader>
 
       {/* Status strip, below the header rather than inside it, so the bar

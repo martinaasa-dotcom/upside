@@ -805,7 +805,12 @@ run("Account is not a workspace room", () => {
     join(process.cwd(), "src/components/WorkspaceSwitcher.tsx"),
     "utf8"
   );
+  const header = readFileSync(
+    join(process.cwd(), "src/components/AppHeader.tsx"),
+    "utf8"
+  );
   assert.doesNotMatch(switcher, /"Account"/);
+  assert.match(header, /\{showWorkspaceNav && <WorkspaceSwitcher \/>\}\s*\{end\}/);
 });
 
 run("Daily Duel is not on Home", () => {

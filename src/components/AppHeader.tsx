@@ -10,6 +10,8 @@ type Props = {
   title?: ReactNode;
   /** Page-specific controls. Sit left of the workspace nav on the right. */
   children?: ReactNode;
+  /** Always last on the right: account avatar, never a workspace room. */
+  end?: ReactNode;
   /** In-app navigation instead of an <a href="/">, for the Dashboard where
    * going "home" means switching tab rather than a page load. */
   onBrandClick?: () => void;
@@ -32,6 +34,7 @@ type Props = {
 export function AppHeader({
   title,
   children,
+  end,
   onBrandClick,
   brandTitle,
   showWorkspaceNav = true,
@@ -64,6 +67,7 @@ export function AppHeader({
         <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-1.5">
           {children}
           {showWorkspaceNav && <WorkspaceSwitcher />}
+          {end}
         </div>
       </div>
     </header>
