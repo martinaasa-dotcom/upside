@@ -51,7 +51,7 @@ function fmt(n: number | null, digits = 2) {
 }
 
 export function MacroStrip() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [macro, setMacro] = useState<Macro>({
     vix: null,
     eurusd: null,
