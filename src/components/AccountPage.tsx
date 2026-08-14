@@ -278,9 +278,9 @@ export function AccountPage() {
                   maxLength={280}
                   rows={3}
                   placeholder={
-                    knowsOptions === false
-                      ? "e.g. Long-term tech · growth investor · Tallinn"
-                      : "e.g. Long-term tech · covered calls · Tallinn"
+                    knowsOptions === true
+                      ? "e.g. Long-term tech · covered calls · Tallinn"
+                      : "e.g. Long-term tech · growth investor · Tallinn"
                   }
                   className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
                 />

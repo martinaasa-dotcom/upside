@@ -71,7 +71,7 @@ export const SHOCKS: ShockDefinition[] = [
     driver: "Tech Valuation",
     headlinePct: -0.10,
     mechanism: "Broad tech multiple reset across software, cloud platforms, and semiconductors. Defensives, energy, and cash provide relative insulation.",
-    tacticalAction: "Covered call strikes gain downside safety. Opportunity to deploy dry powder into high-conviction tech leaders.",
+    tacticalAction: "Cash on the sidelines is useful here. Opportunity to add to high-conviction names if the thesis still holds.",
   },
   {
     id: "oil_shock25",
@@ -91,7 +91,7 @@ export const SHOCKS: ShockDefinition[] = [
     driver: "AI Infrastructure",
     headlinePct: -0.20,
     mechanism: "CapEx digestion or enterprise AI monetization pause hits GPU cloud, chip fabricators, AI software, and data center power demand.",
-    tacticalAction: "Check concentration in AI infrastructure. Stagger covered call strikes above resistance.",
+    tacticalAction: "Check concentration in AI infrastructure. Don't let one theme become the whole book.",
   },
   {
     id: "btc_winter35",
@@ -141,7 +141,7 @@ export const SHOCKS: ShockDefinition[] = [
     driver: "Risk Expansion",
     headlinePct: 0.12,
     mechanism: "Inflation cools without a recession, triggering rate-cut optimism and strong capital inflows into growth, tech, and speculative momentum.",
-    tacticalAction: "High-beta holdings lead the charge. Watch covered call strikes approaching in-the-money territory.",
+    tacticalAction: "High-beta holdings lead the charge. Watch names that already ran a long way from cost.",
   },
 ];
 

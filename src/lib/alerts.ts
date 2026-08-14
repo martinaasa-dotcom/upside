@@ -52,7 +52,7 @@ export function buildStrikeAlerts(
  */
 export function buildEarningsAlerts(
   events: Array<{ ticker: string; date: string; days: number }>,
-  hideOptions = false
+  hideOptions = true
 ): UpsideAlert[] {
   return events
     .filter((e) => e.days >= 0 && e.days <= 7)

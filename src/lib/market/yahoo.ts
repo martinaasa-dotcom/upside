@@ -1,4 +1,5 @@
 import type { Quote } from "@/lib/types";
+import { sessionMark } from "@/lib/market-session";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 
@@ -185,43 +186,18 @@ export async function fetchQuotesYahoo(
               ? rawRegular - quote.regularMarketChange
               : null);
 
-          const usingPost = (state === "POST" || state === "POSTPOST") && rawPost != null;
-          const usingPre = !usingPost && (state === "PRE" || state === "PREPRE") && rawPre != null;
-          const nativePrice = usingPost
-            ? rawPost!
-            : usingPre
-              ? rawPre!
-              : rawRegular ?? rawPost ?? rawPre ?? 0;
+          const mark = sessionMark({
+            marketState: state,
+            regularPrice: rawRegular,
+            postPrice: rawPost,
+            prePrice: rawPre,
+            previousClose: rawPreviousClose,
+          });
+          const nativePrice = mark.price;
           const currency =
             typeof quote.currency === "string" ? quote.currency : undefined;
           const price = priceToUsd(nativePrice, currency, fx);
-
-          // "Yesterday's close" baseline for TODAY's change, chosen per
-          // session — using regularMarketPreviousClose unconditionally was
-          // the bug behind "today's P&L looks stuck on yesterday's number":
-          //  - POST: regularMarketPrice already rolled to TODAY's official
-          //    close, so regularMarketPreviousClose genuinely is yesterday's
-          //    close — correct as the baseline for the post-market price.
-          //  - PRE (with a live tick): regularMarketPrice is STILL
-          //    yesterday's close (today's regular session hasn't opened
-          //    yet) — THAT is the right baseline, not
-          //    regularMarketPreviousClose, which is one session further
-          //    back and was silently reproducing yesterday's *entire*
-          //    prior-day move as if it were today's.
-          //  - Otherwise (REGULAR, or CLOSED with no fresher tick yet): if
-          //    there's no price newer than the last regular close, nothing
-          //    has traded since yesterday's close — the change is flat
-          //    (zero), not yesterday's whole day again. It resets the
-          //    moment a real pre-market tick (or the next regular session)
-          //    arrives.
-          const nativePreviousClose = usingPost
-            ? rawPreviousClose ?? rawRegular ?? nativePrice
-            : usingPre
-              ? rawRegular ?? nativePrice
-              : state === "REGULAR"
-                ? rawPreviousClose ?? nativePrice
-                : nativePrice;
-          const previousClose = priceToUsd(nativePreviousClose, currency, fx);
+          const previousClose = priceToUsd(mark.previousClose, currency, fx);
           // Derived directly from (current price vs yesterday's close)
           // instead of reusing Yahoo's own change fields — regularMarket*
           // and postMarket* changes are relative to two DIFFERENT baselines

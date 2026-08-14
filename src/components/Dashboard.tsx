@@ -135,6 +135,7 @@ import {
   toggleVisibilityMap,
 } from "@/lib/panel-visibility";
 import {
+  shouldHideOptions,
   loadStoredKnowsOptions,
   loadStoredTier,
   saveStoredKnowsOptions,
@@ -474,10 +475,11 @@ export function Dashboard() {
   // answered, true/false = explicit answer to "have you used options
   // before". A "very experienced" tier and "no options experience" are a
   // real, valid combination -- this can't be derived from the tier.
+  // Options UI only appears after an explicit yes.
   const [knowsOptions, setKnowsOptions] = useState<boolean | null>(
     loadStoredKnowsOptions
   );
-  const hideOptionsUI = knowsOptions === false;
+  const hideOptionsUI = shouldHideOptions(knowsOptions);
 
   // Confirm/sync against the server once — localStorage is read
   // synchronously above for an instant first paint, but the DB value is
@@ -2583,6 +2585,7 @@ export function Dashboard() {
             bookCash={overview.totals.cash}
             eurUsd={eurUsd}
             eurUsdDetail={eurUsdDetail}
+            hideOptions={hideOptionsUI}
           />
         ) : isOverview ? (
           <>

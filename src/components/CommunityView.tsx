@@ -2257,13 +2257,13 @@ function ReadOnlyHoldings({
           label="Today"
           value={signedCurrency(todayDollar)}
           sub={todayPct != null ? percent(todayPct) : undefined}
-          tone={todayDollar >= 0 ? "up" : "down"}
+          tone={todayDollar > 0 ? "up" : todayDollar < 0 ? "down" : undefined}
         />
         <Stat
           label="Gain so far"
           value={signedCurrency(totalPnl)}
           sub={percent(totalRoiPct)}
-          tone={totalPnl >= 0 ? "up" : "down"}
+          tone={totalPnl > 0 ? "up" : totalPnl < 0 ? "down" : undefined}
         />
       </div>
       <div className="overflow-x-auto rounded-xl border border-zinc-800">

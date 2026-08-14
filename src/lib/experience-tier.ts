@@ -26,7 +26,7 @@ export const EXPERIENCE_TIERS: {
   {
     id: "advanced",
     label: "Very experienced",
-    blurb: "I actively trade, use options, show me everything.",
+    blurb: "I actively trade, show me everything.",
   },
 ];
 
@@ -87,9 +87,13 @@ const KNOWS_OPTIONS_STORAGE_KEY = "portfell-knows-options";
  * "very experienced" investor who's never touched options should still
  * get every options surface removed, not just soft-defaulted-off; an
  * options-savvy novice-tier investor should still see them. Tri-state:
- * null = hasn't answered yet (show everything, same as today), true =
- * has some options familiarity, false = explicitly none.
+ * null = hasn't answered yet, true = opted in, false = explicitly none.
+ * Only `true` shows options UI. Unanswered and "no" both hide it.
  */
+export function shouldHideOptions(knowsOptions: boolean | null): boolean {
+  return knowsOptions !== true;
+}
+
 export function loadStoredKnowsOptions(): boolean | null {
   if (typeof window === "undefined") return null;
   try {
@@ -113,10 +117,10 @@ export function saveStoredKnowsOptions(value: boolean) {
 
 /**
  * Lab has no options-specific sub-tabs left to hide: the CC income and
- * Cashflow tabs were removed outright, so `knows_options === false` is now
+ * Cashflow tabs were removed outright, so `shouldHideOptions` is now
  * enforced entirely on the covered-call panel, strike alerts, the
- * Target-call% field, and Margus's tool set. Kept as an empty list rather
- * than deleted so the gating call site stays obvious if an options-only
- * Lab tab ever comes back.
+ * Target-call% field, briefing copy, and Margus's tool set. Kept as an
+ * empty list rather than deleted so the gating call site stays obvious
+ * if an options-only Lab tab ever comes back.
  */
 export const NO_OPTIONS_HIDDEN_LAB_TABS: string[] = [];

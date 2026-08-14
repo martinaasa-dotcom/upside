@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Upside - Portfolio Tracker",
     short_name: "Upside",
     description:
-      "Live portfolio book with covered-call targets and Assistant Margus.",
+      "Live portfolio book with Assistant Margus.",
     start_url: "/",
     display: "standalone",
     background_color: "#121214",

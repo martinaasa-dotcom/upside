@@ -86,7 +86,7 @@ type Props = {
   visitStreak?: VisitStreakState | null;
   /** Show Fund + Communities on home (signed-in My book). */
   showCommunities?: boolean;
-  /** Viewer has no options experience, keep copy options-free. */
+  /** Viewer has not opted into options. Hide every covered-call mention. */
   hideOptions?: boolean;
   /** First-run actions, shown only while the book is completely empty. */
   onAddHolding?: () => void;
@@ -409,7 +409,7 @@ export function OverviewDashboard({
   guest = false,
   visitStreak = null,
   showCommunities = false,
-  hideOptions = false,
+  hideOptions = true,
   onAddHolding,
   onImportScreenshot,
   onImportCsv,

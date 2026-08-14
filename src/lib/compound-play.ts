@@ -321,7 +321,7 @@ export function buildCompareScenarios(
     {
       id: "upside",
       label: "Upside path",
-      tagline: `~${upsideRate.toFixed(0)}% · book + CC juice`,
+      tagline: `~${upsideRate.toFixed(0)}% · this book's assumed rate`,
       result: upside,
       color: "#c5a059",
     },

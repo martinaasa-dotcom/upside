@@ -758,12 +758,19 @@ export function CcAdvisorChat({
         "Any concentration risk across sheets?",
         "Which sheets are winning today?",
       ]
-    : [
-        "Give me the updated CC write plan",
-        "Copy Call % and targets from another sheet",
-        "What’s moving in premarket / after hours?",
-        "Tighten Call % on the names with room",
-      ];
+    : context.hideOptions
+      ? [
+          "What’s moving in premarket / after hours?",
+          "Which names are the biggest overnight gaps?",
+          "Any concentration risk across sheets?",
+          "What’s up most since I bought it?",
+        ]
+      : [
+          "Give me the updated CC write plan",
+          "Copy Call % and targets from another sheet",
+          "What’s moving in premarket / after hours?",
+          "Tighten Call % on the names with room",
+        ];
 
   const canSend = !busy && (Boolean(input.trim()) || pendingImages.length > 0);
   // Suppressed while the full panel is open — that already shows the same
@@ -931,56 +938,60 @@ export function CcAdvisorChat({
              * context and grows to a line box, which centres a few pixels
              * off from its unwrapped siblings. */}
             <div className="relative flex" ref={rulesRef}>
-              <button
-                type="button"
-                onClick={() => setRulesOpen((o) => !o)}
-                className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
-                  rulesOpen
-                    ? "bg-brand/15 text-brand"
-                    : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
-                }`}
-                aria-label="Strategy rules"
-                aria-expanded={rulesOpen}
-              >
-                <BookOpen className="h-4 w-4" />
-              </button>
-              {rulesOpen && (
-                <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                      Strategy rules
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setRulesOpen(false)}
-                      className="rounded p-3 text-zinc-400 hover:text-zinc-300 sm:p-0.5"
-                      aria-label="Close rules"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <ul className="max-h-72 space-y-2.5 overflow-y-auto">
-                    {RULES.map((r) => (
-                      <li
-                        key={r.title}
-                        className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0"
-                      >
-                        <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                          {r.title}
+              {!context.hideOptions && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setRulesOpen((o) => !o)}
+                    className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
+                      rulesOpen
+                        ? "bg-brand/15 text-brand"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+                    }`}
+                    aria-label="Strategy rules"
+                    aria-expanded={rulesOpen}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                  </button>
+                  {rulesOpen && (
+                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                          Strategy rules
                         </p>
-                        <p className="mt-0.5 text-sm font-semibold text-brand">
-                          {r.rule}
-                        </p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
-                          {r.detail}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2.5 border-t border-zinc-800/80 pt-2.5 text-xs leading-relaxed text-zinc-400">
-                    {ADVICE_DISCLAIMER_SHORT}
-                  </p>
-                </div>
+                        <button
+                          type="button"
+                          onClick={() => setRulesOpen(false)}
+                          className="rounded p-3 text-zinc-400 hover:text-zinc-300 sm:p-0.5"
+                          aria-label="Close rules"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <ul className="max-h-72 space-y-2.5 overflow-y-auto">
+                        {RULES.map((r) => (
+                          <li
+                            key={r.title}
+                            className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0"
+                          >
+                            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                              {r.title}
+                            </p>
+                            <p className="mt-0.5 text-sm font-semibold text-brand">
+                              {r.rule}
+                            </p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                              {r.detail}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-2.5 border-t border-zinc-800/80 pt-2.5 text-xs leading-relaxed text-zinc-400">
+                        {ADVICE_DISCLAIMER_SHORT}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
             <button
@@ -1004,9 +1015,9 @@ export function CcAdvisorChat({
             {messages.length === 0 && (
               <div className="space-y-3 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/30 p-3">
                 <p className="text-xs leading-relaxed text-zinc-400">
-                  I can read holdings and covered calls, and update shares, buy
-                  price, cash, Call %, or add/remove tickers. Open the book icon
-                  for the strategy rules.
+                  {context.hideOptions
+                    ? "I can read holdings and update shares, buy price, cash, or add/remove tickers."
+                    : "I can read holdings and covered calls, and update shares, buy price, cash, Call %, or add/remove tickers. Open the book icon for the strategy rules."}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestions.map((s) => (

@@ -85,6 +85,8 @@ type Props = {
   /** USD per 1 EUR (Yahoo EURUSD) */
   eurUsd?: number | null;
   eurUsdDetail?: EurUsdQuote | null;
+  /** Skip the covered-call boost in the compare path. */
+  hideOptions?: boolean;
 };
 
 function loadStored(): CompoundInputs {
@@ -408,6 +410,7 @@ export function CompoundInterestSheet({
   bookCash = 0,
   eurUsd = null,
   eurUsdDetail = null,
+  hideOptions = true,
 }: Props) {
   const [draft, setDraft] = useState<CompoundInputs>(DEFAULT_COMPOUND_INPUTS);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
@@ -522,8 +525,8 @@ export function CompoundInterestSheet({
   }, [tipping, draft.depositAmount]);
 
   const compare = useMemo(
-    () => buildCompareScenarios(liveInputs, 6),
-    [liveInputs]
+    () => buildCompareScenarios(liveInputs, hideOptions ? 0 : 6),
+    [liveInputs, hideOptions]
   );
   const compareTakeaway = useMemo(() => buildCompareTakeaway(compare), [compare]);
   const narrative = useMemo(() => buildNarrative(result), [result]);

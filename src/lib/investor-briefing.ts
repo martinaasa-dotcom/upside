@@ -68,16 +68,15 @@ function sheetMostCcPremium(rows: CoveredCallRow[]): string | undefined {
 }
 
 /**
- * One rotating "what's the play today" card. Built from what this viewer
- * can actually reach, so a no-options novice never gets a covered-call
- * pep talk.
+ * One rotating "what's the play today" card. Options pep talks live
+ * elsewhere (strike alerts, covered-call panel) so this pool stays
+ * about the book, not about writing calls.
  */
 function buildPlays(opts: {
   model: OverviewModel;
   dayKey: string;
-  hideOptions: boolean;
 }): BriefingItem[] {
-  const { model, dayKey, hideOptions } = opts;
+  const { model, dayKey } = opts;
   const plays: BriefingItem[] = [];
 
   plays.push({
@@ -87,16 +86,6 @@ function buildPlays(opts: {
     detail:
       "Nothing here needs action right now. Checking in daily is the habit worth keeping. Trading daily isn't.",
   });
-
-  if (!hideOptions) {
-    plays.push({
-      id: `play-cc-wait-${dayKey}`,
-      kind: "play",
-      title: "Hold, and only write when it's worth it",
-      detail:
-        "Own the shares. Sell a call only when the premium is actually rich enough to bother. Otherwise there's nothing to do today.",
-    });
-  }
 
   const equityHoldings = model.tickers
     .filter((t) => t.currentValue > 0)
@@ -176,7 +165,9 @@ export function buildInvestorBriefing(input: {
 }): BriefingItem[] {
   const dayKey = input.dayKey ?? todayKeyInTz();
   const { model, activeAlerts, coveredCallRows } = input;
-  const hideOptions = Boolean(input.hideOptions);
+  // Hide unless the caller explicitly opted the viewer in. Forgetting to
+  // pass this used to leak covered-call pep talks onto Home.
+  const hideOptions = input.hideOptions !== false;
   const canReachPulse = input.canReachPulse ?? true;
   const items: BriefingItem[] = [];
 
@@ -279,7 +270,9 @@ export function buildInvestorBriefing(input: {
     });
   }
 
-  const plays = buildPlays({ model, dayKey, hideOptions });
+  const plays = buildPlays({ model, dayKey }).filter((p) =>
+    activeAlerts.length > 0 ? p.id !== `play-wait-${dayKey}` : true
+  );
   if (plays.length > 0) {
     items.push(plays[Math.abs(hash(dayKey)) % plays.length]!);
   }

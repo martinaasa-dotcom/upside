@@ -15,7 +15,8 @@ import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { fundCopyBullets } from "../src/lib/fund-copy";
 import { reconcilePulseCheck, type PulseCheck } from "../src/lib/thesis-pulse";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
-import { TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
+import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
+import { sessionMark } from "../src/lib/market-session";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 
@@ -91,6 +92,66 @@ run("briefing kinds use plain-English labels", () => {
   assert.equal(BRIEFING_KIND_LABEL.action, "Needs a look");
   assert.equal(BRIEFING_KIND_LABEL.watch, "Worth knowing");
   assert.equal(BRIEFING_KIND_LABEL.play, "Something to sit with");
+});
+
+run("options UI is hidden unless the viewer explicitly said yes", () => {
+  assert.equal(shouldHideOptions(true), false);
+  assert.equal(shouldHideOptions(false), true);
+  assert.equal(shouldHideOptions(null), true);
+});
+
+run("Home briefing never rotates a covered-call pep talk", () => {
+  const withOptions = buildInvestorBriefing({
+    model: emptyModel(),
+    activeAlerts: [],
+    coveredCallRows: [],
+    hideOptions: false,
+    canReachPulse: true,
+    dayKey: "2026-08-14",
+  });
+  const hidden = buildInvestorBriefing({
+    model: emptyModel(),
+    activeAlerts: [],
+    coveredCallRows: [],
+    hideOptions: true,
+    canReachPulse: true,
+    dayKey: "2026-08-14",
+  });
+  for (const items of [withOptions, hidden]) {
+    assert.ok(!items.some((i) => /write when|sell a call|call premium/i.test(`${i.title} ${i.detail}`)));
+  }
+});
+
+run("closed session keeps last print vs yesterday close, including leftover after-hours", () => {
+  const closedAh = sessionMark({
+    marketState: "CLOSED",
+    regularPrice: 100,
+    postPrice: 102,
+    prePrice: null,
+    previousClose: 90,
+  });
+  assert.equal(closedAh.price, 102);
+  assert.equal(closedAh.previousClose, 90);
+
+  const closedFlat = sessionMark({
+    marketState: "CLOSED",
+    regularPrice: 100,
+    postPrice: null,
+    prePrice: null,
+    previousClose: 90,
+  });
+  assert.equal(closedFlat.price, 100);
+  assert.equal(closedFlat.previousClose, 90);
+
+  const pre = sessionMark({
+    marketState: "PRE",
+    regularPrice: 100,
+    postPrice: null,
+    prePrice: 101,
+    previousClose: 90,
+  });
+  assert.equal(pre.price, 101);
+  assert.equal(pre.previousClose, 100);
 });
 
 run("fund today move is live NAV minus last snapshot", () => {

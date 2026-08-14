@@ -63,10 +63,9 @@ export type CcChatContext = {
   }>;
   /** Overview chat: advise only — no mutating tools */
   adviseOnly?: boolean;
-  /** Viewer told onboarding they have no options experience — Margus
-   * should never bring up covered calls, Call %, strikes, or targets
-   * unprompted for this person. Callers already omit `rows` in this
-   * case; this also softens the system prompt itself. */
+  /** Viewer has not opted into options — Margus should never bring up
+   * covered calls, Call %, strikes, or targets unprompted. Callers already
+   * omit `rows` in this case; this also softens the system prompt itself. */
   hideOptions?: boolean;
   /** Yahoo marketState snapshot (PRE / REGULAR / POST / …) */
   marketState?: string | null;
@@ -664,7 +663,7 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
   const adviseOnly = Boolean(ctx.adviseOnly);
 
   const optionsGuard = hideOptions
-    ? `\n\nThis viewer told onboarding they have NO options experience. Covered calls are hidden everywhere in their UI. NEVER mention covered calls, Call %, strikes, premiums, "stock target", or options strategies — not even to suggest learning about them. Talk about their holdings in plain buy/hold/sell/allocation terms only. If they explicitly ask about options, briefly answer their question but note this isn't your focus for their account and don't proactively bring it up again.`
+    ? `\n\nThis viewer has not opted into options. Covered calls are hidden everywhere in their UI. NEVER mention covered calls, Call %, strikes, premiums, "stock target", or options strategies — not even to suggest learning about them. Talk about their holdings in plain buy/hold/sell/allocation terms only. If they explicitly ask about options, briefly answer their question but note this isn't your focus for their account and don't proactively bring it up again.`
     : "";
 
   const writeBlock = adviseOnly

@@ -447,7 +447,7 @@ export function buildDailyFunFacts(
   tickers: TickerScore[],
   totals: OverviewModel["totals"],
   dayKey: string = todayKeyInTz(),
-  hideOptions: boolean = false
+  hideOptions: boolean = true
 ): string[] {
   if (!sheets.length || !tickers.length) return [];
 
