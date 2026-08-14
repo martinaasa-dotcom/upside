@@ -2441,7 +2441,7 @@ function ReadOnlyHoldings({
                       signedTone(todayPct, "text-zinc-400")
                     )}
                   >
-                    {todayPct != null ? percent(todayPct) : "—"}
+                    {todayPct != null ? percent(todayPct, 2) : "—"}
                   </td>
                   <td className="px-3 py-2 tabular-nums text-zinc-400">
                     {currency(cost)}
