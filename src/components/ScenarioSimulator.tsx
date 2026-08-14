@@ -183,7 +183,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             <MicroLabel>
               {analysis.margin.isUsingMargin
                 ? "Borrowed money"
-                : "Cash on hand"}
+                : "Cash"}
             </MicroLabel>
             {analysis.margin.isUsingMargin ? (
               analysis.margin.marginCallRisk === "critical" ? (
@@ -227,22 +227,28 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             <>
               <div className="mt-1 flex items-baseline justify-between gap-2">
                 <span className="text-lg font-semibold tabular-nums text-white">
-                  {analysis.margin.shockedCashPct.toFixed(1)}%
+                  {currency(analysis.cash, 0)}
                 </span>
                 <span className="text-xs tabular-nums text-zinc-400">
-                  {currency(analysis.cash, 0)} in cash
+                  {analysis.margin.shockedCashPct.toFixed(1)}% of the book
+                  after this
                 </span>
               </div>
               <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
-                <span>Buys more of the dip</span>
-                <span className="font-medium text-brand-bright tabular-nums">
-                  +
-                  {(
-                    analysis.margin.shockedCashPct -
-                    analysis.margin.liveCashPct
-                  ).toFixed(1)}
-                  %
-                </span>
+                {analysis.cash > 0 ? (
+                  <>
+                    <span>Doesn&apos;t fall with the stocks</span>
+                    {analysis.margin.shockedCashPct -
+                      analysis.margin.liveCashPct >
+                    0.05 ? (
+                      <span className="tabular-nums text-zinc-300">
+                        Was {analysis.margin.liveCashPct.toFixed(1)}%
+                      </span>
+                    ) : null}
+                  </>
+                ) : (
+                  <span>No cash sitting out as a buffer</span>
+                )}
               </div>
             </>
           )}
