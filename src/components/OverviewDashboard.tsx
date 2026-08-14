@@ -283,45 +283,55 @@ function BriefingCard({
   return <Card tone={cardTone}>{body}</Card>;
 }
 
+const MOVER_GRID =
+  "grid grid-cols-[minmax(6.5rem,1.2fr)_1fr_1fr] items-center gap-4 px-2";
+
 function MoverRow({
   ticker,
   mode,
+  showSheets,
   onOpen,
 }: {
   ticker: TickerScore;
   mode: "win" | "loss" | "today-win" | "today-loss";
+  showSheets: boolean;
   onOpen: () => void;
 }) {
-  const isUp = mode === "win" || mode === "today-win";
   const lifetime = mode === "win" || mode === "loss";
   const pct = lifetime ? ticker.roiPct : ticker.todayPct;
   const dollars = lifetime ? ticker.roiDollar : ticker.todayDollar;
+  const sheets = ticker.portfolios.filter(Boolean).join(", ");
 
   return (
-    <button type="button" onClick={onOpen} className="w-full text-left">
-      <Card tone={isUp ? "good" : "bad"} interactive>
-        <div className="flex items-center gap-4">
-          <span className="w-16 shrink-0 font-heading text-base font-bold text-white">
-            {cashtag(ticker.ticker)}
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        MOVER_GRID,
+        "w-full min-h-11 rounded-lg py-3.5 text-left transition hover:bg-white/[0.04]"
+      )}
+    >
+      <span className="min-w-0">
+        <span className="block font-heading text-base font-bold text-white">
+          {cashtag(ticker.ticker)}
+        </span>
+        {showSheets && sheets ? (
+          <span className="mt-0.5 block truncate text-xs text-muted">
+            {sheets}
           </span>
-          <div className="min-w-0 flex-1">
-            <Sparkline points={ticker.sparkline} fill width={160} height={28} />
-          </div>
-          <div className="shrink-0 text-right">
-            <p
-              className={cn(
-                "font-heading text-base font-bold tabular-nums",
-                tone(pct)
-              )}
-            >
-              {pct != null ? percent(pct) : "—"}
-            </p>
-            <p className={cn("mt-0.5 text-xs tabular-nums", tone(dollars))}>
-              {signedCurrency(dollars)}
-            </p>
-          </div>
-        </div>
-      </Card>
+        ) : null}
+      </span>
+      <span
+        className={cn(
+          "font-heading text-base font-bold tabular-nums",
+          tone(pct)
+        )}
+      >
+        {pct != null ? percent(pct, lifetime ? 1 : 2) : "—"}
+      </span>
+      <span className={cn("text-sm tabular-nums", tone(dollars))}>
+        {signedCurrency(dollars)}
+      </span>
     </button>
   );
 }
@@ -662,20 +672,32 @@ export function OverviewDashboard({
             />
           }
         />
-        <div className="mt-6 space-y-3">
+        <div className="mt-6">
           {movers.length === 0 ? (
             <p className="py-5 text-center text-sm text-zinc-400">
               Waiting on prices.
             </p>
           ) : (
-            movers.map(({ t, mode }) => (
-              <MoverRow
-                key={`${mode}-${t.ticker}`}
-                ticker={t}
-                mode={mode}
-                onOpen={() => openFirstPortfolio(t)}
-              />
-            ))
+            <>
+              <div className={cn(MOVER_GRID, "pb-2")}>
+                <MicroLabel>Ticker</MicroLabel>
+                <MicroLabel>
+                  {moverHorizon === "today" ? "Today" : "ROI"}
+                </MicroLabel>
+                <MicroLabel>P&L</MicroLabel>
+              </div>
+              <div className="divide-y divide-white/5">
+                {movers.map(({ t, mode }) => (
+                  <MoverRow
+                    key={`${mode}-${t.ticker}`}
+                    ticker={t}
+                    mode={mode}
+                    showSheets={multiSheet}
+                    onOpen={() => openFirstPortfolio(t)}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </Panel>

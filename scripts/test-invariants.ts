@@ -680,7 +680,7 @@ run("Montserrat headings and Inter body, no third face", () => {
   assert.doesNotMatch(code(logo), /tracking-\[0\./);
 });
 
-run("mover rows are a ticker, a sparkline, and one figure", () => {
+run("mover rows are a labeled table, not a stretched sparkline", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"
@@ -689,9 +689,11 @@ run("mover rows are a ticker, a sparkline, and one figure", () => {
     src.indexOf("function MoverRow"),
     src.indexOf("function PortfolioLane")
   );
-  assert.match(row, /Sparkline/);
-  assert.match(row, /percent\(pct\)/);
+  assert.doesNotMatch(row, /Sparkline/);
+  assert.match(row, /percent\(pct/);
   assert.match(row, /signedCurrency\(dollars\)/);
+  assert.match(src, /<MicroLabel>Ticker<\/MicroLabel>/);
+  assert.match(src, /<MicroLabel>P&L<\/MicroLabel>/);
   assert.doesNotMatch(row, /label="Price"/);
   assert.doesNotMatch(row, />Recent</);
 });
