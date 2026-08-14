@@ -16,8 +16,7 @@ type Macro = {
 async function fetchMacro(): Promise<Macro> {
   try {
     const res = await fetch(
-      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX",
-      { cache: "no-store" }
+      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX"
     );
     if (!res.ok) throw new Error("macro failed");
     const data = await res.json();

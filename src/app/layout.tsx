@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
 import { PRODUCT_BLURB, PRODUCT_SENTENCE } from "@/lib/product";
+import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,23 +40,30 @@ export const metadata: Metadata = {
   icons: {
     icon: [{ url: "/upside-icon.svg", type: "image/svg+xml" }],
     shortcut: "/upside-icon.svg",
-    apple: "/apple-icon.png",
+    apple: "/icons/icon-192.png",
   },
   openGraph: {
     title: "Upside",
     description: SITE_DESCRIPTION,
     siteName: "Upside",
     type: "website",
-    url: "https://upside-upthink-solutions.vercel.app",
-    images: [{ url: "/upside-icon.svg", width: 128, height: 128, alt: "Upside mark" }],
+    url: siteUrl(),
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Upside",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Upside",
     description: SITE_DESCRIPTION,
-    images: ["/upside-icon.svg"],
+    images: ["/og.png"],
   },
-  metadataBase: new URL("https://upside-upthink-solutions.vercel.app"),
+  metadataBase: new URL(siteUrl()),
 };
 
 export default function RootLayout({

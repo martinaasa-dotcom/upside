@@ -531,7 +531,7 @@ export function UpsidePortfolioPage() {
       ];
       let liveQuotes: Record<string, Quote> = {};
       if (tickers.length > 0) {
-        const res = await fetch(quotesUrl(tickers), { cache: "no-store" });
+        const res = await fetch(quotesUrl(tickers));
         if (!res.ok) throw new Error(`Quotes fetch failed (${res.status})`);
         const data = await res.json();
         liveQuotes = data.quotes ?? {};
@@ -598,7 +598,7 @@ export function UpsidePortfolioPage() {
     } catch {
       /* keep last-known value on transient failure, non-critical */
     }
-  }, [benchmark, valueForPortfolio]);
+  }, [benchmark, valueForPortfolio, fetchMyPortfolios]);
 
   // Refresh the live value of an already-set benchmark whenever it loads.
   useEffect(() => {

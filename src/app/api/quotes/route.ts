@@ -3,12 +3,13 @@ import { marketSession } from "@/lib/market/session";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 /**
  * How long the CDN may reuse a quote response. Browsers always revalidate
  * (max-age=0) so a tab that opened overnight cannot keep serving a
- * flattened close after pre-market starts.
+ * flattened close after pre-market starts. Vercel-CDN-Cache-Control is set
+ * too: Next otherwise stamps dynamic route handlers with no-store and the
+ * s-maxage never reaches the edge.
  */
 function cacheSeconds(): number {
   switch (marketSession()) {
@@ -21,8 +22,11 @@ function cacheSeconds(): number {
 }
 
 function cacheHeaders(seconds: number) {
+  const value = `public, max-age=0, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`;
   return {
-    "Cache-Control": `public, max-age=0, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`,
+    "Cache-Control": value,
+    "CDN-Cache-Control": value,
+    "Vercel-CDN-Cache-Control": value,
   };
 }
 

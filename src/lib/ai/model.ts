@@ -1,5 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, type LanguageModel } from "ai";
+import { siteUrl } from "@/lib/site-url";
 
 /**
  * OpenRouter's `:free` catalogue rots: slugs get retired or moved behind
@@ -177,8 +178,7 @@ export function buildAdvisorProviderChain(options?: {
       baseURL: "https://openrouter.ai/api/v1",
       headers: {
         "HTTP-Referer":
-          process.env.OPENROUTER_HTTP_REFERER ??
-          "https://upside-upthink-solutions.vercel.app",
+          process.env.OPENROUTER_HTTP_REFERER ?? siteUrl(),
         "X-Title":
           process.env.OPENROUTER_APP_TITLE ?? "Upside Assistant Margus",
       },

@@ -23,6 +23,15 @@ type OverviewUser = {
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
   portfolios: { id: string; name: string }[];
+  holding_count: number;
+};
+
+export type AdminFunnel = {
+  signedIn: number;
+  hasSheet: number;
+  hasHoldings: number;
+  returned7d: number;
+  activated: number;
 };
 
 type OverviewMember = {
@@ -47,6 +56,7 @@ type OverviewCommunity = {
 async function loadViaServiceRole(): Promise<{
   users: OverviewUser[];
   communities: OverviewCommunity[];
+  funnel: AdminFunnel;
 }> {
   const supabase = getSupabaseServer();
   if (!supabase) {
@@ -82,6 +92,19 @@ async function loadViaServiceRole(): Promise<{
     .from(PORTFELL_TABLES.portfolios)
     .select("id, name");
   if (pfErr) throw new Error(pfErr.message);
+
+  const { data: holdingRows, error: hErr } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("portfolio_id");
+  if (hErr) throw new Error(hErr.message);
+
+  const holdingsByPortfolio = new Map<string, number>();
+  for (const row of (holdingRows ?? []) as { portfolio_id: string }[]) {
+    holdingsByPortfolio.set(
+      row.portfolio_id,
+      (holdingsByPortfolio.get(row.portfolio_id) ?? 0) + 1
+    );
+  }
 
   const portfolioNameById = new Map(
     ((portfolioRows ?? []) as { id: string; name: string }[]).map((p) => [
@@ -145,6 +168,10 @@ async function loadViaServiceRole(): Promise<{
     last_sign_in_at: signInById.get(p.id) ?? null,
     email_confirmed_at: null,
     portfolios: portfoliosByUser.get(p.id) ?? [],
+    holding_count: (portfoliosByUser.get(p.id) ?? []).reduce(
+      (n, sheet) => n + (holdingsByPortfolio.get(sheet.id) ?? 0),
+      0
+    ),
   }));
 
   users.sort((a, b) => {
@@ -200,7 +227,25 @@ async function loadViaServiceRole(): Promise<{
     };
   });
 
-  return { users, communities: communityRows };
+  return { users, communities: communityRows, funnel: funnelFromUsers(users) };
+}
+
+function funnelFromUsers(users: OverviewUser[]): AdminFunnel {
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const signedIn = users.length;
+  const hasSheet = users.filter((u) => (u.portfolios?.length ?? 0) > 0).length;
+  const hasHoldings = users.filter((u) => (u.holding_count ?? 0) > 0).length;
+  const returned7d = users.filter((u) => {
+    if (!u.last_sign_in_at) return false;
+    const t = Date.parse(u.last_sign_in_at);
+    return Number.isFinite(t) && t >= weekAgo;
+  }).length;
+  const activated = users.filter((u) => {
+    if ((u.holding_count ?? 0) <= 0 || !u.last_sign_in_at) return false;
+    const t = Date.parse(u.last_sign_in_at);
+    return Number.isFinite(t) && t >= weekAgo;
+  }).length;
+  return { signedIn, hasSheet, hasHoldings, returned7d, activated };
 }
 
 export async function GET() {
@@ -238,6 +283,7 @@ export async function GET() {
     return NextResponse.json({
       users: payload.users ?? [],
       communities: payload.communities ?? [],
+      funnel: funnelFromUsers(payload.users ?? []),
     });
   } catch (e) {
     return NextResponse.json(

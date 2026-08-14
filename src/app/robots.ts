@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/site-url";
 
-const BASE_URL = "https://upside-upthink-solutions.vercel.app";
+const BASE_URL = siteUrl();
 
 /** Most routes are per-account data behind sign-in — nothing generically
  * useful for a crawler to index there, and no reason to invite it. */

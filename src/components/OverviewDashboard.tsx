@@ -206,7 +206,7 @@ function EmptyBook({
 
       <p className="mt-5 text-sm text-zinc-400">
         Nothing here is advice, and nothing you add is shared until you invite
-        someone. You can still watch the Upside Fund or start a circle below.
+        someone.
       </p>
     </Panel>
   );
@@ -529,7 +529,6 @@ export function OverviewDashboard({
           onImportCsv={onImportCsv}
           onAskMargus={onAskMargus}
         />
-        {showCommunities && !guest && <HomeWorld />}
       </div>
     );
   }

@@ -667,18 +667,97 @@ run("every tier's default surface uses the shared Panel shell", () => {
   );
 });
 
-run("one product sentence on sign-in, not a fund pitch", () => {
+run("quote clients honor the CDN cache", () => {
+  const files = [
+    "src/components/Dashboard.tsx",
+    "src/components/PulsePage.tsx",
+    "src/components/MacroStrip.tsx",
+    "src/components/CommunityView.tsx",
+    "src/components/UpsidePortfolioPage.tsx",
+  ];
+  for (const rel of files) {
+    const src = readFileSync(join(process.cwd(), rel), "utf8");
+    assert.doesNotMatch(
+      src,
+      /quotesUrl\([^)]*\),\s*\{\s*cache:\s*"no-store"/,
+      `${rel} still bypasses /api/quotes CDN cache`
+    );
+    assert.doesNotMatch(
+      src,
+      /\/api\/quotes[^`]*cache:\s*"no-store"/,
+      `${rel} still bypasses /api/quotes CDN cache`
+    );
+  }
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/quotes/route.ts"),
+    "utf8"
+  );
+  assert.match(route, /Vercel-CDN-Cache-Control/);
+  assert.doesNotMatch(route, /force-dynamic/);
+});
+
+run("first-run is import, not an empty named sheet", () => {
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(dash, /DashboardWelcome/);
+  assert.match(dash, /FIRST_SHEET_NAME/);
+  assert.match(dash, /ensureFirstSheet/);
+  const welcomeGone = (() => {
+    try {
+      readFileSync(
+        join(process.cwd(), "src/components/DashboardWelcome.tsx"),
+        "utf8"
+      );
+      return false;
+    } catch {
+      return true;
+    }
+  })();
+  assert.equal(welcomeGone, true, "DashboardWelcome.tsx should be deleted");
+  const overview = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  assert.match(overview, /Upload a CSV/);
+  assert.match(overview, /Import a screenshot/);
+  assert.doesNotMatch(overview, /watch the Upside Fund or start a circle below/);
+});
+
+run("sign-in reads as a product", () => {
   const product = readFileSync(
     join(process.cwd(), "src/lib/product.ts"),
     "utf8"
   );
-  assert.match(product, /A daily read of your book/);
+  assert.match(product, /SIGNIN_WHO/);
+  assert.match(product, /SIGNIN_POINTS/);
   const gate = readFileSync(
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
   assert.match(gate, /PRODUCT_SENTENCE/);
+  assert.match(gate, /SIGNIN_WHO/);
+  assert.match(gate, /SIGNIN_POINTS/);
   assert.doesNotMatch(gate, /\$50k|AI manage/);
+});
+
+run("empty book does not lead with Fund", () => {
+  const overview = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  const emptyBlock = overview.slice(
+    overview.indexOf("if (bookIsEmpty)"),
+    overview.indexOf("return (", overview.indexOf("if (bookIsEmpty)") + 40)
+  );
+  // The empty return must not render HomeWorld.
+  const emptyFn = overview.slice(
+    overview.indexOf("function EmptyBook"),
+    overview.indexOf("function BriefingCard")
+  );
+  assert.doesNotMatch(emptyFn, /HomeWorld/);
+  void emptyBlock;
 });
 
 run("lab sync writes conviction only", () => {

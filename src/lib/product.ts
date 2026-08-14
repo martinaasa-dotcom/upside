@@ -9,3 +9,17 @@ export const PRODUCT_SENTENCE =
 
 export const PRODUCT_BLURB =
   "See what moved, check the thesis, and ask when you're unsure.";
+
+/** Name used when a first-run import creates the sheet for you. */
+export const FIRST_SHEET_NAME = "My book";
+
+/** Sign-in page: who this is for, one line. */
+export const SIGNIN_WHO =
+  "For people who already own stocks and want a daily read, not another brokerage.";
+
+export const SIGNIN_POINTS = [
+  "Your holdings, what you paid, and how today went.",
+  "Pulse checks the thesis when a name moves.",
+  "Margus can read the sheet and edit it with you.",
+  "Invite a partner when you want company. Optional.",
+] as const;

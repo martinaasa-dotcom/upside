@@ -2,7 +2,12 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { UpsideLogo } from "@/components/UpsideLogo";
-import { PRODUCT_BLURB, PRODUCT_SENTENCE } from "@/lib/product";
+import {
+  PRODUCT_BLURB,
+  PRODUCT_SENTENCE,
+  SIGNIN_POINTS,
+  SIGNIN_WHO,
+} from "@/lib/product";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -83,58 +88,111 @@ export function SignInGate({ children }: Props) {
         }}
       />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-[max(4rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))]">
-        <div className="signin-rise flex w-full max-w-[18.5rem] -translate-y-4 flex-col items-center text-center sm:-translate-y-6">
-          <UpsideLogo variant="icon" className="signin-rise-1 mb-9" />
+      <main className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 py-[max(2rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] md:px-8">
+        <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_16.5rem] md:gap-12">
+          <div className="flex flex-col items-center text-center md:items-start md:text-left">
+            <UpsideLogo variant="icon" className="signin-rise-1 mb-8" />
 
-          {deletedNotice && (
-            <p className="signin-rise-2 mb-4 max-w-[16rem] rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[13px] leading-relaxed text-emerald-200">
-              {deletedNotice === "full"
-                ? "Account deleted. Your data and sign-in are both gone."
-                : "Your Upside data has been deleted. Signing in again starts a brand-new account."}
+            {deletedNotice && (
+              <p className="signin-rise-2 mb-4 max-w-sm rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm leading-relaxed text-emerald-200">
+                {deletedNotice === "full"
+                  ? "Account deleted. Your data and sign-in are both gone."
+                  : "Your Upside data has been deleted. Signing in again starts a brand-new account."}
+              </p>
+            )}
+
+            <p className="signin-rise-2 max-w-md text-base font-medium leading-snug text-zinc-100">
+              {PRODUCT_SENTENCE}
             </p>
-          )}
-
-          <p className="signin-rise-2 max-w-[17rem] text-[15px] font-medium leading-snug text-zinc-200">
-            {PRODUCT_SENTENCE}
-          </p>
-          <p className="signin-rise-2 mt-2.5 max-w-[15.5rem] text-[13px] leading-relaxed text-zinc-400">
-            {PRODUCT_BLURB} Sign in to open the sheets you own.
-          </p>
-
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onSignIn()}
-            className="signin-rise-3 mt-9 inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-lg border border-brand-mid/40 bg-brand-bright px-4 text-[14px] font-semibold text-[#1a1510] shadow-[0_12px_40px_-12px_rgba(212,184,122,0.5)] transition hover:bg-[#F0E4C8] hover:shadow-[0_16px_48px_-12px_rgba(212,184,122,0.6)] active:scale-[0.985] disabled:opacity-60"
-          >
-            <GoogleMark />
-            {busy ? "Redirecting …" : "Continue with Google"}
-          </button>
-
-          {err && (
-            <p className="mt-4 text-xs text-red-400" role="alert">
-              {err}
+            <p className="signin-rise-2 mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
+              {PRODUCT_BLURB}
             </p>
-          )}
+            <p className="signin-rise-2 mt-2 max-w-md text-sm leading-relaxed text-zinc-500">
+              {SIGNIN_WHO}
+            </p>
 
-          <p className="signin-rise-4 mt-8 text-xs leading-relaxed text-zinc-400">
-            Communities stay read-only for everyone else.
-          </p>
+            <ul className="signin-rise-2 mt-5 max-w-md space-y-2 text-left text-sm leading-relaxed text-zinc-400">
+              {SIGNIN_POINTS.map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span
+                    className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-bright/80"
+                    aria-hidden
+                  />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
 
-          <p className="signin-rise-4 mt-3 text-xs leading-relaxed text-zinc-400">
-            By continuing you agree to the{" "}
-            <Link href="/terms" className="underline hover:text-zinc-400">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="underline hover:text-zinc-400">
-              Privacy policy
-            </Link>
-            . Not financial advice.
-          </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void onSignIn()}
+              className="signin-rise-3 mt-8 inline-flex h-12 w-full max-w-sm items-center justify-center gap-2.5 rounded-lg border border-brand-mid/40 bg-brand-bright px-4 text-sm font-semibold text-[#1a1510] shadow-[0_12px_40px_-12px_rgba(212,184,122,0.5)] transition hover:bg-[#F0E4C8] hover:shadow-[0_16px_48px_-12px_rgba(212,184,122,0.6)] active:scale-[0.985] disabled:opacity-60 md:w-auto md:min-w-[16rem]"
+            >
+              <GoogleMark />
+              {busy ? "Redirecting …" : "Continue with Google"}
+            </button>
+
+            {err && (
+              <p className="mt-4 text-xs text-red-400" role="alert">
+                {err}
+              </p>
+            )}
+
+            <p className="signin-rise-4 mt-6 max-w-sm text-xs leading-relaxed text-zinc-500">
+              By continuing you agree to the{" "}
+              <Link href="/terms" className="underline hover:text-zinc-400">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline hover:text-zinc-400">
+                Privacy policy
+              </Link>
+              . Not financial advice. Communities stay read-only for everyone
+              else.
+            </p>
+          </div>
+
+          <BookStill />
         </div>
       </main>
+    </div>
+  );
+}
+
+/** Static chrome of the daily read. Labels only, no fake P&L. */
+function BookStill() {
+  return (
+    <div
+      className="signin-rise-3 hidden w-full rounded-2xl border border-brand-deep/40 bg-[#161618]/80 p-4 md:block"
+      aria-hidden
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright/80">
+        Today’s briefing
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {["Book", "Today", "All time"].map((label) => (
+          <div
+            key={label}
+            className="rounded-lg border border-zinc-800/80 bg-zinc-950/50 px-2 py-2"
+          >
+            <p className="text-xs text-zinc-500">{label}</p>
+            <p className="mt-1 h-2.5 w-10 rounded-sm bg-zinc-700/80" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 rounded-lg border border-brand/25 bg-brand/10 px-3 py-2.5">
+        <p className="text-xs font-medium text-brand-bright">Look at this</p>
+        <p className="mt-1 text-xs leading-snug text-zinc-200">
+          Check the thesis on names that moved.
+        </p>
+      </div>
+      <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/40 px-3 py-2.5">
+        <p className="text-xs font-medium text-zinc-500">Note</p>
+        <p className="mt-1 text-xs leading-snug text-zinc-400">
+          What moved, in a few lines. Then ask Margus if you want.
+        </p>
+      </div>
     </div>
   );
 }

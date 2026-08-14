@@ -143,8 +143,12 @@ import {
 } from "@/lib/experience-tier";
 import { InvitePartnerModal } from "@/components/InvitePartnerModal";
 import { DashboardLoading } from "@/components/DashboardLoading";
-import { DashboardWelcome } from "@/components/DashboardWelcome";
 import { useLabSync } from "@/components/use-lab-sync";
+import { FIRST_SHEET_NAME } from "@/lib/product";
+import {
+  loadInviteNudgeDismissed,
+  saveInviteNudgeDismissed,
+} from "@/lib/invite-nudge";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 
@@ -430,7 +434,11 @@ export function Dashboard() {
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [inviteNudgeOpen, setInviteNudgeOpen] = useState(false);
+  const hadHoldingsOnLoadRef = useRef<boolean | null>(null);
+  const creatingFirstSheetRef = useRef<Promise<Portfolio | undefined> | null>(
+    null
+  );
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
@@ -533,6 +541,21 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experienceTier]);
 
+  useEffect(() => {
+    if (loading || source !== "supabase") return;
+    if (hadHoldingsOnLoadRef.current === null) {
+      hadHoldingsOnLoadRef.current = holdings.length > 0;
+    }
+  }, [loading, source, holdings.length]);
+
+  useEffect(() => {
+    if (source !== "supabase" || !user?.id) return;
+    if (hadHoldingsOnLoadRef.current !== false) return;
+    if (holdings.length === 0) return;
+    if (loadInviteNudgeDismissed(user.id)) return;
+    setInviteNudgeOpen(true);
+  }, [holdings.length, source, user?.id]);
+
   const hiddenMetaTabIds = useMemo(
     () => (experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : []),
     [experienceTier]
@@ -550,6 +573,7 @@ export function Dashboard() {
     isMetaTab
       ? null
       : (portfolios.find((p) => p.id === activeId) ?? null);
+  const inviteSheet = activePortfolio ?? portfolios[0] ?? null;
 
   const ccVisible =
     hideOptionsUI
@@ -947,9 +971,7 @@ export function Dashboard() {
 
   const refreshFx = useCallback(async () => {
     try {
-      const res = await fetch("/api/quotes?tickers=EURUSD%3DX", {
-        cache: "no-store",
-      });
+      const res = await fetch("/api/quotes?tickers=EURUSD%3DX");
       if (!res.ok) return;
       const json = await res.json();
       applyFxPayload(json.fx);
@@ -975,9 +997,7 @@ export function Dashboard() {
       try {
         let nextQuotes = existingQuotes;
         if (!nextQuotes || Object.keys(nextQuotes).length === 0) {
-          const quotesRes = await fetch(quotesUrl(tickers), {
-            cache: "no-store",
-          });
+          const quotesRes = await fetch(quotesUrl(tickers));
           if (!quotesRes.ok) {
             setQuotesDelayed(true);
             throw new Error(`Quotes request failed (${quotesRes.status})`);
@@ -1921,19 +1941,23 @@ export function Dashboard() {
   /**
    * First-run actions fire from Overview, which is a meta-tab with no
    * active sheet, and every write path bails out without one (handleSave
-   * returns early on a null activePortfolio). So switch to the sheet the
-   * holdings will land in first, which also shows the user where their
-   * data is going instead of silently picking for them.
+   * returns early on a null activePortfolio). Create the first sheet if
+   * needed, then switch to it so the import lands where they can see it.
    */
   const startFirstRunAction = useCallback(
     (kind: "manual" | "csv" | "screenshot") => {
-      const target = portfolios[0];
-      if (target && activeId !== target.id) setActiveId(target.id);
-      if (kind === "manual") setModalOpen(true);
-      else if (kind === "csv") setCsvImportOpen(true);
-      else setMargusImagePickSignal((n) => n + 1);
+      void (async () => {
+        const target = await ensureFirstSheet();
+        if (!target) return;
+        if (activeId !== target.id) setActiveId(target.id);
+        if (kind === "manual") setModalOpen(true);
+        else if (kind === "csv") setCsvImportOpen(true);
+        else setMargusImagePickSignal((n) => n + 1);
+      })();
     },
-    [portfolios, activeId]
+    // ensureFirstSheet is a function declaration in this component.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeId, portfolios]
   );
 
   const handleCsvImport = useCallback(
@@ -2033,7 +2057,10 @@ export function Dashboard() {
     return true;
   }
 
-  async function handleAddSheet(name: string) {
+  async function handleAddSheet(
+    name: string,
+    opts?: { silent?: boolean }
+  ): Promise<Portfolio | undefined> {
     const isFirstSheet = portfolios.length === 0;
     if (source === "supabase") {
       const res = await fetch("/api/portfolios", {
@@ -2047,20 +2074,36 @@ export function Dashboard() {
           typeof data.error === "string" ? data.error : "Failed to add sheet",
           "error"
         );
-        return;
+        return undefined;
       }
-      setPortfolios((prev) => [...prev, data.portfolio]);
-      seedNewSheetPanelDefaults(data.portfolio);
-      setActiveId(data.portfolio.id);
-    } else {
-      const next = addPortfolio(loadDemoStore(), name);
-      setPortfolios(next.portfolios);
-      const created = next.portfolios[next.portfolios.length - 1];
+      const created = data.portfolio as Portfolio;
+      setPortfolios((prev) => [...prev, created]);
       seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
+      track("sheet_created", { first_sheet: isFirstSheet });
+      if (!opts?.silent) toast("Sheet added", "success");
+      return created;
     }
+    const next = addPortfolio(loadDemoStore(), name);
+    setPortfolios(next.portfolios);
+    const created = next.portfolios[next.portfolios.length - 1];
+    seedNewSheetPanelDefaults(created);
+    setActiveId(created.id);
     track("sheet_created", { first_sheet: isFirstSheet });
-    toast("Sheet added", "success");
+    if (!opts?.silent) toast("Sheet added", "success");
+    return created;
+  }
+
+  async function ensureFirstSheet(): Promise<Portfolio | undefined> {
+    if (portfolios[0]) return portfolios[0];
+    if (creatingFirstSheetRef.current) return creatingFirstSheetRef.current;
+    const pending = handleAddSheet(FIRST_SHEET_NAME, { silent: true });
+    creatingFirstSheetRef.current = pending;
+    try {
+      return await pending;
+    } finally {
+      creatingFirstSheetRef.current = null;
+    }
   }
 
   function handleRenameSheet(id: string, name: string) {
@@ -2432,46 +2475,6 @@ export function Dashboard() {
     return <DashboardLoading message={loadingMessage} />;
   }
 
-  if (source === "supabase" && portfolios.length === 0) {
-    return (
-      <>
-        <DashboardWelcome
-          loadError={loadError}
-          createSheetOpen={createSheetOpen}
-          onRetry={() => void loadPortfolios()}
-          onAskMargus={() => setMargusExpandSignal((n) => n + 1)}
-          onOpenCreate={() => setCreateSheetOpen(true)}
-          onCloseCreate={() => setCreateSheetOpen(false)}
-          onCreate={(name) => void handleAddSheet(name)}
-        />
-        <CcAdvisorChat
-          portfolioId={OVERVIEW_TAB_ID}
-          expandSignal={margusExpandSignal}
-          onApplyActions={() => {
-            /* no sheet yet */
-          }}
-          context={{
-            portfolioName: "Overview",
-            cashBalance: 0,
-            adviseOnly: true,
-            hideOptions: hideOptionsUI,
-            holdings: [],
-            rows: [],
-            totals: {
-              cost: 0,
-              value: 0,
-              roiPct: 0,
-              roiDollar: 0,
-              yield2wAvg: 0,
-              premiumTotal: 0,
-            },
-            otherPortfolios: [],
-          }}
-        />
-      </>
-    );
-  }
-
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return <DashboardLoading message="Opening the sheet …" />;
   }
@@ -2741,7 +2744,7 @@ export function Dashboard() {
 
       <HoldingModal
         open={modalOpen}
-        portfolioName={activePortfolio?.name ?? ""}
+        portfolioName={inviteSheet?.name ?? ""}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
         hideCallPct={hideOptionsUI}
@@ -2749,17 +2752,17 @@ export function Dashboard() {
 
       <CsvImportModal
         open={csvImportOpen}
-        portfolioName={activePortfolio?.name ?? ""}
+        portfolioName={inviteSheet?.name ?? ""}
         onClose={() => setCsvImportOpen(false)}
         onImport={handleCsvImport}
         hideCallPct={hideOptionsUI}
       />
 
-      {activePortfolio && (
+      {inviteSheet && (
         <InvitePartnerModal
           open={inviteOpen}
-          portfolioId={activePortfolio.id}
-          portfolioName={activePortfolio.name}
+          portfolioId={inviteSheet.id}
+          portfolioName={inviteSheet.name}
           onClose={() => setInviteOpen(false)}
         />
       )}
@@ -2803,6 +2806,23 @@ export function Dashboard() {
             return deleteSheetById(confirmDelete.id);
           }
           return deleteHoldingById(confirmDelete.id);
+        }}
+      />
+
+      <ConfirmModal
+        open={inviteNudgeOpen}
+        title="Invite someone onto this sheet"
+        body="Your book is in. A partner can see and edit it with you. Optional, and you can do this later from the sheet menu."
+        confirmLabel="Invite"
+        cancelLabel="Not now"
+        onClose={() => {
+          if (user?.id) saveInviteNudgeDismissed(user.id);
+          setInviteNudgeOpen(false);
+        }}
+        onConfirm={() => {
+          if (user?.id) saveInviteNudgeDismissed(user.id);
+          setInviteNudgeOpen(false);
+          setInviteOpen(true);
         }}
       />
 

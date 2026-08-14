@@ -25,6 +25,15 @@ type AdminUser = {
   profile_created_at: string | null;
   last_sign_in_at: string | null;
   portfolios?: { id: string; name: string }[];
+  holding_count?: number;
+};
+
+type AdminFunnel = {
+  signedIn: number;
+  hasSheet: number;
+  hasHoldings: number;
+  returned7d: number;
+  activated: number;
 };
 
 type AdminMember = {
@@ -72,6 +81,7 @@ export function AdminPage() {
   const allowed = isSuperadminEmail(user?.email);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [communities, setCommunities] = useState<AdminCommunity[]>([]);
+  const [funnel, setFunnel] = useState<AdminFunnel | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +126,7 @@ export function AdminPage() {
         }
         setUsers(data.users ?? []);
         setCommunities(data.communities ?? []);
+        setFunnel(data.funnel ?? null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
@@ -161,7 +172,7 @@ export function AdminPage() {
                 Superadmin
               </h1>
               <p className="mt-1 text-sm text-zinc-400">
-                All signed-in Upside profiles, communities, and membership.
+                Activation funnel, then every signed-in profile and community.
               </p>
             </div>
           </div>
@@ -176,6 +187,39 @@ export function AdminPage() {
             <p className="text-sm text-red-400">{error}</p>
           ) : (
             <>
+              {funnel && (
+                <section className="space-y-2">
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                    Activation
+                  </h2>
+                  <p className="text-xs text-zinc-500">
+                    Signed in, has a sheet, has holdings, signed in this week,
+                    and holdings plus a visit in the last 7 days.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {(
+                      [
+                        ["Signed in", funnel.signedIn],
+                        ["Has a sheet", funnel.hasSheet],
+                        ["Has holdings", funnel.hasHoldings],
+                        ["Visited 7d", funnel.returned7d],
+                        ["Active 7d", funnel.activated],
+                      ] as const
+                    ).map(([label, n]) => (
+                      <div
+                        key={label}
+                        className="rounded-xl border border-brand-deep/30 bg-[#161618]/70 px-3 py-3"
+                      >
+                        <p className="text-lg font-semibold tabular-nums text-white">
+                          {n}
+                        </p>
+                        <p className="mt-0.5 text-xs text-zinc-400">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-400">
@@ -348,6 +392,12 @@ export function AdminPage() {
                                     {p.name}
                                   </span>
                                 ))
+                              )}
+                              {(u.holding_count ?? 0) > 0 && (
+                                <span className="text-xs text-zinc-500">
+                                  {u.holding_count} holding
+                                  {u.holding_count === 1 ? "" : "s"}
+                                </span>
                               )}
                             </div>
                           </div>

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/site-url";
 
-const BASE_URL = "https://upside-upthink-solutions.vercel.app";
+const BASE_URL = siteUrl();
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

@@ -392,7 +392,7 @@ export function CommunityView({ communityId }: Props) {
     const tick = async () => {
       if (cancelled || document.hidden) return;
       try {
-        const res = await fetch(quotesUrl(tickers), { cache: "no-store" });
+        const res = await fetch(quotesUrl(tickers));
         if (!res.ok || cancelled) return;
         const data = await res.json();
         if (cancelled) return;
