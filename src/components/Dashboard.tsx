@@ -101,6 +101,7 @@ import {
   OVERVIEW_TAB_ID,
   PULSE_TAB_ID,
   SEASONALITY_TAB_ID,
+  ALERTS_TAB_ID,
   buildOverview,
   todayDollarFor,
 } from "@/lib/overview";
@@ -143,6 +144,9 @@ import {
 } from "@/lib/experience-tier";
 import { InvitePartnerModal } from "@/components/InvitePartnerModal";
 import { DashboardLoading } from "@/components/DashboardLoading";
+import { MobileTabBar, type MobileTabId } from "@/components/mobile/MobileTabBar";
+import { MobileTopBar } from "@/components/mobile/MobileTopBar";
+import { cn } from "@/lib/format";
 import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
 import {
@@ -309,6 +313,7 @@ function normalizeMetaTabId(id: string): string | null {
   ) {
     return id;
   }
+  if (id === ALERTS_TAB_ID) return ALERTS_TAB_ID;
   // Seasonality is a Lab sub-tab, so a persisted id from when it was
   // top-level folds onto Lab rather than resolving to a tab that no
   // longer renders and leaving the user on a blank page.
@@ -336,6 +341,9 @@ function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
   if (raw === "lab" || raw === LAB_TAB_ID) return LAB_TAB_ID;
   if (raw === "pulse" || raw === PULSE_TAB_ID) {
     return PULSE_TAB_ID;
+  }
+  if (raw === "alerts" || raw === ALERTS_TAB_ID) {
+    return ALERTS_TAB_ID;
   }
   // Seasonality is a Lab sub-tab. Old links still resolve, they just land
   // on Lab with the right sub-tab selected via ?labtab= below.
@@ -576,7 +584,13 @@ export function Dashboard() {
   const isCompound = activeId === COMPOUND_TAB_ID;
   const isLab = activeId === LAB_TAB_ID;
   const isPulse = activeId === PULSE_TAB_ID;
-  const isMetaTab = isOverview || isCompound || isLab || isPulse;
+  const isAlerts = activeId === ALERTS_TAB_ID;
+  const isMetaTab = isOverview || isCompound || isLab || isPulse || isAlerts;
+  const mobileTab: MobileTabId = isAlerts
+    ? "alerts"
+    : isPulse || isLab || isCompound
+      ? "explore"
+      : "home";
 
   const activePortfolio =
     isMetaTab
@@ -1177,6 +1191,8 @@ export function Dashboard() {
       url.searchParams.set("tab", "lab");
     } else if (activeId === PULSE_TAB_ID) {
       url.searchParams.set("tab", "pulse");
+    } else if (activeId === ALERTS_TAB_ID) {
+      url.searchParams.set("tab", "alerts");
     } else {
       const p = portfolios.find((x) => x.id === activeId);
       url.searchParams.set("tab", "book");
@@ -2505,33 +2521,72 @@ export function Dashboard() {
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return (
-      <div className="flex min-h-dvh flex-col bg-app text-zinc-100">
+      <div className="flex min-h-dvh flex-col bg-black text-zinc-100">
+        <MobileTopBar
+          title="Dashboard"
+          avatar={{
+            url: profile?.avatar_url,
+            initial: (profile?.display_name || user?.email || "?")
+              .trim()
+              .charAt(0)
+              .toUpperCase(),
+          }}
+        />
         <AppHeader
+          className="hidden md:block"
           onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
           brandTitle="Upside Lab: go to Overview"
           showWorkspaceNav={source === "supabase"}
           title="Overview"
           end={accountEnd}
         />
+        <MobileTabBar active="home" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_52%)] text-zinc-100 [--dock-pad:7.25rem] sm:[--dock-pad:5.5rem]">
+    <div className="flex min-h-dvh flex-col bg-black text-zinc-100 [--dock-pad:5.25rem] md:bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_52%)] md:[--dock-pad:5.5rem]">
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}
         missingTickers={missingQuoteTickers}
       />
+      <MobileTopBar
+        title={
+          isOverview
+            ? "Dashboard"
+            : isAlerts
+              ? "Alerts"
+              : isCompound
+                ? "Compound"
+                : isLab
+                  ? "Lab"
+                  : isPulse
+                    ? "Pulse"
+                    : (activePortfolio?.name ?? "Upside Lab")
+        }
+        avatar={{
+          url: profile?.avatar_url,
+          initial: (profile?.display_name || user?.email || "?")
+            .trim()
+            .charAt(0)
+            .toUpperCase(),
+        }}
+        alertCount={activeAlerts.length}
+        onAlerts={() => setActiveId(ALERTS_TAB_ID)}
+      />
       <AppHeader
+        className="hidden md:block"
         onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
         brandTitle="Upside Lab: go to Overview"
         showWorkspaceNav={source === "supabase"}
         title={
           isOverview
             ? "Overview"
-            : isCompound
+            : isAlerts
+              ? "Alerts"
+              : isCompound
               ? "Compound"
               : isLab
                 ? "Lab"
@@ -2594,7 +2649,7 @@ export function Dashboard() {
 
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
-      <div className="border-b border-brand-deep/25 bg-app/80 backdrop-blur-sm">
+      <div className="hidden border-b border-brand-deep/25 bg-app/80 backdrop-blur-sm md:block">
         <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4 sm:py-2">
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
@@ -2606,6 +2661,36 @@ export function Dashboard() {
           <MacroStrip />
         </div>
       </div>
+
+      {!isMetaTab && (
+        <div className="flex items-center gap-2 border-b border-white/5 px-3 py-2 md:hidden">
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto">
+            {portfolios.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setActiveId(p.id)}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1.5 text-xs",
+                  p.id === activeId
+                    ? "bg-brand/20 text-brand"
+                    : "bg-white/5 text-zinc-400"
+                )}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand/20 px-3 py-1.5 text-xs font-medium text-brand"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add
+          </button>
+        </div>
+      )}
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-4 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6">
         {loadError && (
@@ -2622,7 +2707,29 @@ export function Dashboard() {
           </div>
         )}
 
-        {isPulse ? (
+        {isAlerts ? (
+          <div className="space-y-3">
+            {activeAlerts.length === 0 ? (
+              <p className="py-10 text-center text-sm text-zinc-400">
+                Nothing waiting. That&apos;s a good hour.
+              </p>
+            ) : (
+              activeAlerts.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setActiveId(OVERVIEW_TAB_ID)}
+                  className="w-full rounded-2xl border border-white/10 bg-card/80 p-4 text-left"
+                >
+                  <p className="text-sm font-semibold text-white">{a.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                    {a.detail}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        ) : isPulse ? (
           <PulsePage
             model={overview}
             quotes={quotes}
@@ -2684,6 +2791,15 @@ export function Dashboard() {
                 pulseHiddenForTier ? undefined : () => setActiveId(PULSE_TAB_ID)
               }
               onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
+              onOpenCash={() => {
+                const target = [...portfolios].sort(
+                  (a, b) => a.cash_balance - b.cash_balance
+                )[0];
+                if (!target) return;
+                setActiveId(target.id);
+                setCashModalOpen(true);
+              }}
+              onOpenAlerts={() => setActiveId(ALERTS_TAB_ID)}
             />
           </>
         ) : (
@@ -2756,6 +2872,7 @@ export function Dashboard() {
       </main>
 
       <PortfolioTabs
+        className="hidden md:block"
         portfolios={portfolios}
         activeId={activeId}
         onChange={setActiveId}
@@ -2766,6 +2883,27 @@ export function Dashboard() {
         onDeleteRequest={(id, name) =>
           setConfirmDelete({ kind: "sheet", id, label: name })
         }
+      />
+      <MobileTabBar
+        active={mobileTab}
+        alertCount={activeAlerts.length}
+        exploreHref={pulseHiddenForTier ? "/upside-portfolio" : "/?tab=pulse"}
+        onSelect={(id) => {
+          if (id === "home") {
+            setActiveId(OVERVIEW_TAB_ID);
+            return true;
+          }
+          if (id === "alerts") {
+            setActiveId(ALERTS_TAB_ID);
+            return true;
+          }
+          if (id === "explore") {
+            if (pulseHiddenForTier) return false;
+            setActiveId(PULSE_TAB_ID);
+            return true;
+          }
+          return false;
+        }}
       />
 
       <HoldingModal

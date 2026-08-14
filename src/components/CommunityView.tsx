@@ -3,6 +3,7 @@
 import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { SignInGate } from "@/components/SignInGate";
 import { AppHeader } from "@/components/AppHeader";
+import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
@@ -965,10 +966,25 @@ export function CommunityView({ communityId }: Props) {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-app text-zinc-100">
-        {/* The community's own name is "where you are", so it belongs on the
-          * left with the wordmark. Only the admin gear is a control. */}
+      <div className="min-h-dvh bg-black text-zinc-100 md:bg-app">
+        <MobileChrome
+          title={community?.name ?? "Community"}
+          active="explore"
+          end={
+            isAdmin && community ? (
+              <button
+                type="button"
+                onClick={openSettings}
+                title="Community settings"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-300"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            ) : undefined
+          }
+        />
         <AppHeader
+          className="hidden md:block"
           title={
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate">{community?.name ?? "Community"}</span>
@@ -1010,7 +1026,7 @@ export function CommunityView({ communityId }: Props) {
           )}
         </AppHeader>
 
-        <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           {loading && (
             <p className="text-sm text-zinc-400">Loading community …</p>
           )}

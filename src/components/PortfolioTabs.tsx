@@ -25,6 +25,7 @@ type Props = {
   hiddenModeIds?: string[];
   /** Today's $ direction per portfolio id — glanceable dot per sheet tab. */
   sheetTodayTone?: Record<string, "up" | "down" | null>;
+  className?: string;
 };
 
 type OpenMenu = {
@@ -71,6 +72,7 @@ export function PortfolioTabs({
   guest = false,
   hiddenModeIds = [],
   sheetTodayTone,
+  className,
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
@@ -189,7 +191,7 @@ export function PortfolioTabs({
   }
 
   return (
-    <nav className="sticky bottom-0 z-30 border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur">
+    <nav className={cn("sticky bottom-0 z-30 border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
       <div className="mx-auto flex max-w-[1400px] flex-col-reverse gap-1.5 px-3 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2">
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex shrink-0 items-end gap-2 md:min-w-0">

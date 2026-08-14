@@ -2,6 +2,8 @@
 
 import { Sparkline } from "@/components/Sparkline";
 import { HomeWorld } from "@/components/HomeWorld";
+import { CashAlertCard } from "@/components/mobile/CashAlertCard";
+import { GoldNavChart, useBookNavHistory } from "@/components/mobile/GoldNavChart";
 import {
   Card,
   Metric,
@@ -70,7 +72,53 @@ type Props = {
   onImportScreenshot?: () => void;
   onImportCsv?: () => void;
   onAskMargus?: () => void;
+  onOpenCash?: () => void;
+  onOpenAlerts?: () => void;
 };
+
+function MobileHomeHero({
+  totals,
+  alerts,
+  onOpenCash,
+  onOpenAlerts,
+}: {
+  totals: OverviewModel["totals"];
+  alerts: UpsideAlert[];
+  onOpenCash?: () => void;
+  onOpenAlerts?: () => void;
+}) {
+  const points = useBookNavHistory(totals.totalValue);
+  const up = totals.roiPct >= 0;
+  return (
+    <div className="md:hidden">
+      <p className="text-sm text-zinc-500">Total growth</p>
+      <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+        <p className="font-logo text-4xl font-bold tabular-nums leading-none text-white">
+          {currency(totals.totalValue, 0)}
+        </p>
+        <p
+          className={cn(
+            "mb-0.5 text-sm font-semibold tabular-nums",
+            up ? "text-gain" : "text-loss"
+          )}
+        >
+          {up ? "▲" : "▼"} {percent(Math.abs(totals.roiPct))}
+        </p>
+      </div>
+      <div className="mt-5">
+        <GoldNavChart points={points} />
+      </div>
+      <div className="mt-5">
+        <CashAlertCard
+          cash={totals.cash}
+          alerts={alerts}
+          onOpenCash={onOpenCash}
+          onOpenAlerts={onOpenAlerts}
+        />
+      </div>
+    </div>
+  );
+}
 
 function BookNavSpark({ liveNav }: { liveNav: number }) {
   const [points, setPoints] = useState<number[] | null>(null);
@@ -416,6 +464,8 @@ export function OverviewDashboard({
   onImportScreenshot,
   onImportCsv,
   onAskMargus,
+  onOpenCash,
+  onOpenAlerts,
 }: Props) {
   const {
     totals,
@@ -529,8 +579,15 @@ export function OverviewDashboard({
 
   return (
     <div className="space-y-6">
+      <MobileHomeHero
+        totals={totals}
+        alerts={activeAlerts}
+        onOpenCash={onOpenCash}
+        onOpenAlerts={onOpenAlerts}
+      />
+
       {/* One screen: where you stand, then what to make of it. */}
-      <Panel className="overview-fade relative overflow-hidden">
+      <Panel className="overview-fade relative hidden overflow-hidden md:block">
         <div
           className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand/12 blur-3xl"
           aria-hidden

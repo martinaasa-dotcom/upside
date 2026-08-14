@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { AppHeader } from "@/components/AppHeader";
 import { SignInGate } from "@/components/SignInGate";
+import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
 import {
   last7DaysStrip,
@@ -221,8 +222,9 @@ export function AccountPage() {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)] text-zinc-100">
-        <AppHeader title="Account">
+      <div className="min-h-dvh bg-black text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)]">
+        <MobileChrome title="Account" active="settings" />
+        <AppHeader className="hidden md:block" title="Account">
           <button
             type="button"
             onClick={() =>
@@ -237,7 +239,7 @@ export function AccountPage() {
           </button>
         </AppHeader>
 
-        <main className="mx-auto max-w-3xl space-y-8 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <main className="mx-auto max-w-3xl space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[max(2rem,env(safe-area-inset-bottom))]">
           <div>
             <h1 className="text-2xl font-semibold">My account</h1>
             <p className="mt-1 text-sm text-zinc-400">

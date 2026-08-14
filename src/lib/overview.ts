@@ -7,6 +7,8 @@ export const COMPOUND_TAB_ID = "__compound__";
 export const LAB_TAB_ID = "__lab__";
 export const PULSE_TAB_ID = "__pulse__";
 export const SEASONALITY_TAB_ID = "__seasonality__";
+/** Mobile-only: the Alerts tab. Not a desktop meta-tab. */
+export const ALERTS_TAB_ID = "__alerts__";
 
 export type SheetScore = {
   portfolio: Portfolio;
