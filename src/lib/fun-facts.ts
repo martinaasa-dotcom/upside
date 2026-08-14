@@ -45,8 +45,8 @@ const MAKERS: FactMaker[] = [
     const share = Math.round((biggest.totalValue / totals.totalValue) * 100);
     return pick(rng, [
       `${biggest.portfolio.name} is the heavyweight book, ${share}% of combined NAV.`,
-      `${biggest.portfolio.name} is carrying ${share}% of the family fortune. No pressure.`,
-      `If the books were a group chat, ${biggest.portfolio.name} would be the admin (${share}% of NAV).`,
+      `${biggest.portfolio.name} is carrying ${share}% of combined NAV. No pressure.`,
+      `If these sheets were a group, ${biggest.portfolio.name} would be the admin (${share}% of NAV).`,
       `${biggest.portfolio.name} ate ${share}% of the pie. The others are sharing crumbs politely.`,
     ]);
   },
@@ -97,8 +97,8 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${cashtag(most.ticker)} is the crowd favorite, in ${most.portfolios.length} books (${most.portfolios.join(", ")}).`,
       `Conspiracy board: ${cashtag(most.ticker)} shows up in ${most.portfolios.length} portfolios.`,
-      `Family reunion guest of honor: ${cashtag(most.ticker)} (${most.portfolios.join(", ")}).`,
-      `${cashtag(most.ticker)} has more group chats than you: ${most.portfolios.length} books deep.`,
+      `${cashtag(most.ticker)} is in every book that matters here (${most.portfolios.join(", ")}).`,
+      `${cashtag(most.ticker)} shows up in ${most.portfolios.length} books (${most.portfolios.join(", ")}).`,
     ]);
   },
 
@@ -139,14 +139,14 @@ const MAKERS: FactMaker[] = [
     if (totals.cash < 0) {
       return pick(rng, [
         `Combined cash is $${money(totals.cash)}. Someone is surfing on margin.`,
-        `The family is $${money(Math.abs(totals.cash))} into the broker’s cookie jar.`,
+        `Someone is $${money(Math.abs(totals.cash))} into the broker's cookie jar.`,
         `Negative cash alert: $${money(totals.cash)}. Bold. Chaotic. On brand.`,
       ]);
     }
     const croissants = Math.max(1, Math.round(totals.cash / 3.2));
     const coffees = Math.max(1, Math.round(totals.cash / 4.5));
     return pick(rng, [
-      `There's $${money(totals.cash)} in dry powder across the family of books.`,
+      `There's $${money(totals.cash)} in dry powder across the sheets.`,
       `Cash pile: $${money(totals.cash)}, enough for ~${croissants.toLocaleString("en-US")} Tallinn croissants (theoretically).`,
       `$${money(totals.cash)} idle cash ≈ ${coffees.toLocaleString("en-US")} fancy coffees. Deploy wisely.`,
       `Dry powder report: $${money(totals.cash)} waiting for a spicy dip.`,
@@ -370,9 +370,9 @@ const MAKERS: FactMaker[] = [
   ({ totals, rng }) => {
     if (totals.todayPct == null) return null;
     return pick(rng, [
-      `Family day P&L: ${pct1(totals.todayPct)} ($${money(totals.todayDollar)}). ${totals.todayDollar >= 0 ? "Nice." : "Oof."}`,
-      `Combined today: $${money(totals.todayDollar)}. The group chat would be ${totals.todayDollar >= 0 ? "unhinged-positive" : "supportive-with-memes"}.`,
-      `Intraday family mood: ${totals.todayDollar >= 0 ? "vibing" : "coping"} at ${pct1(totals.todayPct)}.`,
+      `Day P&L: ${pct1(totals.todayPct)} ($${money(totals.todayDollar)}). ${totals.todayDollar >= 0 ? "Nice." : "Oof."}`,
+      `Combined today: $${money(totals.todayDollar)}. ${totals.todayDollar >= 0 ? "Green board." : "A rough print."}`,
+      `Intraday mood: ${totals.todayDollar >= 0 ? "up" : "down"} at ${pct1(totals.todayPct)}.`,
     ]);
   },
 

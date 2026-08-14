@@ -16,6 +16,7 @@ import {
 import { todayKeyInTz } from "@/lib/timezone";
 
 export const FORECAST_PLAN_STORAGE_KEY = "portfell-forecast-plan-by-portfolio";
+const FORECAST_PLAN_PREV_KEY = "portfell-forecast-plan-prev-by-portfolio";
 
 export type ForecastStance = "bearish" | "base" | "bullish";
 
@@ -166,12 +167,33 @@ export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
   }
 }
 
+export function loadPreviousForecastPlan(portfolioId: string): ForecastPlan | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(FORECAST_PLAN_PREV_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredForecastPlans;
+    const plan = parsed?.[portfolioId];
+    if (!plan?.eoyTargets?.length) return null;
+    return plan;
+  } catch {
+    return null;
+  }
+}
+
 export function saveForecastPlan(plan: ForecastPlan) {
   if (typeof window === "undefined") return;
   try {
     const cleaned = humanizeMargusTree(plan);
     const raw = localStorage.getItem(FORECAST_PLAN_STORAGE_KEY);
     const parsed = (raw ? JSON.parse(raw) : {}) as StoredForecastPlans;
+    const prev = parsed[cleaned.portfolioId];
+    if (prev?.generatedAt && prev.generatedAt !== cleaned.generatedAt) {
+      const prevRaw = localStorage.getItem(FORECAST_PLAN_PREV_KEY);
+      const prevStore = (prevRaw ? JSON.parse(prevRaw) : {}) as StoredForecastPlans;
+      prevStore[cleaned.portfolioId] = prev;
+      localStorage.setItem(FORECAST_PLAN_PREV_KEY, JSON.stringify(prevStore));
+    }
     parsed[cleaned.portfolioId] = cleaned;
     localStorage.setItem(FORECAST_PLAN_STORAGE_KEY, JSON.stringify(parsed));
   } catch {

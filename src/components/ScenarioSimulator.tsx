@@ -317,28 +317,6 @@ export function ScenarioSimulator({ holdings, cash, scopeLabel }: Props) {
         </Panel>
       </div>
 
-      {analysis.tacticalNotes.length > 0 && (
-        <Panel tone="plain">
-          <h3 className="text-base font-semibold text-white">
-            What this tells you
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {analysis.tacticalNotes.map((note, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-300"
-              >
-                <span
-                  aria-hidden
-                  className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
-                />
-                <span>{note}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      )}
-
       {analysis.themeBreakdown.length > 1 && selectedShock !== "none" && (
         <Panel tone="plain">
           <h3 className="text-base font-semibold text-white">

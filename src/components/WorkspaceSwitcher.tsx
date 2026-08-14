@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { cn } from "@/lib/format";
-import { BookOpen, Bot, Shield, UserRound, Users } from "lucide-react";
+import { BookOpen, Bot, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -55,7 +55,6 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       {item(onBook, "/", "Book", "Your sheets and daily briefing", BookOpen)}
       {item(onFund, "/upside-portfolio", "Fund", "Upside Fund, the paper book Margus runs", Bot)}
       {item(onCommunities, "/communities", "Communities", "Compare books with people you know", Users)}
-      {item(onAccount, "/account", "Account", "You, your data, danger zone", UserRound)}
       {showAdmin ? item(onAdmin, "/admin", "Admin", "Admin", Shield) : null}
     </nav>
   );

@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
+import { Sparkline } from "@/components/Sparkline";
 import {
   Card,
   EmptyState,
@@ -16,6 +17,7 @@ import {
   ensureCompleteEoyTargets,
   DEFAULT_FORECAST_STANCE,
   loadForecastPlan,
+  loadPreviousForecastPlan,
   planEoyPaths,
   saveForecastPlan,
   shouldAutoRefreshForecast,
@@ -214,6 +216,15 @@ export function ForecastPanel({
   const askInFlight = useRef(false);
   const [planHydrated, setPlanHydrated] = useState(false);
   const [stance, setStance] = useState<ForecastStance>(DEFAULT_FORECAST_STANCE);
+  const [prevPlan, setPrevPlan] = useState<ForecastPlan | null>(null);
+  const planAt = plan?.generatedAt ?? "";
+  useEffect(() => {
+    if (!planHydrated) {
+      setPrevPlan(null);
+      return;
+    }
+    setPrevPlan(loadPreviousForecastPlan(portfolioId));
+  }, [planHydrated, portfolioId, planAt]);
 
   useEffect(() => {
     setPlanHydrated(false);
@@ -444,6 +455,29 @@ export function ForecastPanel({
           <p className="mt-1 text-xs text-amber-200/80">
             Margus is updating the forecast …
           </p>
+        )}
+        {model.rows.length > 0 && (
+          <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-950/40 px-3 py-3">
+            <MicroLabel>Sheet path</MicroLabel>
+            <div className="mt-2 flex flex-wrap items-end gap-3">
+              <Sparkline
+                points={[
+                  model.currentTotal,
+                  ...yearCols.map((y) => model.eoyTotals[y]),
+                ]}
+                width={140}
+                height={40}
+              />
+              <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 text-xs tabular-nums text-zinc-400">
+                <span>Now {currency(model.currentTotal, 0)}</span>
+                {yearCols.map((y) => (
+                  <span key={y}>
+                    {y} {currency(model.eoyTotals[y], 0)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </header>
 
@@ -704,6 +738,38 @@ export function ForecastPanel({
                       {t.rationale ? `: ${t.rationale}` : ": price set"}
                     </li>
                   ))}
+                </ul>
+              </Card>
+            )}
+
+            {prevPlan?.eoyTargets && prevPlan.eoyTargets.length > 0 && (
+              <Card tone="raised">
+                <MicroLabel>Vs last plan</MicroLabel>
+                <ul className="mt-2 space-y-1 text-xs leading-relaxed text-zinc-400">
+                  {plan.eoyTargets.flatMap((t) => {
+                    const old = prevPlan.eoyTargets.find(
+                      (p) => p.ticker.toUpperCase() === t.ticker.toUpperCase()
+                    );
+                    if (!old) return [];
+                    const lastYear = yearCols[yearCols.length - 1];
+                    const nextP = t.prices?.[lastYear];
+                    const oldP = old.prices?.[lastYear];
+                    if (
+                      typeof nextP !== "number" ||
+                      typeof oldP !== "number" ||
+                      Math.abs(nextP - oldP) < 0.5
+                    ) {
+                      return [];
+                    }
+                    return [
+                      <li key={t.ticker}>
+                        <span className="font-semibold text-zinc-200">
+                          {cashtag(t.ticker)}
+                        </span>
+                        {` end ${lastYear}: ${currency(oldP, 0)} to ${currency(nextP, 0)}`}
+                      </li>,
+                    ];
+                  })}
                 </ul>
               </Card>
             )}

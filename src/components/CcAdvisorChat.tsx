@@ -150,7 +150,12 @@ function describeChatUiError(message: string): string {
   if (/network|fetch|Failed to fetch|Load failed|aborted/i.test(message)) {
     return "The connection dropped before Margus finished. Check your signal and try again.";
   }
-  // Never surface raw SDK internals if something slips through unmapped.
+  if (/rate.?limit|quota|used up|too many requests/i.test(message)) {
+    return "Margus is out of replies for a bit. Wait a minute, then try again. He switches models on his own when he can.";
+  }
+  if (/overloaded|unavailable|timed out|timeout/i.test(message)) {
+    return "The model is overloaded. Try again in a few seconds. Margus will use a backup if he has one.";
+  }
   if (/AI_[A-Za-z]*Error|Failed after \d+ attempts/i.test(message)) {
     return "Margus couldn't reach a working model just then. Give it a few seconds and try again.";
   }

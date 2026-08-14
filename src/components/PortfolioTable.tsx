@@ -13,7 +13,7 @@ import {
 } from "@/lib/number-input";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
-import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
@@ -154,6 +154,12 @@ type SortKey =
 const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   { label: "Ticker", key: "ticker" },
   {
+    label: "Today",
+    key: "today",
+    explain:
+      "What this position made or lost today, in dollars, versus yesterday's close",
+  },
+  {
     label: "% Total",
     key: "pct",
     explain: "Share of your whole book's value this position takes up",
@@ -170,6 +176,11 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   },
   { label: "Price", key: "price", explain: "Current market price per share" },
   {
+    label: "Value",
+    key: "value",
+    explain: "What that position is worth right now: shares × current price",
+  },
+  {
     label: "ROI %",
     key: "roiPct",
     explain: "Gain or loss vs. what you paid, as a percentage: (Value − Cost) ÷ Cost",
@@ -179,23 +190,7 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
     key: "cost",
     explain: "Total dollars you put in: shares × buy price",
   },
-  {
-    label: "Value",
-    key: "value",
-    explain: "What that position is worth right now: shares × current price",
-  },
-  {
-    label: "ROI $",
-    key: "roiDollar",
-    explain: "Gain or loss in dollars: Value minus Cost",
-  },
   { label: "90d", explain: "Price trend over the last ~90 days" },
-  {
-    label: "Today",
-    key: "today",
-    explain:
-      "What this position made or lost today, in dollars, versus yesterday's close",
-  },
   { label: "" },
 ];
 
@@ -230,7 +225,7 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
 }
 
 const TEMPLATE =
-  "repeat(11, minmax(max-content, 1fr)) minmax(2.25rem, 2.25rem)";
+  "repeat(10, minmax(max-content, 1fr)) minmax(2.25rem, 2.25rem)";
 
 export function PortfolioTable({
   portfolio,
@@ -478,14 +473,6 @@ export function PortfolioTable({
                     ) : (
                       h.ticker
                     )}
-                    {(h.quote?.changePercent ?? 0) < -0.015 && (
-                      <span
-                        title="Thesis intact: macro dip without fundamental business breakdown"
-                        className="inline-flex items-center gap-0.5 rounded bg-emerald-500/15 px-1 py-0.5 text-xs font-medium text-emerald-300"
-                      >
-                        <ShieldCheck className="h-3 w-3" /> Intact
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-zinc-400">
                     {percent(h.pctOfTotal)} of book
@@ -656,14 +643,17 @@ export function PortfolioTable({
                   ) : (
                     h.ticker
                   )}
-                  {(h.quote?.changePercent ?? 0) < -0.015 && (
-                    <span
-                      title="Thesis intact: macro dip without fundamental business breakdown"
-                      className="inline-flex items-center text-emerald-400"
-                    >
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                    </span>
+                </div>
+                <div
+                  className={cn(
+                    cellBase,
+                    "tabular-nums font-medium",
+                    h.quote
+                      ? signedTone(h.quote.changePercent)
+                      : "text-zinc-400"
                   )}
+                >
+                  {h.quote ? money(rowToday(h), 0) : "—"}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
                   {percent(h.pctOfTotal)}
@@ -686,6 +676,9 @@ export function PortfolioTable({
                 <div className={cn(cellBase, "tabular-nums font-semibold text-white")}>
                   {usd(h.quote?.price ?? h.buy_price)}
                 </div>
+                <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
+                  {money(h.currentValue)}
+                </div>
                 <div
                   className={cn(
                     cellBase,
@@ -698,40 +691,12 @@ export function PortfolioTable({
                 <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
                   {money(h.buyValue)}
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
-                  {money(h.currentValue)}
-                </div>
-                <div
-                  className={cn(
-                    cellBase,
-                    "tabular-nums font-medium",
-                    signedTone(h.roiDollar)
-                  )}
-                >
-                  {money(h.roiDollar)}
-                </div>
                 <div className={cellBase}>
                   <Sparkline
                     points={h.quote?.sparkline ?? []}
                     width={72}
                     height={24}
                   />
-                </div>
-                <div
-                  className={cn(
-                    cellBase,
-                    "tabular-nums font-medium",
-                    h.quote
-                      ? signedTone(h.quote.changePercent)
-                      : "text-zinc-400"
-                  )}
-                >
-                  {/* One number per cell. Stacking the percent above the
-                    * dollar put ten figures in a narrow column and made the
-                    * whole table hard to scan. The dollar is the one the
-                    * table uniquely knows, since it is weighted by how much
-                    * you actually hold. */}
-                  {h.quote ? money(rowToday(h), 0) : "—"}
                 </div>
                 <div className={cellBase}>
                   <button
@@ -748,12 +713,16 @@ export function PortfolioTable({
 
             <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
               <div className={cn(cellBase, "py-2.5 text-white")}>PORTFOLIO</div>
+              <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-400")}>
                 100%
               </div>
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-white")}>
+                {money(totals.currentValue)}
+              </div>
               <div
                 className={cn(
                   cellBase,
@@ -766,22 +735,6 @@ export function PortfolioTable({
               <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-300")}>
                 {money(totals.buyValue)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-white")}>
-                {money(totals.currentValue)}
-              </div>
-              <div
-                className={cn(
-                  cellBase,
-                  "py-2.5 tabular-nums",
-                  signedTone(totals.roiDollar)
-                )}
-              >
-                {money(totals.roiDollar)}
-              </div>
-              <div className={cn(cellBase, "py-2.5")} />
-              {/* Intentionally blank. The book's move for the day is stated
-                * once, in the header, where it's visible without scrolling
-                * past every row. Repeating it here was the duplication. */}
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
             </FluidRow>

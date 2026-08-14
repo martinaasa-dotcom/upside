@@ -698,6 +698,53 @@ run("lab sync writes conviction only", () => {
   assert.doesNotMatch(api, /journal|cashflows|defaultArena|badges/);
 });
 
+run("holdings table does not fake a thesis-intact badge", () => {
+  const table = readFileSync(
+    join(process.cwd(), "src/components/PortfolioTable.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(table, /Thesis intact/);
+  assert.doesNotMatch(table, /ShieldCheck/);
+});
+
+run("Account is not a workspace room", () => {
+  const switcher = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceSwitcher.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(switcher, /"Account"/);
+});
+
+run("Daily Duel is not on Home", () => {
+  const home = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(home, /DailyDuelCard/);
+});
+
+run("options onboarding is regularly-only", () => {
+  const onboarding = readFileSync(
+    join(process.cwd(), "src/components/ExperienceOnboardingModal.tsx"),
+    "utf8"
+  );
+  assert.match(onboarding, /q2 === "regularly"/);
+  assert.doesNotMatch(onboarding, /q2 !== "never"/);
+});
+
+run("nightly snapshots can store mark-to-market", () => {
+  const snap = readFileSync(
+    join(process.cwd(), "src/lib/book-snapshot.ts"),
+    "utf8"
+  );
+  const cron = readFileSync(
+    join(process.cwd(), "src/app/api/cron/snapshot/route.ts"),
+    "utf8"
+  );
+  assert.match(snap, /computeSnapshotMarks/);
+  assert.match(cron, /payload.marks = computeSnapshotMarks/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

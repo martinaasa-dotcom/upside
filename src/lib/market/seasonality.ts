@@ -234,7 +234,7 @@ export function buildActionSignals(input: {
     return [
       {
         stance: "deploy",
-        headline: `${curMonth.label} tends to run in this cycle phase`,
+        headline: `${curMonth.label} has been a strong month in this cycle phase`,
         detail: `Across ${curMonth.samples} prior ${curMonth.label}s in the same presidential-cycle year, the month averaged ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% with ${curMonth.winRate}% positive.`,
       },
     ];
@@ -251,7 +251,7 @@ export function buildActionSignals(input: {
   return [
     {
       stance: "hold",
-      headline: `${curMonth.label} is mixed, no strong seasonal edge`,
+      headline: `${curMonth.label} has been mixed. No strong seasonal pattern.`,
       detail: `Cycle-phase ${curMonth.label}s average ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (n=${curMonth.samples}).`,
     },
   ];

@@ -50,13 +50,11 @@ import {
   loadDismissedAlertIds,
   saveDismissedAlertIds,
 } from "@/lib/alert-dismiss";
-import { currency, percent } from "@/lib/format";
 import { setConviction } from "@/lib/conviction";
 import { PULSE_REFRESH_MS, effectiveMove } from "@/lib/thesis-pulse";
 import {
   milestoneToast,
   recordVisitToday,
-  type VisitStreakState,
 } from "@/lib/visit-streak";
 import {
   loadActiveSheetId,
@@ -87,7 +85,6 @@ import {
   getDisplayCurrency,
   loadDisplayCurrencyMap,
   saveDisplayCurrencyMap,
-  usdToDisplay,
   type DisplayCurrency,
 } from "@/lib/display-currency";
 import { normalizeYahooTicker } from "@/lib/ticker";
@@ -436,7 +433,6 @@ export function Dashboard() {
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
   /** Home "Open covered calls" should land on the options table, not holdings. */
   const sheetFocusRef = useRef<"covered-calls" | null>(null);
@@ -1073,8 +1069,7 @@ export function Dashboard() {
   // Personal daily-visit streak — device-local, counts once per Tallinn day
   // regardless of which tab loads first.
   useEffect(() => {
-    const { state, justHitMilestone } = recordVisitToday();
-    setVisitStreak(state);
+    const { justHitMilestone } = recordVisitToday();
     if (justHitMilestone) toast(milestoneToast(justHitMilestone), "success");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per app load
   }, []);
@@ -2402,11 +2397,16 @@ export function Dashboard() {
     activePortfolio?.id,
   ]);
 
-  // Account-scoped actions only — Communities/My account live in
-  // WorkspaceSwitcher already, so they're deliberately not repeated here.
+  // Account-scoped actions. Rooms are Book/Fund/Communities; Account
+  // lives here so it isn't a second tab next to the avatar.
   const accountMenuItems: HeaderMenuItem[] = useMemo(() => {
     if (source !== "supabase") return [];
     return [
+      {
+        id: "account",
+        label: "Account",
+        onSelect: () => router.push("/account"),
+      },
       {
         id: "snapshots",
         label: "Snapshots",
@@ -2598,6 +2598,7 @@ export function Dashboard() {
             model={overview}
             quotes={quotes}
             convictions={convictionMap}
+            onWriteThesis={(t) => setDrawerTicker(t)}
           />
         ) : isLab ? (
           <LabSheet
@@ -2632,7 +2633,6 @@ export function Dashboard() {
           <>
             <OverviewDashboard
               model={overview}
-              visitStreak={visitStreak}
               onOpenSheet={openSheet}
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}

@@ -3,9 +3,17 @@ import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
 export type BookSnapshotKind = "nightly" | "pre_delete" | "manual";
 
+export type SnapshotMarks = {
+  capturedAt: string;
+  quotes: Record<string, number>;
+  navByPortfolio: Record<string, number>;
+};
+
 export type BookSnapshotPayload = {
   portfolios: unknown[];
   holdings: unknown[];
+  /** Mark-to-market at capture time. Older snapshots omit this. */
+  marks?: SnapshotMarks;
 };
 
 export type BookSnapshotRow = {
@@ -36,6 +44,51 @@ export async function captureBookPayload(
   return {
     portfolios: portfolios ?? [],
     holdings: holdings ?? [],
+  };
+}
+
+/**
+ * Nightly NAV per sheet, from live quotes. Restore ignores this. Home's
+ * 14-day spark reads it. Missing quotes fall back to cost, which is worse
+ * than a hole, so callers should only attach marks when quotes actually
+ * covered the book.
+ */
+export function computeSnapshotMarks(
+  portfolios: unknown[],
+  holdings: unknown[],
+  quotes: Record<string, { price?: number }>
+): SnapshotMarks {
+  const navByPortfolio: Record<string, number> = {};
+  const prices: Record<string, number> = {};
+
+  for (const raw of portfolios) {
+    const p = raw as { id?: string; cash_balance?: number };
+    if (!p.id) continue;
+    navByPortfolio[p.id] = Number(p.cash_balance ?? 0);
+  }
+
+  for (const raw of holdings) {
+    const h = raw as {
+      portfolio_id?: string;
+      ticker?: string;
+      shares?: number;
+      buy_price?: number;
+    };
+    const pid = h.portfolio_id;
+    const ticker = String(h.ticker ?? "").toUpperCase();
+    if (!pid || !ticker) continue;
+    const shares = Number(h.shares ?? 0);
+    const spot = quotes[ticker]?.price;
+    const price =
+      typeof spot === "number" && spot > 0 ? spot : Number(h.buy_price ?? 0);
+    if (typeof spot === "number" && spot > 0) prices[ticker] = spot;
+    navByPortfolio[pid] = (navByPortfolio[pid] ?? 0) + shares * price;
+  }
+
+  return {
+    capturedAt: new Date().toISOString(),
+    quotes: prices,
+    navByPortfolio,
   };
 }
 

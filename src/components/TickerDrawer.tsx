@@ -183,6 +183,21 @@ export function TickerDrawer({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <Card className={!thesisDraft.trim() ? "border-amber-500/30 bg-amber-950/15" : undefined}>
+            <MicroLabel>Why you own it</MicroLabel>
+            <textarea
+              value={thesisDraft}
+              rows={3}
+              onChange={(e) => setThesisDraft(e.target.value)}
+              onBlur={() => onConviction(level, thesisDraft)}
+              placeholder="Two sentences. What has to stay true for you to keep holding?"
+              className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500 focus:border-brand focus:ring-1 focus:ring-brand/40"
+            />
+            <p className="mt-1.5 text-xs text-zinc-400">
+              Pulse reads this first. Empty means it is guessing from headlines.
+            </p>
+          </Card>
+
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
           <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4">
@@ -394,21 +409,6 @@ export function TickerDrawer({
             </div>
             <p className="mt-2 text-sm text-zinc-300">
               {CONVICTION_LABELS[level]}
-            </p>
-          </Card>
-
-          <Card>
-            <MicroLabel>Why you own it</MicroLabel>
-            <textarea
-              value={thesisDraft}
-              rows={3}
-              onChange={(e) => setThesisDraft(e.target.value)}
-              onBlur={() => onConviction(level, thesisDraft)}
-              placeholder="One or two lines. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500 focus:border-brand focus:ring-1 focus:ring-brand/40"
-            />
-            <p className="mt-1.5 text-xs text-zinc-400">
-              Pulse and Forecast read this. Saves when you click away.
             </p>
           </Card>
 

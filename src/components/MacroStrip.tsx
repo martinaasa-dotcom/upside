@@ -52,6 +52,7 @@ function fmt(n: number | null, digits = 2) {
 }
 
 export function MacroStrip() {
+  const [open, setOpen] = useState(false);
   const [macro, setMacro] = useState<Macro>({
     vix: null,
     eurusd: null,
@@ -61,6 +62,7 @@ export function MacroStrip() {
   const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);
 
   useEffect(() => {
+    if (!open) return;
     let alive = true;
     void fetchMacro().then((m) => {
       if (alive) setMacro(m);
@@ -68,8 +70,6 @@ export function MacroStrip() {
     void fetchFearGreed().then((fg) => {
       if (alive) setFearGreed(fg);
     });
-    // Bitcoin trades all night but the VIX and the 10-year do not, so the
-    // whole strip slows down overnight and on weekends.
     let timer = 0;
     const schedule = () => {
       timer = window.setTimeout(
@@ -93,7 +93,7 @@ export function MacroStrip() {
       alive = false;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [open]);
 
   const items = [
     fearGreed
@@ -121,21 +121,33 @@ export function MacroStrip() {
   }>;
 
   return (
-    <div className="scrollbar-none flex min-w-0 w-full items-center gap-2 overflow-x-auto text-xs tabular-nums text-zinc-400 sm:w-auto sm:max-w-[min(100%,28rem)] sm:justify-end sm:gap-3 sm:text-xs">
-      {items.map((i) => (
-        <span key={i.label} className="shrink-0" title={i.title}>
-          <span className="text-zinc-400">{i.label}</span>{" "}
-          <span
-            className={cn(
-              "text-zinc-300",
-              i.tone === "fear" && "text-sky-300",
-              i.tone === "greed" && "text-amber-300"
-            )}
-          >
-            {i.value}
-          </span>
-        </span>
-      ))}
+    <div className="flex min-w-0 items-center justify-end gap-2 text-xs text-zinc-400">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="shrink-0 rounded-md px-2 py-1 font-medium text-zinc-400 hover:text-zinc-200"
+        aria-expanded={open}
+      >
+        Markets
+      </button>
+      {open && (
+        <div className="scrollbar-none flex min-w-0 items-center gap-2 overflow-x-auto tabular-nums sm:gap-3">
+          {items.map((i) => (
+            <span key={i.label} className="shrink-0" title={i.title}>
+              <span className="text-zinc-400">{i.label}</span>{" "}
+              <span
+                className={cn(
+                  "text-zinc-300",
+                  i.tone === "fear" && "text-sky-300",
+                  i.tone === "greed" && "text-amber-300"
+                )}
+              >
+                {i.value}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

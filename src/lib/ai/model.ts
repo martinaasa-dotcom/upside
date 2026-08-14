@@ -482,7 +482,7 @@ export function describeAdvisorError(err: unknown): {
   if (/free-models-per-day|models-per-day/i.test(msg)) {
     return {
       message:
-        "OpenRouter's free daily AI quota is used up for today. This is shared across every free model, so switching models won't help. It resets ~daily, adding a Groq/Gemini/Cerebras free key gives Margus a fallback for this, or add credits at openrouter.ai/credits to raise the cap to 1000/day.",
+        "Margus is out of free replies for today. That cap is shared across the free models. Try again tomorrow.",
       status: 429,
     };
   }
@@ -492,13 +492,13 @@ export function describeAdvisorError(err: unknown): {
   ) {
     return {
       message:
-        "Margus's model is rate-limited right now. He'll switch to a backup provider, so try that message again in a few seconds.",
+        "Margus is rate-limited right now. Wait a few seconds and send again. He'll switch to a backup if he can.",
       status: 429,
     };
   }
   if (code === 504 || code === 408 || /timeout|504|timed out/i.test(msg)) {
     return {
-      message: "Model timed out. Try again, free models are flaky under load.",
+      message: "The model timed out. Try again. Free models get flaky under load.",
       status: 504,
     };
   }
@@ -514,7 +514,7 @@ export function describeAdvisorError(err: unknown): {
   if (/no llm key configured|_API_KEY/i.test(msg)) {
     return {
       message:
-        "Missing LLM API key. Add OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) to .env.local, then restart the dev server.",
+        "Margus could not start. The AI keys on this server are missing or rejected.",
       status: 503,
     };
   }

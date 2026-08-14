@@ -40,9 +40,9 @@ function stanceStyles(stance: ActionStance): string {
 }
 
 function stanceLabel(stance: ActionStance): string {
-  if (stance === "deploy") return "Historically strong";
-  if (stance === "raise_cash") return "Historically soft";
-  return "Mixed / no edge";
+  if (stance === "deploy") return "Historically strong months";
+  if (stance === "raise_cash") return "Historically soft months";
+  return "Mixed / no seasonal edge";
 }
 
 function Section({
@@ -395,9 +395,8 @@ function todayInMarketTz(): { month: number; day: number } {
 /**
  * Seasonality — presidential-cycle-aware historical timing patterns.
  * Deliberately doesn't repeat anything from Overview (current state) or Lab
- * (scenario tools) — this page's one job is "based on history, is now a
- * seasonally strong or weak time to add/trim." Nothing here duplicates a
- * NAV/ROI/allocation view that already exists elsewhere.
+ * (scenario tools). This page's one job is the historical calendar shape.
+ * It does not tell you to add or trim.
  */
 export function SeasonalityPage({ bookTickers = [] }: Props) {
   const tickers = useMemo(() => {

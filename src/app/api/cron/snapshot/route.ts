@@ -1,9 +1,11 @@
 import {
   captureBookPayload,
+  computeSnapshotMarks,
   pruneOldSnapshots,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
 import { requireCronAuth } from "@/lib/cron-auth";
+import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { todayKeyInTz } from "@/lib/timezone";
 import { NextResponse } from "next/server";
@@ -41,6 +43,25 @@ export async function GET(req: Request) {
   try {
     const day = todayKeyInTz();
     const payload = await captureBookPayload(supabase);
+    const tickers = [
+      ...new Set(
+        (payload.holdings as Array<{ ticker?: string }>).map((h) =>
+          String(h.ticker ?? "").toUpperCase()
+        )
+      ),
+    ].filter(Boolean);
+    if (tickers.length > 0) {
+      try {
+        const { quotes } = await fetchQuotesWithFallback(tickers);
+        payload.marks = computeSnapshotMarks(
+          payload.portfolios,
+          payload.holdings,
+          quotes
+        );
+      } catch (err) {
+        console.error("[cron/snapshot] marks skipped", err);
+      }
+    }
     const snap = await saveBookSnapshot(
       supabase,
       "nightly",

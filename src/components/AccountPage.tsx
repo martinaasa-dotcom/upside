@@ -5,6 +5,12 @@ import { AppHeader } from "@/components/AppHeader";
 import { SignInGate } from "@/components/SignInGate";
 import { cn } from "@/lib/format";
 import {
+  last7DaysStrip,
+  loadVisitStreak,
+  streakFlavor,
+  type VisitStreakState,
+} from "@/lib/visit-streak";
+import {
   EXPERIENCE_TIERS,
   loadStoredKnowsOptions,
   loadStoredTier,
@@ -26,6 +32,35 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+
+function VisitStreakCard() {
+  const [streak, setStreak] = useState<VisitStreakState | null>(null);
+  useEffect(() => {
+    setStreak(loadVisitStreak());
+  }, []);
+  if (!streak || streak.totalVisits <= 0) return null;
+  return (
+    <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">
+      <h2 className="text-sm font-semibold text-white">Showing up</h2>
+      <p className="text-xs text-zinc-400">{streakFlavor(streak.currentStreak)}</p>
+      <div className="flex gap-1" title="Your last seven days">
+        {last7DaysStrip(streak).map((visited, i) => (
+          <span
+            key={i}
+            className={cn(
+              "h-1.5 w-6 rounded-full",
+              visited ? "bg-amber-400" : "bg-zinc-800"
+            )}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-zinc-500">
+        {streak.currentStreak} day streak · best {streak.longestStreak} ·{" "}
+        {streak.totalVisits} visits on this device
+      </p>
+    </section>
+  );
+}
 
 export function AccountPage() {
   const router = useRouter();
@@ -209,6 +244,8 @@ export function AccountPage() {
               How you appear, your data, and the danger zone.
             </p>
           </div>
+
+          <VisitStreakCard />
 
           {/* Profile / community appearance */}
           <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-[#161618]/70 p-4 sm:p-5">

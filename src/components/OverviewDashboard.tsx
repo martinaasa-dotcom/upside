@@ -1,7 +1,6 @@
 "use client";
 
 import { Sparkline } from "@/components/Sparkline";
-import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { HomeWorld } from "@/components/HomeWorld";
 import {
   Card,
@@ -27,21 +26,9 @@ import {
   type BriefingLink,
 } from "@/lib/investor-briefing";
 import type { UpsideAlert } from "@/lib/alerts";
-import { PULSE_REFRESH_MS } from "@/lib/thesis-pulse";
-import {
-  last7DaysStrip,
-  streakFlavor,
-  type VisitStreakState,
-} from "@/lib/visit-streak";
 import { sessionLabel, sessionShort, sessionKind } from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CoveredCallRow } from "@/lib/types";
-import type { EarningsEvent } from "@/lib/market/yahoo";
-import {
-  calendarDaysBetweenKeys,
-  formatRelativeDays,
-  todayKeyInTz,
-} from "@/lib/timezone";
 import {
   captureVisitSnapshot,
   diffSinceLastVisit,
@@ -50,7 +37,7 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import { PRODUCT_SENTENCE } from "@/lib/product";
-import { ArrowRight, CalendarDays, MessageCircle, Radar } from "lucide-react";
+import { ArrowRight, MessageCircle, Radar } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -59,13 +46,6 @@ export type LabDeepLink = "seasonality";
  * dimmer than the shared default. */
 const tone = (value: number | null | undefined) =>
   signedTone(value, "text-zinc-400");
-
-/**
- * Earnings more than a month out is a diary entry, not a briefing. The
- * 0-7 day window is already covered by a real alert card at the top of the
- * page, so this panel's job is only the near horizon beyond that.
- */
-const EARNINGS_HORIZON_DAYS = 30;
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;
@@ -81,8 +61,6 @@ type Props = {
   onOpenCompound?: () => void;
   marketState?: string | null;
   guest?: boolean;
-  /** Personal daily-visit streak, null for guests / before it loads. */
-  visitStreak?: VisitStreakState | null;
   /** Show Fund + Communities on home (signed-in My book). */
   showCommunities?: boolean;
   /** Viewer has not opted into options. Hide every covered-call mention. */
@@ -94,104 +72,35 @@ type Props = {
   onAskMargus?: () => void;
 };
 
-function signedPct(fraction: number, digits = 0): string {
-  const n = fraction * 100;
-  const body = Math.abs(n).toFixed(digits);
-  if (n > 0) return `+${body}%`;
-  if (n < 0) return `-${body}%`;
-  return `${body}%`;
-}
+function BookNavSpark({ liveNav }: { liveNav: number }) {
+  const [points, setPoints] = useState<number[] | null>(null);
 
-function EarningsRow({ e }: { e: EarningsEvent }) {
-  const soon = e.days <= 7;
-  const digits = e.spot != null && e.spot >= 20 ? 0 : 2;
-  const moves = (e.prints ?? [])
-    .map((p) => p.movePct)
-    .filter((v): v is number => v != null);
-  const surprises = (e.prints ?? [])
-    .map((p) => p.surprisePct)
-    .filter((v): v is number => v != null);
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/book/nav-history")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { points?: { nav: number }[] } | null) => {
+        if (cancelled) return;
+        const navs = (data?.points ?? []).map((p) => p.nav);
+        if (liveNav > 0) navs.push(liveNav);
+        setPoints(navs.length >= 2 ? navs : null);
+      })
+      .catch(() => {
+        if (!cancelled) setPoints(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [liveNav]);
 
+  if (!points) return null;
   return (
-    <div
-      className={cn(
-        "rounded-lg border px-3 py-3",
-        soon
-          ? "border-amber-500/30 bg-amber-500/[0.07]"
-          : "border-zinc-800/80 bg-zinc-950/40"
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <span className="text-sm font-semibold text-white">
-          {cashtag(e.ticker)}
-        </span>
-        <span
-          className={cn(
-            "shrink-0 text-sm tabular-nums",
-            soon ? "text-amber-200" : "text-zinc-400"
-          )}
-          title={e.date}
-        >
-          {formatRelativeDays(e.days)}
-          {e.dateIsEstimate ? " (around then)" : ""}
-        </span>
-      </div>
-
-      {e.expectedMovePct != null && (
-        <div className="mt-2.5 grid grid-cols-2 gap-3">
-          <div>
-            <MicroLabel>Expected</MicroLabel>
-            <p className="mt-0.5 text-sm tabular-nums text-zinc-100">
-              ±{Math.round(e.expectedMovePct * 100)}%
-            </p>
-            <p className="text-xs text-zinc-500">
-              {e.expectedMoveSource === "implied"
-                ? "What's priced in"
-                : "Typical of the last prints"}
-            </p>
-          </div>
-          {e.rangeLow != null && e.rangeHigh != null && (
-            <div>
-              <MicroLabel>Range</MicroLabel>
-              <p className="mt-0.5 text-sm tabular-nums text-zinc-100">
-                {currency(e.rangeLow, digits)} to {currency(e.rangeHigh, digits)}
-              </p>
-              <p className="text-xs text-zinc-500">If it moves that much</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {(surprises.length > 0 || moves.length > 0) && (
-        <div className="mt-2.5 space-y-0.5 text-sm text-zinc-300">
-          {surprises.length > 0 && (
-            <p>
-              EPS:{" "}
-              {surprises.map((s, i) => (
-                <span key={`s-${i}`}>
-                  {i > 0 ? ", " : ""}
-                  <span className={tone(s)}>{signedPct(s)}</span>
-                </span>
-              ))}
-            </p>
-          )}
-          {moves.length > 0 && (
-            <p>
-              Day:{" "}
-              {moves.map((m, i) => (
-                <span key={`m-${i}`}>
-                  {i > 0 ? ", " : ""}
-                  <span className={tone(m)}>{signedPct(m)}</span>
-                </span>
-              ))}
-            </p>
-          )}
-        </div>
-      )}
-      {e.note && (
-        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{e.note}</p>
-      )}
-    </div>
+    <Sparkline
+      points={points}
+      width={72}
+      height={22}
+      className="mt-1"
+    />
   );
 }
 
@@ -507,7 +416,6 @@ export function OverviewDashboard({
   onOpenCompound,
   marketState = null,
   guest = false,
-  visitStreak = null,
   showCommunities = false,
   hideOptions = true,
   onAddHolding,
@@ -525,44 +433,12 @@ export function OverviewDashboard({
     tickers,
   } = model;
   const maxSheet = Math.max(...sheets.map((s) => s.totalValue), 1);
-  const [earnings, setEarnings] = useState<EarningsEvent[] | null>(null);
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
   const [moverHorizon, setMoverHorizon] = useState<"today" | "lifetime">(
     "today"
   );
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
-  useEffect(() => {
-    const list = tickerKey ? tickerKey.split(",") : [];
-    if (!list.length) return;
-    let cancelled = false;
-
-    const load = () => {
-      void fetch(
-        `/api/market/events?tickers=${encodeURIComponent(tickerKey)}&brief=1`
-      )
-        .then((r) => r.json())
-        .then((data: { earnings?: EarningsEvent[] }) => {
-          if (!cancelled) setEarnings(data.earnings ?? []);
-        })
-        .catch(() => {
-          // Keep whatever was already loaded — a blip shouldn't blank the
-          // upcoming-earnings list that's already on screen.
-        });
-    };
-
-    load();
-    // Hourly background refresh, no market-session gating: covers
-    // pre-market and after-hours the same as regular trading hours. Skipped
-    // while the tab is hidden; resumes on the next tick once visible again.
-    const id = window.setInterval(() => {
-      if (!document.hidden) load();
-    }, PULSE_REFRESH_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [tickerKey]);
 
   useEffect(() => {
     if (!model.tickers.length) return;
@@ -589,15 +465,6 @@ export function OverviewDashboard({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerKey, model.totals.totalValue, model.totals.cash]);
-
-  const upcomingEarnings = useMemo(() => {
-    if (!earnings) return null;
-    const today = todayKeyInTz();
-    return earnings
-      .map((e) => ({ ...e, days: calendarDaysBetweenKeys(today, e.date) }))
-      .filter((e) => e.days >= 0 && e.days <= EARNINGS_HORIZON_DAYS)
-      .sort((a, b) => a.days - b.days || a.ticker.localeCompare(b.ticker));
-  }, [earnings]);
 
   const briefing = useMemo(
     () =>
@@ -683,14 +550,6 @@ export function OverviewDashboard({
             subtitle="How the book is doing, in a few lines."
             actions={
               <>
-                {!guest && visitStreak && visitStreak.currentStreak > 0 && (
-                  <Pill
-                    tone="warn"
-                    title={streakFlavor(visitStreak.currentStreak)}
-                  >
-                    {visitStreak.currentStreak} day streak
-                  </Pill>
-                )}
                 {onAskMargus && (
                   <button
                     type="button"
@@ -717,33 +576,17 @@ export function OverviewDashboard({
             }
           />
 
-          {!guest && visitStreak && visitStreak.totalVisits > 0 && (
-            <div className="mt-4 flex items-center gap-2.5">
-              <div className="flex gap-1" title="Your last seven days">
-                {last7DaysStrip(visitStreak).map((visited, i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "h-1.5 w-4 rounded-full sm:w-5",
-                      visited ? "bg-amber-400" : "bg-zinc-800"
-                    )}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-zinc-400">
-                {streakFlavor(visitStreak.currentStreak)}
-              </p>
-            </div>
-          )}
-
           {/* The only place today's dollar move is stated. */}
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Stat
-              label="Book"
-              value={currency(totals.totalValue, 0)}
-              sub={plural(totals.sheetCount, "sheet")}
-              explain="Everything you hold plus your cash, at today's prices."
-            />
+            <div>
+              <Stat
+                label="Book"
+                value={currency(totals.totalValue, 0)}
+                sub={plural(totals.sheetCount, "sheet")}
+                explain="Everything you hold plus your cash, at today's prices."
+              />
+              <BookNavSpark liveNav={totals.totalValue} />
+            </div>
             <Stat
               label="Today"
               value={signedCurrency(totals.todayDollar)}
@@ -824,10 +667,6 @@ export function OverviewDashboard({
         </div>
       </Panel>
 
-      {!guest && <DailyDuelCard tickers={tickers} compact />}
-
-      {showCommunities && !guest && <HomeWorld />}
-
       <Panel className="overview-fade">
         <PanelHeader
           title="Movers"
@@ -882,29 +721,7 @@ export function OverviewDashboard({
         </Panel>
       )}
 
-      {(upcomingEarnings === null || upcomingEarnings.length > 0) && (
-        <Panel className="overview-fade">
-          <PanelHeader
-            icon={<CalendarDays className="h-4 w-4" />}
-            iconTone="violet"
-            title="Results coming up"
-            subtitle="Next 30 days. Last prints, the swing that's priced in, and a range."
-          />
-          <div className="mt-4 space-y-2">
-            {upcomingEarnings === null
-              ? [0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-28 animate-pulse rounded-lg bg-zinc-900/40"
-                    aria-hidden
-                  />
-                ))
-              : upcomingEarnings
-                  .slice(0, 6)
-                  .map((e) => <EarningsRow key={e.ticker} e={e} />)}
-          </div>
-        </Panel>
-      )}
+      {showCommunities && !guest && <HomeWorld />}
     </div>
   );
 }

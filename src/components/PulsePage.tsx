@@ -67,6 +67,7 @@ type Props = {
   model: OverviewModel;
   quotes: Record<string, Quote>;
   convictions: ConvictionMap;
+  onWriteThesis?: (ticker: string) => void;
 };
 
 function PulseHistory({ ticker }: { ticker: string }) {
@@ -140,6 +141,7 @@ function PulseCard({
   convictionThesis,
   checkedAt,
   onRefresh,
+  onWriteThesis,
   pinned = false,
 }: {
   candidate: PulseCandidate;
@@ -149,6 +151,7 @@ function PulseCard({
   convictionThesis?: string;
   checkedAt?: string;
   onRefresh?: () => void;
+  onWriteThesis?: () => void;
   pinned?: boolean;
 }) {
   const pct = c.effectivePct ?? 0;
@@ -334,7 +337,19 @@ function PulseCard({
         <p className="mt-3 border-t border-zinc-800/80 pt-2 text-xs text-zinc-400">
           Your thesis: {convictionThesis}
         </p>
-      ) : null}
+      ) : onWriteThesis ? (
+        <button
+          type="button"
+          onClick={onWriteThesis}
+          className="mt-3 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-left text-xs leading-relaxed text-amber-100/90 hover:border-amber-400/50"
+        >
+          Pulse is guessing. Write why you own {cashtag(c.ticker)}, two sentences, and this check gets real.
+        </button>
+      ) : (
+        <p className="mt-3 border-t border-zinc-800/80 pt-2 text-xs text-zinc-400">
+          No thesis on file. Pulse is reading the tape, not your view.
+        </p>
+      )}
     </li>
   );
 }
@@ -353,7 +368,7 @@ async function fetchQuote(ticker: string): Promise<Quote | null> {
   }
 }
 
-export function PulsePage({ model, quotes, convictions }: Props) {
+export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) {
   const [searchInput, setSearchInput] = useState("");
   const [pinnedTicker, setPinnedTicker] = useState<string | null>(null);
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
@@ -844,6 +859,11 @@ export function PulsePage({ model, quotes, convictions }: Props) {
               }
               checkedAt={checkedAtByTicker[pinnedCandidate.ticker.toUpperCase()]}
               onRefresh={() => void runPulse([pinnedCandidate], { force: true })}
+              onWriteThesis={
+                onWriteThesis
+                  ? () => onWriteThesis(pinnedCandidate.ticker)
+                  : undefined
+              }
               pinned
             />
           </ul>
@@ -875,6 +895,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                     }
                     checkedAt={checkedAtByTicker[c.ticker.toUpperCase()]}
                     onRefresh={() => void runPulse([c], { force: true })}
+                    onWriteThesis={
+                      onWriteThesis ? () => onWriteThesis(c.ticker) : undefined
+                    }
                   />
                 ))}
               </ul>
@@ -901,6 +924,9 @@ export function PulsePage({ model, quotes, convictions }: Props) {
                     }
                     checkedAt={checkedAtByTicker[c.ticker.toUpperCase()]}
                     onRefresh={() => void runPulse([c], { force: true })}
+                    onWriteThesis={
+                      onWriteThesis ? () => onWriteThesis(c.ticker) : undefined
+                    }
                   />
                 ))}
               </ul>

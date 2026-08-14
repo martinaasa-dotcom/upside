@@ -56,11 +56,10 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
     // one we under-guessed.
     const tier: ExperienceTier =
       TIER_RANK[Q2_TIER[q2]] > TIER_RANK[Q1_TIER[q1]] ? Q2_TIER[q2] : Q1_TIER[q1];
-    // Options familiarity is answered directly by Q2, not blended with
-    // Q1 the way the overall tier is -- someone can be "very experienced"
-    // overall (Q1) and still have zero options experience (Q2), and that
-    // combination should hide every options surface, not show them.
-    const knowsOptions = q2 !== "never";
+    // Options UI only if they actually write them. "I understand but rarely
+    // use them" still hides Call % and the covered-call panel. They can
+    // turn that on in Account.
+    const knowsOptions = q2 === "regularly";
     saveStoredTier(tier);
     saveStoredKnowsOptions(knowsOptions);
     try {

@@ -42,12 +42,6 @@ const MODES = [
     Icon: LayoutDashboard,
   },
   {
-    id: COMPOUND_TAB_ID,
-    label: "Compound",
-    shortLabel: "Growth",
-    Icon: Calculator,
-  },
-  {
     id: PULSE_TAB_ID,
     label: "Pulse",
     shortLabel: "Pulse",
@@ -58,6 +52,12 @@ const MODES = [
     label: "Lab",
     shortLabel: "Lab",
     Icon: FlaskConical,
+  },
+  {
+    id: COMPOUND_TAB_ID,
+    label: "Compound",
+    shortLabel: "Growth",
+    Icon: Calculator,
   },
 ] as const;
 
