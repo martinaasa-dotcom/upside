@@ -2,6 +2,7 @@
 
 import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { SignInGate } from "@/components/SignInGate";
+import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
@@ -965,7 +966,7 @@ export function CommunityView({ communityId }: Props) {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-black text-zinc-100 md:bg-app">
+      <div className="flex min-h-dvh flex-col bg-black text-zinc-100 md:bg-app">
         <MobileChrome
           title={community?.name ?? "Community"}
           active="explore"
@@ -1025,7 +1026,7 @@ export function CommunityView({ communityId }: Props) {
           )}
         </AppHeader>
 
-        <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <main className="mx-auto max-w-6xl flex-1 space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           {loading && (
             <p className="text-sm text-zinc-400">Loading community …</p>
           )}
@@ -1987,6 +1988,7 @@ export function CommunityView({ communityId }: Props) {
             </section>
           )}
         </main>
+        <BookBottomNav />
       </div>
 
       <ConfirmModal

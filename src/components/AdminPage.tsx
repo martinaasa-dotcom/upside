@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { AppHeader } from "@/components/AppHeader";
+import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { SignInGate } from "@/components/SignInGate";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
@@ -160,11 +161,11 @@ export function AdminPage() {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+      <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
         <MobileChrome title="Admin" active="settings" />
         <AppHeader className="hidden md:block" title="Admin" />
 
-        <main className="mx-auto max-w-4xl space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-8">
+        <main className="mx-auto max-w-4xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
               <Shield className="h-5 w-5" />
@@ -489,6 +490,7 @@ export function AdminPage() {
             </>
           )}
         </main>
+        <BookBottomNav />
       </div>
 
       <ConfirmModal

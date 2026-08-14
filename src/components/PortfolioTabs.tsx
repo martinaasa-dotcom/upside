@@ -86,6 +86,7 @@ export function PortfolioTabs({
     if (hiddenModeIds.includes(m.id)) return false;
     return true;
   });
+  const modeCols = modes.length;
 
   useEffect(() => {
     setMounted(true);
@@ -194,7 +195,7 @@ export function PortfolioTabs({
     <nav className={cn("sticky bottom-0 z-30 border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
       <div className="mx-auto flex max-w-[1400px] flex-col-reverse gap-1.5 px-3 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2">
         {/* App modes — sits at the thumb edge on phones */}
-        <div className="flex shrink-0 items-end gap-2 md:min-w-0">
+        <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">
             <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-zinc-400 sm:block">
               In your book
@@ -202,7 +203,13 @@ export function PortfolioTabs({
             <div
               role="tablist"
               aria-label="In your book"
-              className="flex h-12 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:h-11 sm:w-auto"
+              className={cn(
+                "grid h-12 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:h-12",
+                modeCols === 2 && "grid-cols-2 sm:w-[18rem]",
+                modeCols === 3 && "grid-cols-3 sm:w-[28rem]",
+                modeCols === 4 && "grid-cols-4 sm:w-[36rem]",
+                modeCols >= 5 && "grid-cols-5 sm:w-[44rem]"
+              )}
             >
               {modes.map(({ id, label, shortLabel, Icon }) => {
                 const active = activeId === id;
@@ -218,9 +225,8 @@ export function PortfolioTabs({
                       onChange(id);
                     }}
                     className={cn(
-                      "touch-target flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
-                      "sm:flex-none sm:flex-row sm:gap-1.5 sm:px-3.5",
-                      "first:pl-2 last:pr-2.5 sm:first:pl-4 sm:last:pr-4",
+                      "touch-target flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
+                      "sm:flex-row sm:gap-1.5 sm:px-2",
                       active
                         ? "bg-white text-black shadow-sm"
                         : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"

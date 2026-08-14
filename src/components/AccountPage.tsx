@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { AppHeader } from "@/components/AppHeader";
+import { BookBottomNav } from "@/components/BookBottomNav";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
@@ -222,7 +223,7 @@ export function AccountPage() {
 
   return (
     <SignInGate>
-      <div className="min-h-dvh bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+      <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
         <MobileChrome title="Account" active="settings" />
         <AppHeader className="hidden md:block" title="Account">
           <button
@@ -239,7 +240,7 @@ export function AccountPage() {
           </button>
         </AppHeader>
 
-        <main className="mx-auto max-w-3xl space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <main className="mx-auto max-w-3xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div>
             <h1 className="text-2xl font-semibold">My account</h1>
             <p className="mt-1 text-sm text-zinc-400">
@@ -534,6 +535,7 @@ export function AccountPage() {
             </p>
           </section>
         </main>
+        <BookBottomNav />
       </div>
 
       {deleteOpen && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/AppHeader";
+import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
@@ -875,7 +876,7 @@ export function UpsidePortfolioPage() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+    <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
       <MobileChrome title="Upside Fund" active="explore" />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
@@ -908,7 +909,7 @@ export function UpsidePortfolioPage() {
         </button>
       </AppHeader>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <main className="mx-auto max-w-4xl flex-1 space-y-6 px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         <div>
           <h1 className="sr-only">Upside Fund</h1>
           <p className="text-sm leading-relaxed text-zinc-400">
@@ -1363,6 +1364,7 @@ export function UpsidePortfolioPage() {
           </>
         )}
       </main>
+      <BookBottomNav />
     </div>
   );
 }
