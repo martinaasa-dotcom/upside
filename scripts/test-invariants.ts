@@ -34,6 +34,7 @@ import {
   portfolioValueOnDate,
   priorNySessionKey,
   quotesCoverDate,
+  sheetReturnPathSince,
 } from "../src/lib/sheet-mark";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
@@ -391,6 +392,20 @@ run("sheet mark as-of a pin date uses that session's close, not last night's", (
   assert.equal(liveCost, 55_000);
   assert.equal(quotesCoverDate({ NBIS: q }, holdings, "aasad", "2026-08-11"), true);
   assert.equal(quotesCoverDate({ NBIS: q }, holdings, "aasad", "2026-01-01"), false);
+
+  const path = sheetReturnPathSince({
+    labels: ["2026-08-11", "2026-08-12", "2026-08-13", "Live"],
+    baselineDate: "2026-08-12",
+    baselineValue: 100_000,
+    liveValue: 130_000,
+    meta,
+    holdings,
+    quotes: { NBIS: q },
+  });
+  assert.deepEqual(
+    path.map((n) => Math.round(n * 1000) / 1000),
+    [0, 0.25, 0.275, 0.3]
+  );
 });
 
 run("fund today move is live NAV minus last snapshot", () => {
@@ -765,6 +780,20 @@ run("quote clients honor the CDN cache", () => {
   );
   assert.match(route, /Vercel-CDN-Cache-Control/);
   assert.doesNotMatch(route, /force-dynamic/);
+});
+
+run("own-book compare also draws on the Margus vs SPY chart", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.match(src, /sheetReturnPathSince/);
+  const chart = src.slice(
+    src.indexOf("const comparisonSeries"),
+    src.indexOf("const fetchMyPortfolios")
+  );
+  assert.match(chart, /youReturnSeries/);
+  assert.match(chart, /SERIES_COLOR\.you/);
 });
 
 run("first-run is import, not an empty named sheet", () => {

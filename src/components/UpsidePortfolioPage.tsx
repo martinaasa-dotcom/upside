@@ -30,6 +30,7 @@ import {
   portfolioValueOnDate,
   priorNySessionKey,
   quotesCoverDate,
+  sheetReturnPathSince,
 } from "@/lib/sheet-mark";
 import {
   ChevronDown,
@@ -313,6 +314,9 @@ export function UpsidePortfolioPage() {
   // fund state everyone else on this page should see.
   const [benchmark, setBenchmark] = useState<MyPortfolioBenchmark | null>(null);
   const [benchmarkLiveValue, setBenchmarkLiveValue] = useState<number | null>(null);
+  const [benchmarkQuotes, setBenchmarkQuotes] = useState<Record<string, Quote>>(
+    {}
+  );
   const [myPortfolios, setMyPortfolios] = useState<MyPortfolioMeta[] | null>(null);
   const [myHoldings, setMyHoldings] = useState<MyHolding[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -470,13 +474,43 @@ export function UpsidePortfolioPage() {
     return [...dates, "Live"];
   }, [reports]);
 
-  const comparisonSeries: ComparisonSeries[] = useMemo(
-    () => [
+  const youReturnSeries = useMemo(() => {
+    if (!benchmark || benchmarkLiveValue == null) return null;
+    const meta = myPortfolios?.find((p) => p.id === benchmark.portfolioId);
+    if (!meta) return null;
+    const points = sheetReturnPathSince({
+      labels: comparisonLabels,
+      baselineDate: benchmark.baselineDate,
+      baselineValue: benchmark.userBaselineValue,
+      liveValue: benchmarkLiveValue,
+      meta,
+      holdings: myHoldings,
+      quotes: benchmarkQuotes,
+    });
+    return points.length >= 2 ? points : null;
+  }, [
+    benchmark,
+    benchmarkLiveValue,
+    benchmarkQuotes,
+    comparisonLabels,
+    myHoldings,
+    myPortfolios,
+  ]);
+
+  const comparisonSeries: ComparisonSeries[] = useMemo(() => {
+    const rows: ComparisonSeries[] = [
       { label: "Margus", color: SERIES_COLOR.margus, points: margusReturnSeries },
       { label: "SPY", color: SERIES_COLOR.spy, points: spyReturnSeries },
-    ],
-    [margusReturnSeries, spyReturnSeries]
-  );
+    ];
+    if (benchmark && youReturnSeries) {
+      rows.splice(1, 0, {
+        label: benchmark.portfolioName,
+        color: SERIES_COLOR.you,
+        points: youReturnSeries,
+      });
+    }
+    return rows;
+  }, [benchmark, margusReturnSeries, spyReturnSeries, youReturnSeries]);
 
   const fetchMyPortfolios = useCallback(async (): Promise<{
     portfolios: MyPortfolioMeta[];
@@ -551,6 +585,8 @@ export function UpsidePortfolioPage() {
       const { portfolios, holdingsList } = await fetchMyPortfolios();
       if (!portfolios.some((p) => p.id === benchmark.portfolioId)) {
         setBenchmark(null);
+        setBenchmarkLiveValue(null);
+        setBenchmarkQuotes({});
         saveStoredBenchmark(null);
         return;
       }
@@ -560,6 +596,7 @@ export function UpsidePortfolioPage() {
         holdingsList
       );
       setBenchmarkLiveValue(live);
+      setBenchmarkQuotes(liveQuotes);
 
       // Re-value the start from dated daily bars so a pin on Aug 12 still
       // includes that day's move. The old path kept rewriting previousClose
@@ -706,6 +743,7 @@ export function UpsidePortfolioPage() {
       saveStoredBenchmark(next);
       setBenchmark(next);
       setBenchmarkLiveValue(live);
+      setBenchmarkQuotes(liveQuotes);
       setPickerOpen(false);
     } catch (e) {
       setBenchmarkError(e instanceof Error ? e.message : "Failed to set benchmark");
@@ -726,6 +764,7 @@ export function UpsidePortfolioPage() {
     saveStoredBenchmark(null);
     setBenchmark(null);
     setBenchmarkLiveValue(null);
+    setBenchmarkQuotes({});
     setPickerSelection("");
   }, []);
 
@@ -887,7 +926,9 @@ export function UpsidePortfolioPage() {
               <div className="flex items-center justify-between gap-2">
                 <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-400">
                   <Scale className="h-3.5 w-3.5" />
-                  Margus vs SPY
+                  {benchmark
+                    ? `${benchmark.portfolioName} vs Margus vs SPY`
+                    : "Margus vs SPY"}
                 </h2>
               </div>
               <ComparisonChart

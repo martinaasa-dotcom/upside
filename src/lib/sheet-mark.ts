@@ -100,3 +100,45 @@ export function portfolioValueOnDate(
     return q?.previousClose ?? fallback;
   });
 }
+
+/**
+ * Fractional return vs a pin date, aligned to an existing chart's labels
+ * (report dates plus a trailing "Live"). Dates before the pin stay at 0
+ * so the line sits on the same axis without pretending you were racing
+ * from day one.
+ */
+export function sheetReturnPathSince({
+  labels,
+  baselineDate,
+  baselineValue,
+  liveValue,
+  meta,
+  holdings,
+  quotes,
+}: {
+  labels: string[];
+  baselineDate: string;
+  baselineValue: number;
+  liveValue: number | null;
+  meta: SheetMeta;
+  holdings: SheetHolding[];
+  quotes: Record<string, Quote>;
+}): number[] {
+  let last = 0;
+  return labels.map((label) => {
+    if (label !== "Live" && label < baselineDate) {
+      last = 0;
+      return 0;
+    }
+    if (!(baselineValue > 0)) return last;
+    if (label === "Live") {
+      if (liveValue == null) return last;
+      last = (liveValue - baselineValue) / baselineValue;
+      return last;
+    }
+    if (!quotesCoverDate(quotes, holdings, meta.id, label)) return last;
+    const v = portfolioValueOnDate(meta, holdings, quotes, label);
+    last = (v - baselineValue) / baselineValue;
+    return last;
+  });
+}
