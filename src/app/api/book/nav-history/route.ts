@@ -3,42 +3,42 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import type { BookSnapshotPayload } from "@/lib/book-snapshot";
+import {
+  downsampleToWeeks,
+  reconstructAssumedNav,
+  type AssumedPosition,
+} from "@/lib/market/assumed-nav";
+import { fetchYtdDailyCloses } from "@/lib/market/yahoo";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
-/**
- * Last ~14 nightly mark-to-market NAVs for the caller's own sheets.
- * Nightly rows are global (one snapshot for the platform). We only ever
- * sum the caller's portfolio ids, and never send other people's marks.
- */
-export async function GET() {
-  const auth = await requireAuthUser();
-  if ("error" in auth) return auth.error;
+const MAX_TICKERS = 24;
 
-  const owned = await listOwnedPortfolioIds(auth.user.id);
-  if (owned.length === 0) {
-    return NextResponse.json({ points: [] });
-  }
+type NavPoint = { date: string; nav: number };
+
+async function snapshotPointsForUser(
+  userId: string
+): Promise<{ points: NavPoint[]; firstRealDate: string | null }> {
+  const owned = await listOwnedPortfolioIds(userId);
+  if (owned.length === 0) return { points: [], firstRealDate: null };
   const ownedSet = new Set(owned);
 
   const supabase = await getSupabaseDataClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
-  }
+  if (!supabase) return { points: [], firstRealDate: null };
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.snapshots)
     .select("created_at, payload")
     .eq("kind", "nightly")
     .order("created_at", { ascending: true })
-    .limit(14);
+    .limit(30);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return { points: [], firstRealDate: null };
 
-  const points: { date: string; nav: number }[] = [];
+  const points: NavPoint[] = [];
   for (const row of data ?? []) {
     const payload = row.payload as BookSnapshotPayload | null;
     const marks = payload?.marks;
@@ -57,5 +57,93 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json({ points });
+  return {
+    points,
+    firstRealDate: points[0]?.date ?? null,
+  };
+}
+
+/**
+ * Book NAV over time. Default is an assumed YTD path: current share counts
+ * × each name's daily close since Jan 1, plus cash as it sits today.
+ * Pass assumed=false to keep only nights we actually recorded.
+ */
+export async function GET() {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+  const snaps = await snapshotPointsForUser(auth.user.id);
+  return NextResponse.json({
+    points: snaps.points,
+    assumed: false,
+    firstRealDate: snaps.firstRealDate,
+  });
+}
+
+export async function POST(req: Request) {
+  let body: {
+    assumed?: boolean;
+    cash?: number;
+    positions?: AssumedPosition[];
+  } = {};
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    body = {};
+  }
+
+  const assumed = body.assumed !== false;
+  const auth = await requireAuthUser();
+  const userId = "error" in auth ? null : auth.user.id;
+  const snaps = userId
+    ? await snapshotPointsForUser(userId)
+    : { points: [] as NavPoint[], firstRealDate: null };
+
+  if (!assumed) {
+    return NextResponse.json({
+      points: snaps.points,
+      assumed: false,
+      firstRealDate: snaps.firstRealDate,
+    });
+  }
+
+  const cash = Number(body.cash ?? 0);
+  const rawPositions = Array.isArray(body.positions) ? body.positions : [];
+  const byTicker = new Map<string, number>();
+  for (const p of rawPositions) {
+    const ticker = String(p?.ticker ?? "")
+      .trim()
+      .toUpperCase();
+    const shares = Number(p?.shares);
+    if (!ticker || !Number.isFinite(shares)) continue;
+    byTicker.set(ticker, (byTicker.get(ticker) ?? 0) + shares);
+  }
+  const positions = [...byTicker.entries()]
+    .slice(0, MAX_TICKERS)
+    .map(([ticker, shares]) => ({ ticker, shares }));
+
+  if (positions.length === 0) {
+    return NextResponse.json({
+      points: snaps.points,
+      assumed: false,
+      firstRealDate: snaps.firstRealDate,
+    });
+  }
+
+  const closes = await fetchYtdDailyCloses(positions.map((p) => p.ticker));
+  const daily = reconstructAssumedNav(cash, positions, closes);
+  const points = downsampleToWeeks(daily);
+
+  if (points.length < 2) {
+    return NextResponse.json({
+      points: snaps.points,
+      assumed: false,
+      firstRealDate: snaps.firstRealDate,
+    });
+  }
+
+  return NextResponse.json({
+    points,
+    assumed: true,
+    firstRealDate: snaps.firstRealDate,
+  });
 }

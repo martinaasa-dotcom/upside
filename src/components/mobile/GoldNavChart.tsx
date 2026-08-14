@@ -4,36 +4,127 @@ import { useEffect, useId, useMemo, useState } from "react";
 
 export type NavPoint = { date: string; nav: number };
 
-export function useBookNavHistory(liveNav: number): NavPoint[] {
+export type AssumedPosition = { ticker: string; shares: number };
+
+const ASSUMED_PREF_KEY = "portfell-nav-assumed-ytd";
+
+function loadAssumedPref(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return localStorage.getItem(ASSUMED_PREF_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+function saveAssumedPref(on: boolean) {
+  try {
+    localStorage.setItem(ASSUMED_PREF_KEY, on ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function useBookNavHistory(input: {
+  liveNav: number;
+  cash: number;
+  positions: AssumedPosition[];
+}): {
+  points: NavPoint[];
+  assumed: boolean;
+  firstRealDate: string | null;
+  loading: boolean;
+  discardAssumed: () => void;
+  restoreAssumed: () => void;
+} {
   const [hist, setHist] = useState<NavPoint[]>([]);
+  const [assumed, setAssumed] = useState(true);
+  const [serverAssumed, setServerAssumed] = useState(false);
+  const [firstRealDate, setFirstRealDate] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setAssumed(loadAssumedPref());
+  }, []);
+
+  const posKey = input.positions
+    .map((p) => `${p.ticker.toUpperCase()}:${p.shares}`)
+    .sort()
+    .join("|");
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/book/nav-history")
+    setLoading(true);
+    const body = assumed
+      ? {
+          assumed: true,
+          cash: input.cash,
+          positions: input.positions,
+        }
+      : { assumed: false };
+    void fetch("/api/book/nav-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { points?: NavPoint[] } | null) => {
-        if (!cancelled) setHist(data?.points ?? []);
-      })
+      .then(
+        (
+          data: {
+            points?: NavPoint[];
+            assumed?: boolean;
+            firstRealDate?: string | null;
+          } | null
+        ) => {
+          if (cancelled) return;
+          setHist(data?.points ?? []);
+          setServerAssumed(Boolean(data?.assumed));
+          setFirstRealDate(data?.firstRealDate ?? null);
+          setLoading(false);
+        }
+      )
       .catch(() => {
-        if (!cancelled) setHist([]);
+        if (cancelled) return;
+        setHist([]);
+        setServerAssumed(false);
+        setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- posKey fingerprints holdings
+  }, [assumed, posKey, input.cash]);
 
-  return useMemo(() => {
-    const points = [...hist];
-    if (liveNav > 0) {
-      const last = points[points.length - 1];
-      if (!last || Math.abs(last.nav - liveNav) > 0.5) {
-        points.push({ date: "Live", nav: liveNav });
+  const points = useMemo(() => {
+    const next = [...hist];
+    if (input.liveNav > 0) {
+      const last = next[next.length - 1];
+      if (!last || Math.abs(last.nav - input.liveNav) > 0.5) {
+        next.push({ date: "Live", nav: input.liveNav });
       } else {
-        points[points.length - 1] = { ...last, nav: liveNav };
+        next[next.length - 1] = { ...last, nav: input.liveNav };
       }
     }
-    return points;
-  }, [hist, liveNav]);
+    return next;
+  }, [hist, input.liveNav]);
+
+  return {
+    points,
+    assumed: assumed && serverAssumed,
+    firstRealDate,
+    loading,
+    discardAssumed: () => {
+      saveAssumedPref(false);
+      setAssumed(false);
+      setServerAssumed(false);
+      setHist([]);
+      setLoading(true);
+    },
+    restoreAssumed: () => {
+      saveAssumedPref(true);
+      setAssumed(true);
+    },
+  };
 }
 
 function compactAxis(n: number): string {
@@ -120,7 +211,7 @@ export function GoldNavChart({
       viewBox={`0 0 ${width} ${height}`}
       className={className ? `h-auto w-full ${className}` : "h-auto w-full"}
       role="img"
-      aria-label="Book value over recent sessions"
+      aria-label="Book value over the year"
     >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
@@ -198,5 +289,78 @@ export function GoldNavChart({
         );
       })}
     </svg>
+  );
+}
+
+export function BookNavChart({
+  points,
+  assumed,
+  loading,
+  firstRealDate,
+  onDiscardAssumed,
+  onRestoreAssumed,
+  className,
+}: {
+  points: NavPoint[];
+  assumed: boolean;
+  loading?: boolean;
+  firstRealDate?: string | null;
+  onDiscardAssumed?: () => void;
+  onRestoreAssumed?: () => void;
+  className?: string;
+}) {
+  const usable = points.filter((p) => Number.isFinite(p.nav));
+  const hasChart = usable.length >= 2;
+  const recorded =
+    firstRealDate &&
+    (() => {
+      const d = new Date(`${firstRealDate}T12:00:00`);
+      if (Number.isNaN(d.getTime())) return firstRealDate;
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      });
+    })();
+
+  return (
+    <div className={className}>
+      {loading && !hasChart ? (
+        <p className="py-8 text-center text-sm text-muted">
+          Working out this year's path …
+        </p>
+      ) : (
+        <GoldNavChart points={points} />
+      )}
+      {assumed && hasChart && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <p className="text-xs text-zinc-400">
+            Drawn as if you held the same names all year. Not your actual
+            buys and sells.
+          </p>
+          {onDiscardAssumed && (
+            <button
+              type="button"
+              onClick={onDiscardAssumed}
+              className="shrink-0 text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+            >
+              {recorded
+                ? `Start from ${recorded}`
+                : "Drop assumed path"}
+            </button>
+          )}
+        </div>
+      )}
+      {!assumed && !loading && onRestoreAssumed && (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={onRestoreAssumed}
+            className="text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+          >
+            Fill in an assumed year
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

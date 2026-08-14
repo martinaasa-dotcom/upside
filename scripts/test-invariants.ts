@@ -13,6 +13,10 @@ import {
 import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { fundCopyBullets } from "../src/lib/fund-copy";
+import {
+  downsampleToWeeks,
+  reconstructAssumedNav,
+} from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
 import { reconcilePulseCheck, statusLabel, type PulseCheck } from "../src/lib/thesis-pulse";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
@@ -1038,6 +1042,31 @@ run("panel copy is not pinched to a reading measure", () => {
       `${rel} still caps in-panel copy so it wraps short of the card`
     );
   }
+});
+
+run("assumed YTD NAV uses current size and forward-fills gaps", () => {
+  const points = reconstructAssumedNav(
+    1000,
+    [
+      { ticker: "AAA", shares: 10 },
+      { ticker: "BBB", shares: 2 },
+    ],
+    {
+      AAA: [
+        { date: "2026-01-02", close: 10 },
+        { date: "2026-01-05", close: 12 },
+      ],
+      BBB: [{ date: "2026-01-05", close: 50 }],
+    }
+  );
+  assert.equal(points.length, 2);
+  // Jan 2: cash 1000 + 10*10 + 2*0 (BBB not listed yet)
+  assert.equal(points[0]!.nav, 1100);
+  // Jan 5: cash 1000 + 10*12 + 2*50
+  assert.equal(points[1]!.nav, 1220);
+  const weeks = downsampleToWeeks(points);
+  assert.ok(weeks.length >= 1);
+  assert.equal(weeks[weeks.length - 1]!.nav, 1220);
 });
 
 if (failed > 0) {

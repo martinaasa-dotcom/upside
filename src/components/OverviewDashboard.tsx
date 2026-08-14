@@ -3,7 +3,7 @@
 import { HomeWorld } from "@/components/HomeWorld";
 import { CashAlertCard } from "@/components/mobile/CashAlertCard";
 import {
-  GoldNavChart,
+  BookNavChart,
   useBookNavHistory,
   type NavPoint,
 } from "@/components/mobile/GoldNavChart";
@@ -80,12 +80,22 @@ function MobileHomeHero({
   totals,
   alerts,
   points,
+  assumed,
+  loading,
+  firstRealDate,
+  onDiscardAssumed,
+  onRestoreAssumed,
   onOpenCash,
   onOpenAlerts,
 }: {
   totals: OverviewModel["totals"];
   alerts: UpsideAlert[];
   points: NavPoint[];
+  assumed: boolean;
+  loading: boolean;
+  firstRealDate: string | null;
+  onDiscardAssumed: () => void;
+  onRestoreAssumed: () => void;
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
 }) {
@@ -107,7 +117,14 @@ function MobileHomeHero({
         </p>
       </div>
       <div className="mt-8">
-        <GoldNavChart points={points} />
+        <BookNavChart
+          points={points}
+          assumed={assumed}
+          loading={loading}
+          firstRealDate={firstRealDate}
+          onDiscardAssumed={onDiscardAssumed}
+          onRestoreAssumed={onRestoreAssumed}
+        />
       </div>
       <CashAlertCard
         className="mt-8"
@@ -440,7 +457,14 @@ export function OverviewDashboard({
     [model, activeAlerts, coveredCallRows, hideOptions, guest, onOpenPulse]
   );
 
-  const navPoints = useBookNavHistory(totals.totalValue);
+  const nav = useBookNavHistory({
+    liveNav: totals.totalValue,
+    cash: totals.cash,
+    positions: model.tickers.map((t) => ({
+      ticker: t.ticker,
+      shares: t.shares,
+    })),
+  });
 
   const movers = useMemo(() => {
     if (moverHorizon === "today") {
@@ -502,7 +526,12 @@ export function OverviewDashboard({
       <MobileHomeHero
         totals={totals}
         alerts={activeAlerts}
-        points={navPoints}
+        points={nav.points}
+        assumed={nav.assumed}
+        loading={nav.loading}
+        firstRealDate={nav.firstRealDate}
+        onDiscardAssumed={nav.discardAssumed}
+        onRestoreAssumed={nav.restoreAssumed}
         onOpenCash={onOpenCash}
         onOpenAlerts={onOpenAlerts}
       />
@@ -574,7 +603,15 @@ export function OverviewDashboard({
             />
           </div>
 
-          <GoldNavChart points={navPoints} className="mt-6" />
+          <BookNavChart
+            points={nav.points}
+            assumed={nav.assumed}
+            loading={nav.loading}
+            firstRealDate={nav.firstRealDate}
+            onDiscardAssumed={nav.discardAssumed}
+            onRestoreAssumed={nav.restoreAssumed}
+            className="mt-6"
+          />
         </div>
       </Panel>
 

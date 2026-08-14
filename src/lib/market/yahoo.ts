@@ -317,6 +317,121 @@ export async function fetchQuotesYahoo(
   }
 }
 
+export type DailyClose = { date: string; close: number };
+
+const YTD_CLOSE_TTL_MS = 6 * 60 * 60 * 1000;
+const ytdCloseCache = new Map<
+  string,
+  { year: number; at: number; rows: DailyClose[] }
+>();
+const ytdCloseInFlight = new Map<string, Promise<DailyClose[]>>();
+
+function chartRowsToDailyCloses(
+  quotes: Array<{ date?: Date | string | number | null; close?: number | null }>,
+  currency: string | undefined,
+  fx: FxRates
+): DailyClose[] {
+  return quotes
+    .map((row) => {
+      const close = row.close;
+      const rawDate = row.date;
+      if (typeof close !== "number" || !rawDate) return null;
+      const when =
+        rawDate instanceof Date
+          ? rawDate
+          : new Date(
+              typeof rawDate === "number" && rawDate < 1e12
+                ? rawDate * 1000
+                : rawDate
+            );
+      if (Number.isNaN(when.getTime())) return null;
+      return {
+        date: dateKeyInTz(when, "America/New_York"),
+        close: priceToUsd(close, currency, fx),
+      };
+    })
+    .filter((b): b is DailyClose => b != null);
+}
+
+async function ytdClosesForSymbol(
+  yf: YahooFinanceInstance,
+  fx: FxRates,
+  symbol: string,
+  year: number,
+  period1: Date
+): Promise<DailyClose[]> {
+  const cacheKey = `${year}:${symbol}`;
+  const hit = ytdCloseCache.get(cacheKey);
+  if (
+    hit &&
+    hit.year === year &&
+    Date.now() - hit.at < YTD_CLOSE_TTL_MS &&
+    hit.rows.length > 0
+  ) {
+    return hit.rows;
+  }
+  const pending = ytdCloseInFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const task = (async () => {
+    try {
+      const chart = await yf.chart(symbol, { period1, interval: "1d" });
+      const currency =
+        typeof chart.meta?.currency === "string"
+          ? chart.meta.currency
+          : undefined;
+      const rows = chartRowsToDailyCloses(chart.quotes ?? [], currency, fx);
+      ytdCloseCache.set(cacheKey, { year, at: Date.now(), rows });
+      return rows;
+    } catch (err) {
+      console.error(`YTD closes failed for ${symbol}`, err);
+      return hit?.rows ?? [];
+    } finally {
+      ytdCloseInFlight.delete(cacheKey);
+    }
+  })();
+  ytdCloseInFlight.set(cacheKey, task);
+  return task;
+}
+
+/** Calendar-year daily closes in USD, cached a few hours so every sheet
+ * that holds NBIS does not hit Yahoo again. */
+export async function fetchYtdDailyCloses(
+  tickers: string[]
+): Promise<Record<string, DailyClose[]>> {
+  const unique = [
+    ...new Set(tickers.map((t) => t.trim()).filter(Boolean)),
+  ];
+  if (unique.length === 0) return {};
+  const year = new Date().getFullYear();
+  const period1 = new Date(Date.UTC(year, 0, 1));
+  try {
+    const yf = await getYahoo();
+    const fx = await fetchFxRates(yf);
+    const out: Record<string, DailyClose[]> = {};
+    await Promise.all(
+      unique.map(async (ticker) => {
+        const symbol = normalizeYahooTicker(ticker);
+        if (!symbol) {
+          out[ticker.toUpperCase()] = [];
+          return;
+        }
+        out[ticker.toUpperCase()] = await ytdClosesForSymbol(
+          yf,
+          fx,
+          symbol,
+          year,
+          period1
+        );
+      })
+    );
+    return out;
+  } catch (err) {
+    console.error("YTD close fetch unavailable", err);
+    return {};
+  }
+}
+
 /** Synthetic placeholder prices — absolute last resort when every real
  * provider (Yahoo, and any configured fallback providers) failed. Not real
  * market data; callers should surface `delayed`/degraded state to the UI. */
