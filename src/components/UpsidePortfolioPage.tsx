@@ -2,6 +2,7 @@
 
 import { AppHeader } from "@/components/AppHeader";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
+import { Metric, MicroLabel } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
@@ -275,6 +276,56 @@ function FundStat({
       </p>
       <p className="mt-0.5 text-sm font-semibold text-zinc-100">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
+    </div>
+  );
+}
+
+function CopyBlock({
+  label,
+  items,
+  tone = "thesis",
+  extra,
+  className,
+}: {
+  label: string;
+  items: string[];
+  tone?: "thesis" | "exit";
+  extra?: string | null;
+  className?: string;
+}) {
+  if (items.length === 0 && !extra) return null;
+  const exit = tone === "exit";
+  return (
+    <div
+      className={cn(
+        exit
+          ? "rounded-lg border border-rose-500/20 bg-rose-950/15 px-3 py-2.5"
+          : "border-t border-zinc-800/60 pt-3",
+        className
+      )}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <MicroLabel className={exit ? "text-rose-300/80" : undefined}>
+          {label}
+        </MicroLabel>
+        {extra ? <p className="text-xs text-zinc-400">{extra}</p> : null}
+      </div>
+      {items.length > 0 && (
+        <ul className="mt-1.5 space-y-1.5 text-sm leading-relaxed text-zinc-300">
+          {items.map((b) => (
+            <li key={b} className="flex gap-2">
+              <span
+                aria-hidden
+                className={cn(
+                  "mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full",
+                  exit ? "bg-rose-400/70" : "bg-brand-bright"
+                )}
+              />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -1175,7 +1226,7 @@ export function UpsidePortfolioPage() {
                     return (
                       <div
                         key={h.id}
-                        className="space-y-2 rounded-xl border border-brand-deep/30 bg-card/80 p-3.5"
+                        className="rounded-xl border border-brand-deep/30 bg-card/80 p-3.5"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-white">
@@ -1195,46 +1246,40 @@ export function UpsidePortfolioPage() {
                             {percent(pnlPct)}
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-400">
-                          {currency(marketValue, 0)} · entered {fmtDate(h.entry_date)} at{" "}
-                          {currency(h.cost_basis)}, now {currency(price)}
-                        </p>
-                        {thesis.length > 0 && (
-                          <ul className="space-y-1 text-xs leading-relaxed text-zinc-400">
-                            {thesis.map((b) => (
-                              <li key={b} className="flex gap-2">
-                                <span
-                                  aria-hidden
-                                  className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500"
-                                />
-                                <span>{b}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {h.target_timeframe && (
-                          <p className="text-xs text-zinc-500">
-                            Timeline · {h.target_timeframe}
-                          </p>
-                        )}
-                        {exits.length > 0 && (
-                          <div className="space-y-1">
-                            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                              Exit
-                            </p>
-                            <ul className="space-y-1 text-xs leading-relaxed text-zinc-400">
-                              {exits.map((b) => (
-                                <li key={b} className="flex gap-2">
-                                  <span
-                                    aria-hidden
-                                    className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500"
-                                  />
-                                  <span>{b}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+                          <Metric
+                            label="Book"
+                            hint={`${h.shares.toLocaleString("en-US")} sh`}
+                          >
+                            {currency(marketValue, 0)}
+                          </Metric>
+                          <Metric label="Entered">
+                            {fmtDate(h.entry_date)}
+                          </Metric>
+                          <Metric label="Cost">{currency(h.cost_basis)}</Metric>
+                          <Metric
+                            label="Now"
+                            valueClassName={signedTone(pnlPct, "text-zinc-100")}
+                          >
+                            {currency(price)}
+                          </Metric>
+                        </div>
+                        <CopyBlock
+                          label="Thesis"
+                          items={thesis}
+                          extra={
+                            h.target_timeframe
+                              ? `Timeline ${h.target_timeframe}`
+                              : null
+                          }
+                          className="mt-3"
+                        />
+                        <CopyBlock
+                          label="Exit"
+                          items={exits}
+                          tone="exit"
+                          className="mt-3"
+                        />
                       </div>
                     );
                   })}
