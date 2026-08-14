@@ -91,7 +91,7 @@ function MobileHomeHero({
   const up = totals.roiPct >= 0;
   return (
     <div className="md:hidden">
-      <p className="text-sm text-zinc-500">Total growth</p>
+      <p className="text-sm text-muted">Total growth</p>
       <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
         <p className="font-logo text-4xl font-bold tabular-nums leading-none text-white">
           {currency(totals.totalValue, 0)}
@@ -404,7 +404,7 @@ function PortfolioLane({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-heading text-lg font-semibold text-white group-hover:text-brand-bright">
+          <p className="truncate font-heading text-lg font-bold text-white group-hover:text-brand-bright">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1 text-sm text-zinc-300">
@@ -412,7 +412,7 @@ function PortfolioLane({
             {currency(sheet.portfolio.cash_balance, 0)} cash
           </p>
         </div>
-        <p className="shrink-0 text-right font-heading text-lg font-semibold tabular-nums text-white">
+        <p className="shrink-0 text-right font-heading text-lg font-bold tabular-nums text-white">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>

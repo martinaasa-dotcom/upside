@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, Outfit } from "next/font/google";
+import { Inter, Montserrat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
@@ -11,17 +11,14 @@ import {
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
-  style: ["normal", "italic"],
-  axes: ["opsz"],
 });
 
-/** Lockup only. UI copy stays on Newsreader. */
-const outfit = Outfit({
-  variable: "--font-outfit",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
   display: "swap",
 });
@@ -87,7 +84,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-timezone="Europe/Tallinn">
       <body
-        className={`${newsreader.variable} ${outfit.variable} antialiased`}
+        className={`${inter.variable} ${montserrat.variable} antialiased`}
       >
         <Providers>{children}</Providers>
         <Analytics />

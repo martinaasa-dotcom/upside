@@ -655,19 +655,22 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
-run("one editorial serif, not a stacked tech type stack", () => {
+run("Montserrat headings and Inter body, no third face", () => {
   const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
   const logo = readFileSync(
     join(process.cwd(), "src/components/UpsideLogo.tsx"),
     "utf8"
   );
-  assert.match(layout, /Newsreader/);
-  assert.match(layout, /Outfit/);
-  assert.doesNotMatch(layout, /Inter|Montserrat|JetBrains/);
-  assert.match(css, /font-newsreader/);
-  assert.match(css, /font-logo/);
-  assert.doesNotMatch(css, /font-inter|font-montserrat|font-jetbrains/);
+  assert.match(layout, /Montserrat/);
+  assert.match(layout, /Inter/);
+  assert.doesNotMatch(layout, /Newsreader|Outfit|JetBrains/);
+  assert.match(css, /font-montserrat/);
+  assert.match(css, /font-inter/);
+  assert.match(css, /--font-heading: var\(--font-montserrat\)/);
+  assert.match(css, /--font-sans: var\(--font-inter\)/);
+  assert.match(css, /--font-logo: var\(--font-montserrat\)/);
+  assert.doesNotMatch(css, /font-newsreader|font-outfit/);
   assert.match(code(logo), /font-logo/);
   assert.match(code(logo), /uppercase/);
   assert.match(code(logo), /Upside/);

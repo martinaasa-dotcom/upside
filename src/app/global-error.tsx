@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { Inter, Montserrat } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], display: "swap" });
+const montserrat = Montserrat({ subsets: ["latin"], display: "swap" });
 
 // global-error replaces the root layout when the layout itself throws, so
 // it can't rely on globals.css/Tailwind or the app's providers — it must
@@ -31,6 +35,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body
+        className={inter.className}
         style={{
           margin: 0,
           minHeight: "100dvh",
@@ -43,12 +48,13 @@ export default function GlobalError({
           textAlign: "center",
           background: "#0C1014",
           color: "#f5f2eb",
-          fontFamily:
-            '"Iowan Old Style", Palatino, Georgia, serif',
         }}
       >
         <div>
-          <h1 style={{ fontSize: "1.1rem", fontWeight: 600, margin: 0 }}>
+          <h1
+            className={montserrat.className}
+            style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}
+          >
             Upside Lab hit a snag
           </h1>
           <p

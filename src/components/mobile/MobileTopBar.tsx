@@ -60,7 +60,7 @@ export function MobileTopBar({
             </span>
           )}
         </Link>
-        <h1 className="truncate text-center text-base font-medium text-white">
+        <h1 className="truncate text-center font-heading text-base font-bold text-white">
           {title}
         </h1>
         {end ? (

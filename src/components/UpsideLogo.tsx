@@ -61,7 +61,7 @@ function UpsideMark({ className }: { className?: string }) {
   );
 }
 
-/** Brand-board type: UPSIDE bold, LAB regular. CSS caps, spoken name stays title case. */
+/** Lockup type: UPSIDE bold, LAB regular. Same Montserrat as every heading. */
 function LogoType({ className }: { className?: string }) {
   return (
     <span

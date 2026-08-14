@@ -19,13 +19,14 @@ import { useState, type ReactNode } from "react";
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
  *   Shell      border-brand/20 on bg-card
  *   Card       border-white/10 on bg-card
- *   Headings   text-base font-semibold (hero: text-lg) · sentence case
- *   Type       one editorial serif for UI and titles. The brand lockup
- *              is the exception: geometric caps, not a second UI face.
- *   Micro      text-xs uppercase tracking-wide text-zinc-400
+ *   Headings   text-base font-bold (hero: text-lg) · sentence case
+ *   Type       Montserrat Bold for titles and figures. Inter Regular
+ *              for body, labels, and glacier-grey supporting copy.
+ *              No third face. The lockup uses the same Montserrat.
+ *   Micro      text-xs uppercase tracking-wide text-muted
  *   Metrics    inside a card, a 2/4-col grid of Metric (label over figure).
  *              Do not park unlabeled numbers on the far right of a row.
- *   Body       text-sm leading-relaxed text-zinc-400
+ *   Body       text-sm leading-relaxed text-muted
  *   Floor      nothing below text-xs. Ever.
  *   Measure    copy inside a panel fills the panel. Do not pinch it to a
  *              reading column. That leaves a dead strip of empty card and
@@ -128,13 +129,13 @@ export function PanelHeader({
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
-              "font-heading font-semibold text-white",
+              "font-heading font-bold text-white",
               hero ? "text-lg sm:text-xl" : "text-base"
             )}
           >
             {title}
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+          <p className="mt-1 text-sm leading-relaxed text-muted">
             {subtitle}
           </p>
         </div>
@@ -200,7 +201,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-0.5 text-xs font-medium uppercase tracking-wide text-zinc-400",
+        "flex items-center gap-0.5 text-xs font-medium uppercase tracking-wide text-muted",
         className
       )}
     >
@@ -228,7 +229,7 @@ export function Metric({
       <MicroLabel>{label}</MicroLabel>
       <p
         className={cn(
-          "mt-0.5 text-sm font-semibold tabular-nums text-zinc-100",
+          "mt-0.5 font-heading text-sm font-bold tabular-nums text-zinc-100",
           valueClassName
         )}
       >
@@ -305,14 +306,14 @@ export function Stat({
       </MicroLabel>
       <p
         className={cn(
-          "mt-1 text-base font-semibold tabular-nums sm:text-lg",
+          "mt-1 font-heading text-base font-bold tabular-nums sm:text-lg",
           valueClassName ?? "text-white"
         )}
       >
         {value}
       </p>
       {sub != null && (
-        <p className={cn("mt-0.5 text-xs", subClassName ?? "text-zinc-400")}>
+        <p className={cn("mt-0.5 text-xs", subClassName ?? "text-muted")}>
           {sub}
         </p>
       )}
