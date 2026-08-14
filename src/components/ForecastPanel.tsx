@@ -299,7 +299,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
           cx={xAt(i)}
           cy={yAt(p.value)}
           r={3.5}
-          fill="#0c1014"
+          fill="#08090C"
           stroke="#E8C989"
           strokeWidth={2}
         />

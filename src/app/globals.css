@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  /* Brand board v1: navy field, cream/gold mark, glacier body. */
-  --background: #0c1014;
+  /* Brand board v1: near-black field, cream/gold mark, glacier body. */
+  --background: #08090c;
   --foreground: #f4f1ea;
   --muted: #9aa3ad; /* glacier grey */
-  --app: #0c1014;
-  --card: #141a20;
-  --hover: #1b232c;
+  --app: #08090c;
+  --card: #111318;
+  --hover: #181b22;
   --brand: #d6ad69;
   --brand-bright: #eed7b5;
   --brand-mid: #dcad55;
@@ -15,8 +15,8 @@
   --brand-dark: #7a5a32;
   --gain: #10b981;
   --loss: #f43f5e;
-  --surface: #141a20;
-  --panel: #141a20;
+  --surface: #111318;
+  --panel: #111318;
   --border: rgb(214 173 105 / 0.22);
 }
 
@@ -191,6 +191,11 @@ button:disabled,
 .btn-primary:disabled {
   opacity: 0.6;
 }
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  outline: 2px solid rgb(214 173 105 / 0.5);
+  outline-offset: 2px;
+}
 
 .btn-secondary {
   display: inline-flex;
@@ -205,11 +210,14 @@ button:disabled,
   font-weight: 500;
   line-height: 1.25rem;
   padding: 0.5rem 1rem;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    color 120ms ease, box-shadow 120ms ease;
 }
 .btn-secondary:hover:not(:disabled) {
-  background: rgb(214 173 105 / 0.1);
-  border-color: rgb(214 173 105 / 0.7);
+  background: #d6ad69;
+  border-color: #d6ad69;
+  color: #08090c;
+  box-shadow: 0 8px 28px -12px rgb(214 173 105 / 0.55);
 }
 .btn-secondary:disabled {
   opacity: 0.6;

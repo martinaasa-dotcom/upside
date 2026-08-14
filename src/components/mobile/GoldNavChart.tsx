@@ -77,23 +77,37 @@ export function GoldNavChart({
 
   if (usable.length < 2) {
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">
+      <p
+        className={
+          className
+            ? `py-8 text-center text-sm text-muted ${className}`
+            : "py-8 text-center text-sm text-muted"
+        }
+      >
         History builds up night by night.
       </p>
     );
   }
 
   const vals = usable.map((p) => p.nav);
-  const min = 0;
-  const max = Math.max(...vals, 1);
-  const span = max - min || 1;
+  const dataMin = Math.min(...vals);
+  const dataMax = Math.max(...vals);
+  const mid = (dataMin + dataMax) / 2;
+  const rawSpan = dataMax - dataMin;
+  // Keep a quiet book from looking like a mountain: at least ~4% of NAV.
+  const floorSpan = Math.max(Math.abs(mid) * 0.04, 1);
+  const span = Math.max(rawSpan, floorSpan);
+  const pad = span * 0.12;
+  const min = dataMin - pad;
+  const max = dataMax + pad;
+  const axisSpan = max - min || 1;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
   const gap = innerW / usable.length;
   const barW = Math.max(6, Math.min(22, gap * 0.55));
   const xAt = (i: number) => padL + gap * i + gap / 2;
-  const yAt = (v: number) => padT + (1 - (v - min) / span) * innerH;
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => min + span * t);
+  const yAt = (v: number) => padT + (1 - (v - min) / axisSpan) * innerH;
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => min + axisSpan * t);
   const line = usable
     .map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.nav).toFixed(1)}`)
     .join(" ");

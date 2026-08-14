@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)] text-zinc-100">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)] text-zinc-100">
       <header className="border-b border-brand/25 bg-app/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />

@@ -1,9 +1,12 @@
 "use client";
 
-import { Sparkline } from "@/components/Sparkline";
 import { HomeWorld } from "@/components/HomeWorld";
 import { CashAlertCard } from "@/components/mobile/CashAlertCard";
-import { GoldNavChart, useBookNavHistory } from "@/components/mobile/GoldNavChart";
+import {
+  GoldNavChart,
+  useBookNavHistory,
+  type NavPoint,
+} from "@/components/mobile/GoldNavChart";
 import {
   Card,
   MicroLabel,
@@ -37,7 +40,7 @@ import {
   saveVisitSnapshot,
   type VisitDiff,
 } from "@/lib/visit-diff";
-import { ArrowRight, MessageCircle, Radar } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -76,15 +79,16 @@ type Props = {
 function MobileHomeHero({
   totals,
   alerts,
+  points,
   onOpenCash,
   onOpenAlerts,
 }: {
   totals: OverviewModel["totals"];
   alerts: UpsideAlert[];
+  points: NavPoint[];
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
 }) {
-  const points = useBookNavHistory(totals.totalValue);
   const up = totals.roiPct >= 0;
   return (
     <div className="md:hidden">
@@ -113,38 +117,6 @@ function MobileHomeHero({
         onOpenAlerts={onOpenAlerts}
       />
     </div>
-  );
-}
-
-function BookNavSpark({ liveNav }: { liveNav: number }) {
-  const [points, setPoints] = useState<number[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch("/api/book/nav-history")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { points?: { nav: number }[] } | null) => {
-        if (cancelled) return;
-        const navs = (data?.points ?? []).map((p) => p.nav);
-        if (liveNav > 0) navs.push(liveNav);
-        setPoints(navs.length >= 2 ? navs : null);
-      })
-      .catch(() => {
-        if (!cancelled) setPoints(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [liveNav]);
-
-  if (!points) return null;
-  return (
-    <Sparkline
-      points={points}
-      width={72}
-      height={22}
-      className="mt-1"
-    />
   );
 }
 
@@ -472,6 +444,8 @@ export function OverviewDashboard({
     [model, activeAlerts, coveredCallRows, hideOptions, guest, onOpenPulse]
   );
 
+  const navPoints = useBookNavHistory(totals.totalValue);
+
   const movers = useMemo(() => {
     if (moverHorizon === "today") {
       return [
@@ -532,6 +506,7 @@ export function OverviewDashboard({
       <MobileHomeHero
         totals={totals}
         alerts={activeAlerts}
+        points={navPoints}
         onOpenCash={onOpenCash}
         onOpenAlerts={onOpenAlerts}
       />
@@ -545,7 +520,6 @@ export function OverviewDashboard({
         <div className="relative">
           <PanelHeader
             hero
-            icon={<Radar className="h-4 w-4" />}
             title="Today"
             actions={
               <>
@@ -553,7 +527,7 @@ export function OverviewDashboard({
                   <button
                     type="button"
                     onClick={onAskMargus}
-                    className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 hover:border-brand/50 hover:text-white"
+                    className="btn-secondary"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
                     Ask Margus
@@ -575,16 +549,12 @@ export function OverviewDashboard({
             }
           />
 
-          {/* The only place today's dollar move is stated. */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div>
-              <Stat
-                label="Book"
-                value={currency(totals.totalValue, 0)}
-                sub={plural(totals.sheetCount, "sheet")}
-              />
-              <BookNavSpark liveNav={totals.totalValue} />
-            </div>
+            <Stat
+              label="Book"
+              value={currency(totals.totalValue, 0)}
+              sub={plural(totals.sheetCount, "sheet")}
+            />
             <Stat
               label="Today"
               value={signedCurrency(totals.todayDollar)}
@@ -608,24 +578,33 @@ export function OverviewDashboard({
             />
           </div>
 
-          <ul className="mt-6 space-y-3">
-            {briefing.map((b) => (
-              <li key={b.id}>
-                <BriefingCard
-                  kind={b.kind}
-                  ticker={b.ticker}
-                  title={b.title}
-                  detail={b.detail}
-                  link={b.link}
-                  navigable={canFollowBriefingLink(b.link)}
-                  onNavigate={handleBriefingNavigate}
-                />
-              </li>
-            ))}
-          </ul>
+          <GoldNavChart points={navPoints} className="mt-6" />
+        </div>
+      </Panel>
+
+      {(briefing.length > 0 ||
+        Boolean(visitDiff && visitDiff.lines.length > 0)) && (
+        <Panel className="overview-fade hidden md:block">
+          {briefing.length > 0 && (
+            <ul className="space-y-3">
+              {briefing.map((b) => (
+                <li key={b.id}>
+                  <BriefingCard
+                    kind={b.kind}
+                    ticker={b.ticker}
+                    title={b.title}
+                    detail={b.detail}
+                    link={b.link}
+                    navigable={canFollowBriefingLink(b.link)}
+                    onNavigate={handleBriefingNavigate}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
 
           {visitDiff && visitDiff.lines.length > 0 && (
-            <Card className="mt-6">
+            <Card className={briefing.length > 0 ? "mt-6" : undefined}>
               <MicroLabel>While you were away</MicroLabel>
               <p className="mt-0.5 text-xs text-zinc-400">
                 Since{" "}
@@ -654,8 +633,8 @@ export function OverviewDashboard({
               </ul>
             </Card>
           )}
-        </div>
-      </Panel>
+        </Panel>
+      )}
 
       <Panel className="overview-fade">
         <PanelHeader

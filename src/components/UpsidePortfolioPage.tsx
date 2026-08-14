@@ -875,7 +875,7 @@ export function UpsidePortfolioPage() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-black text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#16120c_0%,_#0C1014_55%)]">
+    <div className="min-h-dvh bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
       <MobileChrome title="Upside Fund" active="explore" />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span

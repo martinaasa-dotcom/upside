@@ -258,8 +258,8 @@ function DualPathChart({
       >
         <defs>
           <linearGradient id="dualPathGap" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10B981" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#10B981" stopOpacity="0.03" />
+            <stop offset="0%" stopColor="#D6AD69" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#D6AD69" stopOpacity="0.03" />
           </linearGradient>
         </defs>
 
@@ -339,7 +339,7 @@ function DualPathChart({
         <polyline
           points={toPoints(active)}
           fill="none"
-          stroke="#10B981"
+          stroke="#D6AD69"
           strokeWidth="2.5"
         />
 
@@ -359,8 +359,8 @@ function DualPathChart({
               cx={xAt(hoverIdx)}
               cy={yAt(active[hoverIdx] ?? 0)}
               r="4"
-              fill="#10B981"
-              stroke="#0a0a0b"
+              fill="#D6AD69"
+              stroke="#08090C"
               strokeWidth="1.5"
             />
             <circle
@@ -368,7 +368,7 @@ function DualPathChart({
               cy={yAt(stay[hoverIdx] ?? 0)}
               r="4"
               fill="#71717a"
-              stroke="#0a0a0b"
+              stroke="#08090C"
               strokeWidth="1.5"
             />
           </g>
@@ -376,7 +376,7 @@ function DualPathChart({
       </svg>
       {hoverIdx != null && (
         <div
-          className="pointer-events-none absolute top-2 rounded-md border border-zinc-700 bg-zinc-900/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
+          className="pointer-events-none absolute top-2 rounded-md border border-white/10 bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
           style={{
             left: `${Math.min(
               82,
@@ -386,7 +386,7 @@ function DualPathChart({
           }}
         >
           <p className="font-semibold text-white">Year {hoverIdx}</p>
-          <p className="tabular-nums text-gain">
+          <p className="tabular-nums text-brand">
             Plan: {money(active[hoverIdx] ?? 0, currency, eurUsd, 0)}
           </p>
           <p className="tabular-nums text-zinc-400">

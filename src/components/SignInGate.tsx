@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import {
   PRODUCT_BLURB,
@@ -10,6 +11,7 @@ import {
   SIGNIN_WHO,
 } from "@/lib/product";
 import { supabaseIsConfigured } from "@/lib/supabase/env";
+import { pickLoadingMessage } from "@/lib/loading-messages";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -31,6 +33,7 @@ export function SignInGate({ children }: Props) {
   const [deletedNotice, setDeletedNotice] = useState<"full" | "data" | null>(
     null
   );
+  const [loadingMessage] = useState(pickLoadingMessage);
   const needsAuth = supabaseIsConfigured();
 
   useEffect(() => {
@@ -44,16 +47,7 @@ export function SignInGate({ children }: Props) {
   }, []);
 
   if (!needsAuth) return <>{children}</>;
-  if (!ready) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-app px-6">
-        <UpsideLogo variant="stack" />
-        <p className="sr-only" role="status">
-          Checking sign-in
-        </p>
-      </div>
-    );
-  }
+  if (!ready) return <DashboardLoading message={loadingMessage} />;
   if (user) return <>{children}</>;
 
   async function onSignIn() {

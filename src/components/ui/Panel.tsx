@@ -274,7 +274,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
       {open && (
         <span
           role="tooltip"
-          className="absolute left-1/2 top-full z-30 mt-1 w-48 -translate-x-1/2 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-normal normal-case leading-relaxed tracking-normal text-zinc-200 shadow-xl"
+          className="absolute left-1/2 top-full z-30 mt-1 w-48 -translate-x-1/2 rounded-lg border border-white/10 bg-card px-3 py-2 text-xs font-normal normal-case leading-relaxed tracking-normal text-zinc-200 shadow-xl"
         >
           {text}
         </span>
@@ -304,7 +304,7 @@ export function Stat({
   return (
     <div
       className={cn(
-        "rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-4 py-3.5",
+        "rounded-xl border border-white/10 bg-app/40 px-4 py-3.5",
         className
       )}
     >
@@ -354,7 +354,7 @@ export function Segmented<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 rounded-lg border border-zinc-700 bg-zinc-950/50 p-0.5",
+        "inline-flex shrink-0 rounded-lg border border-white/10 bg-app/50 p-0.5",
         className
       )}
     >

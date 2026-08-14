@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = join(root, "Images", "upside favicon.png");
-const BG = "#0C1014";
+const BG = "#08090C";
 
 mkdirSync(join(root, "public", "icons"), { recursive: true });
 
