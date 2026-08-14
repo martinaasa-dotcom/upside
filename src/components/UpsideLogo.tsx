@@ -29,11 +29,18 @@ const MARK_FACETS: { points: string; hi: string; lo: string }[] = [
   { points: "13.82,69.67 24.15,87.86 3.00,87.86", hi: "#b38e61", lo: "#764b1e" },
 ];
 
-function UpsideMark({ className }: { className?: string }) {
+function UpsideMark({
+  className,
+  /** Crop to the drawn A so splash sizes are visual size, not padded square. */
+  tight = false,
+}: {
+  className?: string;
+  tight?: boolean;
+}) {
   const uid = useId().replace(/:/g, "");
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox={tight ? "3 12 94 76" : "0 0 100 100"}
       className={cn("block shrink-0", className)}
       fill="none"
       aria-hidden
@@ -103,11 +110,11 @@ export function UpsideLogo({
         role="img"
         aria-label={title}
       >
-        <UpsideMark className="h-16 w-16" />
-        <span className="mt-5 font-logo text-4xl font-bold uppercase leading-none tracking-wide text-white">
+        <UpsideMark tight className="h-[10.5rem] w-[13rem]" />
+        <span className="mt-10 font-logo text-[2.75rem] font-bold uppercase leading-none tracking-[0.08em] text-white">
           Upside
         </span>
-        <span className="mt-2.5 font-logo text-sm font-normal uppercase leading-none tracking-wide text-white">
+        <span className="mt-4 font-logo text-[2.05rem] font-normal uppercase leading-none tracking-[0.2em] text-white">
           Lab
         </span>
       </span>
