@@ -448,12 +448,12 @@ export function buildNarrative(result: CompoundResult): string[] {
 
   const lines: string[] = [
     pick(rng, [
-      `Path: ${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Structural compounding, not a straight line.`,
+      `Path: ${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Slow at first, then not.`,
       `${fmt(result.principal)} becomes ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Slow at first, then not slow at all.`,
-      `Over ${formatHorizon(result.durationYears)}, ${fmt(result.principal)} compounds into ${fmt(result.futureValue)}. The curve is the point, not the line.`,
+      `Over ${formatHorizon(result.durationYears)}, ${fmt(result.principal)} compounds into ${fmt(result.futureValue)}. Slow at first, then it isn't.`,
     ]),
     pick(rng, [
-      `Interest does ${fmt(result.totalInterest)} of the heavy lifting (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR). The math backs up the thesis.`,
+      `Interest does ${fmt(result.totalInterest)} of the work (${(result.allTimeRoR * 100).toFixed(0)}% all-time).`,
       `${fmt(result.totalInterest)} of the final number is interest, not principal. Compounding earned its keep (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR).`,
       `Of what you end up with, ${fmt(result.totalInterest)} came from the math, not your wallet (${(result.allTimeRoR * 100).toFixed(0)}% RoR).`,
     ]),

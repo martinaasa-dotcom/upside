@@ -387,7 +387,7 @@ export function ForecastPanel({
       <header className="border-b border-zinc-800/80 p-4 sm:p-6">
         <PanelHeader
           title="Forecast"
-          subtitle="Margus works out a price for each holding at the end of every year to 2030, and explains why. He rechecks monthly, and fills in anything you buy without redoing the whole sheet."
+          subtitle="A price for each holding at the end of every year to 2030, and why. Rechecks monthly. New buys get filled in without starting over."
           actions={
             <>
               <Segmented

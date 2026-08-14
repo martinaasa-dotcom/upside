@@ -659,7 +659,7 @@ export function CompoundInterestSheet({
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}
           title="Growth calculator"
-          subtitle="Four numbers in, one picture out. Change anything and the whole page follows along. This is arithmetic, not a prediction."
+          subtitle="Four numbers in. Everything below is just the math."
           actions={
             <Segmented
               ariaLabel="Show amounts in"
@@ -1087,7 +1087,7 @@ Optimistic (25%)
           />
           <p className="text-xs leading-relaxed text-zinc-400">
             {shock === "none"
-              ? "The same return every year. Real markets never do this, which is the point of the other two."
+              ? "The same return every year. Markets don't do that. Try Crash first or Slow start to see the difference."
               : shock === "drawdown30"
                 ? "Loses 30% in year one, then grows at your rate. Same average, worse ending, because the crash hits the biggest balance you had."
                 : "Two flat years before anything happens. Those two years cost you more than they look like."}
@@ -1103,7 +1103,7 @@ Optimistic (25%)
           <PanelHeader
             hero
             title={`Where ${durationLabel} of this gets you`}
-            subtitle="One arithmetic answer to the numbers on the left. Change any of them and everything below moves."
+            subtitle="The answer to the numbers on the left. Change any of them and this moves."
             actions={
               <button
                 type="button"
@@ -1413,7 +1413,7 @@ Optimistic (25%)
           <PanelHeader
             icon={<Zap className="h-4 w-4" />}
             title="The same money, invested differently"
-            subtitle="Your starting amount over the same years, at rates other people would call reasonable. The spread between them is the whole argument about which rate to assume."
+            subtitle="Same starting money, different rates. That's why the rate you pick matters."
           />
           {compareTakeaway && (
             <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm leading-relaxed text-brand-bright">
@@ -1447,7 +1447,7 @@ Optimistic (25%)
           <PanelHeader
             icon={<Sparkles className="h-4 w-4" />}
             title="What this actually tells you"
-            subtitle="The handful of things worth taking away from the numbers above."
+            subtitle="What the numbers are saying."
           />
           <ul className="mt-3 space-y-2">
             {narrative.map((line) => (

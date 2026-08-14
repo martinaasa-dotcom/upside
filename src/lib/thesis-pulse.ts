@@ -379,7 +379,7 @@ function asEnum<T extends string>(
 }
 
 const DEFAULT_THESIS_BREAK =
-  "The story breaks if the reason you own this is gone: lost the customer, a restatement, or guidance that kills the multi-year case. A quiet session in either direction is not that.";
+  "This breaks if the reason you own it disappears. Lost the customer, a restatement, or guidance that kills the multi-year case. A quiet day is not that.";
 
 /**
  * Cached Pulse rows went through a sanitizer that title-cased enums
@@ -423,7 +423,8 @@ export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
     .join(" ")
     .toLowerCase();
   const soundsIntact =
-    /no stress signal/.test(copy) && /normal monitoring/.test(copy);
+    (/no stress signal/.test(copy) && /normal monitoring/.test(copy)) ||
+    (/nothing unusual/.test(copy) && /no reason to change/.test(copy));
 
   let thesisStatus = n.thesisStatus;
   let action = n.action;
@@ -460,17 +461,16 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     return {
       ticker: candidate.ticker,
       situation: [
-        "Momentum is running hot.",
-        "Price action looks stretched versus a normal day range.",
+        "It's running hot.",
+        "This looks stretched for a normal day.",
       ],
-      moveReason:
-        "Likely momentum/euphoria extension rather than a thesis reset.",
+      moveReason: "Looks like a chase, not a new story.",
       thesisStatus: "watch",
       earningsNote: "",
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: `Take profit discipline: trim ${trimPct}% into strength and keep the core position for the long thesis.`,
+      verdict: `Trim about ${trimPct}% into the strength. Keep the rest.`,
       thesisBreak: DEFAULT_THESIS_BREAK,
     };
   }
@@ -480,8 +480,8 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     return {
       ticker: candidate.ticker,
       situation: [
-        "Sharp down move that warrants a thesis check.",
-        "No hard break confirmed from the price move alone.",
+        "Down hard enough to check the thesis.",
+        "Price alone doesn't mean the story broke.",
       ],
       moveReason: `${candidate.moveLabel} move is ${movePct}.`,
       thesisStatus: "intact",
@@ -492,7 +492,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
         candidate.price * 0.92
       ).toFixed(2)}`,
       verdict:
-        "If the thesis is intact, treat this as a buyable dip instead of an auto-sell signal.",
+        "If you still believe the story, this is a dip to add, not a sell.",
       thesisBreak: DEFAULT_THESIS_BREAK,
     };
   }
@@ -500,8 +500,8 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
   return {
     ticker: candidate.ticker,
     situation: [
-      "No stress signal from today's move.",
-      "Position stays in normal monitoring mode.",
+      "Nothing unusual today.",
+      "No reason to change the position.",
     ],
     moveReason: `${candidate.moveLabel} move is ${movePct}.`,
     thesisStatus: "intact",
@@ -509,7 +509,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     action: "hold",
     trimPct: null,
     addLevel: "",
-    verdict: "Hold and reassess on new catalysts, earnings, or thesis-changing news.",
+    verdict: "Hold. Come back if the story actually changes.",
     thesisBreak: DEFAULT_THESIS_BREAK,
   };
 }

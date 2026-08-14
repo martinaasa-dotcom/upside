@@ -704,7 +704,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
-          subtitle="Not every name. Pulse checks your ten biggest holdings, plus anything down 5% or more. Smaller names that aren't falling stay off this list unless you type them above."
+          subtitle="Not every name. Your ten biggest, plus anything down 5% or more. Smaller names that aren't falling stay off unless you search them."
           actions={
             <button
               type="button"

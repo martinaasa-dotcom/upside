@@ -130,7 +130,7 @@ export function HomeWorld({ className }: { className?: string }) {
     <Panel className={cn("overview-fade", className)}>
       <PanelHeader
         title="Around Upside"
-        subtitle="The paper Fund Margus runs in public, and the circles you compare books with. Separate from your own sheets."
+        subtitle="The Fund Margus runs in public, and the circles you share books with. Not your own sheets."
         icon={<Users className="h-4 w-4" />}
       />
       <div className="mt-4 grid gap-3 sm:grid-cols-2">

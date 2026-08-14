@@ -118,7 +118,7 @@ export function streakFlavor(streak: number): string {
   if (streak <= 0) return "No streak yet, today's a great day to start one.";
   if (streak === 1) return "Day 1. Historic. Frame it.";
   if (streak === 2) return "2 days. A tiny habit is forming.";
-  if (streak < 7) return `${streak}-day streak. The algorithm is proud of you.`;
+  if (streak < 7) return `${streak}-day streak. You're showing up.`;
   if (streak < 14) return `${streak} days straight. Certified degenerate (affectionate).`;
   if (streak < 30) return `${streak} days. Your broker knows your face by now.`;
   if (streak < 60) return `${streak}-day streak. This is basically a personality trait now.`;

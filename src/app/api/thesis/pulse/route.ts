@@ -121,7 +121,7 @@ ${fg}
 ### thesisStatus — start from intact. Watch and broken have to be earned
 - First write **thesisBreak**: the concrete thing that would invalidate the reason this is in the book. Falsifiable. Not "the price drops."
 - Then look at today's headlines and the move. **intact** unless those facts actually match the break list (watch) or show the break already happened (broken).
-- **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT thesis breaks. If your situation bullets say there's no stress / normal monitoring, thesisStatus MUST be intact.
+- **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT thesis breaks. If your situation bullets say nothing unusual happened, thesisStatus MUST be intact.
 - **watch**: something on the break list is starting to show up (a soft quarter, a competitive wrinkle, a guidance nuance) but the core story still holds.
 - **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the moat/thesis is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the thesis isn't broken, it's at most "watch".
 - Do not mark watch or broken just because you mentioned a risk. The risk has to be happening now.

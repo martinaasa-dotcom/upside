@@ -1090,8 +1090,8 @@ export function CommunityView({ communityId }: Props) {
                               Power animals
                             </h3>
                             <p className="mt-0.5 text-sm text-zinc-400">
-                              A playful read of how each book is built. Tap a
-                              person to open their sheets.
+                              How each book is built. Tap someone to open their
+                              sheets.
                             </p>
                           </div>
                         </div>
@@ -1172,9 +1172,9 @@ export function CommunityView({ communityId }: Props) {
                                   />
                                 </div>
                                 <p className="rounded-xl border border-zinc-800/60 bg-zinc-950/40 px-3 py-2 text-xs leading-relaxed text-zinc-400">
-                                  Spirit animal and risk band are a playful
-                                  read of the theme mix. The leaderboard above
-                                  is the real scoreboard.
+                                  Spirit animal and risk band are a read of the
+                                  mix. The leaderboard above is the actual
+                                  score.
                                 </p>
                                 <div>
                                   <div className="flex items-center justify-between gap-2 text-xs">
@@ -1445,8 +1445,8 @@ export function CommunityView({ communityId }: Props) {
                             What the circle owns
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Everyone&apos;s holdings pooled by theme. A fun
-                            fingerprint, not a target.
+                            Everyone&apos;s holdings pooled by theme. How the
+                            circle is built, not a recommendation.
                           </p>
                         </div>
                       </div>

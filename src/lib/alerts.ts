@@ -98,7 +98,7 @@ export function buildDecisionAlerts(input: {
       kind: "info",
       title: `${cashtag(input.topTicker.ticker)} is ${share.toFixed(0)}% of your stocks`,
       detail:
-        "One name this big means your year mostly rides on it. Fine if that's deliberate, worth knowing if it isn't.",
+        "One name this big means your year mostly rides on it. Fine if you meant it. A problem if you didn't.",
       ticker: input.topTicker.ticker,
       at: Date.now(),
     });

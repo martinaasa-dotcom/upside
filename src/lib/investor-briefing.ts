@@ -24,9 +24,9 @@ export type BriefingItem = {
 
 /** Plain-English labels. "action/watch/play" are codes, not UI. */
 export const BRIEFING_KIND_LABEL: Record<BriefingItem["kind"], string> = {
-  action: "Needs a look",
-  watch: "Worth knowing",
-  play: "Something to sit with",
+  action: "Look at this",
+  watch: "Note",
+  play: "A thought",
 };
 
 export const BRIEFING_PULSE_CTA = "Open Pulse";
@@ -82,9 +82,8 @@ function buildPlays(opts: {
   plays.push({
     id: `play-wait-${dayKey}`,
     kind: "play",
-    title: "Most days, the job is just watching",
-    detail:
-      "Nothing here needs action right now. Checking in daily is the habit worth keeping. Trading daily isn't.",
+    title: "Nothing to do today",
+    detail: "No trades needed. Checking in is enough.",
   });
 
   const equityHoldings = model.tickers
@@ -100,8 +99,8 @@ function buildPlays(opts: {
       kind: "play",
       title: `Mostly ${THEME_LABEL[personality.dominantTheme]}, ${personality.diversificationBand.label.toLowerCase()}`,
       detail: pick(rng, [
-        `${personality.diversificationBand.description} A playful read of the mix, not a forecast.`,
-        `Theme mix leans ${THEME_LABEL[personality.dominantTheme].toLowerCase()}. Fun label, not a target.`,
+        `${personality.diversificationBand.description} That's the mix, not a prediction.`,
+        `Mostly ${THEME_LABEL[personality.dominantTheme].toLowerCase()}. Just a read on how the book is built.`,
       ]),
     });
   }
@@ -116,8 +115,8 @@ function buildPlays(opts: {
       kind: "play",
       title: `$${money(remaining)} to your next milestone`,
       detail: pick(rng, [
-        `$${money(next)} is the next line on the ladder. No action needed, just time.`,
-        `Crossing $${money(next)} doesn't need a trade, just patience.`,
+        `$${money(next)} is next. Time gets you there, not a trade.`,
+        `$${money(remaining)} to go. No hurry.`,
       ]),
       link: { type: "compound" },
       cta: "Open Compound",
@@ -137,8 +136,8 @@ function buildPlays(opts: {
       kind: "play",
       title: `${cashtag(topMover.ticker)} is today's biggest mover, ${pct >= 0 ? "+" : ""}${pct1(pct)}`,
       detail: pick(rng, [
-        "Worth knowing why before you assume it's noise.",
-        "One name doing most of the day's talking. Worth a glance.",
+        "Look at why before you shrug it off.",
+        "That's the name making noise today.",
       ]),
       ticker: topMover.ticker,
       link: topMover.portfolioIds[0]
@@ -188,28 +187,28 @@ export function buildInvestorBriefing(input: {
       : swing! < 0.005
         ? "Quiet day"
         : swing! < 0.02
-          ? "Normal day, nothing unusual"
+          ? "Normal day"
           : today$ >= 0
             ? "Big day, in your favour"
             : "Rough day";
   const dayDetail =
     todayPct == null
-      ? "Quotes are still settling. Give it a minute, or just come back later."
+      ? "Quotes are still settling. Give it a minute, or come back later."
       : swing! < 0.005
-        ? "Barely moved. Days like this are most of them, and they're the point."
+        ? "Barely moved. Most days look like this."
         : swing! < 0.02
           ? pick(dayRng, [
-              "Inside the range a book like yours moves on any given day. Nothing to react to.",
-              "This is ordinary noise, not information. Watching is the whole job today.",
+              "A normal wobble. You don't need to do anything.",
+              "Small moves. Don't turn them into a decision.",
             ])
           : hideOptions
             ? pick(dayRng, [
-                "A move this size usually has one name behind it. Worth finding out which, and why.",
-                "Big enough to be worth a look. Check whether the story changed or just the price.",
+                "A move this size is usually one name. Pulse will show which.",
+                "Big enough to check. Did the story change, or just the price?",
               ])
             : pick(dayRng, [
-                "A move this size usually has one name behind it. Worth finding out which, and why.",
-                "Big enough to check on. If a call plan needs adjusting, today's the day it would.",
+                "A move this size is usually one name. Pulse will show which.",
+                "Big enough to check. If a call plan needs adjusting, it would be today.",
               ]);
 
   items.push({
@@ -243,8 +242,8 @@ export function buildInvestorBriefing(input: {
         kind: "watch",
         title: `About $${money(openPrem)} in call premium on paper`,
         detail: pick(rng, [
-          "Estimated from the strikes you've set. It isn't money in your account yet.",
-          "What your open calls would be worth if they ran to expiry. On paper, not banked.",
+          "From the strikes you set. Not in the account yet.",
+          "What those calls would be worth at expiry. On paper, not banked.",
         ]),
         link: ccSheetId ? { type: "sheet", portfolioId: ccSheetId } : undefined,
         cta: ccSheetId ? "Open covered calls" : undefined,
@@ -259,9 +258,9 @@ export function buildInvestorBriefing(input: {
       kind: "watch",
       title: `$${money(model.totals.cash)} sitting in cash`,
       detail: pick(rng, [
-        "Nothing wrong with that. Cash is doing its job by being ready. Boredom isn't a buy signal.",
-        "Idle on purpose beats forcing a mediocre entry. Wait for the dip you actually wanted.",
-        "It's ready when you are. Spending it because it's there is how good cash turns into a bad position.",
+        "Fine sitting there. Don't buy just because you're bored.",
+        "Keep it until you actually want the dip.",
+        "Ready when you are. Spending it because it's there is how cash becomes a bad position.",
       ]),
       link: sheetMostCash(model)
         ? { type: "sheet", portfolioId: sheetMostCash(model)! }

@@ -487,7 +487,7 @@ export function buildDailyFunFacts(
 
   while (out.length < 10) {
     push(
-      `Bonus bit #${out.length + 1} for ${dayKey}: the books are still weird and that’s the point.`
+      `Bonus bit #${out.length + 1} for ${dayKey}: still nothing wild happening.`
     );
   }
 

@@ -73,7 +73,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `${top.name} has the best lifetime record, up ${pct1(top.roiPct)} all-time.`,
       `Hall of fame: ${top.name} at ${pct1(top.roiPct)} lifetime ROI.`,
-      `${top.name} is quietly winning the long game: ${pct1(top.roiPct)} lifetime.`,
+      `${top.name} is still ahead on lifetime: ${pct1(top.roiPct)}.`,
     ]);
   },
   // Riskiest investor.

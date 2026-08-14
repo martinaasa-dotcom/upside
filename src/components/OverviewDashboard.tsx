@@ -146,8 +146,8 @@ function EmptyBook({
         Your book is empty. Let&apos;s fix that.
       </h2>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-        Add what you own. {PRODUCT_SENTENCE} Then you&apos;ll see what moved
-        and what needs a look.
+        Add what you own. {PRODUCT_SENTENCE} Then you&apos;ll see what moved,
+        and what to look at.
       </p>
 
       {routes.length > 0 && (
@@ -578,7 +578,7 @@ export function OverviewDashboard({
             hero
             icon={<Radar className="h-4 w-4" />}
             title="Today’s briefing"
-            subtitle="Where you stand, and the one or two things worth your attention."
+            subtitle="How the book is doing, in a few lines."
             actions={
               <>
                 {!guest && visitStreak && visitStreak.currentStreak > 0 && (
@@ -729,7 +729,7 @@ export function OverviewDashboard({
       <Panel className="overview-fade">
         <PanelHeader
           title="Movers"
-          subtitle="The biggest swings in your book, up and down."
+          subtitle="What moved the most."
           actions={
             <Segmented
               options={[
@@ -765,7 +765,7 @@ export function OverviewDashboard({
         <Panel className="overview-fade">
           <PanelHeader
             title="Your sheets"
-            subtitle="Bar length is size. Color is whether that sheet is up or down overall. Tap to open it."
+            subtitle="Bar length is size. Green or red is lifetime. Tap to open it."
           />
           <div className="mt-4 space-y-5">
             {sheets.map((sheet) => (

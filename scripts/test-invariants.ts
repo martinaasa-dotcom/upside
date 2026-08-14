@@ -90,9 +90,9 @@ run("Pulse CTA is offered when Pulse is reachable, even if Lab is hidden", () =>
 });
 
 run("briefing kinds use plain-English labels", () => {
-  assert.equal(BRIEFING_KIND_LABEL.action, "Needs a look");
-  assert.equal(BRIEFING_KIND_LABEL.watch, "Worth knowing");
-  assert.equal(BRIEFING_KIND_LABEL.play, "Something to sit with");
+  assert.equal(BRIEFING_KIND_LABEL.action, "Look at this");
+  assert.equal(BRIEFING_KIND_LABEL.watch, "Note");
+  assert.equal(BRIEFING_KIND_LABEL.play, "A thought");
 });
 
 run("options UI is hidden unless the viewer explicitly said yes", () => {

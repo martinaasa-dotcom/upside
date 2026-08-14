@@ -227,9 +227,9 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     emoji: "🦊",
     criteria: "The flexible middle ground",
     tagline: "Clever and adaptable, some offense, some defense, no dogma.",
-    vibe: "Doesn't fit neatly into any single box, and that's rather the point. Equal parts opportunistic and careful.",
+    vibe: "Some offense, some defense. Doesn't need a label.",
     strength: "Adaptable, ready to lean either way as the market shifts.",
-    watchFor: "Jack-of-all-trades can mean master of none, worth knowing what this book is actually FOR.",
+    watchFor: "Flexible can turn into unfocused. Know what this book is actually for.",
   },
 ];
 

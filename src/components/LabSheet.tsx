@@ -288,7 +288,7 @@ export function LabSheet({
         <PanelHeader
           icon={<FlaskConical className="h-4 w-4" />}
           title="Lab"
-          subtitle="Four ways of looking at what you already own. Nothing here places a trade."
+          subtitle="Different looks at what you already own. None of this places a trade."
           actions={
             <label className="flex items-center gap-2">
               <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
