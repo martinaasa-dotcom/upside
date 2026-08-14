@@ -24,7 +24,6 @@ import {
 } from "@/lib/upside-portfolio-cache";
 import type { Quote } from "@/lib/types";
 import {
-  Bot,
   ChevronDown,
   ChevronRight,
   Minus,
@@ -751,59 +750,50 @@ export function UpsidePortfolioPage() {
 
   return (
     <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_55%)] text-zinc-100">
-      <AppHeader title="Upside Fund" />
+      <AppHeader title="Upside Fund">
+        <span
+          className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
+          title="Prices follow the live print, including pre-market and after hours"
+        >
+          {quotesAt != null && (
+            <span
+              aria-hidden
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
+            />
+          )}
+          {freshnessLabel(quotesAt, nowMs)}
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            void load("manual");
+            void refreshBenchmarkValue();
+          }}
+          disabled={refreshing}
+          aria-label="Refresh prices"
+          className="touch-target inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </AppHeader>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))]">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
-            <Bot className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight text-white">
-                Upside Fund
-              </h1>
-              <div className="flex items-center gap-2">
-                <span
-                  className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
-                  title="Prices follow the live print, including pre-market and after hours"
-                >
-                  {quotesAt != null && (
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
-                    />
-                  )}
-                  {freshnessLabel(quotesAt, nowMs)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void load("manual");
-                    void refreshBenchmarkValue();
-                  }}
-                  disabled={refreshing}
-                  className="touch-target inline-flex items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
-                >
-                  <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
-                  Refresh
-                </button>
-              </div>
-            </div>
-            <p className="mt-1 text-sm text-zinc-400">
-              Paper money Margus trades in public. One decision a day, every
-              trade with a thesis, a timeline, and an exit plan. Watch it,
-              don&apos;t copy it.
-            </p>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Day {dayNumber} · started {fund ? fmtDate(fund.inception_date) : "—"}
-            </p>
-          </div>
+      <main className="mx-auto max-w-4xl space-y-6 px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <div>
+          <h1 className="sr-only">Upside Fund</h1>
+          <p className="text-sm leading-relaxed text-zinc-400">
+            One decision a day in public. Every trade has a thesis, a timeline,
+            and an exit plan.
+            <span className="text-zinc-500">
+              {" "}
+              Day {dayNumber}
+              {fund ? ` · started ${fmtDate(fund.inception_date)}` : ""}
+            </span>
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            {UPSIDE_PORTFOLIO_DISCLAIMER}
+          </p>
         </div>
-
-        <p className="rounded-xl border border-amber-500/25 bg-amber-950/15 px-3.5 py-2.5 text-xs leading-relaxed text-amber-200/90">
-          {UPSIDE_PORTFOLIO_DISCLAIMER}
-        </p>
 
         {loading ? (
           <p className="text-sm text-zinc-400">{loadingMessage}</p>
