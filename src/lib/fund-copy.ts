@@ -69,3 +69,45 @@ export function fundCopyBullets(text: string | null | undefined): string[] {
   }
   return out;
 }
+
+const RECAP_MAX = 6;
+const RECAP_WORDS = 18;
+
+function clipRecap(s: string): string {
+  const words = s.split(/\s+/);
+  if (words.length <= RECAP_WORDS) return s;
+  return words.slice(0, RECAP_WORDS).join(" ");
+}
+
+/**
+ * Daily / weekly fund prose as a short list. Works on stored paragraphs
+ * so old recaps tighten up without waiting for the next cron.
+ */
+export function recapBullets(text: string | null | undefined): string[] {
+  if (!text?.trim()) return [];
+  const chunks = text
+    .split(/\n+/)
+    .flatMap((line) => {
+      const stripped = line
+        .replace(/^[-*•]\s+/, "")
+        .replace(/\*+/g, "")
+        .trim();
+      if (!stripped) return [];
+      return stripped.split(/(?<=[.!?])\s+/);
+    })
+    .flatMap(splitClause)
+    .map(tidy)
+    .filter((s) => s.length >= 8)
+    .map(clipRecap);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const c of chunks) {
+    const key = c.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+    if (out.length >= RECAP_MAX) break;
+  }
+  return out;
+}

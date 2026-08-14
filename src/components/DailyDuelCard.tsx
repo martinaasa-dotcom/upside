@@ -10,6 +10,7 @@ import {
   getOrCreateTodaysDuel,
   loadDuelHistory,
   makeDuelPick,
+  pickTodaysDuel,
   resolvePendingOutcome,
   type DuelPick,
   type DuelRecord,
@@ -92,14 +93,46 @@ export function DailyDuelCard({
     }
   }, [communityId, record, pctByTicker, dayKey, canSettle]);
 
+  const instantPair = useMemo(
+    () => pickTodaysDuel(tickerList, dayKey, communityId ?? ""),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dayKey, communityId, tickerList.join("|")]
+  );
   const pair = communityId
-    ? community?.pair ?? null
+    ? community?.pair ?? instantPair
     : record
       ? { a: record.tickerA, b: record.tickerB }
-      : null;
+      : instantPair;
   const myPick = communityId ? (community?.myPick ?? null) : (record?.pick ?? null);
 
-  if (!pair) return null;
+  if (!pair) {
+    return (
+      <section
+        className={cn(
+          "overview-fade min-h-[13.5rem] rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4",
+          !compact && "sm:p-6"
+        )}
+      >
+        <div className="mb-3 flex items-center gap-2.5">
+          <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
+            <Swords className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Daily Duel</h3>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              {communityId
+                ? "The circle's pick. Who finishes the US session higher."
+                : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-[5.5rem] rounded-2xl border border-zinc-800 bg-zinc-950/40" />
+          <div className="h-[5.5rem] rounded-2xl border border-zinc-800 bg-zinc-950/40" />
+        </div>
+      </section>
+    );
+  }
 
   function pick(choice: DuelPick) {
     if (communityId) {
@@ -162,7 +195,7 @@ export function DailyDuelCard({
   return (
     <section
       className={cn(
-        "overview-fade rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4",
+        "overview-fade min-h-[13.5rem] rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4",
         !compact && "sm:p-6"
       )}
     >

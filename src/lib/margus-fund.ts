@@ -57,7 +57,7 @@ const fundDecisionSchema = z.object({
   marketNote: z
     .string()
     .describe(
-      "1-2 sentences on the broad tape today relevant to this book specifically -- not a generic market wrap."
+      "One short sentence on the tape as it hits this book. Not a generic wrap."
     ),
   holdingDecisions: z
     .array(
@@ -116,7 +116,7 @@ const fundDecisionSchema = z.object({
   closingNote: z
     .string()
     .describe(
-      "1-2 sentences closing today's report -- what you're watching next. Short."
+      "One short sentence: what you are watching next."
     ),
   watchlist: z
     .array(
@@ -182,7 +182,7 @@ const weeklyRecapSchema = z.object({
   body: z
     .string()
     .describe(
-      "4-8 sentences: a genuine step back on how the week went. Your biggest win, your biggest miss or lesson, how the numbers below shaped your thinking, and what you're specifically watching next week. This is the reflection, not a re-listing of each day's actions."
+      "4-6 short bullets, each starting with '- '. First bullets: what you did and what moved. Last 1-2: what you are watching next week. No paragraphs. Each bullet under 16 words."
     ),
 });
 
@@ -196,7 +196,7 @@ export function buildWeeklyRecapSystemPrompt(): string {
   return `${MARGUS_PERSONA}
 
 ## This specific job: your weekly step-back
-Once a week (Friday's close) you write a short, honest recap of your own paper portfolio's week. Not a re-listing of each day's trades, but a genuine reflection: what you got right, what you got wrong or would do differently, how you stack up against SPY, and what specifically you're watching next week. The numbers below are already computed and correct; don't recompute or contradict them, just make sense of them in your own voice. Keep it short: this gets read once a week, not once a day, but it should still feel like a real strategist thinking out loud, not a template.`;
+Once a week (Friday's close) you write a short recap of your paper book. Bullets only. What you did, what moved, what you are watching next week. No paragraphs, no throat-clearing. The numbers below are already computed and correct; don't recompute or contradict them.`;
 }
 
 export function buildWeeklyRecapUserPrompt(input: {

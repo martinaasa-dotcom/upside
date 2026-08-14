@@ -693,11 +693,11 @@ export function CommunityView({ communityId }: Props) {
     if (mostThemes.personality!.themeCount >= 2) {
       out.push({
         id: "themes",
-        emoji: "🐙",
+        emoji: "🗺️",
         title: "Most habitats",
         winner: mostThemes.name,
         stat: `${mostThemes.personality!.themeCount} themes`,
-        description: "The book with a tentacle in the most ponds.",
+        description: "Lives in the most themes at once.",
       });
     }
 
@@ -707,7 +707,7 @@ export function CommunityView({ communityId }: Props) {
     if (mostCash.personality!.cashPct >= 8) {
       out.push({
         id: "dry-powder",
-        emoji: "🐿️",
+        emoji: "💧",
         title: "Driest powder",
         winner: mostCash.name,
         stat: `${mostCash.personality!.cashPct}% cash`,
@@ -723,7 +723,7 @@ export function CommunityView({ communityId }: Props) {
     if (mostSpecialist) {
       out.push({
         id: "specialist",
-        emoji: "🐼",
+        emoji: "⬡",
         title: "One-theme diet",
         winner: mostSpecialist.name,
         stat: `${mostSpecialist.personality!.specialistScore}%`,
@@ -747,11 +747,11 @@ export function CommunityView({ communityId }: Props) {
       });
       out.push({
         id: "small-mighty",
-        emoji: "🐜",
+        emoji: "🌱",
         title: "Small but Mighty",
         winner: smallestBook.name,
         stat: currency(smallestBook.totalValue, 0),
-        description: "Smallest book, every family tree has a sapling.",
+        description: "Smallest book. Every family tree has a sapling.",
       });
     }
 
@@ -1204,7 +1204,7 @@ export function CommunityView({ communityId }: Props) {
                           <span className="hidden sm:inline">Field guide</span>
                         </button>
                       </div>
-                      <div className="grid gap-5 lg:grid-cols-2">
+                      <div className="grid gap-6 lg:grid-cols-2">
                         {membersWithBooks.map((m) => (
                           <PowerAnimalCard
                             key={m.id}
@@ -2267,7 +2267,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "relative overflow-hidden rounded-2xl border p-4 pl-5 text-left transition hover:brightness-110",
+        "relative overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 sm:p-6 sm:pl-7",
         tone.border,
         tone.wash
       )}
@@ -2276,10 +2276,10 @@ function PowerAnimalCard({
         className={cn("absolute inset-y-0 left-0 w-1.5", tone.bar)}
         aria-hidden
       />
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         <span
           className={cn(
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl",
+            "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-2xl",
             tone.well
           )}
           aria-hidden
@@ -2302,7 +2302,7 @@ function PowerAnimalCard({
                   </span>
                 )}
               </p>
-              <p className={cn("mt-0.5 text-base font-semibold", tone.name)}>
+              <p className={cn("mt-1 text-base font-semibold", tone.name)}>
                 {personality?.animal ?? "No book yet"}
               </p>
             </div>
@@ -2314,56 +2314,65 @@ function PowerAnimalCard({
       </div>
 
       {personality && (
-        <div className="mt-3 space-y-3">
+        <div className="mt-5 space-y-5">
           <p className="text-sm leading-relaxed text-zinc-300">
             {personality.whyThisAnimal}
           </p>
-          <div className="space-y-1 text-xs leading-relaxed">
-            <p className="flex gap-1.5 text-emerald-300/90">
-              <Shield className="mt-0.5 h-3 w-3 shrink-0" />
+          <div className="space-y-2 text-xs leading-relaxed">
+            <p className="flex gap-2 text-emerald-300/90">
+              <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{personality.archetype.strength}</span>
             </p>
-            <p className="flex gap-1.5 text-amber-300/90">
-              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+            <p className="flex gap-2 text-amber-300/90">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{personality.archetype.watchFor}</span>
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            <span className="rounded-md bg-black/25 px-2 py-1 text-xs tabular-nums text-zinc-300">
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
               Spread {Math.round(personality.diversificationScore)}
             </span>
-            <span className="rounded-md bg-black/25 px-2 py-1 text-xs tabular-nums text-zinc-300">
+            <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
               Risk {Math.round(personality.riskScore)}
             </span>
-            <span className="rounded-md bg-black/25 px-2 py-1 text-xs tabular-nums text-zinc-300">
+            <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
               {personality.topTicker
                 ? `${cashtag(personality.topTicker)} ${personality.convictionScore}%`
                 : `Conviction ${personality.convictionScore}%`}
             </span>
           </div>
 
-          <p className="text-xs text-zinc-400">
-            <span className="tabular-nums text-zinc-200">
-              {personality.expectedAnnualReturnPct.toFixed(1)}%
-            </span>{" "}
-            a year
-            <span className="mx-1.5 text-zinc-600">·</span>
-            <span className="tabular-nums text-loss">
-              {personality.maxDrawdownPct}%
-            </span>{" "}
-            stretch
-            <span className="mx-1.5 text-zinc-600">·</span>
-            <span
-              className={cn(
-                "tabular-nums",
-                signedTone(personality.modeledAlphaPct, "text-zinc-200")
-              )}
-            >
-              {signedPctPoints(personality.modeledAlphaPct)}
-            </span>{" "}
-            vs index
-          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-black/20 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-zinc-500">
+                Modeled year
+              </p>
+              <p className="mt-1 text-sm tabular-nums text-zinc-200">
+                {personality.expectedAnnualReturnPct.toFixed(1)}% a year
+              </p>
+              <p
+                className={cn(
+                  "mt-1 text-xs tabular-nums",
+                  signedTone(personality.modeledAlphaPct, "text-zinc-400")
+                )}
+              >
+                {signedPctPoints(personality.modeledAlphaPct)} vs index
+              </p>
+            </div>
+            <div className="rounded-xl bg-black/20 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-zinc-500">
+                Stretch (a rough bad year)
+              </p>
+              <p className="mt-1 text-sm tabular-nums text-loss">
+                {personality.maxDrawdownPct}%
+              </p>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                How far these themes have fallen in ugly years. Illustrative,
+                not a forecast.
+              </p>
+            </div>
+          </div>
 
           {milestone.next != null && (
             <div>

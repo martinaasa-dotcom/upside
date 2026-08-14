@@ -18,7 +18,7 @@ export function StaleQuotesBanner({
     updatedAt != null
       ? Math.floor((Date.now() - updatedAt) / 60000)
       : null;
-  const stale = delayed || (ageMin != null && ageMin >= 15);
+  const stale = ageMin != null && ageMin >= 30;
   if (!stale && missingTickers.length === 0) return null;
 
   return (
@@ -35,7 +35,10 @@ export function StaleQuotesBanner({
           <span>
             Quotes may be stale
             {ageMin != null ? ` (${ageMin}m since last refresh)` : ""}
-            {delayed ? " · provider delayed flag" : ""}.
+            {delayed && ageMin != null && ageMin >= 30
+              ? " · provider delayed flag"
+              : ""}
+            .
           </span>
         )}
         {missingTickers.length > 0 && (

@@ -20,7 +20,7 @@ import {
   liveFundTodayMove,
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
-import { fundCopyBullets } from "@/lib/fund-copy";
+import { fundCopyBullets, recapBullets } from "@/lib/fund-copy";
 import {
   sanitizeFundWatchlist,
   type FundWatchItem,
@@ -33,9 +33,6 @@ import { todayKeyInTz } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
   portfolioLiveValue,
-  portfolioValueOnDate,
-  priorNySessionKey,
-  quotesCoverDate,
   sheetReturnPathSince,
 } from "@/lib/sheet-mark";
 import {
@@ -62,7 +59,82 @@ type MyPortfolioBenchmark = {
   baselineDate: string;
   userBaselineValue: number;
   margusBaselineValue: number;
+  /** YTD assumed path. Older pins without this were same-day and look flat. */
+  range?: "ytd";
 };
+
+type YtdNavPoint = { date: string; nav: number };
+
+function yearStartKey(): string {
+  return `${new Date().getFullYear()}-01-01`;
+}
+
+function returnPctFromNav(
+  points: YtdNavPoint[],
+  live?: number | null
+): { labels: string[]; pcts: number[] } {
+  if (points.length < 2) return { labels: [], pcts: [] };
+  const start = points[0]!.nav;
+  if (!(start > 0)) return { labels: [], pcts: [] };
+  const labels = points.map((p) => p.date);
+  const pcts = points.map((p) => (p.nav - start) / start);
+  if (live != null && Number.isFinite(live)) {
+    labels.push("Live");
+    pcts.push((live - start) / start);
+  }
+  return { labels, pcts };
+}
+
+function pctOnOrBefore(
+  points: YtdNavPoint[],
+  date: string,
+  startNav: number
+): number {
+  if (!(startNav > 0)) return 0;
+  let last = 0;
+  for (const p of points) {
+    if (p.date <= date) last = (p.nav - startNav) / startNav;
+  }
+  return last;
+}
+
+function margusOnLabels(
+  labels: string[],
+  reports: ReportRow[],
+  live: number
+): number[] {
+  const chrono = [...reports].reverse();
+  return labels.map((d) => {
+    if (d === "Live") return live;
+    let last = 0;
+    for (const r of chrono) {
+      if (r.report_date <= d) last = r.total_return_pct ?? 0;
+    }
+    return last;
+  });
+}
+
+async function fetchYtdPaths(
+  cash: number,
+  positions: { ticker: string; shares: number }[]
+): Promise<{ sheet: YtdNavPoint[]; spy: YtdNavPoint[] }> {
+  const res = await fetch("/api/book/nav-history", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      assumed: true,
+      cash,
+      positions,
+      includeSpy: true,
+    }),
+  });
+  if (!res.ok) return { sheet: [], spy: [] };
+  const data = (await res.json()) as {
+    points?: YtdNavPoint[];
+    spyPoints?: YtdNavPoint[];
+  };
+  return { sheet: data.points ?? [], spy: data.spyPoints ?? [] };
+}
 
 function loadStoredBenchmark(): MyPortfolioBenchmark | null {
   if (typeof window === "undefined") return null;
@@ -98,18 +170,6 @@ type MyHolding = {
   shares: number;
   buy_price: number;
 };
-
-function margusValueBefore(
-  pinDate: string,
-  reports: { report_date: string; portfolio_value: number }[],
-  startingCapital: number | null | undefined,
-  fallback: number
-): number {
-  const prior = reports.find((r) => r.report_date < pinDate);
-  if (prior && prior.portfolio_value > 0) return prior.portfolio_value;
-  if (startingCapital != null && startingCapital > 0) return startingCapital;
-  return fallback;
-}
 
 type FundRow = {
   cash: number;
@@ -249,10 +309,37 @@ function ReportDetail({ r }: { r: ReportRow }) {
           ))}
         </div>
       )}
-      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-400">
-        {humanizeMargusText(r.body)}
-      </p>
+      <RecapBody text={r.body} muted />
     </>
+  );
+}
+
+function RecapBody({
+  text,
+  muted = false,
+}: {
+  text: string;
+  muted?: boolean;
+}) {
+  const bullets = recapBullets(text);
+  if (bullets.length === 0) return null;
+  return (
+    <ul
+      className={cn(
+        "space-y-1.5 text-sm leading-relaxed",
+        muted ? "text-zinc-400" : "text-zinc-300"
+      )}
+    >
+      {bullets.map((b) => (
+        <li key={b} className="flex gap-2">
+          <span
+            aria-hidden
+            className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
+          />
+          <span>{b}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -379,6 +466,8 @@ export function UpsidePortfolioPage() {
   const [pickerSelection, setPickerSelection] = useState("");
   const [benchmarkBusy, setBenchmarkBusy] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  const [sheetYtd, setSheetYtd] = useState<YtdNavPoint[] | null>(null);
+  const [spyYtd, setSpyYtd] = useState<YtdNavPoint[] | null>(null);
   const [loadingMessage] = useState(pickLoadingMessage);
 
   const load = useCallback(async (mode: "initial" | "manual" | "background") => {
@@ -447,8 +536,6 @@ export function UpsidePortfolioPage() {
   );
 
   const latestReport = reports[0] ?? null;
-  const reportsRef = useRef(reports);
-  reportsRef.current = reports;
   const fundRef = useRef(fund);
   fundRef.current = fund;
   const oldestReport = reports[reports.length - 1] ?? null;
@@ -565,17 +652,30 @@ export function UpsidePortfolioPage() {
     return [...historical, spyReturnPct];
   }, [reports, spyReturnPct]);
 
+  const ytdSheetPath = useMemo(
+    () =>
+      sheetYtd && sheetYtd.length >= 2
+        ? returnPctFromNav(sheetYtd, benchmarkLiveValue)
+        : null,
+    [sheetYtd, benchmarkLiveValue]
+  );
+
   const comparisonLabels = useMemo(() => {
+    if (benchmark && ytdSheetPath && ytdSheetPath.labels.length >= 2) {
+      return ytdSheetPath.labels;
+    }
     const dates = [...reports].reverse().map((r) => r.report_date);
     return [...dates, "Live"];
-  }, [reports]);
+  }, [benchmark, ytdSheetPath, reports]);
 
   const youReturnSeries = useMemo(() => {
-    if (!benchmark || benchmarkLiveValue == null) return null;
+    if (!benchmark) return null;
+    if (ytdSheetPath && ytdSheetPath.pcts.length >= 2) return ytdSheetPath.pcts;
     const meta = myPortfolios?.find((p) => p.id === benchmark.portfolioId) ?? {
       id: benchmark.portfolioId,
       cash_balance: 0,
     };
+    if (benchmarkLiveValue == null) return null;
     const points = sheetReturnPathSince({
       labels: comparisonLabels,
       baselineDate: benchmark.baselineDate,
@@ -593,17 +693,38 @@ export function UpsidePortfolioPage() {
     comparisonLabels,
     myHoldings,
     myPortfolios,
+    ytdSheetPath,
   ]);
 
+  const spyYtdSeries = useMemo(() => {
+    if (!benchmark || !spyYtd || spyYtd.length < 2) return null;
+    const start = spyYtd[0]!.nav;
+    if (!(start > 0)) return null;
+    return comparisonLabels.map((d) => {
+      if (d === "Live") {
+        return spyLivePrice != null ? (spyLivePrice - start) / start : pctOnOrBefore(spyYtd, "9999-12-31", start);
+      }
+      return pctOnOrBefore(spyYtd, d, start);
+    });
+  }, [benchmark, spyYtd, comparisonLabels, spyLivePrice]);
+
+  const margusYtdSeries = useMemo(() => {
+    if (!benchmark || !ytdSheetPath) return null;
+    return margusOnLabels(comparisonLabels, reports, totalReturnPct);
+  }, [benchmark, ytdSheetPath, comparisonLabels, reports, totalReturnPct]);
+
   const comparisonSeries: ComparisonSeries[] = useMemo(() => {
+    const margusPts = margusYtdSeries ?? margusReturnSeries;
+    const spyPts = spyYtdSeries ?? spyReturnSeries;
     const rows: ComparisonSeries[] = [
-      { label: "Margus", color: SERIES_COLOR.margus, points: margusReturnSeries },
-      { label: "SPY", color: SERIES_COLOR.spy, points: spyReturnSeries },
+      { label: "Margus", color: SERIES_COLOR.margus, points: margusPts },
+      { label: "SPY", color: SERIES_COLOR.spy, points: spyPts },
     ];
     if (benchmark && youReturnSeries) {
-      const youDollar = benchmarkLiveValue != null
-        ? benchmarkLiveValue - benchmark.userBaselineValue
-        : null;
+      const youDollar =
+        benchmarkLiveValue != null
+          ? benchmarkLiveValue - benchmark.userBaselineValue
+          : null;
       rows.splice(1, 0, {
         label: benchmark.portfolioName,
         color: SERIES_COLOR.you,
@@ -616,7 +737,9 @@ export function UpsidePortfolioPage() {
     benchmark,
     benchmarkLiveValue,
     margusReturnSeries,
+    margusYtdSeries,
     spyReturnSeries,
+    spyYtdSeries,
     youReturnSeries,
   ]);
 
@@ -706,39 +829,32 @@ export function UpsidePortfolioPage() {
       setBenchmarkLiveValue(live);
       setBenchmarkQuotes(liveQuotes);
 
-      // Re-value the start from dated daily bars so a pin on Aug 12 still
-      // includes that day's move. The old path kept rewriting previousClose
-      // overnight and swallowed the session.
-      const startSession = priorNySessionKey(benchmark.baselineDate);
-      const covered = quotesCoverDate(
-        liveQuotes,
-        holdingsList,
-        meta.id,
-        startSession
-      );
-      const atStart = covered
-        ? portfolioValueOnDate(meta, holdingsList, liveQuotes, startSession)
-        : 0;
-      const margusStart = margusValueBefore(
-        benchmark.baselineDate,
-        reportsRef.current,
-        fundRef.current?.starting_capital,
-        benchmark.margusBaselineValue
-      );
-      if (
-        (covered &&
-          atStart > 0 &&
-          Math.abs(atStart - benchmark.userBaselineValue) > 1) ||
-        Math.abs(margusStart - benchmark.margusBaselineValue) > 1
-      ) {
-        const healed: MyPortfolioBenchmark = {
-          ...benchmark,
-          userBaselineValue:
-            covered && atStart > 0 ? atStart : benchmark.userBaselineValue,
-          margusBaselineValue: margusStart,
-        };
-        saveStoredBenchmark(healed);
-        setBenchmark(healed);
+      const positions = holdingsList
+        .filter((h) => h.portfolio_id === benchmark.portfolioId)
+        .map((h) => ({ ticker: h.ticker, shares: h.shares }));
+      const { sheet, spy } = await fetchYtdPaths(meta.cash_balance, positions);
+      if (sheet.length >= 2) {
+        setSheetYtd(sheet);
+        setSpyYtd(spy);
+        const janNav = sheet[0]!.nav;
+        const needsYtd =
+          benchmark.range !== "ytd" ||
+          benchmark.baselineDate === todayKeyInTz() ||
+          (janNav > 0 && Math.abs(janNav - benchmark.userBaselineValue) > 1);
+        if (needsYtd) {
+          const healed: MyPortfolioBenchmark = {
+            ...benchmark,
+            baselineDate: yearStartKey(),
+            userBaselineValue:
+              janNav > 0 ? janNav : benchmark.userBaselineValue,
+            margusBaselineValue:
+              fundRef.current?.starting_capital ??
+              benchmark.margusBaselineValue,
+            range: "ytd",
+          };
+          saveStoredBenchmark(healed);
+          setBenchmark(healed);
+        }
       }
     } catch {
       /* keep last-known value on transient failure, non-critical */
@@ -828,25 +944,20 @@ export function UpsidePortfolioPage() {
         myPortfolios,
         myHoldings
       );
-      const pinDate = todayKeyInTz();
-      const startSession = priorNySessionKey(pinDate);
-      const atStart = portfolioValueOnDate(
-        meta,
-        myHoldings,
-        liveQuotes,
-        startSession
-      );
+      const positions = myHoldings
+        .filter((h) => h.portfolio_id === pickerSelection)
+        .map((h) => ({ ticker: h.ticker, shares: h.shares }));
+      const { sheet, spy } = await fetchYtdPaths(meta.cash_balance, positions);
+      setSheetYtd(sheet.length >= 2 ? sheet : null);
+      setSpyYtd(spy.length >= 2 ? spy : null);
+      const janNav = sheet[0]?.nav ?? 0;
       const next: MyPortfolioBenchmark = {
         portfolioId: pickerSelection,
         portfolioName: meta.name,
-        baselineDate: pinDate,
-        userBaselineValue: atStart > 0 ? atStart : live,
-        margusBaselineValue: margusValueBefore(
-          pinDate,
-          reports,
-          fund?.starting_capital,
-          totalValue
-        ),
+        baselineDate: yearStartKey(),
+        userBaselineValue: janNav > 0 ? janNav : live,
+        margusBaselineValue: fund?.starting_capital ?? totalValue,
+        range: "ytd",
       };
       saveStoredBenchmark(next);
       setBenchmark(next);
@@ -864,7 +975,6 @@ export function UpsidePortfolioPage() {
     myHoldings,
     valueForPortfolio,
     totalValue,
-    reports,
     fund?.starting_capital,
   ]);
 
@@ -873,6 +983,8 @@ export function UpsidePortfolioPage() {
     setBenchmark(null);
     setBenchmarkLiveValue(null);
     setBenchmarkQuotes({});
+    setSheetYtd(null);
+    setSpyYtd(null);
     setPickerSelection("");
   }, []);
 
@@ -974,7 +1086,7 @@ export function UpsidePortfolioPage() {
                   </h2>
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
                     {benchmark
-                      ? `${benchmark.portfolioName} since ${fmtDate(benchmark.baselineDate)}. Percent from that day, not vs what you paid.`
+                      ? `${benchmark.portfolioName} this year, as if you held today's names. Margus from when the fund started. SPY from Jan 1.`
                       : "How the fund has moved versus the S&P 500, as a percent."}
                   </p>
                 </div>
@@ -1260,9 +1372,7 @@ export function UpsidePortfolioPage() {
                       <h3 className="text-base font-semibold text-white">
                         {humanizeMargusText(r.headline)}
                       </h3>
-                      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">
-                        {humanizeMargusText(r.body)}
-                      </p>
+                      <RecapBody text={r.body} />
                     </article>
                   ))}
                 </div>

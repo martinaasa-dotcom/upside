@@ -35,7 +35,7 @@ export function FluidRow({
   return (
     <div
       className={cn(
-        "col-span-full grid grid-cols-subgrid items-center justify-items-center border-b border-zinc-800/50",
+        "col-span-full box-border grid min-h-[2.75rem] grid-cols-subgrid items-center justify-items-center border-b border-zinc-800/50",
         className
       )}
     >

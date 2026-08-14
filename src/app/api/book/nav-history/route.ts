@@ -83,6 +83,7 @@ export async function POST(req: Request) {
     assumed?: boolean;
     cash?: number;
     positions?: AssumedPosition[];
+    includeSpy?: boolean;
   } = {};
   try {
     body = (await req.json()) as typeof body;
@@ -139,9 +140,21 @@ export async function POST(req: Request) {
     });
   }
 
+  let spyPoints: NavPoint[] | undefined;
+  if (body.includeSpy) {
+    const spyCloses = await fetchYtdDailyCloses(["SPY"]);
+    const spyPath = reconstructAssumedNav(
+      0,
+      [{ ticker: "SPY", shares: 1 }],
+      spyCloses
+    );
+    if (spyPath.length >= 2) spyPoints = spyPath;
+  }
+
   return NextResponse.json({
     points,
     assumed: true,
     firstRealDate: snaps.firstRealDate,
+    spyPoints,
   });
 }

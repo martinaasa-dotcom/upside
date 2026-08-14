@@ -1,13 +1,66 @@
 "use client";
 
 import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 export type NavPoint = { date: string; nav: number };
 
 export type AssumedPosition = { ticker: string; shares: number };
 
 const ASSUMED_PREF_KEY = "portfell-nav-assumed-ytd";
+const NAV_CACHE_KEY = "portfell-nav-history-v1";
+
+type NavCacheV1 = {
+  v: 1;
+  posKey: string;
+  assumed: boolean;
+  cash: number;
+  points: NavPoint[];
+  serverAssumed: boolean;
+  firstRealDate: string | null;
+};
+
+function fingerprintPositions(positions: AssumedPosition[]): string {
+  return positions
+    .map((p) => `${p.ticker.toUpperCase()}:${p.shares}`)
+    .sort()
+    .join("|");
+}
+
+function readNavCache(): NavCacheV1 | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(NAV_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as NavCacheV1;
+    if (parsed?.v !== 1 || !Array.isArray(parsed.points)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeNavCache(entry: NavCacheV1) {
+  try {
+    window.localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function cacheMatches(
+  c: NavCacheV1,
+  posKey: string,
+  assumed: boolean,
+  cash: number
+): boolean {
+  return (
+    c.posKey === posKey &&
+    c.assumed === assumed &&
+    Math.abs(c.cash - cash) < 0.5 &&
+    c.points.length >= 2
+  );
+}
 
 function loadAssumedPref(): boolean {
   if (typeof window === "undefined") return true;
@@ -38,24 +91,33 @@ export function useBookNavHistory(input: {
   discardAssumed: () => void;
   restoreAssumed: () => void;
 } {
+  const posKey = fingerprintPositions(input.positions);
   const [hist, setHist] = useState<NavPoint[]>([]);
   const [assumed, setAssumed] = useState(true);
   const [serverAssumed, setServerAssumed] = useState(false);
   const [firstRealDate, setFirstRealDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setAssumed(loadAssumedPref());
+  useLayoutEffect(() => {
+    const pref = loadAssumedPref();
+    setAssumed(pref);
+    const cached = readNavCache();
+    if (cached && cacheMatches(cached, posKey, pref, input.cash)) {
+      setHist(cached.points);
+      setServerAssumed(cached.serverAssumed);
+      setFirstRealDate(cached.firstRealDate);
+      setLoading(false);
+    }
+    // First client paint only. Later holding changes go through the fetch effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const posKey = input.positions
-    .map((p) => `${p.ticker.toUpperCase()}:${p.shares}`)
-    .sort()
-    .join("|");
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const painted = readNavCache();
+    const havePaint =
+      painted != null && cacheMatches(painted, posKey, assumed, input.cash);
+    if (!havePaint) setLoading(true);
     const body = assumed
       ? {
           assumed: true,
@@ -78,16 +140,32 @@ export function useBookNavHistory(input: {
           } | null
         ) => {
           if (cancelled) return;
-          setHist(data?.points ?? []);
-          setServerAssumed(Boolean(data?.assumed));
-          setFirstRealDate(data?.firstRealDate ?? null);
+          const next = data?.points ?? [];
+          const nextAssumed = Boolean(data?.assumed);
+          const nextFirst = data?.firstRealDate ?? null;
+          setHist(next);
+          setServerAssumed(nextAssumed);
+          setFirstRealDate(nextFirst);
           setLoading(false);
+          if (next.length >= 2) {
+            writeNavCache({
+              v: 1,
+              posKey,
+              assumed,
+              cash: input.cash,
+              points: next,
+              serverAssumed: nextAssumed,
+              firstRealDate: nextFirst,
+            });
+          }
         }
       )
       .catch(() => {
         if (cancelled) return;
-        setHist([]);
-        setServerAssumed(false);
+        if (!havePaint) {
+          setHist([]);
+          setServerAssumed(false);
+        }
         setLoading(false);
       });
     return () => {
@@ -354,7 +432,7 @@ export function GoldNavChart({
 
   return (
     <div className={className}>
-      <div className="mb-2 flex min-h-[3.25rem] items-end justify-center pl-11">
+      <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-11">
         {hoverPoint ? (
           <div className="rounded-lg border border-white/10 bg-zinc-950/90 px-2.5 py-1.5 text-center">
             <p className="text-xs text-zinc-400">{formatDay(hoverPoint.date)}</p>

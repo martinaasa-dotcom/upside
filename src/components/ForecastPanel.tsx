@@ -30,6 +30,7 @@ import { readJsonOrThrow } from "@/lib/http";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { isForecastFullyCovered } from "@/lib/forecast";
+import { INDEX_EOY_MULTS } from "@/lib/forecast-conviction";
 import { playbookBullets, type PlaybookBullet } from "@/lib/forecast-playbook";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
@@ -255,29 +256,42 @@ const cellNum =
 
 type SheetPathPoint = { label: string; value: number };
 
-function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
+function SheetPathChart({
+  points,
+  spyPoints,
+}: {
+  points: SheetPathPoint[];
+  spyPoints?: SheetPathPoint[];
+}) {
   const gid = useId().replace(/:/g, "");
   const width = 640;
-  const height = 148;
+  const height = 88;
   const padX = 10;
-  const padT = 14;
-  const padB = 10;
+  const padT = 8;
+  const padB = 8;
   const usable = points.filter((p) => Number.isFinite(p.value));
+  const spyUsable = (spyPoints ?? []).filter((p) => Number.isFinite(p.value));
   if (usable.length < 2) return null;
 
-  const vals = usable.map((p) => p.value);
+  const vals = [
+    ...usable.map((p) => p.value),
+    ...spyUsable.map((p) => p.value),
+  ];
   const min = Math.min(...vals);
   const max = Math.max(...vals);
   const span = max - min || 1;
   const innerW = width - padX * 2;
   const innerH = height - padT - padB;
-  const xAt = (i: number) =>
-    padX + (usable.length === 1 ? innerW / 2 : (i / (usable.length - 1)) * innerW);
+  const xAt = (i: number, len: number) =>
+    padX + (len === 1 ? innerW / 2 : (i / (len - 1)) * innerW);
   const yAt = (v: number) => padT + (1 - (v - min) / span) * innerH;
   const line = usable
-    .map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.value).toFixed(1)}`)
+    .map((p, i) => `${xAt(i, usable.length).toFixed(1)},${yAt(p.value).toFixed(1)}`)
     .join(" ");
-  const area = `${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} ${line} ${xAt(usable.length - 1).toFixed(1)},${(padT + innerH).toFixed(1)}`;
+  const spyLine = spyUsable
+    .map((p, i) => `${xAt(i, spyUsable.length).toFixed(1)},${yAt(p.value).toFixed(1)}`)
+    .join(" ");
+  const area = `${xAt(0, usable.length).toFixed(1)},${(padT + innerH).toFixed(1)} ${line} ${xAt(usable.length - 1, usable.length).toFixed(1)},${(padT + innerH).toFixed(1)}`;
   const last = usable[usable.length - 1];
 
   return (
@@ -285,19 +299,30 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label="Modeled sheet value from now through the last forecast year"
+      aria-label="Modeled sheet value versus expected SPY from now through the last forecast year"
     >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#D6AD69" stopOpacity="0.32" />
+          <stop offset="0" stopColor="#D6AD69" stopOpacity="0.28" />
           <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points={area} fill={`url(#${gid})`} />
+      {spyUsable.length >= 2 && (
+        <polyline
+          fill="none"
+          stroke="#818cf8"
+          strokeWidth={1.75}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          strokeDasharray="5 4"
+          points={spyLine}
+        />
+      )}
       <polyline
         fill="none"
         stroke="#D6AD69"
-        strokeWidth={2}
+        strokeWidth={1.75}
         strokeLinejoin="round"
         strokeLinecap="round"
         points={line}
@@ -305,18 +330,18 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
       {usable.map((p, i) => (
         <circle
           key={p.label}
-          cx={xAt(i)}
+          cx={xAt(i, usable.length)}
           cy={yAt(p.value)}
-          r={3.5}
+          r={2.5}
           fill="#08090C"
           stroke="#E8C989"
-          strokeWidth={2}
+          strokeWidth={1.5}
         />
       ))}
       <circle
-        cx={xAt(usable.length - 1)}
+        cx={xAt(usable.length - 1, usable.length)}
         cy={yAt(last.value)}
-        r={5}
+        r={4}
         fill="#E8C989"
       />
     </svg>
@@ -338,16 +363,23 @@ function SheetPath({
     { label: "Now", value: now },
     ...years.map((y) => ({ label: String(y), value: totals[y] })),
   ];
+  const spyPoints: SheetPathPoint[] = [
+    { label: "Now", value: now },
+    ...years.map((y, i) => ({
+      label: String(y),
+      value: now * (INDEX_EOY_MULTS[i] ?? INDEX_EOY_MULTS[INDEX_EOY_MULTS.length - 1]!),
+    })),
+  ];
   const end = points[points.length - 1];
 
   return (
-    <div className="mt-8 border-t border-white/5 pt-8">
+    <div className="mt-4 border-t border-white/5 pt-4">
       <div className="flex items-end justify-between gap-6">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             Now
           </p>
-          <p className="mt-2 font-heading text-2xl font-bold tabular-nums text-white sm:text-3xl">
+          <p className="mt-1 font-heading text-lg font-bold tabular-nums text-white sm:text-xl">
             {currency(now, 0)}
           </p>
         </div>
@@ -355,13 +387,13 @@ function SheetPath({
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             {end.label}
           </p>
-          <p className="mt-2 font-heading text-2xl font-bold tabular-nums text-white sm:text-3xl">
+          <p className="mt-1 font-heading text-lg font-bold tabular-nums text-white sm:text-xl">
             {currency(end.value, 0)}
           </p>
           {gainPct != null && (
             <p
               className={cn(
-                "mt-1.5 text-sm font-medium tabular-nums",
+                "mt-1 text-xs font-medium tabular-nums",
                 signedTone(gainPct)
               )}
             >
@@ -371,11 +403,24 @@ function SheetPath({
         </div>
       </div>
 
-      <div className="mt-6">
-        <SheetPathChart points={points} />
+      <div className="mt-3">
+        <SheetPathChart points={points} spyPoints={spyPoints} />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-0.5 w-3 rounded-full bg-[#D6AD69]" aria-hidden />
+          Your book
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className="h-px w-3 border-t border-dashed border-[#818cf8]"
+            aria-hidden
+          />
+          Expected SPY (~10% a year)
+        </span>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-x-4 gap-y-5 sm:grid-cols-6">
+      <div className="mt-4 grid grid-cols-3 gap-x-4 gap-y-3 sm:grid-cols-6">
         {points.map((p) => (
           <div key={p.label}>
             <p className="text-xs font-medium uppercase tracking-wide text-muted">
@@ -837,7 +882,7 @@ export function ForecastPanel({
               </FluidRow>
 
               {model.rows.map((r) => (
-                <FluidRow key={r.ticker} className="hover:bg-zinc-900/40">
+                <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-zinc-900/40">
                   <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
                     {cashtag(r.ticker)}
                     {!r.hasTargets && (
