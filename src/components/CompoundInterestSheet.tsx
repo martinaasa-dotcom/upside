@@ -649,9 +649,10 @@ export function CompoundInterestSheet({
   const isRateMatchedToPortfolio = Math.abs(draft.ratePercent - portfolioExpectedRatePct) < 0.05;
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
-      {/* Interactive Controls Sidebar */}
-      <Panel className="space-y-4 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
+      {/* min-h-0: grid items won't shrink below content, so overflow never starts. */}
+      <div className="min-h-0 lg:sticky lg:top-[4.25rem] lg:max-h-[calc(100dvh-4.25rem-7.5rem-env(safe-area-inset-bottom))] lg:overflow-y-auto lg:overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+        <Panel className="space-y-4 pb-8 lg:pb-4">
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}
           title="Growth calculator"
@@ -1089,7 +1090,8 @@ Optimistic (25%)
                 : "Two flat years before anything happens. Those two years cost you more than they look like."}
           </p>
         </Card>
-      </Panel>
+        </Panel>
+      </div>
 
       {/* Results & Projections Section */}
       <section className="space-y-5">

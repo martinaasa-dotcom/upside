@@ -2628,7 +2628,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-5 pb-[calc(7.5rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6 sm:pb-28 md:pb-24">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 py-5 pb-[calc(13rem+env(safe-area-inset-bottom))] sm:gap-5 sm:px-4 sm:py-6 sm:pb-28 md:pb-24">
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
