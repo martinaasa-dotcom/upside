@@ -1400,22 +1400,27 @@ Optimistic (25%)
               {compareTakeaway}
             </p>
           )}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {compare.map((s) => (
               <Card
                 key={s.id}
                 tone="raised"
-                style={{ borderTopColor: s.color, borderTopWidth: 2 }}
+                className="row-span-4 grid h-full grid-rows-subgrid border-t-2"
+                style={{ borderTopColor: s.color }}
               >
-                <p className="text-sm font-semibold text-white">{s.label}</p>
-                <p className="text-xs text-zinc-400">{s.tagline}</p>
+                <p className="text-sm font-semibold leading-5 text-white">
+                  {s.label}
+                </p>
+                <p className="mt-1 h-[2.5rem] text-xs leading-snug text-zinc-400">
+                  {s.tagline}
+                </p>
                 <p
-                  className="mt-2.5 text-lg font-bold tabular-nums"
+                  className="mt-3 text-lg font-bold leading-7 tabular-nums whitespace-nowrap"
                   style={{ color: s.color }}
                 >
                   {show(s.result.futureValue)}
                 </p>
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="mt-1 text-xs leading-4 text-zinc-400">
                   {show(s.result.totalInterest)} of that is growth
                 </p>
               </Card>
