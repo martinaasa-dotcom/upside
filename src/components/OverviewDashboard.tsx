@@ -42,10 +42,9 @@ import { useEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
 
-/** Overview sits on a darker surface, so flat reads better one step
- * dimmer than the shared default. */
+/** Overview sits on a dark field. Zinc-400 disappears; zinc-300 still reads. */
 const tone = (value: number | null | undefined) =>
-  signedTone(value, "text-zinc-400");
+  signedTone(value, "text-zinc-300");
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;
@@ -357,52 +356,66 @@ function PortfolioLane({
   onOpen: () => void;
 }) {
   const width =
-    maxValue > 0 ? Math.max(8, (sheet.totalValue / maxValue) * 100) : 8;
+    maxValue > 0 ? Math.max(10, (sheet.totalValue / maxValue) * 100) : 10;
   const hot = sheet.roiPct >= 0;
 
   return (
-    <button type="button" onClick={onOpen} className="group w-full text-left">
-      <div className="mb-2 flex items-end justify-between gap-3">
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full min-h-11 rounded-xl border border-white/10 bg-hover/60 px-3.5 py-3.5 text-left transition hover:border-brand/35 hover:bg-hover sm:px-4"
+    >
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-white group-hover:text-brand-bright">
+          <p className="truncate font-heading text-lg font-bold text-white group-hover:text-brand-bright">
             {sheet.portfolio.name}
           </p>
-          <p className="mt-0.5 text-sm text-zinc-400">
-            {plural(sheet.holdingCount, "name")} · cash{" "}
-            {currency(sheet.portfolio.cash_balance, 0)}
+          <p className="mt-1 text-sm text-zinc-300">
+            {plural(sheet.holdingCount, "holding")} ·{" "}
+            {currency(sheet.portfolio.cash_balance, 0)} cash
           </p>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="text-base font-semibold tabular-nums text-zinc-100">
-            {currency(sheet.totalValue, 0)}
-          </p>
-          <p className={cn("mt-0.5 text-sm tabular-nums", tone(sheet.roiPct))}>
-            {percent(sheet.roiPct)} · {signedCurrency(sheet.roiDollar)}
-          </p>
-        </div>
+        <p className="shrink-0 text-right font-heading text-lg font-bold tabular-nums text-white">
+          {currency(sheet.totalValue, 0)}
+        </p>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-zinc-800/80">
+
+      <div className="mt-3 h-3 overflow-hidden rounded-full bg-zinc-800">
         <div
           className={cn(
             "overview-bar h-full rounded-full",
-            hot
-              ? "bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-300"
-              : "bg-gradient-to-r from-rose-700 via-rose-500 to-orange-400"
+            hot ? "bg-gain" : "bg-loss"
           )}
           style={{ width: `${width}%` }}
         />
       </div>
-      <p className="mt-2 text-sm text-zinc-400">
-        Today{" "}
-        <span className={tone(sheet.todayDollar)}>
-          {signedCurrency(sheet.todayDollar)}
-        </span>
-        {sheet.todayPct !== null && (
-          <span className={cn("ml-1.5", tone(sheet.todayPct))}>
-            {percent(sheet.todayPct)}
-          </span>
-        )}
-      </p>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+            Lifetime
+          </p>
+          <p className={cn("mt-0.5 font-medium tabular-nums", tone(sheet.roiPct))}>
+            {percent(sheet.roiPct)} · {signedCurrency(sheet.roiDollar)}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+            Today
+          </p>
+          <p
+            className={cn(
+              "mt-0.5 font-medium tabular-nums",
+              tone(sheet.todayDollar)
+            )}
+          >
+            {signedCurrency(sheet.todayDollar)}
+            {sheet.todayPct !== null && (
+              <span className="ml-1.5">{percent(sheet.todayPct)}</span>
+            )}
+          </p>
+        </div>
+      </div>
     </button>
   );
 }
@@ -705,9 +718,9 @@ export function OverviewDashboard({
         <Panel className="overview-fade">
           <PanelHeader
             title="Your sheets"
-            subtitle="Bar length is size. Green or red is lifetime. Tap to open it."
+            subtitle="Bigger bar, bigger book. Color is all-time return."
           />
-          <div className="mt-4 space-y-5">
+          <div className="mt-4 space-y-3">
             {sheets.map((sheet) => (
               <PortfolioLane
                 key={sheet.portfolio.id}

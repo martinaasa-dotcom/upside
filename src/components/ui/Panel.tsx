@@ -127,7 +127,7 @@ export function PanelHeader({
           >
             {title}
           </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-400">
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-zinc-300">
             {subtitle}
           </p>
         </div>
