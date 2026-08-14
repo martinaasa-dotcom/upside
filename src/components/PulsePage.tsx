@@ -12,6 +12,7 @@ import {
 import {
   Card,
   EmptyState,
+  MicroLabel,
   Panel,
   PanelHeader,
 } from "@/components/ui/Panel";
@@ -63,7 +64,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 type Props = {
   model: OverviewModel;
@@ -73,23 +74,34 @@ type Props = {
 };
 
 function PulseHistory({ ticker }: { ticker: string }) {
-  const prior = loadPulseHistory(ticker).slice(0, -1).slice(-3);
-  if (prior.length === 0) return null;
+  const prior = loadPulseHistory(ticker).slice(0, -1).at(-1);
+  if (!prior) return null;
   return (
-    <ol className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-400">
-      <li className="w-full text-xs uppercase tracking-wide text-zinc-500">
-        Earlier calls
-      </li>
-      {prior.map((h) => (
-        <li key={h.at}>
-          <span className="text-zinc-300">{actionLabel(h.action)}</span>
-          {" · "}
-          {statusLabel(h.thesisStatus)}
-          {" · "}
-          {formatRelativeTime(h.at)}
-        </li>
-      ))}
-    </ol>
+    <p className="mt-2 text-xs text-zinc-500">
+      Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus).toLowerCase()}
+    </p>
+  );
+}
+
+function PulseStat({
+  label,
+  children,
+  hint,
+}: {
+  label: string;
+  children: ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <MicroLabel>{label}</MicroLabel>
+      <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100">
+        {children}
+      </p>
+      {hint ? (
+        <p className="mt-0.5 truncate text-xs text-zinc-500">{hint}</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -183,10 +195,12 @@ function PulseCard({
         statusBorder(status, c.needsAttention, pinned)
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-base font-semibold text-white">{cashtag(c.ticker)}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-base font-semibold text-white">
+              {cashtag(c.ticker)}
+            </span>
             {pinned && (
               <span className="rounded bg-brand/20 px-1.5 py-0.5 text-xs font-medium text-brand-bright">
                 Your check
@@ -202,106 +216,82 @@ function PulseCard({
                 Down ≥5%
               </span>
             )}
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 text-sm font-medium tabular-nums",
-                up ? "text-gain" : "text-loss"
-              )}
-            >
-              {up ? (
-                <TrendingUp className="h-3.5 w-3.5" />
-              ) : (
-                <TrendingDown className="h-3.5 w-3.5" />
-              )}
-              {formatMovePct(c.effectivePct)}
-            </span>
-            <span className="text-xs text-zinc-400">{c.moveLabel}</span>
-            {loading && (
-              <span
-                className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-zinc-400"
-                title="Refreshing in the background. This result stays on screen until the new one lands"
-              >
-                <RefreshCw className="h-2.5 w-2.5 animate-spin" />
-                Updating
-              </span>
-            )}
           </div>
-          {c.inBook ? (
-            <p className="mt-0.5 text-xs text-zinc-400">
-              {currency(c.price)} · {percent(c.bookPct)} of book ·{" "}
-              {currency(c.currentValue)} ·{" "}
-              <span className={signedTone(c.todayDollar, "text-zinc-400")}>
-                {signedCurrency(c.todayDollar)}
-              </span>{" "}
-              today · lifetime{" "}
-              <span className={signedTone(c.roiPct, "text-zinc-400")}>
-                {percent(c.roiPct)}
-              </span>{" "}
-              · {c.portfolios.join(", ")}
-            </p>
-          ) : (
-            <p className="mt-0.5 text-xs text-zinc-400">
-              {currency(c.price)} · not in your book
-            </p>
+          <p
+            className={cn(
+              "mt-1 inline-flex items-center gap-1 text-sm font-medium tabular-nums",
+              up ? "text-gain" : "text-loss"
+            )}
+          >
+            {up ? (
+              <TrendingUp className="h-3.5 w-3.5" />
+            ) : (
+              <TrendingDown className="h-3.5 w-3.5" />
+            )}
+            {formatMovePct(c.effectivePct)}
+            <span className="font-normal text-zinc-400">{c.moveLabel}</span>
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          <ActionBadge action={action} />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
+            <StatusIcon status={status} />
+            {statusLabel(status)}
+          </span>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={loading}
+              title={
+                checkedAt
+                  ? `Last check ${formatRelativeTime(checkedAt)}. Re-check now`
+                  : "Re-check just this ticker now"
+              }
+              aria-label={`Re-check ${c.ticker}`}
+              className="relative rounded-full border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition after:absolute after:-inset-2 after:content-[''] hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+            >
+              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+            </button>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-            <ActionBadge action={action} />
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
-              <StatusIcon status={status} />
-              {statusLabel(status)}
-            </span>
-            {onRefresh && (
-              <button
-                type="button"
-                onClick={onRefresh}
-                disabled={loading}
-                title="Re-check just this ticker now"
-                aria-label={`Re-check ${c.ticker}`}
-                // Pill sits in a dense wrap row, so grow the hit area with
-                // a pseudo-element instead of a 44px box that would break
-                // the badge line's rhythm.
-                className="relative rounded-full border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition after:absolute after:-inset-2 after:content-[''] hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
-              >
-                <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-              </button>
-            )}
-          </div>
       </div>
 
-      {checkedAt && (
-        <p className="mt-1.5 text-xs text-zinc-400">
-          Checked {formatRelativeTime(checkedAt)}
+      {c.inBook ? (
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+          <PulseStat label="Price" hint={currency(c.currentValue)}>
+            {currency(c.price)}
+          </PulseStat>
+          <PulseStat label="Today">
+            <span className={signedTone(c.todayDollar, "text-zinc-100")}>
+              {signedCurrency(c.todayDollar)}
+            </span>
+          </PulseStat>
+          <PulseStat label="Lifetime">
+            <span className={signedTone(c.roiPct, "text-zinc-100")}>
+              {percent(c.roiPct)}
+            </span>
+          </PulseStat>
+          <PulseStat
+            label="Book"
+            hint={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
+          >
+            {percent(c.bookPct)}
+          </PulseStat>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-zinc-500">
+          {currency(c.price)} · not in your book
         </p>
       )}
 
       <PulseHistory ticker={c.ticker} />
 
-      {headlines.length > 0 && (
-        <ul className="mt-3 space-y-1 border-t border-zinc-800/60 pt-3">
-          {headlines.slice(0, 3).map((h) => (
-            <li key={h.link || h.title}>
-              <a
-                href={h.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs leading-snug text-zinc-400 hover:text-brand-bright"
-              >
-                {h.title}
-                <span className="text-zinc-400"> · {h.publisher}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-zinc-300">
+      <div className="mt-4 space-y-3 border-t border-zinc-800/60 pt-3 text-sm leading-relaxed text-zinc-300">
         {thesisBullets.length > 0 && (
           <div>
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                Thesis
-              </p>
+              <MicroLabel>Thesis</MicroLabel>
               {onWriteThesis && (
                 <button
                   type="button"
@@ -313,7 +303,7 @@ function PulseCard({
               )}
             </div>
             <ul className="mt-1.5 space-y-1.5 text-zinc-100">
-              {thesisBullets.map((point, i) => (
+              {thesisBullets.slice(0, 3).map((point, i) => (
                 <li key={i} className="flex gap-2">
                   <span
                     aria-hidden
@@ -325,36 +315,6 @@ function PulseCard({
             </ul>
           </div>
         )}
-        {writtenThesis.length > 0 && situation.length > 0 && (
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-              Today
-            </p>
-            <ul className="mt-1.5 space-y-1.5">
-              {situation.map((point, i) => (
-                <li key={i} className="flex gap-2">
-                  <span
-                    aria-hidden
-                    className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-zinc-500"
-                  />
-                  <span className="leading-snug text-zinc-300">{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {shown.moveReason ? (
-          <p>
-            <span className="font-medium text-zinc-200">Move:</span>{" "}
-            {shown.moveReason}
-          </p>
-        ) : null}
-        {shown.earningsNote ? (
-          <p>
-            <span className="font-medium text-zinc-200">Earnings:</span>{" "}
-            {shown.earningsNote}
-          </p>
-        ) : null}
         {shown.action === "trim" && shown.trimPct ? (
           <p className="font-medium text-violet-200">
             Trim about {shown.trimPct}% into this strength.
@@ -363,16 +323,35 @@ function PulseCard({
         {shown.addLevel ? (
           <p className="font-medium text-brand-bright">{shown.addLevel}</p>
         ) : null}
-        {shown.thesisBreak ? (
-          <p>
-            <span className="font-medium text-zinc-200">What would break it:</span>{" "}
-            {shown.thesisBreak}
-          </p>
-        ) : null}
         {shown.verdict ? (
           <p className="text-zinc-100">{shown.verdict}</p>
         ) : null}
+        {shown.earningsNote ? (
+          <p className="text-xs text-zinc-400">{shown.earningsNote}</p>
+        ) : null}
+        {shown.thesisBreak ? (
+          <p className="text-xs text-zinc-500">
+            Breaks if {shown.thesisBreak.replace(/^this breaks if\s+/i, "")}
+          </p>
+        ) : null}
       </div>
+
+      {headlines.length > 0 && (
+        <ul className="mt-3 space-y-1">
+          {headlines.slice(0, 2).map((h) => (
+            <li key={h.link || h.title}>
+              <a
+                href={h.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs leading-snug text-zinc-500 hover:text-brand-bright"
+              >
+                {h.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }
