@@ -514,9 +514,9 @@ export function ForecastPanel({
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate plan");
-      if (opts?.auto) {
-        autoKeyRef.current = "";
-      }
+      // Keep autoKeyRef set so a failed auto-run does not immediately
+      // fire again. Clearing it used to retry in a tight loop, which
+      // burned the forecast rate limit and left Thinking stuck on.
     } finally {
       askInFlight.current = false;
       setBusy(false);
@@ -702,6 +702,9 @@ export function ForecastPanel({
           <p className="mt-1 text-xs text-amber-200/80">
             Margus is updating the forecast …
           </p>
+        )}
+        {error && (
+          <p className="mt-1 text-xs text-rose-300">{error}</p>
         )}
         {model.rows.length > 0 && (
           <SheetPath
