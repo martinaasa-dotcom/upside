@@ -2408,6 +2408,7 @@ function ReadOnlyHoldings({
               <th className="px-3 py-2 font-medium">Shares</th>
               <th className="px-3 py-2 font-medium">Price</th>
               <th className="px-3 py-2 font-medium">Today</th>
+              <th className="px-3 py-2 font-medium">Cost</th>
               <th className="px-3 py-2 font-medium">Value</th>
               <th className="px-3 py-2 font-medium">ROI %</th>
               <th className="px-3 py-2 font-medium">P&amp;L</th>
@@ -2442,6 +2443,9 @@ function ReadOnlyHoldings({
                   >
                     {todayPct != null ? percent(todayPct) : "—"}
                   </td>
+                  <td className="px-3 py-2 tabular-nums text-zinc-400">
+                    {currency(cost)}
+                  </td>
                   <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
                   <td
                     className={cn(
@@ -2464,7 +2468,7 @@ function ReadOnlyHoldings({
             })}
             {holdings.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-zinc-400" colSpan={8}>
+                <td className="px-3 py-6 text-center text-zinc-400" colSpan={9}>
                   No holdings on this sheet.
                 </td>
               </tr>
@@ -2473,7 +2477,7 @@ function ReadOnlyHoldings({
               <td className="px-3 py-2 text-zinc-400" colSpan={6}>
                 Cash
               </td>
-              <td className="px-3 py-2 tabular-nums" colSpan={2}>
+              <td className="px-3 py-2 tabular-nums" colSpan={3}>
                 {currency(cash)}
               </td>
             </tr>

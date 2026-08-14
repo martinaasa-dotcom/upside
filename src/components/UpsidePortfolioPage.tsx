@@ -1187,12 +1187,6 @@ export function UpsidePortfolioPage() {
                           </span>
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-                          <Metric
-                            label="Book"
-                            hint={`${h.shares.toLocaleString("en-US")} sh`}
-                          >
-                            {currency(marketValue, 0)}
-                          </Metric>
                           <Metric label="Entered">
                             {fmtDate(h.entry_date)}
                           </Metric>
@@ -1202,6 +1196,12 @@ export function UpsidePortfolioPage() {
                             valueClassName={signedTone(pnlPct, "text-zinc-100")}
                           >
                             {currency(price)}
+                          </Metric>
+                          <Metric
+                            label="Book"
+                            hint={`${h.shares.toLocaleString("en-US")} sh`}
+                          >
+                            {currency(marketValue, 0)}
                           </Metric>
                         </div>
                         <CopyBlock

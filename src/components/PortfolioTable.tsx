@@ -170,6 +170,11 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   },
   { label: "Price", key: "price", explain: "Current market price per share" },
   {
+    label: "Cost",
+    key: "cost",
+    explain: "Total dollars you put in: shares × buy price",
+  },
+  {
     label: "Value",
     key: "value",
     explain: "What that position is worth right now: shares × current price",
@@ -178,11 +183,6 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
     label: "ROI %",
     key: "roiPct",
     explain: "Gain or loss vs. what you paid, as a percentage: (Value − Cost) ÷ Cost",
-  },
-  {
-    label: "Cost",
-    key: "cost",
-    explain: "Total dollars you put in: shares × buy price",
   },
   { label: "90d", explain: "Price trend over the last ~90 days" },
   {
@@ -524,6 +524,12 @@ export function PortfolioTable({
                   </p>
                 </div>
                 <div>
+                  <p className="text-zinc-400">Cost</p>
+                  <p className="tabular-nums text-zinc-400">
+                    {money(h.buyValue)}
+                  </p>
+                </div>
+                <div>
                   <p className="text-zinc-400">Value</p>
                   <p className="tabular-nums text-zinc-100">
                     {money(h.currentValue)}
@@ -567,10 +573,8 @@ export function PortfolioTable({
               </span>
             </div>
             <div className="mt-1 flex justify-between text-zinc-400">
+              <span>Cost {money(totals.buyValue)}</span>
               <span>Value {money(totals.currentValue)}</span>
-              <span className={signedTone(totals.roiDollar)}>
-                {money(totals.roiDollar)}
-              </span>
             </div>
             {/* No Today row here either: the header states it once, and it
               * sits above this list on phones too. */}
@@ -665,6 +669,9 @@ export function PortfolioTable({
                 <div className={cn(cellBase, "tabular-nums font-semibold text-white")}>
                   {usd(h.quote?.price ?? h.buy_price)}
                 </div>
+                <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
+                  {money(h.buyValue)}
+                </div>
                 <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
                   {money(h.currentValue)}
                 </div>
@@ -676,9 +683,6 @@ export function PortfolioTable({
                   )}
                 >
                   {percent(h.roiPct)}
-                </div>
-                <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
-                  {money(h.buyValue)}
                 </div>
                 <div className={cellBase}>
                   <Sparkline
@@ -719,6 +723,9 @@ export function PortfolioTable({
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-300")}>
+                {money(totals.buyValue)}
+              </div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-white")}>
                 {money(totals.currentValue)}
               </div>
@@ -730,9 +737,6 @@ export function PortfolioTable({
                 )}
               >
                 {percent(totals.roiPct)}
-              </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-300")}>
-                {money(totals.buyValue)}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
