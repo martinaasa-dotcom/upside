@@ -94,14 +94,19 @@ export function duelCanSettle(now: Date = new Date()): boolean {
   return hour >= 16;
 }
 
-/** Deterministic pair for the day — same matchup all day, changes tomorrow. */
+/** Deterministic pair for the day — same matchup all day, changes tomorrow.
+ * Pass `salt` (a community id) so each circle gets its own pair without
+ * changing the personal Home duel seed. */
 export function pickTodaysDuel(
   tickers: string[],
-  dayKey: string = todayKeyInTz()
+  dayKey: string = todayKeyInTz(),
+  salt = ""
 ): { a: string; b: string } | null {
   const pool = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
   if (pool.length < 2) return null;
-  const rng = mulberry32(hashSeed(`upside-duel|${dayKey}`));
+  const rng = mulberry32(
+    hashSeed(salt ? `upside-duel|${salt}|${dayKey}` : `upside-duel|${dayKey}`)
+  );
   const shuffled = [...pool];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

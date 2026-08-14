@@ -91,6 +91,8 @@ type Props = {
    * panel opens; progress shows in a small status card instead. Picking a
    * screenshot here sends straight away, it never stages in a compose box. */
   imagePickSignal?: number;
+  /** When a screenshot import fails, offer the CSV path instead. */
+  onSuggestCsv?: () => void;
 };
 
 /** Default instruction sent with a screenshot import — same for both the
@@ -463,6 +465,7 @@ export function CcAdvisorChat({
   onApplyActions,
   expandSignal = 0,
   imagePickSignal = 0,
+  onSuggestCsv,
 }: Props) {
   const [input, setInput] = useState("");
   const [pendingImages, setPendingImages] = useState<FileUIPart[]>([]);
@@ -835,6 +838,29 @@ export function CcAdvisorChat({
                   ))}
                 </div>
               )}
+              {silentPhase === "result" &&
+                onSuggestCsv &&
+                (silentSummary?.kind === "error" ||
+                  silentSummary?.kind === "empty") && (
+                  <>
+                    <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                      If the screenshot didn&apos;t read cleanly, upload a CSV.
+                      Most brokers export one.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSilentPhase("idle");
+                        setSilentSummary(null);
+                        onSuggestCsv();
+                      }}
+                      className="mt-2 rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 hover:border-brand/50"
+                    >
+                      Upload a CSV instead
+                    </button>
+                  </>
+                )}
               {silentPhase === "result" && (
                 <p className="mt-1 text-xs text-zinc-400">
                   Tap to open chat

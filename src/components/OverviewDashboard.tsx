@@ -48,7 +48,8 @@ import {
   saveVisitSnapshot,
   type VisitDiff,
 } from "@/lib/visit-diff";
-import { ArrowRight, CalendarDays, Radar } from "lucide-react";
+import { PRODUCT_SENTENCE } from "@/lib/product";
+import { ArrowRight, CalendarDays, MessageCircle, Radar } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -91,6 +92,7 @@ type Props = {
   onAddHolding?: () => void;
   onImportScreenshot?: () => void;
   onImportCsv?: () => void;
+  onAskMargus?: () => void;
 };
 
 /**
@@ -103,28 +105,30 @@ function EmptyBook({
   onAddHolding,
   onImportScreenshot,
   onImportCsv,
+  onAskMargus,
 }: {
   onAddHolding?: () => void;
   onImportScreenshot?: () => void;
   onImportCsv?: () => void;
+  onAskMargus?: () => void;
 }) {
   const routes = [
+    {
+      key: "csv",
+      label: "Upload a CSV",
+      detail: "Most brokers export one. The reliable way in, even if Margus is down.",
+      hint: "Reliable",
+      onClick: onImportCsv,
+      primary: true,
+    },
     {
       key: "screenshot",
       label: "Import a screenshot",
       detail:
-        "Snap your broker's holdings page. Margus reads it and fills everything in.",
-      hint: "Fastest",
+        "Snap your broker's holdings page. Margus reads it when the model is up.",
+      hint: "Fast when it works",
       onClick: onImportScreenshot,
       primary: true,
-    },
-    {
-      key: "csv",
-      label: "Upload a CSV",
-      detail: "Most brokers export one. Bring it over in a single go.",
-      hint: "Best for big books",
-      onClick: onImportCsv,
-      primary: false,
     },
     {
       key: "manual",
@@ -142,8 +146,8 @@ function EmptyBook({
         Your book is empty. Let&apos;s fix that.
       </h2>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
-        Add what you own and this page becomes your daily read: what moved,
-        what needs a look, and a couple of games on the side.
+        Add what you own. {PRODUCT_SENTENCE} Then you&apos;ll see what moved
+        and what needs a look.
       </p>
 
       {routes.length > 0 && (
@@ -178,6 +182,17 @@ function EmptyBook({
             </button>
           ))}
         </div>
+      )}
+
+      {onAskMargus && (
+        <button
+          type="button"
+          onClick={onAskMargus}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-brand/50 hover:text-white"
+        >
+          <MessageCircle className="h-3.5 w-3.5" />
+          Ask Margus first
+        </button>
       )}
 
       <p className="mt-5 text-sm text-zinc-400">
@@ -398,6 +413,7 @@ export function OverviewDashboard({
   onAddHolding,
   onImportScreenshot,
   onImportCsv,
+  onAskMargus,
 }: Props) {
   const {
     totals,
@@ -542,6 +558,7 @@ export function OverviewDashboard({
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
           onImportCsv={onImportCsv}
+          onAskMargus={onAskMargus}
         />
         {showCommunities && !guest && <HomeWorld />}
       </div>
@@ -571,6 +588,16 @@ export function OverviewDashboard({
                   >
                     {visitStreak.currentStreak} day streak
                   </Pill>
+                )}
+                {onAskMargus && (
+                  <button
+                    type="button"
+                    onClick={onAskMargus}
+                    className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 hover:border-brand/50 hover:text-white"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Ask Margus
+                  </button>
                 )}
                 <Pill
                   tone={

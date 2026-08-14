@@ -2,8 +2,6 @@ import {
   emptyLabBundle,
   type LabBundle,
 } from "@/lib/lab-bundle";
-import { saveArena } from "@/lib/paper-arena";
-import { saveCashflows } from "@/lib/cashflow";
 import { saveConvictionMap } from "@/lib/conviction";
 
 export type LabFetchResult = {
@@ -11,11 +9,13 @@ export type LabFetchResult = {
   bundle: LabBundle;
 };
 
-/** Mirror Lab pieces into localStorage (offline / demo cache). */
+/**
+ * Conviction is the only Lab piece that still syncs across devices.
+ * Arena, cashflow, badges, and journal have no UI. Stop writing them
+ * locally from the server so a ghost payload cannot resurrect.
+ */
 export function mirrorLabLocal(bundle: LabBundle) {
   saveConvictionMap(bundle.conviction ?? {});
-  saveCashflows(bundle.cashflows ?? []);
-  saveArena(bundle.arena);
 }
 
 export async function fetchLabBundle(): Promise<LabFetchResult> {
@@ -49,10 +49,6 @@ export async function pushLabBundle(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         conviction: bundle.conviction,
-        journal: [],
-        cashflows: bundle.cashflows,
-        arena: bundle.arena,
-        badges: bundle.badges,
       }),
     });
     if (res.status === 400) {

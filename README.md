@@ -1,6 +1,6 @@
 # Upside
 
-Portfolio tracker with live prices, Thesis Pulse, and Assistant Margus. Optional communities and an open paper fund (Upside Portfolio).
+A daily read of your book, with Margus to think it through. Live prices, Thesis Pulse, and an open paper fund (Upside Fund). Communities are optional.
 
 Production: [https://upside-upthink-solutions.vercel.app](https://upside-upthink-solutions.vercel.app)
 

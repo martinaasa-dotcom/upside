@@ -63,22 +63,48 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = (await req.json().catch(() => ({}))) as Partial<LabBundle>;
-  const payload = {
-    id: auth.user.id,
-    owner_id: auth.user.id,
-    conviction: body.conviction ?? {},
-    journal: [],
-    cashflows: body.cashflows ?? [],
-    arena: body.arena ?? defaultArena(),
-    badges: body.badges ?? [],
-    updated_at: new Date().toISOString(),
-  };
+  const now = new Date().toISOString();
 
-  const { data, error } = await supabase
+  const { data: existing } = await supabase
     .from(PORTFELL_TABLES.labState)
-    .upsert(payload, { onConflict: "id" })
-    .select("*")
-    .single();
+    .select("id")
+    .eq("owner_id", auth.user.id)
+    .maybeSingle();
+
+  let data: Record<string, unknown> | null = null;
+  let error: { message: string } | null = null;
+
+  if (existing) {
+    const updated = await supabase
+      .from(PORTFELL_TABLES.labState)
+      .update({
+        conviction: body.conviction ?? {},
+        journal: [],
+        updated_at: now,
+      })
+      .eq("owner_id", auth.user.id)
+      .select("*")
+      .single();
+    data = updated.data as Record<string, unknown> | null;
+    error = updated.error;
+  } else {
+    const inserted = await supabase
+      .from(PORTFELL_TABLES.labState)
+      .insert({
+        id: auth.user.id,
+        owner_id: auth.user.id,
+        conviction: body.conviction ?? {},
+        journal: [],
+        cashflows: [],
+        arena: defaultArena(),
+        badges: [],
+        updated_at: now,
+      })
+      .select("*")
+      .single();
+    data = inserted.data as Record<string, unknown> | null;
+    error = inserted.error;
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

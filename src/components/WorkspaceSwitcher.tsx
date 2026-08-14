@@ -54,7 +54,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       {item(onBook, "/", "Book", "Your sheets and daily briefing", BookOpen)}
       {item(onFund, "/upside-portfolio", "Fund", "Upside Fund, the paper book Margus runs", Bot)}
       {item(onCommunities, "/communities", "Communities", "Compare books with people you know", Users)}
-      {item(onAccount, "/account", "Account", "Your account and invites", UserRound)}
+      {item(onAccount, "/account", "Account", "You, your data, danger zone", UserRound)}
       {showAdmin ? item(onAdmin, "/admin", "Admin", "Admin", Shield) : null}
     </nav>
   );

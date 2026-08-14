@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { PRODUCT_BLURB, PRODUCT_SENTENCE } from "@/lib/product";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -95,10 +96,10 @@ export function SignInGate({ children }: Props) {
           )}
 
           <p className="signin-rise-2 max-w-[17rem] text-[15px] font-medium leading-snug text-zinc-200">
-            Track your portfolio, and watch an AI manage its own $50k, in the open.
+            {PRODUCT_SENTENCE}
           </p>
           <p className="signin-rise-2 mt-2.5 max-w-[15.5rem] text-[13px] leading-relaxed text-zinc-400">
-            Sign in to open the portfolios you own.
+            {PRODUCT_BLURB} Sign in to open the sheets you own.
           </p>
 
           <button

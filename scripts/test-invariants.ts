@@ -306,6 +306,30 @@ run("every tier's default surface uses the shared Panel shell", () => {
   );
 });
 
+run("one product sentence on sign-in, not a fund pitch", () => {
+  const product = readFileSync(
+    join(process.cwd(), "src/lib/product.ts"),
+    "utf8"
+  );
+  assert.match(product, /A daily read of your book/);
+  const gate = readFileSync(
+    join(process.cwd(), "src/components/SignInGate.tsx"),
+    "utf8"
+  );
+  assert.match(gate, /PRODUCT_SENTENCE/);
+  assert.doesNotMatch(gate, /\$50k|AI manage/);
+});
+
+run("lab sync writes conviction only", () => {
+  const client = readFileSync(
+    join(process.cwd(), "src/lib/lab-sync-client.ts"),
+    "utf8"
+  );
+  assert.match(client, /conviction: bundle.conviction/);
+  assert.doesNotMatch(client, /cashflows: bundle.cashflows/);
+  assert.doesNotMatch(client, /arena: bundle.arena/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

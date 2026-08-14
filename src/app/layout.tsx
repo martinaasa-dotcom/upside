@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
+import { PRODUCT_BLURB, PRODUCT_SENTENCE } from "@/lib/product";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,11 +24,10 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-const SITE_DESCRIPTION =
-  "Track your book, ask Margus, and watch an AI-managed paper fund trade in the open. Built for people who want a clear daily read, not a Bloomberg terminal.";
+const SITE_DESCRIPTION = `${PRODUCT_SENTENCE} ${PRODUCT_BLURB}`;
 
 export const metadata: Metadata = {
-  title: "Upside - Portfolio Tracker & AI-Managed Fund",
+  title: "Upside",
   description: SITE_DESCRIPTION,
   applicationName: "Upside",
   manifest: "/manifest.webmanifest",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "Upside - Portfolio Tracker & AI-Managed Fund",
+    title: "Upside",
     description: SITE_DESCRIPTION,
     siteName: "Upside",
     type: "website",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Upside - Portfolio Tracker & AI-Managed Fund",
+    title: "Upside",
     description: SITE_DESCRIPTION,
     images: ["/upside-icon.svg"],
   },

@@ -9,7 +9,7 @@ import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
 import { CoveredCallPanel } from "@/components/CoveredCallPanel";
 import { ExperienceOnboardingModal } from "@/components/ExperienceOnboardingModal";
-import { ForecastPanel } from "@/components/ForecastPanel";
+import { ForecastPanel, ForecastOffStub } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
 import { LabSheet } from "@/components/LabSheet";
@@ -25,7 +25,6 @@ import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
-import { UpsideLogo } from "@/components/UpsideLogo";
 import { useAuth } from "@/components/AuthProvider";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
@@ -46,24 +45,13 @@ import {
 import { buildSnapshot, STRATEGY } from "@/lib/calculations";
 import type { CsvHoldingRow } from "@/lib/csv-import";
 import { clearChatHistory } from "@/lib/chat-history";
-import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
-import {
-  fetchLabBundle,
-  mirrorLabLocal,
-  pushLabBundle,
-} from "@/lib/lab-sync-client";
-import { loadCashflows } from "@/lib/cashflow";
-import { loadArena } from "@/lib/paper-arena";
 import { loadWatchlist } from "@/lib/watchlist";
 import {
   loadDismissedAlertIds,
   saveDismissedAlertIds,
 } from "@/lib/alert-dismiss";
 import { currency, percent } from "@/lib/format";
-import {
-  loadConvictionMap,
-  setConviction,
-} from "@/lib/conviction";
+import { setConviction } from "@/lib/conviction";
 import { PULSE_REFRESH_MS, effectiveMove } from "@/lib/thesis-pulse";
 import {
   milestoneToast,
@@ -129,6 +117,7 @@ import {
   Plus,
   RefreshCw,
   SlidersHorizontal,
+  UserPlus,
 } from "lucide-react";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -154,6 +143,10 @@ import {
   TIER_HIDDEN_META_TABS,
   type ExperienceTier,
 } from "@/lib/experience-tier";
+import { InvitePartnerModal } from "@/components/InvitePartnerModal";
+import { DashboardLoading } from "@/components/DashboardLoading";
+import { DashboardWelcome } from "@/components/DashboardWelcome";
+import { useLabSync } from "@/components/use-lab-sync";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 
@@ -438,14 +431,13 @@ export function Dashboard() {
   const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [visitStreak, setVisitStreak] = useState<VisitStreakState | null>(null);
-  const [labBundle, setLabBundle] = useState<LabBundle>(() => emptyLabBundle());
-  const [labReady, setLabReady] = useState(false);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
-  const labDirtyRef = useRef(false);
+  const { labBundle, patchLab } = useLabSync();
   /** Browser Back/Forward: sync sheet from history without pushing again. */
   const historyFromPopRef = useRef(false);
   /** Until first book load settles, only replaceState (no fake history stack). */
@@ -2171,62 +2163,6 @@ export function Dashboard() {
     });
   }
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const local: LabBundle = {
-        conviction: loadConvictionMap(),
-        journal: [],
-        cashflows: loadCashflows(),
-        arena: loadArena(),
-        badges: [],
-      };
-      const remote = await fetchLabBundle();
-      if (cancelled) return;
-      if (remote.source === "supabase") {
-        const merged: LabBundle = {
-          ...emptyLabBundle(),
-          ...remote.bundle,
-          conviction:
-            Object.keys(remote.bundle.conviction ?? {}).length > 0
-              ? remote.bundle.conviction
-              : local.conviction,
-          journal: [],
-          cashflows:
-            (remote.bundle.cashflows?.length ?? 0) > 0
-              ? remote.bundle.cashflows
-              : local.cashflows,
-          arena: remote.bundle.arena ?? local.arena,
-          badges: remote.bundle.badges ?? [],
-        };
-        setLabBundle(merged);
-        mirrorLabLocal(merged);
-      } else {
-        setLabBundle(local);
-      }
-      setLabReady(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!labReady || !labDirtyRef.current) return;
-    const t = window.setTimeout(() => {
-      labDirtyRef.current = false;
-      void pushLabBundle(labBundle).then((r) => {
-        if (!r.ok && r.error) toast(r.error, "error");
-      });
-    }, 900);
-    return () => window.clearTimeout(t);
-  }, [labBundle, labReady, toast, source]);
-
-  function patchLab(patch: Partial<LabBundle>) {
-    labDirtyRef.current = true;
-    setLabBundle((prev) => ({ ...prev, ...patch }));
-  }
-
   const overviewTickerKey = overview.tickers
     .map((t) => t.ticker)
     .slice(0, 40)
@@ -2450,101 +2386,51 @@ export function Dashboard() {
   const missingQuoteTickers = missingTickers;
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
-        <UpsideLogo variant="icon" className="animate-pulse" />
-        <p className="mt-6 text-sm text-zinc-400">{loadingMessage}</p>
-      </div>
-    );
+    return <DashboardLoading message={loadingMessage} />;
   }
 
   if (source === "supabase" && portfolios.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_at_top,_#1f1a12_0%,_#121214_52%)] text-zinc-100">
-        <AppHeader />
-        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-          <UpsideLogo variant="icon" />
-          <div>
-            <h1 className="text-lg font-semibold">Welcome to Upside</h1>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              {loadError
-                ? loadError
-                : "A sheet is one portfolio: what you own, what you paid, and leftover cash. Create your first one to start, or open an invite link if someone shared a sheet with you."}
-            </p>
-          </div>
-          {!loadError && (
-            <div className="grid w-full gap-2 text-left sm:grid-cols-2">
-              {[
-                {
-                  title: "See the book",
-                  detail: "Everything you own, what you paid, and how today went.",
-                },
-                {
-                  title: "Ask Margus",
-                  detail: "An AI copilot that reads your sheet and can make edits for you.",
-                },
-                {
-                  title: "Watch the Fund",
-                  detail: "Margus trades a paper-money book in public. One decision a day.",
-                },
-                {
-                  title: "Invite a friend",
-                  detail: "Optional. Share a sheet or start a circle when you want company.",
-                },
-              ].map((f) => (
-                <div
-                  key={f.title}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-3"
-                >
-                  <p className="text-xs font-semibold text-white">{f.title}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-                    {f.detail}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => void loadPortfolios()}
-              className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:border-zinc-500"
-            >
-              Retry
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreateSheetOpen(true)}
-              className="rounded-lg bg-brand-bright px-4 py-2 text-sm font-semibold text-[#1a1510] hover:bg-[#F0E4C8]"
-            >
-              Create your first sheet
-            </button>
-          </div>
-        </main>
-
-        <RenameSheetModal
-          open={createSheetOpen}
-          initialName=""
-          title="Create a sheet"
-          label="Sheet name"
-          placeholder="e.g. My portfolio"
-          confirmLabel="Create"
-          onClose={() => setCreateSheetOpen(false)}
-          onSave={(name) => {
-            setCreateSheetOpen(false);
-            void handleAddSheet(name);
+      <>
+        <DashboardWelcome
+          loadError={loadError}
+          createSheetOpen={createSheetOpen}
+          onRetry={() => void loadPortfolios()}
+          onAskMargus={() => setMargusExpandSignal((n) => n + 1)}
+          onOpenCreate={() => setCreateSheetOpen(true)}
+          onCloseCreate={() => setCreateSheetOpen(false)}
+          onCreate={(name) => void handleAddSheet(name)}
+        />
+        <CcAdvisorChat
+          portfolioId={OVERVIEW_TAB_ID}
+          expandSignal={margusExpandSignal}
+          onApplyActions={() => {
+            /* no sheet yet */
+          }}
+          context={{
+            portfolioName: "Overview",
+            cashBalance: 0,
+            adviseOnly: true,
+            hideOptions: hideOptionsUI,
+            holdings: [],
+            rows: [],
+            totals: {
+              cost: 0,
+              value: 0,
+              roiPct: 0,
+              roiDollar: 0,
+              yield2wAvg: 0,
+              premiumTotal: 0,
+            },
+            otherPortfolios: [],
           }}
         />
-      </div>
+      </>
     );
   }
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#121214] px-6">
-        <UpsideLogo variant="icon" className="animate-pulse" />
-      </div>
-    );
+    return <DashboardLoading message="Opening the sheet …" />;
   }
 
   return (
@@ -2602,6 +2488,16 @@ export function Dashboard() {
                 <Plus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Add holding</span>
                 <span className="sm:hidden">Add</span>
+              </button>
+            )}
+            {!isMetaTab && source === "supabase" && activePortfolio && (
+              <button
+                type="button"
+                onClick={() => setInviteOpen(true)}
+                className="inline-flex h-8 items-center gap-1 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Invite</span>
               </button>
             )}
             <HeaderOverflowMenu
@@ -2702,6 +2598,7 @@ export function Dashboard() {
               onAddHolding={() => startFirstRunAction("manual")}
               onImportScreenshot={() => startFirstRunAction("screenshot")}
               onImportCsv={() => startFirstRunAction("csv")}
+              onAskMargus={() => setMargusExpandSignal((n) => n + 1)}
               onOpenLab={
                 labHiddenForTier
                   ? undefined
@@ -2763,18 +2660,23 @@ export function Dashboard() {
               />
             )}
 
-            {forecastVisible && forecast && activePortfolio && (
-              <ForecastPanel
-                model={forecast}
-                portfolioId={activePortfolio.id}
-                portfolioName={activePortfolio.name}
-                cashBalance={activePortfolio.cash_balance}
-                overrides={eoyOverrides}
-                onSetEoyPrice={commitEoyPrice}
-                onApplyMargusPaths={applyMargusEoyPaths}
-                onClearOverrides={() => setConfirmResetForecast(true)}
-                convictions={convictionMap}
-              />
+            {forecastVisible ? (
+              forecast &&
+              activePortfolio && (
+                <ForecastPanel
+                  model={forecast}
+                  portfolioId={activePortfolio.id}
+                  portfolioName={activePortfolio.name}
+                  cashBalance={activePortfolio.cash_balance}
+                  overrides={eoyOverrides}
+                  onSetEoyPrice={commitEoyPrice}
+                  onApplyMargusPaths={applyMargusEoyPaths}
+                  onClearOverrides={() => setConfirmResetForecast(true)}
+                  convictions={convictionMap}
+                />
+              )
+            ) : (
+              <ForecastOffStub onShow={() => toggleForecastVisible()} />
             )}
           </>
         )}
@@ -2849,6 +2751,15 @@ export function Dashboard() {
         onImport={handleCsvImport}
         hideCallPct={hideOptionsUI}
       />
+
+      {activePortfolio && (
+        <InvitePartnerModal
+          open={inviteOpen}
+          portfolioId={activePortfolio.id}
+          portfolioName={activePortfolio.name}
+          onClose={() => setInviteOpen(false)}
+        />
+      )}
 
       <CashModal
         open={cashModalOpen}
@@ -3041,6 +2952,7 @@ export function Dashboard() {
         }
         expandSignal={margusExpandSignal}
         imagePickSignal={margusImagePickSignal}
+        onSuggestCsv={() => setCsvImportOpen(true)}
         onApplyActions={
           !isMetaTab && activePortfolio && snapshot
             ? applyAdvisorActions

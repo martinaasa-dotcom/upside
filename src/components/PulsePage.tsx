@@ -46,6 +46,10 @@ import {
   type ThesisStatus,
 } from "@/lib/thesis-pulse";
 import {
+  loadPulseHistory,
+  recordPulseHistory,
+} from "@/lib/pulse-history";
+import {
   Activity,
   AlertTriangle,
   CheckCircle2,
@@ -64,6 +68,27 @@ type Props = {
   quotes: Record<string, Quote>;
   convictions: ConvictionMap;
 };
+
+function PulseHistory({ ticker }: { ticker: string }) {
+  const prior = loadPulseHistory(ticker).slice(0, -1).slice(-3);
+  if (prior.length === 0) return null;
+  return (
+    <ol className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-400">
+      <li className="w-full text-xs uppercase tracking-wide text-zinc-500">
+        Earlier calls
+      </li>
+      {prior.map((h) => (
+        <li key={h.at}>
+          <span className="text-zinc-300">{actionLabel(h.action)}</span>
+          {" · "}
+          {statusLabel(h.thesisStatus)}
+          {" · "}
+          {formatRelativeTime(h.at)}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
   if (status === "intact")
@@ -245,6 +270,8 @@ function PulseCard({
         </p>
       )}
 
+      <PulseHistory ticker={c.ticker} />
+
       {headlines.length > 0 && (
         <ul className="mt-3 space-y-1 border-t border-zinc-800/60 pt-3">
           {headlines.slice(0, 3).map((h) => (
@@ -346,6 +373,13 @@ export function PulsePage({ model, quotes, convictions }: Props) {
     () => buildPulseCandidates(model, mergedQuotes),
     [model, mergedQuotes]
   );
+
+  const skippedTickers = useMemo(() => {
+    const checked = new Set(candidates.map((c) => c.ticker.toUpperCase()));
+    return model.tickers
+      .filter((t) => !checked.has(t.ticker.toUpperCase()))
+      .map((t) => t.ticker);
+  }, [candidates, model.tickers]);
 
   // Every check + its headlines, retained per ticker for good — never
   // cleared just because a background refresh is running or a new
@@ -569,6 +603,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
             headlines: newHeadlines[key] ?? [],
             cachedAt: now,
           });
+          recordPulseHistory(check, now);
         }
         if (newReport.summary?.trim()) {
           setSummary(newReport.summary);
@@ -663,7 +698,7 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
-          subtitle="Checks your ten biggest holdings, plus anything down 5% or more, against the news and the reason you bought it. Results are saved and refresh in the background every hour."
+          subtitle="Not every name. Pulse checks your ten biggest holdings, plus anything down 5% or more. Smaller names that aren't falling stay off this list unless you type them above."
           actions={
             <button
               type="button"
@@ -763,6 +798,17 @@ export function PulsePage({ model, quotes, convictions }: Props) {
           <Card className="mt-3">
             <p className="text-sm leading-relaxed text-zinc-200">{summary}</p>
           </Card>
+        )}
+
+        {skippedTickers.length > 0 && (
+          <p className="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-xs leading-relaxed text-zinc-400">
+            Not checking {skippedTickers.length} smaller name
+            {skippedTickers.length === 1 ? "" : "s"} that aren&apos;t down 5%:{" "}
+            <span className="text-zinc-300">
+              {skippedTickers.map((t) => cashtag(t)).join(", ")}
+            </span>
+            . Type one above if you want a look.
+          </p>
         )}
 
         {error && (

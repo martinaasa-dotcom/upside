@@ -81,6 +81,27 @@ function isCurrentYear(year: number) {
   return year === new Date().getFullYear();
 }
 
+export function ForecastOffStub({ onShow }: { onShow: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-white">Forecast is off</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+          Margus&apos;s year-by-year path for this sheet. Same idea as Pulse,
+          sitting under the table.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onShow}
+        className="shrink-0 rounded-lg bg-brand/20 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/30"
+      >
+        Show
+      </button>
+    </div>
+  );
+}
+
 function formatGeneratedAt(iso: string) {
   try {
     return new Date(iso).toLocaleString(undefined, {

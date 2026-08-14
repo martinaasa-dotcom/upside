@@ -493,6 +493,11 @@ export function UpsidePortfolioPage() {
     return [...historical, spyReturnPct];
   }, [reports, spyReturnPct]);
 
+  const comparisonLabels = useMemo(() => {
+    const dates = [...reports].reverse().map((r) => r.report_date);
+    return [...dates, "Live"];
+  }, [reports]);
+
   const comparisonSeries: ComparisonSeries[] = useMemo(
     () => [
       { label: "Margus", color: SERIES_COLOR.margus, points: margusReturnSeries },
@@ -888,7 +893,11 @@ export function UpsidePortfolioPage() {
                   Margus vs SPY
                 </h2>
               </div>
-              <ComparisonChart series={comparisonSeries} height={160} />
+              <ComparisonChart
+                series={comparisonSeries}
+                labels={comparisonLabels}
+                height={160}
+              />
 
               <div className="border-t border-zinc-800/80 pt-3">
                 {!benchmark ? (

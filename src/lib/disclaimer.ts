@@ -17,7 +17,7 @@ export const ADVICE_DISCLAIMER_LONG =
 export const FORECAST_DISCLAIMER =
   "Modeled scenarios for your own thinking, not personalized investment advice or a guarantee of future performance.";
 
-/** Upside Portfolio, a fully simulated, paper-money portfolio managed
+/** Upside Fund, a fully simulated, paper-money portfolio managed
  * autonomously by Margus. Leads with WHO runs it (a common question for a
  * followable daily feed like this), then the same "not real, not advice"
  * emphasis used everywhere else. */

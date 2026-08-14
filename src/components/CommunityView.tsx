@@ -1,5 +1,6 @@
 "use client";
 
+import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
@@ -1044,6 +1045,14 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               </section>
 
+              <DailyDuelCard
+                communityId={communityId}
+                tickers={overview.tickers.map((t) => ({
+                  ticker: t.ticker,
+                  todayPct: t.todayPct,
+                }))}
+              />
+
               <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 w-fit">
                 {(
                   [
@@ -1871,16 +1880,16 @@ export function CommunityView({ communityId }: Props) {
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
               </button>
-              <div>
-                <h2 className="text-lg font-semibold">
-                  {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
-                    profileName(selectedOwnerId)}
-                </h2>
-                <p className="text-xs text-amber-500/90">
+              <div className="sticky top-16 z-20 space-y-3 rounded-xl border border-amber-500/40 bg-amber-950/70 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
+                <p className="text-sm font-semibold text-amber-100">
                   Read-only · owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
-                  {selectedPortfolio ? ` · ${selectedPortfolio.name}` : ""}
+                </p>
+                <p className="text-xs leading-relaxed text-amber-200/80">
+                  This is their book. You can look, you cannot edit. Nothing
+                  you tap here changes their holdings.
+                  {selectedPortfolio ? ` Viewing ${selectedPortfolio.name}.` : ""}
                 </p>
               </div>
 
