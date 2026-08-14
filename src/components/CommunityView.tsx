@@ -1358,10 +1358,15 @@ export function CommunityView({ communityId }: Props) {
                                   ? m.personality?.riskScore
                                   : m.personality?.convictionScore;
                             return (
-                              <li
-                                key={m.id}
-                                className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-2.5"
-                              >
+                              <li key={m.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedOwnerId(m.id);
+                                    setSelectedPortfolioId(null);
+                                  }}
+                                  className="flex w-full items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-2.5 text-left transition hover:border-brand/40 hover:bg-zinc-800/50"
+                                >
                                 <span className="w-6 shrink-0 text-center">
                                   {i === 0 ? (
                                     <Medal className="mx-auto h-4 w-4 text-amber-400" />
@@ -1420,6 +1425,7 @@ export function CommunityView({ communityId }: Props) {
                                     {signedCurrency(m.todayDollar, 0)}
                                   </span>
                                 )}
+                                </button>
                               </li>
                             );
                           })}
