@@ -276,6 +276,120 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
 
 const ARCHETYPE_BY_ID = new Map(ANIMAL_BESTIARY.map((a) => [a.id, a]));
 
+/** Per-animal card chrome. Full Tailwind class strings so JIT picks them
+ * up; keyed by archetype id so Wolf/Shark/Fox never share a grey shell. */
+export type AnimalCardTone = {
+  bar: string;
+  border: string;
+  wash: string;
+  well: string;
+  name: string;
+  milestone: string;
+};
+
+export const ANIMAL_CARD_TONE: Record<string, AnimalCardTone> = {
+  hatchling: {
+    bar: "bg-zinc-400",
+    border: "border-zinc-600/80",
+    wash: "bg-zinc-500/10",
+    well: "bg-zinc-500/20",
+    name: "text-zinc-300",
+    milestone: "bg-zinc-400",
+  },
+  squirrel: {
+    bar: "bg-amber-400",
+    border: "border-amber-500/40",
+    wash: "bg-amber-500/10",
+    well: "bg-amber-500/20",
+    name: "text-amber-300",
+    milestone: "bg-amber-400",
+  },
+  dragon: {
+    bar: "bg-rose-500",
+    border: "border-rose-500/45",
+    wash: "bg-rose-500/10",
+    well: "bg-rose-500/20",
+    name: "text-rose-300",
+    milestone: "bg-rose-400",
+  },
+  panda: {
+    bar: "bg-emerald-400",
+    border: "border-emerald-500/40",
+    wash: "bg-emerald-500/10",
+    well: "bg-emerald-500/20",
+    name: "text-emerald-300",
+    milestone: "bg-emerald-400",
+  },
+  octopus: {
+    bar: "bg-violet-400",
+    border: "border-violet-500/45",
+    wash: "bg-violet-500/10",
+    well: "bg-violet-500/20",
+    name: "text-violet-300",
+    milestone: "bg-violet-400",
+  },
+  shark: {
+    bar: "bg-cyan-400",
+    border: "border-cyan-500/45",
+    wash: "bg-cyan-500/10",
+    well: "bg-cyan-500/20",
+    name: "text-cyan-300",
+    milestone: "bg-cyan-400",
+  },
+  wolf: {
+    bar: "bg-sky-400",
+    border: "border-sky-500/40",
+    wash: "bg-sky-500/10",
+    well: "bg-sky-500/20",
+    name: "text-sky-300",
+    milestone: "bg-sky-400",
+  },
+  falcon: {
+    bar: "bg-yellow-400",
+    border: "border-yellow-500/40",
+    wash: "bg-yellow-500/10",
+    well: "bg-yellow-500/20",
+    name: "text-yellow-300",
+    milestone: "bg-yellow-400",
+  },
+  turtle: {
+    bar: "bg-teal-400",
+    border: "border-teal-500/40",
+    wash: "bg-teal-500/10",
+    well: "bg-teal-500/20",
+    name: "text-teal-300",
+    milestone: "bg-teal-400",
+  },
+  owl: {
+    bar: "bg-indigo-400",
+    border: "border-indigo-500/45",
+    wash: "bg-indigo-500/10",
+    well: "bg-indigo-500/20",
+    name: "text-indigo-300",
+    milestone: "bg-indigo-400",
+  },
+  elephant: {
+    bar: "bg-stone-400",
+    border: "border-stone-500/50",
+    wash: "bg-stone-500/10",
+    well: "bg-stone-500/25",
+    name: "text-stone-300",
+    milestone: "bg-stone-400",
+  },
+  fox: {
+    bar: "bg-orange-400",
+    border: "border-orange-400/45",
+    wash: "bg-orange-400/10",
+    well: "bg-orange-400/20",
+    name: "text-orange-300",
+    milestone: "bg-orange-400",
+  },
+};
+
+export function animalCardTone(id: string | undefined | null): AnimalCardTone {
+  return (id && ANIMAL_CARD_TONE[id]) || ANIMAL_CARD_TONE.hatchling!;
+}
+
 /** Stable color per forecast theme, shared by every theme chart (Lab's
  * allocation fingerprint, the community sector chart) and their legends so
  * a swatch always means the same theme wherever you see it. */

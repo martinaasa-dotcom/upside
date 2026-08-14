@@ -19,6 +19,7 @@ import {
   ANIMAL_BESTIARY,
   THEME_COLOR,
   THEME_LABEL,
+  animalCardTone,
   type PortfolioPersonality,
 } from "@/lib/portfolio-personality";
 import {
@@ -32,6 +33,7 @@ import { todayKeyInTz } from "@/lib/timezone";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import {
   Award,
+  AlertTriangle,
   ArrowLeft,
   Check,
   Copy,
@@ -1202,169 +1204,21 @@ export function CommunityView({ communityId }: Props) {
                           <span className="hidden sm:inline">Field guide</span>
                         </button>
                       </div>
-                      <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="grid gap-5 lg:grid-cols-2">
                         {membersWithBooks.map((m) => (
-                          <button
+                          <PowerAnimalCard
                             key={m.id}
-                            type="button"
-                            onClick={() => {
+                            name={m.name}
+                            isYou={m.isYou}
+                            isPending={m.isPending}
+                            totalValue={m.totalValue}
+                            personality={m.personality}
+                            milestone={m.milestone}
+                            onOpen={() => {
                               setSelectedOwnerId(m.id);
                               setSelectedPortfolioId(null);
                             }}
-                            className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 text-left transition hover:border-brand/40"
-                          >
-                            <div className="flex items-start gap-3">
-                              <span className="text-2xl leading-none" aria-hidden>
-                                {m.personality?.animalEmoji ?? "❔"}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline justify-between gap-3">
-                                  <p className="truncate text-sm font-semibold text-white">
-                                    {m.name}
-                                    {m.isYou && (
-                                      <span className="ml-1.5 text-xs font-normal text-zinc-400">
-                                        (you)
-                                      </span>
-                                    )}
-                                    {m.isPending && (
-                                      <span className="ml-1.5 text-xs font-normal text-amber-500/90">
-                                        awaiting sign-in
-                                      </span>
-                                    )}
-                                  </p>
-                                  <p className="shrink-0 text-sm font-semibold tabular-nums text-white">
-                                    {currency(m.totalValue, 0)}
-                                  </p>
-                                </div>
-                                <p
-                                  className="mt-0.5 text-sm text-brand-bright"
-                                  title={m.personality?.whyThisAnimal}
-                                >
-                                  {m.personality?.animal ?? "No book yet"}
-                                </p>
-                              </div>
-                            </div>
-
-                            {m.personality && (
-                              <div className="mt-4 space-y-3">
-                                <div className="grid grid-cols-3 gap-x-3">
-                                  <div>
-                                    <p className="text-xs text-zinc-400">Spread</p>
-                                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
-                                      {Math.round(
-                                        m.personality.diversificationScore
-                                      )}
-                                      <span className="text-xs font-normal text-zinc-500">
-                                        /100
-                                      </span>
-                                    </p>
-                                    <p className="text-xs text-zinc-500">
-                                      {m.personality.diversificationBand.label}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-zinc-400">Risk</p>
-                                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
-                                      {Math.round(m.personality.riskScore)}
-                                      <span className="text-xs font-normal text-zinc-500">
-                                        /100
-                                      </span>
-                                    </p>
-                                    <p className="text-xs text-zinc-500">
-                                      {m.personality.riskBand.label}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-zinc-400">
-                                      Conviction
-                                    </p>
-                                    <p className="mt-0.5 text-lg font-semibold tabular-nums text-white">
-                                      {m.personality.convictionScore}
-                                      <span className="text-xs font-normal text-zinc-500">
-                                        %
-                                      </span>
-                                    </p>
-                                    <p className="truncate text-xs text-zinc-500">
-                                      {m.personality.topTicker
-                                        ? cashtag(m.personality.topTicker)
-                                        : m.personality.convictionBand.label}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <p className="text-xs text-zinc-500">
-                                  {m.personality.themeCount}{" "}
-                                  {m.personality.themeCount === 1
-                                    ? "theme"
-                                    : "themes"}
-                                  {m.personality.cashPct >= 5
-                                    ? ` · cash ${m.personality.cashPct}%`
-                                    : ""}
-                                </p>
-
-                                <div className="grid grid-cols-3 gap-x-3 border-t border-zinc-800/80 pt-3">
-                                  <div>
-                                    <p className="text-sm font-semibold tabular-nums text-white">
-                                      {m.personality.expectedAnnualReturnPct.toFixed(1)}%
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-zinc-500">
-                                      a year
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-semibold tabular-nums text-loss">
-                                      {m.personality.maxDrawdownPct}%
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-zinc-500">
-                                      stretch
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p
-                                      className={cn(
-                                        "text-sm font-semibold tabular-nums",
-                                        signedTone(
-                                          m.personality.modeledAlphaPct,
-                                          "text-white"
-                                        )
-                                      )}
-                                    >
-                                      {signedPctPoints(
-                                        m.personality.modeledAlphaPct
-                                      )}
-                                    </p>
-                                    <p className="mt-0.5 text-xs text-zinc-500">
-                                      vs index
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {m.milestone.next != null && (
-                                  <div className="border-t border-zinc-800/80 pt-3">
-                                    <div className="flex items-baseline justify-between gap-2 text-xs text-zinc-400">
-                                      <span>
-                                        Next{" "}
-                                        <span className="font-medium text-zinc-300">
-                                          {currency(m.milestone.next, 0)}
-                                        </span>
-                                      </span>
-                                      <span className="tabular-nums">
-                                        {Math.round(m.milestone.progress * 100)}%
-                                      </span>
-                                    </div>
-                                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-zinc-800">
-                                      <div
-                                        className="h-full rounded-full bg-brand"
-                                        style={{
-                                          width: `${Math.round(m.milestone.progress * 100)}%`,
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </button>
+                          />
                         ))}
                       </div>
                     </section>
@@ -1768,6 +1622,9 @@ export function CommunityView({ communityId }: Props) {
                               )
                             : null;
                         const emails = memberEmails(m);
+                        const animalTone = personality
+                          ? animalCardTone(personality.archetype.id)
+                          : null;
                         return (
                           <li
                             key={m.user_id}
@@ -1788,9 +1645,14 @@ export function CommunityView({ communityId }: Props) {
                                     (you)
                                   </span>
                                 )}
-                                {personality && (
+                                {personality && animalTone && (
                                   <span
-                                    className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand-bright"
+                                    className={cn(
+                                      "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
+                                      animalTone.border,
+                                      animalTone.wash,
+                                      animalTone.name
+                                    )}
                                     title={personality.whyThisAnimal}
                                   >
                                     <span aria-hidden>
@@ -2313,37 +2175,54 @@ export function CommunityView({ communityId }: Props) {
               </button>
             </div>
             <div className="mt-4 space-y-3">
-              {ANIMAL_BESTIARY.map((a) => (
-                <div
-                  key={a.id}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-2xl" aria-hidden>
-                      {a.emoji}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white">
-                        {a.animal}
+              {ANIMAL_BESTIARY.map((a) => {
+                const tone = animalCardTone(a.id);
+                return (
+                  <div
+                    key={a.id}
+                    className={cn(
+                      "relative overflow-hidden rounded-xl border p-3.5 pl-4",
+                      tone.border,
+                      tone.wash
+                    )}
+                  >
+                    <span
+                      className={cn("absolute inset-y-0 left-0 w-1", tone.bar)}
+                      aria-hidden
+                    />
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={cn(
+                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl",
+                          tone.well
+                        )}
+                        aria-hidden
+                      >
+                        {a.emoji}
+                      </span>
+                      <div className="min-w-0">
+                        <p className={cn("text-sm font-semibold", tone.name)}>
+                          {a.animal}
+                        </p>
+                        <p className="text-xs text-zinc-400">{a.criteria}</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                      {a.vibe}
+                    </p>
+                    <div className="mt-2 space-y-1 text-xs leading-relaxed">
+                      <p className="flex gap-1.5 text-emerald-300/90">
+                        <Shield className="mt-0.5 h-3 w-3 shrink-0" />
+                        <span>{a.strength}</span>
                       </p>
-                      <p className="text-xs text-zinc-400">{a.criteria}</p>
+                      <p className="flex gap-1.5 text-amber-300/90">
+                        <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                        <span>{a.watchFor}</span>
+                      </p>
                     </div>
                   </div>
-                  <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                    {a.vibe}
-                  </p>
-                  <div className="mt-2 space-y-1 text-xs leading-relaxed">
-                    <p className="flex gap-1.5 text-emerald-300/90">
-                      <Shield className="mt-0.5 h-3 w-3 shrink-0" />
-                      <span>{a.strength}</span>
-                    </p>
-                    <p className="flex gap-1.5 text-amber-300/90">
-                      <span className="shrink-0">⚠️</span>
-                      <span>{a.watchFor}</span>
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -2357,6 +2236,156 @@ function signedPctPoints(n: number): string {
   if (n > 0) return `+${abs}%`;
   if (n < 0) return `-${abs}%`;
   return `${abs}%`;
+}
+
+function PowerAnimalCard({
+  name,
+  isYou,
+  isPending,
+  totalValue,
+  personality,
+  milestone,
+  onOpen,
+}: {
+  name: string;
+  isYou: boolean;
+  isPending: boolean;
+  totalValue: number;
+  personality: PortfolioPersonality | null;
+  milestone: { next: number | null; progress: number };
+  onOpen: () => void;
+}) {
+  const tone = animalCardTone(personality?.archetype.id);
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        "relative overflow-hidden rounded-2xl border p-4 pl-5 text-left transition hover:brightness-110",
+        tone.border,
+        tone.wash
+      )}
+    >
+      <span
+        className={cn("absolute inset-y-0 left-0 w-1.5", tone.bar)}
+        aria-hidden
+      />
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl",
+            tone.well
+          )}
+          aria-hidden
+        >
+          {personality?.animalEmoji ?? "❔"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">
+                {name}
+                {isYou && (
+                  <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                    (you)
+                  </span>
+                )}
+                {isPending && (
+                  <span className="ml-1.5 text-xs font-normal text-amber-500/90">
+                    awaiting sign-in
+                  </span>
+                )}
+              </p>
+              <p className={cn("mt-0.5 text-base font-semibold", tone.name)}>
+                {personality?.animal ?? "No book yet"}
+              </p>
+            </div>
+            <p className="shrink-0 text-base font-semibold tabular-nums text-white">
+              {currency(totalValue, 0)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {personality && (
+        <div className="mt-3 space-y-3">
+          <p className="text-sm leading-relaxed text-zinc-300">
+            {personality.whyThisAnimal}
+          </p>
+          <div className="space-y-1 text-xs leading-relaxed">
+            <p className="flex gap-1.5 text-emerald-300/90">
+              <Shield className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{personality.archetype.strength}</span>
+            </p>
+            <p className="flex gap-1.5 text-amber-300/90">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{personality.archetype.watchFor}</span>
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            <span className="rounded-md bg-black/25 px-2 py-1 text-xs tabular-nums text-zinc-300">
+              Spread {Math.round(personality.diversificationScore)}
+            </span>
+            <span className="rounded-md bg-black/25 px-2 py-1 text-xs tabular-nums text-zinc-300">
+              Risk {Math.round(personality.riskScore)}
+            </span>
+            <span className="rounded-md bg-black/25 px-2 py-1 text-xs tabular-nums text-zinc-300">
+              {personality.topTicker
+                ? `${cashtag(personality.topTicker)} ${personality.convictionScore}%`
+                : `Conviction ${personality.convictionScore}%`}
+            </span>
+          </div>
+
+          <p className="text-xs text-zinc-400">
+            <span className="tabular-nums text-zinc-200">
+              {personality.expectedAnnualReturnPct.toFixed(1)}%
+            </span>{" "}
+            a year
+            <span className="mx-1.5 text-zinc-600">·</span>
+            <span className="tabular-nums text-loss">
+              {personality.maxDrawdownPct}%
+            </span>{" "}
+            stretch
+            <span className="mx-1.5 text-zinc-600">·</span>
+            <span
+              className={cn(
+                "tabular-nums",
+                signedTone(personality.modeledAlphaPct, "text-zinc-200")
+              )}
+            >
+              {signedPctPoints(personality.modeledAlphaPct)}
+            </span>{" "}
+            vs index
+          </p>
+
+          {milestone.next != null && (
+            <div>
+              <div className="flex items-baseline justify-between gap-2 text-xs text-zinc-400">
+                <span>
+                  Next{" "}
+                  <span className="font-medium text-zinc-300">
+                    {currency(milestone.next, 0)}
+                  </span>
+                </span>
+                <span className="tabular-nums">
+                  {Math.round(milestone.progress * 100)}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-black/30">
+                <div
+                  className={cn("h-full rounded-full", tone.milestone)}
+                  style={{
+                    width: `${Math.round(milestone.progress * 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </button>
+  );
 }
 
 function Stat({
