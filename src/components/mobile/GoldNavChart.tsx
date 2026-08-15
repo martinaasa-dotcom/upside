@@ -301,7 +301,7 @@ export function useBookNavHistory(input: {
   };
 }
 
-function compactAxis(n: number): string {
+export function compactAxis(n: number): string {
   const sign = n < 0 ? "-" : "";
   const abs = Math.abs(n);
   if (abs >= 1_000_000) {
@@ -317,7 +317,7 @@ function compactAxis(n: number): string {
   return `${sign}${Math.round(abs)}`;
 }
 
-function niceScale(
+export function niceScale(
   lo: number,
   hi: number,
   target = 5

@@ -10,7 +10,15 @@ import {
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { isAbortError } from "@/lib/abort";
-import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
+import {
+  cn,
+  signedTone,
+  currency,
+  percent,
+  signedCurrency,
+  cashtag,
+} from "@/lib/format";
+import { compactAxis, niceScale } from "@/components/mobile/GoldNavChart";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   ensureCompleteEoyTargets,
@@ -31,11 +39,19 @@ import { readJsonOrThrow } from "@/lib/http";
 import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { isForecastFullyCovered } from "@/lib/forecast";
-import { INDEX_EOY_MULTS } from "@/lib/forecast-conviction";
 import { playbookBullets, type PlaybookBullet } from "@/lib/forecast-playbook";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 
 type Props = {
   model: ForecastModel;
@@ -257,95 +273,252 @@ const cellNum =
 
 type SheetPathPoint = { label: string; value: number };
 
-function SheetPathChart({
-  points,
-  spyPoints,
-}: {
-  points: SheetPathPoint[];
-  spyPoints?: SheetPathPoint[];
-}) {
+function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
   const gid = useId().replace(/:/g, "");
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [active, setActive] = useState<number | null>(null);
+  const [pinned, setPinned] = useState(false);
   const width = 640;
-  const height = 88;
-  const padX = 10;
-  const padT = 8;
+  const height = 176;
+  const padL = 8;
+  const padR = 12;
+  const padT = 12;
   const padB = 8;
-  const usable = points.filter((p) => Number.isFinite(p.value));
-  const spyUsable = (spyPoints ?? []).filter((p) => Number.isFinite(p.value));
-  if (usable.length < 2) return null;
+  const usable = useMemo(
+    () => points.filter((p) => Number.isFinite(p.value) && p.value > 0),
+    [points]
+  );
 
-  const vals = [
-    ...usable.map((p) => p.value),
-    ...spyUsable.map((p) => p.value),
-  ];
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const span = max - min || 1;
-  const innerW = width - padX * 2;
-  const innerH = height - padT - padB;
-  const xAt = (i: number, len: number) =>
-    padX + (len === 1 ? innerW / 2 : (i / (len - 1)) * innerW);
-  const yAt = (v: number) => padT + (1 - (v - min) / span) * innerH;
-  const line = usable
-    .map((p, i) => `${xAt(i, usable.length).toFixed(1)},${yAt(p.value).toFixed(1)}`)
-    .join(" ");
-  const spyLine = spyUsable
-    .map((p, i) => `${xAt(i, spyUsable.length).toFixed(1)},${yAt(p.value).toFixed(1)}`)
-    .join(" ");
-  const area = `${xAt(0, usable.length).toFixed(1)},${(padT + innerH).toFixed(1)} ${line} ${xAt(usable.length - 1, usable.length).toFixed(1)},${(padT + innerH).toFixed(1)}`;
-  const last = usable[usable.length - 1];
+  useEffect(() => {
+    if (!pinned) return;
+    function onDoc(e: Event) {
+      if (svgRef.current?.contains(e.target as Node)) return;
+      setPinned(false);
+      setActive(null);
+    }
+    document.addEventListener("pointerdown", onDoc);
+    return () => document.removeEventListener("pointerdown", onDoc);
+  }, [pinned]);
+
+  const geometry = useMemo(() => {
+    if (usable.length < 2) return null;
+    const vals = usable.map((p) => p.value);
+    const scale = niceScale(Math.min(...vals), Math.max(...vals), 5);
+    const axisSpan = scale.max - scale.min || 1;
+    const innerW = width - padL - padR;
+    const innerH = height - padT - padB;
+    const lastIdx = usable.length - 1;
+    const xAt = (i: number) =>
+      padL + (lastIdx === 0 ? innerW / 2 : (i / lastIdx) * innerW);
+    const yAt = (v: number) => padT + (1 - (v - scale.min) / axisSpan) * innerH;
+    const line = usable
+      .map((p, i) => `${xAt(i).toFixed(1)},${yAt(p.value).toFixed(1)}`)
+      .join(" ");
+    const area = `${xAt(0).toFixed(1)},${(padT + innerH).toFixed(1)} ${line} ${xAt(lastIdx).toFixed(1)},${(padT + innerH).toFixed(1)}`;
+    return { ...scale, innerW, innerH, lastIdx, xAt, yAt, line, area };
+  }, [usable]);
+
+  if (!geometry) return null;
+
+  const { ticks, innerW, innerH, lastIdx, xAt, yAt, line, area } = geometry;
+  const start = usable[0]!.value;
+  const hover =
+    active != null && active >= 0 && active <= lastIdx ? active : null;
+  const hoverPoint = hover != null ? usable[hover] : null;
+  const vsNowPct =
+    hoverPoint && start > 0 ? (hoverPoint.value - start) / start : null;
+  const vsNowDollar =
+    hoverPoint && start > 0 ? hoverPoint.value - start : null;
+
+  function indexFromClientX(clientX: number, target: SVGSVGElement) {
+    const rect = target.getBoundingClientRect();
+    if (rect.width <= 0 || lastIdx <= 0) return 0;
+    const x = ((clientX - rect.left) / rect.width) * width;
+    const t = (x - padL) / innerW;
+    return Math.max(0, Math.min(lastIdx, Math.round(t * lastIdx)));
+  }
+
+  function onPointerDown(e: PointerEvent<SVGSVGElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setActive(indexFromClientX(e.clientX, e.currentTarget));
+    if (e.pointerType !== "mouse") setPinned(true);
+  }
+
+  function onPointerMove(e: PointerEvent<SVGSVGElement>) {
+    const dragging = e.currentTarget.hasPointerCapture(e.pointerId);
+    if (e.pointerType === "mouse" || dragging) {
+      setActive(indexFromClientX(e.clientX, e.currentTarget));
+    }
+  }
+
+  function onPointerLeave(e: PointerEvent<SVGSVGElement>) {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    if (!pinned) setActive(null);
+  }
+
+  function onKeyDown(e: KeyboardEvent<SVGSVGElement>) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    setPinned(true);
+    setActive((prev) => {
+      const cur = prev ?? lastIdx;
+      return e.key === "ArrowLeft"
+        ? Math.max(0, cur - 1)
+        : Math.min(lastIdx, cur + 1);
+    });
+  }
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-auto w-full"
-      role="img"
-      aria-label="Modeled sheet value versus expected SPY from now through the last forecast year"
-    >
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#D6AD69" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={area} fill={`url(#${gid})`} />
-      {spyUsable.length >= 2 && (
-        <polyline
-          fill="none"
-          stroke="#818cf8"
-          strokeWidth={1.75}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          strokeDasharray="5 4"
-          points={spyLine}
-        />
-      )}
-      <polyline
-        fill="none"
-        stroke="#D6AD69"
-        strokeWidth={1.75}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        points={line}
-      />
-      {usable.map((p, i) => (
-        <circle
-          key={p.label}
-          cx={xAt(i, usable.length)}
-          cy={yAt(p.value)}
-          r={2.5}
-          fill="#08090C"
-          stroke="#E8C989"
-          strokeWidth={1.5}
-        />
-      ))}
-      <circle
-        cx={xAt(usable.length - 1, usable.length)}
-        cy={yAt(last.value)}
-        r={4}
-        fill="#E8C989"
-      />
-    </svg>
+    <div>
+      <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-11">
+        {hoverPoint ? (
+          <div className="rounded-lg border border-white/10 bg-zinc-950/90 px-2.5 py-1.5 text-center">
+            <p className="text-xs text-zinc-400">{hoverPoint.label}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
+              {currency(hoverPoint.value, 0)}
+            </p>
+            {vsNowPct != null && vsNowDollar != null && (
+              <p
+                className={cn(
+                  "mt-0.5 text-xs tabular-nums",
+                  signedTone(vsNowPct)
+                )}
+              >
+                vs now {vsNowPct > 0 ? "+" : ""}
+                {percent(vsNowPct)}
+                <span className="text-zinc-500">
+                  {" "}
+                  · {signedCurrency(vsNowDollar, 0)}
+                </span>
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="pb-1 text-xs text-zinc-500">
+            Drag across to read a year
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-stretch gap-3">
+        <div className="relative w-11 shrink-0">
+          {ticks.map((t) => (
+            <span
+              key={t}
+              className="absolute right-0 -translate-y-1/2 text-xs tabular-nums text-zinc-500"
+              style={{ top: `${(yAt(t) / height) * 100}%` }}
+            >
+              {compactAxis(t)}
+            </span>
+          ))}
+        </div>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-auto min-w-0 flex-1 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50"
+          role="slider"
+          tabIndex={0}
+          aria-label="Modeled book value through the last forecast year. Drag or use arrow keys to read a year."
+          aria-valuemin={0}
+          aria-valuemax={lastIdx}
+          aria-valuenow={hover ?? lastIdx}
+          aria-valuetext={
+            hoverPoint
+              ? `${hoverPoint.label}, ${currency(hoverPoint.value, 0)}${
+                  vsNowPct != null ? `, vs now ${percent(vsNowPct)}` : ""
+                }`
+              : undefined
+          }
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerLeave={onPointerLeave}
+          onKeyDown={onKeyDown}
+        >
+          <defs>
+            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#D6AD69" stopOpacity="0.28" />
+              <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {ticks.map((t) => (
+            <line
+              key={t}
+              x1={padL}
+              x2={width - padR}
+              y1={yAt(t)}
+              y2={yAt(t)}
+              stroke="currentColor"
+              strokeOpacity={0.1}
+            />
+          ))}
+          <polygon points={area} fill={`url(#${gid})`} />
+          <polyline
+            fill="none"
+            stroke="#D6AD69"
+            strokeWidth={2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            points={line}
+          />
+          {usable.map((p, i) => (
+            <circle
+              key={p.label}
+              cx={xAt(i)}
+              cy={yAt(p.value)}
+              r={2.5}
+              fill="#08090C"
+              stroke="#E8C989"
+              strokeWidth={1.5}
+            />
+          ))}
+          {hover != null && hoverPoint && (
+            <g pointerEvents="none">
+              <line
+                x1={xAt(hover)}
+                x2={xAt(hover)}
+                y1={padT}
+                y2={padT + innerH}
+                stroke="#E8C989"
+                strokeOpacity={0.45}
+              />
+              <circle
+                cx={xAt(hover)}
+                cy={yAt(hoverPoint.value)}
+                r={4.5}
+                fill="#E8C989"
+                stroke="#08090C"
+                strokeWidth={1.5}
+              />
+            </g>
+          )}
+        </svg>
+      </div>
+      <div className="mt-1.5 flex">
+        <div className="w-11 shrink-0" />
+        <div className="relative h-4 min-w-0 flex-1">
+          {usable.map((p, i) => {
+            const isFirst = i === 0;
+            const isLast = i === lastIdx;
+            return (
+              <span
+                key={p.label}
+                className="absolute top-0 text-xs text-zinc-500"
+                style={{
+                  left: `${((xAt(i) - padL) / innerW) * 100}%`,
+                  transform: isFirst
+                    ? "translateX(0)"
+                    : isLast
+                      ? "translateX(-100%)"
+                      : "translateX(-50%)",
+                }}
+              >
+                {p.label}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -353,86 +526,19 @@ function SheetPath({
   now,
   years,
   totals,
-  gainPct,
 }: {
   now: number;
   years: readonly ForecastYear[];
   totals: Record<ForecastYear, number>;
-  gainPct: number | null;
 }) {
   const points: SheetPathPoint[] = [
     { label: "Now", value: now },
     ...years.map((y) => ({ label: String(y), value: totals[y] })),
   ];
-  const spyPoints: SheetPathPoint[] = [
-    { label: "Now", value: now },
-    ...years.map((y, i) => ({
-      label: String(y),
-      value: now * (INDEX_EOY_MULTS[i] ?? INDEX_EOY_MULTS[INDEX_EOY_MULTS.length - 1]!),
-    })),
-  ];
-  const end = points[points.length - 1];
 
   return (
     <div className="mt-4 border-t border-white/5 pt-4">
-      <div className="flex items-end justify-between gap-6">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">
-            Now
-          </p>
-          <p className="mt-1 font-heading text-base font-bold tabular-nums text-white">
-            {currency(now, 0)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">
-            {end.label}
-          </p>
-          <p className="mt-1 font-heading text-base font-bold tabular-nums text-white">
-            {currency(end.value, 0)}
-          </p>
-          {gainPct != null && (
-            <p
-              className={cn(
-                "mt-1 text-xs font-medium tabular-nums",
-                signedTone(gainPct)
-              )}
-            >
-              {percent(gainPct)}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-3">
-        <SheetPathChart points={points} spyPoints={spyPoints} />
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-3 rounded-full bg-brand" aria-hidden />
-          Your book
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span
-            className="h-px w-3 border-t border-dashed border-[#818cf8]"
-            aria-hidden
-          />
-          Expected SPY (~10% a year)
-        </span>
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-x-4 gap-y-3 sm:grid-cols-6">
-        {points.map((p) => (
-          <div key={p.label}>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted">
-              {p.label}
-            </p>
-            <p className="mt-1.5 font-heading text-sm font-bold tabular-nums text-zinc-100 sm:text-base">
-              {currency(p.value, 0)}
-            </p>
-          </div>
-        ))}
-      </div>
+      <SheetPathChart points={points} />
     </div>
   );
 }
@@ -785,7 +891,6 @@ export function ForecastPanel({
             now={model.currentTotal}
             years={yearCols}
             totals={model.eoyTotals}
-            gainPct={model.gainPct}
           />
         )}
       </header>
