@@ -12,14 +12,31 @@
 --
 -- Doing the arithmetic inside a single UPDATE makes it atomic: Postgres takes
 -- a row lock for the duration, so concurrent callers queue and both deltas
--- land. Rounding happens here too, so the stored value can never drift into
--- fractional cents no matter which caller wrote it.
+-- land.
 --
--- SECURITY DEFINER only so the function can run with a stable search_path and
--- be granted narrowly. It deliberately does NOT do its own permission check:
--- callers are API routes that have already established co-ownership via
--- requirePortfolioOwner(). Execute is granted to authenticated and
--- service_role only, never to anon.
+-- The delta is rounded to cents before it is added, not the running balance
+-- after. Rounding the total compounds: Postgres round() breaks ties away from
+-- zero, so +100.005 then -100.005 stored 100.01 and then 0.01 rather than
+-- returning to 0. Rounding the delta keeps the invariant by induction -- a
+-- balance exact to the cent plus a delta exact to the cent is exact to the
+-- cent -- so nothing accumulates. The outer round() only cleans up a stored
+-- value that was already sub-cent, and is a no-op on anything this function
+-- wrote.
+--
+-- Half-away-from-zero matches roundMoney() in src/lib/money.ts, so a value
+-- rounds the same on both sides of the wire.
+--
+-- The function checks co-ownership itself rather than trusting the API route
+-- that calls it. It takes a portfolio id and an arbitrary amount, so a version
+-- that skipped the check would let any caller who can reach PostgREST move any
+-- sheet's cash by any amount given only its UUID — the same cross-tenant write
+-- this pass set out to close, reintroduced one layer down. The API routes do
+-- run their own requirePortfolioOwner check; this is the backstop for when
+-- something reaches the function without going through them.
+--
+-- service_role bypasses the check because it carries no end-user JWT, so
+-- auth.uid() is null for it: that is the app's own server-side path, which has
+-- already established ownership.
 create or replace function public.portfell_apply_cash_delta(
   p_portfolio_id uuid,
   p_delta numeric
@@ -31,10 +48,18 @@ set search_path = public
 as $$
 declare
   next_balance numeric;
+  uid uuid := auth.uid();
 begin
   if p_portfolio_id is null then
     raise exception 'portfolio id required';
   end if;
+
+  -- uid is null for the service-role connection the API routes use; any other
+  -- caller has to prove co-ownership of this sheet.
+  if uid is not null and not public.portfell_is_portfolio_co_owner(p_portfolio_id) then
+    raise exception 'not a co-owner of this portfolio';
+  end if;
+
   if p_delta is null or p_delta = 0 then
     select cash_balance into next_balance
     from public.portfell_portfolios
@@ -43,7 +68,9 @@ begin
   end if;
 
   update public.portfell_portfolios
-  set cash_balance = round((coalesce(cash_balance, 0) + p_delta)::numeric, 2),
+  set cash_balance = round(
+        (coalesce(cash_balance, 0) + round(p_delta::numeric, 2))::numeric, 2
+      ),
       updated_at = now()
   where id = p_portfolio_id
   returning cash_balance into next_balance;
@@ -52,6 +79,12 @@ begin
 end;
 $$;
 
-revoke all on function public.portfell_apply_cash_delta(uuid, numeric) from public;
-grant execute on function public.portfell_apply_cash_delta(uuid, numeric) to authenticated;
-grant execute on function public.portfell_apply_cash_delta(uuid, numeric) to service_role;
+-- Supabase default-grants execute on new functions in `public` to anon, so
+-- revoking from PUBLIC alone leaves anon holding the privilege. Name it
+-- explicitly, the same way migration 035 had to.
+revoke all on function public.portfell_apply_cash_delta(uuid, numeric)
+  from anon, public;
+grant execute on function public.portfell_apply_cash_delta(uuid, numeric)
+  to authenticated;
+grant execute on function public.portfell_apply_cash_delta(uuid, numeric)
+  to service_role;

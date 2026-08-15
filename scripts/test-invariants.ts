@@ -14,8 +14,10 @@ import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
 import { fundCopyBullets } from "../src/lib/fund-copy";
 import {
+  applyYtdAnchor,
   downsampleToWeeks,
   reconstructAssumedNav,
+  startNavFromYtdPct,
 } from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
 import {
@@ -1147,6 +1149,23 @@ run("assumed YTD NAV uses current size and forward-fills gaps", () => {
   assert.equal(weeks[weeks.length - 1]!.nav, 1220);
 });
 
+run("YTD anchor keeps the assumed shape and pins the year size", () => {
+  const start = startNavFromYtdPct(120, 0.2);
+  assert.equal(start, 100);
+  const scaled = applyYtdAnchor(
+    [
+      { date: "2026-01-02", nav: 200 },
+      { date: "2026-01-03", nav: 250 },
+      { date: "2026-01-04", nav: 300 },
+    ],
+    100,
+    150
+  );
+  assert.equal(scaled[0]!.nav, 100);
+  assert.equal(scaled[1]!.nav, 125);
+  assert.equal(scaled[2]!.nav, 150);
+});
+
 run("empty class plan is anything goes", () => {
   const trade = resolveClassroomTrade(
     parseClassPlan({}),
@@ -1593,14 +1612,35 @@ run("cash deltas are applied in one atomic statement", () => {
     "utf8"
   );
   assert.ok(
-    /cash_balance = round\(\(coalesce\(cash_balance, 0\) \+ p_delta\)/.test(
+    /cash_balance = round\([\s\S]{0,120}coalesce\(cash_balance, 0\)/.test(
       migration
     ),
     "the RPC must add the delta to the stored value inside the UPDATE"
   );
+  // Round the delta, not the running total. Postgres round() breaks ties away
+  // from zero, so rounding the balance after each add compounds: +100.005 then
+  // -100.005 stored 100.01 and then 0.01 instead of returning to 0.
+  assert.ok(
+    /round\(p_delta::numeric, 2\)/.test(migration),
+    "the delta must be rounded before it is added, or cents accumulate"
+  );
+  // Supabase default-grants execute on new public functions to anon, so
+  // revoking from PUBLIC alone leaves anon holding it. It has to be named.
+  assert.ok(
+    /revoke all on function public\.portfell_apply_cash_delta[\s\S]{0,80}from anon/.test(
+      migration
+    ),
+    "anon must be revoked by name, not just via PUBLIC"
+  );
   assert.ok(
     !/grant execute[^;]*to anon/i.test(migration),
-    "the cash RPC must never be callable by anon"
+    "the cash RPC must never be granted to anon"
+  );
+  // It takes a portfolio id and an arbitrary amount, so without its own check
+  // any caller reaching PostgREST could move any sheet's cash given a UUID.
+  assert.ok(
+    /portfell_is_portfolio_co_owner\(p_portfolio_id\)/.test(migration),
+    "the cash RPC must verify co-ownership itself, not trust its callers"
   );
 });
 
