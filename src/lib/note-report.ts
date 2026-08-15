@@ -746,8 +746,12 @@ const GOLD = "#d6ad69";
 const GAIN = "#10b981";
 const LOSS = "#f43f5e";
 const LINE = "#1c1f27";
+const EDGE = "#2a261e";
 const SANS =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const BOOK_URL = "https://upsidelab.app";
+const LOCKUP =
+  "https://www.upsidelab.app/icons/email-lockup.png?v=1";
 
 function toneColor(n: number): string {
   if (n > 0) return GAIN;
@@ -755,18 +759,22 @@ function toneColor(n: number): string {
   return MUTED;
 }
 
+function kicker(text: string): string {
+  return `<p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD}">${escapeHtml(text)}</p>`;
+}
+
 function label(text: string): string {
-  return `<p style="margin:0 0 10px 0;font-family:${SANS};font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:${GOLD}">${escapeHtml(text)}</p>`;
+  return `<p style="margin:0 0 12px 0;font-family:${SANS};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD}">${escapeHtml(text)}</p>`;
 }
 
 function panel(inner: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${CARD};border:1px solid #3c352a;border-radius:16px">
-  <tr><td style="padding:18px 18px">${inner}</td></tr>
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${CARD};border:1px solid ${EDGE};border-radius:14px">
+  <tr><td style="padding:20px 20px">${inner}</td></tr>
 </table>`;
 }
 
 function section(title: string, inner: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0 0 0">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:28px 0 0 0">
   <tr><td>${label(title)}</td></tr>
   <tr><td>${panel(inner)}</td></tr>
 </table>`;
@@ -776,31 +784,43 @@ function weightBar(weight: number): string {
   const pct = Math.max(4, Math.min(100, Math.round(Math.abs(weight) * 100)));
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${LINE};border-radius:2px">
   <tr>
-    <td width="${pct}%" style="height:4px;background:${GOLD};font-size:0;line-height:0;border-radius:2px">&nbsp;</td>
-    <td style="height:4px;font-size:0;line-height:0">&nbsp;</td>
+    <td width="${pct}%" style="height:3px;background:${GOLD};font-size:0;line-height:0;border-radius:2px">&nbsp;</td>
+    <td style="height:3px;font-size:0;line-height:0">&nbsp;</td>
+  </tr>
+</table>`;
+}
+
+function openBookButton(): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:32px 0 0 0">
+  <tr>
+    <td bgcolor="${GOLD}" style="border-radius:10px">
+      <a href="${BOOK_URL}" style="display:inline-block;padding:12px 18px;font-family:${SANS};font-size:14px;font-weight:600;color:${APP};text-decoration:none">Open the book</a>
+    </td>
   </tr>
 </table>`;
 }
 
 export function noteReportHtml(r: NoteReport): string {
   const todayColor = toneColor(r.todayDollar);
-  const todayLine = `${signedMoney(r.todayDollar)}${
-    r.todayPct != null ? `&nbsp;&nbsp;${escapeHtml(signedPct(r.todayPct))}` : ""
-  }`;
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
   const preview = notePreview(r);
   const previewPad = Array.from({ length: 40 }, () => "&zwnj;&nbsp;").join("");
+  const topPad = r.kind === "sunday" ? "36px" : "28px";
 
   const moverRows = r.movers
     .map((m, i) => {
       const c = toneColor(m.dollar);
       const border = i === r.movers.length - 1 ? "none" : `1px solid ${LINE}`;
       return `<tr>
-  <td style="padding:12px 8px 12px 0;font-family:${SANS};font-size:15px;font-weight:600;color:${CREAM};border-bottom:${border}">${escapeHtml(cashtag(m.ticker))}</td>
-  <td style="padding:12px 8px;font-family:${SANS};font-size:14px;text-align:right;color:${MUTED};border-bottom:${border}">${escapeHtml(priceMoney(m.price))}</td>
-  <td style="padding:12px 8px;font-family:${SANS};font-size:15px;font-weight:600;text-align:right;color:${c};border-bottom:${border}">${escapeHtml(signedPct(m.pct))}</td>
-  <td style="padding:12px 0 12px 8px;font-family:${SANS};font-size:15px;font-weight:600;text-align:right;color:${c};border-bottom:${border}">${escapeHtml(signedMoney(m.dollar))}</td>
+  <td style="padding:14px 12px 14px 0;border-bottom:${border};vertical-align:top">
+    <p style="margin:0;font-family:${SANS};font-size:16px;font-weight:600;color:${CREAM}">${escapeHtml(cashtag(m.ticker))}</p>
+    <p style="margin:4px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(priceMoney(m.price))}</p>
+  </td>
+  <td style="padding:14px 0;border-bottom:${border};vertical-align:top;text-align:right">
+    <p style="margin:0;font-family:${SANS};font-size:16px;font-weight:600;color:${c}">${escapeHtml(signedPct(m.pct))}</p>
+    <p style="margin:4px 0 0 0;font-family:${SANS};font-size:13px;color:${c}">${escapeHtml(signedMoney(m.dollar))}</p>
+  </td>
 </tr>`;
     })
     .join("");
@@ -815,7 +835,7 @@ export function noteReportHtml(r: NoteReport): string {
 
   const weightRows = r.weights
     .map((w, i) => {
-      const pad = i === r.weights.length - 1 ? "0" : "0 0 14px 0";
+      const pad = i === r.weights.length - 1 ? "0" : "0 0 16px 0";
       return `<tr>
   <td style="padding:${pad}">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">
@@ -841,8 +861,12 @@ export function noteReportHtml(r: NoteReport): string {
 
   const watchRows = r.watches
     .map((w, i) => {
-      const pad = i === r.watches.length - 1 ? "0" : "0 0 12px 0";
-      return `<tr><td style="padding:${pad};font-family:${SANS};font-size:15px;line-height:1.5;color:${CREAM}">${escapeHtml(w.line)}</td></tr>`;
+      const n = String(i + 1).padStart(2, "0");
+      const pad = i === r.watches.length - 1 ? "0" : "0 0 16px 0";
+      return `<tr>
+  <td style="padding:${pad};width:28px;vertical-align:top;font-family:${SANS};font-size:12px;letter-spacing:0.08em;color:${GOLD}">${n}</td>
+  <td style="padding:${pad};font-family:${SANS};font-size:15px;line-height:1.5;color:${CREAM}">${escapeHtml(w.line)}</td>
+</tr>`;
     })
     .join("");
   const watchesInner =
@@ -854,11 +878,16 @@ export function noteReportHtml(r: NoteReport): string {
       : "";
 
   const margusInner = r.margus
-    ? section(
-        "Margus",
-        `<p style="margin:0;font-family:${SANS};font-size:16px;line-height:1.55;color:${CREAM}">${escapeHtml(r.margus)}</p>
-<p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>`
-      )
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:28px 0 0 0">
+  <tr>
+    <td style="width:3px;background:${GOLD};font-size:0;line-height:0;border-radius:2px">&nbsp;</td>
+    <td style="padding:2px 0 2px 16px">
+      ${kicker("Margus")}
+      <p style="margin:10px 0 0 0;font-family:${SANS};font-size:18px;line-height:1.5;font-weight:500;color:${CREAM}">${escapeHtml(r.margus)}</p>
+      <p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:#6b7280">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
+    </td>
+  </tr>
+</table>`
     : "";
 
   const perspectiveInner =
@@ -868,7 +897,7 @@ export function noteReportHtml(r: NoteReport): string {
           r.perspective
             .map(
               (p, i) =>
-                `<p style="margin:${i === 0 ? "0" : "12px 0 0 0"};font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(p)}</p>`
+                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SANS};font-size:16px;line-height:1.55;color:${CREAM}">${escapeHtml(p)}</p>`
             )
             .join("")
         )
@@ -885,9 +914,9 @@ export function noteReportHtml(r: NoteReport): string {
       r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of the book` : null,
     ]
       .filter((x): x is string => Boolean(x))
-      .join(" · ");
+      .join(", ");
     bits.push(
-      `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(factBits)}</p>`
+      `<p style="margin:6px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(factBits)}</p>`
     );
     if (r.thesis.todayPct != null) {
       bits.push(
@@ -901,7 +930,7 @@ export function noteReportHtml(r: NoteReport): string {
     }
     if (r.thesis.status) {
       bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:${GOLD}">Last Pulse · ${escapeHtml(r.thesis.status)}</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD}">Last Pulse: ${escapeHtml(r.thesis.status)}</p>`
       );
     }
     if (r.thesis.pulseLine) {
@@ -909,8 +938,10 @@ export function noteReportHtml(r: NoteReport): string {
         `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
       );
     }
-    const heading = r.thesis.ownerThesis ? "Thesis" : "Focus";
-    thesisInner = section(heading, bits.join(""));
+    thesisInner = section(
+      r.thesis.ownerThesis ? "The name that did it" : "Focus",
+      bits.join("")
+    );
   }
 
   const weekNoteCards = r.weekNotes
@@ -921,7 +952,7 @@ export function noteReportHtml(r: NoteReport): string {
       );
       if (n.status) {
         bits.push(
-          `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:${GOLD}">${escapeHtml(n.status)}</p>`
+          `<p style="margin:6px 0 0 0;font-family:${SANS};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD}">${escapeHtml(n.status)}</p>`
         );
       }
       if (n.ownerThesis) {
@@ -939,7 +970,7 @@ export function noteReportHtml(r: NoteReport): string {
           `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;line-height:1.45;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
         );
       }
-      const pad = i === r.weekNotes.length - 1 ? "0" : "0 0 16px 0";
+      const pad = i === r.weekNotes.length - 1 ? "0" : "0 0 22px 0";
       return `<tr><td style="padding:${pad}">${bits.join("")}</td></tr>`;
     })
     .join("");
@@ -951,6 +982,26 @@ export function noteReportHtml(r: NoteReport): string {
           `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${weekNoteCards}</table>`
         )
       : "";
+
+  const hero =
+    r.kind === "morning"
+      ? `<p style="margin:18px 0 0 0;font-family:${SANS};font-size:22px;line-height:1.35;font-weight:600;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
+<p style="margin:12px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
+      : `<p style="margin:18px 0 0 0;font-family:${SANS};font-size:40px;line-height:1.05;font-weight:700;letter-spacing:-0.03em;color:${todayColor}">${escapeHtml(signedMoney(r.todayDollar))}</p>
+${
+  r.todayPct != null
+    ? `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(signedPct(r.todayPct))} ${escapeHtml(r.todayLabel.toLowerCase())}</p>`
+    : ""
+}
+<p style="margin:10px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.45;color:${CREAM}">${escapeHtml(r.lead)}</p>`;
+
+  const bodyOrder =
+    r.kind === "morning"
+      ? `${margusInner}${watchesInner}${moversInner}`
+      : r.kind === "sunday"
+        ? `${margusInner}${moversInner}${weightsInner}${perspectiveInner}${weekNotesInner}`
+        : `${margusInner}${moversInner}${thesisInner}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -970,44 +1021,27 @@ export function noteReportHtml(r: NoteReport): string {
 <!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${APP}" style="width:100%;background:${APP}">
   <tr>
-    <td style="padding:0;background:${APP}" bgcolor="${APP}">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${APP}">
+    <td align="center" style="padding:0;background:${APP}" bgcolor="${APP}">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;background:${APP}">
         <tr>
-          <td style="padding:22px 16px 28px 16px;background:${APP}">
+          <td style="height:3px;background:${GOLD};font-size:0;line-height:0">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:${topPad} 24px 40px 24px;background:${APP}">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">
               <tr>
                 <td style="vertical-align:middle">
-                  <img src="https://www.upsidelab.app/icons/email-lockup.png?v=1" width="180" height="33" alt="Upside Lab" style="display:block;border:0" />
+                  <img src="${LOCKUP}" width="156" height="29" alt="Upside Lab" style="display:block;border:0" />
                 </td>
                 <td style="vertical-align:middle;text-align:right;font-family:${SANS};font-size:12px;color:${MUTED}">${escapeHtml(r.dateLine)}</td>
               </tr>
             </table>
-            <h1 style="margin:22px 0 0 0;font-family:${SANS};font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.title)}</h1>
-            <p style="margin:12px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.45;color:${CREAM}">${escapeHtml(r.lead)}</p>
-            ${
-              r.kind === "morning"
-                ? `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">Book ${escapeHtml(money(r.book))} · ${escapeHtml(names)}</p>`
-                : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:22px 0 0 0">
-              <tr>
-                <td>
-                  ${panel(`
-                    ${label("Your book")}
-                    <p style="margin:0;font-family:${SANS};font-size:32px;line-height:1.1;font-weight:700;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(money(r.book))}</p>
-                    <p style="margin:8px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(names)}</p>
-                    <p style="margin:14px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(r.todayLabel)} ${todayLine}</p>
-                  `)}
-                </td>
-              </tr>
-            </table>`
-            }
-            ${margusInner}
-            ${moversInner}
-            ${watchesInner}
-            ${weightsInner}
-            ${thesisInner}
-            ${perspectiveInner}
-            ${weekNotesInner}
-            <p style="margin:20px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Turn these notes off in <a href="https://upsidelab.app/account" style="color:#9aa3ad;text-decoration:underline">Account</a>.</p>
+            <div style="height:22px;font-size:0;line-height:0">&nbsp;</div>
+            ${kicker(r.title)}
+            ${hero}
+            ${bodyOrder}
+            ${openBookButton()}
+            <p style="margin:28px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Turn these notes off in <a href="https://upsidelab.app/account" style="color:#9aa3ad;text-decoration:underline">Account</a>.</p>
           </td>
         </tr>
       </table>
