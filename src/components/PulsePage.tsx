@@ -42,6 +42,7 @@ import {
   statusLabel,
   actionLabel,
   normalizePulseSituation,
+  verdictRepeatsTrim,
   type PulseAction,
   type PulseCheck,
   type PulseHeadline,
@@ -315,7 +316,8 @@ function PulseCard({
         {shown.addLevel ? (
           <p className="font-medium text-brand-bright">{shown.addLevel}</p>
         ) : null}
-        {shown.verdict ? (
+        {shown.verdict &&
+        !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
           <p className="text-zinc-100">{shown.verdict}</p>
         ) : null}
         {shown.earningsNote ? (

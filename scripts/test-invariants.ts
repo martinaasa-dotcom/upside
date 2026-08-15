@@ -18,7 +18,12 @@ import {
   reconstructAssumedNav,
 } from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
-import { reconcilePulseCheck, statusLabel, type PulseCheck } from "../src/lib/thesis-pulse";
+import {
+  reconcilePulseCheck,
+  statusLabel,
+  verdictRepeatsTrim,
+  type PulseCheck,
+} from "../src/lib/thesis-pulse";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
 import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
 import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
@@ -520,6 +525,17 @@ run("Each alert becomes its own briefing card", () => {
   assert.ok(items.some((i) => i.id === "alert-a1"));
   assert.ok(items.some((i) => i.id === "alert-a2"));
   assert.ok(!items.some((i) => i.title.includes("things need a look")));
+});
+
+run("trim verdict that restates the size line is dropped", () => {
+  assert.equal(
+    verdictRepeatsTrim("Trim about 20% into the strength. Keep the rest.", 20),
+    true
+  );
+  assert.equal(
+    verdictRepeatsTrim("Trim about 20% so it isn't a third of the book.", 20),
+    false
+  );
 });
 
 run("broken + trim becomes sell", () => {

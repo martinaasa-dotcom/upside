@@ -447,6 +447,26 @@ export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
   return { ...n, thesisStatus, action };
 }
 
+/** True when verdict just restates the trim line already on the card. */
+export function verdictRepeatsTrim(
+  verdict: string | undefined,
+  trimPct: number | null | undefined
+): boolean {
+  const v = (verdict ?? "").trim().toLowerCase();
+  if (!v || trimPct == null || !Number.isFinite(trimPct)) return false;
+  if (!/\btrim\b/.test(v)) return false;
+  if (!new RegExp(`\\b${trimPct}\\s*%`).test(v)) return false;
+  const leftover = v
+    .replace(/\btrim\b/g, " ")
+    .replace(/\babout\b/g, " ")
+    .replace(new RegExp(`\\b${trimPct}\\s*%`, "g"), " ")
+    .replace(/\binto (this|the) strength\b/g, " ")
+    .replace(/\bkeep the rest\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return leftover.length < 12;
+}
+
 /**
  * Deterministic fallback so every visible card gets a colored action/status
  * even if the model misses a ticker in its response.
@@ -470,7 +490,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: `Trim about ${trimPct}% into the strength. Keep the rest.`,
+      verdict: "",
       thesisBreak: DEFAULT_THESIS_BREAK,
     };
   }
