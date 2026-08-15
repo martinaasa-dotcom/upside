@@ -1355,7 +1355,7 @@ export function CommunityView({ communityId }: Props) {
           )}
         </AppHeader>
 
-        <main id="main" className="mx-auto min-w-0 max-w-6xl flex-1 space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className="mx-auto w-full min-w-0 max-w-6xl flex-1 space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           {loading && (
             <p className="text-sm text-zinc-400">Loading community …</p>
           )}
