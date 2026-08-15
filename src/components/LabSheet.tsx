@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
+import { EmptyState, Panel, PanelHeader, Stat } from "@/components/ui/Panel";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -391,47 +391,49 @@ export function LabSheet({
                 </div>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <StatCell
+                  <Stat
                     label="Behaves like"
                     value={`${concentration.effectivePositions.toFixed(1)} names`}
-                    hint={
+                    sub={
                       concentration.positionCount === 1
                         ? "Your only position."
                         : `You hold ${concentration.positionCount}. Uneven weights make it act like fewer.`
                     }
                   />
-                  <StatCell
+                  <Stat
                     label="Largest position"
                     value={`${(concentration.topWeightPct * 100).toFixed(1)}%`}
-                    hint={concentration.topWeightTicker ?? ""}
-                    tone={
-                      concentration.topWeightPct >= 0.25 ? "warn" : "neutral"
+                    sub={concentration.topWeightTicker ?? undefined}
+                    valueClassName={
+                      concentration.topWeightPct >= 0.25
+                        ? "text-amber-300"
+                        : undefined
                     }
                   />
                   {/* "Top 5" is tautologically 100% for a book of five or
                    * fewer, which reads as broken. Fall back to top 3, and
                    * drop the cell entirely when even that says nothing. */}
                   {concentration.positionCount > 3 && (
-                    <StatCell
+                    <Stat
                       label={
                         concentration.positionCount > 5
                           ? "Top 5 combined"
                           : "Top 3 combined"
                       }
                       value={`${((concentration.positionCount > 5 ? concentration.topFivePct : concentration.topThreePct) * 100).toFixed(1)}%`}
-                      hint={
+                      sub={
                         (concentration.positionCount > 5
                           ? concentration.topFivePct
                           : concentration.topThreePct) >= 0.8
                           ? "The rest barely moves the needle."
                           : "The rest of the book carries real weight."
                       }
-                      tone={
+                      valueClassName={
                         (concentration.positionCount > 5
                           ? concentration.topFivePct
                           : concentration.topThreePct) >= 0.8
-                          ? "warn"
-                          : "neutral"
+                          ? "text-amber-300"
+                          : undefined
                       }
                     />
                   )}
@@ -469,7 +471,7 @@ export function LabSheet({
                     {themes.map((t) => (
                       <div
                         key={t.theme}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
                       >
                         <span className="flex items-center gap-2 text-xs text-zinc-300">
                           <span
@@ -649,37 +651,6 @@ export function LabSheet({
           )}
         </Panel>
       )}
-    </div>
-  );
-}
-
-function StatCell({
-  label,
-  value,
-  hint,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: "neutral" | "good" | "warn";
-}) {
-  return (
-    <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2.5">
-      <p className="text-xs uppercase tracking-wide text-zinc-400">
-        {label}
-      </p>
-      <p
-        className={cn(
-          "mt-0.5 text-base font-semibold tabular-nums",
-          tone === "good" && "text-gain",
-          tone === "warn" && "text-amber-300",
-          tone === "neutral" && "text-zinc-100"
-        )}
-      >
-        {value}
-      </p>
-      {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
     </div>
   );
 }

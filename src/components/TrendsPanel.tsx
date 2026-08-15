@@ -116,7 +116,7 @@ function TickerStoryCard({
           <div
             key={s.key}
             title={s.help}
-            className="rounded-lg border border-zinc-800 bg-black/20 px-2.5 py-2"
+            className="h-full rounded-lg border border-zinc-800 bg-black/20 px-2.5 py-2"
           >
             <p className="text-xs uppercase tracking-wide text-zinc-500">
               {s.label}

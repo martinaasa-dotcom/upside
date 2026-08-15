@@ -1192,7 +1192,7 @@ export function UpsidePortfolioPage() {
                     {bettingSlices.map((t) => (
                       <div
                         key={t.key}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
                       >
                         <span className="flex items-center gap-2 text-xs text-zinc-300">
                           <span
@@ -1288,7 +1288,7 @@ export function UpsidePortfolioPage() {
                     return (
                       <div
                         key={h.id}
-                        className="rounded-xl border border-brand-deep/30 bg-card/80 p-3.5"
+                        className="flex h-full flex-col rounded-xl border border-brand-deep/30 bg-card/80 p-3.5"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-white">
@@ -1328,16 +1328,17 @@ export function UpsidePortfolioPage() {
                             sub={`${h.shares.toLocaleString("en-US")} sh`}
                           />
                         </div>
-                        <CopyBlock
-                          label="Why he owns it"
-                          items={thesis}
-                          extra={
-                            h.target_timeframe
-                              ? `Timeline ${h.target_timeframe}`
-                              : null
-                          }
-                          className="mt-3"
-                        />
+                        <div className="mt-3 flex min-h-0 flex-1 flex-col">
+                          <CopyBlock
+                            label="Why he owns it"
+                            items={thesis}
+                            extra={
+                              h.target_timeframe
+                                ? `Timeline ${h.target_timeframe}`
+                                : null
+                            }
+                          />
+                        </div>
                         <CopyBlock
                           label="Exit"
                           items={exits}

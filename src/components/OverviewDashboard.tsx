@@ -304,7 +304,7 @@ function EmptyBook({
               type="button"
               onClick={r.onClick}
               className={cn(
-                "group rounded-xl border p-5 text-left transition active:scale-[0.99]",
+                "group h-full rounded-xl border p-5 text-left transition active:scale-[0.99]",
                 r.primary
                   ? "border-brand/40 bg-brand/10 hover:border-brand/70 hover:bg-brand/15"
                   : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700 hover:bg-zinc-900/70"
@@ -547,7 +547,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative grid min-h-11 w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-app/40 py-3.5 pl-5 pr-4 text-left transition hover:border-brand/35 hover:bg-hover"
+      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-app/40 py-3.5 pl-5 pr-4 text-left transition hover:border-brand/35 hover:bg-hover"
     >
       <span
         className={cn(

@@ -1,6 +1,6 @@
 "use client";
 
-import { Metric } from "@/components/ui/Panel";
+import { Stat } from "@/components/ui/Panel";
 import { cn, percent, signedTone } from "@/lib/format";
 import { useMemo, useState } from "react";
 
@@ -215,7 +215,7 @@ export function ComparisonChart({
         {usable.map((s) => {
           const last = s.points[s.points.length - 1] ?? 0;
           return (
-            <Metric
+            <Stat
               key={s.label}
               label={
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -227,7 +227,8 @@ export function ComparisonChart({
                   <span className="truncate">{s.label}</span>
                 </span>
               }
-              hint={
+              value={percent(last)}
+              sub={
                 s.hint ? (
                   <span className={signedTone(last, "text-zinc-500")}>
                     {s.hint}
@@ -235,9 +236,7 @@ export function ComparisonChart({
                 ) : undefined
               }
               valueClassName={signedTone(last, "text-zinc-100")}
-            >
-              {percent(last)}
-            </Metric>
+            />
           );
         })}
       </div>

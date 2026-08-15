@@ -1641,7 +1641,7 @@ export function CommunityView({ communityId }: Props) {
                         {achievements.map((a) => (
                           <div
                             key={a.id}
-                            className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
+                            className="flex h-full flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-xl" aria-hidden>
@@ -1657,7 +1657,7 @@ export function CommunityView({ communityId }: Props) {
                                 · {a.stat}
                               </span>
                             </p>
-                            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                            <p className="mt-auto pt-1 text-xs leading-relaxed text-zinc-400">
                               {a.description}
                             </p>
                           </div>
@@ -1835,7 +1835,7 @@ export function CommunityView({ communityId }: Props) {
                         {communityThemeBreakdown.map((t) => (
                           <div
                             key={t.theme}
-                            className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                            className="flex h-full items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
                           >
                             <span className="flex items-center gap-2 text-xs text-zinc-300">
                               <span
@@ -2676,7 +2676,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "relative overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 sm:p-6 sm:pl-7",
+        "relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 sm:p-6 sm:pl-7",
         tone.border,
         tone.wash
       )}
@@ -2723,7 +2723,7 @@ function PowerAnimalCard({
       </div>
 
       {personality && (
-        <div className="mt-5 space-y-5">
+        <div className="mt-5 flex flex-1 flex-col space-y-5">
           <p className="text-sm leading-relaxed text-zinc-300">
             {personality.whyThisAnimal}
           </p>
@@ -2752,8 +2752,8 @@ function PowerAnimalCard({
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl bg-black/20 px-3 py-3">
+          <div className="mt-auto grid gap-3 sm:grid-cols-2">
+            <div className="h-full rounded-xl bg-black/20 px-3 py-3">
               <p className="text-xs uppercase tracking-wide text-zinc-500">
                 Modeled year
               </p>
@@ -2769,7 +2769,7 @@ function PowerAnimalCard({
                 {signedPctPoints(personality.modeledAlphaPct)} vs index
               </p>
             </div>
-            <div className="rounded-xl bg-black/20 px-3 py-3">
+            <div className="h-full rounded-xl bg-black/20 px-3 py-3">
               <p className="text-xs uppercase tracking-wide text-zinc-500">
                 Stretch (a rough bad year)
               </p>

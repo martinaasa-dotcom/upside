@@ -1114,7 +1114,7 @@ export function ForecastPanel({
                     {activePeriod.label}
                   </p>
                   <div className="mt-4 grid gap-6 sm:grid-cols-2">
-                    <div>
+                    <div className="flex h-full flex-col">
                       <MicroLabel className="text-brand-bright">
                         Worth adding
                       </MicroLabel>
@@ -1124,7 +1124,7 @@ export function ForecastPanel({
                         tone="add"
                       />
                     </div>
-                    <div>
+                    <div className="flex h-full flex-col">
                       <MicroLabel className="text-rose-300">
                         Worth selling some
                       </MicroLabel>

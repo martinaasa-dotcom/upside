@@ -158,7 +158,7 @@ export function HomeWorld({
           fundOnly ? "grid-cols-1" : "sm:grid-cols-2"
         )}
       >
-        <Link href="/upside-portfolio" className="group block">
+        <Link href="/upside-portfolio" className="group block h-full">
           <Card
             tone="brand"
             interactive
@@ -207,7 +207,7 @@ export function HomeWorld({
         </Link>
 
         {!fundOnly && (
-        <Link href={communityHref} className="group block">
+        <Link href={communityHref} className="group block h-full">
           <Card
             interactive
             className="h-full px-4 py-4 transition group-hover:border-brand/50"

@@ -158,7 +158,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
       </Panel>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Panel tone="plain" padded={false} className="p-4">
+        <Panel tone="plain" padded={false} className="flex flex-col p-4">
           <MicroLabel>Book after this</MicroLabel>
           <div className="mt-1 flex items-baseline justify-between gap-2">
             <span className="text-lg font-semibold tabular-nums text-white">
@@ -173,7 +173,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {percent(analysis.deltaPct)}
             </span>
           </div>
-          <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
             <span>Today {currency(analysis.liveTotalVal, 0)}</span>
             <span
               className={cn(
@@ -187,7 +187,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           </div>
         </Panel>
 
-        <Panel tone="plain" padded={false} className="p-4">
+        <Panel tone="plain" padded={false} className="flex flex-col p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <MicroLabel>
               {analysis.margin.isUsingMargin
@@ -218,7 +218,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   of what you own
                 </span>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
                 <span>Room before a margin call</span>
                 <span
                   className={cn(
@@ -243,7 +243,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   after this
                 </span>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
                 {analysis.cash > 0 ? (
                   <>
                     <span>Doesn&apos;t fall with the stocks</span>
@@ -263,7 +263,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           )}
         </Panel>
 
-        <Panel tone="plain" padded={false} className="p-4">
+        <Panel tone="plain" padded={false} className="flex flex-col p-4">
           <MicroLabel>Hurts most</MicroLabel>
           {analysis.topVulnerability ? (
             <>
@@ -275,7 +275,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   {currency(analysis.topVulnerability.deltaVal, 0)}
                 </span>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
                 <span className="truncate pr-1">
                   {analysis.topVulnerability.label}
                 </span>
@@ -289,7 +289,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           )}
         </Panel>
 
-        <Panel tone="plain" padded={false} className="p-4">
+        <Panel tone="plain" padded={false} className="flex flex-col p-4">
           <MicroLabel>Holds up best</MicroLabel>
           {analysis.topShockAbsorber ? (
             <>
@@ -309,7 +309,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   {currency(analysis.topShockAbsorber.deltaVal, 0)}
                 </span>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
                 <span className="truncate pr-1">
                   {analysis.topShockAbsorber.label}
                 </span>
@@ -343,7 +343,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             {analysis.themeBreakdown.map((t) => (
               <div
                 key={t.theme}
-                className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-950/40 px-3 py-2 text-sm"
+                className="flex h-full items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-950/40 px-3 py-2 text-sm"
               >
                 <span className="truncate text-zinc-300">{t.theme}</span>
                 <span

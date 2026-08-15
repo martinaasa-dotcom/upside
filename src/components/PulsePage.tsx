@@ -12,10 +12,10 @@ import {
 } from "@/lib/format";
 import {
   EmptyState,
-  Metric,
   MicroLabel,
   Panel,
   PanelHeader,
+  Stat,
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
@@ -250,28 +250,27 @@ function PulseCard({
       </div>
 
       {c.inBook ? (
-        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          <Metric label="Price" hint={currency(c.currentValue)}>
-            {currency(c.price)}
-          </Metric>
-          <Metric
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat
+            label="Price"
+            value={currency(c.price)}
+            sub={currency(c.currentValue)}
+          />
+          <Stat
             label="Today"
+            value={signedCurrency(c.todayDollar)}
             valueClassName={signedTone(c.todayDollar, "text-zinc-100")}
-          >
-            {signedCurrency(c.todayDollar)}
-          </Metric>
-          <Metric
+          />
+          <Stat
             label="Lifetime"
+            value={percent(c.roiPct)}
             valueClassName={signedTone(c.roiPct, "text-zinc-100")}
-          >
-            {percent(c.roiPct)}
-          </Metric>
-          <Metric
+          />
+          <Stat
             label="Book"
-            hint={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
-          >
-            {percent(c.bookPct)}
-          </Metric>
+            value={percent(c.bookPct)}
+            sub={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
+          />
         </div>
       ) : (
         <p className="mt-2 text-xs tabular-nums text-zinc-500">

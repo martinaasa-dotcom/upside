@@ -73,7 +73,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-2xl border",
+        "h-full rounded-2xl border",
         SHELL_TONES[tone],
         padded && "p-5 sm:p-8",
         className
@@ -193,7 +193,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border px-4 py-4",
+        "h-full rounded-xl border px-4 py-4",
         CARD_TONES[tone],
         interactive &&
           "transition hover:border-white/20 hover:bg-hover active:scale-[0.995]",
@@ -297,6 +297,7 @@ export function Stat({
   value,
   sub,
   explain,
+  tone,
   valueClassName,
   subClassName,
   className,
@@ -305,6 +306,7 @@ export function Stat({
   value: ReactNode;
   sub?: ReactNode;
   explain?: string;
+  tone?: "up" | "down";
   valueClassName?: string;
   subClassName?: string;
   className?: string;
@@ -312,7 +314,7 @@ export function Stat({
   return (
     <div
       className={cn(
-        "rounded-xl border border-white/10 bg-app/40 px-4 py-3.5",
+        "h-full rounded-xl border border-white/10 bg-app/40 px-4 py-3.5",
         className
       )}
     >
@@ -323,7 +325,12 @@ export function Stat({
       <p
         className={cn(
           "mt-1 font-heading text-base font-bold tabular-nums",
-          valueClassName ?? "text-white"
+          valueClassName ??
+            (tone === "up"
+              ? "text-gain"
+              : tone === "down"
+                ? "text-loss"
+                : "text-white")
         )}
       >
         {value}

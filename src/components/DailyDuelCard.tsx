@@ -294,7 +294,7 @@ export function DailyDuelCard({
               disabled={myPick != null}
               onClick={() => pick(side)}
               className={cn(
-                "touch-target rounded-2xl border px-4 py-5 text-center transition",
+                "touch-target flex h-full flex-col items-center justify-center rounded-2xl border px-4 py-5 text-center transition",
                 myPick == null
                   ? "border-zinc-700 bg-zinc-900/40 hover:border-sky-400/60 hover:bg-sky-500/10 active:scale-[0.98]"
                   : win

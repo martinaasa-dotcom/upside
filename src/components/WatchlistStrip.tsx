@@ -131,7 +131,7 @@ export function WatchlistStrip({
             return (
               <li
                 key={ticker}
-                className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-app/40 px-3 py-2"
+                className="flex h-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-app/40 px-3 py-2"
               >
                 <button
                   type="button"
