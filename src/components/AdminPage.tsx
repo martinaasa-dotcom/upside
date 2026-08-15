@@ -99,6 +99,7 @@ export function AdminPage() {
   const [confirmClearErrors, setConfirmClearErrors] = useState(false);
 
   const loadAbortRef = useRef<AbortController | null>(null);
+  const hasAdminDataRef = useRef(false);
 
   const loadErrorLog = useCallback(async (signal?: AbortSignal) => {
     setErrorLogLoading(true);
@@ -127,7 +128,7 @@ export function AdminPage() {
   const load = useCallback(
     async (isRefresh: boolean, signal?: AbortSignal) => {
       if (isRefresh) setRefreshing(true);
-      else setLoading(true);
+      else if (!hasAdminDataRef.current) setLoading(true);
       setError(null);
       try {
         const res = await fetch("/api/admin/overview", {
@@ -143,6 +144,7 @@ export function AdminPage() {
         setUsers(data.users ?? []);
         setCommunities(data.communities ?? []);
         setFunnel(data.funnel ?? null);
+        hasAdminDataRef.current = true;
       } catch (e) {
         if (isAbortError(e) || signal?.aborted) return;
         setError(e instanceof Error ? e.message : "Couldn't load that page.");

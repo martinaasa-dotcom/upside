@@ -38,12 +38,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useState } from "react";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
 function VisitStreakCard() {
-  const [streak, setStreak] = useState<VisitStreakState | null>(null);
-  useEffect(() => {
-    setStreak(loadVisitStreak());
-  }, []);
+  const [streak] = useHydratedCache<VisitStreakState | null>(
+    loadVisitStreak,
+    null
+  );
   if (!streak || streak.totalVisits <= 0) return null;
   return (
     <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">

@@ -19,8 +19,10 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { isAbortError } from "@/lib/abort";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { loadTrendsPaint, saveTrendsPaint } from "@/lib/paint-cache";
 
 // Mirrors MAX_TICKERS in src/lib/market/trends-cache.ts; kept as a plain
 // constant here so this client component never imports the yahoo-finance2
@@ -143,17 +145,10 @@ function rsText(v: number | null): string {
 }
 
 export function TrendsPanel({ tickers }: { tickers: string[] }) {
-  const [rows, setRows] = useState<TrendRow[] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [draft, setDraft] = useState("");
-  const [addError, setAddError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setWatchlist(loadTrendsWatchlist());
-  }, []);
-
+  const [watchlist, setWatchlist] = useHydratedCache<string[]>(
+    loadTrendsWatchlist,
+    []
+  );
   const holdingSet = useMemo(
     () => new Set(tickers.map((t) => t.toUpperCase())),
     [tickers]
@@ -164,11 +159,31 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   );
   const key = combined.join(",");
 
+  const [rows, setRows] = useHydratedCache<TrendRow[] | null>(
+    () => (key ? loadTrendsPaint(key) : []),
+    null
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [addError, setAddError] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (!key) {
+      setRows([]);
+      return;
+    }
+    const cached = loadTrendsPaint(key);
+    if (cached) setRows(cached);
+  }, [key, setRows]);
+
   const load = useCallback(async (force = false, signal?: AbortSignal) => {
     if (!key) {
       setRows([]);
       return;
     }
+    const cached = loadTrendsPaint(key);
+    if (cached && !force) setRows(cached);
     setBusy(true);
     setError(null);
     try {
@@ -182,14 +197,17 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
         res,
         "Couldn't load trends. Try again."
       );
-      setRows(data.rows ?? []);
+      const next = data.rows ?? [];
+      setRows(next);
+      saveTrendsPaint(key, next);
     } catch (e) {
       if (isAbortError(e)) return;
+      if (loadTrendsPaint(key) != null) return;
       setError(e instanceof Error ? e.message : "Couldn't load trends. Try again.");
     } finally {
       if (!signal?.aborted) setBusy(false);
     }
-  }, [key]);
+  }, [key, setRows]);
 
   // Weekly indicators barely move intraday, so fetch once per ticker set
   // rather than polling. The button is there for a manual recheck.
@@ -202,7 +220,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
     const ctrl = new AbortController();
     void load(false, ctrl.signal);
     return () => ctrl.abort();
-  }, [key, load]);
+  }, [key, load, setRows]);
 
   const addToWatchlist = useCallback(() => {
     const symbol = draft.trim().toUpperCase().replace(/\s+/g, "");
@@ -219,11 +237,11 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
     setWatchlist(next);
     setDraft("");
     setAddError(null);
-  }, [draft, holdingSet, watchlist, combined.length]);
+  }, [draft, holdingSet, watchlist, combined.length, setWatchlist]);
 
   const removeFromWatchlist = useCallback((symbol: string) => {
     setWatchlist((prev) => removeWatchlistTicker(prev, symbol));
-  }, []);
+  }, [setWatchlist]);
 
   // Stories with the loudest news (a divergence, a regime actually
   // changing) float to the top; everything else falls back to who's

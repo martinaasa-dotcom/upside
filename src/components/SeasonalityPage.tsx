@@ -12,8 +12,10 @@ import {
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAbortError } from "@/lib/abort";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { loadSeasonalityPaint, saveSeasonalityPaint } from "@/lib/paint-cache";
 
 const DEFAULT_TICKERS = ["SPY", "^GSPC", "QQQ", "IWM", "DIA"];
 
@@ -433,8 +435,11 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   const marketToday = useMemo(() => todayInMarketTz(), []);
 
   const [ticker, setTicker] = useState("SPY");
-  const [model, setModel] = useState<SeasonalityModel | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [model, setModel] = useHydratedCache<SeasonalityModel | null>(
+    () => loadSeasonalityPaint("SPY"),
+    null
+  );
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** Monthly history panel — independent from day drill-down. */
   const [playbookMonth, setPlaybookMonth] = useState(marketToday.month);
@@ -447,7 +452,13 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
     loadCtrlRef.current?.abort();
     const ctrl = new AbortController();
     loadCtrlRef.current = ctrl;
-    setLoading(true);
+    const cached = loadSeasonalityPaint(sym);
+    if (cached) {
+      setModel(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const res = await fetch(
@@ -461,20 +472,27 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       const next = (await res.json()) as SeasonalityModel;
       if (ctrl.signal.aborted) return;
       setModel(next);
+      saveSeasonalityPaint(next);
     } catch (e) {
       if (isAbortError(e) || ctrl.signal.aborted) return;
+      if (loadSeasonalityPaint(sym)) return;
       setModel(null);
       setError(e instanceof Error ? e.message : "Couldn't load those charts.");
     } finally {
       if (!ctrl.signal.aborted) setLoading(false);
     }
-  }, []);
+  }, [setModel]);
 
   useEffect(() => {
     if (!tickers.includes(ticker)) {
       setTicker(tickers[0] ?? "SPY");
     }
   }, [tickers, ticker]);
+
+  useLayoutEffect(() => {
+    const cached = loadSeasonalityPaint(ticker);
+    if (cached) setModel(cached);
+  }, [ticker, setModel]);
 
   useEffect(() => {
     void load(ticker);

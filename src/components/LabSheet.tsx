@@ -492,16 +492,20 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "trends" && !hiddenTabs.includes("trends") && (
-        <WidgetErrorBoundary name="Trends">
-          <TrendsPanel tickers={scopedTickers.map((t) => t.ticker)} />
-        </WidgetErrorBoundary>
+      {!hiddenTabs.includes("trends") && (
+        <div className={tab === "trends" ? undefined : "hidden"}>
+          <WidgetErrorBoundary name="Trends">
+            <TrendsPanel tickers={scopedTickers.map((t) => t.ticker)} />
+          </WidgetErrorBoundary>
+        </div>
       )}
 
-      {tab === "seasonality" && !hiddenTabs.includes("seasonality") && (
-        <WidgetErrorBoundary name="Seasonality">
-          <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
-        </WidgetErrorBoundary>
+      {!hiddenTabs.includes("seasonality") && (
+        <div className={tab === "seasonality" ? undefined : "hidden"}>
+          <WidgetErrorBoundary name="Seasonality">
+            <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
+          </WidgetErrorBoundary>
+        </div>
       )}
 
       {tab === "risk" && !hiddenTabs.includes("risk") && (

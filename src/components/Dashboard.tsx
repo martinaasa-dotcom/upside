@@ -537,6 +537,10 @@ export function Dashboard() {
     const cachedQuotes = loadCachedQuotes();
     setQuotes(cachedQuotes.quotes);
     setQuotesUpdatedAt(cachedQuotes.savedAt);
+    const eur = cachedQuotes.quotes["EURUSD=X"]?.price;
+    if (eur && eur > 0) setEurUsd(eur);
+    const gbp = cachedQuotes.quotes["GBPUSD=X"]?.price;
+    if (gbp && gbp > 0) setGbpUsd(gbp);
     setDisplayCurrencyByPortfolio(loadDisplayCurrencyMap());
     setAlertToastsSent(loadDismissedAlertIds());
     setCcVisibleByPortfolio(loadVisibilityMap(CC_VISIBLE_KEY));

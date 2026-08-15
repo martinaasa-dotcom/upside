@@ -12,6 +12,7 @@ import type { DuelPick } from "@/lib/daily-duel";
 
 const CACHE_PREFIX = "upside-community-v1:";
 const LIST_CACHE_KEY = "upside-communities-list-v1";
+const DISCOVER_CACHE_KEY = "upside-communities-discover-v1";
 const DUEL_CACHE_PREFIX = "upside-community-duel-v1:";
 const SHEETS_CACHE_PREFIX = "upside-community-sheets-v1:";
 const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes — communities update slowly
@@ -173,6 +174,52 @@ export function saveCommunityListCache(rows: CommunityListRow[]) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(LIST_CACHE_KEY, JSON.stringify(rows));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export type CommunityDiscoverRow = {
+  id: string;
+  name: string;
+  houseNote?: string | null;
+  memberCount: number;
+  requestStatus: "pending" | "approved" | "rejected" | null;
+};
+
+let discoverMemory: CommunityDiscoverRow[] | null = null;
+
+function isDiscoverShape(v: unknown): v is CommunityDiscoverRow[] {
+  if (!Array.isArray(v)) return false;
+  return v.every(
+    (row) =>
+      row &&
+      typeof row === "object" &&
+      typeof (row as CommunityDiscoverRow).id === "string" &&
+      typeof (row as CommunityDiscoverRow).name === "string"
+  );
+}
+
+export function loadCommunityDiscoverCache(): CommunityDiscoverRow[] | null {
+  if (discoverMemory) return discoverMemory;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DISCOVER_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isDiscoverShape(parsed)) return null;
+    discoverMemory = parsed;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCommunityDiscoverCache(rows: CommunityDiscoverRow[]) {
+  discoverMemory = rows;
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DISCOVER_CACHE_KEY, JSON.stringify(rows));
   } catch {
     /* ignore quota / private mode */
   }

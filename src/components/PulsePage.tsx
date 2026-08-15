@@ -52,6 +52,7 @@ import {
   type ThesisStatus,
 } from "@/lib/thesis-pulse";
 import { fundCopyBullets } from "@/lib/fund-copy";
+import { loadFearGreedPaint, loadMacroPaint, saveMacroPaint } from "@/lib/paint-cache";
 import {
   loadPulseHistory,
   recordPulseHistory,
@@ -519,6 +520,8 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   useLayoutEffect(() => {
     const cached = loadPulseSummary();
     if (cached) setSummary(humanizeMargusText(cached.summary));
+    const fg = loadFearGreedPaint();
+    if (fg) setFearGreed(fg);
   }, []);
 
   useEffect(() => {
@@ -527,7 +530,17 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!ctrl.signal.aborted && data?.score != null) {
-          setFearGreed(data as FearGreedSnapshot);
+          const fg = data as FearGreedSnapshot;
+          setFearGreed(fg);
+          saveMacroPaint({
+            macro: loadMacroPaint()?.macro ?? {
+              vix: null,
+              eurusd: null,
+              btc: null,
+              tenYear: null,
+            },
+            fearGreed: fg,
+          });
         }
       })
       .catch((err) => {

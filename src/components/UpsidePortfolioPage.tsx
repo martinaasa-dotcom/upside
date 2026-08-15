@@ -34,6 +34,10 @@ import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
 } from "@/lib/upside-portfolio-cache";
+import {
+  loadFundComparePaint,
+  patchFundComparePaint,
+} from "@/lib/paint-cache";
 import type { Quote } from "@/lib/types";
 import {
   portfolioLiveValue,
@@ -527,7 +531,23 @@ export function UpsidePortfolioPage() {
   });
 
   useLayoutEffect(() => {
-    setBenchmark(loadStoredBenchmark());
+    const stored = loadStoredBenchmark();
+    setBenchmark(stored);
+    const cmp = loadFundComparePaint();
+    if (!cmp) return;
+    setMyPortfolios(cmp.portfolios);
+    setMyHoldings(cmp.holdings);
+    if (!stored) return;
+    const path = cmp.paths[stored.portfolioId];
+    if (path?.sheet?.length) {
+      setSheetYtd(path.sheet);
+      setSpyYtd(path.spy?.length ? path.spy : null);
+    }
+    const live = cmp.live[stored.portfolioId];
+    if (live) {
+      setBenchmarkLiveValue(live.value);
+      setBenchmarkQuotes(live.quotes ?? {});
+    }
   }, []);
 
   const openHoldings = useMemo(
@@ -776,6 +796,7 @@ export function UpsidePortfolioPage() {
     );
     setMyPortfolios(portfolios);
     setMyHoldings(holdingsList);
+    patchFundComparePaint({ portfolios, holdings: holdingsList });
     return { portfolios, holdingsList };
   }, []);
 
@@ -837,6 +858,12 @@ export function UpsidePortfolioPage() {
       if (sheet.length >= 2) {
         setSheetYtd(sheet);
         setSpyYtd(spy);
+        patchFundComparePaint({
+          paths: { [benchmark.portfolioId]: { sheet, spy } },
+          live: {
+            [benchmark.portfolioId]: { value: live, quotes: liveQuotes },
+          },
+        });
         const first = sheet[0]!;
         const needsHeal =
           benchmark.range !== "recorded" ||
@@ -955,6 +982,10 @@ export function UpsidePortfolioPage() {
       }
       setSheetYtd(sheet);
       setSpyYtd(spy.length >= 2 ? spy : null);
+      patchFundComparePaint({
+        paths: { [pickerSelection]: { sheet, spy } },
+        live: { [pickerSelection]: { value: live, quotes: liveQuotes } },
+      });
       const first = sheet[0]!;
       const next: MyPortfolioBenchmark = {
         portfolioId: pickerSelection,

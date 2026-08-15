@@ -44,7 +44,7 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
 
@@ -696,7 +696,7 @@ export function OverviewDashboard({
     });
   }, [tickerKey, model.totals.totalValue, model.totals.todayDollar, model.totals.todayPct, model.tickers]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!model.tickers.length) return;
     const prev = loadVisitSnapshot();
     setVisitDiff(prev ? diffSinceLastVisit(prev, model) : null);

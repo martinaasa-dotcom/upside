@@ -6,13 +6,33 @@ import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { cn } from "@/lib/format";
 import { quotePollMs } from "@/lib/market/session";
+import { loadCachedQuotes } from "@/lib/quote-cache";
+import {
+  loadMacroPaint,
+  saveMacroPaint,
+  type MacroNumbers,
+} from "@/lib/paint-cache";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
-type Macro = {
-  vix: number | null;
-  eurusd: number | null;
-  btc: number | null;
-  tenYear: number | null;
+type Macro = MacroNumbers;
+
+const EMPTY_MACRO: Macro = {
+  vix: null,
+  eurusd: null,
+  btc: null,
+  tenYear: null,
 };
+
+function readCachedMacro(): Macro {
+  const saved = loadMacroPaint()?.macro;
+  const q = loadCachedQuotes().quotes;
+  return {
+    vix: q["^VIX"]?.price ?? saved?.vix ?? null,
+    eurusd: q["EURUSD=X"]?.price ?? saved?.eurusd ?? null,
+    btc: q["BTC-USD"]?.price ?? saved?.btc ?? null,
+    tenYear: q["^TNX"]?.price ?? saved?.tenYear ?? null,
+  };
+}
 
 async function fetchMacro(signal?: AbortSignal): Promise<Macro> {
   try {
@@ -56,25 +76,35 @@ function fmt(n: number | null, digits = 2) {
 
 export function MacroStrip() {
   const [open, setOpen] = useState(true);
-  const [macro, setMacro] = useState<Macro>({
-    vix: null,
-    eurusd: null,
-    btc: null,
-    tenYear: null,
-  });
-  const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);
+  const [macro, setMacro] = useHydratedCache<Macro>(readCachedMacro, EMPTY_MACRO);
+  const [fearGreed, setFearGreed] = useHydratedCache<FearGreedSnapshot | null>(
+    () => loadMacroPaint()?.fearGreed ?? null,
+    null
+  );
 
   useEffect(() => {
     if (!open) return;
     const ctrl = new AbortController();
-    void fetchMacro(ctrl.signal).then((m) => {
-      if (!ctrl.signal.aborted) setMacro(m);
-    }).catch((err) => {
+    const applyMacro = (m: Macro) => {
+      if (ctrl.signal.aborted) return;
+      setMacro(m);
+      saveMacroPaint({
+        macro: m,
+        fearGreed: loadMacroPaint()?.fearGreed ?? null,
+      });
+    };
+    const applyFear = (fg: FearGreedSnapshot | null) => {
+      if (ctrl.signal.aborted || !fg) return;
+      setFearGreed(fg);
+      saveMacroPaint({
+        macro: loadMacroPaint()?.macro ?? readCachedMacro(),
+        fearGreed: fg,
+      });
+    };
+    void fetchMacro(ctrl.signal).then(applyMacro).catch((err) => {
       if (isAbortError(err)) return;
     });
-    void fetchFearGreed(ctrl.signal).then((fg) => {
-      if (!ctrl.signal.aborted && fg) setFearGreed(fg);
-    }).catch((err) => {
+    void fetchFearGreed(ctrl.signal).then(applyFear).catch((err) => {
       if (isAbortError(err)) return;
     });
     let timer = 0;
@@ -82,14 +112,10 @@ export function MacroStrip() {
       timer = window.setTimeout(
         () => {
           if (!document.hidden && !ctrl.signal.aborted) {
-            void fetchMacro(ctrl.signal).then((m) => {
-              if (!ctrl.signal.aborted) setMacro(m);
-            }).catch((err) => {
+            void fetchMacro(ctrl.signal).then(applyMacro).catch((err) => {
               if (isAbortError(err)) return;
             });
-            void fetchFearGreed(ctrl.signal).then((fg) => {
-              if (!ctrl.signal.aborted && fg) setFearGreed(fg);
-            }).catch((err) => {
+            void fetchFearGreed(ctrl.signal).then(applyFear).catch((err) => {
               if (isAbortError(err)) return;
             });
           }
@@ -104,7 +130,7 @@ export function MacroStrip() {
       ctrl.abort();
       window.clearTimeout(timer);
     };
-  }, [open]);
+  }, [open, setFearGreed, setMacro]);
 
   const items = [
     fearGreed

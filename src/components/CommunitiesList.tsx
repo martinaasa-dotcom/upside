@@ -10,10 +10,13 @@ import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import {
+  loadCommunityDiscoverCache,
   loadCommunityListCache,
   prefetchCommunity,
   prefetchCommunityList,
+  saveCommunityDiscoverCache,
   saveCommunityListCache,
+  type CommunityDiscoverRow,
   type CommunityListRow,
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
@@ -34,13 +37,7 @@ import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import { useEffect, useState } from "react";
 
-type DiscoverRow = {
-  id: string;
-  name: string;
-  houseNote?: string | null;
-  memberCount: number;
-  requestStatus: "pending" | "approved" | "rejected" | null;
-};
+type DiscoverRow = CommunityDiscoverRow;
 
 export function CommunitiesList() {
   const router = useRouter();
@@ -69,7 +66,10 @@ export function CommunitiesList() {
     () => (loadCommunityListCache()?.length ?? 0) === 0,
     true
   );
-  const [discover, setDiscover] = useState<DiscoverRow[]>([]);
+  const [discover, setDiscover] = useHydratedCache<DiscoverRow[]>(
+    () => loadCommunityDiscoverCache() ?? [],
+    []
+  );
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
 
   async function load(signal?: AbortSignal) {
@@ -103,7 +103,11 @@ export function CommunitiesList() {
         signal,
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) setDiscover((data.communities ?? []) as DiscoverRow[]);
+      if (res.ok) {
+        const rows = (data.communities ?? []) as DiscoverRow[];
+        setDiscover(rows);
+        saveCommunityDiscoverCache(rows);
+      }
     } catch {
       /* best-effort — discover is a bonus section, not the main list */
     }
@@ -135,9 +139,13 @@ export function CommunitiesList() {
         setError(plainError(data.error, "Couldn't send that request."));
         return;
       }
-      setDiscover((rows) =>
-        rows.map((r) => (r.id === communityId ? { ...r, requestStatus: "pending" } : r))
-      );
+      setDiscover((rows) => {
+        const next = rows.map((r) =>
+          r.id === communityId ? { ...r, requestStatus: "pending" as const } : r
+        );
+        saveCommunityDiscoverCache(next);
+        return next;
+      });
     } finally {
       setRequestBusyId(null);
     }
