@@ -11,6 +11,7 @@ import {
   cashtag,
 } from "@/lib/format";
 import {
+  Card,
   EmptyState,
   MicroLabel,
   Panel,
@@ -961,16 +962,10 @@ export function PulsePage({
                 Skipping{" "}
                 {skippedTickers.map((t) => cashtag(t)).join(", ")}
                 {" "}
-                (smaller, not down 5%)
+                (quiet, under 5%)
               </>
             )}
             .
-          </p>
-        )}
-
-        {summary && !pinnedTicker && (
-          <p className="mt-3 text-sm leading-relaxed text-zinc-200">
-            {humanizeMargusText(summary)}
           </p>
         )}
 
@@ -981,6 +976,15 @@ export function PulsePage({
           </div>
         )}
       </Panel>
+
+      {summary && !pinnedTicker && (
+        <Card>
+          <MicroLabel>Today&apos;s scan</MicroLabel>
+          <p className="mt-1.5 text-sm leading-relaxed text-zinc-100">
+            {humanizeMargusText(summary)}
+          </p>
+        </Card>
+      )}
 
       {pinnedCandidate && (
         <section>

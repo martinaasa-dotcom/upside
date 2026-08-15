@@ -1267,6 +1267,24 @@ run("chat does not ping the model before the first token", () => {
   );
 });
 
+run("Pulse scan sits in its own card, not under the mood line", () => {
+  const page = readFileSync(
+    join(process.cwd(), "src/components/PulsePage.tsx"),
+    "utf8"
+  );
+  const schema = readFileSync(
+    join(process.cwd(), "src/lib/thesis-pulse-schema.ts"),
+    "utf8"
+  );
+  assert.match(page, /Today&apos;s scan/);
+  assert.match(page, /<Card>/);
+  assert.doesNotMatch(
+    page,
+    /skippedTickers\.length > 0[\s\S]{0,400}humanizeMargusText\(summary\)/
+  );
+  assert.doesNotMatch(schema, /lead with any sharp drops/);
+});
+
 run("Pulse puts hold-exits and 5% movers on top", () => {
   assert.equal(isBigPulseMove(0.05), true);
   assert.equal(isBigPulseMove(-0.05), true);
