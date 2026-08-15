@@ -797,7 +797,7 @@ export function CommunityView({ communityId }: Props) {
     out.push({
       id: "diversifier",
       emoji: "🌐",
-      title: "The Diversifier",
+      title: "Most spread out",
       winner: mostDiversified.name,
       stat: `${mostDiversified.personality!.diversificationScore}/100`,
       description: "Most spread-out book in the circle.",
@@ -809,10 +809,10 @@ export function CommunityView({ communityId }: Props) {
     out.push({
       id: "risk-taker",
       emoji: "🔥",
-      title: "The Risk Taker",
+      title: "Hottest book",
       winner: mostRisk.name,
       stat: `${mostRisk.personality!.riskScore}/100`,
-      description: "Runs the hottest theme mix, hands down.",
+      description: "The jumpiest mix of names in the circle.",
     });
 
     const steadiest = [...withPersonality].sort(
@@ -824,7 +824,7 @@ export function CommunityView({ communityId }: Props) {
       title: "The Steady Hand",
       winner: steadiest.name,
       stat: `${steadiest.personality!.riskScore}/100`,
-      description: "Calmest, most defensive book in the group.",
+      description: "Calmest book in the circle.",
     });
 
     const mostConviction = [...withPersonality].sort(
@@ -852,10 +852,10 @@ export function CommunityView({ communityId }: Props) {
       out.push({
         id: "themes",
         emoji: "🗺️",
-        title: "Most habitats",
+        title: "Most kinds of stocks",
         winner: mostThemes.name,
-        stat: `${mostThemes.personality!.themeCount} themes`,
-        description: "Lives in the most themes at once.",
+        stat: `${mostThemes.personality!.themeCount} groups`,
+        description: "Holds the most different kinds of businesses.",
       });
     }
 
@@ -882,10 +882,10 @@ export function CommunityView({ communityId }: Props) {
       out.push({
         id: "specialist",
         emoji: "⬡",
-        title: "One-theme diet",
+        title: "One-kind diet",
         winner: mostSpecialist.name,
         stat: `${mostSpecialist.personality!.specialistScore}%`,
-        description: "Heaviest bet on a single theme.",
+        description: "Heaviest bet on one kind of business.",
       });
     }
     const biggestBook = [...membersWithBooks].sort(
@@ -901,7 +901,7 @@ export function CommunityView({ communityId }: Props) {
         title: "The Big Book",
         winner: biggestBook.name,
         stat: currency(biggestBook.totalValue, 0),
-        description: "Largest total portfolio in the family.",
+        description: "Largest book in the circle.",
       });
       out.push({
         id: "small-mighty",
@@ -909,7 +909,7 @@ export function CommunityView({ communityId }: Props) {
         title: "Small but Mighty",
         winner: smallestBook.name,
         stat: currency(smallestBook.totalValue, 0),
-        description: "Smallest book. Every family tree has a sapling.",
+        description: "Smallest book. Every circle has a sapling.",
       });
     }
 
@@ -1809,8 +1809,9 @@ export function CommunityView({ communityId }: Props) {
                             What the circle owns
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Everyone&apos;s holdings pooled by theme. How the
-                            circle is built, not a recommendation.
+                            Everyone&apos;s holdings pooled by kind of
+                            business. How the circle is built, not a
+                            recommendation.
                           </p>
                         </div>
                       </div>
@@ -2787,8 +2788,8 @@ function PowerAnimalCard({
                 {personality.maxDrawdownPct}%
               </p>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
-                How far these themes have fallen in ugly years. Illustrative,
-                not a forecast.
+                How far these kinds of stocks have fallen in ugly years.
+                Illustrative, not a forecast.
               </p>
             </div>
           </div>

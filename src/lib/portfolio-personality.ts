@@ -156,71 +156,71 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     id: "hatchling",
     animal: "Hatchling",
     emoji: "🥚",
-    criteria: "No positions yet",
-    tagline: "No positions yet. Every book starts here.",
-    vibe: "Pure potential and zero commitments. Every other animal on this list started right here, deciding what to hatch into.",
-    strength: "Nothing to lose, no bad habits to unlearn, a completely clean slate.",
-    watchFor: "Sitting in cash forever isn't a strategy either. Hatch when you're ready.",
+    criteria: "No names yet",
+    tagline: "No names yet. Every book starts here.",
+    vibe: "Nothing picked. Every other animal on this list started right here, deciding what to hatch into.",
+    strength: "Nothing to lose, and no bad habits yet.",
+    watchFor: "Cash sitting forever is just a savings account. Hatch when you're ready.",
   },
   {
     id: "squirrel",
     animal: "Squirrel",
     emoji: "🐿️",
-    criteria: "Cash is at least ~28% of the book",
-    tagline: "Keeps a fat cash stash so a dry season doesn't starve the book.",
-    vibe: "Positions exist, but cash sitting ready is the real personality. Ready to pounce, or just nervously hoarding.",
-    strength: "Can buy the dip without selling something else first.",
-    watchFor: "Cash that never gets deployed is just a savings account with extra steps.",
+    criteria: "Cash is at least about 28% of the book",
+    tagline: "Keeps a fat cash stash so a quiet stretch doesn't starve the book.",
+    vibe: "There are names, but the cash pile is the real personality. Ready to pounce, or just nervously hoarding.",
+    strength: "Can buy when prices drop without selling something else first.",
+    watchFor: "Cash that never gets used is just a savings account with extra steps.",
   },
   {
     id: "dragon",
     animal: "Dragon",
     emoji: "🐉",
-    criteria: "Crypto is the heaviest theme, and it is a real slice of the book",
-    tagline: "Hoards volatile treasure, breathes fire on rallies and dips.",
-    vibe: "Lives and dies by the crypto cycle, and wouldn't have it any other way. When the hoard is up, nothing moves faster.",
-    strength: "First in line for the biggest, fastest moves in the market.",
-    watchFor: "Dragons sleep on hoards that can lose half their value by morning.",
+    criteria: "Crypto is the heaviest group, and a real slice of the book",
+    tagline: "Sits on jumpy treasure. Up fast, down fast.",
+    vibe: "Lives and dies by crypto, and likes it that way. When the pile is up, nothing moves faster.",
+    strength: "First in line when those names run.",
+    watchFor: "The pile can lose half its value by morning.",
   },
   {
     id: "panda",
     animal: "Panda",
     emoji: "🐼",
-    criteria: "Two thirds or more in a single non-crypto, non-index theme",
-    tagline: "Eats one thing. When that theme moves, the whole book moves.",
-    vibe: "Not random concentration. A chosen diet. Space pandas, AI pandas, semi pandas. Same animal, different bamboo.",
-    strength: "Gets the full ride when the one theme is right.",
+    criteria: "Two thirds or more in one kind of stock, not crypto, not an index",
+    tagline: "Eats one thing. When that group moves, the whole book moves.",
+    vibe: "Not random. A chosen diet. Space pandas, AI pandas, chip pandas. Same animal, different bamboo.",
+    strength: "Gets the full ride when that one group is right.",
     watchFor: "A panda with no bamboo left has nothing else to eat.",
   },
   {
     id: "octopus",
     animal: "Octopus",
     emoji: "🐙",
-    criteria: "Three or more live themes",
-    tagline: "A tentacle in every pond. Many habitats, no single bet on the weather.",
-    vibe: "Rotated, collected, or just curious. The book is not one story. It is several, running in parallel.",
-    strength: "A bad year in one habitat does not empty the tank.",
+    criteria: "Three or more kinds of stocks",
+    tagline: "A tentacle in every pond. Many kinds of stocks, no single bet on the weather.",
+    vibe: "Curious, or just collected. The book is not one story. It is several, running side by side.",
+    strength: "A bad year in one pond does not empty the tank.",
     watchFor: "Eight tentacles can become eight half-finished reasons.",
   },
   {
     id: "shark",
     animal: "Shark",
     emoji: "🦈",
-    criteria: "Hot themes and a fat largest position",
+    criteria: "Jumpy names and one really big position",
     tagline: "A few big bets, hunted with total focus.",
-    vibe: "No wasted motion and no safety net. Every name earned its spot because you meant it, not because it felt comfortable.",
-    strength: "Maximum upside when you're right, with nothing watering down the payoff.",
-    watchFor: "One bad call and there's no net underneath to catch it.",
+    vibe: "No wasted motion and no safety net. Every name is there because you meant it.",
+    strength: "Gets the full ride when those few names are right.",
+    watchFor: "One bad call and there's no net underneath.",
   },
   {
     id: "wolf",
     animal: "Wolf",
     emoji: "🐺",
-    criteria: "Hot themes, spread across a pack",
-    tagline: "Runs with a pack of aggressive names across several fronts.",
-    vibe: "Bold, but never betting the whole den on one hunt. Aggressive and spread at once is the rare combination.",
-    strength: "Chases growth on more than one front instead of picking just one.",
-    watchFor: "A pack of hot names can still all go cold together if they are more correlated than they look.",
+    criteria: "Jumpy names, spread across a pack",
+    tagline: "Runs with a pack of jumpy names, not just one.",
+    vibe: "Bold, but never betting the whole den on one hunt. Jumpy and spread at once is the rare mix.",
+    strength: "Chases the fast names on more than one front.",
+    watchFor: "A pack of jumpy names can all fall together if they move as one.",
   },
   {
     id: "falcon",
@@ -228,29 +228,29 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     emoji: "🦅",
     criteria: "Three names or fewer",
     tagline: "Small, sharp-eyed, and diving hard on very few targets.",
-    vibe: "Precision over volume. Every position was picked, not just added, and there's nowhere for a bad call to hide.",
-    strength: "Laser focus on the names you're surest about, no clutter.",
+    vibe: "Every name was picked, not just added. Nowhere for a bad call to hide.",
+    strength: "Focus on the names you're surest about. No clutter.",
     watchFor: "A falcon with a bad target has nowhere else to turn.",
   },
   {
     id: "turtle",
     animal: "Turtle",
     emoji: "🐢",
-    criteria: "Calm themes, still concentrated",
+    criteria: "Calm names, still a short list",
     tagline: "A small, well-armored shell, slow and steady on purpose.",
-    vibe: "Concentrated by choice, not by accident, in names calm enough that the shell rarely needs to close.",
-    strength: "Low-drama compounding, calm under pressure, on purpose.",
-    watchFor: "Concentrated-and-calm only works as long as those few picks stay calm too.",
+    vibe: "A short list on purpose, in names calm enough that the shell rarely needs to close.",
+    strength: "Quiet growth, calm under pressure, on purpose.",
+    watchFor: "Short-and-calm only works while those few picks stay calm too.",
   },
   {
     id: "owl",
     animal: "Owl",
     emoji: "🦉",
-    criteria: "Calm themes, and actually spread out",
-    tagline: "Watchful and risk-aware, with the spread to match.",
-    vibe: "Sees what's coming, and is not all-in on one perch while watching. Calm plus breadth, not calm plus a single name.",
-    strength: "Rarely surprised, rarely rattled, a genuinely calm book.",
-    watchFor: "All that watching can turn into missed swoops. Calm isn't the same as complacent.",
+    criteria: "Calm names, and actually spread out",
+    tagline: "Watchful and calm, and actually spread out.",
+    vibe: "Sees what's coming, and is not all-in on one perch. Calm plus breadth, not calm plus a single name.",
+    strength: "Rarely surprised, rarely rattled. A genuinely calm book.",
+    watchFor: "All that watching can turn into missed chances. Calm is not the same as asleep.",
   },
   {
     id: "elephant",
@@ -259,17 +259,17 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     criteria: "Index-broad, or an index fund doing the spreading",
     tagline: "Broad, steady, and hard to spook. Never one bad day away from trouble.",
     vibe: "Built to survive any single name's worst day. Slow to startle, and remembers every cycle it's lived through.",
-    strength: "Resilient. No single ticker can sink this book on its own.",
-    watchFor: "Broad can drift into bland. Worth checking the spread is on purpose, not just default.",
+    strength: "No single ticker can sink this book on its own.",
+    watchFor: "Broad can drift into bland. Check the spread is on purpose, not just default.",
   },
   {
     id: "fox",
     animal: "Fox",
     emoji: "🦊",
     criteria: "The flexible middle. Not extreme on cash, diet, heat, or spread",
-    tagline: "Clever and adaptable, some offense, some defense, no dogma.",
+    tagline: "Clever and adaptable. Some offense, some defense. No dogma.",
     vibe: "Some offense, some defense. Doesn't need a label.",
-    strength: "Adaptable, ready to lean either way as the market shifts.",
+    strength: "Can lean either way when prices shift.",
     watchFor: "Flexible can turn into unfocused. Know what this book is actually for.",
   },
 ];
@@ -553,7 +553,7 @@ function pickAnimal(opts: {
   if (theme === "crypto" && specialistScore >= 35) {
     return {
       archetype: archetype("dragon"),
-      why: `Crypto is ${specialistScore}% of equity, with risk at ${risk}/100. Nothing else in the bestiary moves like that.`,
+      why: `Crypto is ${specialistScore}% of the stocks, and how jumpy is ${risk}/100. Nothing else in the field guide moves like that.`,
     };
   }
   if (
@@ -569,7 +569,7 @@ function pickAnimal(opts: {
   if (themeCount >= 3) {
     return {
       archetype: archetype("octopus"),
-      why: `${themeCount} live themes across ${names}. This is not one habitat. It is a handful running in parallel.`,
+      why: `${themeCount} kinds of stocks across ${names}. This is not one kind of business. It is a handful running side by side.`,
     };
   }
   if (
@@ -578,13 +578,13 @@ function pickAnimal(opts: {
   ) {
     return {
       archetype: archetype("shark"),
-      why: `Risk ${risk}/100 with ${top}. Across ${names}, a couple of hot positions decide almost everything.`,
+      why: `How jumpy ${risk}/100 with ${top}. Across ${names}, a couple of hot names decide almost everything.`,
     };
   }
   if (risk >= 72) {
     return {
       archetype: archetype("wolf"),
-      why: `Risk ${risk}/100 is top-band, but ${diversification}/100 diversification across ${names} means no single position gets to decide your year.`,
+      why: `How jumpy ${risk}/100 is hot, but how spread out ${diversification}/100 across ${names} means no single name gets to decide the year.`,
     };
   }
   if (positionCount <= 3) {
@@ -596,24 +596,24 @@ function pickAnimal(opts: {
   if (risk < 38 && (conviction >= 40 || diversification < 35)) {
     return {
       archetype: archetype("turtle"),
-      why: `Risk only ${risk}/100 and concentrated (${top}). A short list of genuinely calm positions.`,
+      why: `How jumpy only ${risk}/100 and a short list (${top}). A few genuinely calm names.`,
     };
   }
   if (risk < 42 && diversification >= 40) {
     return {
       archetype: archetype("owl"),
-      why: `Risk ${risk}/100 sits at the calm end, and diversification ${diversification}/100 means the watching actually has breadth behind it.`,
+      why: `How jumpy ${risk}/100 sits at the calm end, and how spread out ${diversification}/100 means the watching actually has breadth behind it.`,
     };
   }
   if (diversification >= 68 || (theme === "index" && specialistScore >= 50)) {
     return {
       archetype: archetype("elephant"),
-      why: `Diversification ${diversification}/100 across ${names}. Spread this wide is hard to knock over.`,
+      why: `How spread out ${diversification}/100 across ${names}. Spread this wide is hard to knock over.`,
     };
   }
   return {
     archetype: archetype("fox"),
-    why: `Risk ${risk}/100, diversification ${diversification}/100, ${themeCount} themes, ${top}. Mid-table on every axis, which is its own kind of choice.`,
+    why: `How jumpy ${risk}/100, how spread out ${diversification}/100, ${themeCount} kinds of stocks, ${top}. Mid-table on every axis, which is its own kind of choice.`,
   };
 }
 

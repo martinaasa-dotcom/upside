@@ -1100,6 +1100,9 @@ run("empty book does not lead with Fund", () => {
     overview.indexOf("function HomeSheetChip")
   );
   assert.doesNotMatch(emptyFn, /HomeWorld/);
+  assert.match(emptyFn, /browse circles/);
+  assert.match(emptyFn, /homework sheet/);
+  assert.match(emptyFn, /Do not paste a real book/);
   void emptyBlock;
 });
 
@@ -1234,6 +1237,9 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.doesNotMatch(src, /hadCache = communities\.length/);
   assert.match(src, /loadCommunityListCache/);
   assert.match(src, /communities\.length === 0 && loading/);
+  assert.match(src, /Discover public circles/);
+  assert.match(src, /No public circles right now/);
+  assert.doesNotMatch(src, /discover\.length > 0 &&/);
 });
 
 run("Daily Duel is not on Home", () => {
@@ -1738,10 +1744,22 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
     join(process.cwd(), "src/lib/compound-play.ts"),
     "utf8"
   );
+  const personality = readFileSync(
+    join(process.cwd(), "src/lib/portfolio-personality.ts"),
+    "utf8"
+  );
+  const league = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
   assert.doesNotMatch(facts, /dry powder/i);
   assert.doesNotMatch(facts, /\bNAV\b/);
   assert.doesNotMatch(circle, /dry-powder stash|dry powder/i);
   assert.doesNotMatch(circle, /Circle NAV/);
+  assert.doesNotMatch(circle, /live mark/i);
+  assert.doesNotMatch(circle, /risk-taker|Risk Taker/i);
+  assert.doesNotMatch(personality, /volatile treasure/i);
+  assert.doesNotMatch(league, /The Risk Taker/);
   assert.doesNotMatch(compound, /thesis breaks/);
   assert.doesNotMatch(compound, /index-ish beta/);
   assert.doesNotMatch(compound, /long-only beta/);

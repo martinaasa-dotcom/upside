@@ -22,13 +22,13 @@ export const FIRST_SHEET_NAME = "My book";
 
 /** Sign-in page: who this is for, one line. */
 export const SIGNIN_WHO =
-  "For people who already own stocks and want a daily read, not another brokerage.";
+  "Your own book, a circle with friends, or a paper class. Not another brokerage.";
 
 export const SIGNIN_POINTS = [
-  "Your holdings, what you paid, and how today went.",
+  "Paste what you own, or start a paper sheet for class.",
   "Pulse checks why you own a name when the price jumps.",
   "Margus can read the sheet and edit it with you.",
-  "Invite a partner when you want company. Optional.",
+  "Invite a partner, a friend, or a class. Optional.",
 ] as const;
 
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";

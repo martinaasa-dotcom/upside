@@ -44,6 +44,7 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import { ArrowRight, MessageCircle } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -85,6 +86,9 @@ type Props = {
   homeSheetId?: HomeSheetId;
   homeSheets?: Array<{ id: string; name: string }>;
   onHomeSheet?: (id: HomeSheetId) => void;
+  /** Empty classroom homework sheet, not a personal book. */
+  homework?: boolean;
+  homeworkCash?: number;
 };
 
 function MobileHomeHero({
@@ -212,6 +216,8 @@ function EmptyBook({
   onImportCsv,
   onPasteHoldings,
   onAskMargus,
+  homework = false,
+  homeworkCash,
 }: {
   onAddHolding?: () => void;
   onImportScreenshot?: () => void;
@@ -222,29 +228,42 @@ function EmptyBook({
     replace: boolean;
   }) => void;
   onAskMargus?: () => void;
+  homework?: boolean;
+  homeworkCash?: number;
 }) {
   const [paste, setPaste] = useState("");
   const [pasteErr, setPasteErr] = useState<string | null>(null);
-  const routes = [
-    {
-      key: "csv",
-      label: "Upload a CSV",
-      onClick: onImportCsv,
-      primary: false,
-    },
-    {
-      key: "screenshot",
-      label: "Import a screenshot",
-      onClick: onImportScreenshot,
-      primary: false,
-    },
-    {
-      key: "manual",
-      label: "Add one by hand",
-      onClick: onAddHolding,
-      primary: false,
-    },
-  ].filter((r) => r.onClick);
+  const routes = (
+    homework
+      ? [
+          {
+            key: "manual",
+            label: "Buy a name with paper money",
+            onClick: onAddHolding,
+            primary: true,
+          },
+        ]
+      : [
+          {
+            key: "csv",
+            label: "Upload a CSV",
+            onClick: onImportCsv,
+            primary: false,
+          },
+          {
+            key: "screenshot",
+            label: "Import a screenshot",
+            onClick: onImportScreenshot,
+            primary: false,
+          },
+          {
+            key: "manual",
+            label: "Add one by hand",
+            onClick: onAddHolding,
+            primary: false,
+          },
+        ]
+  ).filter((r) => r.onClick);
 
   function submitPaste() {
     const parsed = parseHoldingsPaste(paste);
@@ -266,16 +285,43 @@ function EmptyBook({
   return (
     <Panel tone="brand" className="overview-fade">
       <h2 className="text-lg font-bold text-white">
-        Your book is empty.
+        {homework ? "Your homework sheet is empty." : "Your book is empty."}
       </h2>
-      <p className="mt-3 text-sm text-muted">
-        Paste what you own. One name per line: ticker, shares, cost.
-      </p>
-      <p className="mt-2 text-xs text-zinc-500">
-        This sheet is only yours until you share it with a circle.
-      </p>
+      {homework ? (
+        <>
+          <p className="mt-3 text-sm text-muted">
+            This is paper class. Everyone started with the same cash. Buy
+            names with that paper money. Do not paste a real book in here.
+          </p>
+          {homeworkCash != null && homeworkCash > 0 ? (
+            <p className="mt-2 text-xs text-zinc-500">
+              You have {currency(homeworkCash, 0)} sitting ready.
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <p className="mt-3 text-sm text-muted">
+            Paste what you own. One name per line: ticker, shares, cost.
+          </p>
+          <p className="mt-2 text-xs text-zinc-500">
+            This sheet is only yours until you invite someone or share it
+            with a circle.
+          </p>
+          <p className="mt-2 text-xs text-zinc-500">
+            Have a link from a friend or a teacher? Open it, or{" "}
+            <Link
+              href="/communities"
+              className="text-zinc-300 underline decoration-zinc-600 underline-offset-2 hover:text-white"
+            >
+              browse circles
+            </Link>
+            .
+          </p>
+        </>
+      )}
 
-      {onPasteHoldings && (
+      {!homework && onPasteHoldings && (
         <div className="mt-6 space-y-2">
           <textarea
             value={paste}
@@ -659,6 +705,8 @@ export function OverviewDashboard({
   homeSheetId = "all",
   homeSheets = [],
   onHomeSheet,
+  homework = false,
+  homeworkCash,
 }: Props) {
   const {
     totals,
@@ -773,6 +821,8 @@ export function OverviewDashboard({
           onImportCsv={onImportCsv}
           onPasteHoldings={onPasteHoldings}
           onAskMargus={onAskMargus}
+          homework={homework}
+          homeworkCash={homeworkCash}
         />
       </div>
     );

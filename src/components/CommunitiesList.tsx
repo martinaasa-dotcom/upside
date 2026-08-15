@@ -196,9 +196,9 @@ export function CommunitiesList() {
               Communities
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-              A private league for books you actually want to compare. You
-              pick which sheets to share. Members see today’s prices, not what
-              you paid.
+              Compare books with people you invite, or find a public circle
+              below. You pick which sheets to share. Members see today&apos;s
+              prices, not what you paid.
             </p>
           </div>
           <WidgetErrorBoundary name="Upside Fund">
@@ -265,18 +265,23 @@ export function CommunitiesList() {
             </ul>
           )}
 
-          {discover.length > 0 && (
-            <div>
-              <div className="mb-2 flex items-center gap-2">
-                <Compass className="h-4 w-4 text-sky-400/80" />
-                <h2 className="text-sm font-semibold text-zinc-200">
-                  Discover public communities
-                </h2>
-              </div>
-              <p className="mb-3 text-xs text-zinc-400">
-                Anyone can ask to join. An admin still has to approve before
-                you see any books.
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <Compass className="h-4 w-4 text-sky-400/80" />
+              <h2 className="text-sm font-semibold text-zinc-200">
+                Discover public circles
+              </h2>
+            </div>
+            <p className="mb-3 text-xs text-zinc-400">
+              Anyone can ask to join. An admin still has to approve before
+              you see any books.
+            </p>
+            {discover.length === 0 ? (
+              <p className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-6 text-sm leading-relaxed text-zinc-400">
+                No public circles right now. If you start one, flip it to
+                Public so people can ask in.
               </p>
+            ) : (
               <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
                 {discover.map((c) => (
                   <li
@@ -321,8 +326,8 @@ export function CommunitiesList() {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+          </div>
 
           <form
             onSubmit={(e) => void createCommunity(e)}

@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { provisionClassroomSheet } from "@/lib/classroom";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
+import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -58,15 +59,26 @@ export async function POST(req: NextRequest) {
   }
 
   const dataClient = await getSupabaseDataClient();
+  let name: string | null = null;
+  let kind: string | null = null;
   if (dataClient && result.community_id) {
     await provisionClassroomSheet(dataClient, {
       communityId: result.community_id,
       userId: auth.user.id,
     });
+    const { data: community } = await dataClient
+      .from(PORTFELL_TABLES.communities)
+      .select("name, kind")
+      .eq("id", result.community_id)
+      .maybeSingle();
+    name = (community as { name?: string } | null)?.name ?? null;
+    kind = (community as { kind?: string } | null)?.kind ?? null;
   }
 
   return NextResponse.json({
     ok: true,
     communityId: result.community_id,
+    name,
+    kind,
   });
 }

@@ -12,11 +12,13 @@ function JoinInner() {
   const router = useRouter();
   const token = params.get("token")?.trim() ?? "";
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [status, setStatus] = useState<string | null>(
+    token ? "Opening your invite …" : null
+  );
 
   useEffect(() => {
     if (!token) {
-      setError("That invite link is missing a code.");
+      setError("That invite link is missing a code. Ask them to send it again.");
       return;
     }
     const ctrl = new AbortController();
@@ -29,14 +31,31 @@ function JoinInner() {
           signal: ctrl.signal,
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(plainError(data.error, "Couldn't join. Try the link again."));
+        if (!res.ok) {
+          throw new Error(
+            plainError(data.error, "Couldn't join. Try the link again.")
+          );
+        }
         if (ctrl.signal.aborted) return;
         track("community_invite_redeemed");
-        setDone(true);
+        const classroom = data.kind === "classroom";
+        const label = typeof data.name === "string" ? data.name : null;
+        setStatus(
+          classroom
+            ? label
+              ? `You're in ${label}. Opening the class …`
+              : "You're in the class. Opening it …"
+            : label
+              ? `You're in ${label}. Opening the circle …`
+              : "You're in. Opening the circle …"
+        );
         router.replace(`/communities/${data.communityId}`);
       } catch (e) {
         if (ctrl.signal.aborted) return;
-        setError(e instanceof Error ? e.message : "Couldn't join. Try the link again.");
+        setStatus(null);
+        setError(
+          e instanceof Error ? e.message : "Couldn't join. Try the link again."
+        );
       }
     })();
     return () => {
@@ -48,13 +67,18 @@ function JoinInner() {
     <SignInGate>
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-app px-4 text-zinc-100">
         <UpsideLogo variant="mark" className="h-10 w-10" />
-        {error ? (
-          <p className="text-sm text-red-400">{error}</p>
-        ) : done ? (
-          <p className="text-sm text-zinc-400">Joined, redirecting …</p>
-        ) : (
-          <p className="text-sm text-zinc-400">Accepting invite …</p>
-        )}
+        <div className="w-full max-w-sm space-y-2 text-center">
+          <h1 className="text-lg font-bold text-white">Join with an invite</h1>
+          <p className="text-sm leading-relaxed text-zinc-400">
+            A friend or a teacher sent this. Sign in with Google if you
+            haven&apos;t yet. Then we put you in the circle or the class.
+          </p>
+          {error ? (
+            <p className="text-sm text-red-400">{error}</p>
+          ) : status ? (
+            <p className="text-sm text-zinc-400">{status}</p>
+          ) : null}
+        </div>
       </div>
     </SignInGate>
   );

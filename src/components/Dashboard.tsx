@@ -771,6 +771,18 @@ export function Dashboard() {
       quotes
     );
   }, [overview, homeSheetId, portfolios, holdings, quotes]);
+  const viewedHomeSheets = useMemo(() => {
+    const known = portfolios.some((p) => p.id === homeSheetId);
+    if (homeSheetId === "all" || !known) return portfolios;
+    return portfolios.filter((p) => p.id === homeSheetId);
+  }, [homeSheetId, portfolios]);
+  const homeworkEmpty =
+    viewedHomeSheets.length > 0 &&
+    viewedHomeSheets.every((p) => p.classroom_community_id);
+  const homeworkCash =
+    homeworkEmpty && viewedHomeSheets.length === 1
+      ? viewedHomeSheets[0]!.cash_balance
+      : undefined;
 
   // Book-wide CC rows, computed once and shared by Lab (Alerts/calendar) and
   // the alert builders below — was previously an inline flatMap recomputed
@@ -3086,6 +3098,8 @@ export function Dashboard() {
               }}
               homeSheetId={homeSheetId}
               homeSheets={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+              homework={homeworkEmpty}
+              homeworkCash={homeworkCash}
               onHomeSheet={(id) => {
                 setHomeSheetId(id);
                 saveHomeSheetId(id);

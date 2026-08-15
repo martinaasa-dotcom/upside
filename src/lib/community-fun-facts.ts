@@ -69,14 +69,14 @@ const MAKERS: FactMaker[] = [
       `${bottom.name} could use a pep talk today, ${pct1(bottom.todayPct!)}.`,
     ]);
   },
-  // Biggest book (live mark, not cost).
+  // Biggest book (today's prices, not cost).
   ({ members, rng }) => {
     const ranked = [...members].sort((a, b) => b.totalValue - a.totalValue);
     const top = ranked[0];
     if (!top || top.totalValue <= 0) return null;
     return pick(rng, [
       `${top.name} is carrying the biggest book, $${money(top.totalValue)}.`,
-      `Largest live mark: ${top.name} at $${money(top.totalValue)}.`,
+      `Largest book today: ${top.name} at $${money(top.totalValue)}.`,
       `${top.name} has the most on the board right now, $${money(top.totalValue)}.`,
     ]);
   },
@@ -89,9 +89,9 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top?.personality) return null;
     return pick(rng, [
-      `${top.name} is the group's risk-taker: ${top.personality.riskScore}/100 risk score, ${top.personality.animalEmoji} ${top.personality.animal} energy.`,
-      `Highest risk appetite: ${top.name} (${top.personality.riskScore}/100). Not for the faint of heart.`,
-      `${top.name} runs the hottest book here (risk ${top.personality.riskScore}/100).`,
+      `${top.name} has the jumpiest book: ${top.personality.riskScore}/100, ${top.personality.animalEmoji} ${top.personality.animal} energy.`,
+      `Hottest mix in the circle: ${top.name} (${top.personality.riskScore}/100). Not for a quiet night.`,
+      `${top.name} runs the jumpiest book here (${top.personality.riskScore}/100).`,
     ]);
   },
   // Most diversified.
@@ -105,7 +105,7 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top?.personality) return null;
     return pick(rng, [
-      `${top.name} is the most spread out, ${top.personality.diversificationScore}/100 diversification.`,
+      `${top.name} is the most spread out, ${top.personality.diversificationScore}/100.`,
       `Least concentrated book: ${top.name} (${top.personality.diversificationScore}/100). Nothing keeping all its eggs in one basket.`,
     ]);
   },
@@ -142,7 +142,7 @@ const MAKERS: FactMaker[] = [
       `The circle's animals: ${parts.join(", ")}.`,
     ]);
   },
-  // Combined family movement today.
+  // Combined circle movement today.
   ({ members, rng }) => {
     const total = members.reduce((s, m) => s + m.todayDollar, 0);
     if (total === 0) return null;
@@ -168,7 +168,7 @@ const MAKERS: FactMaker[] = [
       `Biggest-to-smallest spread in the group: $${money(gap)} (${biggest.name} vs ${smallest.name}).`,
     ]);
   },
-  // Combined family NAV.
+  // Combined circle total.
   ({ members, rng }) => {
     const total = members.reduce((s, m) => s + m.totalValue, 0);
     if (total <= 0) return null;
@@ -187,14 +187,14 @@ const MAKERS: FactMaker[] = [
       `Don't underestimate ${f.name}'s Falcon book, few positions, big bets.`,
     ]);
   },
-  // Octopus: most habitats.
+  // Octopus: most kinds of stocks.
   ({ members, rng }) => {
     const octopi = members.filter((m) => m.personality?.animal === "Octopus");
     if (octopi.length === 0) return null;
     const o = pick(rng, octopi);
     return pick(rng, [
-      `${o.name} is an Octopus: ${o.personality!.themeCount} live themes, a tentacle in every pond.`,
-      `Most habitats in the circle: ${o.name} the Octopus (${o.personality!.themeCount} themes).`,
+      `${o.name} is an Octopus: ${o.personality!.themeCount} kinds of stocks, a tentacle in every pond.`,
+      `Most kinds of stocks in the circle: ${o.name} the Octopus (${o.personality!.themeCount} groups).`,
     ]);
   },
   // Squirrel cash stash.
@@ -234,8 +234,8 @@ const MAKERS: FactMaker[] = [
     if (pandas.length === 0) return null;
     const p = pick(rng, pandas);
     return pick(rng, [
-      `${p.name} is a Panda: ${p.personality!.specialistScore}% in one theme. When that bamboo moves, the whole book moves.`,
-      `One-theme diet: ${p.name} the Panda, ${p.personality!.specialistScore}% specialist.`,
+      `${p.name} is a Panda: ${p.personality!.specialistScore}% in one kind of business. When that bamboo moves, the whole book moves.`,
+      `One-kind diet: ${p.name} the Panda, ${p.personality!.specialistScore}% in a single group.`,
     ]);
   },
 ];
