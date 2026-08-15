@@ -534,18 +534,22 @@ function MorningStack({
           </p>
         </Card>
       )}
-      {morning.pulseFlag && (
-        <button
-          type="button"
-          onClick={() => onOpenPulse?.()}
-          className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3 text-left"
-        >
-          <MicroLabel className="text-amber-200/80">
-            Pulse · {cashtag(morning.pulseFlag.ticker)} ·{" "}
-            {statusLabel(morning.pulseFlag.status)}
-          </MicroLabel>
-          <p className="mt-1.5 text-sm text-zinc-200">{morning.pulseFlag.line}</p>
-        </button>
+      {morning.pulseFlags.length > 0 && (
+        <div className="space-y-2">
+          {morning.pulseFlags.map((flag) => (
+            <button
+              key={flag.ticker}
+              type="button"
+              onClick={() => onOpenPulse?.(flag.ticker)}
+              className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3 text-left"
+            >
+              <MicroLabel className="text-amber-200/80">
+                Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
+              </MicroLabel>
+              <p className="mt-1.5 text-sm text-zinc-200">{flag.line}</p>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -9,7 +9,9 @@ import type { VisitDiff } from "@/lib/visit-diff";
 import { loadWeekMarks } from "@/lib/week-marks";
 import {
   loadPulseTickerCache,
+  reconcilePulseCheck,
   statusLabel,
+  type PulseCheck,
   type ThesisStatus,
 } from "@/lib/thesis-pulse";
 
@@ -40,7 +42,7 @@ export type MorningRead = {
   quiet: boolean;
   sentence: string;
   insight: string | null;
-  pulseFlag: MorningPulseFlag | null;
+  pulseFlags: MorningPulseFlag[];
   awayLines: VisitDiff["lines"];
   drivers: MorningDriver[];
   afterClose: boolean;
@@ -79,23 +81,47 @@ function daySentence(model: OverviewModel): { quiet: boolean; sentence: string }
   };
 }
 
-function pulseFlagFor(model: OverviewModel): MorningPulseFlag | null {
-  const ranked = [...model.tickers].sort(
+export function pulseFlagsFromChecks(
+  tickers: Array<{ ticker: string; todayPct: number | null }>,
+  checks: Record<string, PulseCheck | undefined>
+): MorningPulseFlag[] {
+  const ranked = [...tickers].sort(
     (a, b) => Math.abs(b.todayPct ?? 0) - Math.abs(a.todayPct ?? 0)
   );
+  const flags: MorningPulseFlag[] = [];
+  const seen = new Set<string>();
   for (const t of ranked) {
-    const cached = loadPulseTickerCache(t.ticker);
-    if (!cached?.check) continue;
-    const status = cached.check.thesisStatus;
-    if (status === "intact" && Math.abs(t.todayPct ?? 0) < 0.03) continue;
-    if (status === "intact") continue;
+    const key = t.ticker.trim().toUpperCase();
+    if (!key || seen.has(key)) continue;
+    const raw = checks[key];
+    if (!raw) continue;
+    const check = reconcilePulseCheck(raw);
+    if (check.thesisStatus === "intact") continue;
+    seen.add(key);
     const line =
-      cached.check.verdict?.trim() ||
-      cached.check.thesisBreak?.trim() ||
-      `${statusLabel(status)}. ${cashtag(t.ticker)}`;
-    return { ticker: t.ticker, status, line };
+      check.verdict?.trim() ||
+      check.moveReason?.trim() ||
+      check.thesisBreak?.trim() ||
+      `${statusLabel(check.thesisStatus)} on ${cashtag(key)}.`;
+    flags.push({
+      ticker: key,
+      status: check.thesisStatus,
+      line,
+    });
   }
-  return null;
+  return flags;
+}
+
+function pulseFlagsFor(model: OverviewModel): MorningPulseFlag[] {
+  const checks: Record<string, PulseCheck | undefined> = {};
+  for (const t of model.tickers) {
+    const cached = loadPulseTickerCache(t.ticker);
+    if (cached?.check) checks[t.ticker.toUpperCase()] = cached.check;
+  }
+  return pulseFlagsFromChecks(
+    model.tickers.map((t) => ({ ticker: t.ticker, todayPct: t.todayPct })),
+    checks
+  );
 }
 
 function driversFor(model: OverviewModel): MorningDriver[] {
@@ -176,7 +202,7 @@ export function buildMorningRead(
     quiet: quiet && awayLines.length === 0,
     sentence,
     insight,
-    pulseFlag: pulseFlagFor(model),
+    pulseFlags: pulseFlagsFor(model),
     awayLines,
     drivers: sunday ? [] : driversFor(model),
     afterClose: !sunday && afterClose,
