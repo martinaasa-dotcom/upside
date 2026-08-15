@@ -160,10 +160,6 @@ import { MobileTopBar } from "@/components/mobile/MobileTopBar";
 import { cn } from "@/lib/format";
 import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
-import {
-  loadInviteNudgeDismissed,
-  saveInviteNudgeDismissed,
-} from "@/lib/invite-nudge";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 import { loadHomeSheetId, saveHomeSheetId, type HomeSheetId } from "@/lib/home-sheet";
@@ -451,8 +447,6 @@ export function Dashboard() {
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteNudgeOpen, setInviteNudgeOpen] = useState(false);
-  const hadHoldingsOnLoadRef = useRef<boolean | null>(null);
   const creatingFirstSheetRef = useRef<Promise<Portfolio | undefined> | null>(
     null
   );
@@ -604,21 +598,6 @@ export function Dashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experienceTier]);
-
-  useEffect(() => {
-    if (loading || source !== "supabase") return;
-    if (hadHoldingsOnLoadRef.current === null) {
-      hadHoldingsOnLoadRef.current = holdings.length > 0;
-    }
-  }, [loading, source, holdings.length]);
-
-  useEffect(() => {
-    if (source !== "supabase" || !user?.id) return;
-    if (hadHoldingsOnLoadRef.current !== false) return;
-    if (holdings.length === 0) return;
-    if (loadInviteNudgeDismissed(user.id)) return;
-    setInviteNudgeOpen(true);
-  }, [holdings.length, source, user?.id]);
 
   const hiddenMetaTabIds = useMemo(
     () => (experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : []),
@@ -3092,14 +3071,10 @@ export function Dashboard() {
               onImportCsv={() => startFirstRunAction("csv")}
               onPasteHoldings={(input) => {
                 void (async () => {
-                  const wasEmpty = holdings.length === 0;
                   const target = await ensureFirstSheet();
                   if (!target) return;
                   handleCsvImport(input);
                   markSheetImported(target.id);
-                  if (wasEmpty && !pulseHiddenForTier) {
-                    setActiveId(PULSE_TAB_ID);
-                  }
                 })();
               }}
               homeSheetId={homeSheetId}
@@ -3329,23 +3304,6 @@ export function Dashboard() {
             return deleteSheetById(confirmDelete.id);
           }
           return deleteHoldingById(confirmDelete.id);
-        }}
-      />
-
-      <ConfirmModal
-        open={inviteNudgeOpen}
-        title="Invite someone onto this sheet"
-        body="Your book is in. A partner can see and edit it with you. Optional, and you can do this later from the sheet menu."
-        confirmLabel="Invite"
-        cancelLabel="Not now"
-        onClose={() => {
-          if (user?.id) saveInviteNudgeDismissed(user.id);
-          setInviteNudgeOpen(false);
-        }}
-        onConfirm={() => {
-          if (user?.id) saveInviteNudgeDismissed(user.id);
-          setInviteNudgeOpen(false);
-          setInviteOpen(true);
         }}
       />
 

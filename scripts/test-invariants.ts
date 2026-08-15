@@ -1109,6 +1109,8 @@ run("first-run is import, not an empty named sheet", () => {
   assert.match(overview, /Upload a CSV/);
   assert.match(overview, /Import a screenshot/);
   assert.doesNotMatch(overview, /watch the Upside Fund or start a circle below/);
+  assert.doesNotMatch(dash, /Invite someone onto this sheet/);
+  assert.doesNotMatch(dash, /wasEmpty && !pulseHiddenForTier/);
 });
 
 run("sign-in reads as a product", () => {
@@ -1177,7 +1179,8 @@ run("empty book does not lead with Fund", () => {
     overview.indexOf("function HomeSheetChip")
   );
   assert.doesNotMatch(emptyFn, /HomeWorld/);
-  assert.match(emptyFn, /browse circles/);
+  assert.doesNotMatch(emptyFn, /browse circles/);
+  assert.doesNotMatch(emptyFn, /Ask Margus first/);
   assert.match(emptyFn, /homework sheet/);
   assert.match(emptyFn, /Do not paste a real book/);
   void emptyBlock;
@@ -1510,7 +1513,10 @@ run("onboarding asks for weekday and Sunday notes", () => {
   assert.match(onboarding, /noteMorning/);
   assert.match(onboarding, /noteSunday, setNoteSunday\] = useState\(true\)/);
   assert.match(onboarding, /Sunday is on/);
-  assert.match(onboarding, /\{step\}\/4/);
+  assert.match(onboarding, /once there are names in the book/);
+  assert.match(onboarding, /\{step\}\/3/);
+  assert.match(onboarding, /Add what you own/);
+  assert.doesNotMatch(onboarding, /saveWatchlist/);
 });
 
 run("popular ticker snapshot is 30 names, one month at a time", () => {
@@ -1648,8 +1654,8 @@ run("watchlist typeahead matches names as you type", () => {
 });
 
 run("onboarding lets you pick this month's popular names", () => {
-  const onboarding = readFileSync(
-    join(process.cwd(), "src/components/ExperienceOnboardingModal.tsx"),
+  const strip = readFileSync(
+    join(process.cwd(), "src/components/WatchlistStrip.tsx"),
     "utf8"
   );
   const cron = readFileSync(
@@ -1657,8 +1663,8 @@ run("onboarding lets you pick this month's popular names", () => {
     "utf8"
   );
   const vercel = readFileSync(join(process.cwd(), "vercel.json"), "utf8");
-  assert.match(onboarding, /Any names you want to keep an eye on/);
-  assert.match(onboarding, /saveWatchlist/);
+  assert.match(strip, /Watching/);
+  assert.match(strip, /\/api\/popular-tickers/);
   assert.match(cron, /refreshPopularTickers/);
   assert.match(vercel, /\/api\/cron\/popular-tickers/);
   assert.match(vercel, /0 7 1 \* \*/);

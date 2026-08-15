@@ -44,7 +44,6 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -305,18 +304,7 @@ function EmptyBook({
             Paste what you own. One name per line: ticker, shares, cost.
           </p>
           <p className="mt-2 text-xs text-zinc-500">
-            This sheet is only yours until you invite someone or share it
-            with a circle.
-          </p>
-          <p className="mt-2 text-xs text-zinc-500">
-            Have a link from a friend or a teacher? Open it, or{" "}
-            <Link
-              href="/communities"
-              className="text-zinc-300 underline decoration-zinc-600 underline-offset-2 hover:text-white"
-            >
-              browse circles
-            </Link>
-            .
+            This sheet is only yours until you invite someone.
           </p>
         </>
       )}
@@ -368,16 +356,6 @@ function EmptyBook({
         </div>
       )}
 
-      {onAskMargus && (
-        <button
-          type="button"
-          onClick={onAskMargus}
-          className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-brand/50 hover:text-white"
-        >
-          <MessageCircle className="h-3.5 w-3.5" />
-          Ask Margus first
-        </button>
-      )}
     </Panel>
   );
 }

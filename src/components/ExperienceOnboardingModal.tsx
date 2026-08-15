@@ -6,14 +6,9 @@ import {
   saveStoredTier,
   type ExperienceTier,
 } from "@/lib/experience-tier";
-import { cashtag, cn } from "@/lib/format";
-import {
-  FALLBACK_POPULAR_TICKERS,
-  type PopularTickersPayload,
-} from "@/lib/popular-tickers";
-import { saveWatchlist } from "@/lib/watchlist";
+import { cn } from "@/lib/format";
 import { Check, GraduationCap, Settings, Sparkles, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   onDone: (tier: ExperienceTier, knowsOptions: boolean) => void;
@@ -49,28 +44,12 @@ const TIER_RANK: Record<ExperienceTier, number> = { novice: 0, investor: 1, adva
 export function ExperienceOnboardingModal({ onDone }: Props) {
   const [q1, setQ1] = useState<Q1Answer | null>(null);
   const [q2, setQ2] = useState<Q2Answer | null>(null);
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [noteMorning, setNoteMorning] = useState(false);
   const [noteSunday, setNoteSunday] = useState(true);
-  const [popular, setPopular] = useState<string[]>([...FALLBACK_POPULAR_TICKERS]);
-  const [watching, setWatching] = useState<string[]>([]);
   const [result, setResult] = useState<ExperienceTier | null>(null);
   const [resultKnowsOptions, setResultKnowsOptions] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    const ctrl = new AbortController();
-    void fetch("/api/popular-tickers", { cache: "no-store", signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: PopularTickersPayload | null) => {
-        if (ctrl.signal.aborted) return;
-        if (data?.tickers?.length) setPopular(data.tickers);
-      })
-      .catch(() => {
-        /* keep the fallback list */
-      });
-    return () => ctrl.abort();
-  }, []);
 
   async function saveAccount() {
     if (!q1 || !q2) return;
@@ -106,91 +85,32 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
     setStep(4);
   }
 
-  function finishWatchlist() {
-    if (watching.length > 0) saveWatchlist(watching);
-    setStep(5);
-  }
-
-  function toggleWatch(ticker: string) {
-    setWatching((prev) =>
-      prev.includes(ticker) ? prev.filter((t) => t !== ticker) : [...prev, ticker]
-    );
-  }
-
   const resultLabel = result ? EXPERIENCE_TIERS.find((t) => t.id === result)?.label : null;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
       <div className="flex max-h-[min(85dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
-        {step !== 5 ? (
+        {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
-                Quick question · {step}/4
+                Quick question · {step}/3
               </p>
               <h2 className="mt-1 text-lg font-semibold text-white">
                 {step === 1
                   ? "How would you describe yourself as an investor?"
                   : step === 2
                     ? "Have you used covered calls or other options strategies?"
-                    : step === 3
-                      ? "Want a report in your inbox?"
-                      : "Any names you want to keep an eye on?"}
+                    : "Want a report in your inbox?"}
               </h2>
               <p className="mt-1 text-xs text-zinc-400">
                 {step === 3
-                  ? "Sunday is on. Weekdays only if you want them. Change this anytime in Account."
-                  : step === 4
-                    ? "The 30 names people have been watching most this month. Tap a few. You can add more later from Home."
-                    : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}
+                  ? "Sunday is on. Weekdays only if you want them. These start once there are names in the book. Change this anytime in Account."
+                  : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}
               </p>
             </div>
 
-            {step === 4 ? (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
-                  <div className="flex flex-wrap gap-2">
-                    {popular.map((ticker) => {
-                      const on = watching.includes(ticker);
-                      return (
-                        <button
-                          key={ticker}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() => toggleWatch(ticker)}
-                          className={cn(
-                            "rounded-lg border px-2.5 py-1.5 text-sm font-medium tabular-nums transition",
-                            on
-                              ? "border-brand/50 bg-brand/15 text-white"
-                              : "border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-brand-mid hover:bg-brand/10"
-                          )}
-                        >
-                          {cashtag(ticker)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="mt-4 shrink-0 space-y-2">
-                  <button
-                    type="button"
-                    onClick={finishWatchlist}
-                    className="w-full btn-primary"
-                  >
-                    {watching.length > 0
-                      ? `Watch ${watching.length}`
-                      : "Skip for now"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    className="w-full text-xs text-zinc-400 hover:text-zinc-300"
-                  >
-                    ← Back
-                  </button>
-                </div>
-              </div>
-            ) : step === 3 ? (
+            {step === 3 ? (
               <div className="space-y-3">
                 <label className="flex items-start gap-3 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-sm text-zinc-200">
                   <input
@@ -294,13 +214,14 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 You&apos;re set to {resultLabel}
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                We&apos;ve simplified what you see to match. Nothing&apos;s hidden for good.
+                Next, paste what you own. That is the whole start.
               </p>
             </div>
             <div className="flex items-center gap-2.5 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-xs text-zinc-300">
               <Settings className="h-4 w-4 shrink-0 text-brand-bright" />
               <span>
-                Change this anytime in <span className="font-semibold text-white">Account</span>, including the email notes.
+                Change the view and the email notes anytime in{" "}
+                <span className="font-semibold text-white">Account</span>.
               </span>
             </div>
             <button
@@ -308,7 +229,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
               onClick={() => result && onDone(result, resultKnowsOptions)}
               className="w-full btn-primary"
             >
-              Got it
+              Add what you own
             </button>
           </div>
         )}
