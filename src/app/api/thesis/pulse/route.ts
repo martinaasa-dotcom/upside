@@ -237,7 +237,7 @@ export async function POST(req: Request) {
     });
     const report: PulseReport = {
       summary: humanizeMargusText(
-        "Tape read from the move and the book."
+        "Couldn't get a full model read. Here's what today's prices and the book say."
       ),
       checks,
       generatedAt: new Date().toISOString(),
@@ -253,7 +253,7 @@ export async function POST(req: Request) {
     });
     const report: PulseReport = {
       summary: humanizeMargusText(
-        "Tape read from the move and the book, no model in the loop."
+        "Couldn't reach the model. Here's what today's prices and the book say."
       ),
       checks,
       generatedAt: new Date().toISOString(),
@@ -369,7 +369,7 @@ export async function POST(req: Request) {
     });
     const report: PulseReport = {
       summary: humanizeMargusText(
-        "Tape read from the move and the book while the model was busy."
+        "The model was busy. Here's what today's prices and the book say."
       ),
       checks,
       generatedAt: new Date().toISOString(),

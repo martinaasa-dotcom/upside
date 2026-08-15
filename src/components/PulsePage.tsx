@@ -7,10 +7,10 @@ import {
   signedCurrency,
   cn,
   plural,
-  signedTone,  cashtag,
+  signedTone,
+  cashtag,
 } from "@/lib/format";
 import {
-  Card,
   EmptyState,
   Metric,
   MicroLabel,
@@ -20,7 +20,8 @@ import {
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
-import { ADVICE_DISCLAIMER_LONG } from "@/lib/disclaimer";
+import { humanizeMargusText } from "@/lib/ai/humanize-copy";
+import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
@@ -493,7 +494,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
 
   useEffect(() => {
     const cached = loadPulseSummary();
-    if (cached) setSummary(cached.summary);
+    if (cached) setSummary(humanizeMargusText(cached.summary));
   }, []);
 
   useEffect(() => {
@@ -744,11 +745,9 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
             </button>
           }
         />
-        <p className="mt-3 text-xs leading-relaxed text-zinc-400">
-          {ADVICE_DISCLAIMER_LONG}
-        </p>
+        <p className="mt-2 text-xs text-zinc-500">{ADVICE_DISCLAIMER_SHORT}</p>
 
-        <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <form onSubmit={(e) => void submitSearch(e)} className="mt-5 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
             <input
@@ -804,40 +803,44 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
           </div>
         )}
 
-        {fearGreed && (
+        {(fearGreed || skippedTickers.length > 0) && (
           <p
             className="mt-3 text-xs text-zinc-400"
             title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
           >
-            How the market is feeling today:{" "}
-            <span
-              className={cn(
-                "font-semibold tabular-nums",
-                fearGreedTone(fearGreed.score) === "fear" && "text-sky-300",
-                fearGreedTone(fearGreed.score) === "neutral" && "text-zinc-300",
-                fearGreedTone(fearGreed.score) === "greed" && "text-amber-300"
-              )}
-            >
-              {fearGreed.rating.toLowerCase()}
-            </span>{" "}
-            <span className="tabular-nums">({fearGreed.score} out of 100)</span>
+            {fearGreed && (
+              <>
+                Market mood:{" "}
+                <span
+                  className={cn(
+                    "font-semibold tabular-nums",
+                    fearGreedTone(fearGreed.score) === "fear" && "text-sky-300",
+                    fearGreedTone(fearGreed.score) === "neutral" && "text-zinc-300",
+                    fearGreedTone(fearGreed.score) === "greed" && "text-amber-300"
+                  )}
+                >
+                  {fearGreed.rating.toLowerCase()}
+                </span>
+                {", "}
+                <span className="tabular-nums">{fearGreed.score} of 100</span>
+              </>
+            )}
+            {fearGreed && skippedTickers.length > 0 ? ". " : ""}
+            {skippedTickers.length > 0 && (
+              <>
+                Skipping{" "}
+                {skippedTickers.map((t) => cashtag(t)).join(", ")}
+                {" "}
+                (smaller, not down 5%)
+              </>
+            )}
+            .
           </p>
         )}
 
         {summary && !pinnedTicker && (
-          <Card className="mt-3">
-            <p className="text-sm leading-relaxed text-zinc-200">{summary}</p>
-          </Card>
-        )}
-
-        {skippedTickers.length > 0 && (
-          <p className="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2 text-xs leading-relaxed text-zinc-400">
-            Not checking {skippedTickers.length} smaller name
-            {skippedTickers.length === 1 ? "" : "s"} that aren&apos;t down 5%:{" "}
-            <span className="text-zinc-300">
-              {skippedTickers.map((t) => cashtag(t)).join(", ")}
-            </span>
-            . Type one above if you want a look.
+          <p className="mt-3 text-sm leading-relaxed text-zinc-200">
+            {humanizeMargusText(summary)}
           </p>
         )}
 

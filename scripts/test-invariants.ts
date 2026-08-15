@@ -591,6 +591,10 @@ run("humanize kills leftover market slang", () => {
     humanizeMargusText("A calmer sleeve next to it keeps one delay from being the whole year."),
     /\bsleeve\b/i
   );
+  assert.doesNotMatch(
+    humanizeMargusText("Tape read from the move and the book while the model was busy."),
+    /\btape\b/i
+  );
 });
 
 run("novice hides Lab, not Pulse", () => {
@@ -1430,6 +1434,7 @@ run("prompts do not teach the model trader words as working vocab", () => {
   assert.doesNotMatch(forecast, /OWNER CONVICTION/);
   assert.doesNotMatch(forecast, /owner's thesis/);
   assert.doesNotMatch(pulse, /Owner thesis:/);
+  assert.doesNotMatch(pulse, /Tape read/);
   assert.doesNotMatch(notes, /Owner thesis:/);
   assert.doesNotMatch(fund, /Original thesis:/);
   assert.doesNotMatch(fund, /fundamentals-based thesis/);

@@ -79,10 +79,16 @@ export function scrubAiPhrases(text: string): string {
 function scrubMarketJargon(text: string): string {
   if (!text) return text;
   let s = text;
+  s = s.replace(
+    /\btape read from the move and the book(?:, no model in the loop)?(?: while the model was busy)?\.?/gi,
+    "Couldn't get a full model read. Here's what today's prices and the book say."
+  );
+  s = s.replace(/\btape read\b/gi, "Read");
   s = s.replace(/\bbest tape\b/gi, "biggest gainer");
   s = s.replace(/\bworst tape\b/gi, "biggest drop");
   s = s.replace(/\bon the tape\b/gi, "in the prices");
   s = s.replace(/\bthe tape\b/gi, "prices");
+  s = s.replace(/\btape\b/gi, "prices");
   s = s.replace(/\blive marks\b/gi, "today's prices");
   s = s.replace(/\bAI power sleeves?\b/gi, "electricity-for-AI names");
   s = s.replace(/\bindex sleeves?\b/gi, "a mix of many companies");
