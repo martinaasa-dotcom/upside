@@ -1341,7 +1341,8 @@ run("onboarding asks for weekday and Sunday notes", () => {
   );
   assert.match(onboarding, /Want a report in your inbox/);
   assert.match(onboarding, /noteMorning/);
-  assert.match(onboarding, /noteSunday/);
+  assert.match(onboarding, /noteSunday, setNoteSunday\] = useState\(true\)/);
+  assert.match(onboarding, /Sunday is on/);
   assert.match(onboarding, /\{step\}\/4/);
 });
 

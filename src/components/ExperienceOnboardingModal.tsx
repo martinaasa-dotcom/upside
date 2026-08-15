@@ -51,7 +51,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
   const [q2, setQ2] = useState<Q2Answer | null>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [noteMorning, setNoteMorning] = useState(false);
-  const [noteSunday, setNoteSunday] = useState(false);
+  const [noteSunday, setNoteSunday] = useState(true);
   const [popular, setPopular] = useState<string[]>([...FALLBACK_POPULAR_TICKERS]);
   const [watching, setWatching] = useState<string[]>([]);
   const [result, setResult] = useState<ExperienceTier | null>(null);
@@ -139,7 +139,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
               </h2>
               <p className="mt-1 text-xs text-zinc-400">
                 {step === 3
-                  ? "Weekdays, Sundays, both, or none. You can change this anytime in Account."
+                  ? "Sunday is on. Weekdays only if you want them. Change this anytime in Account."
                   : step === 4
                     ? "The 30 names people have been watching most this month. Tap a few. You can add more later from Home."
                     : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}

@@ -287,7 +287,7 @@ export function AccountPage() {
             <h2 className="text-base font-bold text-white">Email notes</h2>
             <p className="text-xs text-zinc-400">
               {morningCanSend
-                ? "Pick weekdays, Sundays, both, or none. Off until you ask."
+                ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
                 : "Notes also land in the app. Email is not set up on this server yet."}
             </p>
             {(
