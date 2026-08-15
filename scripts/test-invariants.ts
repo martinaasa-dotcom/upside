@@ -986,6 +986,26 @@ run("chrome is quiet and prose sits in a dark box", () => {
   assert.match(gate, /<Pill>Hold<\/Pill>/);
 });
 
+run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {
+  const lab = readFileSync(
+    join(process.cwd(), "src/components/LabSheet.tsx"),
+    "utf8"
+  );
+  const season = readFileSync(
+    join(process.cwd(), "src/components/SeasonalityPage.tsx"),
+    "utf8"
+  );
+  assert.match(lab, /padded=\{false\}/);
+  assert.doesNotMatch(lab, /FlaskConical/);
+  assert.doesNotMatch(lab, /bg-brand/);
+  assert.doesNotMatch(season, /amber-950/);
+  assert.doesNotMatch(season, /197,160,89/);
+  assert.doesNotMatch(season, /border-brand\/30 bg-brand\/10/);
+  assert.doesNotMatch(season, /shadow-\[0_0_12px/);
+  assert.match(season, /border-gain\/30 bg-gain\/\[0\.08\]/);
+  assert.match(season, /border-loss\/30 bg-loss\/\[0\.08\]/);
+});
+
 run("Montserrat headings and Inter body, no third face", () => {
   const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");

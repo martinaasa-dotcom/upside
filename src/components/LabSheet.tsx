@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, Panel, PanelHeader, Stat } from "@/components/ui/Panel";
+import { EmptyState, Panel, Stat } from "@/components/ui/Panel";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -23,7 +23,6 @@ import { TrendsPanel } from "@/components/TrendsPanel";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
-import { FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
@@ -271,74 +270,73 @@ export function LabSheet({
 
   return (
     <div className="space-y-6">
-      <Panel>
-        <PanelHeader
-          icon={<FlaskConical className="h-4 w-4" />}
-          title="Lab"
-          actions={
-            <label className="flex items-center gap-2">
-              <span className="shrink-0 text-xs font-medium text-zinc-400">
-                Looking at
-              </span>
-              <select
-                value={scopeId}
-                onChange={(e) => setScopeId(e.target.value)}
-                disabled={!scopeApplies}
-                className={cn(
-                  "min-w-0 rounded-lg border border-zinc-700 bg-zinc-950/50 px-2.5 py-1.5 text-xs text-white",
-                  !scopeApplies && "cursor-not-allowed opacity-40"
-                )}
-                title={
-                  scopeApplies
-                    ? "Narrow these tools down to one sheet"
-                    : "This tool always uses your whole book"
-                }
+      <Panel padded={false} className="px-4 py-3 sm:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <h2 className="shrink-0 text-base font-bold text-white">Lab</h2>
+            <div className="relative min-w-0 flex-1">
+              <div
+                ref={tabScrollRef}
+                onScroll={syncTabOverflow}
+                role="tablist"
+                aria-label="Lab sections"
+                className="scrollbar-none flex min-h-[2rem] gap-1 overflow-x-auto"
               >
-                <option value="book">Everything</option>
-                {portfolios.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+                {visibleTabs.map((t) => (
+                  <button
+                    key={t.id}
+                    ref={(el) => {
+                      tabRefs.current[t.id] = el;
+                    }}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    onClick={() => selectTab(t.id)}
+                    className={cn(
+                      "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
+                      tab === t.id
+                        ? "bg-zinc-100 text-zinc-900"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    )}
+                  >
+                    {t.label}
+                  </button>
                 ))}
-              </select>
-            </label>
-          }
-        />
-        <div className="relative mt-4">
-          <div
-            ref={tabScrollRef}
-            onScroll={syncTabOverflow}
-            role="tablist"
-            aria-label="Lab sections"
-            className="scrollbar-none flex min-h-[2rem] gap-1 overflow-x-auto"
-          >
-            {visibleTabs.map((t) => (
-              <button
-                key={t.id}
-                ref={(el) => {
-                  tabRefs.current[t.id] = el;
-                }}
-                type="button"
-                role="tab"
-                aria-selected={tab === t.id}
-                onClick={() => selectTab(t.id)}
-                className={cn(
-                  "shrink-0 rounded-md px-2.5 py-2 text-xs font-medium transition touch-target",
-                  tab === t.id
-                    ? "bg-zinc-100 text-zinc-900"
-                    : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                )}
-              >
-                {t.label}
-              </button>
-            ))}
+              </div>
+              {tabOverflow.left && (
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-card to-transparent" />
+              )}
+              {tabOverflow.right && (
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-card to-transparent" />
+              )}
+            </div>
           </div>
-          {tabOverflow.left && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#161618] to-transparent" />
-          )}
-          {tabOverflow.right && (
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#161618] to-transparent" />
-          )}
+          <label className="flex shrink-0 items-center gap-2">
+            <span className="shrink-0 text-xs font-medium text-zinc-400">
+              Looking at
+            </span>
+            <select
+              value={scopeId}
+              onChange={(e) => setScopeId(e.target.value)}
+              disabled={!scopeApplies}
+              className={cn(
+                "min-w-0 rounded-lg border border-zinc-700 bg-zinc-950/50 px-2.5 py-1.5 text-xs text-white",
+                !scopeApplies && "cursor-not-allowed opacity-40"
+              )}
+              title={
+                scopeApplies
+                  ? "Narrow these tools down to one sheet"
+                  : "This tool always uses your whole book"
+              }
+            >
+              <option value="book">Everything</option>
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </Panel>
 
@@ -367,7 +365,7 @@ export function LabSheet({
                       {personality.diversificationScore}
                       <span className="text-sm text-zinc-400">/100</span>
                     </p>
-                    <p className="text-xs font-medium text-brand-bright">
+                    <p className="text-xs font-medium text-muted">
                       Diversified
                     </p>
                   </div>
@@ -378,7 +376,7 @@ export function LabSheet({
                 <div className="mt-3">
                   <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
                     <div
-                      className="h-full rounded-full bg-brand/70 transition-all"
+                      className="h-full rounded-full bg-zinc-100 transition-all"
                       style={{
                         width: `${Math.max(2, Math.min(100, personality.diversificationScore))}%`,
                       }}
@@ -665,7 +663,7 @@ function AllocCard({
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
               <div
-                className="h-full rounded-full bg-brand/70"
+                className="h-full rounded-full bg-zinc-100"
                 style={{ width: `${Math.min(100, s.pct * 100)}%` }}
               />
             </div>

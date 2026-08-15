@@ -32,15 +32,15 @@ function retText(v: number): string {
 }
 
 function retBarColor(v: number): string {
-  if (v > 0.05) return "bg-emerald-500";
-  if (v < -0.05) return "bg-rose-500";
+  if (v > 0.05) return "bg-gain";
+  if (v < -0.05) return "bg-loss";
   return "bg-zinc-600";
 }
 
 function stanceStyles(stance: ActionStance): string {
-  if (stance === "deploy") return "border-emerald-500/40 bg-emerald-950/30";
-  if (stance === "raise_cash") return "border-amber-500/40 bg-amber-950/25";
-  return "border-zinc-600/50 bg-zinc-900/50";
+  if (stance === "deploy") return "border-gain/30 bg-gain/[0.08]";
+  if (stance === "raise_cash") return "border-loss/30 bg-loss/[0.08]";
+  return "border-border bg-card";
 }
 
 function stanceLabel(stance: ActionStance): string {
@@ -103,9 +103,9 @@ function CycleMonthlyChart({
             className={cn(
               "group flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-0.5 py-1 transition",
               isSelected
-                ? "bg-brand/25 ring-2 ring-brand shadow-[0_0_12px_0_rgba(197,160,89,0.45)]"
+                ? "bg-hover ring-2 ring-zinc-100"
                 : isCurrent
-                  ? "ring-1 ring-brand/35 hover:bg-brand/10"
+                  ? "ring-1 ring-white/20 hover:bg-hover"
                   : "hover:bg-zinc-800/50"
             )}
             title={`${row.label}: avg ${v >= 0 ? "+" : ""}${v}% (${row.samples} prior ${row.label}s)`}
@@ -123,9 +123,9 @@ function CycleMonthlyChart({
               className={cn(
                 "text-xs",
                 isSelected
-                  ? "font-bold text-brand-bright"
+                  ? "font-bold text-white"
                   : isCurrent
-                    ? "font-semibold text-brand-bright/80"
+                    ? "font-semibold text-zinc-200"
                     : "text-zinc-400"
               )}
             >
@@ -220,7 +220,7 @@ function CycleHistoryBars({
               key={h.year}
               className={cn(
                 "grid grid-cols-[2.25rem_minmax(0,1fr)_3.25rem] items-center gap-1.5 rounded px-0.5 py-px",
-                isHighlight && "bg-brand/10 ring-1 ring-brand/25"
+                isHighlight && "bg-hover ring-1 ring-white/15"
               )}
               title={`${h.year}: ${h.returnPct >= 0 ? "+" : ""}${h.returnPct.toFixed(2)}%`}
             >
@@ -228,7 +228,7 @@ function CycleHistoryBars({
                 className={cn(
                   "text-xs tabular-nums",
                   isHighlight
-                    ? "font-semibold text-brand-bright"
+                    ? "font-semibold text-white"
                     : "text-zinc-400"
                 )}
               >
@@ -354,9 +354,9 @@ function DayOfMonthChart({
                 "flex min-h-11 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
                 dayCellBg(v, mag, empty),
                 isSelected
-                  ? "ring-2 ring-brand"
+                  ? "ring-2 ring-zinc-100"
                   : isToday
-                    ? "ring-1 ring-brand/40 hover:brightness-110"
+                    ? "ring-1 ring-white/25 hover:brightness-110"
                     : "hover:brightness-110"
               )}
             >
@@ -364,7 +364,7 @@ function DayOfMonthChart({
                 className={cn(
                   "text-xs tabular-nums",
                   isSelected || isToday
-                    ? "font-bold text-brand-bright"
+                    ? "font-bold text-white"
                     : "text-zinc-300"
                 )}
               >
@@ -540,7 +540,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
             <select
               value={ticker}
               onChange={(e) => setTicker(e.target.value)}
-              className="ml-2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-white outline-none focus:border-brand"
+              className="ml-2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-white outline-none focus:border-zinc-500"
             >
               {tickers.map((t) => (
                 <option key={t} value={t}>
@@ -575,11 +575,11 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
       {model && (
         <>
-          <div className="rounded-xl border border-brand/30 bg-brand/10 px-4 py-3">
+          <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-sm text-zinc-200">
               <span className="font-semibold text-white">{model.asOfYear}</span>
               {" · "}
-              <span className="text-brand-bright">{model.currentCycleLabel} year</span>
+              <span className="text-zinc-300">{model.currentCycleLabel} year</span>
               {" · "}
               {cashtag(model.ticker)} since {model.from.slice(0, 4)}
             </p>
@@ -653,12 +653,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 </p>
                 {viewMonth === marketToday.month &&
                 selectedDay === marketToday.day ? (
-                  <p className="text-xs text-brand-bright">Today</p>
+                  <p className="text-xs text-zinc-400">Today</p>
                 ) : (
                   <button
                     type="button"
                     onClick={goToToday}
-                    className="text-xs text-zinc-400 underline-offset-2 hover:text-brand-bright hover:underline"
+                    className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
                   >
                     Jump to today
                   </button>
@@ -684,9 +684,9 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     className={cn(
                       "rounded-lg px-1 py-1.5 text-center text-xs font-medium transition",
                       viewMonth === m
-                        ? "bg-brand/25 text-brand-bright ring-1 ring-brand"
+                        ? "bg-zinc-100 text-zinc-900"
                         : m === marketToday.month
-                          ? "text-brand-bright ring-1 ring-brand/40 hover:bg-brand/15"
+                          ? "text-zinc-200 ring-1 ring-white/20 hover:bg-hover"
                           : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
                     )}
                   >
