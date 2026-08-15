@@ -921,7 +921,7 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
-run("chrome is quiet and prose sits in a dark box", () => {
+run("chrome is quiet, pewter not bronze, prose sits in a dark box", () => {
   const panel = readFileSync(
     join(process.cwd(), "src/components/ui/Panel.tsx"),
     "utf8"
@@ -943,15 +943,16 @@ run("chrome is quiet and prose sits in a dark box", () => {
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #f3efe6/);
+  assert.match(css, /--paper: #f2efe8/);
   assert.match(css, /--ink: #14161c/);
   assert.match(css, /--card: #1a1c22/);
-  assert.match(css, /--muted: #a39e96/);
-  assert.match(css, /--brand: #c4a574/);
+  assert.match(css, /--muted: #9a9690/);
+  assert.match(css, /--brand: #b8b3aa/);
   assert.match(css, /--gain: #5fcb96/);
   assert.match(css, /--loss: #e07a7a/);
+  assert.doesNotMatch(css, /--brand: #c4a574/);
   assert.doesNotMatch(css, /--brand: #c9a56a/);
-  assert.doesNotMatch(css, /--brand: #b4b7bc/);
+  assert.doesNotMatch(css, /--caution: #c4a574/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
   assert.match(panel, /export function InsightText/);
@@ -966,6 +967,14 @@ run("chrome is quiet and prose sits in a dark box", () => {
   assert.match(panel, /default: "border-border bg-card\/80"/);
   assert.match(panel, /h-full rounded-xl border border-border bg-card px-4 py-3.5/);
   assert.match(panel, /text-xs font-medium text-muted/);
+  assert.match(
+    panel.slice(panel.indexOf("export function Reading")),
+    /text-xs font-medium text-muted/
+  );
+  assert.doesNotMatch(
+    panel.slice(panel.indexOf("export function Reading")),
+    /text-brand-bright/
+  );
   assert.match(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),
@@ -998,12 +1007,15 @@ run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {
   assert.match(lab, /padded=\{false\}/);
   assert.doesNotMatch(lab, /FlaskConical/);
   assert.doesNotMatch(lab, /bg-brand/);
+  assert.doesNotMatch(lab, /text-amber/);
   assert.doesNotMatch(season, /amber-950/);
   assert.doesNotMatch(season, /197,160,89/);
   assert.doesNotMatch(season, /border-brand\/30 bg-brand\/10/);
   assert.doesNotMatch(season, /shadow-\[0_0_12px/);
+  assert.doesNotMatch(season, /<h2 className="text-base font-bold text-white">Seasonality<\/h2>/);
   assert.match(season, /border-gain\/30 bg-gain\/\[0\.08\]/);
   assert.match(season, /border-loss\/30 bg-loss\/\[0\.08\]/);
+  assert.match(season, /text-2xl font-semibold tabular-nums/);
 });
 
 run("Montserrat headings and Inter body, no third face", () => {
@@ -2923,7 +2935,8 @@ run("workspace nav marks the current room and the skip link exists", () => {
     "utf8"
   );
   assert.ok(/aria-current=\{active \? "page"/.test(switcher));
-  assert.ok(/bg-brand\/20 text-brand-bright/.test(switcher));
+  assert.ok(/bg-zinc-100 text-zinc-900/.test(switcher));
+  assert.ok(!/bg-brand\/20 text-brand-bright/.test(switcher));
   const providers = readFileSync(
     join(process.cwd(), "src/components/Providers.tsx"),
     "utf8"

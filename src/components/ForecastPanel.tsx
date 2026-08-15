@@ -161,7 +161,7 @@ function PlaybookItem({
         aria-hidden
         className={cn(
           "mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full",
-          tone === "add" ? "bg-brand-bright" : "bg-rose-400"
+          tone === "add" ? "bg-gain" : "bg-loss"
         )}
       />
       <div className="min-w-0">
@@ -191,7 +191,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
       <button
         type="button"
         onClick={onShow}
-        className="shrink-0 rounded-lg bg-brand/20 px-3 py-1.5 text-xs font-semibold text-brand-bright hover:bg-brand/30"
+        className="shrink-0 rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200"
       >
         Show
       </button>
@@ -955,10 +955,10 @@ export function ForecastPanel({
           {FORECAST_DISCLAIMER}
         </p>
         {statusHint && (
-          <p className="mt-1 text-xs text-amber-200/80">{statusHint}</p>
+          <p className="mt-1 text-xs text-muted">{statusHint}</p>
         )}
         {busy && (
-          <p className="mt-1 text-xs text-amber-200/80">
+          <p className="mt-1 text-xs text-muted">
             Margus is updating the forecast …
           </p>
         )}
@@ -1252,7 +1252,7 @@ export function ForecastPanel({
             )}
 
             {soldTickersInPlan.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-950/25 px-3 py-2.5 text-xs text-amber-100">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-hover px-3 py-2.5 text-xs text-zinc-200">
                 <span>
                   This still mentions {soldTickersInPlan.join(", ")}, which you
                   no longer hold here.
@@ -1262,7 +1262,7 @@ export function ForecastPanel({
                   <button
                     type="button"
                     onClick={() => void askMargus()}
-                    className="shrink-0 rounded-lg border border-amber-400/40 px-2.5 py-1 font-semibold text-amber-200 transition hover:bg-amber-500/10"
+                    className="shrink-0 rounded-lg border border-white/15 px-2.5 py-1 font-semibold text-zinc-100 transition hover:bg-white/5"
                   >
                     Update it
                   </button>

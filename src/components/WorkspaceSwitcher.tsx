@@ -36,8 +36,8 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       className={cn(
         "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition md:h-auto md:min-h-0 md:min-w-0 md:px-2.5 md:py-1.5 md:justify-start",
         active
-          ? "bg-brand/20 text-brand-bright shadow-sm shadow-black/20"
-          : "text-zinc-400 hover:text-zinc-300"
+          ? "bg-zinc-100 text-zinc-900"
+          : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
       )}
     >
       <Icon className="h-4 w-4 md:h-3.5 md:w-3.5" />

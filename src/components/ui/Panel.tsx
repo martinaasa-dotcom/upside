@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-border on bg-card. Selected is white. Bronze is a
- *              thread (labels, a hairline). Not a fill on sliders or chips.
+ *   Shell      border-border on bg-card. Selected is white. Pewter is a
+ *              thread (quiet metal). Not a fill on sliders or chips.
  *   Card       border-border on bg-card. The box has to lift off the field.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips
@@ -35,7 +35,7 @@ import { useState, type ReactNode } from "react";
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    a dark card, bronze label, same type as the page. Thesis
+ *   Reading    a dark card, muted label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
  *              not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted for chrome
@@ -235,7 +235,7 @@ export function MicroLabel({
 
 /**
  * Long sentences a person actually reads. A dark card that lifts off
- * the field, bronze label, warm type. Not a cream slab, and not loose
+ * the field, muted label, warm type. Not a cream slab, and not loose
  * type sitting on the page.
  */
 export function Reading({
@@ -255,7 +255,7 @@ export function Reading({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-brand-bright">{label}</div>
+        <div className="text-xs font-medium text-muted">{label}</div>
       ) : null}
       <div
         className={cn(
@@ -329,7 +329,7 @@ export function ScanList({
     >
       {label != null && label !== "" ? (
         <div className="border-b border-white/10 px-4 py-2.5">
-          <p className="text-xs font-medium text-brand-bright">{label}</p>
+          <p className="text-xs font-medium text-muted">{label}</p>
         </div>
       ) : null}
       <ul>

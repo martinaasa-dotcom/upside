@@ -1,29 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark desk. Cards lift. Bronze is a thread, not a fill.
-     Field and card have to be far enough apart that a box reads as a box.
-     Brand sits next to the A: warm, quiet, never a gold wash on chrome.
-     Gain and loss do the loud work. */
+  /* Dark desk. Cards lift. The A on the logo is the only gold.
+     Brand is pewter: a quiet metal thread, never a jewelry wash.
+     Selected chrome is white. Gain and loss do the loud work. */
   --background: #08090b;
-  --foreground: #f3efe6;
-  --paper: #f3efe6;
+  --foreground: #f2efe8;
+  --paper: #f2efe8;
   --ink: #14161c;
-  --muted: #a39e96;
+  --muted: #9a9690;
   --app: #08090b;
   --card: #1a1c22;
   --hover: #24272e;
-  --brand: #c4a574;
-  --brand-bright: #dcc49a;
-  --brand-mid: #a68654;
-  --brand-deep: #7a6240;
-  --brand-dark: #8a7350;
-  --caution: #c4a574;
+  --brand: #b8b3aa;
+  --brand-bright: #d4cfc6;
+  --brand-mid: #8f8a82;
+  --brand-deep: #6a665e;
+  --brand-dark: #7a756c;
+  --caution: #b8b3aa;
   --gain: #5fcb96;
   --loss: #e07a7a;
   --surface: #1a1c22;
   --panel: #1a1c22;
-  --border: rgb(243 239 230 / 0.16);
+  --border: rgb(242 239 232 / 0.16);
 }
 
 @theme inline {

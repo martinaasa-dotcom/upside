@@ -100,7 +100,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
                 className={cn(
                   "flex w-full items-baseline justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm sm:py-2",
                   i === active
-                    ? "bg-brand/15 text-brand-bright"
+                    ? "bg-zinc-100 text-zinc-900"
                     : "text-zinc-300 hover:bg-zinc-900"
                 )}
               >

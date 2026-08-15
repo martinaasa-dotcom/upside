@@ -36,6 +36,10 @@ export type ActionSignal = {
   stance: ActionStance;
   headline: string;
   detail: string;
+  /** Month return, shown as the figure on the right of the card. */
+  figurePct?: number;
+  winRate?: number;
+  samples?: number;
 };
 
 export type SeasonalityModel = {
@@ -230,12 +234,19 @@ export function buildActionSignals(input: {
   const curMonth = input.cycleMonthly[input.asOfMonth - 1];
   if (!curMonth || curMonth.samples === 0) return [];
 
+  const stats = {
+    figurePct: curMonth.avgMonthReturnPct,
+    winRate: curMonth.winRate,
+    samples: curMonth.samples,
+  };
+
   if (curMonth.avgMonthReturnPct >= 1.5 && curMonth.winRate >= 55) {
     return [
       {
         stance: "deploy",
         headline: `${curMonth.label} has been a strong month in this cycle phase`,
-        detail: `Across ${curMonth.samples} prior ${curMonth.label}s in the same presidential-cycle year, the month averaged ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% with ${curMonth.winRate}% positive.`,
+        detail: `Across ${curMonth.samples} prior ${curMonth.label}s in the same presidential-cycle year.`,
+        ...stats,
       },
     ];
   }
@@ -244,7 +255,8 @@ export function buildActionSignals(input: {
       {
         stance: "raise_cash",
         headline: `${curMonth.label} is historically soft in this cycle phase`,
-        detail: `Average month return ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (${curMonth.winRate}% win rate, n=${curMonth.samples}).`,
+        detail: `Same slot in the 4-year cycle, prior ${curMonth.label}s only.`,
+        ...stats,
       },
     ];
   }
@@ -252,7 +264,8 @@ export function buildActionSignals(input: {
     {
       stance: "hold",
       headline: `${curMonth.label} has been mixed. No strong seasonal pattern.`,
-      detail: `Cycle-phase ${curMonth.label}s average ${curMonth.avgMonthReturnPct >= 0 ? "+" : ""}${curMonth.avgMonthReturnPct}% (n=${curMonth.samples}).`,
+      detail: `Cycle-phase ${curMonth.label}s, prior years only.`,
+      ...stats,
     },
   ];
 }

@@ -394,12 +394,35 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
   if (signals.length === 0) return null;
   const s = signals[0]!;
   return (
-    <div className={cn("rounded-xl border px-4 py-3", stanceStyles(s.stance))}>
-      <p className="text-xs font-semibold text-zinc-400">
-        {stanceLabel(s.stance)} · this month
-      </p>
-      <p className="mt-1 text-sm font-medium text-white">{s.headline}</p>
-      <p className="mt-1 text-xs leading-relaxed text-zinc-400">{s.detail}</p>
+    <div
+      className={cn(
+        "flex flex-wrap items-start justify-between gap-3 rounded-xl border px-4 py-3.5",
+        stanceStyles(s.stance)
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-muted">
+          {stanceLabel(s.stance)} · this month
+        </p>
+        <p className="mt-1 text-base font-semibold text-white">{s.headline}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted">{s.detail}</p>
+      </div>
+      {typeof s.figurePct === "number" ? (
+        <div className="shrink-0 text-right">
+          <p
+            className={cn(
+              "text-2xl font-semibold tabular-nums",
+              retText(s.figurePct)
+            )}
+          >
+            {s.figurePct >= 0 ? "+" : ""}
+            {s.figurePct.toFixed(2)}%
+          </p>
+          <p className="text-xs text-muted">
+            {s.winRate}% win · n={s.samples}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -525,39 +548,62 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-white">Seasonality</h2>
-          <p className="mt-0.5 text-sm leading-relaxed text-zinc-400">
-            Which months and days have historically been kind to the market,
-            and which have not. Patterns from the past, nothing about your own
-            holdings and no claim about what happens next.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="text-xs text-zinc-400">
-            Benchmark
-            <select
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
-              className="ml-2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-white outline-none focus:border-zinc-500"
+      <div className="rounded-xl border border-border bg-card px-4 py-3.5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {model ? (
+              <>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-md border border-white/10 bg-hover px-2 py-0.5 text-xs font-semibold text-white">
+                    {model.asOfYear}
+                  </span>
+                  <span className="rounded-md border border-white/10 bg-hover px-2 py-0.5 text-xs font-medium text-zinc-200">
+                    {model.currentCycleLabel} year
+                  </span>
+                  <span className="rounded-md border border-white/10 bg-hover px-2 py-0.5 text-xs font-medium text-zinc-200">
+                    {cashtag(model.ticker)} since {model.from.slice(0, 4)}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Months and days that have historically been kind, and those
+                  that have not. Only prior{" "}
+                  {model.currentCycleLabel.toLowerCase()} years, same slot in
+                  the 4-year cycle as today. Nothing about your own holdings.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm leading-relaxed text-muted">
+                Which months and days have historically been kind to the
+                market, and which have not. Patterns from the past, nothing
+                about your own holdings and no claim about what happens next.
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <label className="text-xs text-muted">
+              Benchmark
+              <select
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value)}
+                className="ml-2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-white outline-none focus:border-zinc-500"
+              >
+                {tickers.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => void load(ticker, true)}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 disabled:opacity-50"
             >
-              {tickers.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            onClick={() => void load(ticker, true)}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 disabled:opacity-50"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-            Refresh
-          </button>
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -575,21 +621,6 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
       {model && (
         <>
-          <div className="rounded-xl border border-border bg-card px-4 py-3">
-            <p className="text-sm text-zinc-200">
-              <span className="font-semibold text-white">{model.asOfYear}</span>
-              {" · "}
-              <span className="text-zinc-300">{model.currentCycleLabel} year</span>
-              {" · "}
-              {cashtag(model.ticker)} since {model.from.slice(0, 4)}
-            </p>
-            <p className="mt-1 text-xs text-zinc-400">
-              All monthly and daily patterns below use only history from prior{" "}
-              {model.currentCycleLabel.toLowerCase()} years, same slot in the
-              4-year presidential cycle as today.
-            </p>
-          </div>
-
           <ActionCards signals={model.signals} />
 
           <Section

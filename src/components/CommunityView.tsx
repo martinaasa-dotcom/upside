@@ -1339,7 +1339,7 @@ export function CommunityView({ communityId }: Props) {
           {isAdmin && joinRequests.length > 0 && (
             <span
               title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-              className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs font-semibold text-amber-300"
+              className="shrink-0 rounded-full bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-900"
             >
               {joinRequests.length}
             </span>
@@ -1870,7 +1870,7 @@ export function CommunityView({ communityId }: Props) {
                       <button
                         type="button"
                         onClick={() => setFunFactsShuffle((n) => n + 1)}
-                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-xs font-medium text-amber-200 transition hover:border-amber-400/60 hover:bg-amber-500/10 active:scale-95"
+                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-white/25 hover:bg-hover active:scale-95"
                         title="Get a fresh random batch"
                       >
                         <Shuffle className="h-3.5 w-3.5" />
@@ -2147,11 +2147,11 @@ export function CommunityView({ communityId }: Props) {
                   </section>
 
                   {isAdmin && joinRequests.length > 0 && (
-                    <section className="space-y-3 rounded-xl border border-amber-800/50 bg-amber-950/10 p-4">
+                    <section className="space-y-3 rounded-xl border border-border bg-hover p-4">
                       <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
-                        <UserCheck className="h-4 w-4 text-amber-400" />
+                        <UserCheck className="h-4 w-4 text-zinc-300" />
                         Join requests
-                        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs font-semibold text-amber-300">
+                        <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-900">
                           {joinRequests.length}
                         </span>
                       </h2>
@@ -2279,13 +2279,13 @@ export function CommunityView({ communityId }: Props) {
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
               </button>
-              <div className="sticky top-16 z-20 space-y-3 rounded-xl border border-amber-500/40 bg-amber-950/70 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
-                <p className="text-sm font-semibold text-amber-100">
+              <div className="sticky top-16 z-20 space-y-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
+                <p className="text-sm font-semibold text-white">
                   Read-only · owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
                 </p>
-                <p className="text-xs leading-relaxed text-amber-200/80">
+                <p className="text-xs leading-relaxed text-muted">
                   This is their book. You can look, you cannot edit. Nothing
                   you tap here changes their holdings.
                   {selectedPortfolio ? ` Viewing ${selectedPortfolio.name}.` : ""}
@@ -2300,7 +2300,7 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                       selectedPortfolioId === null
-                        ? "border-brand/40 bg-brand/15 text-brand-bright"
+                        ? "bg-zinc-100 text-zinc-900 border-transparent"
                         : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
                     )}
                   >
@@ -2317,7 +2317,7 @@ export function CommunityView({ communityId }: Props) {
                       className={cn(
                         "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                         selectedPortfolioId === p.id
-                          ? "border-brand/40 bg-brand/15 text-brand-bright"
+                          ? "bg-zinc-100 text-zinc-900 border-transparent"
                           : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
                       )}
                     >

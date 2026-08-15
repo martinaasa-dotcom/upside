@@ -2943,7 +2943,7 @@ export function Dashboard() {
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-xs",
                   p.id === activeId
-                    ? "bg-brand/20 text-brand"
+                    ? "bg-zinc-100 text-zinc-900"
                     : "bg-white/5 text-zinc-400"
                 )}
               >
@@ -2955,7 +2955,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand/20 px-3 py-1.5 text-xs font-medium text-brand"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900"
           >
             <Plus className="h-3.5 w-3.5" />
             Add

@@ -404,7 +404,7 @@ export function LabSheet({
                     sub={concentration.topWeightTicker ?? undefined}
                     valueClassName={
                       concentration.topWeightPct >= 0.25
-                        ? "text-amber-300"
+                        ? "text-loss"
                         : undefined
                     }
                   />
@@ -430,7 +430,7 @@ export function LabSheet({
                         (concentration.positionCount > 5
                           ? concentration.topFivePct
                           : concentration.topThreePct) >= 0.8
-                          ? "text-amber-300"
+                          ? "text-loss"
                           : undefined
                       }
                     />
@@ -602,9 +602,9 @@ export function LabSheet({
                           className={cn(
                             "shrink-0 tabular-nums font-medium",
                             c.corr >= 0.7
-                              ? "text-amber-300"
+                              ? "text-loss"
                               : c.corr <= -0.3
-                                ? "text-sky-300"
+                                ? "text-gain"
                                 : "text-zinc-400"
                           )}
                         >

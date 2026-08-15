@@ -100,7 +100,7 @@ export function HeaderOverflowMenu({
               className="h-6 w-6 rounded-full object-cover"
             />
           ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand/20 text-xs font-semibold text-brand-bright">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold text-zinc-200">
               {avatar.initial ?? "?"}
             </span>
           )

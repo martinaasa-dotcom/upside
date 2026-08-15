@@ -93,7 +93,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
-              <p className="text-xs font-semibold text-brand-bright">
+              <p className="text-xs font-semibold text-muted">
                 Quick question · {step}/3
               </p>
               <h2 className="mt-1 text-lg font-semibold text-white">
@@ -117,7 +117,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     type="checkbox"
                     checked={noteMorning}
                     onChange={(e) => setNoteMorning(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
+                    className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-white/40"
                   />
                   <span>
                     <span className="font-medium text-white">Weekdays</span>
@@ -131,7 +131,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     type="checkbox"
                     checked={noteSunday}
                     onChange={(e) => setNoteSunday(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
+                    className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-white/40"
                   />
                   <span>
                     <span className="font-medium text-white">Sundays</span>
@@ -171,10 +171,10 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           }}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-brand-mid hover:bg-brand/10"
+                            "border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-white/20 hover:bg-hover"
                           )}
                         >
-                          <Icon className="h-4 w-4 shrink-0 text-brand-bright" />
+                          <Icon className="h-4 w-4 shrink-0 text-zinc-300" />
                           {opt.label}
                         </button>
                       );
@@ -187,7 +187,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-sm text-zinc-200 transition hover:border-brand-mid hover:bg-brand/10"
+                        className="flex w-full items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-sm text-zinc-200 transition hover:border-white/20 hover:bg-hover"
                       >
                         {opt.label}
                       </button>
@@ -206,7 +206,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
           </>
         ) : (
           <div className="space-y-4 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-brand/15 text-brand-bright">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-zinc-800 text-zinc-100">
               <Check className="h-5 w-5" />
             </div>
             <div>
@@ -218,7 +218,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
               </p>
             </div>
             <div className="flex items-center gap-2.5 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-xs text-zinc-300">
-              <Settings className="h-4 w-4 shrink-0 text-brand-bright" />
+              <Settings className="h-4 w-4 shrink-0 text-zinc-300" />
               <span>
                 Change the view and the email notes anytime in{" "}
                 <span className="font-semibold text-white">Account</span>.

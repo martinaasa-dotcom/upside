@@ -56,7 +56,7 @@ function VisitStreakCard() {
             key={i}
             className={cn(
               "h-1.5 w-6 rounded-full",
-              visited ? "bg-amber-400" : "bg-zinc-800"
+              visited ? "bg-zinc-100" : "bg-zinc-800"
             )}
           />
         ))}
@@ -353,7 +353,7 @@ export function AccountPage() {
           {/* Profile / community appearance */}
           <section className="space-y-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
@@ -376,7 +376,7 @@ export function AccountPage() {
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand/20 text-sm font-semibold text-brand-bright">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-sm font-semibold text-zinc-200">
                   {(displayName || "?").slice(0, 1).toUpperCase()}
                 </div>
               )}
@@ -439,7 +439,7 @@ export function AccountPage() {
                   className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
                 />
                 {avatarBroken && (
-                  <span className="text-xs text-amber-400/90">
+                  <span className="text-xs text-loss">
                     Couldn&apos;t load that image, showing your initial instead.
                   </span>
                 )}
@@ -463,7 +463,7 @@ export function AccountPage() {
           {/* Experience level */}
           <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
                 <Gauge className="h-4 w-4" />
               </div>
               <div>
@@ -482,7 +482,7 @@ export function AccountPage() {
                   className={cn(
                     "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
                     tier === t.id
-                      ? "border-brand-mid bg-brand/15 text-white"
+                      ? "border-white/25 bg-hover text-white"
                       : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
                   )}
                 >
@@ -490,7 +490,7 @@ export function AccountPage() {
                     <span className="font-medium">{t.label}</span>
                     <span className="mt-0.5 block text-xs text-zinc-400">{t.blurb}</span>
                   </span>
-                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-brand-bright" />}
+                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-zinc-100" />}
                 </button>
               ))}
             </div>
@@ -509,7 +509,7 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === true
-                      ? "border-brand-mid bg-brand/15 text-white"
+                      ? "border-white/25 bg-hover text-white"
                       : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
                   )}
                 >
@@ -524,7 +524,7 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === false
-                      ? "border-brand-mid bg-brand/15 text-white"
+                      ? "border-white/25 bg-hover text-white"
                       : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
                   )}
                 >
@@ -541,7 +541,7 @@ export function AccountPage() {
           {/* Sheet invites live next to the sheet, not here. */}
           <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
                 <Link2 className="h-4 w-4" />
               </div>
               <div>
@@ -556,7 +556,7 @@ export function AccountPage() {
             </div>
             <p className="text-xs leading-relaxed text-zinc-400">
               Redeem a code at{" "}
-              <Link href="/account/join" className="text-brand-bright/80 underline">
+              <Link href="/account/join" className="text-zinc-200 underline">
                 /account/join
               </Link>
               .
@@ -566,7 +566,7 @@ export function AccountPage() {
           {/* Data & privacy */}
           <section className="space-y-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>

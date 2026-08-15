@@ -626,7 +626,7 @@ function PortfolioLane({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-heading text-lg font-bold text-white group-hover:text-brand-bright">
+          <p className="truncate font-heading text-lg font-bold text-white">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1.5 text-sm text-muted">
@@ -852,7 +852,7 @@ export function OverviewDashboard({
                       kind === "open"
                         ? "bg-gain"
                         : kind === "pre" || kind === "ah"
-                          ? "bg-amber-400"
+                          ? "bg-zinc-300"
                           : "bg-zinc-500"
                     )}
                     aria-hidden

@@ -173,14 +173,14 @@ export function HomeWorld({
           <Card
             tone="brand"
             interactive
-            className="h-full px-4 py-4 transition group-hover:border-brand/50"
+            className="h-full px-4 py-4 transition group-hover:border-white/25"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
-                <Bot className="h-3.5 w-3.5 text-brand-bright" aria-hidden />
+                <Bot className="h-3.5 w-3.5 text-muted" aria-hidden />
                 Upside Fund
               </MicroLabel>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-brand-bright" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-zinc-200" />
             </div>
             {fund ? (
               <>
@@ -221,14 +221,14 @@ export function HomeWorld({
         <Link href={communityHref} className="group block h-full">
           <Card
             interactive
-            className="h-full px-4 py-4 transition group-hover:border-brand/50"
+            className="h-full px-4 py-4 transition group-hover:border-white/25"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
-                <Users className="h-3.5 w-3.5 text-brand-bright" aria-hidden />
+                <Users className="h-3.5 w-3.5 text-muted" aria-hidden />
                 Communities
               </MicroLabel>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-brand-bright" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-zinc-200" />
             </div>
             <p className="mt-2 text-base font-semibold text-white">
               {communitiesError
