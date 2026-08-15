@@ -238,6 +238,20 @@ export function isClassroomKind(kind: unknown): boolean {
   return kind === CLASSROOM_KIND;
 }
 
+export function isClassroomSheet(p: {
+  classroom_community_id?: string | null;
+}): boolean {
+  return Boolean(p.classroom_community_id);
+}
+
+/** Real books only, unless the person has nothing but class sheets. */
+export function realBookPortfolios<
+  T extends { classroom_community_id?: string | null },
+>(portfolios: T[]): T[] {
+  const real = portfolios.filter((p) => !isClassroomSheet(p));
+  return real.length > 0 ? real : portfolios;
+}
+
 export function parseStartingCash(raw: unknown): number | null {
   const n = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isFinite(n)) return null;

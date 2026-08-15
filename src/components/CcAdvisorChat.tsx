@@ -424,7 +424,7 @@ const RULES = [
     title: "Table meaning",
     rule: "Stock Target ≠ strike",
     detail:
-      "Stock Target = write level. Call % = buffer above that. Next Strike = Target × (1+Call%). Distance = Spot→Target (not OTM). Premium uses Next Strike.",
+      "Stock Target = write level. Call % = buffer above that. Next Strike = Target × (1+Call%). Distance = Spot to Target, not the strike gap. Premium uses Next Strike.",
   },
   {
     title: "Market condition",

@@ -38,25 +38,41 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ sheets: [] });
   }
 
-  const [{ data: portfolios }, { data: shared }] = await Promise.all([
-    supabase
-      .from(PORTFELL_TABLES.portfolios)
-      .select("id, name, sort_order")
-      .in("id", ids)
-      .order("sort_order"),
-    supabase
-      .from(PORTFELL_TABLES.communityPortfolios)
-      .select("portfolio_id")
-      .eq("community_id", id)
-      .in("portfolio_id", ids),
-  ]);
+  const [{ data: community }, { data: portfolios }, { data: shared }] =
+    await Promise.all([
+      supabase
+        .from(PORTFELL_TABLES.communities)
+        .select("kind")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .select("id, name, sort_order, classroom_community_id")
+        .in("id", ids)
+        .order("sort_order"),
+      supabase
+        .from(PORTFELL_TABLES.communityPortfolios)
+        .select("portfolio_id")
+        .eq("community_id", id)
+        .in("portfolio_id", ids),
+    ]);
+  const classroom = isClassroomKind(
+    (community as { kind?: string } | null)?.kind
+  );
+  const visible = classroom
+    ? ((portfolios ?? []) as {
+        id: string;
+        name: string;
+        classroom_community_id?: string | null;
+      }[]).filter((p) => p.classroom_community_id === id)
+    : ((portfolios ?? []) as { id: string; name: string }[]);
 
   const sharedSet = new Set(
     ((shared ?? []) as { portfolio_id: string }[]).map((r) => r.portfolio_id)
   );
 
   return NextResponse.json({
-    sheets: ((portfolios ?? []) as { id: string; name: string }[]).map((p) => ({
+    sheets: visible.map((p) => ({
       id: p.id,
       name: p.name,
       shared: sharedSet.has(p.id),

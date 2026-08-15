@@ -24,6 +24,7 @@ import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
+import { realBookPortfolios } from "@/lib/classroom";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { useAuth } from "@/components/AuthProvider";
@@ -708,9 +709,17 @@ export function Dashboard() {
     return buildSnapshot(activePortfolio, portfolioHoldings, quotes, options);
   }, [activePortfolio, portfolioHoldings, quotes, options]);
 
+  const realPortfolios = useMemo(
+    () => realBookPortfolios(portfolios),
+    [portfolios]
+  );
+  const realHoldings = useMemo(() => {
+    const ids = new Set(realPortfolios.map((p) => p.id));
+    return holdings.filter((h) => ids.has(h.portfolio_id));
+  }, [holdings, realPortfolios]);
   const overview = useMemo(
-    () => buildOverview(portfolios, holdings, quotes),
-    [portfolios, holdings, quotes]
+    () => buildOverview(realPortfolios, realHoldings, quotes),
+    [realPortfolios, realHoldings, quotes]
   );
   const [homeSheetId, setHomeSheetId] = useState<HomeSheetId>("all");
   useEffect(() => {
@@ -734,11 +743,11 @@ export function Dashboard() {
   // on every render just for the Lab prop.
   const bookCoveredCallRows = useMemo(
     () =>
-      portfolios.flatMap((p) => {
+      realPortfolios.flatMap((p) => {
         const rows = holdings.filter((h) => h.portfolio_id === p.id);
         return buildSnapshot(p, rows, quotes, options).coveredCallRows;
       }),
-    [portfolios, holdings, quotes, options]
+    [realPortfolios, holdings, quotes, options]
   );
 
   const drawerCoveredCallRow = useMemo(() => {
@@ -3365,6 +3374,12 @@ export function Dashboard() {
                 },
                 otherPortfolios: portfolios
                   .filter((p) => p.id !== activePortfolio.id)
+                  .filter((p) =>
+                    activePortfolio.classroom_community_id
+                      ? p.classroom_community_id ===
+                        activePortfolio.classroom_community_id
+                      : !p.classroom_community_id
+                  )
                   .map((p) => ({
                     name: p.name,
                     cashBalance: p.cash_balance,
@@ -3416,7 +3431,7 @@ export function Dashboard() {
                   yield2wAvg: 0,
                   premiumTotal: 0,
                 },
-                otherPortfolios: portfolios.map((p) => ({
+                otherPortfolios: realPortfolios.map((p) => ({
                   name: p.name,
                   cashBalance: p.cash_balance,
                   holdings: holdings

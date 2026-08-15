@@ -1,4 +1,5 @@
 import { listOwnedPortfolioIds } from "@/lib/auth/ownership";
+import { realBookPortfolios } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -27,10 +28,20 @@ async function snapshotPointsForUser(
     ? owned.filter((id) => onlyIds.includes(id))
     : owned;
   if (allowed.length === 0) return { points: [], firstRealDate: null };
-  const ownedSet = new Set(allowed);
-
   const supabase = await getSupabaseDataClient();
   if (!supabase) return { points: [], firstRealDate: null };
+  const { data: sheets } = await supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .select("id, classroom_community_id")
+    .in("id", allowed);
+  const scoped = realBookPortfolios(
+    ((sheets ?? []) as {
+      id: string;
+      classroom_community_id?: string | null;
+    }[]).filter((p) => allowed.includes(p.id))
+  );
+  const ownedSet = new Set(scoped.map((p) => p.id));
+  if (ownedSet.size === 0) return { points: [], firstRealDate: null };
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.snapshots)

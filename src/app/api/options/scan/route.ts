@@ -1,5 +1,8 @@
+import { shouldHideOptions } from "@/lib/experience-tier";
 import { scanCoveredCall } from "@/lib/market/covered-call";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
+import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,6 +23,23 @@ type ScanBody = {
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
+
+  const supabase = await getSupabaseDataClient();
+  if (supabase) {
+    const { data: profile } = await supabase
+      .from(PORTFELL_TABLES.profiles)
+      .select("knows_options")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (
+      shouldHideOptions(
+        (profile as { knows_options?: boolean | null } | null)?.knows_options ??
+          null
+      )
+    ) {
+      return NextResponse.json({ error: "Options stay hidden." }, { status: 403 });
+    }
+  }
 
   const limit = checkRateLimit(`options-scan:${auth.user.id}`, 30, 5 * 60_000);
   if (!limit.ok) {

@@ -51,6 +51,7 @@ import {
   classifyImportWrite,
   holdingWriteActions,
   parseClassPlan,
+  realBookPortfolios,
   resolveClassroomTrade,
   startPeriodNow,
 } from "../src/lib/classroom";
@@ -1279,6 +1280,22 @@ run("holding write classify buy sell adjust", () => {
   );
 });
 
+run("class sheets stay out of the real book", () => {
+  assert.deepEqual(
+    realBookPortfolios([
+      { id: "real", classroom_community_id: null },
+      { id: "hw", classroom_community_id: "class-1" },
+    ]).map((p) => p.id),
+    ["real"]
+  );
+  assert.deepEqual(
+    realBookPortfolios([{ id: "hw", classroom_community_id: "class-1" }]).map(
+      (p) => p.id
+    ),
+    ["hw"]
+  );
+});
+
 run("inbox notes do not say thesis to a person", () => {
   const src = readFileSync(
     join(process.cwd(), "src/lib/note-report.ts"),
@@ -1416,6 +1433,11 @@ run("prompts do not teach the model trader words as working vocab", () => {
   assert.doesNotMatch(notes, /Owner thesis:/);
   assert.doesNotMatch(fund, /Original thesis:/);
   assert.doesNotMatch(fund, /fundamentals-based thesis/);
+  const chat = readFileSync(
+    join(process.cwd(), "src/components/CcAdvisorChat.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(chat, /not OTM/);
 });
 
 run("import classify treats default replace as a sell", () => {

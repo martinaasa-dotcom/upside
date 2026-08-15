@@ -1,3 +1,4 @@
+import { realBookPortfolios } from "@/lib/classroom";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchMarketEvents, fetchWeekReturns } from "@/lib/market/yahoo";
 import {
@@ -94,12 +95,26 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
     }
     const { data: books } = await supabase
       .from(PORTFELL_TABLES.portfolios)
-      .select("id, cash_balance")
+      .select("id, cash_balance, classroom_community_id")
       .in("id", ids);
+    const noteBooks = realBookPortfolios(
+      (books ?? []) as {
+        id: string;
+        cash_balance: number;
+        classroom_community_id?: string | null;
+      }[]
+    );
+    const noteIds = new Set(
+      (noteBooks as { id: string }[]).map((p) => p.id)
+    );
+    if (noteIds.size === 0) {
+      skipped += 1;
+      continue;
+    }
     const { data: rows } = await supabase
       .from(PORTFELL_TABLES.holdings)
-      .select("ticker, shares, buy_price")
-      .in("portfolio_id", ids);
+      .select("ticker, shares, buy_price, portfolio_id")
+      .in("portfolio_id", [...noteIds]);
     const holdings = (rows ?? []).map((h) => ({
       ticker: String(h.ticker ?? "").toUpperCase(),
       shares: Number(h.shares ?? 0),
@@ -118,7 +133,7 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
       (kind === "morning" || kind === "sunday") && tickers.length > 0
         ? (await fetchMarketEvents(tickers)).earnings
         : undefined;
-    const cash = (books ?? []).reduce(
+    const cash = (noteBooks as { cash_balance?: number }[]).reduce(
       (s, p) => s + Number(p.cash_balance ?? 0),
       0
     );
