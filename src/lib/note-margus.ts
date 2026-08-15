@@ -71,7 +71,7 @@ function facts(r: NoteReport): string {
   if (r.thesis) {
     lines.push(
       `Focus: ${cashtag(r.thesis.ticker)}`,
-      r.thesis.ownerThesis ? `Owner thesis: ${r.thesis.ownerThesis}` : null,
+      r.thesis.ownerThesis ? `Why they own it: ${r.thesis.ownerThesis}` : null,
       r.thesis.status ? `Pulse: ${r.thesis.status}` : null,
       r.thesis.pulseLine
     );

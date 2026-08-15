@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import {
+  applyPortfolioCashDelta,
+  importCashDelta,
+  salePriceFor,
+} from "@/lib/cash-trade";
 import { classifyImportWrite } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -58,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   const { data: existing, error: exErr } = await supabase
     .from(PORTFELL_TABLES.holdings)
-    .select("id, ticker, shares, sort_order")
+    .select("id, ticker, shares, buy_price, sort_order")
     .eq("portfolio_id", portfolioId);
   if (exErr) {
     return NextResponse.json({ error: exErr.message }, { status: 500 });
@@ -175,9 +180,82 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let cashBalance: number | null = null;
+  if (cashUpdated) {
+    const { data: port } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("cash_balance")
+      .eq("id", portfolioId)
+      .maybeSingle();
+    const n = Number((port as { cash_balance?: number } | null)?.cash_balance);
+    cashBalance = Number.isFinite(n) ? n : null;
+  } else {
+    const accepted = rows
+      .map((row) => {
+        const ticker =
+          resolveImportTicker(String(row.ticker ?? ""), row.isin) ||
+          normalizeYahooTicker(String(row.ticker ?? ""));
+        const shares = Number(row.shares);
+        const buyPrice = Number(row.buy_price);
+        if (
+          !ticker ||
+          !Number.isFinite(shares) ||
+          shares <= 0 ||
+          !Number.isFinite(buyPrice) ||
+          !(buyPrice > 0)
+        ) {
+          return null;
+        }
+        return { ticker, shares, buy_price: buyPrice };
+      })
+      .filter((row): row is { ticker: string; shares: number; buy_price: number } =>
+        Boolean(row)
+      );
+    const existingRows = ((existing ?? []) as {
+      ticker: string;
+      shares: number;
+      buy_price: number;
+    }[]).map((h) => ({
+      ticker: String(h.ticker),
+      shares: Number(h.shares),
+      buy_price: Number(h.buy_price),
+    }));
+    const saleTickers = new Set<string>();
+    for (const old of existingRows) {
+      const key = old.ticker.toUpperCase();
+      const nxt = accepted.find((r) => r.ticker.toUpperCase() === key);
+      if (!nxt) {
+        if (replacing) saleTickers.add(old.ticker);
+      } else if (nxt.shares < old.shares) {
+        saleTickers.add(old.ticker);
+      }
+    }
+    const salePx: Record<string, number> = {};
+    await Promise.all(
+      [...saleTickers].map(async (ticker) => {
+        const old = existingRows.find(
+          (h) => h.ticker.toUpperCase() === ticker.toUpperCase()
+        );
+        salePx[ticker.toUpperCase()] = await salePriceFor(
+          ticker,
+          old?.buy_price ?? 0
+        );
+      })
+    );
+    const delta = importCashDelta(
+      existingRows,
+      accepted,
+      replacing,
+      salePx
+    );
+    cashBalance = await applyPortfolioCashDelta(supabase, portfolioId, delta);
+    cashUpdated = delta !== 0;
+  }
+
   return NextResponse.json({
     ok: failed.length === 0,
     cashUpdated,
+    cash_balance: cashBalance,
     upserted,
     removed,
     failed,

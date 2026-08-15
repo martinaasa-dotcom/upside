@@ -12,9 +12,11 @@ recaps, community facts), legal pages, onboarding copy, and Margus's own
 generated output (chat replies, Forecast rationale, Thesis Pulse verdicts,
 Upside Portfolio reports).
 
-It does not cover code comments, prompt/schema text sent *to* the model
-(only what the model or app actually shows a user matters), or the standard
-`—` placeholder character for a missing/N-A value in a table cell.
+It does not cover code comments, TypeScript identifiers, or JSON/schema
+field names the model must emit (`thesisStatus`, `convictionKey`).
+Instructional prose sent *to* the model should already use grandma English
+so the model does not learn the banned words as its working vocabulary.
+The standard `—` placeholder for a missing/N-A table cell is also exempt.
 
 ## Never use em dashes in user-facing prose
 

@@ -331,7 +331,7 @@ export function saveForecastPlan(
 }
 
 function stanceGuidance(): string {
-  return `BASE CASE (the only case; there is no cautious or bullish variant to hedge toward). Reason each ticker's path from its own fundamentals, sector cycle and volatility, against the macro thesis and the magnitude calibration above. Do not drift back toward consensus 2-3x five-year targets for names that genuinely sit in the AI buildout: that would contradict the thesis you were given. A digestion year is shape, not a smaller destination. No per-ticker price target to match. Consistency: if the macro / company / sector thesis is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when the thesis meaningfully changes. Never lower a prior run's terminal just to look more conservative.`;
+  return `BASE CASE (the only case; there is no cautious or bullish variant to hedge toward). Reason each ticker's path from its own fundamentals, sector cycle and how jumpy it is, against the long-term view and the magnitude calibration above. Do not drift back toward consensus 2-3x five-year targets for names that genuinely sit in the AI buildout: that would contradict the view you were given. A quiet year is shape, not a smaller destination. No per-ticker price target to match. Consistency: if the long-term view for the company or group is unchanged between runs, keep magnitudes in a similar neighborhood, and only reprice when that view meaningfully changes. Never lower a prior run's finish just to look more conservative.`;
 }
 
 function isJunkRationale(text: string | undefined): boolean {
@@ -346,27 +346,27 @@ function themeDynamicsLabel(
 ): string {
   switch (theme) {
     case "ai_infra":
-      return "AI infra S-curve with digestion years, not a straight line";
+      return "AI computers S-curve with quiet years, not a straight line";
     case "ai_power":
       return "datacenter power bottleneck compounding through buildout";
     case "crypto":
-      return "crypto liquidity cycle with an explicit winter mid-path";
+      return "crypto easy-money cycle with an explicit winter in the middle";
     case "space":
-      return "launch-cadence story with digestion between expansion legs";
+      return "launch-rhythm story with quiet stretches between expansion legs";
     case "semi":
-      return "AI semi cycle that digests, then re-accelerates on spend";
+      return "AI chip cycle that pauses, then runs again on spend";
     case "fintech":
-      return "fintech beta to liquidity and risk appetite";
+      return "money apps that move with easy money and how bold people feel";
     case "software":
-      return "software / SaaS adoption with mid-path digestion";
+      return "software / SaaS adoption with a quiet stretch in the middle";
     case "healthcare":
       return "healthcare compounder with non-linear clinical / payer cycles";
     case "drones":
-      return "defense / autonomy cadence with program digestion years";
+      return "defense / autonomy rhythm with quiet program years";
     case "index":
-      return "broad beta grind, muted vs single-name conviction";
+      return "broad market grind, quieter than a single big bet";
     default:
-      return "thesis path with non-linear bull / digestion phases";
+      return "path with non-linear bull runs and quiet stretches";
   }
 }
 
@@ -502,15 +502,15 @@ export function buildForecastPlanPrompt(input: {
       input.convictions?.[r.ticker] ??
       input.convictions?.[r.ticker.split(".")[0]!.toUpperCase()];
     const convBit = conv
-      ? `, OWNER CONVICTION=${conv.level}/5${conv.thesis?.trim() ? ` — owner's thesis: "${conv.thesis.trim().slice(0, 400)}"` : ""}`
+      ? `, HOW SURE THEY ARE=${conv.level}/5${conv.thesis?.trim() ? `, why they own it: "${conv.thesis.trim().slice(0, 400)}"` : ""}`
       : "";
     return `${r.ticker} [${sector} · theme=${theme}]: shares=${r.shares}, spot=${r.currentPrice.toFixed(2)}, value=${r.currentValue.toFixed(0)}, weight=${weightPct}% of book, covered=${r.hasTargets ? "yes" : "NEED FULL PATH"}${convBit}`;
   });
 
-  const anyConviction = lines.some((l) => l.includes("OWNER CONVICTION"));
+  const anyConviction = lines.some((l) => l.includes("HOW SURE THEY ARE"));
   const convictionGuidance = anyConviction
     ? `
-OWNER CONVICTION: some holdings carry the owner's own conviction level (1-5) and written thesis. Treat a high-conviction written thesis as a serious input, not decoration: if the owner has articulated why a name is a long-term compounder, reason their argument through properly and let the path reflect it where the argument holds up. You are allowed to disagree, but if you land materially below their thesis you must say why in one plain sentence in that ticker's rationale, naming the specific thing you think they are underweighting. A 5/5 with a substantive thesis should not quietly get an average path.
+HOW SURE THEY ARE: some holdings carry the owner's own 1-5 score and a written reason they own it. Treat a high score plus a real writeup as a serious input, not decoration: if the owner has said why a name is a long-term compounder, reason their argument through properly and let the path reflect it where the argument holds up. You are allowed to disagree, but if you land materially below their view you must say why in one plain sentence in that ticker's rationale, naming the specific thing you think they are underweighting. A 5/5 with a real writeup should not quietly get an average path.
 `
     : "";
 
@@ -522,7 +522,7 @@ ${FORECAST_CONVICTION_PROMPT}
 
 Build an actionable trim/add + theme plan AND a full EOY stock-price prognosis for Upside Lab portfolio "${input.portfolioName}".
 
-CRITICAL: Reason every price from each company's micro-thesis + the conviction bands above. Do NOT paste sell-side targets. Do NOT draw straight lines. Never leave a ticker or year empty. Never paste the same spot across all years unless cash-like (say so).
+CRITICAL: Reason every price from why that company exists + the size bands above. Do NOT paste sell-side targets. Do NOT draw straight lines. Never leave a ticker or year empty. Never paste the same spot across all years unless cash-like (say so).
 
 Today (Europe/Tallinn): ${todayKeyInTz()} · next quarter ≈ Q${nextQuarter.q} ${nextQuarter.y} · next calendar year ${year + 1}.
 
@@ -559,9 +559,9 @@ Requirements:
 5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
-   - Year ${year} is December 31 ${year}, not today's spot. Do not paste the current print into that cell.
+   - Year ${year} is December 31 ${year}, not today's spot. Do not paste today's price into that cell.
    - NON-LINEAR only. Crypto: include a winter year. AI computers / electricity for AI: big multi-year upside. Space: a quiet year in the middle.
-   - rationale: one human sentence on why this company + how the path wiggles. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes. No sleeve/thesis/conviction/digestion.
+   - rationale: one human sentence on why this company + how the path wiggles. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes. Never say sleeve, marks, thesis, conviction, digestion, beta, or rotation.
 7. Consistency: if the reason you own the names is unchanged from a prior run, keep year-end prices in a similar neighborhood. Do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.
 9. Be concise.

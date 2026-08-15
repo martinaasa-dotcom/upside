@@ -44,6 +44,7 @@ import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 import { snapshotSheetsForOwner } from "../src/lib/book-snapshot";
+import { importCashDelta, tradeCashDelta } from "../src/lib/cash-delta";
 import {
   allowClassAction,
   classifyHoldingWrite,
@@ -1303,6 +1304,92 @@ run("full-book restore only touches sheets you own", () => {
     ["mine-a", "mine-b", "ghost"]
   );
   assert.deepEqual(ids, ["mine-a", "mine-b"]);
+});
+
+run("buying a name spends cash and selling adds it back", () => {
+  assert.equal(tradeCashDelta({ buyShares: 10, buyPrice: 20 }), -200);
+  assert.equal(tradeCashDelta({ sellShares: 10, sellPrice: 25 }), 250);
+  assert.equal(
+    tradeCashDelta({
+      sellShares: 5,
+      sellPrice: 10,
+      buyShares: 2,
+      buyPrice: 8,
+    }),
+    34
+  );
+  assert.equal(
+    importCashDelta(
+      [{ ticker: "AAPL", shares: 10, buy_price: 100 }],
+      [{ ticker: "AAPL", shares: 12, buy_price: 110 }],
+      false,
+      {}
+    ),
+    -220
+  );
+  assert.equal(
+    importCashDelta(
+      [{ ticker: "AAPL", shares: 10, buy_price: 100 }],
+      [{ ticker: "AAPL", shares: 4, buy_price: 100 }],
+      false,
+      { AAPL: 90 }
+    ),
+    540
+  );
+  assert.equal(
+    importCashDelta(
+      [
+        { ticker: "AAPL", shares: 10, buy_price: 100 },
+        { ticker: "MSFT", shares: 2, buy_price: 400 },
+      ],
+      [{ ticker: "AAPL", shares: 10, buy_price: 100 }],
+      true,
+      { MSFT: 410 }
+    ),
+    820
+  );
+});
+
+run("saves list hides nightly rows", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/api/snapshots/route.ts"),
+    "utf8"
+  );
+  assert.match(src, /kind === "nightly"/);
+});
+
+run("Fund page does not label Margus's note Thesis", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(src, /label="Thesis"/);
+  assert.match(src, /Why he owns it/);
+});
+
+run("prompts do not teach the model trader words as working vocab", () => {
+  const persona = readFileSync(
+    join(process.cwd(), "src/lib/ai/margus-persona.ts"),
+    "utf8"
+  );
+  const forecast = readFileSync(
+    join(process.cwd(), "src/lib/forecast-plan.ts"),
+    "utf8"
+  );
+  const pulse = readFileSync(
+    join(process.cwd(), "src/app/api/thesis/pulse/route.ts"),
+    "utf8"
+  );
+  const notes = readFileSync(
+    join(process.cwd(), "src/lib/note-margus.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(persona, /high-conviction, forward-looking/);
+  assert.doesNotMatch(persona, /liquidity expansion, risk-on/);
+  assert.doesNotMatch(forecast, /OWNER CONVICTION/);
+  assert.doesNotMatch(forecast, /owner's thesis/);
+  assert.doesNotMatch(pulse, /Owner thesis:/);
+  assert.doesNotMatch(notes, /Owner thesis:/);
 });
 
 run("import classify treats default replace as a sell", () => {

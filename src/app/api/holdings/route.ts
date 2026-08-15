@@ -1,4 +1,9 @@
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import {
+  applyPortfolioCashDelta,
+  salePriceFor,
+  tradeCashDelta,
+} from "@/lib/cash-trade";
 import { holdingWriteActions } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
@@ -46,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const { data: existingRow } = await supabase
     .from(PORTFELL_TABLES.holdings)
-    .select("shares")
+    .select("shares, buy_price")
     .eq("portfolio_id", portfolioId)
     .eq("ticker", ticker)
     .maybeSingle();
@@ -88,7 +93,30 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ holding: data });
+
+  const prevShares = existingRow
+    ? Number((existingRow as { shares: number }).shares)
+    : 0;
+  const prevBuy = existingRow
+    ? Number((existingRow as { buy_price: number }).buy_price)
+    : 0;
+  let delta = 0;
+  if (!existingRow) {
+    delta = tradeCashDelta({ buyShares: shares, buyPrice });
+  } else if (shares > prevShares) {
+    delta = tradeCashDelta({
+      buyShares: shares - prevShares,
+      buyPrice,
+    });
+  } else if (shares < prevShares) {
+    const px = await salePriceFor(ticker, prevBuy || buyPrice);
+    delta = tradeCashDelta({
+      sellShares: prevShares - shares,
+      sellPrice: px,
+    });
+  }
+  const cash = await applyPortfolioCashDelta(supabase, portfolioId, delta);
+  return NextResponse.json({ holding: data, cash_balance: cash });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -111,7 +139,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from(PORTFELL_TABLES.holdings)
-    .select("portfolio_id, shares, ticker")
+    .select("portfolio_id, shares, ticker, buy_price")
     .eq("id", id)
     .maybeSingle();
 
@@ -194,7 +222,58 @@ export async function PATCH(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ holding: data });
+
+  let cash: number | null = null;
+  if (portfolioId) {
+    const prevShares = Number(
+      (existing as { shares?: number } | null)?.shares ?? 0
+    );
+    const prevBuy = Number(
+      (existing as { buy_price?: number } | null)?.buy_price ?? 0
+    );
+    const prevTicker = String(
+      (existing as { ticker?: string } | null)?.ticker ?? ""
+    );
+    const nextShares =
+      body.shares !== undefined ? roundShares(Number(body.shares)) : prevShares;
+    const nextBuy =
+      body.buy_price !== undefined
+        ? roundMoney(Number(body.buy_price))
+        : prevBuy;
+    const nextTicker =
+      body.ticker !== undefined
+        ? normalizeYahooTicker(String(body.ticker))
+        : prevTicker;
+    const renamed =
+      Boolean(prevTicker) &&
+      Boolean(nextTicker) &&
+      prevTicker.toUpperCase() !== nextTicker.toUpperCase();
+    let delta = 0;
+    if (renamed) {
+      const sellPx = await salePriceFor(prevTicker, prevBuy);
+      delta += tradeCashDelta({
+        sellShares: prevShares,
+        sellPrice: sellPx,
+      });
+      delta += tradeCashDelta({
+        buyShares: nextShares,
+        buyPrice: nextBuy || prevBuy,
+      });
+    } else if (nextShares > prevShares) {
+      delta = tradeCashDelta({
+        buyShares: nextShares - prevShares,
+        buyPrice: nextBuy || prevBuy,
+      });
+    } else if (nextShares < prevShares) {
+      const px = await salePriceFor(prevTicker, prevBuy);
+      delta = tradeCashDelta({
+        sellShares: prevShares - nextShares,
+        sellPrice: px,
+      });
+    }
+    cash = await applyPortfolioCashDelta(supabase, portfolioId, delta);
+  }
+  return NextResponse.json({ holding: data, cash_balance: cash });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -216,7 +295,7 @@ export async function DELETE(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from(PORTFELL_TABLES.holdings)
-    .select("portfolio_id")
+    .select("portfolio_id, shares, ticker, buy_price")
     .eq("id", id)
     .maybeSingle();
 
@@ -242,5 +321,23 @@ export async function DELETE(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
+  let cash: number | null = null;
+  if (portfolioId) {
+    const shares = Number(
+      (existing as { shares?: number } | null)?.shares ?? 0
+    );
+    const buy = Number(
+      (existing as { buy_price?: number } | null)?.buy_price ?? 0
+    );
+    const ticker = String(
+      (existing as { ticker?: string } | null)?.ticker ?? ""
+    );
+    const px = ticker ? await salePriceFor(ticker, buy) : buy;
+    cash = await applyPortfolioCashDelta(
+      supabase,
+      portfolioId,
+      tradeCashDelta({ sellShares: shares, sellPrice: px })
+    );
+  }
+  return NextResponse.json({ ok: true, cash_balance: cash });
 }

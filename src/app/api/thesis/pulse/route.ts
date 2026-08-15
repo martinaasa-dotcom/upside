@@ -75,8 +75,8 @@ function buildPrompt(
     const flag = c.needsAttention ? " **NEEDS ATTENTION: down ≥5%**" : "";
     const parts = [
       `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup, not in book)"}`,
-      conv?.thesis ? `  Owner thesis: ${conv.thesis}` : "",
-      conv?.level ? `  Conviction: ${conv.level}/5` : "",
+      conv?.thesis ? `  Why they own it: ${conv.thesis}` : "",
+      conv?.level ? `  How sure they are: ${conv.level}/5` : "",
       ctx?.sector ? `  Sector: ${ctx.sector}` : "",
       "  Recent headlines:",
       newsBlock(ctx?.news ?? []),
@@ -96,7 +96,7 @@ function buildPrompt(
 
   return `${MARGUS_PERSONA}
 
-## Task: Thesis Pulse
+## Task: Pulse
 Martin uses this when a **big line drops hard**. He asks: *should I sell, or add the dip?*
 
 Primary job: **down ≥5% moves** (including pre-market / after-hours). Also covers other big book lines for context.
@@ -116,40 +116,40 @@ ${insightsPromptBlock(
 ### Action rules (do NOT default everything to hold)
 - **action** = \`add\` | \`hold\` | \`trim\` | \`sell\` | \`watch\`
 - **trim** and **sell** are opposites in spirit, don't blur them:
-  - **trim** = disciplined profit-taking on a winner that ran too hot (parabolic move, crowd chase). Thesis is **intact or at most watch**. This is "take some money off the table because it went up a lot", never a reaction to bad news.
-  - **sell** = the thesis is actually **broken**. You're exiting because the reason you owned it is gone, not because it went up too much.
-- **intact thesis + red day** on a high-conviction compounder (AI infra, AI power, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A digestion print that didn't break the multi-year story is a **steal**, not a trim signal. This is about the thesis, not a fixed ticker list; apply it to whatever the user actually holds.
-- If a line is in **rapid euphoria** (parabolic move / crowd chase) with the thesis still intact: prefer **trim** with explicit take-profit sizing.
-- **addLevel**: always give a concrete, self-explanatory price plan when thesis is intact or action is add:
+  - **trim** = disciplined profit-taking on a winner that ran too hot (parabolic move, crowd chase). The reason they own it is **intact or at most watch**. This is "take some money off the table because it went up a lot", never a reaction to bad news.
+  - **sell** = the reason they own it is actually **broken**. You're exiting because that reason is gone, not because it went up too much.
+- **intact reason + red day** on a name they are very sure about (AI computers, electricity for AI, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A quiet down day that didn't break the multi-year story is a **steal**, not a trim signal. This is about why they own it, not a fixed ticker list; apply it to whatever the user actually holds.
+- If a line is in **rapid euphoria** (parabolic move / crowd chase) with the reason still intact: prefer **trim** with explicit take-profit sizing.
+- **addLevel**: always give a concrete, self-explanatory price plan when the reason is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
   - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
   - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
-- Use **hold** only when you would not deploy (max concentration, no cash story) but aren't ready to sell either. Hold never pairs with a broken thesis.
-- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis. Never use **hold** for a broken thesis either: that's what puts a Hold badge next to "Reason looks shaky".
+- Use **hold** only when you would not deploy (max concentration, no cash story) but aren't ready to sell either. Hold never pairs with a broken reason.
+- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken reason. Never use **hold** for a broken reason either: that's what puts a Hold badge next to "Reason looks shaky".
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 ### thesisStatus — start from intact. Watch and broken have to be earned
 - First write **thesisBreak**: the concrete thing that would invalidate the reason this is in the book. Falsifiable. Not "the price drops."
 - Then look at today's headlines and the move. **intact** unless those facts actually match the break list (watch) or show the break already happened (broken).
-- **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT thesis breaks. If your situation bullets say nothing unusual happened, thesisStatus MUST be intact.
+- **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT breaks. If your situation bullets say nothing unusual happened, thesisStatus MUST be intact.
 - **watch**: something on the break list is starting to show up (a soft quarter, a competitive wrinkle, a guidance nuance) but the core story still holds.
-- **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the moat/thesis is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the thesis isn't broken, it's at most "watch".
+- **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the staying power is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the reason isn't broken, it's at most "watch".
 - Do not mark watch or broken just because you mentioned a risk. The risk has to be happening now.
 
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
 2. **moveReason**: one sentence (cite headline when possible).
-3. **thesisBreak**: one or two short sentences, concrete, what would actually break the thesis.
+3. **thesisBreak**: one or two short sentences, concrete, what would actually break the reason they own it.
 4. **thesisStatus**: intact / watch / broken, scored against thesisBreak and today's facts. Default intact.
 5. **action**: add / hold / trim / sell / watch per rules above.
 6. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.
 7. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim/sell).
 8. **earningsNote**: if relevant; else empty string.
-9. **verdict**: one sentence tying **action + addLevel/trimPct** to the thesis.
+9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own it.
 
-**summary**: one sentence, lead with dips that are add opportunities vs real thesis breaks.
+**summary**: one sentence, lead with dips that are add opportunities vs real breaks in why they own it.
 
-If the owner didn't write a thesis, still pick action and thesisStatus from headlines and today's prices. Never ask them to write a thesis. Never say you are guessing. Never say "tape".
+If the owner didn't write why they own it, still pick action and thesisStatus from headlines and today's prices. Never ask them to write a note. Never say you are guessing. Never say "tape".
 
 Keep fields short. Use the headlines, don't invent news.
 
@@ -208,7 +208,7 @@ export async function POST(req: Request) {
 
     const summary =
       getCachedPulseSummary() ??
-      "Dips on high-conviction holdings remain intact add opportunities.";
+      "Dips on names you are sure about stay add opportunities.";
 
     const report: PulseReport = {
       summary: humanizeMargusText(summary),

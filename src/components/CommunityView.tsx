@@ -16,6 +16,8 @@ import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   DEFAULT_STARTING_CASH,
+  MAX_STARTING_CASH,
+  MIN_STARTING_CASH,
   type ClassPeriodKind,
   type ClassPlan,
   type ClassroomTrade,
@@ -256,6 +258,9 @@ export function CommunityView({ communityId }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsName, setSettingsName] = useState("");
   const [settingsNote, setSettingsNote] = useState("");
+  const [settingsStartingCash, setSettingsStartingCash] = useState(
+    String(DEFAULT_STARTING_CASH)
+  );
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -1024,6 +1029,9 @@ export function CommunityView({ communityId }: Props) {
   function openSettings() {
     setSettingsName(community?.name ?? "");
     setSettingsNote(community?.house_note ?? "");
+    setSettingsStartingCash(
+      String(Number(community?.starting_cash) || DEFAULT_STARTING_CASH)
+    );
     setSettingsError(null);
     setSettingsOpen(true);
   }
@@ -1118,6 +1126,37 @@ export function CommunityView({ communityId }: Props) {
       setSettingsOpen(false);
     } catch (e) {
       setSettingsError(e instanceof Error ? e.message : "Couldn't rename this circle.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function handleSaveStartingCash() {
+    const next = Number(settingsStartingCash);
+    const current = Number(community?.starting_cash) || DEFAULT_STARTING_CASH;
+    if (!Number.isFinite(next) || next === current) return;
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startingCash: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          plainError(
+            (data as { error?: string }).error,
+            "Couldn't update starting cash."
+          )
+        );
+      }
+      setCommunity((data as { community: CommunityMeta }).community);
+    } catch (e) {
+      setSettingsError(
+        e instanceof Error ? e.message : "Couldn't update starting cash."
+      );
     } finally {
       setSettingsBusy(false);
     }
@@ -2336,10 +2375,36 @@ export function CommunityView({ communityId }: Props) {
                   onStart={(kind) => void handleStartPeriod(kind)}
                   onSavePlan={(plan) => void handleSaveClassPlan(plan)}
                 />
-                <p className="mt-5 text-xs leading-relaxed text-zinc-400">
-                  Classes stay invite-only. Starting cash is{" "}
-                  {currency(startingCash)} per student.
+                <label className="mt-5 block text-xs font-medium text-zinc-400">
+                  Starting cash
+                  <input
+                    type="number"
+                    min={MIN_STARTING_CASH}
+                    max={MAX_STARTING_CASH}
+                    step={1000}
+                    value={settingsStartingCash}
+                    onChange={(e) => setSettingsStartingCash(e.target.value)}
+                    disabled={settingsBusy}
+                    className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand/50 disabled:opacity-50 sm:max-w-[12rem]"
+                  />
+                </label>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                  Classes stay invite-only. Changing this adds or takes the
+                  difference from every paper sheet already handed out.
                 </p>
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveStartingCash()}
+                    disabled={
+                      settingsBusy ||
+                      Number(settingsStartingCash) === startingCash
+                    }
+                    className="btn-primary disabled:opacity-40"
+                  >
+                    {settingsBusy ? "Saving …" : "Save starting cash"}
+                  </button>
+                </div>
               </>
             ) : (
             <div className="mt-5 border-t border-zinc-800 pt-4">

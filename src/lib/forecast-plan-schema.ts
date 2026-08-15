@@ -31,7 +31,7 @@ export const forecastPlanSchema = z.object({
   sectorRotation: z
     .string()
     .describe(
-      "What sector / factor rotation looks plausible over the next quarter and year, tied to this book. Plain speech, no em dashes."
+      "Where money might move from one group of similar stocks to another over the next quarter and year, tied to this book. Plain speech, no em dashes."
     ),
   periods: z
     .array(
@@ -69,17 +69,17 @@ export const forecastPlanSchema = z.object({
           .string()
           .describe("Exact ticker as listed in holdings (keep exchange suffix)"),
         prices: yearPriceSchema.describe(
-          "NON-LINEAR EOY prices 2026–2030. Forbidden: equal steps / flat CAGR. Crypto needs a winter year; AI infra can rip with digestion as slower-up not collapse."
+          "NON-LINEAR EOY prices 2026-2030. Forbidden: equal steps / flat CAGR. Crypto needs a winter year; AI computers can rip with a quieter year as slower-up, not a collapse."
         ),
         rationale: z
           .string()
           .optional()
           .describe(
-            "Human thesis in one sentence: micro-thesis + path dynamics (bull run / winter / digestion). No em dashes. Never say overridden, rejected, calibrated, or sheet-aligned."
+            "One human sentence: why this company + how the path wiggles (bull run / winter / quiet year). No em dashes. Never say overridden, rejected, calibrated, or sheet-aligned."
           ),
       })
     )
     .describe(
-      "EOY SP for EVERY holding, all years 2026-2030. High-conviction AI infra / AI power / crypto magnitudes. Never paste spot across years. Never draw a straight line."
+      "EOY SP for EVERY holding, all years 2026-2030. Big-bet AI computers / electricity for AI / crypto magnitudes. Never paste spot across years. Never draw a straight line."
     ),
 });

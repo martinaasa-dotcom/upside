@@ -1,4 +1,5 @@
 import type { Holding, Portfolio } from "./types";
+import { tradeCashDelta } from "@/lib/cash-delta";
 import { supabaseIsConfigured } from "@/lib/supabase/env";
 
 /** Yahoo-friendly symbols for non-US listings */
@@ -186,33 +187,84 @@ export function lockDemoStore(store: DemoStore): DemoStore {
   return snapshot;
 }
 
+function applyDemoCash(
+  store: DemoStore,
+  portfolioId: string,
+  delta: number
+): DemoStore {
+  if (!Number.isFinite(delta) || delta === 0) return store;
+  return {
+    ...store,
+    portfolios: store.portfolios.map((p) =>
+      p.id === portfolioId
+        ? { ...p, cash_balance: p.cash_balance + delta }
+        : p
+    ),
+  };
+}
+
 export function upsertHolding(
   store: DemoStore,
   input: Omit<Holding, "id"> & { id?: string }
 ): DemoStore {
   const holdings = [...store.holdings];
-  if (input.id) {
-    const idx = holdings.findIndex((row) => row.id === input.id);
-    if (idx >= 0)
-      holdings[idx] = { ...holdings[idx], ...input, id: input.id };
+  const ticker = input.ticker.toUpperCase();
+  const idx = input.id
+    ? holdings.findIndex((row) => row.id === input.id)
+    : holdings.findIndex(
+        (row) =>
+          row.portfolio_id === input.portfolio_id &&
+          row.ticker.toUpperCase() === ticker
+      );
+  const prev = idx >= 0 ? holdings[idx] : undefined;
+  if (idx >= 0 && prev) {
+    holdings[idx] = { ...prev, ...input, id: prev.id, ticker };
   } else {
     holdings.push({
       ...input,
       id: uid("h"),
-      ticker: input.ticker.toUpperCase(),
+      ticker,
       stock_target_override: input.stock_target_override ?? null,
     });
   }
-  const next = { ...store, holdings };
+  let delta = 0;
+  if (!prev) {
+    delta = tradeCashDelta({
+      buyShares: input.shares,
+      buyPrice: input.buy_price,
+    });
+  } else if (input.shares > prev.shares) {
+    delta = tradeCashDelta({
+      buyShares: input.shares - prev.shares,
+      buyPrice: input.buy_price,
+    });
+  } else if (input.shares < prev.shares) {
+    delta = tradeCashDelta({
+      sellShares: prev.shares - input.shares,
+      sellPrice: prev.buy_price,
+    });
+  }
+  const next = applyDemoCash({ ...store, holdings }, input.portfolio_id, delta);
   saveDemoStore(next);
   return next;
 }
 
 export function deleteHolding(store: DemoStore, id: string): DemoStore {
-  const next = {
+  const removed = store.holdings.find((row) => row.id === id);
+  let next: DemoStore = {
     ...store,
     holdings: store.holdings.filter((row) => row.id !== id),
   };
+  if (removed) {
+    next = applyDemoCash(
+      next,
+      removed.portfolio_id,
+      tradeCashDelta({
+        sellShares: removed.shares,
+        sellPrice: removed.buy_price,
+      })
+    );
+  }
   saveDemoStore(next);
   return next;
 }
@@ -302,12 +354,27 @@ export function patchHolding(
     >
   >
 ): DemoStore {
-  const next = {
-    ...store,
-    holdings: store.holdings.map((row) =>
-      row.id === id ? { ...row, ...patch } : row
-    ),
-  };
+  const prev = store.holdings.find((row) => row.id === id);
+  const holdings = store.holdings.map((row) =>
+    row.id === id ? { ...row, ...patch } : row
+  );
+  let next: DemoStore = { ...store, holdings };
+  if (prev && patch.shares != null && patch.shares !== prev.shares) {
+    const buyPrice = patch.buy_price ?? prev.buy_price;
+    let delta = 0;
+    if (patch.shares > prev.shares) {
+      delta = tradeCashDelta({
+        buyShares: patch.shares - prev.shares,
+        buyPrice,
+      });
+    } else {
+      delta = tradeCashDelta({
+        sellShares: prev.shares - patch.shares,
+        sellPrice: prev.buy_price,
+      });
+    }
+    next = applyDemoCash(next, prev.portfolio_id, delta);
+  }
   saveDemoStore(next);
   return next;
 }

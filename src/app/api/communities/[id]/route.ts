@@ -12,10 +12,12 @@ import {
   CLASS_PERIOD_KINDS,
   isClassroomKind,
   parseClassPlan,
+  parseStartingCash,
   resolveClassroomTrade,
   startPeriodNow,
   type ClassPeriodKind,
 } from "@/lib/classroom";
+import { roundMoney } from "@/lib/money";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -325,6 +327,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     houseNote?: string;
     classPlan?: unknown;
     startPeriod?: string;
+    startingCash?: unknown;
   };
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -404,6 +407,29 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       patch.class_plan = plan;
     }
   }
+  let startingCashDelta = 0;
+  if (body.startingCash !== undefined) {
+    const nextCash = parseStartingCash(body.startingCash);
+    if (nextCash == null) {
+      return NextResponse.json(
+        { error: "Starting cash has to be between $1,000 and $10,000,000." },
+        { status: 400 }
+      );
+    }
+    const { data: current } = await supabase
+      .from(PORTFELL_TABLES.communities)
+      .select("kind, starting_cash")
+      .eq("id", id)
+      .maybeSingle();
+    if (!isClassroomKind((current as { kind?: string } | null)?.kind)) {
+      return NextResponse.json({ error: "Not a class" }, { status: 400 });
+    }
+    const prevCash = Number(
+      (current as { starting_cash?: number } | null)?.starting_cash ?? 0
+    );
+    startingCashDelta = nextCash - prevCash;
+    patch.starting_cash = nextCash;
+  }
   if (Object.keys(patch).length <= 1) {
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
   }
@@ -417,6 +443,24 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (startingCashDelta !== 0) {
+    const { data: sheets } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("id, cash_balance")
+      .eq("classroom_community_id", id);
+    for (const sheet of (sheets ?? []) as {
+      id: string;
+      cash_balance: number;
+    }[]) {
+      await supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .update({
+          cash_balance: roundMoney(Number(sheet.cash_balance) + startingCashDelta),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sheet.id);
+    }
   }
   const saved = community as {
     kind?: string;

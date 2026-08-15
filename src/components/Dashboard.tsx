@@ -69,6 +69,7 @@ import {
   setEoyOverride,
   type PortfolioEoyOverrides,
 } from "@/lib/forecast-overrides";
+import { tradeCashDelta } from "@/lib/cash-delta";
 import {
   addPortfolio,
   deleteHolding,
@@ -1435,6 +1436,19 @@ export function Dashboard() {
     return fetch(input, { ...init, headers });
   }
 
+  function applyCashBalance(portfolioId: string, cash: number | null | undefined) {
+    if (cash == null || !Number.isFinite(Number(cash))) return;
+    const next = Number(cash);
+    setPortfolios((prev) =>
+      prev.map((p) => (p.id === portfolioId ? { ...p, cash_balance: next } : p))
+    );
+  }
+
+  function salePx(ticker: string, fallback: number) {
+    const p = quotes[ticker]?.price ?? quotes[ticker.toUpperCase()]?.price;
+    return typeof p === "number" && p > 0 ? p : fallback;
+  }
+
   function handleSave(values: HoldingFormValues) {
     if (!activePortfolio) return;
 
@@ -1471,6 +1485,31 @@ export function Dashboard() {
       }
       return [...prev, optimistic];
     });
+    const prevCash = activePortfolio.cash_balance;
+    let nextCash = prevCash;
+    if (!existing) {
+      nextCash =
+        prevCash +
+        tradeCashDelta({
+          buyShares: values.shares,
+          buyPrice: values.buy_price,
+        });
+    } else if (values.shares > existing.shares) {
+      nextCash =
+        prevCash +
+        tradeCashDelta({
+          buyShares: values.shares - existing.shares,
+          buyPrice: values.buy_price,
+        });
+    } else if (values.shares < existing.shares) {
+      nextCash =
+        prevCash +
+        tradeCashDelta({
+          sellShares: existing.shares - values.shares,
+          sellPrice: salePx(ticker, existing.buy_price),
+        });
+    }
+    applyCashBalance(activePortfolio.id, nextCash);
     setModalOpen(false);
     toast("Holding saved", "success");
     track("holding_added", { ticker });
@@ -1495,6 +1534,7 @@ export function Dashboard() {
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
           holding?: Holding;
+          cash_balance?: number | null;
         };
         if (!res.ok) {
           setHoldings((prev) => {
@@ -1503,12 +1543,14 @@ export function Dashboard() {
             }
             return prev.filter((h) => h.id !== optimistic.id);
           });
+          applyCashBalance(activePortfolio.id, prevCash);
           toast(
             plainError(data.error, "Couldn't save that holding. We put it back how it was."),
             "error"
           );
           return;
         }
+        applyCashBalance(activePortfolio.id, data.cash_balance);
         if (data.holding) {
           const saved = data.holding;
           setHoldings((prev) => {
@@ -1557,6 +1599,25 @@ export function Dashboard() {
     setHoldings((prev) =>
       prev.map((h) => (h.id === id ? { ...h, ...fields } : h))
     );
+    const prevCash = previous
+      ? portfolios.find((p) => p.id === previous.portfolio_id)?.cash_balance
+      : undefined;
+    if (previous && fields.shares != null && fields.shares !== previous.shares) {
+      const buyPrice = fields.buy_price ?? previous.buy_price;
+      let delta = 0;
+      if (fields.shares > previous.shares) {
+        delta = tradeCashDelta({
+          buyShares: fields.shares - previous.shares,
+          buyPrice,
+        });
+      } else {
+        delta = tradeCashDelta({
+          sellShares: previous.shares - fields.shares,
+          sellPrice: salePx(previous.ticker, previous.buy_price),
+        });
+      }
+      if (prevCash != null) applyCashBalance(previous.portfolio_id, prevCash + delta);
+    }
 
     if (source === "supabase") {
       void (async () => {
@@ -1564,23 +1625,30 @@ export function Dashboard() {
           method: "PATCH",
           body: JSON.stringify({ id, ...fields }),
         });
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          cash_balance?: number | null;
+        };
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
           if (previous) {
             setHoldings((prev) =>
               prev.map((h) => (h.id === id ? previous : h))
             );
+            if (prevCash != null) applyCashBalance(previous.portfolio_id, prevCash);
           }
           toast(
             plainError(data.error, "Couldn't update that holding. We put it back how it was."),
             "error"
           );
+          return;
         }
+        if (previous) applyCashBalance(previous.portfolio_id, data.cash_balance);
       })();
       return true;
     }
     const next = patchHolding(loadDemoStore(), id, fields);
     setHoldings(next.holdings);
+    setPortfolios(next.portfolios);
     return true;
   }
 
@@ -1810,6 +1878,10 @@ export function Dashboard() {
             failures += 1;
             return false;
           }
+          const data = (await res.json().catch(() => ({}))) as {
+            cash_balance?: number | null;
+          };
+          applyCashBalance(activePortfolio.id, data.cash_balance);
           working = working.map((x) =>
             x.id === id ? ({ ...x, ...fields } as Holding) : x
           );
@@ -1886,7 +1958,13 @@ export function Dashboard() {
               }),
             });
             if (!res.ok) failures += 1;
-            else await loadPortfolios({ silent: true });
+            else {
+              const data = (await res.json().catch(() => ({}))) as {
+                cash_balance?: number | null;
+              };
+              applyCashBalance(activePortfolio.id, data.cash_balance);
+              await loadPortfolios({ silent: true });
+            }
           } else if (action.action === "import_sheet") {
             const res = await apiFetch("/api/holdings/import", {
               method: "POST",
@@ -1942,6 +2020,10 @@ export function Dashboard() {
             });
             if (!res.ok) failures += 1;
             else {
+              const data = (await res.json().catch(() => ({}))) as {
+                cash_balance?: number | null;
+              };
+              applyCashBalance(activePortfolio.id, data.cash_balance);
               working = working.filter((x) => x.id !== h.id);
               setHoldings((prev) => prev.filter((x) => x.id !== h.id));
             }
@@ -2086,6 +2168,19 @@ export function Dashboard() {
 
   function deleteHoldingById(id: string): boolean {
     const removed = holdings.find((h) => h.id === id);
+    const prevCash = removed
+      ? portfolios.find((p) => p.id === removed.portfolio_id)?.cash_balance
+      : undefined;
+    if (removed && prevCash != null) {
+      applyCashBalance(
+        removed.portfolio_id,
+        prevCash +
+          tradeCashDelta({
+            sellShares: removed.shares,
+            sellPrice: salePx(removed.ticker, removed.buy_price),
+          })
+      );
+    }
     if (source === "supabase") {
       // Optimistic — gone from the table immediately; restored + toasted if
       // the delete actually fails server-side.
@@ -2094,10 +2189,14 @@ export function Dashboard() {
         const res = await apiFetch(`/api/holdings?id=${id}`, {
           method: "DELETE",
         });
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          cash_balance?: number | null;
+        };
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
           if (removed) {
             setHoldings((prev) => [...prev, removed]);
+            if (prevCash != null) applyCashBalance(removed.portfolio_id, prevCash);
           }
           toast(
             plainError(data.error, "Couldn't delete that holding. It's still there."),
@@ -2105,10 +2204,12 @@ export function Dashboard() {
           );
           return;
         }
+        if (removed) applyCashBalance(removed.portfolio_id, data.cash_balance);
       })();
     } else {
       const next = deleteHolding(loadDemoStore(), id);
       setHoldings(next.holdings);
+      setPortfolios(next.portfolios);
     }
     toast("Holding deleted", "success");
     return true;

@@ -1315,7 +1315,7 @@ export function UpsidePortfolioPage() {
                           </Metric>
                         </div>
                         <CopyBlock
-                          label="Thesis"
+                          label="Why he owns it"
                           items={thesis}
                           extra={
                             h.target_timeframe

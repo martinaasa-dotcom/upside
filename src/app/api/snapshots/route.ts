@@ -51,6 +51,7 @@ export async function GET() {
     payload?: { portfolios?: { id?: string }[] };
   }[])
     .filter((row) => {
+      if (row.kind === "nightly") return false;
       const ports = row.payload?.portfolios;
       if (!Array.isArray(ports)) return false;
       return ports.some((p) => p.id && owned.has(p.id));
