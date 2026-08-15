@@ -32,6 +32,9 @@ import {
   sortPulseCandidates,
   statusLabel,
   verdictRepeatsTrim,
+  buildPulseScan,
+  pulseNeedsExplainer,
+  pulseScanLine,
   type PulseCheck,
 } from "../src/lib/thesis-pulse";
 import {
@@ -1360,11 +1363,93 @@ run("Pulse scan sits in its own card, not under the mood line", () => {
   );
   assert.match(page, /Today&apos;s scan/);
   assert.match(page, /<Card>/);
+  assert.match(page, /scanRows\.map/);
   assert.doesNotMatch(
     page,
     /skippedTickers\.length > 0[\s\S]{0,400}humanizeMargusText\(summary\)/
   );
+  assert.doesNotMatch(page, /humanizeMargusText\(summary\)/);
   assert.doesNotMatch(schema, /lead with any sharp drops/);
+
+  const quiet: PulseCheck = {
+    ticker: "MSFT",
+    situation: ["Nothing unusual today."],
+    moveReason: "Today move is +0.4%.",
+    thesisStatus: "intact",
+    earningsNote: "",
+    action: "hold",
+    addLevel: "",
+    verdict: "Hold. Come back if the story actually changes.",
+  };
+  const hot: PulseCheck = {
+    ticker: "RDDT",
+    situation: ["It's running hot."],
+    moveReason: "Looks like a chase, not a new story.",
+    thesisStatus: "watch",
+    earningsNote: "",
+    action: "trim",
+    trimPct: 10,
+    addLevel: "",
+    verdict: "Take a little off. The story is the same, the price ran.",
+  };
+  assert.equal(
+    pulseNeedsExplainer({ isBigMove: false, leftHold: false, check: quiet }),
+    false
+  );
+  assert.equal(
+    pulseNeedsExplainer({ isBigMove: true, leftHold: false, check: quiet }),
+    true
+  );
+  assert.equal(
+    pulseNeedsExplainer({ isBigMove: false, leftHold: false, check: hot }),
+    true
+  );
+  const scan = buildPulseScan([
+    {
+      ticker: "AVGO",
+      isBigMove: true,
+      leftHold: false,
+      effectivePct: -0.07,
+      moveLabel: "Today",
+      check: {
+        ...quiet,
+        ticker: "AVGO",
+        moveReason: "Financing talk, not the chip story.",
+        verdict: "",
+      },
+    },
+    {
+      ticker: "RDDT",
+      isBigMove: true,
+      leftHold: false,
+      effectivePct: 0.127,
+      moveLabel: "Today",
+      check: hot,
+    },
+    {
+      ticker: "MSFT",
+      isBigMove: false,
+      leftHold: false,
+      effectivePct: 0.004,
+      moveLabel: "Today",
+      check: quiet,
+    },
+  ]);
+  assert.deepEqual(
+    scan.map((r) => r.ticker),
+    ["AVGO", "RDDT"]
+  );
+  assert.match(scan[0]!.line, /\$AVGO/);
+  assert.match(scan[0]!.line, /Financing talk/);
+  assert.match(scan[1]!.line, /\$RDDT/);
+  assert.match(
+    pulseScanLine({
+      ticker: "AVGO",
+      effectivePct: -0.07,
+      moveLabel: "Today",
+    }),
+    /\$AVGO/
+  );
 });
 
 run("Pulse puts hold-exits and 5% movers on top", () => {

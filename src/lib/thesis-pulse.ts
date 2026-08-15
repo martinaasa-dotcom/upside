@@ -1,4 +1,5 @@
 import { humanizeMargusText, humanizeMargusTree } from "@/lib/ai/humanize-copy";
+import { cashtag } from "@/lib/format";
 import { TICKER_SECTORS } from "@/lib/forecast-plan";
 import type { OverviewModel, TickerScore } from "@/lib/overview";
 import type { Quote } from "@/lib/types";
@@ -534,6 +535,72 @@ export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
   }
 
   return { ...n, thesisStatus, action };
+}
+
+/** Names that moved, left Hold, or came back with a call that needs a why. */
+export function pulseNeedsExplainer(input: {
+  isBigMove: boolean;
+  leftHold: boolean;
+  check?: PulseCheck | null;
+}): boolean {
+  if (input.isBigMove || input.leftHold) return true;
+  const check = input.check;
+  if (!check) return false;
+  if (check.thesisStatus === "watch" || check.thesisStatus === "broken") {
+    return true;
+  }
+  return check.action !== "hold";
+}
+
+export type PulseScanRow = {
+  ticker: string;
+  line: string;
+};
+
+export function pulseScanLine(input: {
+  ticker: string;
+  check?: PulseCheck | null;
+  effectivePct: number | null;
+  moveLabel: string;
+}): string {
+  const tag = cashtag(input.ticker);
+  const check = input.check;
+  const verdict = check?.verdict?.trim();
+  if (verdict && !verdictRepeatsTrim(verdict, check?.trimPct)) {
+    return `${tag}  ${verdict}`;
+  }
+  const reason = check?.moveReason?.trim();
+  if (reason) return `${tag}  ${reason}`;
+  const sit = normalizePulseSituation(check?.situation)[0]?.trim();
+  if (sit) return `${tag}  ${sit}`;
+  const move = formatMovePct(input.effectivePct);
+  const when = input.moveLabel.trim().toLowerCase() || "today";
+  return `${tag}  ${move} ${when}.`;
+}
+
+export function buildPulseScan(
+  rows: Array<{
+    ticker: string;
+    isBigMove: boolean;
+    leftHold: boolean;
+    effectivePct: number | null;
+    moveLabel: string;
+    check?: PulseCheck | null;
+  }>
+): PulseScanRow[] {
+  const out: PulseScanRow[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const ticker = row.ticker.trim().toUpperCase();
+    if (!ticker || seen.has(ticker)) continue;
+    if (!pulseNeedsExplainer(row)) continue;
+    seen.add(ticker);
+    out.push({
+      ticker,
+      line: pulseScanLine({ ...row, ticker }),
+    });
+  }
+  return out;
 }
 
 /** True when verdict just restates the trim line already on the card. */

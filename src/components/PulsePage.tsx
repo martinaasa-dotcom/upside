@@ -35,6 +35,7 @@ import {
   pulseLeftHold,
   shouldAutoPulseTicker,
   sortPulseCandidates,
+  buildPulseScan,
   loadPulseSummary,
   loadPulseTickerCache,
   reconcilePulseCheck,
@@ -577,6 +578,24 @@ export function PulsePage({
     [ranked, pinnedTicker, leftHoldTickers]
   );
 
+  const scanRows = useMemo(
+    () =>
+      buildPulseScan(
+        ranked.map((c) => {
+          const key = c.ticker.toUpperCase();
+          return {
+            ticker: key,
+            isBigMove: c.isBigMove,
+            leftHold: leftHoldTickers.has(key),
+            effectivePct: c.effectivePct,
+            moveLabel: c.moveLabel,
+            check: checksByTicker[key],
+          };
+        })
+      ),
+    [ranked, leftHoldTickers, checksByTicker]
+  );
+
   useEffect(() => {
     for (const c of candidates) hydrateTicker(c.ticker);
   }, [candidates, hydrateTicker]);
@@ -962,12 +981,19 @@ export function PulsePage({
         )}
       </Panel>
 
-      {summary && !pinnedTicker && (
+      {scanRows.length > 0 && !pinnedTicker && (
         <Card>
           <MicroLabel>Today&apos;s scan</MicroLabel>
-          <p className="mt-1.5 text-sm leading-relaxed text-zinc-100">
-            {humanizeMargusText(summary)}
-          </p>
+          <ul className="mt-2 space-y-2">
+            {scanRows.map((row) => (
+              <li
+                key={row.ticker}
+                className="text-sm leading-relaxed text-zinc-100"
+              >
+                {humanizeMargusText(row.line)}
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
