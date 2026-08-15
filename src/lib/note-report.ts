@@ -422,7 +422,7 @@ export function noteReportText(r: NoteReport): string {
       if (n.actionLine) lines.push(n.actionLine);
     }
   }
-  lines.push("", "Account turns this off.");
+  lines.push("", "Turn these notes off in Account: https://upsidelab.app/account");
   return lines.join("\n");
 }
 
@@ -652,7 +652,7 @@ export function noteReportHtml(r: NoteReport): string {
             ${weightsInner}
             ${thesisInner}
             ${weekNotesInner}
-            <p style="margin:20px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Account turns this off · upsidelab.app</p>
+            <p style="margin:20px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Turn these notes off in <a href="https://upsidelab.app/account" style="color:#9aa3ad;text-decoration:underline">Account</a>.</p>
           </td>
         </tr>
       </table>
