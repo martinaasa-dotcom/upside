@@ -103,9 +103,15 @@ function priceMoney(n: number): string {
 }
 
 export function notePreview(r: NoteReport): string {
-  const when = r.kind === "sunday" ? "This week" : "Today";
-  const pct = r.todayPct != null ? ` (${signedPct(r.todayPct)})` : "";
-  return `${when} ${signedMoney(r.todayDollar)}${pct}`;
+  const top = r.movers[0];
+  const pctBit =
+    r.todayPct != null
+      ? `${signedPct(r.todayPct)} on the book`
+      : "Prices are still coming in";
+  if (top) {
+    return `${pctBit}. ${cashtag(top.ticker)} did most of the move. What moved is inside.`;
+  }
+  return `${pctBit}. Open the note for the full look.`;
 }
 
 function signedMoney(n: number): string {
@@ -483,8 +489,8 @@ export function noteReportHtml(r: NoteReport): string {
   }`;
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
-  const preview =
-    r.todayPct != null ? signedPct(r.todayPct) : notePreview(r);
+  const preview = notePreview(r);
+  const previewPad = Array.from({ length: 40 }, () => "&zwnj;&nbsp;").join("");
 
   const moverRows = r.movers
     .map((m, i) => {
@@ -625,7 +631,7 @@ export function noteReportHtml(r: NoteReport): string {
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background:${APP};color:${CREAM}" bgcolor="${APP}">
-<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeHtml(preview)}</div>
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeHtml(preview)}${previewPad}</div>
 <!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${APP}" style="width:100%;background:${APP}">
   <tr>
@@ -670,5 +676,11 @@ export function noteReportHtml(r: NoteReport): string {
 }
 
 export function noteSubject(r: NoteReport): string {
-  return `${TITLE[r.kind]} · ${r.shortDate} · ${signedMoney(r.todayDollar)}`;
+  const when =
+    r.kind === "morning"
+      ? "this morning"
+      : r.kind === "sunday"
+        ? "this week"
+        : "after the close";
+  return `${signedMoney(r.todayDollar)} ${when}, ${r.shortDate}`;
 }
