@@ -17,7 +17,7 @@ RLS is enabled on every `portfell_*` table. Holdings and portfolios are scoped t
 
 ## Auth
 
-Site URL on the dedicated project: `https://www.upsidelab.app`. Redirect allow-list includes upsidelab.app, the Vercel alias, and localhost.
+Site URL on the dedicated project: `https://upsidelab.app`. Redirect allow-list includes the apex, www (legacy), the Vercel alias, and localhost.
 
 Google provider credentials were copied from the old project. In Google Cloud, authorized redirect URIs must include:
 

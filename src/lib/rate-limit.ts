@@ -14,6 +14,8 @@ type Bucket = { count: number; resetAt: number };
 
 const buckets = new Map<string, Bucket>();
 let lastSweep = 0;
+/** Cap so a unique-key flood cannot grow this Map without bound. */
+const MAX_BUCKETS = 10_000;
 
 function sweep(now: number) {
   if (now - lastSweep < 60_000) return;
@@ -41,6 +43,13 @@ export function checkRateLimit(
 ): RateLimitResult {
   const now = Date.now();
   sweep(now);
+  if (buckets.size >= MAX_BUCKETS && !buckets.has(key)) {
+    sweep(now);
+    if (buckets.size >= MAX_BUCKETS) {
+      const first = buckets.keys().next().value;
+      if (first !== undefined) buckets.delete(first);
+    }
+  }
 
   const bucket = buckets.get(key);
   if (!bucket || now >= bucket.resetAt) {

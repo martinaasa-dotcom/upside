@@ -38,6 +38,12 @@ import {
 } from "../src/lib/earnings-brief";
 import { sessionMark } from "../src/lib/market-session";
 import { quotePollMs } from "../src/lib/market/session";
+import {
+  isLegacyHost,
+  normalizeHostname,
+  safeInternalPath,
+} from "../src/lib/site-url";
+import { validateServerEnv } from "../src/lib/env-schema";
 import { mergeQuotes } from "../src/lib/quote-cache";
 import {
   closeOnDate,
@@ -648,11 +654,46 @@ run("product is Upside Lab on upsidelab.app", () => {
   const site = readFileSync("src/lib/site-url.ts", "utf8");
   assert.match(site, /PRODUCT_DOMAIN/);
   assert.match(site, /LEGACY_HOSTS/);
+  assert.match(site, /UPSIDE_CANONICAL_HOST/);
+  assert.match(site, /safeInternalPath/);
   const layout = readFileSync("src/app/layout.tsx", "utf8");
   assert.match(layout, /PRODUCT_NAME/);
   const envEx = readFileSync(".env.example", "utf8");
   assert.match(envEx, /upsidelab\.app/);
   assert.doesNotMatch(envEx, /jwjezdgggrgdgfsovgtx/);
+  const nextCfg = readFileSync("next.config.ts", "utf8");
+  assert.match(nextCfg, /poweredByHeader: false/);
+  assert.match(nextCfg, /X-Frame-Options/);
+  const callback = readFileSync("src/app/auth/callback/route.ts", "utf8");
+  assert.match(callback, /safeInternalPath/);
+  const proxy = readFileSync("src/proxy.ts", "utf8");
+  assert.match(proxy, /redirectTarget/);
+});
+
+run("canonical host strips www and rejects off-site next paths", () => {
+  assert.equal(normalizeHostname("https://www.upsidelab.app/"), "www.upsidelab.app");
+  assert.ok(isLegacyHost("www.upsidelab.app"));
+  assert.ok(isLegacyHost("https://upside-upthink-solutions.vercel.app"));
+  assert.ok(!isLegacyHost("upsidelab.app"));
+  assert.equal(safeInternalPath("https://evil.example"), "/");
+  assert.equal(safeInternalPath("//evil.example"), "/");
+  assert.equal(safeInternalPath("/lab?tab=pulse"), "/lab?tab=pulse");
+  assert.equal(safeInternalPath("lab"), "/");
+});
+
+run("set env values that are not https are rejected", () => {
+  const issues = validateServerEnv({
+    NEXT_PUBLIC_SUPABASE_URL: "http://insecure.example",
+    UPSIDE_CANONICAL_HOST: "not a host",
+  });
+  assert.ok(issues.some((i) => i.key === "NEXT_PUBLIC_SUPABASE_URL"));
+  assert.ok(issues.some((i) => i.key === "UPSIDE_CANONICAL_HOST"));
+  assert.equal(
+    validateServerEnv({
+      NEXT_PUBLIC_SUPABASE_URL: "https://uzrnybyggznpvgxgrvgl.supabase.co",
+    }).length,
+    0
+  );
 });
 
 /* ---------- design system ---------- */

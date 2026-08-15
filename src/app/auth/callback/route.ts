@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
+import { isLocalHost, safeInternalPath, siteUrl } from "@/lib/site-url";
 import { createSupabaseServerAuth } from "@/lib/supabase/server-auth";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +8,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/";
-  const origin = url.origin;
+  const next = safeInternalPath(url.searchParams.get("next"));
+  const origin = isLocalHost(url.hostname) ? url.origin : siteUrl();
 
   if (code) {
     const supabase = await createSupabaseServerAuth();

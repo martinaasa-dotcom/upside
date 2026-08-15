@@ -6,11 +6,23 @@
  * a new project is env-only: swap URL + keys, no code change.
  */
 
+function httpsOrigin(raw: string | undefined): string | undefined {
+  const t = raw?.trim();
+  if (!t) return undefined;
+  try {
+    const u = new URL(t);
+    if (u.protocol !== "https:" || !u.hostname) return undefined;
+    return u.origin;
+  } catch {
+    return undefined;
+  }
+}
+
 export function supabaseUrl(): string | undefined {
-  const raw =
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
-    process.env.SUPABASE_URL?.trim();
-  return raw || undefined;
+  return (
+    httpsOrigin(process.env.NEXT_PUBLIC_SUPABASE_URL) ||
+    httpsOrigin(process.env.SUPABASE_URL)
+  );
 }
 
 export function supabaseAnonKey(): string | undefined {

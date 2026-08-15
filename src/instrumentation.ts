@@ -1,5 +1,14 @@
 import type { Instrumentation } from "next";
+import { validateServerEnv } from "@/lib/env-schema";
 import { logError } from "@/lib/error-log";
+
+export async function register() {
+  if (process.env.NEXT_RUNTIME === "edge") return;
+  const issues = validateServerEnv();
+  for (const issue of issues) {
+    console.warn(`[env] ${issue.key}: ${issue.message}`);
+  }
+}
 
 /**
  * Next.js calls onRequestError automatically for any uncaught server-side

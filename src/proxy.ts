@@ -5,26 +5,16 @@ import {
   isLegacyHost,
   isLocalHost,
   isVercelPreviewHost,
+  redirectTarget,
 } from "@/lib/site-url";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
-
-function redirectTarget(): string | null {
-  // Only 301 when production has an explicit canonical host. The code
-  // default (upsidelab.app) is for OG/sitemap; flipping traffic there
-  // before the domain is attached on Vercel black-holes the live app.
-  const explicit =
-    process.env.UPSIDE_CANONICAL_HOST?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!explicit) return null;
-  return explicit.replace(/^https?:\/\//, "").replace(/\/+$/, "").toLowerCase();
-}
 
 /**
  * Legacy host redirects + Supabase session refresh.
  *
- * Document navigations to a known legacy host 301 to upsidelab.app, path
- * and query intact. `/api/*` stays on the incoming host so cron jobs and
- * signed webhooks do not drop a body on a redirect.
+ * Document navigations to a known legacy host 301 to the canonical host,
+ * path and query intact. `/api/*` stays on the incoming host so cron jobs
+ * and signed webhooks do not drop a body on a redirect.
  */
 export async function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
