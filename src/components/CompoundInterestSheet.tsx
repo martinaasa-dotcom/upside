@@ -48,7 +48,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Card,
   InfoTip,
@@ -441,7 +441,7 @@ export function CompoundInterestSheet({
     return pct > 0 ? pct : 10.0;
   }, [tickerValues, bookCash]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const stored = loadStored();
     setDraft(stored);
     setCurrency(loadCompoundCurrency());

@@ -1607,6 +1607,10 @@ run("cash deltas are applied in one atomic statement", () => {
     /portfell_apply_cash_delta/.test(src),
     "cash moves must go through the atomic RPC, not a read-modify-write"
   );
+  assert.ok(
+    !/falling back to read-modify-write/.test(src),
+    "a failed RPC must fail closed, not fall back to a racy write"
+  );
   const migration = readFileSync(
     join(process.cwd(), "supabase/migrations/041_atomic_cash_delta.sql"),
     "utf8"
@@ -1655,6 +1659,9 @@ run("browser-only caches are not read during render", () => {
     "src/components/CommunityView.tsx",
     "src/components/WatchlistStrip.tsx",
     "src/components/DailyDuelCard.tsx",
+    "src/components/HomeWorld.tsx",
+    "src/components/LabSheet.tsx",
+    "src/components/Dashboard.tsx",
   ];
   const offenders: string[] = [];
   for (const file of files) {

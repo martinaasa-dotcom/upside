@@ -28,3 +28,9 @@ export const PORTFELL_TABLES = {
 
 /** Fixed id for the seed test community (Aasad/MaryAnn/Anu/Karud/Lap circle). */
 export const UPSIDE_CIRCLE_ID = "a0000000-0000-4000-8000-000000000001";
+
+/** Live book columns. Snapshots still select * so a restore cannot drop a field. */
+export const PORTFOLIO_COLUMNS =
+  "id, name, slug, sort_order, cash_balance, owner_id, classroom_community_id";
+export const HOLDING_COLUMNS =
+  "id, portfolio_id, ticker, shares, buy_price, eoy_target, target_call_pct, stock_target_override, sort_order";

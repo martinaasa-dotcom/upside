@@ -8,6 +8,7 @@ import {
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
 import { loadUpsidePortfolioCache } from "@/lib/upside-portfolio-cache";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { ArrowRight, Bot, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -82,7 +83,10 @@ export function HomeWorld({
   /** On Circle, the communities card just links back here. Fund only. */
   fundOnly?: boolean;
 }) {
-  const [fund, setFund] = useState<FundTeaser | null>(() => teaserFromFundCache());
+  const [fund, setFund] = useHydratedCache<FundTeaser | null>(
+    teaserFromFundCache,
+    null
+  );
   const [communities, setCommunities] = useState<CommunityRow[] | null>(null);
 
   useEffect(() => {
@@ -100,7 +104,7 @@ export function HomeWorld({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setFund]);
 
   useEffect(() => {
     if (fundOnly) return;

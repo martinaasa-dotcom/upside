@@ -14,7 +14,11 @@ import {
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import {
+  HOLDING_COLUMNS,
+  PORTFELL_TABLES,
+  PORTFOLIO_COLUMNS,
+} from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +62,7 @@ export async function GET(req: NextRequest) {
 
   const { data: portfolios, error: pErr } = await supabase
     .from(PORTFELL_TABLES.portfolios)
-    .select("*")
+    .select(PORTFOLIO_COLUMNS)
     .in("id", ownedIds)
     .order("sort_order");
 
@@ -73,7 +77,7 @@ export async function GET(req: NextRequest) {
   if (portfolioIds.length) {
     const { data: h, error: hErr } = await supabase
       .from(PORTFELL_TABLES.holdings)
-      .select("*")
+      .select(HOLDING_COLUMNS)
       .in("portfolio_id", portfolioIds)
       .order("sort_order");
     if (hErr) {

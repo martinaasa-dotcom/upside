@@ -24,6 +24,7 @@ import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import { FlaskConical } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
 type Props = {
   overview: OverviewModel;
@@ -85,12 +86,11 @@ export function LabSheet({
   hiddenTabs = [],
 }: Props) {
   const visibleTabs = TABS.filter((t) => !hiddenTabs.includes(t.id));
-  const [tab, setTab] = useState<LabTab>(() => {
+  const fallbackTab = visibleTabs[0]?.id ?? "alloc";
+  const [tab, setTab] = useHydratedCache<LabTab>(() => {
     const fromUrl = initialLabTab();
-    return visibleTabs.some((t) => t.id === fromUrl)
-      ? fromUrl
-      : visibleTabs[0]?.id ?? "alloc";
-  });
+    return visibleTabs.some((t) => t.id === fromUrl) ? fromUrl : fallbackTab;
+  }, fallbackTab);
   const tabScrollRef = useRef<HTMLDivElement | null>(null);
   const tabRefs = useRef<Partial<Record<LabTab, HTMLButtonElement | null>>>({});
   const [tabOverflow, setTabOverflow] = useState({ left: false, right: false });

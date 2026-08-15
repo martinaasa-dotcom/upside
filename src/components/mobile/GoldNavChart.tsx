@@ -9,6 +9,7 @@ import {
   writeYtdAnchor,
   type YtdAnchor,
 } from "@/lib/market/ytd-anchor";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 export type NavPoint = { date: string; nav: number };
@@ -105,7 +106,7 @@ export function useBookNavHistory(input: {
 } {
   const posKey = fingerprintPositions(input.positions);
   const [hist, setHist] = useState<NavPoint[]>([]);
-  const [assumed, setAssumed] = useState(loadAssumedPref);
+  const [assumed, setAssumed] = useHydratedCache(loadAssumedPref, true);
   const [serverAssumed, setServerAssumed] = useState(false);
   const [firstRealDate, setFirstRealDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

@@ -62,6 +62,7 @@ import {
   loadActiveSheetId,
   saveActiveSheetId,
 } from "@/lib/active-sheet";
+import { loadLastUser } from "@/lib/last-session";
 import { buildForecast, type ForecastYear } from "@/lib/forecast";
 import {
   loadEoyOverrides,
@@ -122,7 +123,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
 import {
@@ -135,6 +136,7 @@ import {
   saveVisibilityMap,
   setPanelVisible,
   toggleVisibilityMap,
+  type VisibilityMap,
 } from "@/lib/panel-visibility";
 import {
   shouldHideOptions,
@@ -387,55 +389,22 @@ export function Dashboard() {
   const { push: toast } = useToast();
   const { profile, signOut, refresh, user } = useAuth();
   const router = useRouter();
-  const cachedBook = readBookCache(user?.id);
   // Picked once per mount, not per render, so it doesn't shuffle mid-load.
   const [loadingMessage] = useState(pickLoadingMessage);
-  const [source, setSource] = useState<DataSource>(
-    cachedBook?.source ?? "demo"
-  );
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(
-    cachedBook?.portfolios ?? []
-  );
-  const [holdings, setHoldings] = useState<Holding[]>(
-    cachedBook?.holdings ?? []
-  );
+  const [source, setSource] = useState<DataSource>("demo");
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
   const [saveFlash, setSaveFlash] = useState(false);
-  const [locked, setLocked] = useState(cachedBook?.locked ?? false);
-  const [activeId, setActiveId] = useState<string>(() => {
-    // URL wins on first paint too, not just after popstate/portfolio-load —
-    // otherwise opening a shared "?sheet=lab" link (or any link that differs
-    // from your own last-visited tab) would flash your last tab first, then
-    // snap to the linked one once the async portfolio load corrects it.
-    const fromUrl = resolveSheetIdFromUrl(cachedBook?.portfolios ?? []);
-    if (fromUrl) return fromUrl;
-    if (!cachedBook) return OVERVIEW_TAB_ID;
-    const saved = loadActiveSheetId();
-    if (!saved) return OVERVIEW_TAB_ID;
-    const meta = normalizeMetaTabId(saved);
-    if (meta) return meta;
-    return cachedBook.portfolios.some((p) => p.id === saved)
-      ? saved
-      : OVERVIEW_TAB_ID;
-  });
-  // Hydrate from the last known market prices so the book's first paint is
-  // a real valuation. Starting empty made calculations.ts fall back to
-  // buy_price for every holding, flashing cost basis as if it were the
-  // book value until the quotes request landed.
-  const cachedQuotesRef = useRef(loadCachedQuotes());
-  const [quotes, setQuotes] = useState<Record<string, Quote>>(
-    () => cachedQuotesRef.current.quotes
-  );
+  const [locked, setLocked] = useState(false);
+  const [activeId, setActiveId] = useState<string>(OVERVIEW_TAB_ID);
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [options, setOptions] = useState<Record<string, OptionCandidate | null>>(
     {}
   );
-  const [loading, setLoading] = useState(!cachedBook);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  // Seeded with the cache's own timestamp so "Prices · Xs ago" is honest
-  // about showing older prices until the refresh lands.
-  const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(
-    () => cachedQuotesRef.current.savedAt
-  );
+  const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
   const [quotesDelayed, setQuotesDelayed] = useState(false);
   const [missingTickers, setMissingTickers] = useState<string[]>([]);
   const [eurUsd, setEurUsd] = useState<number | null>(null);
@@ -446,9 +415,9 @@ export function Dashboard() {
     rate: number | null;
   } | null>(null);
   const [gbpUsd, setGbpUsd] = useState<number | null>(null);
-  const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState(
-    () => loadDisplayCurrencyMap()
-  );
+  const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState<
+    Record<string, DisplayCurrency>
+  >({});
   const [modalOpen, setModalOpen] = useState(false);
   const [cashModalOpen, setCashModalOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{
@@ -491,7 +460,7 @@ export function Dashboard() {
     Array<{ ticker: string; date: string; days: number }>
   >([]);
   const [alertToastsSent, setAlertToastsSent] = useState<Set<string>>(
-    () => loadDismissedAlertIds()
+    () => new Set()
   );
   // Read inside effects without adding alertToastsSent as a dependency
   // (that would re-trigger the alert effect on every toast it fires).
@@ -499,15 +468,13 @@ export function Dashboard() {
   alertToastsSentRef.current = alertToastsSent;
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
-  const [ccVisibleByPortfolio, setCcVisibleByPortfolio] = useState(() =>
-    loadVisibilityMap(CC_VISIBLE_KEY)
-  );
-  const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] = useState(
-    () => loadVisibilityMap(FORECAST_VISIBLE_KEY)
-  );
+  const [ccVisibleByPortfolio, setCcVisibleByPortfolio] =
+    useState<VisibilityMap>({});
+  const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] =
+    useState<VisibilityMap>({});
   const [eoyOverrides, setEoyOverrides] = useState<PortfolioEoyOverrides>({});
   const [experienceTier, setExperienceTier] = useState<ExperienceTier | null>(
-    loadStoredTier
+    null
   );
   const [tierChecked, setTierChecked] = useState(false);
   // Tri-state and deliberately separate from experienceTier: null = hasn't
@@ -515,10 +482,50 @@ export function Dashboard() {
   // before". A "very experienced" tier and "no options experience" are a
   // real, valid combination -- this can't be derived from the tier.
   // Options UI only appears after an explicit yes.
-  const [knowsOptions, setKnowsOptions] = useState<boolean | null>(
-    loadStoredKnowsOptions
-  );
+  const [knowsOptions, setKnowsOptions] = useState<boolean | null>(null);
   const hideOptionsUI = shouldHideOptions(knowsOptions);
+
+  useLayoutEffect(() => {
+    const uid = user?.id ?? loadLastUser()?.id ?? null;
+    const cached = readBookCache(uid);
+    if (cached) {
+      setSource(cached.source);
+      setPortfolios(cached.portfolios);
+      setHoldings(cached.holdings);
+      setLocked(cached.locked);
+      setLoading(false);
+      const fromUrl = resolveSheetIdFromUrl(cached.portfolios);
+      if (fromUrl) {
+        setActiveId(fromUrl);
+      } else {
+        const saved = loadActiveSheetId();
+        if (saved) {
+          const meta = normalizeMetaTabId(saved);
+          if (meta) setActiveId(meta);
+          else if (cached.portfolios.some((p) => p.id === saved)) {
+            setActiveId(saved);
+          }
+        }
+      }
+    } else {
+      const fromUrl = resolveSheetIdFromUrl([]);
+      if (fromUrl) setActiveId(fromUrl);
+      else {
+        const saved = loadActiveSheetId();
+        const meta = saved ? normalizeMetaTabId(saved) : null;
+        if (meta) setActiveId(meta);
+      }
+    }
+    const cachedQuotes = loadCachedQuotes();
+    setQuotes(cachedQuotes.quotes);
+    setQuotesUpdatedAt(cachedQuotes.savedAt);
+    setDisplayCurrencyByPortfolio(loadDisplayCurrencyMap());
+    setAlertToastsSent(loadDismissedAlertIds());
+    setCcVisibleByPortfolio(loadVisibilityMap(CC_VISIBLE_KEY));
+    setForecastVisibleByPortfolio(loadVisibilityMap(FORECAST_VISIBLE_KEY));
+    setExperienceTier(loadStoredTier());
+    setKnowsOptions(loadStoredKnowsOptions());
+  }, [user?.id]);
 
   // Confirm/sync against the server once — localStorage is read
   // synchronously above for an instant first paint, but the DB value is

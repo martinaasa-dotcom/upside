@@ -783,7 +783,7 @@ const SANS =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const BOOK_URL = "https://upsidelab.app";
 const LOCKUP =
-  "https://www.upsidelab.app/icons/email-lockup.png?v=1";
+  "https://upsidelab.app/icons/email-lockup.png?v=1";
 
 function toneColor(n: number): string {
   if (n > 0) return GAIN;

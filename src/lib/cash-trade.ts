@@ -30,7 +30,7 @@ async function readCashBalance(
     .eq("id", portfolioId)
     .maybeSingle();
   if (error || !data) return null;
-  const n = Number((data as { cash_balance?: number }).cash_balance);
+  const n = Number(data.cash_balance);
   return Number.isFinite(n) ? roundMoney(n) : null;
 }
 
@@ -44,8 +44,10 @@ async function readCashBalance(
  * client retries all produce that overlap in normal use, and the symptom is a
  * cash balance quietly missing one trade.
  *
- * Callers must have already established co-ownership. The RPC does no
- * permission check of its own.
+ * Callers must have already established co-ownership. The RPC also checks
+ * co-ownership itself when the caller has a user JWT, so a stray PostgREST
+ * call cannot move another sheet's cash. service_role skips that check
+ * because auth.uid() is null on that connection.
  */
 export async function applyPortfolioCashDelta(
   supabase: SupabaseClient,
@@ -61,25 +63,10 @@ export async function applyPortfolioCashDelta(
     p_delta: roundMoney(delta),
   });
 
-  if (!error) {
-    const n = Number(data);
-    return Number.isFinite(n) ? roundMoney(n) : null;
+  if (error) {
+    console.error("[cash] portfell_apply_cash_delta failed", error.message);
+    return null;
   }
-
-  // An environment that hasn't run migration 041 yet still has to be able to
-  // trade. Fall back to the old read-modify-write, which is racy but correct
-  // for a single writer, rather than failing the trade outright.
-  console.warn(
-    "[cash] portfell_apply_cash_delta unavailable, falling back to read-modify-write",
-    error.message
-  );
-  const current = await readCashBalance(supabase, portfolioId);
-  if (current === null) return null;
-  const next = roundMoney(current + delta);
-  const { error: uErr } = await supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .update({ cash_balance: next, updated_at: new Date().toISOString() })
-    .eq("id", portfolioId);
-  if (uErr) return null;
-  return next;
+  const n = Number(data);
+  return Number.isFinite(n) ? roundMoney(n) : null;
 }

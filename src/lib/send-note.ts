@@ -3,7 +3,7 @@
 import { Resend } from "resend";
 
 const DEFAULT_FROM = "Upside Lab <notes@upsidelab.app>";
-const MARK_URL = "https://www.upsidelab.app/icons/email-lockup.png?v=1";
+const MARK_URL = "https://upsidelab.app/icons/email-lockup.png?v=1";
 
 function escapeHtml(s: string): string {
   return s
