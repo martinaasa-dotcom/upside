@@ -119,20 +119,8 @@ export function SignInGate({ children }: Props) {
         id="main"
         className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-center px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:px-10"
       >
-        <div
-          className={
-            invite
-              ? "signin-rise mx-auto w-full max-w-md"
-              : "signin-rise grid items-center gap-14 md:grid-cols-[minmax(0,1fr)_22rem] md:gap-16 lg:gap-20"
-          }
-        >
-          <div
-            className={
-              invite
-                ? "flex flex-col items-center text-center"
-                : "flex flex-col items-center text-center md:items-start md:text-left"
-            }
-          >
+        <div className="signin-rise grid items-center gap-14 md:grid-cols-[minmax(0,1fr)_22rem] md:gap-16 lg:gap-20">
+          <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
             {deletedNotice && (
@@ -157,19 +145,17 @@ export function SignInGate({ children }: Props) {
               </p>
             </div>
 
-            {!invite && (
-              <ul className="signin-rise-2 mt-8 max-w-md space-y-3.5 text-left text-sm leading-relaxed text-zinc-400">
-                {SIGNIN_POINTS.map((line) => (
-                  <li key={line} className="flex gap-3">
-                    <span
-                      className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
-                      aria-hidden
-                    />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <ul className="signin-rise-2 mt-8 max-w-md space-y-3.5 text-left text-sm leading-relaxed text-zinc-400">
+              {SIGNIN_POINTS.map((line) => (
+                <li key={line} className="flex gap-3">
+                  <span
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
+                    aria-hidden
+                  />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
 
             <button
               type="button"
@@ -200,7 +186,7 @@ export function SignInGate({ children }: Props) {
             </p>
           </div>
 
-          {!invite && <BookStill />}
+          <BookStill />
         </div>
       </main>
     </div>
