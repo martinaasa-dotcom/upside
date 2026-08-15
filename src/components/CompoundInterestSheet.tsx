@@ -50,6 +50,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTimeout } from "@/lib/use-timeout";
 import {
   Card,
   InfoTip,
@@ -430,6 +431,7 @@ export function CompoundInterestSheet({
   const [tipFlash, setTipFlash] = useState(false);
   const [copied, setCopied] = useState(false);
   const appliedDefaultRateRef = useRef(false);
+  const later = useTimeout();
 
   // Calculate the portfolio's actual blended expected growth rate
   const portfolioExpectedRatePct = useMemo(() => {
@@ -537,7 +539,19 @@ export function CompoundInterestSheet({
     [liveInputs.years]
   );
 
-  const storyYear = storyOpts[Math.min(storyIdx, storyOpts.length - 1)] ?? 1;
+  const safeStoryIdx = Math.min(storyIdx, Math.max(storyOpts.length - 1, 0));
+  const storyYear = storyOpts[safeStoryIdx] ?? 1;
+
+  useEffect(() => {
+    if (storyIdx !== safeStoryIdx) setStoryIdx(safeStoryIdx);
+  }, [storyIdx, safeStoryIdx]);
+
+  useEffect(() => {
+    if (principalSource === "custom" || principalSource === "book") return;
+    if (!sheets.some((s) => s.id === principalSource)) {
+      setPrincipalSource("custom");
+    }
+  }, [principalSource, sheets]);
   const storyRow =
     result.yearly.find((y) => y.index === storyYear) ??
     result.yearly[result.yearly.length - 1];
@@ -632,7 +646,7 @@ export function CompoundInterestSheet({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      later(() => setCopied(false), 1600);
     } catch {
       /* ignore */
     }
@@ -1305,7 +1319,7 @@ Optimistic (25%)
             {storyOpts.map((y, i) => (
               <SegButton
                 key={y}
-                active={storyIdx === i}
+                active={safeStoryIdx === i}
                 onClick={() => setStoryIdx(i)}
               >
                 Year {y}

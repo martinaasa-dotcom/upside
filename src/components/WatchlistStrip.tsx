@@ -66,7 +66,9 @@ export function WatchlistStrip({
   }, [namesKey]);
 
   function add() {
-    const next = addWatchlistTicker(list, draft);
+    const t = draft.trim().toUpperCase();
+    if (!/^[A-Z0-9.=^-]{1,12}$/.test(t)) return;
+    const next = addWatchlistTicker(list, t);
     setList(next);
     setDraft("");
   }

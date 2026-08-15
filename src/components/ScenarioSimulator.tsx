@@ -6,7 +6,7 @@ import {
   type ShockId,
 } from "@/lib/book-shock";
 import { cashtag, cn, currency, percent } from "@/lib/format";
-import { Card, MicroLabel, Panel, PanelHeader, Pill } from "@/components/ui/Panel";
+import { Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -81,6 +81,15 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
 
   const activeScenario = analysis.scenario;
   const DriverIcon = DRIVER_ICONS[activeScenario.driver] ?? Activity;
+
+  if (holdings.length === 0) {
+    return (
+      <EmptyState
+        title="Nothing to stress yet"
+        detail="Add a holding and this shows what a rough day would do to the book."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

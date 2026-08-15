@@ -88,6 +88,7 @@ export function HomeWorld({
     null
   );
   const [communities, setCommunities] = useState<CommunityRow[] | null>(null);
+  const [communitiesError, setCommunitiesError] = useState(false);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -117,13 +118,16 @@ export function HomeWorld({
       try {
         const res = await fetch("/api/communities", { signal: ctrl.signal });
         if (!res.ok) {
-          if (!ctrl.signal.aborted) setCommunities([]);
+          if (!ctrl.signal.aborted) setCommunitiesError(true);
           return;
         }
         const data = await res.json();
-        if (!ctrl.signal.aborted) setCommunities(data.communities ?? []);
+        if (!ctrl.signal.aborted) {
+          setCommunitiesError(false);
+          setCommunities(data.communities ?? []);
+        }
       } catch {
-        if (!ctrl.signal.aborted) setCommunities([]);
+        if (!ctrl.signal.aborted) setCommunitiesError(true);
       }
     })();
     return () => {
@@ -216,12 +220,18 @@ export function HomeWorld({
               <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-brand-bright" />
             </div>
             <p className="mt-2 text-base font-semibold text-white">
-              {communities === null ? "Your circles" : communityTitle}
+              {communitiesError
+                ? "Couldn't load circles"
+                : communities === null
+                  ? "Your circles"
+                  : communityTitle}
             </p>
             <p className="mt-3 text-sm text-muted">
-              {communities === null
-                ? "Compare books with people you actually know."
-                : communityDetail}
+              {communitiesError
+                ? "Open the page to try again."
+                : communities === null
+                  ? "Compare books with people you actually know."
+                  : communityDetail}
             </p>
           </Card>
         </Link>

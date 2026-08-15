@@ -491,8 +491,12 @@ export function ForecastPanel({
   const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
   const askAbortRef = useRef<AbortController | null>(null);
+  const askGenRef = useRef(0);
   useEffect(() => {
-    return () => askAbortRef.current?.abort();
+    return () => {
+      askAbortRef.current?.abort();
+      askGenRef.current += 1;
+    };
   }, []);
   const [prevPlan, setPrevPlan] = useState<ForecastPlan | null>(null);
   const [horizon, setHorizon] = useState(0);
@@ -510,6 +514,10 @@ export function ForecastPanel({
   }, [planAt]);
 
   useLayoutEffect(() => {
+    askAbortRef.current?.abort();
+    askGenRef.current += 1;
+    askInFlight.current = false;
+    setBusy(false);
     setPlanHydrated(false);
     const loaded = loadForecastPlan(portfolioId);
     setPlan(loaded);
@@ -522,11 +530,11 @@ export function ForecastPanel({
   }, [portfolioId]);
 
   async function askMargus(opts?: { auto?: boolean }) {
-    if (askInFlight.current) return;
-    askInFlight.current = true;
     askAbortRef.current?.abort();
     const ctrl = new AbortController();
     askAbortRef.current = ctrl;
+    const gen = ++askGenRef.current;
+    askInFlight.current = true;
     if (!opts?.auto) track("forecast_plan_requested");
     setBusy(true);
     setError(null);
@@ -548,6 +556,7 @@ export function ForecastPanel({
         res,
         "Couldn't build a forecast. Try again."
       );
+      if (askGenRef.current !== gen || ctrl.signal.aborted) return;
       const convictionKey = bookConvictionKey(
         model.rows.map((r) => r.ticker),
         convictions
@@ -575,14 +584,16 @@ export function ForecastPanel({
       reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
-      if (isAbortError(err)) return;
+      if (isAbortError(err) || askGenRef.current !== gen) return;
       setError(err instanceof Error ? err.message : "Couldn't build a forecast. Try again.");
       // Keep autoKeyRef set so a failed auto-run does not immediately
       // fire again. Clearing it used to retry in a tight loop, which
       // burned the forecast rate limit and left Thinking stuck on.
     } finally {
-      askInFlight.current = false;
-      setBusy(false);
+      if (askGenRef.current === gen) {
+        askInFlight.current = false;
+        setBusy(false);
+      }
     }
   }
 

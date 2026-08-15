@@ -19,7 +19,7 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isAbortError } from "@/lib/abort";
 
 // Mirrors MAX_TICKERS in src/lib/market/trends-cache.ts; kept as a plain
@@ -166,7 +166,6 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
     [tickers, watchlist, holdingSet]
   );
   const key = combined.join(",");
-  const lastKey = useRef<string>("");
 
   const load = useCallback(async (force = false, signal?: AbortSignal) => {
     if (!key) {
@@ -198,8 +197,11 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   // Weekly indicators barely move intraday, so fetch once per ticker set
   // rather than polling. The button is there for a manual recheck.
   useEffect(() => {
-    if (!key || lastKey.current === key) return;
-    lastKey.current = key;
+    if (!key) {
+      setRows([]);
+      setBusy(false);
+      return;
+    }
     const ctrl = new AbortController();
     void load(false, ctrl.signal);
     return () => ctrl.abort();

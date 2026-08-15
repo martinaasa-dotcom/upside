@@ -12,7 +12,7 @@ import {
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isAbortError } from "@/lib/abort";
 
 const DEFAULT_TICKERS = ["SPY", "^GSPC", "QQQ", "IWM", "DIA"];
@@ -441,33 +441,44 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   /** Day drill-down defaults to today and stays put unless you navigate. */
   const [viewMonth, setViewMonth] = useState(marketToday.month);
   const [selectedDay, setSelectedDay] = useState(marketToday.day);
+  const loadCtrlRef = useRef<AbortController | null>(null);
 
-  const load = useCallback(async (sym: string, signal?: AbortSignal) => {
+  const load = useCallback(async (sym: string) => {
+    loadCtrlRef.current?.abort();
+    const ctrl = new AbortController();
+    loadCtrlRef.current = ctrl;
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
         `/api/market/seasonality?ticker=${encodeURIComponent(sym)}`,
-        { cache: "no-store", signal }
+        { cache: "no-store", signal: ctrl.signal }
       );
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(plainError(body.error, "Couldn't load those charts."));
       }
-      setModel((await res.json()) as SeasonalityModel);
+      const next = (await res.json()) as SeasonalityModel;
+      if (ctrl.signal.aborted) return;
+      setModel(next);
     } catch (e) {
-      if (isAbortError(e)) return;
+      if (isAbortError(e) || ctrl.signal.aborted) return;
       setModel(null);
       setError(e instanceof Error ? e.message : "Couldn't load those charts.");
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      if (!ctrl.signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const ctrl = new AbortController();
-    void load(ticker, ctrl.signal);
-    return () => ctrl.abort();
+    if (!tickers.includes(ticker)) {
+      setTicker(tickers[0] ?? "SPY");
+    }
+  }, [tickers, ticker]);
+
+  useEffect(() => {
+    void load(ticker);
+    return () => loadCtrlRef.current?.abort();
   }, [ticker, load]);
 
   const playbookMonthRow = model?.cycleMonthly[playbookMonth - 1];

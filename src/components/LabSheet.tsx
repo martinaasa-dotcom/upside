@@ -152,10 +152,23 @@ export function LabSheet({
   useEffect(() => {
     if (!intentTab) return;
     const id = INTENT_TO_TAB[intentTab];
-    selectTab(id);
+    if (!hiddenTabs.includes(id)) selectTab(id);
     onIntentConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intentTab]);
+
+  // Tier can load after the first paint and hide the tab we landed on
+  // (investor hides Risk). Snap back so the panel is not a blank hole.
+  const hiddenKey = hiddenTabs.join("|");
+  useEffect(() => {
+    if (hiddenTabs.includes(tab)) setTab(fallbackTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hiddenKey stands in for the list
+  }, [hiddenKey, tab, fallbackTab]);
+
+  useEffect(() => {
+    if (scopeId === "book") return;
+    if (!portfolios.some((p) => p.id === scopeId)) setScopeId("book");
+  }, [scopeId, portfolios]);
 
   const scopedTickers = useMemo(() => {
     if (scopeId === "book") return overview.tickers;
@@ -329,7 +342,7 @@ export function LabSheet({
         </div>
       </Panel>
 
-      {tab === "alloc" && (
+      {tab === "alloc" && !hiddenTabs.includes("alloc") && (
         <div className="space-y-4">
           {concentration.positionCount === 0 ? (
             <EmptyState
@@ -483,19 +496,19 @@ export function LabSheet({
         </div>
       )}
 
-      {tab === "trends" && (
+      {tab === "trends" && !hiddenTabs.includes("trends") && (
         <WidgetErrorBoundary name="Trends">
           <TrendsPanel tickers={scopedTickers.map((t) => t.ticker)} />
         </WidgetErrorBoundary>
       )}
 
-      {tab === "seasonality" && (
+      {tab === "seasonality" && !hiddenTabs.includes("seasonality") && (
         <WidgetErrorBoundary name="Seasonality">
           <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
         </WidgetErrorBoundary>
       )}
 
-      {tab === "risk" && (
+      {tab === "risk" && !hiddenTabs.includes("risk") && (
         <WidgetErrorBoundary name="Risk">
         <ScenarioSimulator
           holdings={scopedTickers}
@@ -505,7 +518,7 @@ export function LabSheet({
         </WidgetErrorBoundary>
       )}
 
-      {tab === "risk" && (
+      {tab === "risk" && !hiddenTabs.includes("risk") && (
         <Panel tone="plain" className="space-y-4">
           <div>
             <h3 className="text-base font-bold text-white">

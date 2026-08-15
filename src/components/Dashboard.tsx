@@ -475,6 +475,7 @@ export function Dashboard() {
   bookRef.current = { portfolios, holdings };
   const bookAbortRef = useRef<AbortController | null>(null);
   const quotesAbortRef = useRef<AbortController | null>(null);
+  const holdingPatchSeqRef = useRef(new Map<string, number>());
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] =
     useState<VisibilityMap>({});
   const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] =
@@ -1142,8 +1143,13 @@ export function Dashboard() {
           body: JSON.stringify({ positions }),
           signal: ctrl.signal,
         });
-        const optJson = await optRes.json();
-        setOptions(optJson.options ?? {});
+        if (!optRes.ok) return;
+        const optJson = (await optRes.json().catch(() => ({}))) as {
+          options?: Record<string, OptionCandidate | null>;
+        };
+        if (optJson.options && typeof optJson.options === "object") {
+          setOptions(optJson.options);
+        }
       } catch (err) {
         if (isAbortError(err) || quotesAbortRef.current !== ctrl) return;
         console.error(err);
@@ -1693,6 +1699,8 @@ export function Dashboard() {
       toast("Buy price has to be bigger than 0 and not enormous.", "error");
       return false;
     }
+    const patchSeq = (holdingPatchSeqRef.current.get(id) ?? 0) + 1;
+    holdingPatchSeqRef.current.set(id, patchSeq);
     const previous = holdings.find((h) => h.id === id);
 
     // Clear stale option when strike-driving fields change
@@ -1743,6 +1751,7 @@ export function Dashboard() {
           error?: string;
           cash_balance?: number | null;
         };
+        if (holdingPatchSeqRef.current.get(id) !== patchSeq) return;
         if (!res.ok) {
           if (previous) {
             setHoldings((prev) =>

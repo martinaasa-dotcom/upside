@@ -67,12 +67,16 @@ export function YtdAnchorModal({
     e.preventDefault();
     if (busy || startNav == null || !isSafePositiveMoney(startNav)) return;
     setBusy(true);
-    onSave({
-      v: 1,
-      source: "manual",
-      startNav,
-      ytdPct: impliedPct ?? undefined,
-    });
+    try {
+      onSave({
+        v: 1,
+        source: "manual",
+        startNav,
+        ytdPct: impliedPct ?? undefined,
+      });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (

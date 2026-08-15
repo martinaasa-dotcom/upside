@@ -158,32 +158,40 @@ export function useBookNavHistory(input: {
           } | null
         ) => {
           if (ctrl.signal.aborted) return;
-          const next = data?.points ?? [];
+          const raw = data?.points;
+          if (!Array.isArray(raw)) {
+            setLoading(false);
+            return;
+          }
+          const next = raw.filter(
+            (p): p is NavPoint =>
+              Boolean(p) &&
+              typeof p.date === "string" &&
+              Number.isFinite(p.nav)
+          );
+          if (next.length < 2) {
+            setLoading(false);
+            return;
+          }
           const nextAssumed = Boolean(data?.assumed);
           const nextFirst = data?.firstRealDate ?? null;
           setHist(next);
           setServerAssumed(nextAssumed);
           setFirstRealDate(nextFirst);
           setLoading(false);
-          if (next.length >= 2) {
-            writeNavCache({
-              v: 1,
-              posKey,
-              assumed,
-              cash: input.cash,
-              points: next,
-              serverAssumed: nextAssumed,
-              firstRealDate: nextFirst,
-            });
-          }
+          writeNavCache({
+            v: 1,
+            posKey,
+            assumed,
+            cash: input.cash,
+            points: next,
+            serverAssumed: nextAssumed,
+            firstRealDate: nextFirst,
+          });
         }
       )
       .catch((err) => {
         if (isAbortError(err) || ctrl.signal.aborted) return;
-        if (!havePaint) {
-          setHist([]);
-          setServerAssumed(false);
-        }
         setLoading(false);
       });
     return () => {
@@ -219,7 +227,6 @@ export function useBookNavHistory(input: {
       saveAssumedPref(false);
       setAssumed(false);
       setServerAssumed(false);
-      setHist([]);
       setLoading(true);
     },
     restoreAssumed: () => {
@@ -638,9 +645,14 @@ export function BookNavChart({
   className?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const readAbortRef = useRef<AbortController | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => readAbortRef.current?.abort();
+  }, []);
   const usable = points.filter((p) => Number.isFinite(p.nav));
   const hasChart = usable.length >= 2;
   const recorded =
@@ -656,6 +668,9 @@ export function BookNavChart({
 
   async function onPickFile(file: File | undefined) {
     if (!file || !onApplyAnchor) return;
+    readAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    readAbortRef.current = ctrl;
     setReading(true);
     setReadError(null);
     try {
@@ -665,12 +680,14 @@ export function BookNavChart({
       const res = await fetch("/api/book/ytd-from-image", {
         method: "POST",
         body,
+        signal: ctrl.signal,
       });
       const data = (await res.json().catch(() => ({}))) as {
         startNav?: number;
         ytdPct?: number | null;
         error?: string;
       };
+      if (ctrl.signal.aborted) return;
       if (!res.ok || !(data.startNav != null && data.startNav > 0)) {
         setReadError(
           data.error || "Couldn't read a year-to-date from that. Type the number instead."
@@ -683,10 +700,11 @@ export function BookNavChart({
         startNav: data.startNav,
         ytdPct: data.ytdPct ?? undefined,
       });
-    } catch {
+    } catch (err) {
+      if (isAbortError(err) || ctrl.signal.aborted) return;
       setReadError("Couldn't read that screenshot. Type the number instead.");
     } finally {
-      setReading(false);
+      if (!ctrl.signal.aborted) setReading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
   }

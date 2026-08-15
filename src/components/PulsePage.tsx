@@ -623,10 +623,12 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
           }),
           signal: opts?.signal,
         });
+        if (opts?.signal?.aborted) return;
         const data = await readJsonOrThrow<{
           report: PulseReport;
           headlines?: Record<string, PulseHeadline[]>;
         }>(res, "Pulse check failed");
+        if (opts?.signal?.aborted) return;
         const newReport = data.report as PulseReport;
         const newHeadlines =
           (data.headlines as Record<string, PulseHeadline[]>) ?? {};
@@ -754,7 +756,10 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
     }
 
     const candidate = buildPulseCandidate(ticker, model, quoteMap);
-    await runPulse([candidate], { force: true });
+    await runPulse([candidate], {
+      force: true,
+      signal: pageAbortRef.current.signal,
+    });
   }
 
   async function submitSearch(e: React.FormEvent) {
