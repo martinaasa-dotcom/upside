@@ -48,8 +48,12 @@ import {
 import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
-import { snapshotSheetsForOwner } from "../src/lib/book-snapshot";
+import {
+  NIGHTLY_SNAPSHOT_WINDOW,
+  snapshotSheetsForOwner,
+} from "../src/lib/book-snapshot";
 import { importCashDelta, tradeCashDelta } from "../src/lib/cash-delta";
+import { roundMoney, safeDiv, sumMoney } from "../src/lib/money";
 import {
   allowClassAction,
   classifyHoldingWrite,
@@ -692,6 +696,26 @@ run("no type below 12px anywhere a person reads", () => {
     offenders,
     [],
     `sub-12px type is unreadable on a phone, use text-xs. Offenders: ${offenders.join(", ")}`
+  );
+});
+
+run("UI type stays on the five-size scale", () => {
+  const offenders = sources
+    .filter(({ file, src }) => {
+      if (file.endsWith("UpsideLogo.tsx") || file.endsWith("ui/Panel.tsx")) {
+        return false;
+      }
+      return (
+        /text-\[(?:\d|\.)+[^\]]*\]/.test(src) ||
+        /text-(?:3xl|4xl|5xl)/.test(src) ||
+        /sm:text-(?:xl|2xl|3xl)/.test(src)
+      );
+    })
+    .map(({ file }) => file);
+  assert.deepEqual(
+    [...new Set(offenders)],
+    [],
+    `use text-xs/sm/base/lg/2xl only. Offenders: ${offenders.join(", ")}`
   );
 });
 
@@ -1473,6 +1497,171 @@ run("import classify treats default replace as a sell", () => {
   });
   assert.ok(actions.includes("sell"));
   assert.ok(!actions.includes("buy"));
+});
+
+run("money rounds the same distance either side of zero", () => {
+  // roundMoney used to add Number.EPSILON before scaling, which does nothing
+  // above ~1, and leaned on Math.round, which breaks ties toward +Infinity.
+  // So 8.165 rounded down to 8.16 and -1.005 rounded to -1 while 1.005
+  // rounded to 1.01. Sheets carry negative cash, so a buy and the sell that
+  // undoes it have to cancel exactly.
+  for (const v of [1.005, 2.675, 8.165, 0.005, 1234.565]) {
+    assert.equal(
+      roundMoney(-v),
+      -roundMoney(v),
+      `${v} rounds differently below zero`
+    );
+  }
+  assert.equal(roundMoney(1.005), 1.01);
+  assert.equal(roundMoney(8.165), 8.17);
+  assert.equal(roundMoney(0.1 + 0.2), 0.3);
+  // -0 serialises as "-0" and fails Object.is against 0, so a balance that
+  // rounded to nothing would look like a change to anything diffing it.
+  assert.ok(Object.is(roundMoney(-0.001), 0), "rounds to negative zero");
+  // Junk in, zero out: NaN and Infinity are not amounts of money.
+  assert.equal(roundMoney(Number.NaN), 0);
+  assert.equal(roundMoney(Number.POSITIVE_INFINITY), 0);
+  // Real but past the point where a double can hold cents, so it clamps
+  // instead of returning a number nobody can reason about.
+  assert.equal(roundMoney(1e18), Number.MAX_SAFE_INTEGER / 100);
+  assert.equal(roundMoney(-1e18), -Number.MAX_SAFE_INTEGER / 100);
+});
+
+run("safeDiv and sumMoney never emit NaN or drift", () => {
+  assert.equal(safeDiv(1, 0), 0);
+  assert.equal(safeDiv(0, 0), 0);
+  assert.equal(safeDiv(Number.NaN, 2), 0);
+  assert.equal(safeDiv(1, Number.NaN), 0);
+  assert.equal(sumMoney([0.1, 0.2, 0.3]), 0.6);
+  assert.equal(sumMoney([0.01, Number.NaN, 0.02]), 0.03);
+  // A long column of thirds must not accumulate a stray fraction of a cent.
+  assert.equal(sumMoney(Array(300).fill(0.01)), 3);
+});
+
+run("a round trip through cash leaves the balance where it started", () => {
+  // The regression this guards: asymmetric rounding meant buy-then-sell at the
+  // same price could leave a stray cent behind in cash.
+  for (const [shares, price] of [
+    [3, 2.675],
+    [7, 8.165],
+    [11, 1.005],
+    [1, 0.005],
+  ] as [number, number][]) {
+    const out = tradeCashDelta({ buyShares: shares, buyPrice: price });
+    const back = tradeCashDelta({ sellShares: shares, sellPrice: price });
+    assert.equal(out + back, 0, `${shares} @ ${price} did not net to zero`);
+  }
+});
+
+run("holdings writes are scoped to the portfolio they were cleared for", () => {
+  const src = code(
+    readFileSync(join(process.cwd(), "src/app/api/holdings/route.ts"), "utf8")
+  );
+  // Authorization for an existing row must come from that row. Falling back to
+  // a client-supplied portfolio id (`row?.portfolio_id ?? body.portfolio_id`)
+  // let a failed lookup authorize against whatever the caller named, and
+  // getSupabaseDataClient() is the service-role client in production, so RLS is
+  // not there to catch it. POST naming a portfolio for a brand-new holding is
+  // fine — it is ownership-checked directly.
+  assert.ok(
+    !/\?\?\s*\(?\s*body\.portfolio_id/.test(src),
+    "an existing holding's portfolio must not fall back to request input"
+  );
+  // The lookup that decides ownership has to fail closed, not treat an error
+  // as "no such row".
+  assert.ok(
+    /if \(error\)/.test(src) && /status: 503/.test(src),
+    "a failed holding lookup must fail closed"
+  );
+  // Both row-level writes must also filter on portfolio_id, so the rows the
+  // ownership check cleared and the rows the write touches are the same set.
+  const scopedWrites = src.match(/\.eq\("portfolio_id", portfolioId\)/g) ?? [];
+  assert.ok(
+    scopedWrites.length >= 2,
+    `expected update and delete to be portfolio-scoped, found ${scopedWrites.length}`
+  );
+});
+
+run("cash deltas are applied in one atomic statement", () => {
+  const src = readFileSync(join(process.cwd(), "src/lib/cash-trade.ts"), "utf8");
+  assert.ok(
+    /portfell_apply_cash_delta/.test(src),
+    "cash moves must go through the atomic RPC, not a read-modify-write"
+  );
+  const migration = readFileSync(
+    join(process.cwd(), "supabase/migrations/041_atomic_cash_delta.sql"),
+    "utf8"
+  );
+  assert.ok(
+    /cash_balance = round\(\(coalesce\(cash_balance, 0\) \+ p_delta\)/.test(
+      migration
+    ),
+    "the RPC must add the delta to the stored value inside the UPDATE"
+  );
+  assert.ok(
+    !/grant execute[^;]*to anon/i.test(migration),
+    "the cash RPC must never be callable by anon"
+  );
+});
+
+run("browser-only caches are not read during render", () => {
+  // /communities and /communities/[id] have no auth gate in front of them, so
+  // they really are prerendered and hydrated. Seeding state from localStorage
+  // or window.location during render makes the server and client trees
+  // disagree, and React throws the server HTML away — the opposite of what
+  // the cache was for.
+  const files = [
+    "src/components/CommunitiesList.tsx",
+    "src/components/CommunityView.tsx",
+    "src/components/WatchlistStrip.tsx",
+    "src/components/DailyDuelCard.tsx",
+  ];
+  const offenders: string[] = [];
+  for (const file of files) {
+    const src = code(readFileSync(join(process.cwd(), file), "utf8"));
+    // `useState<Foo[]>(() => loadThing())` and `useState(readThing(id))` both
+    // count; the generic argument is optional, so the pattern has to allow it.
+    if (/useState(?:<[^>]*>)?\(\s*(?:\(\)\s*=>\s*)?(?:load|read)[A-Z]/.test(src)) {
+      offenders.push(`${file}: useState seeded from a cache read`);
+    }
+    if (/useState(?:<[^>]*>)?\([^;]{0,240}new URLSearchParams\(window/.test(src)) {
+      offenders.push(`${file}: useState seeded from window.location`);
+    }
+    if (/useRef\(\s*(?:load|read)[A-Z]/.test(src)) {
+      offenders.push(`${file}: useRef seeded from a cache read`);
+    }
+  }
+  assert.deepEqual(offenders, [], offenders.join("; "));
+});
+
+run("nightly NAV history reads the newest nights, bounded by retention", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/api/book/nav-history/route.ts"),
+    "utf8"
+  );
+  // Ascending + limit took the *oldest* rows. One nightly row covers every
+  // user's book, so once retention passed the limit the chart would have
+  // frozen on ancient history for everyone.
+  assert.ok(
+    /ascending: false/.test(src),
+    "nightly history must read newest-first"
+  );
+  assert.ok(
+    /limit\(NIGHTLY_SNAPSHOT_WINDOW\)/.test(src),
+    "the window must track the retention constant, not a magic number"
+  );
+  assert.equal(NIGHTLY_SNAPSHOT_WINDOW, 14);
+});
+
+run("membership checks do not run one query per community", () => {
+  const src = code(
+    readFileSync(join(process.cwd(), "src/app/api/portfolios/route.ts"), "utf8")
+  );
+  assert.ok(
+    !/Promise\.all\([^)]*userIsCommunityAdmin/.test(src),
+    "mapping a per-row membership query over a list is an N+1"
+  );
+  assert.ok(/communityAdminFlags/.test(src));
 });
 
 if (failed > 0) {

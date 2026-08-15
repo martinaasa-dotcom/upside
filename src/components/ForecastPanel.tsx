@@ -379,7 +379,7 @@ function SheetPath({
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             Now
           </p>
-          <p className="mt-1 font-heading text-lg font-bold tabular-nums text-white sm:text-xl">
+          <p className="mt-1 font-heading text-base font-bold tabular-nums text-white">
             {currency(now, 0)}
           </p>
         </div>
@@ -387,7 +387,7 @@ function SheetPath({
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             {end.label}
           </p>
-          <p className="mt-1 font-heading text-lg font-bold tabular-nums text-white sm:text-xl">
+          <p className="mt-1 font-heading text-base font-bold tabular-nums text-white">
             {currency(end.value, 0)}
           </p>
           {gainPct != null && (
@@ -408,7 +408,7 @@ function SheetPath({
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-3 rounded-full bg-[#D6AD69]" aria-hidden />
+          <span className="h-0.5 w-3 rounded-full bg-brand" aria-hidden />
           Your book
         </span>
         <span className="inline-flex items-center gap-1.5">
@@ -470,21 +470,21 @@ export function ForecastPanel({
   const [planHydrated, setPlanHydrated] = useState(false);
   const overrideCount = countOverrides(overrides);
   const flatCount = model.rows.filter((r) => !r.hasTargets).length;
-  const holdingsKey = forecastHoldingsKey(model.rows.map((r) => r.ticker));
-  const convictionKey = bookConvictionKey(
-    model.rows.map((r) => r.ticker),
-    convictions
+  const rowTickers = useMemo(
+    () => model.rows.map((r) => r.ticker),
+    [model.rows]
   );
-  const cachedTickers = planHydrated
-    ? cachedTickersFor(
-        model.rows.map((r) => r.ticker),
-        convictions
-      )
-    : [];
-  const fullyCovered = isForecastFullyCovered(
-    model.rows.map((r) => r.ticker),
-    overrides
+  const holdingsKey = forecastHoldingsKey(rowTickers);
+  const convictionKey = bookConvictionKey(rowTickers, convictions);
+  // Memoized on the stable keys rather than recomputed inline: this feeds a
+  // useMemo below, and a fresh array every render made that memo recompute
+  // every render, which is the same as not having it.
+  const cachedTickers = useMemo(
+    () => (planHydrated ? cachedTickersFor(rowTickers, convictions) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- convictionKey stands in for `convictions`
+    [planHydrated, rowTickers, convictionKey]
   );
+  const fullyCovered = isForecastFullyCovered(rowTickers, overrides);
   const autoKeyRef = useRef<string>("");
   const reappliedRef = useRef<string>("");
   const calibrateKeyRef = useRef<string>("");

@@ -375,6 +375,17 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Dashboard passes onStamp as an inline arrow and re-renders on a 1s timer,
+  // so its identity changes constantly. Depending on it directly would rebuild
+  // the check callback (and re-fire the effect keyed off it) every second;
+  // leaving it out of the deps would pin the very first closure and stamp
+  // stale state. A ref refreshed every render gives a stable dependency and a
+  // current callback at the same time.
+  const onStampRef = useRef(onStamp);
+  useEffect(() => {
+    onStampRef.current = onStamp;
+  }, [onStamp]);
+
   const mergedQuotes = useMemo(
     () => ({ ...quotes, ...lookupQuotes }),
     [quotes, lookupQuotes]
@@ -627,7 +638,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
             cachedAt: now,
           });
           recordPulseHistory(reconciled, now);
-          onStamp?.(key, {
+          onStampRef.current?.(key, {
             at: now,
             verdict: statusLabel(reconciled.thesisStatus),
             line:

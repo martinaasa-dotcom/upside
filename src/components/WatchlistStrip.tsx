@@ -8,8 +8,12 @@ import {
   loadWatchlist,
   removeWatchlistTicker,
 } from "@/lib/watchlist";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { Plus, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+/** Stable server-side value; a fresh [] each render would churn the memo. */
+const EMPTY_LIST: string[] = [];
 
 export function WatchlistStrip({
   heldTickers,
@@ -18,12 +22,20 @@ export function WatchlistStrip({
   heldTickers: string[];
   onOpenPulse?: (ticker?: string) => void;
 }) {
-  const held = new Set(heldTickers.map((t) => t.toUpperCase()));
-  const [list, setList] = useState<string[]>(() => loadWatchlist());
+  // Watchlist lives in localStorage, so it can't be read during render
+  // without the server and client trees disagreeing.
+  const [list, setList] = useHydratedCache<string[]>(loadWatchlist, EMPTY_LIST);
   const [draft, setDraft] = useState("");
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
 
-  const names = list.filter((t) => !held.has(t)).slice(0, 8);
+  const heldKey = heldTickers.join("|");
+  const names = useMemo(() => {
+    const held = new Set(heldTickers.map((t) => t.toUpperCase()));
+    return list.filter((t) => !held.has(t)).slice(0, 8);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- heldKey stands in for the array's contents
+  }, [list, heldKey]);
+  const namesKey = useMemo(() => names.join("|"), [names]);
+
   const jumps = names
     .map((ticker) => ({
       ticker,
@@ -50,7 +62,8 @@ export function WatchlistStrip({
     return () => {
       cancelled = true;
     };
-  }, [names.join("|")]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- namesKey stands in for the array's contents
+  }, [namesKey]);
 
   function add() {
     const next = addWatchlistTicker(list, draft);

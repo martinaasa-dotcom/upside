@@ -1435,6 +1435,18 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- allTickers covered by key
   }, [allTickersKey, refreshMarkets]);
 
+  /**
+   * fetch for our own API that reports a dead network as a failed response
+   * instead of throwing.
+   *
+   * Every optimistic write here follows the same shape: apply the change to
+   * local state, fire the request, and roll back when `!res.ok`. A bare fetch
+   * rejects rather than returning when the device is offline or DNS fails, so
+   * those blocks skipped their own rollback and left the person looking at a
+   * number that was never saved, plus an unhandled rejection in the console.
+   * Offline is the normal failure for a phone app, so it has to travel the same
+   * path as a 500 rather than a separate one every caller must remember.
+   */
   async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
     const headers: Record<string, string> = {
       ...(init?.headers as Record<string, string> | undefined),
@@ -1442,7 +1454,15 @@ export function Dashboard() {
     if (init?.body && !headers["Content-Type"] && !headers["content-type"]) {
       headers["Content-Type"] = "application/json";
     }
-    return fetch(input, { ...init, headers });
+    try {
+      return await fetch(input, { ...init, headers });
+    } catch (err) {
+      console.warn("[api] request failed", input, err);
+      return Response.json(
+        { error: "You look offline. Nothing was saved." },
+        { status: 503 }
+      );
+    }
   }
 
   function applyCashBalance(portfolioId: string, cash: number | null | undefined) {

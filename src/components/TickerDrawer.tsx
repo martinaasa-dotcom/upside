@@ -150,7 +150,7 @@ export function TickerDrawer({
         <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-base font-bold text-white">
                 {cashtag(ticker)}
               </h2>
               <Pill tone="neutral">{THEME_LABELS[theme] ?? "Equities"}</Pill>
@@ -194,7 +194,7 @@ export function TickerDrawer({
               className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500 focus:border-brand focus:ring-1 focus:ring-brand/40"
             />
             <p className="mt-1.5 text-xs text-zinc-400">
-              Pulse reads this first. Leave it blank and it still works from headlines and today's prices.
+              Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
             </p>
             {conviction?.stamps && conviction.stamps.length > 0 && (
               <ul className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3">

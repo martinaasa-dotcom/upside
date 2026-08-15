@@ -2,9 +2,9 @@ import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { captureBookPayload, saveBookSnapshot } from "@/lib/book-snapshot";
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import {
+  communityAdminFlags,
   listOwnedPortfolioIds,
   requirePortfolioOwner,
-  userIsCommunityAdmin,
 } from "@/lib/auth/ownership";
 import {
   parseClassPlan,
@@ -100,11 +100,12 @@ export async function GET(req: NextRequest) {
       class_plan?: unknown;
       house_note?: string | null;
     }[];
-    const teacherFlags = await Promise.all(
-      classRows.map((row) => userIsCommunityAdmin(auth.user.id, row.id))
+    const teacherOf = await communityAdminFlags(
+      auth.user.id,
+      classRows.map((row) => row.id)
     );
-    classRows.forEach((row, i) => {
-      const isTeacher = teacherFlags[i];
+    classRows.forEach((row) => {
+      const isTeacher = teacherOf.has(row.id);
       const trade = resolveClassroomTrade(
         parseClassPlan(row.class_plan),
         new Date(),
@@ -294,11 +295,11 @@ export async function DELETE(req: NextRequest) {
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
+    // Deleting a sheet is irreversible, so a failed pre-delete backup has to
+    // block the delete. Log the cause: the caller only gets the safe sentence.
+    console.error("[portfolios] pre-delete backup failed", err);
     return NextResponse.json(
-      {
-        error:
-          "Couldn't take a backup before deleting. Try again.",
-      },
+      { error: "Couldn't take a backup before deleting. Try again." },
       { status: 500 }
     );
   }

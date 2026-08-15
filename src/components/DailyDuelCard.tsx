@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { Swords } from "lucide-react";
 import { cn, percent, cashtag } from "@/lib/format";
 import {
@@ -16,6 +17,9 @@ import {
   type DuelRecord,
 } from "@/lib/daily-duel";
 import { todayKeyInTz } from "@/lib/timezone";
+
+/** What the server sees: no local history, so nothing played yet. */
+const EMPTY_DUEL_STATS = duelStats([]);
 
 type Props = {
   tickers: Array<{ ticker: string; todayPct: number | null }>;
@@ -42,6 +46,9 @@ export function DailyDuelCard({
 }: Props) {
   const dayKey = todayKeyInTz();
   const tickerList = useMemo(() => tickers.map((t) => t.ticker), [tickers]);
+  // Identity of the ticker set, so effects below can depend on what the list
+  // *is* rather than on a fresh array reference every render.
+  const tickerKey = useMemo(() => tickerList.join("|"), [tickerList]);
   const pctByTicker = useMemo(() => {
     const map: Record<string, number | null> = {};
     for (const t of tickers) map[t.ticker] = t.todayPct;
@@ -50,14 +57,19 @@ export function DailyDuelCard({
 
   const [record, setRecord] = useState<DuelRecord | null>(null);
   const [community, setCommunity] = useState<CommunityDuel | null>(null);
-  const [stats, setStats] = useState(() => duelStats(loadDuelHistory()));
-  const [canSettle, setCanSettle] = useState(() => duelCanSettle());
+  // Both read browser-only state, so they start at the server-safe value and
+  // hydrate before paint rather than during render.
+  const [stats, setStats] = useHydratedCache(
+    () => duelStats(loadDuelHistory()),
+    EMPTY_DUEL_STATS
+  );
+  const [canSettle, setCanSettle] = useState(false);
 
   useEffect(() => {
     if (communityId) return;
     setRecord(getOrCreateTodaysDuel(tickerList, dayKey));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [communityId, dayKey, tickerList.join("|")]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on tickerKey, not the array identity
+  }, [communityId, dayKey, tickerKey]);
 
   useEffect(() => {
     if (!communityId) return;
@@ -91,12 +103,14 @@ export function DailyDuelCard({
       setRecord(updated);
       setStats(duelStats(loadDuelHistory()));
     }
-  }, [communityId, record, pctByTicker, dayKey, canSettle]);
+    // setStats comes from a custom hook, so the linter can't see that it's a
+    // useState setter and therefore stable. Listing it is free.
+  }, [communityId, record, pctByTicker, dayKey, canSettle, setStats]);
 
   const instantPair = useMemo(
     () => pickTodaysDuel(tickerList, dayKey, communityId ?? ""),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dayKey, communityId, tickerList.join("|")]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on tickerKey, not the array identity
+    [dayKey, communityId, tickerKey]
   );
   const pair = communityId
     ? community?.pair ?? instantPair

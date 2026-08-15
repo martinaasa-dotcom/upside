@@ -3,7 +3,10 @@ import { realBookPortfolios } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import type { BookSnapshotPayload } from "@/lib/book-snapshot";
+import {
+  NIGHTLY_SNAPSHOT_WINDOW,
+  type BookSnapshotPayload,
+} from "@/lib/book-snapshot";
 import {
   reconstructAssumedNav,
   type AssumedPosition,
@@ -43,17 +46,22 @@ async function snapshotPointsForUser(
   const ownedSet = new Set(scoped.map((p) => p.id));
   if (ownedSet.size === 0) return { points: [], firstRealDate: null };
 
+  // Newest first, then reversed for the chart. Ascending + limit took the
+  // *oldest* N nightly rows in the table, and since one nightly row covers
+  // every user's book, that meant the chart would silently freeze on ancient
+  // history the moment retention exceeded the limit. Bounded by the same
+  // constant that governs retention so the two can't drift apart.
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.snapshots)
     .select("created_at, payload")
     .eq("kind", "nightly")
-    .order("created_at", { ascending: true })
-    .limit(30);
+    .order("created_at", { ascending: false })
+    .limit(NIGHTLY_SNAPSHOT_WINDOW);
 
   if (error) return { points: [], firstRealDate: null };
 
   const points: NavPoint[] = [];
-  for (const row of data ?? []) {
+  for (const row of [...(data ?? [])].reverse()) {
     const payload = row.payload as BookSnapshotPayload | null;
     const marks = payload?.marks;
     if (!marks?.navByPortfolio) continue;

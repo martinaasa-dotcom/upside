@@ -110,6 +110,32 @@ export async function addCoOwnerToPortfolio(
   return { ok: true, userId: userId as string };
 }
 
+/**
+ * Which of these communities the user is an admin of, in one round trip.
+ *
+ * Callers resolving a set of communities were mapping userIsCommunityAdmin over
+ * the list inside Promise.all, which is one query per community. Concurrency
+ * hides it at three classrooms and stops hiding it well before thirty.
+ */
+export async function communityAdminFlags(
+  userId: string,
+  communityIds: string[]
+): Promise<Set<string>> {
+  const ids = [...new Set(communityIds.filter(Boolean))];
+  if (ids.length === 0) return new Set();
+  const supabase = await db();
+  if (!supabase) return new Set();
+  const { data } = await supabase
+    .from(PORTFELL_TABLES.communityMembers)
+    .select("community_id")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .in("community_id", ids);
+  return new Set(
+    ((data ?? []) as { community_id: string }[]).map((r) => r.community_id)
+  );
+}
+
 export async function userIsCommunityAdmin(
   userId: string,
   communityId: string

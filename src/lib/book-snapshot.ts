@@ -24,7 +24,14 @@ export type BookSnapshotRow = {
   created_at: string;
 };
 
-const KEEP_NIGHTLY = 14;
+/**
+ * Nightly rows kept, and therefore the widest window any nightly-history
+ * reader can hope to see. Exported so a reader can bound its own query to the
+ * same number instead of picking an unrelated magic limit.
+ */
+export const NIGHTLY_SNAPSHOT_WINDOW = 14;
+
+const KEEP_NIGHTLY = NIGHTLY_SNAPSHOT_WINDOW;
 const KEEP_PRE_DELETE = 30;
 const KEEP_MANUAL = 20;
 

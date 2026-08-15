@@ -611,7 +611,7 @@ export function BookNavChart({
     <div className={className}>
       {loading && !hasChart ? (
         <p className="py-8 text-center text-sm text-muted">
-          Working out this year's path …
+          Working out this year’s path …
         </p>
       ) : (
         <GoldNavChart points={points} />

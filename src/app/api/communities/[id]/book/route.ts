@@ -213,7 +213,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     }
   }
 
-  let thesisCoverage: Record<string, { names: number; withWhy: number }> = {};
+  const thesisCoverage: Record<string, { names: number; withWhy: number }> = {};
   if (classroom && memberIds.length) {
     const { data: labRows } = await supabase
       .from(PORTFELL_TABLES.labState)

@@ -78,7 +78,14 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
 
@@ -157,10 +164,12 @@ type CommunityBookResponse = {
 /** Synchronous cache read shared by every piece of state below, so they
  * all hydrate from the exact same snapshot instead of some fields lagging
  * a render behind others. */
-function readCommunityCache(communityId: string): {
+type CommunityCache = {
   meta: CommunityMetaResponse | null;
   book: CommunityBookResponse | null;
-} {
+};
+
+function readCommunityCache(communityId: string): CommunityCache {
   const cached = loadCommunityCache(communityId);
   if (!cached) return { meta: null, book: null };
   return {
@@ -189,71 +198,79 @@ function combineHouseholdNames(names: string[]): string {
 
 export function CommunityView({ communityId }: Props) {
   const router = useRouter();
-  const initialCacheRef = useRef(readCommunityCache(communityId));
-  const [community, setCommunity] = useState<CommunityMeta | null>(
-    () => initialCacheRef.current.meta?.community ?? null
-  );
-  const [members, setMembers] = useState<Member[]>(
-    () => initialCacheRef.current.meta?.members ?? []
-  );
-  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>(
-    () => initialCacheRef.current.meta?.pending_members ?? []
-  );
-  const [isAdmin, setIsAdmin] = useState(
-    () => initialCacheRef.current.meta?.isAdmin ?? false
-  );
-  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>(
-    () => initialCacheRef.current.meta?.join_requests ?? []
-  );
+  // /communities/[id] sits behind no auth gate, so this component really is
+  // server-rendered and then hydrated. Every one of these used to be seeded
+  // straight out of localStorage (and out of window.location) during render,
+  // which meant the server tree and the first client tree disagreed on
+  // basically all of it: React discarded the server HTML and re-rendered the
+  // whole page, so the cache that existed to make this instant was making it
+  // slower. State now starts at the server-safe value and the cache is applied
+  // in a layout effect below, before the browser paints.
+  const initialCacheRef = useRef<CommunityCache>({ meta: null, book: null });
+  const [community, setCommunity] = useState<CommunityMeta | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [joinDecisionBusyId, setJoinDecisionBusyId] = useState<string | null>(
     null
   );
-  const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>(
-    () => initialCacheRef.current.book?.portfolios ?? []
-  );
-  const [holdings, setHoldings] = useState<Holding[]>(
-    () => initialCacheRef.current.book?.holdings ?? []
-  );
-  const [profiles, setProfiles] = useState<Profile[]>(
-    () => initialCacheRef.current.book?.profiles ?? []
-  );
+  const [portfolios, setPortfolios] = useState<OwnedPortfolio[]>([]);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [ownership, setOwnership] = useState<
     { portfolio_id: string; user_id: string }[]
-  >(() => initialCacheRef.current.book?.ownership ?? []);
+  >([]);
   const [thesisCoverage, setThesisCoverage] = useState<
     Record<string, ThesisCoverage>
-  >(() => initialCacheRef.current.book?.thesisCoverage ?? {});
+  >({});
   const [claimBusy, setClaimBusy] = useState(false);
   // Community books paint instantly from cache, so without seeding prices
   // too every member's value would render at cost basis for a beat.
-  const [quotes, setQuotes] = useState<Record<string, Quote>>(
-    () => loadCachedQuotes().quotes
-  );
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   // Only true when we have nothing at all to show yet — a cache hit
   // (even a stale one) renders immediately while load() quietly confirms
   // it's current in the background, instead of blanking the page on
   // every single visit the way an unconditional loading flag would.
-  const [loading, setLoading] = useState(() => !initialCacheRef.current.meta);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(() =>
-    typeof window === "undefined"
-      ? null
-      : new URLSearchParams(window.location.search).get("member")
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(
+    null
   );
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<
-    string | null
-  >(() =>
-    typeof window === "undefined"
-      ? null
-      : new URLSearchParams(window.location.search).get("portfolio")
-  );
-  const [view, setView] = useState<"overview" | "play" | "members">(() => {
-    if (typeof window === "undefined") return "overview";
-    const raw = new URLSearchParams(window.location.search).get("view");
-    if (raw === "members") return raw;
-    if (raw === "play" || raw === "league") return "play";
-    return "overview";
-  });
+  const [view, setView] = useState<"overview" | "play" | "members">("overview");
+  const hasDataRef = useRef(false);
+
+  useLayoutEffect(() => {
+    const cache = readCommunityCache(communityId);
+    initialCacheRef.current = cache;
+
+    // Assigned unconditionally, including the empty case. React can keep this
+    // component mounted across a move from one community to another, and
+    // leaving the previous one's rows on screen while the new one loads would
+    // show a person someone else's book under the wrong name.
+    setCommunity(cache.meta?.community ?? null);
+    setMembers(cache.meta?.members ?? []);
+    setPendingMembers(cache.meta?.pending_members ?? []);
+    setIsAdmin(cache.meta?.isAdmin ?? false);
+    setJoinRequests(cache.meta?.join_requests ?? []);
+    setPortfolios(cache.book?.portfolios ?? []);
+    setHoldings(cache.book?.holdings ?? []);
+    setProfiles(cache.book?.profiles ?? []);
+    setOwnership(cache.book?.ownership ?? []);
+    setThesisCoverage(cache.book?.thesisCoverage ?? {});
+    setQuotes(loadCachedQuotes().quotes);
+    hasDataRef.current = Boolean(cache.meta);
+    setLoading(!cache.meta);
+
+    const params = new URLSearchParams(window.location.search);
+    setSelectedOwnerId(params.get("member"));
+    setSelectedPortfolioId(params.get("portfolio"));
+    const rawView = params.get("view");
+    if (rawView === "members") setView("members");
+    else if (rawView === "play" || rawView === "league") setView("play");
+    else setView("overview");
+  }, [communityId]);
   const [bestiaryOpen, setBestiaryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsName, setSettingsName] = useState("");
@@ -277,7 +294,6 @@ export function CommunityView({ communityId }: Props) {
   // Tracks whether we have SOME data already (from cache or a prior
   // successful load) — a ref so `load` doesn't need `community` etc. in
   // its own dependency array just to decide whether to show a spinner.
-  const hasDataRef = useRef(Boolean(initialCacheRef.current.meta));
   // Mount + visibility-regain can both trigger `load()` in quick succession
   // (e.g. flip tabs away and back before the first request lands). Without
   // this, whichever request happens to resolve last wins, even if it was
@@ -1526,7 +1542,7 @@ export function CommunityView({ communityId }: Props) {
                             <Sparkles className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-white">
+                            <h3 className="text-base font-bold text-white">
                               Power animals
                             </h3>
                             <p className="mt-0.5 text-sm text-zinc-400">
@@ -1571,7 +1587,7 @@ export function CommunityView({ communityId }: Props) {
                           <Award className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">
+                          <h3 className="text-base font-bold text-white">
                             Community superlatives
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
@@ -1616,7 +1632,7 @@ export function CommunityView({ communityId }: Props) {
                             <Trophy className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-white">
+                            <h3 className="text-base font-bold text-white">
                               Today
                             </h3>
                             <p className="mt-0.5 text-sm text-zinc-400">
@@ -1700,7 +1716,7 @@ export function CommunityView({ communityId }: Props) {
                           <Layers className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">
+                          <h3 className="text-base font-bold text-white">
                             Shared names
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
@@ -1725,7 +1741,7 @@ export function CommunityView({ communityId }: Props) {
                           <PieChart className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">
+                          <h3 className="text-base font-bold text-white">
                             What the circle owns
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
@@ -1776,7 +1792,7 @@ export function CommunityView({ communityId }: Props) {
                           <Lightbulb className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-white">
+                          <h3 className="text-base font-bold text-white">
                             Community fun facts
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
@@ -2738,7 +2754,7 @@ function Stat({
       <div className="text-xs text-zinc-400">{label}</div>
       <div
         className={cn(
-          "mt-1 text-xl font-semibold tabular-nums",
+          "mt-1 text-2xl font-bold tabular-nums",
           tone === "up" && "text-gain",
           tone === "down" && "text-loss",
           !tone && "text-white"

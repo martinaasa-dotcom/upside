@@ -30,7 +30,6 @@ import {
   loadUpsidePortfolioCache,
   saveUpsidePortfolioCache,
 } from "@/lib/upside-portfolio-cache";
-import { todayKeyInTz } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
   portfolioLiveValue,
@@ -816,7 +815,7 @@ export function UpsidePortfolioPage() {
         saveStoredBenchmark(null);
         return;
       }
-      const { meta, live, quotes: liveQuotes } = await valueForPortfolio(
+      const { live, quotes: liveQuotes } = await valueForPortfolio(
         benchmark.portfolioId,
         portfolios,
         holdingsList

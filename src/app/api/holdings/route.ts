@@ -11,9 +11,65 @@ import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { roundMoney, roundShares } from "@/lib/money";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+type HoldingRow = {
+  portfolio_id: string;
+  shares: number;
+  ticker: string;
+  buy_price: number;
+};
+
+/**
+ * Load the holding a write is aimed at, or the response explaining why not.
+ *
+ * Authorization for a row-level write has to come from the stored row, never
+ * from the request body. This used to read the row and then fall back to
+ * `body.portfolio_id` when the read came back empty, while the read's error
+ * was discarded — so a failed lookup (timeout, transient error) turned into
+ * "authorize against whatever portfolio the caller named". Since
+ * getSupabaseDataClient() is the service-role client in production, RLS is
+ * not there to catch it: these checks are the only thing standing between a
+ * caller and another tenant's row.
+ *
+ * Fails closed on every path: a lookup error is a 503, a missing row is a
+ * 404, and the portfolio id used for the ownership check is always the one
+ * persisted on the row.
+ */
+async function loadWritableHolding(
+  supabase: SupabaseClient,
+  userId: string,
+  holdingId: string
+): Promise<{ row: HoldingRow; portfolioId: string } | { error: NextResponse }> {
+  const { data, error } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("portfolio_id, shares, ticker, buy_price")
+    .eq("id", holdingId)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      error: NextResponse.json(
+        { error: "Couldn't check that holding. Try again." },
+        { status: 503 }
+      ),
+    };
+  }
+  if (!data) {
+    return {
+      error: NextResponse.json({ error: "Holding not found" }, { status: 404 }),
+    };
+  }
+
+  const row = data as HoldingRow;
+  const notOwner = await requirePortfolioOwner(userId, row.portfolio_id);
+  if (notOwner) return { error: notOwner };
+
+  return { row, portfolioId: row.portfolio_id };
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
@@ -137,19 +193,9 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const { data: existing } = await supabase
-    .from(PORTFELL_TABLES.holdings)
-    .select("portfolio_id, shares, ticker, buy_price")
-    .eq("id", id)
-    .maybeSingle();
-
-  const portfolioId =
-    (existing as { portfolio_id?: string } | null)?.portfolio_id ??
-    (body.portfolio_id as string | undefined) ??
-    null;
-
-  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
-  if (notOwner) return notOwner;
+  const loaded = await loadWritableHolding(supabase, auth.user.id, id);
+  if ("error" in loaded) return loaded.error;
+  const { row: existing, portfolioId } = loaded;
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of [
@@ -183,39 +229,43 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  if (portfolioId) {
-    const nextShares =
-      body.shares !== undefined
-        ? roundShares(Number(body.shares))
-        : Number((existing as { shares?: number } | null)?.shares ?? 0);
-    const nextTicker =
-      body.ticker !== undefined
-        ? normalizeYahooTicker(String(body.ticker))
-        : String((existing as { ticker?: string } | null)?.ticker ?? "");
-    const prevTicker = String(
-      (existing as { ticker?: string } | null)?.ticker ?? ""
-    );
-    const blocked = await denyClassroomWrite(supabase, {
-      portfolioId,
-      userId: auth.user.id,
-      action: holdingWriteActions({
-        isNew: false,
-        isDelete: false,
-        existingShares: Number((existing as { shares?: number } | null)?.shares ?? 0),
-        nextShares,
-        tickerChanged:
-          Boolean(prevTicker) &&
-          Boolean(nextTicker) &&
-          prevTicker.toUpperCase() !== nextTicker.toUpperCase(),
-      }),
-    });
-    if (blocked) return blocked;
-  }
+  const prevShares = Number(existing.shares) || 0;
+  const prevBuy = Number(existing.buy_price) || 0;
+  const prevTicker = String(existing.ticker ?? "");
+  const nextShares =
+    body.shares !== undefined ? roundShares(Number(body.shares)) : prevShares;
+  const nextBuy =
+    body.buy_price !== undefined ? roundMoney(Number(body.buy_price)) : prevBuy;
+  const nextTicker =
+    body.ticker !== undefined
+      ? normalizeYahooTicker(String(body.ticker))
+      : prevTicker;
+  const renamed =
+    Boolean(prevTicker) &&
+    Boolean(nextTicker) &&
+    prevTicker.toUpperCase() !== nextTicker.toUpperCase();
 
+  const blocked = await denyClassroomWrite(supabase, {
+    portfolioId,
+    userId: auth.user.id,
+    action: holdingWriteActions({
+      isNew: false,
+      isDelete: false,
+      existingShares: prevShares,
+      nextShares,
+      tickerChanged: renamed,
+    }),
+  });
+  if (blocked) return blocked;
+
+  // Scoped to the portfolio the ownership check just cleared, not only to the
+  // row id. Authorization and mutation then describe the same rows, so the
+  // window between the two reads can't be used to retarget the write.
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.holdings)
     .update(patch)
     .eq("id", id)
+    .eq("portfolio_id", portfolioId)
     .select()
     .single();
 
@@ -223,56 +273,27 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  let cash: number | null = null;
-  if (portfolioId) {
-    const prevShares = Number(
-      (existing as { shares?: number } | null)?.shares ?? 0
-    );
-    const prevBuy = Number(
-      (existing as { buy_price?: number } | null)?.buy_price ?? 0
-    );
-    const prevTicker = String(
-      (existing as { ticker?: string } | null)?.ticker ?? ""
-    );
-    const nextShares =
-      body.shares !== undefined ? roundShares(Number(body.shares)) : prevShares;
-    const nextBuy =
-      body.buy_price !== undefined
-        ? roundMoney(Number(body.buy_price))
-        : prevBuy;
-    const nextTicker =
-      body.ticker !== undefined
-        ? normalizeYahooTicker(String(body.ticker))
-        : prevTicker;
-    const renamed =
-      Boolean(prevTicker) &&
-      Boolean(nextTicker) &&
-      prevTicker.toUpperCase() !== nextTicker.toUpperCase();
-    let delta = 0;
-    if (renamed) {
-      const sellPx = await salePriceFor(prevTicker, prevBuy);
-      delta += tradeCashDelta({
-        sellShares: prevShares,
-        sellPrice: sellPx,
-      });
-      delta += tradeCashDelta({
-        buyShares: nextShares,
-        buyPrice: nextBuy || prevBuy,
-      });
-    } else if (nextShares > prevShares) {
-      delta = tradeCashDelta({
-        buyShares: nextShares - prevShares,
-        buyPrice: nextBuy || prevBuy,
-      });
-    } else if (nextShares < prevShares) {
-      const px = await salePriceFor(prevTicker, prevBuy);
-      delta = tradeCashDelta({
-        sellShares: prevShares - nextShares,
-        sellPrice: px,
-      });
-    }
-    cash = await applyPortfolioCashDelta(supabase, portfolioId, delta);
+  let delta = 0;
+  if (renamed) {
+    const sellPx = await salePriceFor(prevTicker, prevBuy);
+    delta += tradeCashDelta({ sellShares: prevShares, sellPrice: sellPx });
+    delta += tradeCashDelta({
+      buyShares: nextShares,
+      buyPrice: nextBuy || prevBuy,
+    });
+  } else if (nextShares > prevShares) {
+    delta = tradeCashDelta({
+      buyShares: nextShares - prevShares,
+      buyPrice: nextBuy || prevBuy,
+    });
+  } else if (nextShares < prevShares) {
+    const px = await salePriceFor(prevTicker, prevBuy);
+    delta = tradeCashDelta({
+      sellShares: prevShares - nextShares,
+      sellPrice: px,
+    });
   }
+  const cash = await applyPortfolioCashDelta(supabase, portfolioId, delta);
   return NextResponse.json({ holding: data, cash_balance: cash });
 }
 
@@ -293,51 +314,34 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
-  const { data: existing } = await supabase
-    .from(PORTFELL_TABLES.holdings)
-    .select("portfolio_id, shares, ticker, buy_price")
-    .eq("id", id)
-    .maybeSingle();
+  const loaded = await loadWritableHolding(supabase, auth.user.id, id);
+  if ("error" in loaded) return loaded.error;
+  const { row: existing, portfolioId } = loaded;
 
-  const portfolioId =
-    (existing as { portfolio_id?: string } | null)?.portfolio_id ?? null;
-
-  const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
-  if (notOwner) return notOwner;
-
-  if (portfolioId) {
-    const blocked = await denyClassroomWrite(supabase, {
-      portfolioId,
-      userId: auth.user.id,
-      action: "sell",
-    });
-    if (blocked) return blocked;
-  }
+  const blocked = await denyClassroomWrite(supabase, {
+    portfolioId,
+    userId: auth.user.id,
+    action: "sell",
+  });
+  if (blocked) return blocked;
 
   const { error } = await supabase
     .from(PORTFELL_TABLES.holdings)
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("portfolio_id", portfolioId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  let cash: number | null = null;
-  if (portfolioId) {
-    const shares = Number(
-      (existing as { shares?: number } | null)?.shares ?? 0
-    );
-    const buy = Number(
-      (existing as { buy_price?: number } | null)?.buy_price ?? 0
-    );
-    const ticker = String(
-      (existing as { ticker?: string } | null)?.ticker ?? ""
-    );
-    const px = ticker ? await salePriceFor(ticker, buy) : buy;
-    cash = await applyPortfolioCashDelta(
-      supabase,
-      portfolioId,
-      tradeCashDelta({ sellShares: shares, sellPrice: px })
-    );
-  }
+
+  const shares = Number(existing.shares) || 0;
+  const buy = Number(existing.buy_price) || 0;
+  const ticker = String(existing.ticker ?? "");
+  const px = ticker ? await salePriceFor(ticker, buy) : buy;
+  const cash = await applyPortfolioCashDelta(
+    supabase,
+    portfolioId,
+    tradeCashDelta({ sellShares: shares, sellPrice: px })
+  );
   return NextResponse.json({ ok: true, cash_balance: cash });
 }

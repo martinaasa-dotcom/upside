@@ -15,6 +15,7 @@ import {
 import { ChevronRight, Compass, Globe, GraduationCap, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { useEffect, useState } from "react";
 
 type CommunityRow = {
@@ -58,8 +59,12 @@ function saveListCache(rows: CommunityRow[]) {
 
 export function CommunitiesList() {
   const router = useRouter();
-  const [communities, setCommunities] = useState<CommunityRow[]>(
-    () => loadListCache() ?? []
+  // Hydration-safe: /communities has no auth gate in front of it, so this
+  // component really is server-rendered, and seeding state straight from
+  // localStorage during render made the server and client trees disagree.
+  const [communities, setCommunities] = useHydratedCache<CommunityRow[]>(
+    () => loadListCache() ?? [],
+    []
   );
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"circle" | "classroom">("circle");
@@ -68,9 +73,14 @@ export function CommunitiesList() {
   const [visibility, setVisibility] = useState<"public" | "private">("private");
   const [error, setError] = useState<string | null>(null);
   // Only blocks on a spinner when there's truly nothing cached to show —
-  // same instant-first-paint pattern as Thesis Pulse and the community
-  // detail view.
-  const [loading, setLoading] = useState(() => loadListCache() === null);
+  // same instant-first-paint pattern as Thesis Pulse and the community detail
+  // view. Server-safe value is true (no cache exists there); the cache check
+  // runs in a layout effect, so a warm cache still skips the spinner in the
+  // first painted frame.
+  const [loading, setLoading] = useHydratedCache(
+    () => loadListCache() === null,
+    true
+  );
   const [discover, setDiscover] = useState<DiscoverRow[]>([]);
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
 
@@ -175,12 +185,12 @@ export function CommunitiesList() {
         <AppHeader className="hidden md:block" title="Communities" />
         <main className="mx-auto max-w-3xl flex-1 space-y-6 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div>
-            <h1 className="text-2xl font-semibold text-white">
+            <h1 className="text-lg font-bold text-white">
               Communities
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
               A private league for books you actually want to compare. You
-              pick which sheets to share. Members see today's prices, not what
+              pick which sheets to share. Members see today’s prices, not what
               you paid.
             </p>
           </div>
