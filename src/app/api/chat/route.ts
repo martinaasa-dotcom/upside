@@ -152,7 +152,10 @@ export async function POST(req: Request) {
           { hideOptions: Boolean(ccContext.hideOptions) }
         );
 
-    const providerChain = buildAdvisorProviderChain({ vision });
+    const providerChain = buildAdvisorProviderChain({
+      vision,
+      speaking: true,
+    });
     if (providerChain.length === 0) {
       return fallbackChatResponse();
     }
@@ -177,17 +180,14 @@ export async function POST(req: Request) {
           system: buildCcSystemPrompt(ccContext),
           messages: modelMessages,
           tools,
-          ...(vision
-            ? {
-                providerOptions: {
-                  openrouter: {
-                    reasoning: { effort: "low", max_tokens: 400 },
-                  },
-                },
-                ...(adviseOnly ? {} : { toolChoice: "required" as const }),
-              }
-            : {}),
-          stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 12),
+          providerOptions: {
+            openrouter: {
+              reasoning: { effort: "low", max_tokens: vision ? 400 : 128 },
+            },
+            openai: { reasoningEffort: "low" },
+          },
+          ...(vision && !adviseOnly ? { toolChoice: "required" as const } : {}),
+          stopWhen: stepCountIs(adviseOnly ? 3 : vision ? 8 : 6),
           maxRetries: 1,
           abortSignal: req.signal,
           onError: ({ error }) => {

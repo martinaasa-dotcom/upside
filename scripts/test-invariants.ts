@@ -1239,6 +1239,14 @@ run("chat does not ping the model before the first token", () => {
   assert.match(model, /rememberStreamingProvider/);
   assert.match(chat, /markChatActive/);
   assert.match(chat, /rememberStreamingProvider/);
+  assert.match(chat, /speaking:\s*true/);
+  assert.match(chat, /reasoningEffort:\s*"low"/);
+  assert.match(model, /GROQ_CHAT_MODEL/);
+  assert.match(model, /openai\/gpt-oss-20b/);
+  assert.match(
+    readFileSync(join(process.cwd(), "src/app/api/forecast/plan/route.ts"), "utf8"),
+    /reasoning:\s*true/
+  );
 });
 
 run("Pulse does not hourly-refresh the model", () => {

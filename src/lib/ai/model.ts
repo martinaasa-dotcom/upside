@@ -69,6 +69,7 @@ function hasKey(name: string): boolean {
 export function resolveAdvisorModelId(options?: {
   vision?: boolean;
   reasoning?: boolean;
+  speaking?: boolean;
 }): string {
   const vision = Boolean(options?.vision) && !options?.reasoning;
   if (vision) {
@@ -95,6 +96,7 @@ export function resolveAdvisorModelId(options?: {
 export function resolveAdvisorFallbackIds(options?: {
   vision?: boolean;
   reasoning?: boolean;
+  speaking?: boolean;
 }): string[] {
   const primary = resolveAdvisorModelId(options);
   const vision = Boolean(options?.vision) && !options?.reasoning;
@@ -151,8 +153,10 @@ export type AdvisorProviderCandidate = {
 export function buildAdvisorProviderChain(options?: {
   vision?: boolean;
   reasoning?: boolean;
+  speaking?: boolean;
 }): AdvisorProviderCandidate[] {
   const vision = Boolean(options?.vision) && !options?.reasoning;
+  const speaking = Boolean(options?.speaking) && !vision && !options?.reasoning;
   const chain: AdvisorProviderCandidate[] = [];
 
   // Groq leads for text: measured 380-640ms with dependable tool calls,
@@ -164,12 +168,13 @@ export function buildAdvisorProviderChain(options?: {
       apiKey: process.env.GROQ_API_KEY,
       baseURL: "https://api.groq.com/openai/v1",
     });
-    // gpt-oss is Groq's only model family with guaranteed json_schema
-    // support — llama-3.3-70b-versatile 400s on any structured
-    // (generateObject) call, which would silently break this as a
-    // fallback for forecast/thesis-pulse/margus-fund without ever
-    // touching the plain-text chat path (confirmed against the live API).
-    const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
+    // Chat uses the 20b: about 1000 tok/s and low thinking. Forecast,
+    // Pulse, and the Fund cron keep 120b so structured writes stay sharp.
+    // llama-3.3-70b-versatile 400s on generateObject, so it is not a
+    // fallback for those jobs.
+    const groqModel = speaking
+      ? (process.env.GROQ_CHAT_MODEL ?? "openai/gpt-oss-20b")
+      : (process.env.GROQ_MODEL ?? "openai/gpt-oss-120b");
     chain.push({ id: "groq", model: groq.chat(groqModel) });
   }
 
@@ -211,7 +216,9 @@ export function buildAdvisorProviderChain(options?: {
     // llama-3.3-70b no longer exists on Cerebras's catalog (confirmed
     // 404 against the live API) — gpt-oss-120b is their current
     // production model and matches Groq's structured-output-safe choice.
-    const cerebrasModel = process.env.CEREBRAS_MODEL ?? "gpt-oss-120b";
+    const cerebrasModel = speaking
+      ? (process.env.CEREBRAS_CHAT_MODEL ?? process.env.CEREBRAS_MODEL ?? "gpt-oss-120b")
+      : (process.env.CEREBRAS_MODEL ?? "gpt-oss-120b");
     chain.push({ id: "cerebras", model: cerebras.chat(cerebrasModel) });
   }
 
