@@ -1,6 +1,14 @@
 "use client";
 
-import { cashtag, cn, percent, signedTone } from "@/lib/format";
+import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
+import {
+  cashtag,
+  cn,
+  currency,
+  signedCurrency,
+  signedPercent,
+  signedTone,
+} from "@/lib/format";
 import { sanitizeTickerDraft } from "@/lib/input-guard";
 import { quotesUrl } from "@/lib/market/session";
 import {
@@ -10,6 +18,7 @@ import {
 } from "@/lib/market/ticker-search";
 import { FALLBACK_POPULAR_TICKERS } from "@/lib/popular-tickers";
 import type { Quote } from "@/lib/types";
+import { watchLook, type WatchLookKind } from "@/lib/watch-look";
 import {
   addWatchlistTicker,
   loadWatchlist,
@@ -22,6 +31,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 /** Stable server-side value; a fresh [] each render would churn the memo. */
 const EMPTY_LIST: string[] = [];
 const POPULAR_SEED = [...FALLBACK_POPULAR_TICKERS];
+
+function lookBorder(kind: WatchLookKind | undefined): string {
+  if (kind === "look") return "border-emerald-500/25";
+  if (kind === "wait" || kind === "report") return "border-amber-500/25";
+  return "border-white/10";
+}
 
 export function WatchlistStrip({
   heldTickers,
@@ -39,6 +54,7 @@ export function WatchlistStrip({
   const [remote, setRemote] = useState<TickerSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [reportDays, setReportDays] = useState<Record<string, number>>({});
   const boxRef = useRef<HTMLFormElement>(null);
   const searchGen = useRef(0);
 
@@ -61,18 +77,6 @@ export function WatchlistStrip({
     [draft, popular, remote, exclude]
   );
 
-  const jumps = names
-    .map((ticker) => ({
-      ticker,
-      pct: quotes[ticker]?.changePercent ?? null,
-    }))
-    .filter(
-      (row): row is { ticker: string; pct: number } =>
-        row.pct != null && Math.abs(row.pct) >= 0.06
-    )
-    .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
-    .slice(0, 2);
-
   useEffect(() => {
     if (names.length === 0) return;
     const ctrl = new AbortController();
@@ -87,6 +91,36 @@ export function WatchlistStrip({
     return () => {
       ctrl.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- namesKey stands in for the array's contents
+  }, [namesKey]);
+
+  useEffect(() => {
+    if (names.length === 0) {
+      setReportDays({});
+      return;
+    }
+    const ctrl = new AbortController();
+    void fetch(`/api/market/events?tickers=${encodeURIComponent(names.join(","))}`, {
+      cache: "no-store",
+      signal: ctrl.signal,
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (data: { earnings?: Array<{ ticker?: string; days?: number }> } | null) => {
+          if (ctrl.signal.aborted) return;
+          const next: Record<string, number> = {};
+          for (const row of data?.earnings ?? []) {
+            const t = String(row.ticker ?? "").toUpperCase();
+            if (!t || row.days == null || !Number.isFinite(row.days)) continue;
+            next[t] = row.days;
+          }
+          setReportDays(next);
+        }
+      )
+      .catch(() => {
+        /* cards still work without a results date */
+      });
+    return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- namesKey stands in for the array's contents
   }, [namesKey]);
 
@@ -244,68 +278,90 @@ export function WatchlistStrip({
           )}
         </form>
       </div>
-      {jumps.length > 0 && (
-        <div className="mt-3 space-y-1.5">
-          {jumps.map((j) => (
-            <button
-              key={j.ticker}
-              type="button"
-              onClick={() => onOpenPulse?.(j.ticker)}
-              className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3 py-2 text-left"
-            >
-              <p className="text-sm tabular-nums text-zinc-200">
-                {cashtag(j.ticker)}{" "}
-                {j.pct > 0 ? "jumped" : "dropped"} {percent(Math.abs(j.pct))}{" "}
-                today. Not in your book.
-              </p>
-            </button>
-          ))}
-        </div>
-      )}
       {names.length === 0 ? (
         <p className="mt-2 text-xs text-zinc-500">
-          Names you don&apos;t own yet. Add one to keep an eye on it.
+          Names you don&apos;t own. Add one to see the price, the recent
+          range, and whether now looks quiet or rushed.
         </p>
       ) : (
-        <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {names.map((ticker) => {
-            const q = quotes[ticker];
-            const pct = q?.changePercent ?? null;
-            return (
-              <li
-                key={ticker}
-                className="flex h-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-app/40 px-3 py-2"
-              >
-                <button
-                  type="button"
-                  onClick={() => onOpenPulse?.(ticker)}
-                  className="min-w-0 text-left"
+        <>
+          <p className="mt-2 text-xs text-zinc-500">
+            Today&apos;s price and a plain read of the last few weeks. Not a
+            buy order.
+          </p>
+          <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {names.map((ticker) => {
+              const q = quotes[ticker];
+              const look = q
+                ? watchLook(q, reportDays[ticker] ?? null)
+                : null;
+              const pct = q?.changePercent ?? null;
+              return (
+                <li
+                  key={ticker}
+                  className={cn(
+                    "flex flex-col rounded-xl border bg-app/40",
+                    lookBorder(look?.kind)
+                  )}
                 >
-                  <p className="text-sm font-semibold text-white">
-                    {cashtag(ticker)}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-xs tabular-nums",
-                      pct == null ? "text-zinc-500" : signedTone(pct)
-                    )}
+                  <div className="flex items-start justify-between gap-2 px-3 pt-3">
+                    <p className="text-sm font-semibold text-white">
+                      {cashtag(ticker)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setList(removeWatchlistTicker(list, ticker))}
+                      className="shrink-0 rounded p-1 text-zinc-600 hover:text-zinc-300"
+                      aria-label={`Remove ${ticker}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onOpenPulse?.(ticker)}
+                    className="flex flex-1 flex-col px-3 pb-3 text-left"
                   >
-                    {pct == null ? "—" : percent(pct)}
-                    <span className="ml-1 text-zinc-500">not in book</span>
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setList(removeWatchlistTicker(list, ticker))}
-                  className="shrink-0 rounded p-1 text-zinc-600 hover:text-zinc-300"
-                  aria-label={`Remove ${ticker}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                    <p className="mt-1 text-sm font-semibold tabular-nums text-white">
+                      {q ? currency(q.price) : "—"}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-xs tabular-nums",
+                        pct == null ? "text-zinc-500" : signedTone(pct)
+                      )}
+                    >
+                      {pct == null
+                        ? "Waiting on today's price"
+                        : `${signedCurrency(q!.change)} today · ${signedPercent(pct)}`}
+                    </p>
+                    {look?.low != null && look.high != null && (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Lately {currency(look.low)} to {currency(look.high)}
+                      </p>
+                    )}
+                    {look && (
+                      <>
+                        <p className="mt-3 text-sm font-semibold text-white">
+                          {look.headline}
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                          {look.detail}
+                        </p>
+                      </>
+                    )}
+                    {onOpenPulse && (
+                      <span className="mt-3 text-xs font-medium text-brand-bright">
+                        Check in Pulse
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-xs text-zinc-600">{ADVICE_DISCLAIMER_SHORT}</p>
+        </>
       )}
     </div>
   );

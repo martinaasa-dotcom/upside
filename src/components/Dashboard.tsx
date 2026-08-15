@@ -459,6 +459,7 @@ export function Dashboard() {
   const [undoStack, setUndoStack] = useState<BookUndoSnapshot[]>([]);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
+  const [pulseIntent, setPulseIntent] = useState<string | null>(null);
   /** Home "Open covered calls" should land on the options table, not holdings. */
   const sheetFocusRef = useRef<"covered-calls" | null>(null);
   const { labBundle, labReady, patchLab } = useLabSync();
@@ -3030,6 +3031,8 @@ export function Dashboard() {
             model={overview}
             quotes={quotes}
             convictions={convictionMap}
+            intentTicker={pulseIntent}
+            onIntentConsumed={() => setPulseIntent(null)}
             onWriteThesis={(t) => setDrawerTicker(t)}
             onStamp={(ticker, stamp) => {
               patchLab({
@@ -3114,7 +3117,12 @@ export function Dashboard() {
                     }
               }
               onOpenPulse={
-                pulseHiddenForTier ? undefined : () => setActiveId(PULSE_TAB_ID)
+                pulseHiddenForTier
+                  ? undefined
+                  : (ticker) => {
+                      if (ticker) setPulseIntent(ticker);
+                      setActiveId(PULSE_TAB_ID);
+                    }
               }
               onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
               onOpenCash={() => {

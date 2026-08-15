@@ -73,6 +73,8 @@ type Props = {
   model: OverviewModel;
   quotes: Record<string, Quote>;
   convictions: ConvictionMap;
+  intentTicker?: string | null;
+  onIntentConsumed?: () => void;
   onWriteThesis?: (ticker: string) => void;
   onStamp?: (
     ticker: string,
@@ -383,7 +385,15 @@ async function fetchQuote(
   }
 }
 
-export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }: Props) {
+export function PulsePage({
+  model,
+  quotes,
+  convictions,
+  intentTicker,
+  onIntentConsumed,
+  onWriteThesis,
+  onStamp,
+}: Props) {
   const [searchInput, setSearchInput] = useState("");
   const [pinnedTicker, setPinnedTicker] = useState<string | null>(null);
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
@@ -777,6 +787,16 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
       signal: pageAbortRef.current.signal,
     });
   }
+
+  useEffect(() => {
+    if (!intentTicker) return;
+    const ticker = intentTicker;
+    onIntentConsumed?.();
+    void checkTicker(ticker);
+    // Consume once when Home hands us a name. checkTicker is recreated
+    // every render, so it stays out of the deps on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intentTicker]);
 
   async function submitSearch(e: React.FormEvent) {
     e.preventDefault();

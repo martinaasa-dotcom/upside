@@ -63,7 +63,7 @@ type Props = {
   /** Book-wide, not-yet-dismissed alerts (earnings/strike/margin/concentration). */
   activeAlerts?: UpsideAlert[];
   onOpenLab?: (tab?: LabDeepLink) => void;
-  onOpenPulse?: () => void;
+  onOpenPulse?: (ticker?: string) => void;
   onOpenCompound?: () => void;
   marketState?: string | null;
   guest?: boolean;
@@ -131,7 +131,7 @@ function MobileHomeHero({
   onOpenAlerts?: () => void;
   morning: ReturnType<typeof buildMorningRead>;
   previousAt: string | null;
-  onOpenPulse?: () => void;
+  onOpenPulse?: (ticker?: string) => void;
   homeSheetId: HomeSheetId;
   homeSheets: Array<{ id: string; name: string }>;
   onHomeSheet?: (id: HomeSheetId) => void;
@@ -441,7 +441,7 @@ function MorningStack({
 }: {
   morning: ReturnType<typeof buildMorningRead>;
   previousAt: string | null;
-  onOpenPulse?: () => void;
+  onOpenPulse?: (ticker?: string) => void;
   className?: string;
 }) {
   const sunday = morning.sunday;
@@ -1015,7 +1015,7 @@ export function OverviewDashboard({
       <Panel className="overview-fade">
         <WatchlistStrip
           heldTickers={tickers.map((t) => t.ticker)}
-          onOpenPulse={() => onOpenPulse?.()}
+          onOpenPulse={onOpenPulse}
         />
       </Panel>
 

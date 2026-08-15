@@ -73,6 +73,7 @@ import {
   localTickerSuggestions,
   mergeTickerSuggestions,
 } from "../src/lib/market/ticker-search";
+import { watchLook } from "../src/lib/watch-look";
 import { buildTrendStory } from "../src/lib/market/trend-story";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
@@ -1347,6 +1348,39 @@ run("popular ticker snapshot is 30 names, one month at a time", () => {
     "AAPL",
   ]);
   assert.match(currentPopularMonth(new Date("2026-08-15T12:00:00Z")), /^2026-08$/);
+});
+
+run("watchlist look is a range read, not a made-up target", () => {
+  const low = watchLook({
+    price: 102,
+    changePercent: -0.01,
+    sparkline: [100, 118, 116, 114, 112, 110, 108, 106, 104, 103],
+  });
+  assert.equal(low.kind, "look");
+  assert.match(low.headline, /recent low/i);
+  const high = watchLook({
+    price: 117,
+    changePercent: 0.01,
+    sparkline: [100, 102, 104, 106, 108, 110, 112, 114, 116, 117],
+  });
+  assert.equal(high.kind, "wait");
+  assert.match(high.headline, /recent high/i);
+  const report = watchLook(
+    {
+      price: 110,
+      changePercent: 0,
+      sparkline: [100, 102, 104, 106, 108, 110],
+    },
+    3
+  );
+  assert.equal(report.kind, "report");
+  assert.match(report.headline, /3 days/);
+  const strip = readFileSync(
+    join(process.cwd(), "src/components/WatchlistStrip.tsx"),
+    "utf8"
+  );
+  assert.match(strip, /watchLook/);
+  assert.match(strip, /Check in Pulse/);
 });
 
 run("watchlist typeahead matches names as you type", () => {
