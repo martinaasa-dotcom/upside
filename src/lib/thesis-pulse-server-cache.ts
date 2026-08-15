@@ -1,6 +1,6 @@
 /**
- * SWR (Stale-While-Revalidate) server-side caching for Thesis Pulse.
- * Reduces redundant LLM invocations and news fetching during volatile market sessions.
+ * Server cache for Pulse. A hit (up to 4 hours) is served as-is.
+ * The model is not called again just because the read is a bit old.
  */
 
 import type { PulseCheck, PulseHeadline } from "@/lib/thesis-pulse";
@@ -13,8 +13,8 @@ export type PulseServerCacheEntry = {
 };
 
 // Cache timings
-export const PULSE_SERVER_FRESH_TTL_MS = 15 * 60 * 1000; // 15 minutes fresh
-export const PULSE_SERVER_STALE_TTL_MS = 60 * 60 * 1000; // 60 minutes stale-while-revalidate
+export const PULSE_SERVER_FRESH_TTL_MS = 60 * 60 * 1000;
+export const PULSE_SERVER_STALE_TTL_MS = 4 * 60 * 60 * 1000;
 const MAX_CACHE_SIZE = 300;
 
 const PULSE_SERVER_CACHE = new Map<string, PulseServerCacheEntry>();

@@ -1,4 +1,8 @@
 import {
+  beginBackgroundLlm,
+  endBackgroundLlm,
+} from "@/lib/ai/llm-slots";
+import {
   buildAdvisorProviderChain,
   describeAdvisorError,
   withAdvisorFallback,
@@ -31,8 +35,29 @@ export async function POST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
+  let body: {
+    portfolioId?: string;
+    portfolioName?: string;
+    cashBalance?: number;
+    forecast?: ForecastModel;
+    convictions?: Record<string, { level: number; thesis: string }>;
+    auto?: boolean;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Couldn't read that request." }, { status: 400 });
+  }
+
+  const auto = Boolean(body.auto);
+  const heldSlot = auto ? beginBackgroundLlm() : false;
+  if (auto && !heldSlot) {
+    return Response.json({ skipped: true });
+  }
+
   const limit = checkRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
+    if (heldSlot) endBackgroundLlm();
     return Response.json(
       { error: "Forecast requests are limited. Try again in a bit." },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
@@ -41,6 +66,7 @@ export async function POST(req: Request) {
 
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {
+    if (heldSlot) endBackgroundLlm();
     const { message } = describeAdvisorError(
       new Error("No LLM key configured")
     );
@@ -48,14 +74,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
     const portfolioId = String(body.portfolioId ?? "");
     const portfolioName = String(body.portfolioName ?? "Portfolio");
     const cashBalance = Number(body.cashBalance ?? 0);
-    const forecast = body.forecast as ForecastModel | undefined;
-    const convictions = body.convictions as
-      | Record<string, { level: number; thesis: string }>
-      | undefined;
+    const forecast = body.forecast;
+    const convictions = body.convictions;
 
     if (!portfolioId || !forecast?.rows) {
       return Response.json(
@@ -108,5 +131,7 @@ export async function POST(req: Request) {
     console.error("[forecast/plan]", err);
     const { message, status } = describeAdvisorError(err);
     return Response.json({ error: message }, { status });
+  } finally {
+    if (heldSlot) endBackgroundLlm();
   }
 }

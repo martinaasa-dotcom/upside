@@ -2,6 +2,11 @@
 
 import { generateText } from "ai";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
+import {
+  beginBackgroundLlm,
+  chatIsBusy,
+  endBackgroundLlm,
+} from "@/lib/ai/llm-slots";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import {
   buildAdvisorProviderChain,
@@ -96,8 +101,13 @@ function facts(r: NoteReport): string {
 export async function writeMargusNoteTake(
   report: NoteReport
 ): Promise<string | null> {
+  if (chatIsBusy()) return null;
+  if (!beginBackgroundLlm()) return null;
   const chain = buildAdvisorProviderChain();
-  if (chain.length === 0) return null;
+  if (chain.length === 0) {
+    endBackgroundLlm();
+    return null;
+  }
   try {
     const { text } = await withAdvisorFallback(
       chain,
@@ -132,5 +142,7 @@ Hard rules for this block:
   } catch (err) {
     console.error("Margus note take failed", err);
     return null;
+  } finally {
+    endBackgroundLlm();
   }
 }

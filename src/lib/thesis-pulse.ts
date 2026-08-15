@@ -339,6 +339,20 @@ export function isPulseCacheFresh(
   return Date.now() - ts < maxAgeMs;
 }
 
+/**
+ * Auto Pulse may call the model only for a name that was never checked,
+ * or a name that is down hard and whose last check is stale. Quiet names
+ * keep the last read until the person hits Check again.
+ */
+export function shouldAutoPulseTicker(input: {
+  needsAttention: boolean;
+  cachedAt?: string;
+}): boolean {
+  if (!input.cachedAt) return true;
+  if (!input.needsAttention) return false;
+  return !isPulseCacheFresh({ cachedAt: input.cachedAt });
+}
+
 export function statusLabel(status: ThesisStatus | string): string {
   const s = String(status ?? "").trim().toLowerCase();
   if (s === "watch") return "Keep an eye on it";

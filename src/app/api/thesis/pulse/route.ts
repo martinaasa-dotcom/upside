@@ -1,4 +1,8 @@
 import {
+  beginBackgroundLlm,
+  endBackgroundLlm,
+} from "@/lib/ai/llm-slots";
+import {
   buildAdvisorProviderChain,
   withAdvisorFallback,
 } from "@/lib/ai/model";
@@ -23,7 +27,6 @@ import {
   setCachedPulseCheck,
   getCachedPulseSummary,
   setCachedPulseSummary,
-  isPulseEntryFresh,
 } from "@/lib/thesis-pulse-server-cache";
 import { pulseReportSchema } from "@/lib/thesis-pulse-schema";
 import { generateObject } from "ai";
@@ -184,7 +187,7 @@ export async function POST(req: Request) {
     const cacheKey = getPulseCacheKey(symbol, c.effectivePct, conv?.thesis, conv?.level);
     const cachedEntry = getCachedPulseCheck(cacheKey, { force });
 
-    if (cachedEntry && isPulseEntryFresh(cachedEntry)) {
+    if (cachedEntry) {
       cachedMap.set(symbol, {
         check: cachedEntry.check,
         headlines: cachedEntry.headlines,
@@ -259,6 +262,25 @@ export async function POST(req: Request) {
       generatedAt: new Date().toISOString(),
     };
     return Response.json({ report, headlines, degraded: true });
+  }
+
+  // Auto Pulse yields when someone is in chat, or another background
+  // read is already on the model. Manual Check again still goes through.
+  const heldSlot = force ? false : beginBackgroundLlm();
+  if (!force && !heldSlot) {
+    const checks = candidates.map((c) => {
+      const cached = cachedMap.get(c.ticker.toUpperCase());
+      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
+    });
+    const report: PulseReport = {
+      summary: humanizeMargusText(
+        getCachedPulseSummary() ??
+          "Couldn't get a full model read. Here's what today's prices and the book say."
+      ),
+      checks,
+      generatedAt: new Date().toISOString(),
+    };
+    return Response.json({ report, headlines, deferred: true });
   }
 
   const uncachedTickers = uncachedCandidates.map((c) => c.ticker);
@@ -375,5 +397,7 @@ export async function POST(req: Request) {
       generatedAt: new Date().toISOString(),
     };
     return Response.json({ report, headlines, degraded: true });
+  } finally {
+    if (heldSlot) endBackgroundLlm();
   }
 }

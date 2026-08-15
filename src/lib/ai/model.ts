@@ -1,5 +1,5 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateText, type LanguageModel } from "ai";
+import type { LanguageModel } from "ai";
 import { siteUrl } from "@/lib/site-url";
 
 /**
@@ -373,37 +373,28 @@ export async function withAdvisorFallback<T>(
 /**
  * Streaming needs a provider chosen BEFORE `streamText` starts (there's no
  * clean way to swap providers mid-stream once bytes are flowing to the
- * client). Runs a cheap, tiny probe request against each candidate in
- * order and caches the first one that works for a few minutes per cache
- * key, so most requests pay zero extra latency and only re-probe
- * occasionally or right after a real failure.
+ * client). Remember the last provider that actually streamed tokens.
+ * Do not ping with a dummy generateText: that burned a quota slot and
+ * delayed the first real token. Chat already peeks the live stream and
+ * failovers if the first bytes never arrive.
  */
 const streamingProviderCache = new Map<
   string,
   { candidate: AdvisorProviderCandidate; at: number }
 >();
 const STREAMING_PROVIDER_CACHE_TTL_MS = 5 * 60 * 1000;
-// Vision requests (screenshot import) are rare enough that re-probing every
-// time is cheap, and a free vision model going degraded/rate-limited
-// upstream mid-window is common enough that trusting a 5-minute-old "this
-// one works" verdict risks silently eating a real user action (add this
-// holding) rather than just costing an extra second on a chat reply.
 const VISION_STREAMING_PROVIDER_CACHE_TTL_MS = 30 * 1000;
 
-export async function pickStreamingProvider(
+export function pickStreamingProvider(
   chain: AdvisorProviderCandidate[],
   cacheKey: string
-): Promise<AdvisorProviderCandidate> {
+): AdvisorProviderCandidate {
   if (chain.length === 0) {
     throw new Error(
       "No LLM key configured. Set OPENROUTER_API_KEY (or GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY) in .env.local."
     );
   }
-  // Skip anything that just failed a live request, then probe the rest.
   const order = usableChain(chain);
-
-  // Nothing to choose between — skip the probe entirely so the common
-  // today (single provider configured) case pays zero extra latency.
   if (order.length === 1) return order[0]!;
 
   const ttl = cacheKey.includes("vision")
@@ -418,30 +409,17 @@ export async function pickStreamingProvider(
     return cached.candidate;
   }
 
-  let lastErr: unknown;
-  for (const candidate of order) {
-    try {
-      await generateText({
-        model: candidate.model,
-        prompt: "ping",
-        maxOutputTokens: 4,
-      });
-      streamingProviderCache.set(cacheKey, { candidate, at: Date.now() });
-      return candidate;
-    } catch (err) {
-      console.error(`[ai] streaming probe for "${candidate.id}" failed`, err);
-      lastErr = err;
-      const { status } = describeAdvisorError(err);
-      if (status === 429 || status === 503 || status === 504) {
-        markProviderUnhealthy(candidate.id);
-      }
-    }
-  }
-  throw lastErr;
+  return order[0]!;
 }
 
-/** Invalidate a cached streaming provider choice — call after a real request
- * against it fails, so the next request re-probes instead of repeating it. */
+export function rememberStreamingProvider(
+  cacheKey: string,
+  candidate: AdvisorProviderCandidate
+) {
+  streamingProviderCache.set(cacheKey, { candidate, at: Date.now() });
+}
+
+/** Drop a cached choice after a real request against it fails. */
 export function invalidateStreamingProvider(cacheKey: string) {
   streamingProviderCache.delete(cacheKey);
 }

@@ -661,20 +661,25 @@ export function ForecastPanel({
           cashBalance,
           forecast: model,
           convictions,
+          auto: Boolean(opts?.auto),
         }),
         signal: ctrl.signal,
       });
-      const data = await readJsonOrThrow<{ plan: ForecastPlan }>(
-        res,
-        "Couldn't build a forecast. Try again."
-      );
+      const data = await readJsonOrThrow<{
+        plan?: ForecastPlan;
+        skipped?: boolean;
+      }>(res, "Couldn't build a forecast. Try again.");
       if (askGenRef.current !== gen || ctrl.signal.aborted) return;
+      if (data.skipped || !data.plan) {
+        if (opts?.auto) return;
+        throw new Error("Couldn't build a forecast. Try again.");
+      }
       const convictionKey = bookConvictionKey(
         model.rows.map((r) => r.ticker),
         convictions
       );
       const next: ForecastPlan = {
-        ...(data.plan as ForecastPlan),
+        ...data.plan,
         holdingsKey,
         convictionKey,
         stance: DEFAULT_FORECAST_STANCE,

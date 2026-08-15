@@ -29,12 +29,11 @@ import { formatRelativeTime } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
   PULSE_DOWN_THRESHOLD,
-  PULSE_REFRESH_MS,
   buildFallbackPulseCheck,
   buildPulseCandidate,
   buildPulseCandidates,
   formatMovePct,
-  isPulseCacheFresh,
+  shouldAutoPulseTicker,
   loadPulseSummary,
   loadPulseTickerCache,
   reconcilePulseCheck,
@@ -578,13 +577,9 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   }, []);
 
   /**
-   * Checks a set of tickers in one request. By default only re-checks
-   * whichever are missing or stale (>1h, PULSE_REFRESH_MS) — everything
-   * else keeps showing its last result untouched. Tickers being refreshed
-   * ALSO keep showing their old result (checkingTickers only adds the
-   * small "Updating" tag in PulseCard, it never blanks the card) — that's
-   * the whole point: analysis happens in the background, the previous
-   * result stays viewable the entire time.
+   * Checks a set of tickers in one request. Auto only covers a name that
+   * was never checked, or a hard-down name whose last read is stale.
+   * Tickers being refreshed keep showing their old result.
    */
   const runPulse = useCallback(
     async (targets: PulseCandidate[], opts?: { force?: boolean; signal?: AbortSignal }) => {
@@ -595,12 +590,12 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
       );
       const stale = force
         ? notInFlight
-        : notInFlight.filter(
-            (c) =>
-              !isPulseCacheFresh({
-                cachedAt:
-                  checkedAtByTickerRef.current[c.ticker.toUpperCase()] ?? "",
-              })
+        : notInFlight.filter((c) =>
+            shouldAutoPulseTicker({
+              needsAttention: c.needsAttention,
+              cachedAt:
+                checkedAtByTickerRef.current[c.ticker.toUpperCase()] ?? "",
+            })
           );
       if (stale.length === 0) return;
       if (force) track("thesis_pulse_refresh", { tickers: stale.length });
@@ -708,43 +703,22 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
 
   // Keyed off the ticker SET, not the `candidates` array's object identity
   // — quotes refresh every ~45s and rebuild `candidates` fresh each time,
-  // which would otherwise re-fire this effect (and reset the interval
-  // below) constantly even though the underlying tickers never changed.
+  // which would otherwise re-fire this effect constantly even though the
+  // underlying tickers never changed.
   const candidateSetKey = candidates
     .map((c) => c.ticker.toUpperCase())
     .sort()
     .join(",");
 
   // First paint + whenever the candidate SET actually changes: fill in
-  // anything missing/stale in the background. Cached results already
-  // render from hydrateTicker above, so this never blocks or blanks the
-  // page. runPulse's own in-flight guard makes it safe to call again with
-  // an overlapping ticker list.
+  // names that were never checked, or a hard-down name whose last read
+  // is stale. Quiet names keep the last read. Check again is the override.
   useEffect(() => {
     if (candidates.length === 0) return;
     const ctrl = new AbortController();
     void runPulse(candidates, { signal: ctrl.signal });
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the stable ticker-set signature, not candidates/runPulse identity churn
-  }, [candidateSetKey]);
-
-  // Hourly background sweep, no market-session gating at all — this runs
-  // the same in pre-market, after-hours, and while the market's closed, not
-  // just during regular hours.
-  useEffect(() => {
-    if (candidates.length === 0) return;
-    const controllers: AbortController[] = [];
-    const id = window.setInterval(() => {
-      if (document.hidden) return;
-      const ctrl = new AbortController();
-      controllers.push(ctrl);
-      void runPulse(candidates, { signal: ctrl.signal });
-    }, PULSE_REFRESH_MS);
-    return () => {
-      window.clearInterval(id);
-      for (const c of controllers) c.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the stable ticker-set signature so the hourly timer survives quote-refresh churn
   }, [candidateSetKey]);
 
   async function checkTicker(tickerRaw: string) {

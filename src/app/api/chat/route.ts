@@ -3,12 +3,14 @@ import {
   buildCcAdvisorTools,
   type CcChatContext,
 } from "@/lib/ai/cc-advisor";
+import { markChatActive } from "@/lib/ai/llm-slots";
 import {
   buildAdvisorProviderChain,
   invalidateStreamingProvider,
   isTransientAdvisorFailure,
   markProviderUnhealthy,
   pickStreamingProvider,
+  rememberStreamingProvider,
 } from "@/lib/ai/model";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -117,6 +119,7 @@ export async function POST(req: Request) {
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
     );
   }
+  markChatActive();
 
   try {
     const body = await req.json();
@@ -160,7 +163,7 @@ export async function POST(req: Request) {
     while (tried.size < providerChain.length) {
       let provider;
       try {
-        provider = await pickStreamingProvider(providerChain, cacheKey);
+        provider = pickStreamingProvider(providerChain, cacheKey);
       } catch (err) {
         console.error("[chat] no streaming provider available", err);
         break;
@@ -204,6 +207,7 @@ export async function POST(req: Request) {
           continue;
         }
 
+        rememberStreamingProvider(cacheKey, provider);
         return createUIMessageStreamResponse({
           stream: toUIMessageStream({
             stream: replayParts(peeked.prefix, peeked.iterator),

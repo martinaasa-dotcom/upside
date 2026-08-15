@@ -24,10 +24,17 @@ import { playbookBullets } from "../src/lib/forecast-playbook";
 import { shouldAutoRefreshForecast } from "../src/lib/forecast-plan";
 import {
   reconcilePulseCheck,
+  shouldAutoPulseTicker,
   statusLabel,
   verdictRepeatsTrim,
   type PulseCheck,
 } from "../src/lib/thesis-pulse";
+import {
+  beginBackgroundLlm,
+  chatIsBusy,
+  endBackgroundLlm,
+  markChatActive,
+} from "../src/lib/ai/llm-slots";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
 import { LAB_TAB_ID, PULSE_TAB_ID, todayDollarFor, buildOverview } from "../src/lib/overview";
 import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
@@ -1216,6 +1223,47 @@ run("Forecast does not call the model when a path is already saved", () => {
     }).reason,
     "new-holding"
   );
+});
+
+run("chat does not ping the model before the first token", () => {
+  const model = readFileSync(join(process.cwd(), "src/lib/ai/model.ts"), "utf8");
+  const chat = readFileSync(
+    join(process.cwd(), "src/app/api/chat/route.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(model, /prompt:\s*"ping"/);
+  assert.match(model, /rememberStreamingProvider/);
+  assert.match(chat, /markChatActive/);
+  assert.match(chat, /rememberStreamingProvider/);
+});
+
+run("Pulse does not hourly-refresh the model", () => {
+  const page = readFileSync(
+    join(process.cwd(), "src/components/PulsePage.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(page, /setInterval\(\(\) => \{[\s\S]*runPulse/);
+  assert.match(page, /shouldAutoPulseTicker/);
+  assert.equal(
+    shouldAutoPulseTicker({ needsAttention: false, cachedAt: "2026-08-15T00:00:00Z" }),
+    false
+  );
+  assert.equal(shouldAutoPulseTicker({ needsAttention: true }), true);
+  assert.equal(shouldAutoPulseTicker({ needsAttention: false }), true);
+});
+
+run("background Margus waits while chat is live", () => {
+  markChatActive(0);
+  endBackgroundLlm();
+  endBackgroundLlm();
+  markChatActive(5_000);
+  assert.equal(chatIsBusy(), true);
+  assert.equal(beginBackgroundLlm(), false);
+  markChatActive(0);
+  assert.equal(chatIsBusy(), false);
+  assert.equal(beginBackgroundLlm(), true);
+  assert.equal(beginBackgroundLlm(), false);
+  endBackgroundLlm();
 });
 
 run("Daily Duel paints the last pick before the network returns", () => {
