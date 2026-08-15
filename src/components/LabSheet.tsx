@@ -20,6 +20,7 @@ import {
 import { currency, cn, cashtag } from "@/lib/format";
 import { SeasonalityPage } from "@/components/SeasonalityPage";
 import { TrendsPanel } from "@/components/TrendsPanel";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 import { FlaskConical } from "lucide-react";
@@ -483,19 +484,25 @@ export function LabSheet({
       )}
 
       {tab === "trends" && (
-        <TrendsPanel tickers={scopedTickers.map((t) => t.ticker)} />
+        <WidgetErrorBoundary name="Trends">
+          <TrendsPanel tickers={scopedTickers.map((t) => t.ticker)} />
+        </WidgetErrorBoundary>
       )}
 
       {tab === "seasonality" && (
-        <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
+        <WidgetErrorBoundary name="Seasonality">
+          <SeasonalityPage bookTickers={overview.tickers.map((t) => t.ticker)} />
+        </WidgetErrorBoundary>
       )}
 
       {tab === "risk" && (
+        <WidgetErrorBoundary name="Risk">
         <ScenarioSimulator
           holdings={scopedTickers}
           cash={scopedCash}
           scopeLabel={scopeLabel}
         />
+        </WidgetErrorBoundary>
       )}
 
       {tab === "risk" && (

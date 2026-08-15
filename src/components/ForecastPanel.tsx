@@ -9,6 +9,7 @@ import {
   Segmented,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
+import { isAbortError } from "@/lib/abort";
 import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
@@ -489,6 +490,10 @@ export function ForecastPanel({
   const reappliedRef = useRef<string>("");
   const calibrateKeyRef = useRef<string>("");
   const askInFlight = useRef(false);
+  const askAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    return () => askAbortRef.current?.abort();
+  }, []);
   const [prevPlan, setPrevPlan] = useState<ForecastPlan | null>(null);
   const [horizon, setHorizon] = useState(0);
   const planAt = plan?.generatedAt ?? "";
@@ -519,6 +524,9 @@ export function ForecastPanel({
   async function askMargus(opts?: { auto?: boolean }) {
     if (askInFlight.current) return;
     askInFlight.current = true;
+    askAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    askAbortRef.current = ctrl;
     if (!opts?.auto) track("forecast_plan_requested");
     setBusy(true);
     setError(null);
@@ -534,6 +542,7 @@ export function ForecastPanel({
           forecast: model,
           convictions,
         }),
+        signal: ctrl.signal,
       });
       const data = await readJsonOrThrow<{ plan: ForecastPlan }>(
         res,
@@ -566,6 +575,7 @@ export function ForecastPanel({
       reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
+      if (isAbortError(err)) return;
       setError(err instanceof Error ? err.message : "Couldn't build a forecast. Try again.");
       // Keep autoKeyRef set so a failed auto-run does not immediately
       // fire again. Clearing it used to retry in a tight loop, which

@@ -89,6 +89,11 @@ export function normalizeYahooTicker(raw: string): string {
   return t;
 }
 
+/** After normalize: Yahoo-style symbols only, no HTML or free text. */
+export function isPlausibleTicker(ticker: string): boolean {
+  return /^[A-Z0-9^=.][A-Z0-9.\-=]{0,23}$/.test(ticker);
+}
+
 /**
  * Resolve a broker screenshot ticker (+ optional ISIN) to a Yahoo symbol.
  * Prefer explicit exchange suffixes; else map known EU names; else ISIN country.

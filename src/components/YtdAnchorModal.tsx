@@ -1,6 +1,7 @@
 "use client";
 
 import { currency, percent } from "@/lib/format";
+import { isSafePositiveMoney } from "@/lib/input-guard";
 import { startNavFromYtdPct } from "@/lib/market/assumed-nav";
 import type { YtdAnchor } from "@/lib/market/ytd-anchor";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
@@ -17,7 +18,7 @@ type Props = {
 
 function parseStart(raw: string): number | null {
   const n = parseDecimal(raw.replace(/\$/g, ""));
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return isSafePositiveMoney(n) ? n : null;
 }
 
 function parseYtdPct(raw: string): number | null {
@@ -37,6 +38,7 @@ export function YtdAnchorModal({
 }: Props) {
   const [start, setStart] = useState("");
   const [ytd, setYtd] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -46,6 +48,7 @@ export function YtdAnchorModal({
         : ""
     );
     setYtd("");
+    setBusy(false);
   }, [open, initialStartNav]);
 
   if (!open) return null;
@@ -62,7 +65,8 @@ export function YtdAnchorModal({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (startNav == null) return;
+    if (busy || startNav == null || !isSafePositiveMoney(startNav)) return;
+    setBusy(true);
     onSave({
       v: 1,
       source: "manual",
@@ -156,8 +160,12 @@ export function YtdAnchorModal({
           >
             Cancel
           </button>
-          <button type="submit" disabled={startNav == null} className="btn-primary">
-            Use this number
+          <button
+            type="submit"
+            disabled={busy || startNav == null}
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? "Saving…" : "Use this number"}
           </button>
         </div>
       </form>

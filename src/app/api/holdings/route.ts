@@ -8,8 +8,9 @@ import { holdingWriteActions } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
+import { isSafePositiveMoney, isSafeShares } from "@/lib/input-guard";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { normalizeYahooTicker } from "@/lib/ticker";
+import { isPlausibleTicker, normalizeYahooTicker } from "@/lib/ticker";
 import { roundMoney, roundShares } from "@/lib/money";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
@@ -85,6 +86,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!isPlausibleTicker(ticker)) {
+    return NextResponse.json(
+      { error: "That ticker doesn't look like a real symbol." },
+      { status: 400 }
+    );
+  }
+
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
 
@@ -98,10 +106,10 @@ export async function POST(req: NextRequest) {
 
   const shares = roundShares(Number(body.shares));
   const buyPrice = roundMoney(Number(body.buy_price));
-  if (!Number.isFinite(shares) || shares <= 0) {
+  if (!isSafeShares(shares)) {
     return NextResponse.json({ error: "Shares must be a positive number" }, { status: 400 });
   }
-  if (!Number.isFinite(buyPrice) || buyPrice <= 0) {
+  if (!isSafePositiveMoney(buyPrice)) {
     return NextResponse.json({ error: "Buy price must be a positive number" }, { status: 400 });
   }
 
@@ -208,7 +216,16 @@ export async function PATCH(req: NextRequest) {
     "sort_order",
   ]) {
     if (body[key] !== undefined) {
-      if (key === "ticker") patch[key] = normalizeYahooTicker(String(body[key]));
+      if (key === "ticker") {
+        const t = normalizeYahooTicker(String(body[key]));
+        if (!isPlausibleTicker(t)) {
+          return NextResponse.json(
+            { error: "That ticker doesn't look like a real symbol." },
+            { status: 400 }
+          );
+        }
+        patch[key] = t;
+      }
       else if (
         (key === "eoy_target" || key === "stock_target_override") &&
         body[key] === null
@@ -216,7 +233,7 @@ export async function PATCH(req: NextRequest) {
         patch[key] = null;
       } else if (key === "shares") {
         const n = roundShares(Number(body[key]));
-        if (!Number.isFinite(n) || n <= 0) {
+        if (!isSafeShares(n)) {
           return NextResponse.json(
             { error: "Shares must be a positive number" },
             { status: 400 }
@@ -224,7 +241,14 @@ export async function PATCH(req: NextRequest) {
         }
         patch[key] = n;
       } else if (key === "buy_price") {
-        patch[key] = roundMoney(Number(body[key]));
+        const n = roundMoney(Number(body[key]));
+        if (!isSafePositiveMoney(n)) {
+          return NextResponse.json(
+            { error: "Buy price must be a positive number" },
+            { status: 400 }
+          );
+        }
+        patch[key] = n;
       } else patch[key] = Number(body[key]);
     }
   }

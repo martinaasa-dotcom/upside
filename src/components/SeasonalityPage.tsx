@@ -13,6 +13,7 @@ import {
 } from "@/lib/market/seasonality";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { isAbortError } from "@/lib/abort";
 
 const DEFAULT_TICKERS = ["SPY", "^GSPC", "QQQ", "IWM", "DIA"];
 
@@ -441,13 +442,13 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   const [viewMonth, setViewMonth] = useState(marketToday.month);
   const [selectedDay, setSelectedDay] = useState(marketToday.day);
 
-  const load = useCallback(async (sym: string) => {
+  const load = useCallback(async (sym: string, signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(
         `/api/market/seasonality?ticker=${encodeURIComponent(sym)}`,
-        { cache: "no-store" }
+        { cache: "no-store", signal }
       );
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -455,15 +456,18 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       }
       setModel((await res.json()) as SeasonalityModel);
     } catch (e) {
+      if (isAbortError(e)) return;
       setModel(null);
       setError(e instanceof Error ? e.message : "Couldn't load those charts.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void load(ticker);
+    const ctrl = new AbortController();
+    void load(ticker, ctrl.signal);
+    return () => ctrl.abort();
   }, [ticker, load]);
 
   const playbookMonthRow = model?.cycleMonthly[playbookMonth - 1];

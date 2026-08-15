@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isAbortError } from "@/lib/abort";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { cn } from "@/lib/format";
@@ -13,10 +14,11 @@ type Macro = {
   tenYear: number | null;
 };
 
-async function fetchMacro(): Promise<Macro> {
+async function fetchMacro(signal?: AbortSignal): Promise<Macro> {
   try {
     const res = await fetch(
-      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX"
+      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX",
+      { signal }
     );
     if (!res.ok) throw new Error("macro failed");
     const data = await res.json();
@@ -27,17 +29,19 @@ async function fetchMacro(): Promise<Macro> {
       btc: q["BTC-USD"]?.price ?? null,
       tenYear: q["^TNX"]?.price ?? null,
     };
-  } catch {
+  } catch (err) {
+    if (isAbortError(err)) throw err;
     return { vix: null, eurusd: null, btc: null, tenYear: null };
   }
 }
 
-async function fetchFearGreed(): Promise<FearGreedSnapshot | null> {
+async function fetchFearGreed(signal?: AbortSignal): Promise<FearGreedSnapshot | null> {
   try {
-    const res = await fetch("/api/market/fear-greed");
+    const res = await fetch("/api/market/fear-greed", { signal });
     if (!res.ok) return null;
     return (await res.json()) as FearGreedSnapshot;
-  } catch {
+  } catch (err) {
+    if (isAbortError(err)) throw err;
     return null;
   }
 }
@@ -62,26 +66,34 @@ export function MacroStrip() {
 
   useEffect(() => {
     if (!open) return;
-    let alive = true;
-    void fetchMacro().then((m) => {
-      if (alive) setMacro(m);
+    const ctrl = new AbortController();
+    void fetchMacro(ctrl.signal).then((m) => {
+      if (!ctrl.signal.aborted) setMacro(m);
+    }).catch((err) => {
+      if (isAbortError(err)) return;
     });
-    void fetchFearGreed().then((fg) => {
-      if (alive) setFearGreed(fg);
+    void fetchFearGreed(ctrl.signal).then((fg) => {
+      if (!ctrl.signal.aborted && fg) setFearGreed(fg);
+    }).catch((err) => {
+      if (isAbortError(err)) return;
     });
     let timer = 0;
     const schedule = () => {
       timer = window.setTimeout(
         () => {
-          if (!document.hidden) {
-            void fetchMacro().then((m) => {
-              if (alive) setMacro(m);
+          if (!document.hidden && !ctrl.signal.aborted) {
+            void fetchMacro(ctrl.signal).then((m) => {
+              if (!ctrl.signal.aborted) setMacro(m);
+            }).catch((err) => {
+              if (isAbortError(err)) return;
             });
-            void fetchFearGreed().then((fg) => {
-              if (alive) setFearGreed(fg);
+            void fetchFearGreed(ctrl.signal).then((fg) => {
+              if (!ctrl.signal.aborted && fg) setFearGreed(fg);
+            }).catch((err) => {
+              if (isAbortError(err)) return;
             });
           }
-          schedule();
+          if (!ctrl.signal.aborted) schedule();
         },
         quotePollMs()
       );
@@ -89,7 +101,7 @@ export function MacroStrip() {
     schedule();
 
     return () => {
-      alive = false;
+      ctrl.abort();
       window.clearTimeout(timer);
     };
   }, [open]);

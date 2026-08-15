@@ -26,6 +26,7 @@ import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
 import { realBookPortfolios } from "@/lib/classroom";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { useAuth } from "@/components/AuthProvider";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -63,6 +64,8 @@ import {
   saveActiveSheetId,
 } from "@/lib/active-sheet";
 import { loadLastUser } from "@/lib/last-session";
+import { isAbortError, retryOnNetwork } from "@/lib/abort";
+import { isSafePositiveMoney, isSafeShares, sanitizeSheetName } from "@/lib/input-guard";
 import { buildForecast, type ForecastYear } from "@/lib/forecast";
 import {
   loadEoyOverrides,
@@ -468,6 +471,8 @@ export function Dashboard() {
   alertToastsSentRef.current = alertToastsSent;
   const bookRef = useRef({ portfolios, holdings });
   bookRef.current = { portfolios, holdings };
+  const bookAbortRef = useRef<AbortController | null>(null);
+  const quotesAbortRef = useRef<AbortController | null>(null);
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] =
     useState<VisibilityMap>({});
   const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] =
@@ -538,8 +543,8 @@ export function Dashboard() {
       return;
     }
     setTierChecked(false);
-    let cancelled = false;
-    void fetch("/api/account/experience-tier")
+    const ctrl = new AbortController();
+    void fetch("/api/account/experience-tier", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then(
         (
@@ -548,7 +553,7 @@ export function Dashboard() {
             knowsOptions?: boolean | null;
           } | null
         ) => {
-          if (cancelled) return;
+          if (ctrl.signal.aborted) return;
           if (data?.tier) {
             setExperienceTier(data.tier);
             saveStoredTier(data.tier);
@@ -559,14 +564,15 @@ export function Dashboard() {
           }
         }
       )
-      .catch(() => {
+      .catch((err) => {
+        if (isAbortError(err)) return;
         /* keep whatever localStorage already had */
       })
       .finally(() => {
-        if (!cancelled) setTierChecked(true);
+        if (!ctrl.signal.aborted) setTierChecked(true);
       });
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, [source, user]);
 
@@ -888,7 +894,7 @@ export function Dashboard() {
     []
   );
 
-  const loadPortfolios = useCallback(async (opts?: { silent?: boolean }) => {
+  const loadPortfolios = useCallback(async (opts?: { silent?: boolean; retry?: boolean }) => {
     const userId = user?.id ?? null;
     const hasCache = Boolean(readBookCache(userId));
     // Cold start only — remounts (My book from Communities/Account) use cache.
@@ -899,8 +905,14 @@ export function Dashboard() {
     } else {
       setLoading(false);
     }
+    bookAbortRef.current?.abort();
     const ctrl = new AbortController();
-    const timeout = window.setTimeout(() => ctrl.abort(), 20_000);
+    bookAbortRef.current = ctrl;
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      ctrl.abort();
+    }, 20_000);
 
     const fetchBook = async () => {
       const res = await fetch("/api/portfolios", {
@@ -918,7 +930,10 @@ export function Dashboard() {
 
     try {
       if (shouldClaimSeed(userId)) {
-        await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
+        await fetch("/api/auth/me", {
+          cache: "no-store",
+          signal: ctrl.signal,
+        }).catch(() => null);
         if (userId) markSeedClaimed(userId);
       }
 
@@ -928,8 +943,11 @@ export function Dashboard() {
         holdings?: Holding[];
       };
       try {
-        data = await fetchBook();
+        data = opts?.retry
+          ? await retryOnNetwork(fetchBook, { signal: ctrl.signal })
+          : await fetchBook();
       } catch (first) {
+        if (ctrl.signal.aborted) throw first;
         if (
           first instanceof Error &&
           /Sign in required/i.test(first.message)
@@ -941,6 +959,8 @@ export function Dashboard() {
           throw first;
         }
       }
+
+      if (ctrl.signal.aborted) return;
 
       if (data.source === "supabase") {
         const nextPortfolios = data.portfolios ?? [];
@@ -980,18 +1000,18 @@ export function Dashboard() {
         }
       }
     } catch (err) {
+      if (bookAbortRef.current !== ctrl) return;
+      if (isAbortError(err) && !timedOut) return;
       console.error(err);
       if (showSplash) {
-        const aborted =
-          err instanceof DOMException && err.name === "AbortError";
         setLoadError(
-          aborted
+          timedOut
             ? "Timed out loading your book. Check the connection and retry."
             : err instanceof Error
               ? err.message
               : "Couldn’t load the shared book. Showing local demo, retry when ready."
         );
-        if (!aborted && !(err instanceof Error && /Sign in/i.test(err.message))) {
+        if (!timedOut && !(err instanceof Error && /Sign in/i.test(err.message))) {
           const demo = loadDemoStore();
           setSource("demo");
           setPortfolios(demo.portfolios);
@@ -1006,7 +1026,7 @@ export function Dashboard() {
       }
     } finally {
       window.clearTimeout(timeout);
-      setLoading(false);
+      if (bookAbortRef.current === ctrl) setLoading(false);
     }
   }, [pickInitialSheet, refresh, user?.id]);
 
@@ -1038,13 +1058,14 @@ export function Dashboard() {
     if (typeof fx.gbpUsd === "number" && fx.gbpUsd > 0) setGbpUsd(fx.gbpUsd);
   }, []);
 
-  const refreshFx = useCallback(async () => {
+  const refreshFx = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/quotes?tickers=EURUSD%3DX");
+      const res = await fetch("/api/quotes?tickers=EURUSD%3DX", { signal });
       if (!res.ok) return;
       const json = await res.json();
       applyFxPayload(json.fx);
-    } catch {
+    } catch (err) {
+      if (isAbortError(err)) return;
       /* ignore */
     }
   }, [applyFxPayload]);
@@ -1062,11 +1083,14 @@ export function Dashboard() {
         await refreshFx();
         return;
       }
+      quotesAbortRef.current?.abort();
+      const ctrl = new AbortController();
+      quotesAbortRef.current = ctrl;
       if (!opts?.silent) setRefreshing(true);
       try {
         let nextQuotes = existingQuotes;
         if (!nextQuotes || Object.keys(nextQuotes).length === 0) {
-          const quotesRes = await fetch(quotesUrl(tickers));
+          const quotesRes = await fetch(quotesUrl(tickers), { signal: ctrl.signal });
           if (!quotesRes.ok) {
             setQuotesDelayed(true);
             throw new Error(`Quotes request failed (${quotesRes.status})`);
@@ -1114,32 +1138,60 @@ export function Dashboard() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ positions }),
+          signal: ctrl.signal,
         });
         const optJson = await optRes.json();
         setOptions(optJson.options ?? {});
       } catch (err) {
+        if (isAbortError(err) || quotesAbortRef.current !== ctrl) return;
         console.error(err);
         setQuotesDelayed(true);
       } finally {
-        if (!opts?.silent) setRefreshing(false);
+        if (quotesAbortRef.current === ctrl && !opts?.silent) {
+          setRefreshing(false);
+        }
       }
     },
     [applyFxPayload, refreshFx, hideOptionsUI]
   );
 
   useEffect(() => {
-    void refreshFx();
+    const ctrl = new AbortController();
+    void refreshFx(ctrl.signal);
     const id = window.setInterval(() => {
       if (document.hidden) return;
-      void refreshFx();
+      void refreshFx(ctrl.signal);
     }, 120_000);
-    return () => window.clearInterval(id);
+    return () => {
+      ctrl.abort();
+      window.clearInterval(id);
+    };
   }, [refreshFx]);
 
   useEffect(() => {
     const cached = readBookCache(user?.id);
     void loadPortfolios({ silent: Boolean(cached) });
   }, [loadPortfolios, user?.id]);
+
+  useEffect(() => {
+    return () => {
+      bookAbortRef.current?.abort();
+      quotesAbortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onOnline = () => {
+      void loadPortfolios({ silent: true, retry: true });
+      if (allTickers.length === 0) return;
+      void refreshMarkets(allTickers, holdings, undefined, {
+        quotesOnly: true,
+        silent: true,
+      });
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [loadPortfolios, refreshMarkets, allTickers, holdings]);
 
   // Keep session cache warm so My book remounts paint instantly.
   useEffect(() => {
@@ -1313,10 +1365,17 @@ export function Dashboard() {
         ]),
       ]);
 
+    let pollAbort: AbortController | null = null;
     const tick = async () => {
       if (document.hidden) return;
+      pollAbort?.abort();
+      const ctrl = new AbortController();
+      pollAbort = ctrl;
       try {
-        const res = await fetch("/api/portfolios", { cache: "no-store" });
+        const res = await fetch("/api/portfolios", {
+          cache: "no-store",
+          signal: ctrl.signal,
+        });
         if (!res.ok) return;
         const data = await res.json();
         if (data.source !== "supabase") return;
@@ -1343,13 +1402,17 @@ export function Dashboard() {
           });
         }
         toast("This sheet changed on another device. We pulled in the latest.", "info");
-      } catch {
+      } catch (err) {
+        if (isAbortError(err)) return;
         /* ignore */
       }
     };
 
     const id = window.setInterval(() => void tick(), 45_000);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      pollAbort?.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 
@@ -1615,6 +1678,20 @@ export function Dashboard() {
 
   function handlePatch(patch: HoldingPatch): boolean {
     const { id, ...fields } = patch;
+    if (
+      fields.shares != null &&
+      !isSafeShares(fields.shares)
+    ) {
+      toast("Share count has to be bigger than 0 and not enormous.", "error");
+      return false;
+    }
+    if (
+      fields.buy_price != null &&
+      !isSafePositiveMoney(fields.buy_price)
+    ) {
+      toast("Buy price has to be bigger than 0 and not enormous.", "error");
+      return false;
+    }
     const previous = holdings.find((h) => h.id === id);
 
     // Clear stale option when strike-driving fields change
@@ -2253,11 +2330,12 @@ export function Dashboard() {
     opts?: { silent?: boolean }
   ): Promise<Portfolio | undefined> {
     const isFirstSheet = portfolios.length === 0;
+    const trimmed = sanitizeSheetName(name);
+    if (!trimmed) return undefined;
     if (source === "supabase") {
-      const res = await fetch("/api/portfolios", {
+      const res = await apiFetch("/api/portfolios", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: trimmed }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -2275,7 +2353,7 @@ export function Dashboard() {
       if (!opts?.silent) toast("Sheet added", "success");
       return created;
     }
-    const next = addPortfolio(loadDemoStore(), name);
+    const next = addPortfolio(loadDemoStore(), trimmed);
     setPortfolios(next.portfolios);
     const created = next.portfolios[next.portfolios.length - 1];
     seedNewSheetPanelDefaults(created);
@@ -2430,19 +2508,21 @@ export function Dashboard() {
     .join(",");
   useEffect(() => {
     if (!overviewTickerKey) return;
-    let cancelled = false;
+    const ctrl = new AbortController();
 
     const load = () => {
       void fetch(
-        `/api/market/events?tickers=${encodeURIComponent(overviewTickerKey)}`
+        `/api/market/events?tickers=${encodeURIComponent(overviewTickerKey)}`,
+        { signal: ctrl.signal }
       )
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
-          if (cancelled || !data) return;
+          if (ctrl.signal.aborted || !data) return;
           const events = Array.isArray(data.earnings) ? data.earnings : [];
           setEarningsEvents(events);
         })
-        .catch(() => {
+        .catch((err) => {
+          if (isAbortError(err)) return;
           /* keep whatever was already loaded */
         });
     };
@@ -2455,7 +2535,7 @@ export function Dashboard() {
       if (!document.hidden) load();
     }, PULSE_REFRESH_MS);
     return () => {
-      cancelled = true;
+      ctrl.abort();
       window.clearInterval(id);
     };
   }, [overviewTickerKey]);
@@ -2898,6 +2978,7 @@ export function Dashboard() {
             )}
           </div>
         ) : isPulse ? (
+          <WidgetErrorBoundary name="Pulse">
           <PulsePage
             model={overview}
             quotes={quotes}
@@ -2909,7 +2990,9 @@ export function Dashboard() {
               });
             }}
           />
+          </WidgetErrorBoundary>
         ) : isLab ? (
+          <WidgetErrorBoundary name="Lab">
           <LabSheet
             overview={overview}
             portfolios={portfolios}
@@ -2921,7 +3004,9 @@ export function Dashboard() {
               experienceTier ? TIER_HIDDEN_LAB_TABS[experienceTier] : []
             }
           />
+          </WidgetErrorBoundary>
         ) : isCompound ? (
+          <WidgetErrorBoundary name="Compound">
           <CompoundInterestSheet
             bookValue={overview.totals.totalValue}
             sheets={overview.sheets.map((s) => ({
@@ -2938,8 +3023,9 @@ export function Dashboard() {
             eurUsdDetail={eurUsdDetail}
             hideOptions={hideOptionsUI}
           />
+          </WidgetErrorBoundary>
         ) : isOverview ? (
-          <>
+          <WidgetErrorBoundary name="Overview">
             <OverviewDashboard
               model={homeOverview}
               onOpenSheet={openSheet}
@@ -2992,9 +3078,10 @@ export function Dashboard() {
               }}
               onOpenAlerts={() => setActiveId(ALERTS_TAB_ID)}
             />
-          </>
+          </WidgetErrorBoundary>
         ) : (
           <>
+            <WidgetErrorBoundary name="Holdings">
             <PortfolioTable
               portfolio={activePortfolio!}
               holdings={snapshot!.holdings}
@@ -3041,8 +3128,10 @@ export function Dashboard() {
                 });
               }}
             />
+            </WidgetErrorBoundary>
 
             {ccVisible && (
+              <WidgetErrorBoundary name="Covered calls">
               <CoveredCallPanel
                 rows={snapshot!.coveredCallRows}
                 yield2wAvg={snapshot!.totals.yield2wAvg}
@@ -3057,11 +3146,13 @@ export function Dashboard() {
                   canClassBuy ? () => setModalOpen(true) : undefined
                 }
               />
+              </WidgetErrorBoundary>
             )}
 
             {forecastVisible ? (
               forecast &&
               activePortfolio && (
+                <WidgetErrorBoundary name="Forecast">
                 <ForecastPanel
                   model={forecast}
                   portfolioId={activePortfolio.id}
@@ -3073,6 +3164,7 @@ export function Dashboard() {
                   onClearOverrides={() => setConfirmResetForecast(true)}
                   convictions={convictionMap}
                 />
+                </WidgetErrorBoundary>
               )
             ) : (
               <ForecastOffStub onShow={() => toggleForecastVisible()} />
@@ -3332,6 +3424,7 @@ export function Dashboard() {
         }}
       />
 
+      <WidgetErrorBoundary name="Margus">
       <CcAdvisorChat
         key={
           !isMetaTab && activePortfolio && snapshot
@@ -3476,6 +3569,7 @@ export function Dashboard() {
               }
         }
       />
+      </WidgetErrorBoundary>
     </div>
   );
 }

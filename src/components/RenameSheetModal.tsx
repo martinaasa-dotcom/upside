@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { sanitizeSheetName } from "@/lib/input-guard";
 
 type Props = {
   open: boolean;
@@ -32,18 +33,22 @@ export function RenameSheetModal({
   confirmLabel = "Save",
 }: Props) {
   const [name, setName] = useState(initialName);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setName(initialName);
+    setBusy(false);
   }, [open, initialName]);
 
   if (!open) return null;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = name.trim();
+    if (busy) return;
+    const trimmed = sanitizeSheetName(name);
     if (!trimmed) return;
+    setBusy(true);
     onSave(trimmed);
   }
 
@@ -76,7 +81,8 @@ export function RenameSheetModal({
           <input
             autoFocus
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value.slice(0, 80))}
+            maxLength={80}
             placeholder={placeholder}
             className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             required
@@ -93,9 +99,10 @@ export function RenameSheetModal({
           </button>
           <button
             type="submit"
-            className="btn-primary"
+            disabled={busy || !sanitizeSheetName(name)}
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {confirmLabel}
+            {busy ? "Saving…" : confirmLabel}
           </button>
         </div>
       </form>

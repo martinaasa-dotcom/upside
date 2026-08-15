@@ -38,6 +38,7 @@ export function CsvImportModal({
   const [replace, setReplace] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paste, setPaste] = useState("");
+  const [busy, setBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
@@ -81,9 +82,12 @@ export function CsvImportModal({
   }
 
   function confirm() {
+    if (busy) return;
     if (rows.length === 0 && cash == null) return;
+    setBusy(true);
     onImport({ rows, cash, replace });
     reset();
+    setBusy(false);
     onClose();
   }
 
@@ -269,11 +273,12 @@ export function CsvImportModal({
           </button>
           <button
             type="button"
-            disabled={rows.length === 0 && cash == null}
+            disabled={busy || (rows.length === 0 && cash == null)}
             onClick={confirm}
             className={cn(
               "btn-primary",
-              rows.length === 0 && cash == null && "cursor-not-allowed opacity-40"
+              (busy || (rows.length === 0 && cash == null)) &&
+                "cursor-not-allowed opacity-40"
             )}
           >
             Import{rows.length > 0 ? ` ${rows.length} holding${rows.length === 1 ? "" : "s"}` : ""}

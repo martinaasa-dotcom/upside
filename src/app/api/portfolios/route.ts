@@ -12,6 +12,8 @@ import {
   type ClassroomTrade,
 } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
+import { sanitizeSheetName } from "@/lib/input-guard";
+import { roundMoney } from "@/lib/money";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import {
@@ -150,7 +152,7 @@ export async function POST(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   const body = await req.json();
-  const name = String(body.name ?? "").trim();
+  const name = sanitizeSheetName(String(body.name ?? ""));
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
@@ -225,9 +227,22 @@ export async function PATCH(req: NextRequest) {
       action: "cash",
     });
     if (blocked) return blocked;
-    patch.cash_balance = Number(body.cash_balance);
+    const raw = Number(body.cash_balance);
+    if (!Number.isFinite(raw)) {
+      return NextResponse.json(
+        { error: "Cash has to be a real dollar amount." },
+        { status: 400 }
+      );
+    }
+    patch.cash_balance = roundMoney(raw);
   }
-  if (body.name !== undefined) patch.name = body.name;
+  if (body.name !== undefined) {
+    const name = sanitizeSheetName(String(body.name));
+    if (!name) {
+      return NextResponse.json({ error: "name required" }, { status: 400 });
+    }
+    patch.name = name;
+  }
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.portfolios)

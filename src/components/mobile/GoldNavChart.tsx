@@ -10,6 +10,7 @@ import {
   type YtdAnchor,
 } from "@/lib/market/ytd-anchor";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { isAbortError } from "@/lib/abort";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 export type NavPoint = { date: string; nav: number };
@@ -128,7 +129,7 @@ export function useBookNavHistory(input: {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    const ctrl = new AbortController();
     const painted = readNavCache();
     const havePaint =
       painted != null && cacheMatches(painted, posKey, assumed, input.cash);
@@ -144,6 +145,7 @@ export function useBookNavHistory(input: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: ctrl.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
       .then(
@@ -154,7 +156,7 @@ export function useBookNavHistory(input: {
             firstRealDate?: string | null;
           } | null
         ) => {
-          if (cancelled) return;
+          if (ctrl.signal.aborted) return;
           const next = data?.points ?? [];
           const nextAssumed = Boolean(data?.assumed);
           const nextFirst = data?.firstRealDate ?? null;
@@ -175,8 +177,8 @@ export function useBookNavHistory(input: {
           }
         }
       )
-      .catch(() => {
-        if (cancelled) return;
+      .catch((err) => {
+        if (isAbortError(err) || ctrl.signal.aborted) return;
         if (!havePaint) {
           setHist([]);
           setServerAssumed(false);
@@ -184,7 +186,7 @@ export function useBookNavHistory(input: {
         setLoading(false);
       });
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- posKey fingerprints holdings
   }, [assumed, posKey, input.cash]);

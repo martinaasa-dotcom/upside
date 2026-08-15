@@ -1,5 +1,6 @@
 "use client";
 
+import { isSafeSignedMoney } from "@/lib/input-guard";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
 import { roundMoney } from "@/lib/money";
 import { X } from "lucide-react";
@@ -21,18 +22,27 @@ export function CashModal({
   onSave,
 }: Props) {
   const [cash, setCash] = useState(String(initialCash));
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setCash(String(initialCash));
+    setError(null);
+    setBusy(false);
   }, [open, initialCash]);
 
   if (!open) return null;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const n = parseDecimal(cash);
-    if (!Number.isFinite(n)) return;
+    if (!isSafeSignedMoney(n)) {
+      setError("That has to be a real dollar amount, not enormous.");
+      return;
+    }
+    setBusy(true);
     onSave(roundMoney(n));
   }
 
@@ -70,16 +80,19 @@ export function CashModal({
             type="text"
             inputMode="decimal"
             value={cash}
-            onChange={(e) =>
+            onChange={(e) => {
               setCash(
                 e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, "")
-              )
-            }
+              );
+              setError(null);
+            }}
             onWheel={blockWheelChange}
             className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
             required
           />
         </label>
+
+        {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
           <button
@@ -91,9 +104,10 @@ export function CashModal({
           </button>
           <button
             type="submit"
-            className="btn-primary"
+            disabled={busy}
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save
+            {busy ? "Saving…" : "Save"}
           </button>
         </div>
       </form>

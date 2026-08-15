@@ -2,9 +2,18 @@
 
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  isSafePositiveMoney,
+  isSafeShares,
+  sanitizeTickerDraft,
+} from "@/lib/input-guard";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
 import { roundMoney, roundShares } from "@/lib/money";
-import { normalizeYahooTicker, tickerExchangeHint } from "@/lib/ticker";
+import {
+  isPlausibleTicker,
+  normalizeYahooTicker,
+  tickerExchangeHint,
+} from "@/lib/ticker";
 
 export type HoldingFormValues = {
   ticker: string;
@@ -36,6 +45,7 @@ export function HoldingModal({
   const [buyPrice, setBuyPrice] = useState("");
   const [targetCall, setTargetCall] = useState("15");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -44,25 +54,32 @@ export function HoldingModal({
     setBuyPrice("");
     setTargetCall("15");
     setError(null);
+    setBusy(false);
   }, [open]);
 
   if (!open) return null;
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const sharesN = parseDecimal(shares);
     const buyN = parseDecimal(buyPrice);
     const callN = Math.round(parseDecimal(targetCall));
-    if (!ticker.trim()) {
+    const normalizedTicker = normalizeYahooTicker(ticker);
+    if (!normalizedTicker) {
       setError("Type a ticker first.");
       return;
     }
-    if (!Number.isFinite(sharesN) || sharesN <= 0) {
-      setError("Share count has to be bigger than 0.");
+    if (!isPlausibleTicker(normalizedTicker)) {
+      setError("That ticker doesn't look like a real symbol.");
       return;
     }
-    if (!Number.isFinite(buyN) || buyN <= 0) {
-      setError("Buy price has to be bigger than 0.");
+    if (!isSafeShares(sharesN)) {
+      setError("Share count has to be bigger than 0 and not enormous.");
+      return;
+    }
+    if (!isSafePositiveMoney(buyN)) {
+      setError("Buy price has to be bigger than 0 and not enormous.");
       return;
     }
     if (!Number.isFinite(callN) || callN < 0 || callN > 100) {
@@ -70,8 +87,9 @@ export function HoldingModal({
       return;
     }
 
+    setBusy(true);
     onSave({
-      ticker: normalizeYahooTicker(ticker),
+      ticker: normalizedTicker,
       shares: roundShares(sharesN),
       buy_price: roundMoney(buyN),
       target_call_pct: callN / 100,
@@ -115,7 +133,7 @@ export function HoldingModal({
               autoFocus
               value={ticker}
               onChange={(e) => {
-                setTicker(e.target.value.toUpperCase());
+                setTicker(sanitizeTickerDraft(e.target.value));
                 setError(null);
               }}
               className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
@@ -199,9 +217,10 @@ export function HoldingModal({
           </button>
           <button
             type="submit"
-            className="btn-primary"
+            disabled={busy}
+            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save
+            {busy ? "Saving…" : "Save"}
           </button>
         </div>
       </form>

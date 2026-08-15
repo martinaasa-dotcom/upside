@@ -18,7 +18,10 @@
  */
 
 /** Largest value we can round without losing integer precision at 2 digits. */
-const MAX_SAFE_MONEY = Number.MAX_SAFE_INTEGER / 100;
+export const MAX_SAFE_MONEY = Number.MAX_SAFE_INTEGER / 100;
+
+/** Share counts above this are not a real position. Guard against overflow. */
+export const MAX_SAFE_SHARES = 1_000_000_000_000;
 
 function roundHalfAwayFromZero(n: number, digits: number): number {
   if (!Number.isFinite(n)) return 0;

@@ -4,6 +4,7 @@
  * dependency-free (no papaparse) since the shape is simple: a header row plus
  * ticker/shares/price columns, tolerant of common column-name variations.
  */
+import { isSafePositiveMoney, isSafeShares, isSafeSignedMoney } from "@/lib/input-guard";
 import { resolveImportTicker } from "@/lib/ticker";
 
 export type CsvHoldingRow = {
@@ -138,14 +139,16 @@ export function parseHoldingsCsv(text: string): CsvImportResult {
 
     if (cashCol >= 0) {
       const cashHere = parseNumber(cells[cashCol]);
-      if (cashHere != null) {
+      if (cashHere != null && isSafeSignedMoney(cashHere)) {
         result.cash = (result.cash ?? 0) + cashHere;
       }
     }
 
     if (CASH_KEYS.has(tickerRaw.toUpperCase())) {
       const amount = parseNumber(cells[buyCol]) ?? parseNumber(cells[sharesCol]);
-      if (amount != null) result.cash = (result.cash ?? 0) + amount;
+      if (amount != null && isSafeSignedMoney(amount)) {
+        result.cash = (result.cash ?? 0) + amount;
+      }
       continue;
     }
 
@@ -156,21 +159,21 @@ export function parseHoldingsCsv(text: string): CsvImportResult {
     }
 
     const shares = parseNumber(cells[sharesCol]);
-    if (!(shares != null && shares > 0)) {
+    if (!(shares != null && isSafeShares(shares))) {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Share count is missing or isn't a number",
+        reason: "Share count is missing, isn't a number, or is enormous",
       });
       continue;
     }
 
     const buyPrice = parseNumber(cells[buyCol]);
-    if (!(buyPrice != null && buyPrice > 0)) {
+    if (!(buyPrice != null && isSafePositiveMoney(buyPrice))) {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Buy price is missing or isn't a number",
+        reason: "Buy price is missing, isn't a number, or is enormous",
       });
       continue;
     }
@@ -227,7 +230,7 @@ export function parseHoldingsPaste(text: string): CsvImportResult {
       return;
     }
     const shares = parseNumber(cells[1]);
-    if (!(shares != null && shares > 0)) {
+    if (!(shares != null && isSafeShares(shares))) {
       result.skipped.push({
         line: i + 1,
         raw,
@@ -236,7 +239,7 @@ export function parseHoldingsPaste(text: string): CsvImportResult {
       return;
     }
     const buyPrice = parseNumber(cells[2]);
-    if (!(buyPrice != null && buyPrice > 0)) {
+    if (!(buyPrice != null && isSafePositiveMoney(buyPrice))) {
       result.skipped.push({
         line: i + 1,
         raw,

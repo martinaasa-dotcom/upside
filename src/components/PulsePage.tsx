@@ -21,6 +21,7 @@ import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
+import { isAbortError } from "@/lib/abort";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
@@ -356,15 +357,20 @@ function PulseCard({
   );
 }
 
-async function fetchQuote(ticker: string): Promise<Quote | null> {
+async function fetchQuote(
+  ticker: string,
+  signal?: AbortSignal
+): Promise<Quote | null> {
   try {
     const res = await fetch(
-      `/api/quotes?tickers=${encodeURIComponent(ticker)}`
+      `/api/quotes?tickers=${encodeURIComponent(ticker)}`,
+      { signal }
     );
     if (!res.ok) return null;
     const data = await res.json();
     return (data.quotes?.[ticker] as Quote | undefined) ?? null;
-  } catch {
+  } catch (err) {
+    if (isAbortError(err)) return null;
     return null;
   }
 }
@@ -517,15 +523,19 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   }, []);
 
   useEffect(() => {
-    let alive = true;
-    void fetch("/api/market/fear-greed")
+    const ctrl = new AbortController();
+    void fetch("/api/market/fear-greed", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (alive && data?.score != null) setFearGreed(data as FearGreedSnapshot);
+        if (!ctrl.signal.aborted && data?.score != null) {
+          setFearGreed(data as FearGreedSnapshot);
+        }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (isAbortError(err)) return;
+      });
     return () => {
-      alive = false;
+      ctrl.abort();
     };
   }, []);
 
@@ -549,6 +559,11 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   // a ref updates immediately so a near-simultaneous second call always
   // sees the first call's claim.
   const inFlightRef = useRef<Set<string>>(new Set());
+  const pageAbortRef = useRef(new AbortController());
+  useEffect(() => {
+    const ctrl = pageAbortRef.current;
+    return () => ctrl.abort();
+  }, []);
 
   /**
    * Checks a set of tickers in one request. By default only re-checks
@@ -560,7 +575,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
    * result stays viewable the entire time.
    */
   const runPulse = useCallback(
-    async (targets: PulseCandidate[], opts?: { force?: boolean }) => {
+    async (targets: PulseCandidate[], opts?: { force?: boolean; signal?: AbortSignal }) => {
       if (targets.length === 0) return;
       const force = opts?.force ?? false;
       const notInFlight = targets.filter(
@@ -606,6 +621,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
             fearGreed,
             force,
           }),
+          signal: opts?.signal,
         });
         const data = await readJsonOrThrow<{
           report: PulseReport;
@@ -654,7 +670,8 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
           savePulseSummary(newReport.summary);
         }
         setLastGeneratedAt(now);
-      } catch {
+      } catch (err) {
+        if (isAbortError(err)) return;
         setChecksByTicker((prev) => {
           const next = { ...prev };
           for (const c of stale) {
@@ -691,7 +708,9 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   // an overlapping ticker list.
   useEffect(() => {
     if (candidates.length === 0) return;
-    void runPulse(candidates);
+    const ctrl = new AbortController();
+    void runPulse(candidates, { signal: ctrl.signal });
+    return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the stable ticker-set signature, not candidates/runPulse identity churn
   }, [candidateSetKey]);
 
@@ -700,11 +719,17 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
   // just during regular hours.
   useEffect(() => {
     if (candidates.length === 0) return;
+    const controllers: AbortController[] = [];
     const id = window.setInterval(() => {
       if (document.hidden) return;
-      void runPulse(candidates);
+      const ctrl = new AbortController();
+      controllers.push(ctrl);
+      void runPulse(candidates, { signal: ctrl.signal });
     }, PULSE_REFRESH_MS);
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      for (const c of controllers) c.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed off the stable ticker-set signature so the hourly timer survives quote-refresh churn
   }, [candidateSetKey]);
 
@@ -718,7 +743,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
 
     let quoteMap = mergedQuotes;
     if (!quoteMap[ticker]) {
-      const q = await fetchQuote(ticker);
+      const q = await fetchQuote(ticker, pageAbortRef.current.signal);
       if (q) {
         setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
         quoteMap = { ...quoteMap, [ticker]: q };

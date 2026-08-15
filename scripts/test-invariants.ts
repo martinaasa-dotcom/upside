@@ -1711,6 +1711,56 @@ run("membership checks do not run one query per community", () => {
   assert.ok(/communityAdminFlags/.test(src));
 });
 
+run("dashboard modules sit behind an error boundary", () => {
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  for (const name of ["Pulse", "Lab", "Overview", "Holdings", "Forecast", "Margus"]) {
+    assert.ok(
+      dash.includes(`<WidgetErrorBoundary name="${name}">`),
+      `Dashboard must isolate ${name}`
+    );
+  }
+  const boundary = readFileSync(
+    join(process.cwd(), "src/components/WidgetErrorBoundary.tsx"),
+    "utf8"
+  );
+  assert.ok(/getDerivedStateFromError/.test(boundary));
+  assert.ok(/Retry/.test(boundary));
+});
+
+run("holding and cash saves cannot double-fire", () => {
+  const holding = readFileSync(
+    join(process.cwd(), "src/components/HoldingModal.tsx"),
+    "utf8"
+  );
+  const cash = readFileSync(
+    join(process.cwd(), "src/components/CashModal.tsx"),
+    "utf8"
+  );
+  assert.ok(/if \(busy\) return/.test(holding));
+  assert.ok(/disabled=\{busy\}/.test(holding));
+  assert.ok(/if \(busy\) return/.test(cash));
+  assert.ok(/disabled=\{busy\}/.test(cash));
+});
+
+run("cash RPC still fails closed and money has a hard ceiling", () => {
+  const money = readFileSync(join(process.cwd(), "src/lib/money.ts"), "utf8");
+  assert.ok(/export const MAX_SAFE_MONEY/.test(money));
+  assert.ok(/export const MAX_SAFE_SHARES/.test(money));
+});
+
+run("offline status is not read during render", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/lib/use-online-status.ts"),
+    "utf8"
+  );
+  assert.ok(/useState\(true\)/.test(src));
+  assert.ok(/useLayoutEffect/.test(src));
+  assert.ok(/navigator\.onLine/.test(src));
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

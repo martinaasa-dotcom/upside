@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isAbortError } from "@/lib/abort";
 
 // Mirrors MAX_TICKERS in src/lib/market/trends-cache.ts; kept as a plain
 // constant here so this client component never imports the yahoo-finance2
@@ -167,7 +168,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   const key = combined.join(",");
   const lastKey = useRef<string>("");
 
-  const load = useCallback(async (force = false) => {
+  const load = useCallback(async (force = false, signal?: AbortSignal) => {
     if (!key) {
       setRows([]);
       return;
@@ -179,6 +180,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tickers: key.split(","), force }),
+        signal,
       });
       const data = await readJsonOrThrow<{ rows: TrendRow[] }>(
         res,
@@ -186,9 +188,10 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       );
       setRows(data.rows ?? []);
     } catch (e) {
+      if (isAbortError(e)) return;
       setError(e instanceof Error ? e.message : "Couldn't load trends. Try again.");
     } finally {
-      setBusy(false);
+      if (!signal?.aborted) setBusy(false);
     }
   }, [key]);
 
@@ -197,7 +200,9 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
   useEffect(() => {
     if (!key || lastKey.current === key) return;
     lastKey.current = key;
-    void load();
+    const ctrl = new AbortController();
+    void load(false, ctrl.signal);
+    return () => ctrl.abort();
   }, [key, load]);
 
   const addToWatchlist = useCallback(() => {

@@ -6,7 +6,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -35,13 +37,24 @@ export function useToast() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
+  const timers = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const ids = timers.current;
+    return () => {
+      for (const id of ids) window.clearTimeout(id);
+      ids.clear();
+    };
+  }, []);
 
   const push = useCallback((message: string, kind: ToastKind = "info") => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setItems((prev) => [...prev, { id, kind, message }]);
-    window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
+      timers.current.delete(timer);
       setItems((prev) => prev.filter((t) => t.id !== id));
     }, 3800);
+    timers.current.add(timer);
   }, []);
 
   const value = useMemo(() => ({ push }), [push]);

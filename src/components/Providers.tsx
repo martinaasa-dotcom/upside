@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProvider } from "@/components/AuthProvider";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import type { ReactNode } from "react";
 
 /**
@@ -16,5 +17,10 @@ import type { ReactNode } from "react";
  * visit.
  */
 export function Providers({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return (
+    <AuthProvider>
+      <OfflineBanner />
+      {children}
+    </AuthProvider>
+  );
 }

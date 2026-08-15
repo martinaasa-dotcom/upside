@@ -8,6 +8,7 @@ import {
   useBookNavHistory,
   type NavPoint,
 } from "@/components/mobile/GoldNavChart";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   Card,
   MicroLabel,
@@ -172,6 +173,7 @@ function MobileHomeHero({
         onOpenPulse={onOpenPulse}
       />
       <div className="mt-8">
+        <WidgetErrorBoundary name="Year chart">
         <BookNavChart
           points={points}
           assumed={assumed}
@@ -185,6 +187,7 @@ function MobileHomeHero({
           onApplyAnchor={onApplyAnchor}
           onClearAnchor={onClearAnchor}
         />
+        </WidgetErrorBoundary>
       </div>
       <CashAlertCard
         className="mt-8"
@@ -862,6 +865,7 @@ export function OverviewDashboard({
             onOpenPulse={onOpenPulse}
           />
 
+          <WidgetErrorBoundary name="Year chart">
           <BookNavChart
             points={nav.points}
             assumed={nav.assumed}
@@ -876,6 +880,7 @@ export function OverviewDashboard({
             onClearAnchor={nav.clearAnchor}
             className="mt-6"
           />
+          </WidgetErrorBoundary>
         </div>
       </Panel>
 
