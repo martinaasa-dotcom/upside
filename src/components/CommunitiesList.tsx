@@ -8,8 +8,13 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
 import { plainError } from "@/lib/plain-error";
 import { prefetchCommunity } from "@/lib/community-cache";
-import { ChevronRight, Compass, Globe, Lock, Users } from "lucide-react";
+import {
+  DEFAULT_CLASS_ASSIGNMENT,
+  DEFAULT_STARTING_CASH,
+} from "@/lib/classroom";
+import { ChevronRight, Compass, Globe, GraduationCap, Lock, Users } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type CommunityRow = {
@@ -17,6 +22,7 @@ type CommunityRow = {
   name: string;
   role: string;
   visibility?: "public" | "private";
+  kind?: "circle" | "classroom";
 };
 
 type DiscoverRow = {
@@ -51,10 +57,14 @@ function saveListCache(rows: CommunityRow[]) {
 }
 
 export function CommunitiesList() {
+  const router = useRouter();
   const [communities, setCommunities] = useState<CommunityRow[]>(
     () => loadListCache() ?? []
   );
   const [name, setName] = useState("");
+  const [kind, setKind] = useState<"circle" | "classroom">("circle");
+  const [startingCash, setStartingCash] = useState(String(DEFAULT_STARTING_CASH));
+  const [assignment, setAssignment] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("private");
   const [error, setError] = useState<string | null>(null);
   // Only blocks on a spinner when there's truly nothing cached to show —
@@ -132,7 +142,16 @@ export function CommunitiesList() {
     const res = await fetch("/api/communities", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), visibility }),
+      body: JSON.stringify(
+        kind === "classroom"
+          ? {
+              name: name.trim(),
+              kind: "classroom",
+              startingCash: Number(startingCash) || DEFAULT_STARTING_CASH,
+              assignment: assignment.trim() || DEFAULT_CLASS_ASSIGNMENT,
+            }
+          : { name: name.trim(), visibility }
+      ),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -140,6 +159,12 @@ export function CommunitiesList() {
       return;
     }
     setName("");
+    setAssignment("");
+    const id = (data.community as { id?: string } | undefined)?.id;
+    if (id) {
+      router.push(`/communities/${id}`);
+      return;
+    }
     await load();
   }
 
@@ -191,7 +216,9 @@ export function CommunitiesList() {
                     className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-brand/5"
                   >
                     <span className="flex min-w-0 items-center gap-2">
-                      {c.visibility === "public" ? (
+                      {c.kind === "classroom" ? (
+                        <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
+                      ) : c.visibility === "public" ? (
                         <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
                       ) : (
                         <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
@@ -199,6 +226,11 @@ export function CommunitiesList() {
                       <span className="min-w-0 truncate text-sm font-semibold text-zinc-100">
                         {c.name}
                       </span>
+                      {c.kind === "classroom" ? (
+                        <span className="shrink-0 text-xs text-zinc-500">
+                          Class
+                        </span>
+                      ) : null}
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className="text-xs capitalize text-brand-bright/80">
@@ -278,34 +310,20 @@ export function CommunitiesList() {
             <p className="text-sm font-medium text-zinc-200">
               Create a community
             </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Community name"
-                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
-              />
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                Create community
-              </button>
-            </div>
             <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 sm:w-fit">
               {(
                 [
-                  ["private", Lock, "Private: invite only"],
-                  ["public", Globe, "Public: anyone can request to join"],
+                  ["circle", Users, "Circle"],
+                  ["classroom", GraduationCap, "Class"],
                 ] as const
               ).map(([id, Icon, label]) => (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setVisibility(id)}
+                  onClick={() => setKind(id)}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
-                    visibility === id
+                    kind === id
                       ? "bg-brand/20 text-brand-bright"
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
                   )}
@@ -315,6 +333,80 @@ export function CommunitiesList() {
                 </button>
               ))}
             </div>
+            {kind === "classroom" ? (
+              <p className="text-xs leading-relaxed text-zinc-400">
+                High school or uni. Students join with a link. Everyone
+                starts with the same paper cash and an empty sheet. Real
+                prices. No brokerage.
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={
+                  kind === "classroom" ? "Class name, like Econ 201" : "Community name"
+                }
+                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
+              />
+              <button
+                type="submit"
+                className="btn-primary"
+              >
+                {kind === "classroom" ? "Start a class" : "Create community"}
+              </button>
+            </div>
+            {kind === "classroom" ? (
+              <>
+                <label className="block text-xs font-medium text-zinc-400">
+                  Starting cash
+                  <input
+                    type="number"
+                    min={1000}
+                    max={10000000}
+                    step={1000}
+                    value={startingCash}
+                    onChange={(e) => setStartingCash(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 sm:max-w-[12rem]"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-zinc-400">
+                  This week
+                  <textarea
+                    value={assignment}
+                    onChange={(e) => setAssignment(e.target.value)}
+                    maxLength={400}
+                    rows={2}
+                    placeholder={DEFAULT_CLASS_ASSIGNMENT}
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"
+                  />
+                </label>
+              </>
+            ) : (
+              <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 sm:w-fit">
+                {(
+                  [
+                    ["private", Lock, "Private: invite only"],
+                    ["public", Globe, "Public: anyone can request to join"],
+                  ] as const
+                ).map(([id, Icon, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setVisibility(id)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
+                      visibility === id
+                        ? "bg-brand/20 text-brand-bright"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </form>
         </main>
         <BookBottomNav />

@@ -5,6 +5,7 @@ import {
   type RawMember,
 } from "@/lib/auth/identity";
 import { userIsCommunityMember } from "@/lib/auth/ownership";
+import { countTheses, isClassroomKind } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -36,17 +37,26 @@ export async function GET(req: NextRequest, ctx: Ctx) {
 
   // The alias map doesn't depend on members/pinned, so it rides along
   // instead of costing its own serial round-trip before them.
-  const [aliasMap, { data: members }, { data: pinned }] = await Promise.all([
-    loadAliasMap(supabase),
-    supabase
-      .from(PORTFELL_TABLES.communityMembers)
-      .select("user_id, role, joined_at")
-      .eq("community_id", id),
-    supabase
-      .from(PORTFELL_TABLES.communityPortfolios)
-      .select("portfolio_id, label")
-      .eq("community_id", id),
-  ]);
+  const [aliasMap, { data: members }, { data: pinned }, { data: communityRow }] =
+    await Promise.all([
+      loadAliasMap(supabase),
+      supabase
+        .from(PORTFELL_TABLES.communityMembers)
+        .select("user_id, role, joined_at")
+        .eq("community_id", id),
+      supabase
+        .from(PORTFELL_TABLES.communityPortfolios)
+        .select("portfolio_id, label")
+        .eq("community_id", id),
+      supabase
+        .from(PORTFELL_TABLES.communities)
+        .select("kind")
+        .eq("id", id)
+        .maybeSingle(),
+    ]);
+  const classroom = isClassroomKind(
+    (communityRow as { kind?: string } | null)?.kind
+  );
 
   const memberIds = ((members ?? []) as { user_id: string }[]).map(
     (m) => m.user_id
@@ -142,23 +152,24 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       supabase
         .from(PORTFELL_TABLES.portfolios)
         .select(
-          "id, name, slug, sort_order, cash_balance, owner_id, created_at, updated_at"
+          "id, name, slug, sort_order, cash_balance, owner_id, classroom_community_id, created_at, updated_at"
         )
         .in("id", portfolioIds)
         .order("sort_order"),
       supabase
         .from(PORTFELL_TABLES.holdings)
         .select(
-          "id, portfolio_id, ticker, shares, eoy_target, target_call_pct, stock_target_override, sort_order"
+          "id, portfolio_id, ticker, shares, buy_price, eoy_target, target_call_pct, stock_target_override, sort_order"
         )
         .in("portfolio_id", portfolioIds)
         .order("sort_order"),
     ]);
     portfolios = p ?? [];
-    // Live marks only. Cost never leaves the owner's book.
+    // Circles hide cost. A class needs it so the teacher can see what
+    // students actually paid on the paper sheet.
     holdings = ((h ?? []) as Array<Record<string, unknown>>).map((row) => ({
       ...row,
-      buy_price: 0,
+      buy_price: classroom ? row.buy_price : 0,
     }));
   }
 
@@ -202,11 +213,50 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     }
   }
 
+  let thesisCoverage: Record<string, { names: number; withWhy: number }> = {};
+  if (classroom && memberIds.length) {
+    const { data: labRows } = await supabase
+      .from(PORTFELL_TABLES.labState)
+      .select("owner_id, conviction")
+      .in("owner_id", memberIds);
+    const convictionByOwner = new Map<
+      string,
+      Record<string, { thesis?: string } | undefined>
+    >();
+    for (const row of (labRows ?? []) as {
+      owner_id: string | null;
+      conviction: unknown;
+    }[]) {
+      if (!row.owner_id) continue;
+      convictionByOwner.set(
+        row.owner_id,
+        (row.conviction ?? {}) as Record<string, { thesis?: string } | undefined>
+      );
+    }
+    const tickersByOwner = new Map<string, string[]>();
+    for (const o of ownershipOut) {
+      const held = (
+        holdings as Array<{ portfolio_id: string; ticker: string }>
+      )
+        .filter((h) => h.portfolio_id === o.portfolio_id)
+        .map((h) => h.ticker);
+      const prev = tickersByOwner.get(o.user_id) ?? [];
+      tickersByOwner.set(o.user_id, [...prev, ...held]);
+    }
+    for (const [userId, tickers] of tickersByOwner) {
+      thesisCoverage[userId] = countTheses(
+        tickers,
+        convictionByOwner.get(userId)
+      );
+    }
+  }
+
   return NextResponse.json({
     readOnly: true,
     profiles: profiles ?? [],
     portfolios,
     holdings,
     ownership: ownershipOut,
+    ...(classroom ? { thesisCoverage } : {}),
   });
 }

@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { provisionClassroomSheet } from "@/lib/classroom";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -53,6 +55,14 @@ export async function POST(req: NextRequest) {
       { error: result?.error ?? "Invalid invite" },
       { status: 404 }
     );
+  }
+
+  const dataClient = await getSupabaseDataClient();
+  if (dataClient && result.community_id) {
+    await provisionClassroomSheet(dataClient, {
+      communityId: result.community_id,
+      userId: auth.user.id,
+    });
   }
 
   return NextResponse.json({

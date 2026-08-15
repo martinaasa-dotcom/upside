@@ -158,6 +158,20 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
     }
   }
 
+  const { data: classSheets } = await supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .select("id")
+    .eq("classroom_community_id", id)
+    .in("owner_id", targetIds);
+  const classIds = ((classSheets ?? []) as { id: string }[]).map((s) => s.id);
+  if (classIds.length) {
+    await supabase
+      .from(PORTFELL_TABLES.communityPortfolios)
+      .delete()
+      .eq("community_id", id)
+      .in("portfolio_id", classIds);
+  }
+
   const { error } = await supabase
     .from(PORTFELL_TABLES.communityMembers)
     .delete()

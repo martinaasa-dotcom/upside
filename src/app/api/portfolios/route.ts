@@ -202,9 +202,17 @@ export async function DELETE(req: NextRequest) {
   try {
     const { data: sheet } = await supabase
       .from(PORTFELL_TABLES.portfolios)
-      .select("name")
+      .select("name, classroom_community_id")
       .eq("id", id)
       .maybeSingle();
+
+    if ((sheet as { classroom_community_id?: string | null } | null)
+      ?.classroom_community_id) {
+      return NextResponse.json(
+        { error: "Class sheets stay until the class ends." },
+        { status: 400 }
+      );
+    }
 
     await saveBookSnapshot(
       supabase,

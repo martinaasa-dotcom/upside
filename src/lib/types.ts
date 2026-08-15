@@ -11,6 +11,8 @@ export type Portfolio = {
   owner_id?: string | null;
   /** Co-owner user ids when API includes them. */
   coOwnerIds?: string[];
+  /** Homework sheet for this class. Isolated from any real book. */
+  classroom_community_id?: string | null;
 };
 
 export type Holding = {

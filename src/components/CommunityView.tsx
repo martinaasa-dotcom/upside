@@ -1,5 +1,6 @@
 "use client";
 
+import { ClassroomRoster } from "@/components/ClassroomRoster";
 import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { ShareSheets } from "@/components/ShareSheets";
 import { SignInGate } from "@/components/SignInGate";
@@ -8,6 +9,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { DEFAULT_STARTING_CASH, type ThesisCoverage } from "@/lib/classroom";
 import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
 import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
@@ -42,6 +44,7 @@ import {
   Check,
   Copy,
   Globe,
+  GraduationCap,
   HelpCircle,
   LayoutGrid,
   Lightbulb,
@@ -95,6 +98,8 @@ type CommunityMeta = {
   id: string;
   name: string;
   visibility?: "public" | "private";
+  kind?: "circle" | "classroom";
+  starting_cash?: number;
   house_note?: string | null;
   created_by: string | null;
 };
@@ -131,6 +136,7 @@ type CommunityBookResponse = {
   holdings?: Holding[];
   profiles?: Profile[];
   ownership?: { portfolio_id: string; user_id: string }[];
+  thesisCoverage?: Record<string, ThesisCoverage>;
 };
 
 /** Synchronous cache read shared by every piece of state below, so they
@@ -199,6 +205,10 @@ export function CommunityView({ communityId }: Props) {
   const [ownership, setOwnership] = useState<
     { portfolio_id: string; user_id: string }[]
   >(() => initialCacheRef.current.book?.ownership ?? []);
+  const [thesisCoverage, setThesisCoverage] = useState<
+    Record<string, ThesisCoverage>
+  >(() => initialCacheRef.current.book?.thesisCoverage ?? {});
+  const [claimBusy, setClaimBusy] = useState(false);
   // Community books paint instantly from cache, so without seeding prices
   // too every member's value would render at cost basis for a beat.
   const [quotes, setQuotes] = useState<Record<string, Quote>>(
@@ -291,6 +301,7 @@ export function CommunityView({ communityId }: Props) {
       setHoldings(book.holdings ?? []);
       setProfiles(book.profiles ?? []);
       setOwnership(book.ownership ?? []);
+      setThesisCoverage(book.thesisCoverage ?? {});
       hasDataRef.current = true;
       saveCommunityCache(communityId, { meta, book });
     } catch (e) {
@@ -625,6 +636,43 @@ export function CommunityView({ communityId }: Props) {
     [memberStats]
   );
 
+  const isClassroom = community?.kind === "classroom";
+  const startingCash = Number(community?.starting_cash) || DEFAULT_STARTING_CASH;
+  const myMember = members.find((m) => m.is_you);
+  const myClassSheet = Boolean(
+    isClassroom &&
+      myMember &&
+      portfolios.some(
+        (p) =>
+          p.classroom_community_id === communityId &&
+          ownership.some(
+            (o) => o.portfolio_id === p.id && o.user_id === myMember.user_id
+          )
+      )
+  );
+  const effectiveView = isClassroom && view === "play" ? "overview" : view;
+
+  async function claimClassSheet() {
+    setClaimBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/classroom-sheet`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          plainError((data as { error?: string }).error, "Couldn't make the paper sheet.")
+        );
+      }
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't make the paper sheet.");
+    } finally {
+      setClaimBusy(false);
+    }
+  }
+
   const overlapLines = useMemo(
     () =>
       overlapSentences(overview.tickers, (portfolioIds) => {
@@ -898,7 +946,7 @@ export function CommunityView({ communityId }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: inviteEmail.trim() || undefined,
-          daysValid: 14,
+          daysValid: community?.kind === "classroom" ? 90 : 14,
         }),
       });
       const data = await res.json();
@@ -1113,12 +1161,16 @@ export function CommunityView({ communityId }: Props) {
               {community && (
                 <span
                   title={
-                    community.visibility === "public"
-                      ? "Public community"
-                      : "Private community"
+                    community.kind === "classroom"
+                      ? "Paper class"
+                      : community.visibility === "public"
+                        ? "Public community"
+                        : "Private community"
                   }
                 >
-                  {community.visibility === "public" ? (
+                  {community.kind === "classroom" ? (
+                    <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
+                  ) : community.visibility === "public" ? (
                     <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
                   ) : (
                     <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
@@ -1162,12 +1214,35 @@ export function CommunityView({ communityId }: Props) {
             <>
               <section className="space-y-3">
                 <p className="text-xs uppercase tracking-wide text-zinc-400">
-                  Shared sheets added together. Live marks only. Members do
-                  not see what you paid.
+                  {isClassroom
+                    ? "Paper class. Same starting cash. Real prices."
+                    : "Shared sheets added together. Live marks only. Members do not see what you paid."}
                 </p>
                 {community?.house_note?.trim() ? (
                   <p className="text-sm leading-relaxed text-zinc-200">
                     {community.house_note.trim()}
+                  </p>
+                ) : null}
+                {isClassroom && !myClassSheet ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-3">
+                    <p className="min-w-0 flex-1 text-sm text-zinc-300">
+                      {isAdmin
+                        ? "You are watching the class. Get a paper sheet if you want to trade alongside them."
+                        : "Your paper sheet is not on Home yet. Same starting cash as everyone else."}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={claimBusy}
+                      onClick={() => void claimClassSheet()}
+                      className="btn-primary shrink-0 disabled:opacity-50"
+                    >
+                      {claimBusy ? "Making sheet …" : "Get paper sheet"}
+                    </button>
+                  </div>
+                ) : null}
+                {isClassroom && myClassSheet ? (
+                  <p className="text-xs text-zinc-400">
+                    Your paper sheet is on Home. Sunday note is the weekly recap.
                   </p>
                 ) : null}
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -1191,21 +1266,51 @@ export function CommunityView({ communityId }: Props) {
                           : undefined
                     }
                   />
-                  <Stat
-                    label="Cash"
-                    value={currency(overview.totals.cash)}
-                    tone={overview.totals.cash < 0 ? "down" : undefined}
-                  />
+                  {isClassroom ? (
+                    <Stat
+                      label="vs start"
+                      value={signedCurrency(
+                        overview.totals.totalValue -
+                          startingCash * Math.max(1, membersWithBooks.length)
+                      )}
+                      sub={`${currency(startingCash)} each`}
+                      tone={
+                        overview.totals.totalValue -
+                          startingCash * Math.max(1, membersWithBooks.length) >
+                        0
+                          ? "up"
+                          : overview.totals.totalValue -
+                                startingCash *
+                                  Math.max(1, membersWithBooks.length) <
+                              0
+                            ? "down"
+                            : undefined
+                      }
+                    />
+                  ) : (
+                    <Stat
+                      label="Cash"
+                      value={currency(overview.totals.cash)}
+                      tone={overview.totals.cash < 0 ? "down" : undefined}
+                    />
+                  )}
                 </div>
               </section>
 
               <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 w-fit">
                 {(
-                  [
-                    ["overview", "Overview", LayoutGrid],
-                    ["play", "League", Award],
-                    ["members", "Members", Users],
-                  ] as const
+                  (isClassroom
+                    ? [
+                        ["overview", "Roster", LayoutGrid],
+                        ["members", "Members", Users],
+                      ]
+                    : [
+                        ["overview", "Overview", LayoutGrid],
+                        ["play", "League", Award],
+                        ["members", "Members", Users],
+                      ]) as ReadonlyArray<
+                    [typeof view, string, typeof LayoutGrid]
+                  >
                 ).map(([id, label, Icon]) => (
                   <button
                     key={id}
@@ -1224,9 +1329,34 @@ export function CommunityView({ communityId }: Props) {
                 ))}
               </div>
 
-              {(view === "overview" || view === "play") && (
+              {(effectiveView === "overview" || effectiveView === "play") && (
                 <div className="flex flex-col gap-8">
-                  {view === "overview" && membersWithBooks.length === 0 && (
+                  {effectiveView === "overview" && isClassroom && (
+                    <ClassroomRoster
+                      members={memberStats.map((m) => ({
+                        id: m.id,
+                        name: m.name,
+                        isYou: m.isYou,
+                        sheetCount: m.sheetCount,
+                        totalValue: m.totalValue,
+                        todayDollar: m.todayDollar,
+                        topTicker: m.personality?.topTicker ?? null,
+                        topWeight: m.personality?.convictionScore ?? null,
+                      }))}
+                      startingCash={startingCash}
+                      holdings={holdings}
+                      quotes={quotes}
+                      ownership={ownership}
+                      thesisCoverage={thesisCoverage}
+                      onOpen={(id) => {
+                        setSelectedOwnerId(id);
+                        setSelectedPortfolioId(null);
+                      }}
+                    />
+                  )}
+                  {effectiveView === "overview" &&
+                    !isClassroom &&
+                    membersWithBooks.length === 0 && (
                     <div className="space-y-4">
                       <p className="text-sm text-zinc-400">
                         Nobody has shared a sheet here yet. Pick which of
@@ -1238,7 +1368,27 @@ export function CommunityView({ communityId }: Props) {
                       />
                     </div>
                   )}
-                  {view === "overview" && membersWithBooks.length > 0 && (
+                  {effectiveView === "overview" &&
+                    isClassroom &&
+                    membersWithBooks.length === 0 &&
+                    isAdmin && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm text-zinc-400">
+                        Send the invite. Each student gets the same starting
+                        cash and an empty book.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setView("members")}
+                        className="text-sm font-medium text-brand-bright hover:text-white"
+                      >
+                        Invite students
+                      </button>
+                    </div>
+                  )}
+                  {effectiveView === "overview" &&
+                    !isClassroom &&
+                    membersWithBooks.length > 0 && (
                     <DailyDuelCard
                       compact
                       communityId={communityId}
@@ -1248,14 +1398,14 @@ export function CommunityView({ communityId }: Props) {
                       }))}
                     />
                   )}
-                  {view === "play" && leaguePrize && leaguePrize.wins >= 1 && (
+                  {effectiveView === "play" && leaguePrize && leaguePrize.wins >= 1 && (
                     <p className="text-sm text-zinc-300">
                       {leaguePrize.name} took {leaguePrize.wins}{" "}
                       {leaguePrize.wins === 1 ? "session" : "sessions"} this
                       week.
                     </p>
                   )}
-                  {view === "play" && membersWithBooks.length > 0 && (
+                  {effectiveView === "play" && membersWithBooks.length > 0 && (
                     <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
@@ -1301,7 +1451,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {view === "play" && achievements.length > 0 && (
+                  {effectiveView === "play" && achievements.length > 0 && (
                     <section className="overview-fade order-2 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
@@ -1345,7 +1495,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {view === "overview" && membersWithBooks.length > 0 && (
+                  {effectiveView === "overview" && membersWithBooks.length > 0 && (
                     <section className="overview-fade order-1 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
@@ -1430,7 +1580,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {view === "overview" && overlapLines.length > 0 && (
+                  {effectiveView === "overview" && !isClassroom && overlapLines.length > 0 && (
                     <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
@@ -1455,7 +1605,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {view === "play" && communityThemeBreakdown.length > 0 && (
+                  {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
                     <section className="overview-fade order-5 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
@@ -1505,7 +1655,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {view === "play" && (
+                  {effectiveView === "play" && (
                   <section className="overview-fade order-6 rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-6">
                     <div className="mb-5 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
@@ -1554,12 +1704,14 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               )}
 
-              {view === "members" && (
+              {effectiveView === "members" && (
                 <>
+                  {!isClassroom && (
                   <ShareSheets
                     communityId={communityId}
                     onChanged={() => void load()}
                   />
+                  )}
                   <section className="space-y-3">
                     <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
                       <Users className="h-4 w-4 text-zinc-400" />
@@ -1846,8 +1998,9 @@ export function CommunityView({ communityId }: Props) {
                         Admin · invite
                       </h2>
                       <p className="text-xs text-zinc-400">
-                        Invites join the community. Each person picks which
-                        sheets to share. Live marks only.
+                        {isClassroom
+                          ? "Students join with this link. Each one gets the same paper cash and an empty sheet."
+                          : "Invites join the community. Each person picks which sheets to share. Live marks only."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input
@@ -2067,11 +2220,12 @@ export function CommunityView({ communityId }: Props) {
             </div>
 
             <label className="mt-5 block text-xs font-medium text-zinc-400">
-              House note
+              {isClassroom ? "This week" : "House note"}
             </label>
             <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-              One paragraph for the room. Public circles show this on
-              Discover too.
+              {isClassroom
+                ? "What the class is working on. Students see it at the top."
+                : "One paragraph for the room. Public circles show this on Discover too."}
             </p>
             <textarea
               value={settingsNote}
@@ -2096,6 +2250,12 @@ export function CommunityView({ communityId }: Props) {
               </button>
             </div>
 
+            {isClassroom ? (
+              <p className="mt-5 text-xs leading-relaxed text-zinc-400">
+                Classes stay invite-only. Starting cash is{" "}
+                {currency(startingCash)} per student.
+              </p>
+            ) : (
             <div className="mt-5 border-t border-zinc-800 pt-4">
               <label className="block text-xs font-medium text-zinc-400">
                 Visibility
@@ -2130,6 +2290,7 @@ export function CommunityView({ communityId }: Props) {
                 ))}
               </div>
             </div>
+            )}
 
             {isAdmin && (
               <div className="mt-6 rounded-xl border border-rose-900/40 bg-rose-950/20 p-3.5">

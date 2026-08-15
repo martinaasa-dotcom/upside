@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       userIsCommunityAdmin(auth.user.id, id),
       supabase
         .from(PORTFELL_TABLES.communities)
-        .select("id, name, visibility, house_note, created_by, created_at, updated_at")
+        .select("id, name, visibility, kind, starting_cash, house_note, created_by, created_at, updated_at")
         .eq("id", id)
         .single(),
       supabase
@@ -109,7 +109,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   const { data: portfolios } = portfolioIds.length
     ? await supabase
         .from(PORTFELL_TABLES.portfolios)
-        .select("id, name, slug, sort_order, cash_balance, owner_id")
+        .select("id, name, slug, sort_order, cash_balance, owner_id, classroom_community_id")
         .in("id", portfolioIds)
         .order("sort_order")
     : { data: [] };
@@ -316,6 +316,20 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (body.visibility !== "public" && body.visibility !== "private") {
       return NextResponse.json({ error: "invalid visibility" }, { status: 400 });
     }
+    const { data: current } = await supabase
+      .from(PORTFELL_TABLES.communities)
+      .select("kind")
+      .eq("id", id)
+      .maybeSingle();
+    if (
+      body.visibility === "public" &&
+      (current as { kind?: string } | null)?.kind === "classroom"
+    ) {
+      return NextResponse.json(
+        { error: "Classes stay invite-only" },
+        { status: 400 }
+      );
+    }
     patch.visibility = body.visibility;
   }
   if (body.houseNote !== undefined) {
@@ -329,7 +343,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     .from(PORTFELL_TABLES.communities)
     .update(patch)
     .eq("id", id)
-    .select("id, name, visibility, house_note, created_by, created_at, updated_at")
+    .select("id, name, visibility, kind, starting_cash, house_note, created_by, created_at, updated_at")
     .single();
 
   if (error) {

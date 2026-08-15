@@ -2,6 +2,7 @@ import {
   userIsCommunityMember,
   userOwnsPortfolio,
 } from "@/lib/auth/ownership";
+import { isClassroomKind } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -90,6 +91,36 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
+  }
+
+  const { data: community } = await supabase
+    .from(PORTFELL_TABLES.communities)
+    .select("kind")
+    .eq("id", id)
+    .maybeSingle();
+  const classroom = isClassroomKind(
+    (community as { kind?: string } | null)?.kind
+  );
+  if (classroom) {
+    const { data: sheet } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("classroom_community_id")
+      .eq("id", portfolioId)
+      .maybeSingle();
+    const classId = (sheet as { classroom_community_id?: string | null } | null)
+      ?.classroom_community_id;
+    if (body.shared !== false && classId !== id) {
+      return NextResponse.json(
+        { error: "This class only shows the paper sheet you were given." },
+        { status: 403 }
+      );
+    }
+    if (body.shared === false && classId === id) {
+      return NextResponse.json(
+        { error: "Your class sheet stays in the circle." },
+        { status: 400 }
+      );
+    }
   }
 
   const share = body.shared !== false;

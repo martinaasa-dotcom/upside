@@ -3193,6 +3193,7 @@ export function Dashboard() {
             ? {
                 portfolioName: activePortfolio.name,
                 cashBalance: activePortfolio.cash_balance,
+                classroom: Boolean(activePortfolio.classroom_community_id),
                 hideOptions: hideOptionsUI,
                 eurUsd,
                 gbpUsd,

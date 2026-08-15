@@ -37,6 +37,16 @@ const KNOWN: Record<string, string> = {
   "Avatar URL must start with http(s)://":
     "Photo link has to start with http:// or https://",
   "invalid visibility": "Pick private or public.",
+  "Classes stay invite-only": "Classes stay invite-only.",
+  "Not a class": "That isn't a class.",
+  "Class sheets stay until the class ends.":
+    "Class sheets stay until the class ends.",
+  "This class only shows the paper sheet you were given.":
+    "This class only shows the paper sheet you were given.",
+  "Your class sheet stays in the circle.":
+    "Your class sheet stays in the circle.",
+  "invalid starting cash":
+    "Starting cash has to be between $1,000 and $10,000,000.",
   "Invalid ticker": "That ticker doesn't look right.",
   "Invalid tier": "That experience level isn't valid.",
   "Invalid knowsOptions": "That options answer isn't valid.",

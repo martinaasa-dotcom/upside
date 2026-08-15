@@ -2,6 +2,7 @@ import {
   userIsCommunityAdmin,
   userIsCommunityMember,
 } from "@/lib/auth/ownership";
+import { provisionClassroomSheet } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -129,6 +130,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (memberErr) {
       return NextResponse.json({ error: memberErr.message }, { status: 500 });
     }
+    await provisionClassroomSheet(supabase, {
+      communityId: id,
+      userId: targetUserId,
+    });
   }
 
   const { error } = await supabase

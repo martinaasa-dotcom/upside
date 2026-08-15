@@ -9,6 +9,7 @@
 - Community membership is **always opt-in, never automatic**. Signing in never adds anyone to any community (fixed in `030`, see below). A community is either:
   - **Private** (default): invite-link only, exactly like portfolio co-ownership.
   - **Public**: discoverable to any signed-in user (`GET /api/communities/discover`), who can ask to join (`POST /api/communities/:id/join-request`) — an admin still has to approve (`PATCH` same route) before the requester gets read access to anyone's book.
+  - **Classroom** (`kind = classroom`, always private): teacher-run paper class. Students join with an invite. Redeeming the invite (or an approved join request) provisions one homework sheet with the class `starting_cash` and pins it. Real books cannot be shared into a class. Class sheets cannot be deleted while the class exists. See migration `039`.
 
 ## Identity aliases
 
@@ -80,6 +81,7 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `029` community admin delete RLS policy (rename already had one from `008`)
 - `030` **critical fix**: `ensureProfileAndClaims`'s service-role path (`claimWithServiceRole`) auto-joined *every* signed-in user into Upside Circle unconditionally, regardless of any seed claim — meaning any stranger creating an account was silently added to the family's community and granted read access to their books (and vice versa). Confirmed live for two non-family test accounts before the fix. Removed the auto-join entirely from both the app-code path and `portfell_claim_seed_for_me()` (which had a narrower, seed-claim-gated version of the same auto-join) — see `031` for the invite/request model that replaced it
 - `031` `portfell_communities.visibility` (`public`/`private`, defaults to `private`), discovery `SELECT` policy for public communities, and `portfell_community_join_requests` (+ RLS) for the request-to-join flow
+- `039` classroom kind + starting cash on communities, `classroom_community_id` on portfolios (one paper sheet per student per class)
 
 Writes require a signed-in **co-owner** only.
 

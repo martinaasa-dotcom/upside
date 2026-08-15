@@ -76,6 +76,8 @@ export type CcChatContext = {
   gbpUsd?: number | null;
   /** Not-owned-yet names Margus may discuss without sheet pollution */
   watchlist?: string[];
+  /** Paper class sheet. Margus is the lab assistant, not a stock picker. */
+  classroom?: boolean;
 };
 
 type AdvisorFx = { eurUsd: number | null; gbpUsd: number | null };
@@ -779,8 +781,18 @@ Covered-call strategy:
 Covered-call rows:
 ${ccTable}`;
 
-  return `${MARGUS_PERSONA}
+  const classroomBlock = ctx.classroom
+    ? `
+### Classroom sheet
+This is a paper class book, not a real brokerage account. You are the lab assistant.
+Explain what a move means for their written why. Never tell them what to buy.
+If they ask what they should buy, turn it back: what do they believe, over what time, and what would prove them wrong.
+Keep the educational disclaimer.
+`
+    : "";
 
+  return `${MARGUS_PERSONA}
+${classroomBlock}
 This chat thread is for Upside Lab portfolio "${ctx.portfolioName}" only.
 Do not assume prior talk about other sheets unless the user brings them up. Each sheet has its own conversation.
 

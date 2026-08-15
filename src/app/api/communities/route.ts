@@ -1,3 +1,11 @@
+import {
+  CLASSROOM_KIND,
+  CIRCLE_KIND,
+  DEFAULT_CLASS_ASSIGNMENT,
+  DEFAULT_STARTING_CASH,
+  isClassroomKind,
+  parseStartingCash,
+} from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -32,7 +40,7 @@ export async function GET() {
 
   const { data: communities, error: cErr } = await supabase
     .from(PORTFELL_TABLES.communities)
-    .select("id, name, visibility, created_by, created_at, updated_at")
+    .select("id, name, visibility, kind, starting_cash, created_by, created_at, updated_at")
     .in("id", ids)
     .order("name");
 
@@ -71,19 +79,40 @@ export async function POST(req: NextRequest) {
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
+  const kind =
+    (body as { kind?: string }).kind === CLASSROOM_KIND
+      ? CLASSROOM_KIND
+      : CIRCLE_KIND;
+  const classroom = isClassroomKind(kind);
   const visibility =
-    (body as { visibility?: string }).visibility === "public"
-      ? "public"
-      : "private";
+    classroom || (body as { visibility?: string }).visibility !== "public"
+      ? "private"
+      : "public";
+  const startingCash = classroom
+    ? parseStartingCash((body as { startingCash?: unknown }).startingCash) ??
+      DEFAULT_STARTING_CASH
+    : DEFAULT_STARTING_CASH;
+  if (classroom && (body as { startingCash?: unknown }).startingCash != null) {
+    if (parseStartingCash((body as { startingCash?: unknown }).startingCash) == null) {
+      return NextResponse.json({ error: "invalid starting cash" }, { status: 400 });
+    }
+  }
+  const houseNote = classroom
+    ? String((body as { assignment?: string }).assignment ?? "").trim().slice(0, 400) ||
+      DEFAULT_CLASS_ASSIGNMENT
+    : undefined;
 
   const { data: community, error } = await supabase
     .from(PORTFELL_TABLES.communities)
     .insert({
       name,
       visibility,
+      kind,
+      starting_cash: startingCash,
+      ...(houseNote ? { house_note: houseNote } : {}),
       created_by: auth.user.id,
     })
-    .select("id, name, visibility, created_by, created_at, updated_at")
+    .select("id, name, visibility, kind, starting_cash, house_note, created_by, created_at, updated_at")
     .single();
 
   if (error) {
