@@ -161,7 +161,7 @@ export function buildBookInsights(holdings: InsightHolding[]): BookInsights {
       ? ""
       : `Book insights (use when relevant, do not force into every reply):
 ${lines.map((l) => `- ${l}`).join("\n")}
-Talk about groups of similar businesses, not a shopping list of new tickers, unless the user asks for names. Educational scenario, not an order to buy. Use plain words a grandma would get. Never say sleeve, marks, thesis, conviction, digestion, beta, or rotation.`;
+Talk about groups of similar businesses, not a shopping list of new tickers, unless the user asks for names. Educational scenario, not an order to buy. Use plain words a grandma would get. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.`;
 
   return { idea, rotation, lines, promptBlock };
 }

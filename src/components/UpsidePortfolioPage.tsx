@@ -1362,7 +1362,7 @@ export function UpsidePortfolioPage() {
                         </div>
                         <div className="mt-3 flex min-h-0 flex-1 flex-col">
                           <CopyBlock
-                            label="Why he owns it"
+                            label="Thesis"
                             items={thesis}
                             extra={
                               h.target_timeframe

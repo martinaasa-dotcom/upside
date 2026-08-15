@@ -77,7 +77,7 @@ function facts(r: NoteReport): string {
     lines.push(
       ...[
         `Focus: ${cashtag(r.thesis.ticker)}`,
-        r.thesis.ownerThesis ? `Why they own it: ${r.thesis.ownerThesis}` : null,
+        r.thesis.ownerThesis ? `Thesis: ${r.thesis.ownerThesis}` : null,
         r.thesis.status ? `Pulse: ${r.thesis.status}` : null,
         r.thesis.pulseLine,
       ].filter((x): x is string => Boolean(x))
@@ -123,7 +123,7 @@ ${JOB[report.kind]}
 
 Hard rules for this block:
 - Plain English a 12-year-old and a 75-year-old both get.
-- Never say "tape", "sleeve", "marks", "thesis", "conviction", "digestion", "beta", or "rotation".
+- Never say "tape", "sleeve", "marks", "conviction", "digestion", "beta", or "rotation". Thesis is fine.
 - No greeting, no sign-off, no "as an AI".
 - Tickers as cashtags: $NBIS, not NBIS.
 - Only use names in the facts. Do not invent holdings.

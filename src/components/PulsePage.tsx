@@ -95,7 +95,7 @@ function PulseHistory({ ticker }: { ticker: string }) {
   if (!prior) return null;
   return (
     <p className="mt-2 text-xs text-zinc-500">
-      Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus).toLowerCase()}
+      Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus)}
     </p>
   );
 }
@@ -311,7 +311,7 @@ function PulseCard({
         {thesisBullets.length > 0 && (
           <div>
             <div className="flex items-baseline justify-between gap-2">
-              <MicroLabel>Why you own it</MicroLabel>
+              <MicroLabel>Thesis</MicroLabel>
               {onWriteThesis && (
                 <button
                   type="button"

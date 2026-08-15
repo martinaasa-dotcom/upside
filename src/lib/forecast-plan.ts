@@ -544,7 +544,7 @@ Requirements:
    - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing). Never a generic sector vibe that could be pasted onto any ticker in the theme.
    - Name the trigger/condition when it isn't "do this now": a price, an earnings date, a number that just came out. So it reads as a plan, not a headline.
    - Each item: "TICKER (current% -> target%): specific why + trigger". Groups: "electricity for AI (~0% to 5%): why + size". Sheet tickers preferred; NEW tickers and sectors are welcome when the reason you own the sheet needs them.
-   - Plain English only. Never say sleeve, marks, thesis, conviction, digestion, beta, or rotation.
+   - Plain English only. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.
    - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
    - Never use em dashes or en-dash clause breaks in add/trim lines.
 4. sectorRotation: talk through money moving between groups (AI computers, electricity for AI, crypto, space, chips, software, healthcare, drones, money apps, etc.). Do not stay stuck in one box. Plain speech, no em dashes.
@@ -553,7 +553,7 @@ Requirements:
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
    - Year ${year} is December 31 ${year}, not today's spot. Do not paste today's price into that cell.
    - NON-LINEAR only. Crypto: include a winter year. AI computers / electricity for AI: big multi-year upside. Space: a quiet year in the middle.
-   - rationale: one human sentence on why this company + how the path wiggles. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes. Never say sleeve, marks, thesis, conviction, digestion, beta, or rotation.
+   - rationale: one human sentence on why this company + how the path wiggles. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.
 7. Consistency: if the reason you own the names is unchanged from a prior run, keep year-end prices in a similar neighborhood. Do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.
 9. Be concise.

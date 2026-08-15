@@ -407,9 +407,9 @@ export function shouldAutoPulseTicker(input: {
 
 export function statusLabel(status: ThesisStatus | string): string {
   const s = String(status ?? "").trim().toLowerCase();
-  if (s === "watch") return "Keep an eye on it";
-  if (s === "broken") return "Reason looks shaky";
-  return "Reason still holds";
+  if (s === "watch") return "Thesis watch";
+  if (s === "broken") return "Thesis broken";
+  return "Thesis intact";
 }
 
 export function actionLabel(action: PulseAction | string): string {

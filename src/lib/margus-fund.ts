@@ -277,7 +277,7 @@ export function buildFundUserPrompt(input: {
               `### ${h.ticker}`,
               `- Entry: ${h.entry_date} (${h.daysHeld}d ago) at $${h.cost_basis.toFixed(2)}, now $${h.price.toFixed(2)} (${h.unrealizedPnlPct >= 0 ? "+" : ""}${(h.unrealizedPnlPct * 100).toFixed(1)}%, ${money(h.unrealizedPnl)})`,
               `- Position size: ${money(h.marketValue)} (${((h.marketValue / totalValue) * 100).toFixed(1)}% of book)`,
-              `- Why he owns it: ${h.thesis}`,
+              `- Thesis: ${h.thesis}`,
               `- Target timeframe: ${h.target_timeframe ?? "not set"}`,
               `- Exit plan: ${h.exit_plan ?? "not set"}`,
             ].join("\n");

@@ -105,8 +105,6 @@ function scrubMarketJargon(text: string): string {
   s = s.replace(/\bcost basis\b/gi, "what you paid");
   s = s.replace(/\bhighest conviction\b/gi, "biggest bet");
   s = s.replace(/\bhigh conviction\b/gi, "a big bet");
-  s = s.replace(/\bthe thesis\b/gi, "the reason you own it");
-  s = s.replace(/\byour thesis\b/gi, "why you own it");
   s = s.replace(/\bsector rotation\b/gi, "money moving between groups");
   return s;
 }

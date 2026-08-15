@@ -103,7 +103,7 @@ function buildPrompt(
       : "";
     const parts = [
       `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup, not in book)"}`,
-      conv?.thesis ? `  Why they own it: ${conv.thesis}` : "",
+      conv?.thesis ? `  Thesis: ${conv.thesis}` : "",
       conv?.level ? `  How sure they are: ${conv.level}/5` : "",
       ctx?.sector ? `  Sector: ${ctx.sector}` : "",
       "  Recent headlines:",
@@ -153,7 +153,7 @@ ${insightsPromptBlock(
   - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
   - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
 - Use **hold** only when you would not deploy (max concentration, no cash story) but aren't ready to sell either. Hold never pairs with a broken reason.
-- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken reason. Never use **hold** for a broken reason either: that's what puts a Hold badge next to "Reason looks shaky".
+- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken reason. Never use **hold** for a broken reason either: that's what puts a Hold badge next to "Thesis broken".
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 ### thesisStatus — start from intact. Watch and broken have to be earned

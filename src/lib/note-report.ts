@@ -357,19 +357,19 @@ function weekActionLine(input: {
   const down = input.weekPct != null && input.weekPct <= -0.03;
   const upHot = input.weekPct != null && input.weekPct >= 0.08;
 
-  if (risk || action === "sell") return "Reason looks shaky. Do not add this week.";
+  if (risk || action === "sell") return "Thesis broken. Do not add this week.";
   if (watch || action === "watch") return "Wait. Best thing this week is to wait.";
   if (action === "trim") {
-    return "Reason still holds. If it ran too far, sell some. Otherwise do nothing.";
+    return "Thesis intact. If it ran too far, sell some. Otherwise do nothing.";
   }
   if (action === "add" || (intact && down)) {
-    return "Reason still holds. Look to add this week on the dip.";
+    return "Thesis intact. Look to add this week on the dip.";
   }
   if (intact && upHot) {
-    return "Reason still holds. If it ran too far, sell some. Otherwise do nothing.";
+    return "Thesis intact. If it ran too far, sell some. Otherwise do nothing.";
   }
   if (intact || action === "hold") {
-    return "Reason still holds. Best thing this week is nothing.";
+    return "Thesis intact. Best thing this week is nothing.";
   }
   return null;
 }
@@ -434,7 +434,7 @@ function dayActionLine(input: {
   if (watch || action === "watch") return "Wait. Best thing today is to wait.";
   if (action === "trim") return "If it runs, sell some. Don't chase.";
   if (action === "add" || (intact && down)) {
-    return "Reason still holds. Look to add if it dips.";
+    return "Thesis intact. Look to add if it dips.";
   }
   return null;
 }
@@ -515,7 +515,7 @@ function perspectiveFor(input: {
   const worst = [...input.movers].sort((a, b) => a.pct - b.pct)[0];
   if (worst && worst.pct <= -0.05) {
     lines.push(
-      `${cashtag(worst.ticker)} had the rough week. If the reason you own it is still true, that's a dip, not a new story.`
+      `${cashtag(worst.ticker)} had the rough week. If the thesis is still true, that's a dip, not a new story.`
     );
   }
   if (lines.length === 0) {
@@ -547,7 +547,7 @@ function morningLead(input: {
   const add = input.watches.find((w) => /look to add/i.test(w.line));
   if (add?.ticker) {
     return {
-      lead: `${cashtag(add.ticker)}. Reason still holds. Look to add if it dips.`,
+      lead: `${cashtag(add.ticker)}. Thesis intact. Look to add if it dips.`,
       subjectHook: `Look to add ${cashtag(add.ticker)}`,
     };
   }
@@ -735,7 +735,7 @@ export function noteReportText(r: NoteReport): string {
   }
   if (r.thesis) {
     const heading = r.thesis.ownerThesis
-      ? `Why you own it  ${cashtag(r.thesis.ticker)}`
+      ? `Thesis  ${cashtag(r.thesis.ticker)}`
       : `Focus  ${cashtag(r.thesis.ticker)}`;
     lines.push("", heading);
     const facts = [

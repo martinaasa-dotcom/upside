@@ -183,7 +183,7 @@ export function TickerDrawer({
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Card>
-            <MicroLabel>Why you own it</MicroLabel>
+            <MicroLabel>Thesis</MicroLabel>
             <textarea
               value={thesisDraft}
               rows={3}

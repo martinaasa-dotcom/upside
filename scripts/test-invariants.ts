@@ -638,9 +638,10 @@ run("title-cased Pulse enums no longer paint intact as at-risk", () => {
   );
   assert.equal(next.thesisStatus, "intact");
   assert.equal(next.action, "hold");
-  assert.equal(statusLabel(next.thesisStatus), "Reason still holds");
-  assert.equal(statusLabel("Intact"), "Reason still holds");
-  assert.equal(statusLabel("broken"), "Reason looks shaky");
+  assert.equal(statusLabel(next.thesisStatus), "Thesis intact");
+  assert.equal(statusLabel("Intact"), "Thesis intact");
+  assert.equal(statusLabel("broken"), "Thesis broken");
+  assert.equal(statusLabel("watch"), "Thesis watch");
 });
 
 run("humanize does not title-case Pulse enums", () => {
@@ -662,6 +663,10 @@ run("humanize still recapitalizes after stripping a leading opener", () => {
 });
 
 run("humanize kills leftover market slang", () => {
+  assert.equal(
+    humanizeMargusText("The thesis is intact on the dip."),
+    "The thesis is intact on the dip."
+  );
   assert.match(
     humanizeMargusText("Add an AI power sleeve next to the compute names."),
     /electricity-for-AI names/i
@@ -1980,14 +1985,13 @@ run("class sheets stay out of the real book", () => {
   );
 });
 
-run("inbox notes do not say thesis to a person", () => {
+run("inbox notes say Thesis intact to a person", () => {
   const src = readFileSync(
     join(process.cwd(), "src/lib/note-report.ts"),
     "utf8"
   );
-  assert.doesNotMatch(src, /`Thesis /);
+  assert.match(src, /Thesis intact/);
   assert.doesNotMatch(src, /Last Pulse:/);
-  assert.match(src, /Why you own it/);
   assert.match(src, /humanPulseStatus/);
 });
 
@@ -2091,13 +2095,12 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
   assert.doesNotMatch(compound, /long-only beta/);
 });
 
-run("Fund page does not label Margus's note Thesis", () => {
+run("Fund page labels Margus's note Thesis", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
     "utf8"
   );
-  assert.doesNotMatch(src, /label="Thesis"/);
-  assert.match(src, /Why he owns it/);
+  assert.match(src, /label="Thesis"/);
 });
 
 run("prompts do not teach the model trader words as working vocab", () => {
