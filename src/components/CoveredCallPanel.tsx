@@ -61,9 +61,9 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
+        className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
       />
-      <span className="text-xs text-zinc-400">%</span>
+      <span className="text-xs text-muted">%</span>
     </div>
   );
 }
@@ -86,7 +86,7 @@ function InlineStockTarget({
 
   return (
     <div className="inline-flex items-center justify-center gap-0.5">
-      <span className="text-xs text-zinc-400">$</span>
+      <span className="text-xs text-muted">$</span>
       <input
         type="text"
         inputMode="decimal"
@@ -113,7 +113,7 @@ function InlineStockTarget({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40"
+        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
       />
     </div>
   );
@@ -152,18 +152,18 @@ function writeProximity(distance: number | null): {
   className: string;
 } {
   if (distance == null || !Number.isFinite(distance)) {
-    return { label: "—", className: "text-zinc-400" };
+    return { label: "—", className: "text-muted" };
   }
   if (distance <= 0) {
     return { label: "At write level", className: "text-brand-bright" };
   }
   if (distance < 0.04) {
-    return { label: "Close", className: "text-amber-200" };
+    return { label: "Close", className: "text-caution" };
   }
   if (distance < 0.12) {
-    return { label: "Getting near", className: "text-zinc-200" };
+    return { label: "Getting near", className: "text-foreground" };
   }
-  return { label: "Far from write", className: "text-zinc-400" };
+  return { label: "Far from write", className: "text-muted" };
 }
 
 /** Anchor Home uses to land on this table from "Open covered calls". */
@@ -183,7 +183,7 @@ export function CoveredCallPanel({
       id={COVERED_CALLS_ANCHOR}
       className="scroll-mt-28 overflow-hidden"
     >
-      <div className="border-b border-zinc-800/80 p-5 sm:p-8">
+      <div className="border-b border-border p-5 sm:p-8">
         <PanelHeader title="Covered calls" />
       </div>
 
@@ -209,23 +209,23 @@ export function CoveredCallPanel({
           rows.map((r) => (
             <Card key={r.holding.id} tone="raised">
               <div className="flex items-baseline justify-between gap-2">
-                <p className="text-base font-semibold text-white">
+                <p className="text-base font-semibold text-foreground">
                   {cashtag(r.holding.ticker)}
                 </p>
-                <p className="text-sm tabular-nums text-zinc-400">
+                <p className="text-sm tabular-nums text-muted">
                   Spot {currency(r.spot)}
                 </p>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="mb-1 text-zinc-400">Strike gap</p>
+                  <p className="mb-1 text-muted">Strike gap</p>
                   <InlineTargetCall
                     value={r.targetCall}
                     onCommit={(pct) => onPatchTargetCall(r.holding.id, pct)}
                   />
                 </div>
                 <div>
-                  <p className="mb-1 text-zinc-400">Happy to sell at</p>
+                  <p className="mb-1 text-muted">Happy to sell at</p>
                   <InlineStockTarget
                     value={r.stockTarget}
                     onCommit={(price) =>
@@ -234,13 +234,13 @@ export function CoveredCallPanel({
                   />
                 </div>
                 <div>
-                  <p className="text-zinc-400">Still to go</p>
+                  <p className="text-muted">Still to go</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
                       r.targetDistance != null
                         ? signedTone(r.targetDistance)
-                        : "text-zinc-400"
+                        : "text-muted"
                     )}
                   >
                     {r.targetDistance != null
@@ -249,7 +249,7 @@ export function CoveredCallPanel({
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Write</p>
+                  <p className="text-muted">Write</p>
                   <p
                     className={cn(
                       "font-medium",
@@ -260,25 +260,25 @@ export function CoveredCallPanel({
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Strike</p>
+                  <p className="text-muted">Strike</p>
                   <p className="tabular-nums font-semibold text-brand">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">2-week %</p>
-                  <p className="tabular-nums font-medium text-sky-400">
+                  <p className="text-muted">2-week %</p>
+                  <p className="tabular-nums font-medium text-brand-bright">
                     {r.yield2w != null ? percent(r.yield2w) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Premium</p>
-                  <p className="tabular-nums text-zinc-100">
+                  <p className="text-muted">Premium</p>
+                  <p className="tabular-nums text-foreground">
                     {r.premium != null ? currency(r.premium) : "—"}
                   </p>
                 </div>
               </div>
-              <p className="mt-2 text-sm text-zinc-400">
+              <p className="mt-2 text-sm text-muted">
                 {Math.round(r.contracts)} contracts
                 {r.expiration
                   ? ` · expires ${format(parseISO(r.expiration), "MMM d")}`
@@ -290,12 +290,12 @@ export function CoveredCallPanel({
         {rows.length > 0 && (
           <Card tone="raised" className="text-sm">
             <div className="flex justify-between">
-              <span className="font-semibold text-white">All together</span>
-              <span className="tabular-nums text-sky-400">
+              <span className="font-semibold text-foreground">All together</span>
+              <span className="tabular-nums text-brand-bright">
                 {percent(yield2wAvg)} over 2 weeks
               </span>
             </div>
-            <p className="mt-1 tabular-nums text-zinc-300">
+            <p className="mt-1 tabular-nums text-foreground/80">
               {currency(premiumTotal)} in premium
             </p>
           </Card>
@@ -305,7 +305,7 @@ export function CoveredCallPanel({
       {/* Desktop table */}
       <div className="hidden md:block">
         <FluidTable template={TEMPLATE}>
-          <FluidRow className="border-zinc-800 text-xs font-medium text-zinc-400">
+          <FluidRow className="border-border text-xs font-medium text-muted">
             {HEADERS.map((label) => (
               <div
                 key={label}
@@ -338,16 +338,16 @@ export function CoveredCallPanel({
           )}
 
           {rows.map((r) => (
-            <FluidRow key={r.holding.id} className="min-h-10 hover:bg-zinc-900/40">
+            <FluidRow key={r.holding.id} className="min-h-10 hover:bg-well/50">
               <div
                 className={cn(
                   cellBase,
-                  "font-semibold tracking-wide text-white"
+                  "font-semibold tracking-wide text-foreground"
                 )}
               >
                 {cashtag(r.holding.ticker)}
               </div>
-              <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {currency(r.spot)}
               </div>
               <div className={cn(cellBase, "py-1")}>
@@ -368,7 +368,7 @@ export function CoveredCallPanel({
                   "tabular-nums font-medium",
                   r.targetDistance != null
                     ? signedTone(r.targetDistance)
-                    : "text-zinc-400"
+                    : "text-muted"
                 )}
               >
                 {r.targetDistance != null ? percent(r.targetDistance) : "—"}
@@ -390,28 +390,28 @@ export function CoveredCallPanel({
               >
                 {r.nextStrike != null ? currency(r.nextStrike) : "—"}
               </div>
-              <div className={cn(cellBase, "text-zinc-400")}>
+              <div className={cn(cellBase, "text-muted")}>
                 {r.expiration
                   ? format(parseISO(r.expiration), "MMM d, yyyy")
                   : "—"}
               </div>
-              <div className={cn(cellBase, "tabular-nums text-zinc-300")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground/80")}>
                 {Math.round(r.contracts)}
               </div>
               <div
-                className={cn(cellBase, "tabular-nums font-medium text-sky-400")}
+                className={cn(cellBase, "tabular-nums font-medium text-brand-bright")}
               >
                 {r.yield2w != null ? percent(r.yield2w) : "—"}
               </div>
-              <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {r.premium != null ? currency(r.premium) : "—"}
               </div>
             </FluidRow>
           ))}
 
           {rows.length > 0 && (
-            <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
-              <div className={cn(cellBase, "py-2.5 text-white")}>All</div>
+            <FluidRow className="border-t border-border bg-well/60 font-semibold">
+              <div className={cn(cellBase, "py-2.5 text-foreground")}>All</div>
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
@@ -420,10 +420,10 @@ export function CoveredCallPanel({
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-sky-400")}>
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-brand-bright")}>
                 {percent(yield2wAvg)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-white")}>
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
                 {currency(premiumTotal)}
               </div>
             </FluidRow>

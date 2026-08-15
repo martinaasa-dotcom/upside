@@ -99,11 +99,11 @@ export function CsvImportModal({
         aria-label="Close"
         onClick={handleClose}
       />
-      <div className="relative z-10 flex max-h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="relative z-10 flex max-h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <FileUp className="h-4 w-4 text-brand-bright" />
-            <h2 className="text-sm font-semibold text-zinc-100">
+            <h2 className="text-sm font-semibold text-foreground">
               Import CSV · {portfolioName}
             </h2>
           </div>
@@ -111,16 +111,16 @@ export function CsvImportModal({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-muted">
             Replace this sheet, or paste lines like{" "}
-            <span className="text-zinc-200">NBIS 500 85.10</span>. CSV columns:
+            <span className="text-foreground">NBIS 500 85.10</span>. CSV columns:
             Ticker, Shares, Buy Price.
           </p>
 
@@ -139,7 +139,7 @@ export function CsvImportModal({
             }}
             rows={4}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+            className="w-full rounded-xl border border-border bg-well px-3 py-2 font-mono text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -165,18 +165,18 @@ export function CsvImportModal({
             <button
               type="button"
               onClick={() => downloadHoldingsCsvTemplate()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground/80 hover:border-brand"
             >
               <Download className="h-3.5 w-3.5" />
               Download template
             </button>
             {fileName && (
-              <span className="text-xs text-zinc-400">{fileName}</span>
+              <span className="text-xs text-muted">{fileName}</span>
             )}
           </div>
 
           {error && (
-            <p className="flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-950/30 px-3 py-2 text-sm text-rose-100">
+            <p className="flex items-start gap-2 rounded-lg border border-loss/30 bg-loss/10 px-3 py-2 text-sm text-loss">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               {error}
             </p>
@@ -184,10 +184,10 @@ export function CsvImportModal({
 
           {rows.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-zinc-400">
+              <div className="flex items-center justify-between text-xs text-muted">
                 <span>Preview · {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
                 {cash != null && (
-                  <span className="text-zinc-400">
+                  <span className="text-muted">
                     Cash ${cash.toLocaleString("en-US", { maximumFractionDigits: 0 })}
                   </span>
                 )}
@@ -195,9 +195,9 @@ export function CsvImportModal({
               {/* overflow-x too: an imported file can carry long tickers and
                   wide numbers, and on a phone the preview needs to scroll
                   sideways instead of pushing the modal past the viewport. */}
-              <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-zinc-800">
+              <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border">
                 <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-zinc-900 text-xs text-zinc-400">
+                  <thead className="sticky top-0 bg-well text-xs text-muted">
                     <tr>
                       <th className="px-3 py-1.5 font-medium">Ticker</th>
                       <th className="px-3 py-1.5 font-medium">Shares</th>
@@ -209,18 +209,18 @@ export function CsvImportModal({
                   </thead>
                   <tbody>
                     {rows.map((r) => (
-                      <tr key={r.ticker} className="border-t border-zinc-900">
-                        <td className="px-3 py-1.5 font-medium text-white">
+                      <tr key={r.ticker} className="border-t border-border">
+                        <td className="px-3 py-1.5 font-medium text-foreground">
                           {cashtag(r.ticker)}
                         </td>
-                        <td className="px-3 py-1.5 tabular-nums text-zinc-300">
+                        <td className="px-3 py-1.5 tabular-nums text-foreground/80">
                           {r.shares}
                         </td>
-                        <td className="px-3 py-1.5 tabular-nums text-zinc-300">
+                        <td className="px-3 py-1.5 tabular-nums text-foreground/80">
                           ${r.buyPrice.toFixed(2)}
                         </td>
                         {!hideCallPct && (
-                          <td className="px-3 py-1.5 tabular-nums text-zinc-400">
+                          <td className="px-3 py-1.5 tabular-nums text-muted">
                             {r.callPct != null
                               ? `${Math.round(r.callPct * 100)}%`
                               : "default"}
@@ -236,10 +236,10 @@ export function CsvImportModal({
 
           {skipped.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs text-amber-400/80">
+              <p className="text-xs text-caution">
                 Skipped {skipped.length} row{skipped.length === 1 ? "" : "s"}
               </p>
-              <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-zinc-400">
+              <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-muted">
                 {skipped.slice(0, 10).map((s) => (
                   <li key={`${s.line}-${s.raw}`}>
                     Line {s.line}: {s.reason}
@@ -250,12 +250,12 @@ export function CsvImportModal({
           )}
 
           {rows.length > 0 && (
-            <label className="flex items-center gap-2 text-sm text-zinc-300">
+            <label className="flex items-center gap-2 text-sm text-foreground/80">
               <input
                 type="checkbox"
                 checked={replace}
                 onChange={(e) => setReplace(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
+                className="h-4 w-4 rounded border-brand-mid bg-well text-brand focus:ring-brand/50"
               />
               Replace this sheet&apos;s holdings (uncheck to only add/update
               the tickers above, keeping everything else)
@@ -263,11 +263,11 @@ export function CsvImportModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-800 px-4 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

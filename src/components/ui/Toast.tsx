@@ -71,9 +71,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               t.kind === "success" &&
                 "border-brand/30 bg-brand-dark/90 text-brand-bright",
               t.kind === "error" &&
-                "border-rose-500/30 bg-rose-950/90 text-rose-100",
+                "border-loss/30 bg-loss/15 text-loss",
               t.kind === "info" &&
-                "border-zinc-600 bg-zinc-950/95 text-zinc-100"
+                "border-brand-mid bg-well/95 text-foreground"
             )}
             role="status"
             aria-live="polite"

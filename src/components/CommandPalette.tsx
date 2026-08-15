@@ -62,7 +62,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
         aria-label="Close command palette"
         onClick={onClose}
       />
-      <div className="relative max-h-[min(85dvh,32rem)] w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl sm:max-h-[min(70dvh,32rem)]">
+      <div className="relative max-h-[min(85dvh,32rem)] w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-well shadow-2xl sm:max-h-[min(70dvh,32rem)]">
         <input
           ref={inputRef}
           value={q}
@@ -83,11 +83,11 @@ export function CommandPalette({ open, onClose, items }: Props) {
             }
           }}
           placeholder="Jump to sheet, ticker, unlock, Lab …"
-          className="w-full border-b border-zinc-800 bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-400"
+          className="w-full border-b border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted"
         />
         <ul className="max-h-80 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
-            <li className="px-3 py-6 text-center text-sm text-zinc-400">
+            <li className="px-3 py-6 text-center text-sm text-muted">
               No matches
             </li>
           )}
@@ -100,20 +100,20 @@ export function CommandPalette({ open, onClose, items }: Props) {
                 className={cn(
                   "flex w-full items-baseline justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm sm:py-2",
                   i === active
-                    ? "bg-zinc-100 text-zinc-900"
-                    : "text-zinc-300 hover:bg-zinc-900"
+                    ? "bg-select text-select-ink"
+                    : "text-foreground/80 hover:bg-well"
                 )}
               >
                 <span>
                   {item.group && (
-                    <span className="mr-2 text-xs text-zinc-400">
+                    <span className="mr-2 text-xs text-muted">
                       {item.group}
                     </span>
                   )}
                   {item.label}
                 </span>
                 {item.hint && (
-                  <span className="shrink-0 text-xs text-zinc-400">
+                  <span className="shrink-0 text-xs text-muted">
                     {item.hint}
                   </span>
                 )}
@@ -121,7 +121,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
             </li>
           ))}
         </ul>
-        <p className="border-t border-zinc-800 px-3 py-1.5 text-xs text-zinc-400">
+        <p className="border-t border-border px-3 py-1.5 text-xs text-muted">
           ↑↓ navigate · Enter run · Esc close · ⌘K toggle
         </p>
       </div>

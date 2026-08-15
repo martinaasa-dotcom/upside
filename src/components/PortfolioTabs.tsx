@@ -193,19 +193,19 @@ export function PortfolioTabs({
   }
 
   return (
-    <nav className={cn("sticky bottom-0 z-30 border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
+    <nav className={cn("sticky bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
       <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-1.5 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:py-2")}>
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="mb-1 hidden text-xs font-medium text-zinc-400 sm:block">
+            <p className="mb-1 hidden text-xs font-medium text-muted sm:block">
               In your book
             </p>
             <div
               role="tablist"
               aria-label="In your book"
               className={cn(
-                "grid h-12 w-full overflow-hidden rounded-lg bg-zinc-900/80 ring-1 ring-inset ring-white/10 sm:h-12",
+                "grid h-12 w-full overflow-hidden rounded-lg bg-well/80 ring-1 ring-inset ring-brand/30 sm:h-12",
                 modeCols === 2 && "grid-cols-2 sm:w-[18rem]",
                 modeCols === 3 && "grid-cols-3 sm:w-[28rem]",
                 modeCols === 4 && "grid-cols-4 sm:w-[36rem]",
@@ -229,8 +229,8 @@ export function PortfolioTabs({
                       "touch-target flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
                       "sm:flex-row sm:gap-1.5 sm:px-2",
                       active
-                        ? "bg-white text-black shadow-sm"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                        ? "bg-select text-select-ink shadow-sm"
+                        : "text-muted hover:bg-hover hover:text-foreground"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />
@@ -249,15 +249,15 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 hidden text-xs font-medium text-zinc-400 sm:block">
+          <p className="mb-1 hidden text-xs font-medium text-muted sm:block">
             Sheets
           </p>
           <div
             role="tablist"
             aria-label="Portfolio sheets"
             className={cn(
-              "scrollbar-none flex h-10 items-stretch gap-0.5 overflow-x-auto border-b border-zinc-800/90 snap-x snap-mandatory sm:h-11",
-              sheetActive ? "border-zinc-700" : "border-zinc-800/60"
+              "scrollbar-none flex h-10 items-stretch gap-0.5 overflow-x-auto border-b border-border/90 snap-x snap-mandatory sm:h-11",
+              sheetActive ? "border-border" : "border-border"
             )}
           >
             {portfolios.map((p) => {
@@ -286,8 +286,8 @@ export function PortfolioTabs({
                   className={cn(
                     "touch-target relative shrink-0 snap-start px-3 text-sm transition",
                     active
-                      ? "font-semibold text-white"
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "font-semibold text-foreground"
+                      : "text-muted hover:text-foreground"
                   )}
                 >
                   <span className="flex h-full items-center gap-1.5 whitespace-nowrap">
@@ -308,7 +308,7 @@ export function PortfolioTabs({
                   {active && (
                     <span
                       aria-hidden
-                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-zinc-100"
+                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-select"
                     />
                   )}
                 </button>
@@ -335,14 +335,14 @@ export function PortfolioTabs({
                     }
                   }}
                   placeholder="Name"
-                  className="h-7 w-28 rounded border border-zinc-600 bg-zinc-900 px-2 text-sm text-white outline-none focus:border-brand"
+                  className="h-7 w-28 rounded border border-brand-mid bg-well px-2 text-sm text-foreground outline-none focus:border-brand"
                 />
               </form>
             ) : !guest ? (
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-xs text-zinc-400 hover:text-zinc-300"
+                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-xs text-muted hover:text-foreground/80"
                 aria-label="Add sheet"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -360,13 +360,13 @@ export function PortfolioTabs({
           <div
             data-sheet-menu
             role="menu"
-            className="fixed z-[100] min-w-[9rem] rounded-lg border border-zinc-700 bg-zinc-950 py-1 shadow-xl"
+            className="fixed z-[100] min-w-[9rem] rounded-lg border border-border bg-well py-1 shadow-xl"
             style={{ left: menu.x, top: menu.y }}
           >
             <button
               type="button"
               role="menuitem"
-              className="block w-full px-3 py-3 text-left text-sm text-zinc-200 hover:bg-zinc-900 sm:py-2"
+              className="block w-full px-3 py-3 text-left text-sm text-foreground hover:bg-well sm:py-2"
               onClick={() => {
                 const id = menu.id;
                 const sheetName = menu.name;
@@ -380,7 +380,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-3 text-left text-sm text-rose-300 hover:bg-zinc-900 sm:py-2"
+                className="block w-full px-3 py-3 text-left text-sm text-loss hover:bg-well sm:py-2"
                 onClick={() => {
                   const id = menu.id;
                   const sheetName = menu.name;

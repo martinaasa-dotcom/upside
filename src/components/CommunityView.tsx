@@ -1302,7 +1302,7 @@ export function CommunityView({ communityId }: Props) {
                 type="button"
                 onClick={openSettings}
                 title="Community settings"
-                className="touch-target inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-300"
+                className="touch-target inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80"
               >
                 <Settings className="h-5 w-5" />
               </button>
@@ -1327,9 +1327,9 @@ export function CommunityView({ communityId }: Props) {
                   {community.kind === "classroom" ? (
                     <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
                   ) : community.visibility === "public" ? (
-                    <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
+                    <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
                   ) : (
-                    <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                    <Lock className="h-3.5 w-3.5 shrink-0 text-muted" />
                   )}
                 </span>
               )}
@@ -1339,7 +1339,7 @@ export function CommunityView({ communityId }: Props) {
           {isAdmin && joinRequests.length > 0 && (
             <span
               title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-              className="shrink-0 rounded-full bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-900"
+              className="shrink-0 rounded-full bg-select px-1.5 py-0.5 text-xs font-semibold text-select-ink"
             >
               {joinRequests.length}
             </span>
@@ -1349,7 +1349,7 @@ export function CommunityView({ communityId }: Props) {
               type="button"
               onClick={openSettings}
               title="Community settings"
-              className="touch-target inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              className="touch-target inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-hover hover:text-foreground"
             >
               <Settings className="h-4 w-4" />
             </button>
@@ -1358,7 +1358,7 @@ export function CommunityView({ communityId }: Props) {
 
         <main id="main" className={PAGE_MAIN_CLASS}>
           {loading && (
-            <p className="text-sm text-zinc-400">Loading community …</p>
+            <p className="text-sm text-muted">Loading community …</p>
           )}
           {error && (
             <p className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-300">
@@ -1369,7 +1369,7 @@ export function CommunityView({ communityId }: Props) {
           {!loading && !selectedOwnerId && (
             <>
               <section className="space-y-3">
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-muted">
                   {isClassroom
                     ? "Paper class. Same starting cash. Real prices."
                     : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
@@ -1387,13 +1387,13 @@ export function CommunityView({ communityId }: Props) {
                     }
                   />
                 ) : community?.house_note?.trim() ? (
-                  <p className="text-sm leading-relaxed text-zinc-200">
+                  <p className="text-sm leading-relaxed text-foreground">
                     {community.house_note.trim()}
                   </p>
                 ) : null}
                 {isClassroom && !myClassSheet ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-card/80 px-4 py-3">
-                    <p className="min-w-0 flex-1 text-sm text-zinc-300">
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/80 px-4 py-3">
+                    <p className="min-w-0 flex-1 text-sm text-foreground/80">
                       {isAdmin
                         ? "You are watching the class. Get a paper sheet if you want to trade alongside them."
                         : "Your paper sheet is not on Home yet. Same starting cash as everyone else."}
@@ -1409,7 +1409,7 @@ export function CommunityView({ communityId }: Props) {
                   </div>
                 ) : null}
                 {isClassroom && myClassSheet ? (
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-muted">
                     Your paper sheet is on Home. Sunday note is the weekly recap.
                   </p>
                 ) : null}
@@ -1465,7 +1465,7 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               </section>
 
-              <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 w-fit">
+              <div className="flex gap-1 rounded-lg border border-border bg-well/50 p-1 w-fit">
                 {(
                   (isClassroom
                     ? [
@@ -1487,8 +1487,8 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition",
                       view === id
-                        ? "bg-brand/20 text-brand-bright"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                        ? "bg-select text-select-ink"
+                        : "text-muted hover:bg-hover hover:text-foreground"
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -1527,7 +1527,7 @@ export function CommunityView({ communityId }: Props) {
                   {effectiveView === "overview" &&
                     !isClassroom &&
                     membersWithBooks.length === 0 && (
-                    <p className="text-sm text-zinc-400">
+                    <p className="text-sm text-muted">
                       Nobody has shared a sheet here yet. Pick which of
                       yours belong in this circle.
                     </p>
@@ -1537,14 +1537,14 @@ export function CommunityView({ communityId }: Props) {
                     membersWithBooks.length === 0 &&
                     isAdmin && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm text-zinc-400">
+                      <p className="text-sm text-muted">
                         Send the invite. Each student gets the same starting
                         cash and an empty book.
                       </p>
                       <button
                         type="button"
                         onClick={() => setView("members")}
-                        className="text-sm font-medium text-brand-bright hover:text-white"
+                        className="text-sm font-medium text-brand-bright hover:text-foreground"
                       >
                         Invite students
                       </button>
@@ -1565,24 +1565,24 @@ export function CommunityView({ communityId }: Props) {
                     </WidgetErrorBoundary>
                   )}
                   {effectiveView === "play" && leaguePrize && leaguePrize.wins >= 1 && (
-                    <p className="text-sm text-zinc-300">
+                    <p className="text-sm text-foreground/80">
                       {leaguePrize.name} took {leaguePrize.wins}{" "}
                       {leaguePrize.wins === 1 ? "session" : "sessions"} this
                       week.
                     </p>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
+                          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                             <Sparkles className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-base font-bold text-white">
+                            <h3 className="text-base font-bold text-foreground">
                               Power animals
                             </h3>
-                            <p className="mt-0.5 text-sm text-zinc-400">
+                            <p className="mt-0.5 text-sm text-muted">
                               How each book is built. Tap someone to open their
                               sheets.
                             </p>
@@ -1591,7 +1591,7 @@ export function CommunityView({ communityId }: Props) {
                         <button
                           type="button"
                           onClick={() => setBestiaryOpen(true)}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/60 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:border-brand/40 hover:text-white"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-well/60 px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:border-brand/40 hover:text-foreground"
                         >
                           <HelpCircle className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">Field guide</span>
@@ -1618,16 +1618,16 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-2 rounded-2xl border border-border bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-white">
+                          <h3 className="text-base font-bold text-foreground">
                             Community superlatives
                           </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
+                          <p className="mt-0.5 text-sm text-muted">
                             Fun awards pulled from the numbers above
                           </p>
                         </div>
@@ -1636,23 +1636,23 @@ export function CommunityView({ communityId }: Props) {
                         {achievements.map((a) => (
                           <div
                             key={a.id}
-                            className="flex h-full flex-col rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5"
+                            className="flex h-full flex-col rounded-xl border border-border bg-well/40 p-3.5"
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-xl" aria-hidden>
                                 {a.emoji}
                               </span>
-                              <p className="text-sm font-semibold text-white">
+                              <p className="text-sm font-semibold text-foreground">
                                 {a.title}
                               </p>
                             </div>
                             <p className="mt-1.5 truncate text-sm font-medium text-brand-bright">
                               {a.winner}{" "}
-                              <span className="font-normal text-zinc-400">
+                              <span className="font-normal text-muted">
                                 · {a.stat}
                               </span>
                             </p>
-                            <p className="mt-auto pt-1 text-xs leading-relaxed text-zinc-400">
+                            <p className="mt-auto pt-1 text-xs leading-relaxed text-muted">
                               {a.description}
                             </p>
                           </div>
@@ -1662,17 +1662,17 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-1 rounded-2xl border border-border bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                             <Trophy className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-base font-bold text-white">
+                            <h3 className="text-base font-bold text-foreground">
                               Today
                             </h3>
-                            <p className="mt-0.5 text-sm text-zinc-400">
+                            <p className="mt-0.5 text-sm text-muted">
                               Ranked by today&apos;s move
                             </p>
                           </div>
@@ -1693,25 +1693,25 @@ export function CommunityView({ communityId }: Props) {
                                     setSelectedOwnerId(m.id);
                                     setSelectedPortfolioId(null);
                                   }}
-                                  className="flex w-full items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/30 px-3.5 py-2.5 text-left transition hover:border-brand/40 hover:bg-zinc-800/50"
+                                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-well/30 px-3.5 py-2.5 text-left transition hover:border-brand/40 hover:bg-hover"
                                 >
                                 <span className="w-6 shrink-0 text-center">
                                   {i === 0 ? (
-                                    <Medal className="mx-auto h-4 w-4 text-amber-400" />
+                                    <Medal className="mx-auto h-4 w-4 text-caution" />
                                   ) : i === 1 ? (
-                                    <Medal className="mx-auto h-4 w-4 text-zinc-400" />
+                                    <Medal className="mx-auto h-4 w-4 text-muted" />
                                   ) : i === 2 ? (
-                                    <Medal className="mx-auto h-4 w-4 text-amber-700" />
+                                    <Medal className="mx-auto h-4 w-4 text-caution" />
                                   ) : (
-                                    <span className="text-xs text-zinc-400">
+                                    <span className="text-xs text-muted">
                                       {i + 1}
                                     </span>
                                   )}
                                 </span>
-                                <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
+                                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                                   {m.name}
                                   {m.isYou && (
-                                    <span className="ml-1.5 text-xs text-zinc-400">
+                                    <span className="ml-1.5 text-xs text-muted">
                                       (you)
                                     </span>
                                   )}
@@ -1725,7 +1725,7 @@ export function CommunityView({ communityId }: Props) {
                                 <span
                                   className={cn(
                                     "w-16 shrink-0 text-right text-sm font-semibold tabular-nums",
-                                    signedTone(pct, "text-zinc-400")
+                                    signedTone(pct, "text-muted")
                                   )}
                                 >
                                   {pct != null ? percent(pct) : "—"}
@@ -1733,7 +1733,7 @@ export function CommunityView({ communityId }: Props) {
                                 <span
                                   className={cn(
                                     "hidden w-24 shrink-0 text-right text-xs tabular-nums sm:inline-block",
-                                    signedTone(m.todayDollar, "text-zinc-400")
+                                    signedTone(m.todayDollar, "text-muted")
                                   )}
                                 >
                                   {signedCurrency(m.todayDollar, 0)}
@@ -1747,16 +1747,16 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
-                    <section className="overview-fade order-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-4 rounded-2xl border border-border bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
+                        <div className="rounded-xl bg-gain/15 p-2 text-gain">
                           <Layers className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-white">
+                          <h3 className="text-base font-bold text-foreground">
                             Shared names
                           </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
+                          <p className="mt-0.5 text-sm text-muted">
                             Who else is in the same name today
                           </p>
                         </div>
@@ -1765,16 +1765,16 @@ export function CommunityView({ communityId }: Props) {
                         {sharedNames.map((row) => (
                           <li
                             key={row.ticker}
-                            className="rounded-xl border border-white/10 bg-app/40 px-4 py-3"
+                            className="rounded-xl border border-border bg-app/40 px-4 py-3"
                           >
                             <div className="flex items-baseline justify-between gap-3">
-                              <span className="font-heading text-base font-bold text-white">
+                              <span className="font-heading text-base font-bold text-foreground">
                                 {cashtag(row.ticker)}
                               </span>
                               <span
                                 className={cn(
                                   "text-sm font-semibold tabular-nums",
-                                  signedTone(row.todayPct, "text-zinc-400")
+                                  signedTone(row.todayPct, "text-muted")
                                 )}
                               >
                                 {row.todayPct != null
@@ -1786,7 +1786,7 @@ export function CommunityView({ communityId }: Props) {
                               {row.people.map((name) => (
                                 <span
                                   key={name}
-                                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-2 py-1 text-xs text-zinc-300"
+                                  className="rounded-lg border border-border bg-well/50 px-2 py-1 text-xs text-foreground/80"
                                 >
                                   {name}
                                 </span>
@@ -1799,23 +1799,23 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-5 rounded-2xl border border-border bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
+                        <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                           <PieChart className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-white">
+                          <h3 className="text-base font-bold text-foreground">
                             What the circle owns
                           </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
+                          <p className="mt-0.5 text-sm text-muted">
                             Everyone&apos;s holdings pooled by kind of
                             business. How the circle is built, not a
                             recommendation.
                           </p>
                         </div>
                       </div>
-                      <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
+                      <div className="flex h-3 overflow-hidden rounded-full bg-well">
                         {communityThemeBreakdown.map((t) => (
                           <div
                             key={t.theme}
@@ -1831,16 +1831,16 @@ export function CommunityView({ communityId }: Props) {
                         {communityThemeBreakdown.map((t) => (
                           <div
                             key={t.theme}
-                            className="flex h-full items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                            className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-well/40 px-3 py-2"
                           >
-                            <span className="flex items-center gap-2 text-xs text-zinc-300">
+                            <span className="flex items-center gap-2 text-xs text-foreground/80">
                               <span
                                 className="h-2 w-2 shrink-0 rounded-full"
                                 style={{ backgroundColor: THEME_COLOR[t.theme] }}
                               />
                               {t.label}
                             </span>
-                            <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-400">
+                            <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
                               {Math.round(t.pct * 100)}%
                             </span>
                           </div>
@@ -1850,17 +1850,17 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && (
-                  <section className="overview-fade order-6 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
+                  <section className="overview-fade order-6 rounded-2xl border border-border bg-card/80 p-4 sm:p-6">
                     <div className="mb-5 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                           <Lightbulb className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-white">
+                          <h3 className="text-base font-bold text-foreground">
                             Community fun facts
                           </h3>
-                          <p className="mt-0.5 text-sm text-zinc-400">
+                          <p className="mt-0.5 text-sm text-muted">
                             {funFactsShuffle > 0
                               ? "Shuffled, reload for the daily batch"
                               : "New batch every day"}
@@ -1870,7 +1870,7 @@ export function CommunityView({ communityId }: Props) {
                       <button
                         type="button"
                         onClick={() => setFunFactsShuffle((n) => n + 1)}
-                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-white/25 hover:bg-hover active:scale-95"
+                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-brand/40 px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:border-brand hover:bg-hover active:scale-95"
                         title="Get a fresh random batch"
                       >
                         <Shuffle className="h-3.5 w-3.5" />
@@ -1879,14 +1879,14 @@ export function CommunityView({ communityId }: Props) {
                     </div>
                     <ul className="space-y-3">
                       {communityFunFacts.length === 0 ? (
-                        <li className="text-sm text-zinc-400">
+                        <li className="text-sm text-muted">
                           Not enough data yet. Check back once books load.
                         </li>
                       ) : (
                         communityFunFacts.map((fact, i) => (
                           <li
                             key={`${i}-${fact.slice(0, 24)}`}
-                            className="rounded-2xl border border-zinc-800/70 bg-zinc-950/50 px-4 py-3.5 text-sm leading-relaxed text-zinc-200"
+                            className="rounded-2xl border border-border/70 bg-well/70 px-4 py-3.5 text-sm leading-relaxed text-foreground"
                           >
                             {fact}
                           </li>
@@ -1918,11 +1918,11 @@ export function CommunityView({ communityId }: Props) {
               {effectiveView === "members" && (
                 <>
                   <section className="space-y-3">
-                    <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
-                      <Users className="h-4 w-4 text-zinc-400" />
+                    <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <Users className="h-4 w-4 text-muted" />
                       Members
                     </h2>
-                    <ul className="divide-y divide-zinc-800 rounded-xl border border-zinc-800">
+                    <ul className="divide-y divide-border rounded-xl border border-border">
                       {members.map((m) => {
                         const sheetIds = new Set(
                           ownership
@@ -1977,10 +1977,10 @@ export function CommunityView({ communityId }: Props) {
                               }}
                               className="text-left"
                             >
-                              <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
+                              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                                 {profileName(m.user_id)}
                                 {m.is_you && (
-                                  <span className="text-xs text-zinc-400">
+                                  <span className="text-xs text-muted">
                                     (you)
                                   </span>
                                 )}
@@ -2002,16 +2002,16 @@ export function CommunityView({ communityId }: Props) {
                                 )}
                               </div>
                               {m.profile?.bio ? (
-                                <div className="text-xs text-zinc-400">
+                                <div className="text-xs text-muted">
                                   {m.profile.bio}
                                 </div>
                               ) : null}
                               {emails.length > 1 ? (
-                                <div className="text-xs text-zinc-400">
+                                <div className="text-xs text-muted">
                                   {emails.join(" · ")}
                                 </div>
                               ) : null}
-                              <div className="text-xs text-zinc-400">
+                              <div className="text-xs text-muted">
                                 {m.role}
                                 {" · "}
                                 {sheets.length} portfolio
@@ -2024,7 +2024,7 @@ export function CommunityView({ communityId }: Props) {
                                     <span
                                       className={signedTone(
                                         sheetToday,
-                                        "text-zinc-400"
+                                        "text-muted"
                                       )}
                                     >
                                       {signedCurrency(sheetToday)}
@@ -2044,7 +2044,7 @@ export function CommunityView({ communityId }: Props) {
                                       m.role === "admin" ? "member" : "admin"
                                     )
                                   }
-                                  className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200"
+                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-foreground"
                                 >
                                   <Shield className="h-3 w-3" />
                                   {m.role === "admin" ? "Demote" : "Make admin"}
@@ -2058,7 +2058,7 @@ export function CommunityView({ communityId }: Props) {
                                       name: profileName(m.user_id),
                                     })
                                   }
-                                  className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:text-red-300"
+                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-red-300"
                                 >
                                   <UserMinus className="h-3 w-3" />
                                   Remove
@@ -2070,7 +2070,7 @@ export function CommunityView({ communityId }: Props) {
                                 type="button"
                                 disabled={busy}
                                 onClick={() => setLeaveOpen(true)}
-                                className="inline-flex items-center gap-1 rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-rose-800/60 hover:text-rose-300"
+                                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted hover:border-loss/40 hover:text-loss"
                               >
                                 <LogOut className="h-3 w-3" />
                                 Leave
@@ -2109,18 +2109,18 @@ export function CommunityView({ communityId }: Props) {
                               }}
                               className="text-left"
                             >
-                              <div className="text-sm font-medium text-zinc-100">
+                              <div className="text-sm font-medium text-foreground">
                                 {p.label}
-                                <span className="ml-2 text-xs font-normal text-amber-500/90">
+                                <span className="ml-2 text-xs font-normal text-caution">
                                   awaiting sign-in
                                 </span>
                               </div>
                               {p.emails.length ? (
-                                <div className="text-xs text-zinc-400">
+                                <div className="text-xs text-muted">
                                   {p.emails.join(" · ")}
                                 </div>
                               ) : null}
-                              <div className="text-xs text-zinc-400">
+                              <div className="text-xs text-muted">
                                 {sheets.length} portfolio
                                 {sheets.length === 1 ? "" : "s"}
                                 {" · "}
@@ -2131,7 +2131,7 @@ export function CommunityView({ communityId }: Props) {
                                     <span
                                       className={signedTone(
                                         sheetToday,
-                                        "text-zinc-400"
+                                        "text-muted"
                                       )}
                                     >
                                       {signedCurrency(sheetToday)}
@@ -2148,14 +2148,14 @@ export function CommunityView({ communityId }: Props) {
 
                   {isAdmin && joinRequests.length > 0 && (
                     <section className="space-y-3 rounded-xl border border-border bg-hover p-4">
-                      <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
-                        <UserCheck className="h-4 w-4 text-zinc-300" />
+                      <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <UserCheck className="h-4 w-4 text-foreground/80" />
                         Join requests
-                        <span className="rounded-full bg-zinc-100 px-1.5 py-0.5 text-xs font-semibold text-zinc-900">
+                        <span className="rounded-full bg-select px-1.5 py-0.5 text-xs font-semibold text-select-ink">
                           {joinRequests.length}
                         </span>
                       </h2>
-                      <p className="text-xs text-zinc-400">
+                      <p className="text-xs text-muted">
                         This community is public, so anyone can ask to join,
                         but nothing happens until you approve them here.
                       </p>
@@ -2163,13 +2163,13 @@ export function CommunityView({ communityId }: Props) {
                         {joinRequests.map((r) => (
                           <li
                             key={r.id}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/40 px-3 py-2.5"
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-well/40 px-3 py-2.5"
                           >
                             <div className="min-w-0">
-                              <p className="truncate text-sm text-zinc-200">
+                              <p className="truncate text-sm text-foreground">
                                 {r.profile?.display_name ?? r.profile?.email ?? "Unknown"}
                               </p>
-                              <p className="truncate text-xs text-zinc-400">
+                              <p className="truncate text-xs text-muted">
                                 {r.profile?.email}
                               </p>
                             </div>
@@ -2178,7 +2178,7 @@ export function CommunityView({ communityId }: Props) {
                                 type="button"
                                 disabled={joinDecisionBusyId === r.user_id}
                                 onClick={() => void decideJoinRequest(r.user_id, "approve")}
-                                className="rounded-md bg-emerald-600/90 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                                className="rounded-md bg-mustard px-2.5 py-1.5 text-xs font-semibold text-select-ink hover:bg-brand-bright disabled:opacity-50"
                               >
                                 Approve
                               </button>
@@ -2186,7 +2186,7 @@ export function CommunityView({ communityId }: Props) {
                                 type="button"
                                 disabled={joinDecisionBusyId === r.user_id}
                                 onClick={() => void decideJoinRequest(r.user_id, "reject")}
-                                className="rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                                className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:bg-hover disabled:opacity-50"
                               >
                                 Decline
                               </button>
@@ -2198,11 +2198,11 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {isAdmin && (
-                    <section className="space-y-3 rounded-xl border border-zinc-800 p-4">
-                      <h2 className="text-sm font-medium text-zinc-200">
+                    <section className="space-y-3 rounded-xl border border-border p-4">
+                      <h2 className="text-sm font-medium text-foreground">
                         Admin · invite
                       </h2>
-                      <p className="text-xs text-zinc-400">
+                      <p className="text-xs text-muted">
                         {isClassroom
                           ? "Students join with this link. Each one gets the same paper cash and an empty sheet."
                           : "Invites join the community. Each person picks which sheets to share. Today's prices only."}
@@ -2213,21 +2213,21 @@ export function CommunityView({ communityId }: Props) {
                           value={inviteEmail}
                           onChange={(e) => setInviteEmail(e.target.value)}
                           placeholder="Email (optional)"
-                          className="min-w-[12rem] flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+                          className="min-w-[12rem] flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm"
                         />
                         <button
                           type="button"
                           disabled={busy}
                           onClick={() => void createInvite()}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+                          className="inline-flex items-center gap-1 rounded-lg bg-mustard px-3 py-2 text-sm font-medium text-select-ink hover:bg-brand-bright"
                         >
                           <Link2 className="h-3.5 w-3.5" />
                           Create invite link
                         </button>
                       </div>
                       {inviteUrl && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-900/50 bg-emerald-950/20 px-3 py-2">
-                          <p className="min-w-0 flex-1 break-all text-xs text-emerald-300/90">
+                        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gain/40 bg-gain/10 px-3 py-2">
+                          <p className="min-w-0 flex-1 break-all text-xs text-gain">
                             {inviteUrl}
                           </p>
                           <button
@@ -2242,7 +2242,7 @@ export function CommunityView({ communityId }: Props) {
                                 1500
                               );
                             }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-700/60 px-2 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-900/40"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gain/50 px-2 py-1 text-xs font-medium text-gain hover:bg-gain/15"
                           >
                             {inviteCopied ? (
                               <Check className="h-3 w-3" />
@@ -2274,13 +2274,13 @@ export function CommunityView({ communityId }: Props) {
                   setSelectedPortfolioId(null);
                   setSelectedOwnerId(null);
                 }}
-                className="touch-target inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
+                className="touch-target inline-flex items-center gap-1 text-xs text-muted hover:text-foreground"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
               </button>
               <div className="sticky top-16 z-20 space-y-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-foreground">
                   Read-only · owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
@@ -2300,12 +2300,12 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                       selectedPortfolioId === null
-                        ? "bg-zinc-100 text-zinc-900 border-transparent"
-                        : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                        ? "bg-select text-select-ink border-transparent"
+                        : "border-border text-muted hover:border-border hover:text-foreground"
                     )}
                   >
                     All books
-                    <span className="ml-1.5 text-zinc-400">
+                    <span className="ml-1.5 text-muted">
                       {ownerPortfolios.length}
                     </span>
                   </button>
@@ -2317,8 +2317,8 @@ export function CommunityView({ communityId }: Props) {
                       className={cn(
                         "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                         selectedPortfolioId === p.id
-                          ? "bg-zinc-100 text-zinc-900 border-transparent"
-                          : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                          ? "bg-select text-select-ink border-transparent"
+                          : "border-border text-muted hover:border-border hover:text-foreground"
                       )}
                     >
                       {p.name}
@@ -2384,21 +2384,21 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
           />
-          <div className="relative w-full max-w-sm rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5">
+          <div className="relative w-full max-w-sm rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5">
             <div className="mb-4 flex items-start justify-between gap-3">
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-semibold text-foreground">
                 Community settings
               </h3>
               <button
                 type="button"
                 onClick={() => setSettingsOpen(false)}
-                className="shrink-0 rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+                className="shrink-0 rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <label className="block text-xs font-medium text-zinc-400">
+            <label className="block text-xs font-medium text-muted">
               Community name
             </label>
             <input
@@ -2409,10 +2409,10 @@ export function CommunityView({ communityId }: Props) {
               }}
               maxLength={80}
               disabled={settingsBusy}
-              className="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand/50 disabled:opacity-50"
+              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand disabled:opacity-50"
             />
             {settingsError && (
-              <p className="mt-2 text-xs text-rose-400">{settingsError}</p>
+              <p className="mt-2 text-xs text-loss">{settingsError}</p>
             )}
             <div className="mt-3 flex justify-end">
               <button
@@ -2429,10 +2429,10 @@ export function CommunityView({ communityId }: Props) {
               </button>
             </div>
 
-            <label className="mt-5 block text-xs font-medium text-zinc-400">
+            <label className="mt-5 block text-xs font-medium text-muted">
               {isClassroom ? "What we're learning" : "House note"}
             </label>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+            <p className="mt-1 text-xs leading-relaxed text-muted">
               {isClassroom
                 ? "Change this whenever the lesson changes. Students see it at the top."
                 : "One paragraph for the room. Public circles show this on Discover too."}
@@ -2448,7 +2448,7 @@ export function CommunityView({ communityId }: Props) {
                   ? "Week 2: only sell. Write why you sold."
                   : "Family books, today's prices, no advice."
               }
-              className="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
+              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand disabled:opacity-50"
             />
             <div className="mt-2 flex justify-end">
               <button
@@ -2480,7 +2480,7 @@ export function CommunityView({ communityId }: Props) {
                     disabled={settingsBusy}
                   />
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                <p className="mt-1 text-xs leading-relaxed text-muted">
                   Classes stay invite-only. Changing this adds or takes the
                   difference from every paper sheet already handed out.
                 </p>
@@ -2499,16 +2499,16 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               </>
             ) : (
-            <div className="mt-5 border-t border-zinc-800 pt-4">
-              <label className="block text-xs font-medium text-zinc-400">
+            <div className="mt-5 border-t border-border pt-4">
+              <label className="block text-xs font-medium text-muted">
                 Visibility
               </label>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+              <p className="mt-1 text-xs leading-relaxed text-muted">
                 {community?.visibility === "public"
                   ? "Public: anyone signed in can find this community and ask to join. You still approve every request."
                   : "Private: invite-only. No one can find or join without a link."}
               </p>
-              <div className="mt-2 flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1">
+              <div className="mt-2 flex gap-1 rounded-lg border border-border bg-well/50 p-1">
                 {(
                   [
                     ["private", Lock, "Private"],
@@ -2523,8 +2523,8 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
                       (community?.visibility ?? "private") === id
-                        ? "bg-brand/20 text-brand-bright"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                        ? "bg-select text-select-ink"
+                        : "text-muted hover:bg-hover hover:text-foreground"
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -2536,11 +2536,11 @@ export function CommunityView({ communityId }: Props) {
             )}
 
             {isAdmin && (
-              <div className="mt-6 rounded-xl border border-rose-900/40 bg-rose-950/20 p-3.5">
-                <p className="text-xs font-semibold text-rose-300">
+              <div className="mt-6 rounded-xl border border-loss/40 bg-loss/10 p-3.5">
+                <p className="text-xs font-semibold text-loss">
                   Danger zone
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-rose-300/70">
+                <p className="mt-1 text-xs leading-relaxed text-loss">
                   Deleting the community removes it for every member. Their
                   own portfolios and holdings are never affected.
                 </p>
@@ -2550,7 +2550,7 @@ export function CommunityView({ communityId }: Props) {
                     setSettingsOpen(false);
                     setDeleteConfirmOpen(true);
                   }}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-rose-800/60 bg-rose-950/40 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-900/40"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-loss/40 bg-loss/10 px-3 py-1.5 text-xs font-semibold text-loss hover:bg-loss/15"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete community
@@ -2569,13 +2569,13 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setBestiaryOpen(false)}
           />
-          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5">
+          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5">
             <div className="mb-1 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold text-white">
+                <h3 className="text-base font-semibold text-foreground">
                   The power animal field guide
                 </h3>
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="mt-1 text-xs text-muted">
                   Every book gets scored on how spread out it is, how jumpy
                   the names are, and how big the largest name is. Then it
                   gets the animal that fits. A fun lens, not a grade.
@@ -2584,7 +2584,7 @@ export function CommunityView({ communityId }: Props) {
               <button
                 type="button"
                 onClick={() => setBestiaryOpen(false)}
-                className="shrink-0 rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+                className="shrink-0 rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2619,18 +2619,18 @@ export function CommunityView({ communityId }: Props) {
                         <p className={cn("text-sm font-semibold", tone.name)}>
                           {a.animal}
                         </p>
-                        <p className="text-xs text-zinc-400">{a.criteria}</p>
+                        <p className="text-xs text-muted">{a.criteria}</p>
                       </div>
                     </div>
-                    <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                    <p className="mt-2 text-xs leading-relaxed text-muted">
                       {a.vibe}
                     </p>
                     <div className="mt-2 space-y-1 text-xs leading-relaxed">
-                      <p className="flex gap-1.5 text-emerald-300/90">
+                      <p className="flex gap-1.5 text-gain">
                         <Shield className="mt-0.5 h-3 w-3 shrink-0" />
                         <span>{a.strength}</span>
                       </p>
-                      <p className="flex gap-1.5 text-amber-300/90">
+                      <p className="flex gap-1.5 text-caution">
                         <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                         <span>{a.watchFor}</span>
                       </p>
@@ -2698,15 +2698,15 @@ function PowerAnimalCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
+              <p className="truncate text-sm font-semibold text-foreground">
                 {name}
                 {isYou && (
-                  <span className="ml-1.5 text-xs font-normal text-zinc-400">
+                  <span className="ml-1.5 text-xs font-normal text-muted">
                     (you)
                   </span>
                 )}
                 {isPending && (
-                  <span className="ml-1.5 text-xs font-normal text-amber-500/90">
+                  <span className="ml-1.5 text-xs font-normal text-caution">
                     awaiting sign-in
                   </span>
                 )}
@@ -2715,7 +2715,7 @@ function PowerAnimalCard({
                 {personality?.animal ?? "No book yet"}
               </p>
             </div>
-            <p className="shrink-0 text-base font-semibold tabular-nums text-white">
+            <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
               {currency(totalValue, 0)}
             </p>
           </div>
@@ -2724,15 +2724,15 @@ function PowerAnimalCard({
 
       {personality && (
         <div className="mt-5 flex flex-1 flex-col space-y-5">
-          <p className="text-sm leading-relaxed text-zinc-300">
+          <p className="text-sm leading-relaxed text-foreground/80">
             {personality.whyThisAnimal}
           </p>
           <div className="space-y-2 text-xs leading-relaxed">
-            <p className="flex gap-2 text-emerald-300/90">
+            <p className="flex gap-2 text-gain">
               <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{personality.archetype.strength}</span>
             </p>
-            <p className="flex gap-2 text-amber-300/90">
+            <p className="flex gap-2 text-caution">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{personality.archetype.watchFor}</span>
             </p>
@@ -2765,29 +2765,29 @@ function PowerAnimalCard({
 
           <div className="mt-auto grid gap-3 sm:grid-cols-2">
             <div className="h-full rounded-xl bg-black/20 px-3 py-3">
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted">
                 Modeled year
               </p>
-              <p className="mt-1 text-sm tabular-nums text-zinc-200">
+              <p className="mt-1 text-sm tabular-nums text-foreground">
                 {personality.expectedAnnualReturnPct.toFixed(1)}% a year
               </p>
               <p
                 className={cn(
                   "mt-1 text-xs tabular-nums",
-                  signedTone(personality.modeledAlphaPct, "text-zinc-400")
+                  signedTone(personality.modeledAlphaPct, "text-muted")
                 )}
               >
                 {signedPctPoints(personality.modeledAlphaPct)} vs index
               </p>
             </div>
             <div className="h-full rounded-xl bg-black/20 px-3 py-3">
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted">
                 Stretch (a rough bad year)
               </p>
               <p className="mt-1 text-sm tabular-nums text-loss">
                 {personality.maxDrawdownPct}%
               </p>
-              <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+              <p className="mt-1.5 text-xs leading-relaxed text-muted">
                 How far these kinds of stocks have fallen in ugly years.
                 Illustrative, not a forecast.
               </p>
@@ -2796,10 +2796,10 @@ function PowerAnimalCard({
 
           {milestone.next != null && (
             <div>
-              <div className="flex items-baseline justify-between gap-2 text-xs text-zinc-400">
+              <div className="flex items-baseline justify-between gap-2 text-xs text-muted">
                 <span>
                   Next{" "}
-                  <span className="font-medium text-zinc-300">
+                  <span className="font-medium text-foreground/80">
                     {currency(milestone.next, 0)}
                   </span>
                 </span>
@@ -2836,12 +2836,12 @@ function ScoreRead({
 }) {
   return (
     <div className="h-full rounded-xl bg-black/20 px-3 py-2.5">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-sm font-semibold tabular-nums text-white">
+      <p className="text-xs text-muted">{label}</p>
+      <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
         {value}
       </p>
-      <p className="mt-0.5 text-xs font-medium text-zinc-200">{band}</p>
-      <p className="mt-1 text-xs leading-relaxed text-zinc-400">{detail}</p>
+      <p className="mt-0.5 text-xs font-medium text-foreground">{band}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">{detail}</p>
     </div>
   );
 }
@@ -2858,19 +2858,19 @@ function Stat({
   tone?: "up" | "down";
 }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3">
-      <div className="text-xs text-zinc-400">{label}</div>
+    <div className="rounded-xl border border-border bg-well/40 px-4 py-3">
+      <div className="text-xs text-muted">{label}</div>
       <div
         className={cn(
           "mt-1 text-2xl font-bold tabular-nums",
           tone === "up" && "text-gain",
           tone === "down" && "text-loss",
-          !tone && "text-white"
+          !tone && "text-foreground"
         )}
       >
         {value}
       </div>
-      {sub && <div className="text-xs tabular-nums text-zinc-400">{sub}</div>}
+      {sub && <div className="text-xs tabular-nums text-muted">{sub}</div>}
     </div>
   );
 }
@@ -2924,19 +2924,19 @@ function ReadOnlyHoldings({
           return (
             <div
               key={h.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-3 py-3"
+              className="rounded-xl border border-border bg-well/30 px-3 py-3"
             >
               <div className="flex items-baseline justify-between gap-2">
-                <p className="font-semibold text-white">{cashtag(h.ticker)}</p>
-                <p className="text-sm tabular-nums text-zinc-100">
+                <p className="font-semibold text-foreground">{cashtag(h.ticker)}</p>
+                <p className="text-sm tabular-nums text-foreground">
                   {currency(value)}
                 </p>
               </div>
-              <p className="mt-0.5 text-xs text-zinc-400">
+              <p className="mt-0.5 text-xs text-muted">
                 {percent(pctBook)} of book · {h.shares} sh · {currency(price)}
               </p>
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
-                <span className={signedTone(todayPct, "text-zinc-400")}>
+                <span className={signedTone(todayPct, "text-muted")}>
                   {todayPct != null ? percent(todayPct) : "—"} today
                 </span>
               </div>
@@ -2944,18 +2944,18 @@ function ReadOnlyHoldings({
           );
         })}
         {holdings.length === 0 && (
-          <p className="rounded-xl border border-dashed border-zinc-800 px-3 py-6 text-center text-sm text-zinc-400">
+          <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-sm text-muted">
             No holdings on this sheet.
           </p>
         )}
-        <div className="flex items-center justify-between rounded-xl border border-zinc-800 px-3 py-3 text-sm">
-          <span className="text-zinc-400">Cash</span>
-          <span className="tabular-nums text-zinc-100">{currency(cash)}</span>
+        <div className="flex items-center justify-between rounded-xl border border-border px-3 py-3 text-sm">
+          <span className="text-muted">Cash</span>
+          <span className="tabular-nums text-foreground">{currency(cash)}</span>
         </div>
       </div>
-      <div className="hidden overflow-x-auto rounded-xl border border-zinc-800 md:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
         <table className="w-full min-w-[36rem] text-left text-sm">
-          <thead className="border-b border-zinc-800 text-xs text-zinc-400">
+          <thead className="border-b border-border text-xs text-muted">
             <tr>
               <th className="px-3 py-2 font-medium">Ticker</th>
               <th className="px-3 py-2 font-medium">% Book</th>
@@ -2972,21 +2972,21 @@ function ReadOnlyHoldings({
               const todayPct = quotes[h.ticker]?.changePercent ?? null;
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
-                <tr key={h.id} className="border-b border-zinc-800/60">
+                <tr key={h.id} className="border-b border-border">
                   <td className="px-3 py-2 font-medium">{cashtag(h.ticker)}</td>
-                  <td className="px-3 py-2 tabular-nums text-zinc-400">
+                  <td className="px-3 py-2 tabular-nums text-muted">
                     {percent(pctBook)}
                   </td>
-                  <td className="px-3 py-2 tabular-nums text-zinc-400">
+                  <td className="px-3 py-2 tabular-nums text-muted">
                     {h.shares}
                   </td>
-                  <td className="px-3 py-2 font-semibold tabular-nums text-white">
+                  <td className="px-3 py-2 font-semibold tabular-nums text-foreground">
                     {currency(price)}
                   </td>
                   <td
                     className={cn(
                       "px-3 py-2 tabular-nums",
-                      signedTone(todayPct, "text-zinc-400")
+                      signedTone(todayPct, "text-muted")
                     )}
                   >
                     {todayPct != null ? percent(todayPct, 2) : "—"}
@@ -2997,13 +2997,13 @@ function ReadOnlyHoldings({
             })}
             {holdings.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-zinc-400" colSpan={6}>
+                <td className="px-3 py-6 text-center text-muted" colSpan={6}>
                   No holdings on this sheet.
                 </td>
               </tr>
             )}
             <tr>
-              <td className="px-3 py-2 text-zinc-400" colSpan={5}>
+              <td className="px-3 py-2 text-muted" colSpan={5}>
                 Cash
               </td>
               <td className="px-3 py-2 tabular-nums">{currency(cash)}</td>

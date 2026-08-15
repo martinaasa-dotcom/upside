@@ -22,14 +22,14 @@ function noteHtml(text: string): string {
         block === last &&
         (/Turn these notes off/i.test(block) || /one-time note/i.test(block));
       const style = muted
-        ? "margin:20px 0 0 0;font-size:12px;line-height:1.4;color:#6b7280"
+        ? "margin:20px 0 0 0;font-size:12px;line-height:1.4;color:#a89878"
         : i === 0
           ? "margin:0 0 16px 0;font-size:18px;line-height:1.4;font-weight:700;color:#ede8dc"
-          : "margin:0 0 14px 0;font-size:15px;line-height:1.5;color:#9a9488";
+          : "margin:0 0 14px 0;font-size:15px;line-height:1.5;color:#a89878";
       return `<p style="${style}">${escapeHtml(block).replace(/\n/g, "<br>")}</p>`;
     })
     .join("");
-  return `<div style="width:100%;padding:22px 16px;background:#0d110f;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ede8dc">
+  return `<div style="width:100%;padding:22px 16px;background:#1a2820;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ede8dc">
 <img src="${MARK_URL}" width="180" height="33" alt="Upside Lab" style="display:block;margin:0 0 16px 0;border:0" />
 ${body}
 </div>`;

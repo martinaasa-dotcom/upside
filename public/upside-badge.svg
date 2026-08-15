@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 100" role="img" aria-label="Upside Lab">
-  <rect width="540" height="100" fill="#0d110f"/>
+  <rect width="540" height="100" fill="#1a2820"/>
   <defs>
     <linearGradient id="b0" x1="72" y1="10" x2="18" y2="90" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#dfc59a"/>

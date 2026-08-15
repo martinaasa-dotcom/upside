@@ -33,9 +33,9 @@ const EMPTY_LIST: string[] = [];
 const POPULAR_SEED = [...FALLBACK_POPULAR_TICKERS];
 
 function lookBorder(kind: WatchLookKind | undefined): string {
-  if (kind === "look") return "border-emerald-500/25";
-  if (kind === "wait" || kind === "report") return "border-amber-500/25";
-  return "border-white/10";
+  if (kind === "look") return "border-gain/25";
+  if (kind === "wait" || kind === "report") return "border-caution/35";
+  return "border-border";
 }
 
 export function WatchlistStrip({
@@ -189,7 +189,7 @@ export function WatchlistStrip({
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-white">Watching</p>
+        <p className="text-sm font-semibold text-foreground">Watching</p>
         <form
           ref={boxRef}
           className="relative flex items-center gap-1.5"
@@ -232,12 +232,12 @@ export function WatchlistStrip({
                 ? `watchlist-suggest-${suggestions[active]!.symbol}`
                 : undefined
             }
-            className="w-24 rounded-md border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+            className="w-24 rounded-md border border-border bg-well px-2 py-1 text-xs text-foreground outline-none placeholder:text-muted focus:border-brand"
           />
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="rounded-md p-1 text-zinc-400 hover:text-white disabled:opacity-40"
+            className="rounded-md p-1 text-muted hover:text-foreground disabled:opacity-40"
             aria-label="Add to watchlist"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -246,7 +246,7 @@ export function WatchlistStrip({
             <ul
               id="watchlist-suggest"
               role="listbox"
-              className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-xl"
+              className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-well shadow-xl"
             >
               {suggestions.map((row, i) => (
                 <li key={row.symbol} role="presentation">
@@ -257,17 +257,17 @@ export function WatchlistStrip({
                     aria-selected={i === active}
                     className={cn(
                       "flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left",
-                      i === active ? "bg-zinc-900" : "hover:bg-zinc-900"
+                      i === active ? "bg-well" : "hover:bg-well"
                     )}
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseEnter={() => setActive(i)}
                     onClick={() => add(row.symbol)}
                   >
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-foreground">
                       {cashtag(row.symbol)}
                     </span>
                     {row.name && (
-                      <span className="truncate text-xs text-zinc-500">
+                      <span className="truncate text-xs text-muted">
                         {row.name}
                       </span>
                     )}
@@ -279,13 +279,13 @@ export function WatchlistStrip({
         </form>
       </div>
       {names.length === 0 ? (
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-muted">
           Names you don&apos;t own. Add one to see the price, the recent
           range, and whether now looks quiet or rushed.
         </p>
       ) : (
         <>
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-muted">
             Today&apos;s price and a plain read of the last few weeks. Not a
             buy order.
           </p>
@@ -305,13 +305,13 @@ export function WatchlistStrip({
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 px-3 pt-3">
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-foreground">
                       {cashtag(ticker)}
                     </p>
                     <button
                       type="button"
                       onClick={() => setList(removeWatchlistTicker(list, ticker))}
-                      className="shrink-0 rounded p-1 text-zinc-600 hover:text-zinc-300"
+                      className="shrink-0 rounded p-1 text-muted hover:text-foreground/80"
                       aria-label={`Remove ${ticker}`}
                     >
                       <X className="h-3 w-3" />
@@ -322,13 +322,13 @@ export function WatchlistStrip({
                     onClick={() => onOpenPulse?.(ticker)}
                     className="flex flex-1 flex-col px-3 pb-3 text-left"
                   >
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-white">
+                    <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
                       {q ? currency(q.price) : "—"}
                     </p>
                     <p
                       className={cn(
                         "text-xs tabular-nums",
-                        pct == null ? "text-zinc-500" : signedTone(pct)
+                        pct == null ? "text-muted" : signedTone(pct)
                       )}
                     >
                       {pct == null
@@ -336,16 +336,16 @@ export function WatchlistStrip({
                         : `${signedCurrency(q!.change)} today · ${signedPercent(pct)}`}
                     </p>
                     {look?.low != null && look.high != null && (
-                      <p className="mt-1 text-xs text-zinc-500">
+                      <p className="mt-1 text-xs text-muted">
                         Lately {currency(look.low)} to {currency(look.high)}
                       </p>
                     )}
                     {look && (
                       <>
-                        <p className="mt-3 text-sm font-semibold text-white">
+                        <p className="mt-3 text-sm font-semibold text-foreground">
                           {look.headline}
                         </p>
-                        <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                        <p className="mt-1 text-xs leading-relaxed text-muted">
                           {look.detail}
                         </p>
                       </>
@@ -360,7 +360,7 @@ export function WatchlistStrip({
               );
             })}
           </ul>
-          <p className="mt-3 text-xs text-zinc-600">{ADVICE_DISCLAIMER_SHORT}</p>
+          <p className="mt-3 text-xs text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
         </>
       )}
     </div>

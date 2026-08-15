@@ -56,24 +56,24 @@ export function CashModal({
       />
       <form
         onSubmit={submit}
-        className="relative w-full max-w-md rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5"
+        className="relative w-full max-w-md rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-white">Edit cash</h3>
-            <p className="text-xs text-zinc-400">{portfolioName}</p>
+            <h3 className="text-base font-semibold text-foreground">Edit cash</h3>
+            <p className="text-xs text-muted">{portfolioName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <label className="grid gap-1 text-xs text-zinc-400">
+        <label className="grid gap-1 text-xs text-muted">
           Cash balance (can be negative)
           <input
             autoFocus
@@ -87,18 +87,18 @@ export function CashModal({
               setError(null);
             }}
             onWheel={blockWheelChange}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
             required
           />
         </label>
 
-        {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
+        {error && <p className="mt-3 text-sm text-loss">{error}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

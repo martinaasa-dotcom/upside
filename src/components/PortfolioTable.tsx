@@ -139,7 +139,7 @@ function InlineNumber({
         }
       }}
       className={cn(
-        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-zinc-100 outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
+        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50",
         className ?? "mx-auto w-[5.25rem]"
       )}
     />
@@ -336,7 +336,7 @@ export function PortfolioTable({
           <button
             type="button"
             onClick={onImportScreenshot ?? onAskMargus}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-mid px-3 py-2 text-sm font-medium text-foreground hover:border-brand hover:text-foreground"
           >
             <ImagePlus className="h-4 w-4" />
             Import screenshot
@@ -346,7 +346,7 @@ export function PortfolioTable({
           <button
             type="button"
             onClick={onImportCsv}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-200 hover:border-zinc-400 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-mid px-3 py-2 text-sm font-medium text-foreground hover:border-brand hover:text-foreground"
           >
             <FileUp className="h-4 w-4" />
             Import CSV
@@ -363,25 +363,25 @@ export function PortfolioTable({
           </button>
         )}
       </div>
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-muted">
         Screenshot or CSV drops every row in at once. Pick whichever&apos;s
         easier to get your hands on.
       </p>
     </div>
   ) : (
-    <p className="mt-4 text-center text-xs text-zinc-400">
+    <p className="mt-4 text-center text-xs text-muted">
       {tradeLock?.message}
     </p>
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/80">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800/80 px-4 py-4 sm:px-5">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-white">Holdings</h2>
+          <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (
             <div
-              className="flex rounded-lg border border-zinc-800 bg-zinc-900/50 p-0.5"
+              className="flex rounded-lg border border-border bg-well/50 p-0.5"
               title={
                 eurUsd && eurUsd > 0
                   ? `Converted at ${formatEurUsdHint(eurUsd)}. Share prices stay in dollars.`
@@ -397,7 +397,7 @@ export function PortfolioTable({
                     "rounded-md px-2 py-1 text-xs font-semibold transition",
                     displayCurrency === code
                       ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-400 hover:text-zinc-300"
+                      : "text-muted hover:text-foreground/80"
                   )}
                 >
                   {code}
@@ -407,13 +407,13 @@ export function PortfolioTable({
           )}
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-zinc-800/60 bg-zinc-900/40 py-1 pl-1 pr-1">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-well/50 py-1 pl-1 pr-1">
             {canAdd && onImportCsv && holdings.length > 0 && (
               <button
                 type="button"
                 onClick={onImportCsv}
                 title="Import / update holdings from a CSV file"
-                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted hover:bg-hover hover:text-foreground/80"
                 aria-label="Import CSV"
               >
                 <FileUp className="h-3.5 w-3.5" />
@@ -423,16 +423,16 @@ export function PortfolioTable({
               type="button"
               onClick={canCash ? onEditCash : undefined}
               disabled={!canCash}
-              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-hover disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
-              <span className="text-xs font-medium text-zinc-400">
+              <span className="text-xs font-medium text-muted">
                 Cash
               </span>
               <span
                 className={cn(
                   "text-sm font-semibold tabular-nums",
-                  portfolio.cash_balance < 0 ? "text-loss" : "text-zinc-200"
+                  portfolio.cash_balance < 0 ? "text-loss" : "text-foreground"
                 )}
               >
                 {money(portfolio.cash_balance)}
@@ -445,19 +445,19 @@ export function PortfolioTable({
       {/* Mobile cards */}
       <div className="space-y-2 p-3 md:hidden">
         {holdings.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-800 px-4 py-8 text-center">
-            <p className="text-sm text-zinc-400">No holdings on this sheet yet.</p>
+          <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
+            <p className="text-sm text-muted">No holdings on this sheet yet.</p>
             {emptyCta}
           </div>
         ) : (
           holdings.map((h) => (
             <div
               key={h.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-3 py-3"
+              className="rounded-xl border border-border bg-well/30 px-3 py-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="flex items-center gap-1.5 font-semibold text-white">
+                  <div className="flex items-center gap-1.5 font-semibold text-foreground">
                     {onOpenTicker ? (
                       <button
                         type="button"
@@ -470,7 +470,7 @@ export function PortfolioTable({
                       h.ticker
                     )}
                   </div>
-                  <p className="text-sm text-zinc-400">
+                  <p className="text-sm text-muted">
                     {percent(h.pctOfTotal)} of book
                   </p>
                 </div>
@@ -478,7 +478,7 @@ export function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-rose-400"
+                  className="rounded p-3.5 text-muted hover:bg-hover hover:text-loss"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -488,7 +488,7 @@ export function PortfolioTable({
                 )}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <label className="grid gap-1 text-zinc-400">
+                <label className="grid gap-1 text-muted">
                   Shares
                   <InlineNumber
                     value={h.shares}
@@ -498,7 +498,7 @@ export function PortfolioTable({
                     className="w-full"
                   />
                 </label>
-                <label className="grid gap-1 text-zinc-400">
+                <label className="grid gap-1 text-muted">
                   Buy
                   <InlineNumber
                     value={h.buy_price}
@@ -508,31 +508,31 @@ export function PortfolioTable({
                   />
                 </label>
                 <div>
-                  <p className="text-zinc-400">Price</p>
-                  <p className="tabular-nums font-semibold text-white">
+                  <p className="text-muted">Price</p>
+                  <p className="tabular-nums font-semibold text-foreground">
                     {usd(h.quote?.price ?? h.buy_price)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">ROI %</p>
+                  <p className="text-muted">ROI %</p>
                   <p className={cn("tabular-nums font-medium", signedTone(h.roiPct))}>
                     {percent(h.roiPct)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Cost</p>
-                  <p className="tabular-nums text-zinc-400">
+                  <p className="text-muted">Cost</p>
+                  <p className="tabular-nums text-muted">
                     {money(h.buyValue)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Value</p>
-                  <p className="tabular-nums text-zinc-100">
+                  <p className="text-muted">Value</p>
+                  <p className="tabular-nums text-foreground">
                     {money(h.currentValue)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">ROI $</p>
+                  <p className="text-muted">ROI $</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
@@ -543,13 +543,13 @@ export function PortfolioTable({
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Today %</p>
+                  <p className="text-muted">Today %</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
                       rowToday(h).pct != null
                         ? signedTone(rowToday(h).pct!)
-                        : "text-zinc-400"
+                        : "text-muted"
                     )}
                   >
                     {rowToday(h).pct != null
@@ -558,13 +558,13 @@ export function PortfolioTable({
                   </p>
                 </div>
                 <div>
-                  <p className="text-zinc-400">Today $</p>
+                  <p className="text-muted">Today $</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
                       rowToday(h).pct != null
                         ? signedTone(rowToday(h).dollar)
-                        : "text-zinc-400"
+                        : "text-muted"
                     )}
                   >
                     {rowToday(h).pct != null
@@ -585,14 +585,14 @@ export function PortfolioTable({
         )}
 
         {holdings.length > 0 && (
-          <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 px-3 py-3 text-sm">
+          <div className="rounded-xl border border-border bg-well/60 px-3 py-3 text-sm">
             <div className="flex justify-between font-semibold">
-              <span className="text-white">Portfolio</span>
+              <span className="text-foreground">Portfolio</span>
               <span className={cn("tabular-nums", signedTone(totals.roiPct))}>
                 {percent(totals.roiPct)}
               </span>
             </div>
-            <div className="mt-1 flex justify-between text-zinc-400">
+            <div className="mt-1 flex justify-between text-muted">
               <span>Cost {money(totals.buyValue)}</span>
               <span>Value {money(totals.currentValue)}</span>
             </div>
@@ -605,7 +605,7 @@ export function PortfolioTable({
                   <span className={signedTone(today.pct)}>
                     {percent(today.pct, 2)}
                   </span>
-                  <span className="text-zinc-500"> </span>
+                  <span className="text-muted"> </span>
                   <span className={signedTone(today.dollar)}>
                     {money(today.dollar, 0)}
                   </span>
@@ -620,12 +620,12 @@ export function PortfolioTable({
       <div className="hidden md:block">
         {holdings.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <p className="text-sm text-zinc-400">No holdings on this sheet yet.</p>
+            <p className="text-sm text-muted">No holdings on this sheet yet.</p>
             {emptyCta}
           </div>
         ) : (
           <FluidTable template={TEMPLATE}>
-            <FluidRow className="border-zinc-800 text-xs font-medium text-zinc-400">
+            <FluidRow className="border-border text-xs font-medium text-muted">
               {COLUMNS.map((col) => (
                 <div key={col.label || "actions"} className={cellBase}>
                   {col.key ? (
@@ -633,7 +633,7 @@ export function PortfolioTable({
                       type="button"
                       onClick={() => toggleSort(col.key!)}
                       className={cn(
-                        "group inline-flex items-center gap-1 transition hover:text-zinc-300",
+                        "group inline-flex items-center gap-1 transition hover:text-foreground/80",
                         sortKey === col.key && "text-brand-bright"
                       )}
                       title={
@@ -663,11 +663,11 @@ export function PortfolioTable({
             </FluidRow>
 
             {sortedHoldings.map((h) => (
-              <FluidRow key={h.id} className="group hover:bg-zinc-900/40">
+              <FluidRow key={h.id} className="group hover:bg-well/50">
                 <div
                   className={cn(
                     cellBase,
-                    "font-semibold tracking-wide text-white flex items-center gap-1.5"
+                    "font-semibold tracking-wide text-foreground flex items-center gap-1.5"
                   )}
                 >
                   {onOpenTicker ? (
@@ -682,7 +682,7 @@ export function PortfolioTable({
                     h.ticker
                   )}
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
+                <div className={cn(cellBase, "tabular-nums text-muted")}>
                   {percent(h.pctOfTotal)}
                 </div>
                 <div className={cn(cellBase, "py-1")}>
@@ -700,7 +700,7 @@ export function PortfolioTable({
                     onCommit={(buy_price) => onPatch({ id: h.id, buy_price })}
                   />
                 </div>
-                <div className={cn(cellBase, "tabular-nums font-semibold text-white")}>
+                <div className={cn(cellBase, "tabular-nums font-semibold text-foreground")}>
                   {usd(h.quote?.price ?? h.buy_price)}
                 </div>
                 <div
@@ -712,10 +712,10 @@ export function PortfolioTable({
                 >
                   {percent(h.roiPct)}
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-zinc-400")}>
+                <div className={cn(cellBase, "tabular-nums text-muted")}>
                   {money(h.buyValue)}
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-zinc-100")}>
+                <div className={cn(cellBase, "tabular-nums text-foreground")}>
                   {money(h.currentValue)}
                 </div>
                 <div
@@ -740,7 +740,7 @@ export function PortfolioTable({
                     "tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).pct!)
-                      : "text-zinc-400"
+                      : "text-muted"
                   )}
                 >
                   {rowToday(h).pct != null
@@ -753,7 +753,7 @@ export function PortfolioTable({
                     "tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).dollar)
-                      : "text-zinc-400"
+                      : "text-muted"
                   )}
                 >
                   {rowToday(h).pct != null
@@ -765,7 +765,7 @@ export function PortfolioTable({
                   <button
                     type="button"
                     onClick={() => onDelete(h.id)}
-                    className="rounded p-1 text-zinc-400 opacity-0 transition hover:text-rose-400 group-hover:opacity-100"
+                    className="rounded p-1 text-muted opacity-0 transition hover:text-loss group-hover:opacity-100"
                     aria-label={`Delete ${h.ticker}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -775,9 +775,9 @@ export function PortfolioTable({
               </FluidRow>
             ))}
 
-            <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
-              <div className={cn(cellBase, "py-2.5 text-white")}>PORTFOLIO</div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-400")}>
+            <FluidRow className="border-t border-border bg-well/60 font-semibold">
+              <div className={cn(cellBase, "py-2.5 text-foreground")}>PORTFOLIO</div>
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-muted")}>
                 100%
               </div>
               <div className={cn(cellBase, "py-2.5")} />
@@ -792,10 +792,10 @@ export function PortfolioTable({
               >
                 {percent(totals.roiPct)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-zinc-300")}>
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground/80")}>
                 {money(totals.buyValue)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-white")}>
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
                 {money(totals.currentValue)}
               </div>
               <div
@@ -812,7 +812,7 @@ export function PortfolioTable({
                 className={cn(
                   cellBase,
                   "py-2.5 tabular-nums font-medium",
-                  today.pct != null ? signedTone(today.pct) : "text-zinc-400"
+                  today.pct != null ? signedTone(today.pct) : "text-muted"
                 )}
               >
                 {today.pct != null ? percent(today.pct, 2) : "—"}
@@ -821,7 +821,7 @@ export function PortfolioTable({
                 className={cn(
                   cellBase,
                   "py-2.5 tabular-nums font-medium",
-                  today.pct != null ? signedTone(today.dollar) : "text-zinc-400"
+                  today.pct != null ? signedTone(today.dollar) : "text-muted"
                 )}
               >
                 {today.pct != null ? money(today.dollar, 0) : "—"}

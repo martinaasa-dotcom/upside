@@ -57,11 +57,11 @@ function JoinInner() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#1a241e_0%,_#0d110f_55%)] px-4 text-zinc-100">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#2d3d32_0%,_#1a2820_55%)] px-4 text-foreground">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="w-full max-w-sm space-y-4 text-center">
           <h1 className="text-lg font-bold">Join a sheet</h1>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-muted">
             Your partner invited you to edit this book together. Paste the
             code if the link did not fill it in.
           </p>
@@ -77,7 +77,7 @@ function JoinInner() {
                 value={manual}
                 onChange={(e) => setManual(e.target.value)}
                 placeholder="Paste invite code"
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
+                className="rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
               />
               <button
                 type="submit"
@@ -87,8 +87,8 @@ function JoinInner() {
               </button>
             </form>
           )}
-          {status && <p className="text-sm text-zinc-400">{status}</p>}
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {status && <p className="text-sm text-muted">{status}</p>}
+          {error && <p className="text-sm text-loss">{error}</p>}
         </div>
       </div>
     </SignInGate>
@@ -99,7 +99,7 @@ export default function AccountJoinPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-app text-zinc-400">
+        <div className="flex min-h-dvh items-center justify-center bg-app text-muted">
           Loading …
         </div>
       }

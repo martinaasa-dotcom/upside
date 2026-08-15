@@ -138,17 +138,17 @@ export function DailyDuelCard({
     return (
       <section
         className={cn(
-          "overview-fade min-h-[13.5rem] rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4",
+          "overview-fade min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
           !compact && "sm:p-6"
         )}
       >
         <div className="mb-3 flex items-center gap-2.5">
-          <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
+          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">Daily Duel</h3>
-            <p className="mt-0.5 text-xs text-zinc-400">
+            <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
+            <p className="mt-0.5 text-xs text-muted">
               {communityId
                 ? "The circle's pick. Who finishes the US session higher."
                 : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
@@ -156,8 +156,8 @@ export function DailyDuelCard({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="h-[5.5rem] rounded-2xl border border-zinc-800 bg-zinc-950/40" />
-          <div className="h-[5.5rem] rounded-2xl border border-zinc-800 bg-zinc-950/40" />
+          <div className="h-[5.5rem] rounded-2xl border border-border bg-well/40" />
+          <div className="h-[5.5rem] rounded-2xl border border-border bg-well/40" />
         </div>
       </section>
     );
@@ -232,18 +232,18 @@ export function DailyDuelCard({
   return (
     <section
       className={cn(
-        "overview-fade min-h-[13.5rem] rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-4",
+        "overview-fade min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
         !compact && "sm:p-6"
       )}
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
+          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">Daily Duel</h3>
-            <p className="mt-0.5 text-xs text-zinc-400">
+            <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
+            <p className="mt-0.5 text-xs text-muted">
               {communityId
                 ? "The circle's pick. Who finishes the US session higher."
                 : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
@@ -251,8 +251,8 @@ export function DailyDuelCard({
           </div>
         </div>
         {communityId && (community?.pickCount ?? 0) > 0 ? (
-          <p className="shrink-0 text-xs text-zinc-400">
-            <span className="font-semibold tabular-nums text-zinc-200">
+          <p className="shrink-0 text-xs text-muted">
+            <span className="font-semibold tabular-nums text-foreground">
               {community?.pickCount ?? 0}
             </span>
             {(community?.pickCount ?? 0) === 1 ? " pick" : " picks"}
@@ -260,18 +260,18 @@ export function DailyDuelCard({
         ) : (
           !communityId &&
           stats.totalPlayed > 0 && (
-            <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/50 px-3 py-2 text-right">
-              <p className="text-xs text-zinc-400">
+            <div className="rounded-xl border border-border bg-well/70 px-3 py-2 text-right">
+              <p className="text-xs text-muted">
                 Record
               </p>
-              <p className="text-sm font-semibold tabular-nums text-white">
+              <p className="text-sm font-semibold tabular-nums text-foreground">
                 {stats.totalCorrect}/{stats.totalPlayed}
-                <span className="ml-1.5 font-normal text-zinc-400">
+                <span className="ml-1.5 font-normal text-muted">
                   ({percent(stats.accuracyPct ?? 0, 0)})
                 </span>
               </p>
               {stats.currentStreak >= 2 && (
-                <p className="text-xs text-amber-300">
+                <p className="text-xs text-caution">
                   {stats.currentStreak} in a row
                 </p>
               )}
@@ -315,36 +315,36 @@ export function DailyDuelCard({
               className={cn(
                 "touch-target flex h-full flex-col items-center justify-center rounded-2xl border px-4 py-5 text-center transition",
                 myPick == null
-                  ? "border-zinc-700 bg-zinc-900/40 hover:border-sky-400/60 hover:bg-sky-500/10 active:scale-[0.98]"
+                  ? "border-border bg-well/40 hover:border-brand hover:bg-brand/10 active:scale-[0.98]"
                   : win
-                    ? "border-emerald-500/50 bg-emerald-500/10"
+                    ? "border-gain/50 bg-gain/10"
                     : waitingOnClose && isPick
-                      ? "border-sky-500/40 bg-sky-500/10"
-                      : "border-zinc-800 bg-zinc-950/40 opacity-70",
-                isPick && "ring-2 ring-sky-400/60"
+                      ? "border-brand/40 bg-brand/10"
+                      : "border-border bg-well/40 opacity-70",
+                isPick && "ring-2 ring-brand/60"
               )}
             >
-              <p className="text-2xl font-semibold text-white">
+              <p className="text-2xl font-semibold text-foreground">
                 {cashtag(ticker)}
               </p>
               {isPick && (
-                <p className="mt-1 text-xs font-medium text-sky-300">
+                <p className="mt-1 text-xs font-medium text-brand-bright">
                   Your pick
                 </p>
               )}
               {communityId &&
                 community?.settled &&
                 (community?.counts[side] ?? 0) > 0 && (
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="mt-1 text-xs text-muted">
                   {community.counts[side]} vote
                   {community.counts[side] === 1 ? "" : "s"}
                 </p>
               )}
               {waitingOnClose && isPick && !communityId && (
-                <p className="mt-2 text-sm text-zinc-400">Locked · no peek</p>
+                <p className="mt-2 text-sm text-muted">Locked · no peek</p>
               )}
               {waitingOnClose && !isPick && !communityId && (
-                <p className="mt-2 text-sm text-zinc-400">—</p>
+                <p className="mt-2 text-sm text-muted">—</p>
               )}
               {pct != null && (
                 <p
@@ -354,7 +354,7 @@ export function DailyDuelCard({
                       ? "text-gain"
                       : pct < 0
                         ? "text-loss"
-                        : "text-zinc-400"
+                        : "text-muted"
                   )}
                 >
                   {percent(pct)}
@@ -365,7 +365,7 @@ export function DailyDuelCard({
         })}
       </div>
 
-      <p className="mt-4 text-center text-sm leading-relaxed text-zinc-400">
+      <p className="mt-4 text-center text-sm leading-relaxed text-muted">
         {communityId
           ? communityLine
           : myPick == null

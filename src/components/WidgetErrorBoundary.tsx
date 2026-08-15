@@ -53,13 +53,13 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           role="alert"
           className={
             this.props.className ??
-            "min-w-0 overflow-x-clip rounded-2xl border border-white/10 bg-card/80 px-5 py-6"
+            "min-w-0 overflow-x-clip rounded-2xl border border-border bg-card/80 px-5 py-6"
           }
         >
-          <p className="text-sm font-semibold text-white">
+          <p className="text-sm font-semibold text-foreground">
             {this.props.name} hit a snag
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-1 text-sm leading-relaxed text-muted">
             Your book is fine. This panel failed to render.
           </p>
           <button

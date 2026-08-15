@@ -26,10 +26,10 @@ export function MobileTopBar({
   className,
 }: Props) {
   const bell = (
-    <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-300">
+    <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80">
       <Bell className="h-5 w-5" />
       {alertCount > 0 && (
-        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-orange-400" />
+        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-mustard" />
       )}
     </span>
   );
@@ -62,7 +62,7 @@ export function MobileTopBar({
             </span>
           )}
         </Link>
-        <h1 className="truncate text-center font-heading text-base font-bold text-white">
+        <h1 className="truncate text-center font-heading text-base font-bold text-foreground">
           {title}
         </h1>
         {end ? (

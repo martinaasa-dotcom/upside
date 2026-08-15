@@ -158,11 +158,11 @@ export function MacroStrip() {
   }>;
 
   return (
-    <div className="flex min-w-0 items-center justify-end gap-2 text-xs text-zinc-400">
+    <div className="flex min-w-0 items-center justify-end gap-2 text-xs text-muted">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="shrink-0 rounded-md px-2 py-1 font-medium text-zinc-400 hover:text-zinc-200"
+        className="shrink-0 rounded-md px-2 py-1 font-medium text-muted hover:text-foreground"
         aria-expanded={open}
       >
         Markets
@@ -171,12 +171,12 @@ export function MacroStrip() {
         <div className="scrollbar-none flex min-w-0 items-center gap-2 overflow-x-auto tabular-nums sm:gap-3">
           {items.map((i) => (
             <span key={i.label} className="shrink-0" title={i.title}>
-              <span className="text-zinc-400">{i.label}</span>{" "}
+              <span className="text-muted">{i.label}</span>{" "}
               <span
                 className={cn(
-                  "text-zinc-300",
-                  i.tone === "fear" && "text-sky-300",
-                  i.tone === "greed" && "text-amber-300"
+                  "text-foreground/80",
+                  i.tone === "fear" && "text-brand-bright",
+                  i.tone === "greed" && "text-caution"
                 )}
               >
                 {i.value}

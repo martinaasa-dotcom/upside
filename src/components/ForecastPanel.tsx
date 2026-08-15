@@ -137,7 +137,7 @@ function PlaybookList({
 }) {
   const items = playbookBullets(text);
   if (items.length === 0) {
-    return <p className="mt-1.5 text-sm text-zinc-500">{empty}</p>;
+    return <p className="mt-1.5 text-sm text-muted">{empty}</p>;
   }
   return (
     <ul className="mt-1.5 space-y-2.5">
@@ -165,11 +165,11 @@ function PlaybookItem({
         )}
       />
       <div className="min-w-0">
-        <p className="text-sm font-medium leading-snug text-zinc-100">
+        <p className="text-sm font-medium leading-snug text-foreground">
           {item.head}
         </p>
         {item.detail && (
-          <p className="mt-0.5 text-sm leading-snug text-zinc-400">
+          <p className="mt-0.5 text-sm leading-snug text-muted">
             {item.detail}
           </p>
         )}
@@ -180,10 +180,10 @@ function PlaybookItem({
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950/40 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-well/40 px-4 py-3">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-white">Forecast is off</p>
-        <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+        <p className="text-sm font-medium text-foreground">Forecast is off</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-muted">
           Margus&apos;s year-by-year path for this sheet. Same idea as Pulse,
           sitting under the table.
         </p>
@@ -191,7 +191,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
       <button
         type="button"
         onClick={onShow}
-        className="shrink-0 rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-zinc-200"
+        className="shrink-0 rounded-lg bg-mustard px-3 py-1.5 text-xs font-semibold text-select-ink hover:bg-brand-bright"
       >
         Show
       </button>
@@ -259,8 +259,8 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-zinc-800/50 focus:bg-zinc-900 focus:ring-1 focus:ring-brand/40",
-        targeted ? "text-zinc-100" : "text-zinc-400"
+        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50",
+        targeted ? "text-foreground" : "text-muted"
       )}
     />
   );
@@ -376,9 +376,9 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
     <div>
       <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-11">
         {hoverPoint ? (
-          <div className="rounded-lg border border-white/10 bg-zinc-950/90 px-2.5 py-1.5 text-center">
-            <p className="text-xs text-zinc-400">{hoverPoint.label}</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
+          <div className="rounded-lg border border-border bg-well/90 px-2.5 py-1.5 text-center">
+            <p className="text-xs text-muted">{hoverPoint.label}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
               {currency(hoverPoint.value, 0)}
             </p>
             {vsNowPct != null && vsNowDollar != null && (
@@ -390,7 +390,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
               >
                 vs now {vsNowPct > 0 ? "+" : ""}
                 {percent(vsNowPct)}
-                <span className="text-zinc-500">
+                <span className="text-muted">
                   {" "}
                   · {signedCurrency(vsNowDollar, 0)}
                 </span>
@@ -398,7 +398,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
             )}
           </div>
         ) : (
-          <p className="pb-1 text-xs text-zinc-500">
+          <p className="pb-1 text-xs text-muted">
             Drag across to read a year
           </p>
         )}
@@ -409,7 +409,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
           {ticks.map((t) => (
             <span
               key={t}
-              className="absolute right-0 -translate-y-1/2 text-xs tabular-nums text-zinc-500"
+              className="absolute right-0 -translate-y-1/2 text-xs tabular-nums text-muted"
               style={{ top: `${(yAt(t) / height) * 100}%` }}
             >
               {compactAxis(t)}
@@ -440,8 +440,8 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
         >
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#d4d4d8" stopOpacity="0.22" />
-              <stop offset="1" stopColor="#d4d4d8" stopOpacity="0" />
+              <stop offset="0" stopColor="#c4a36a" stopOpacity="0.22" />
+              <stop offset="1" stopColor="#c4a36a" stopOpacity="0" />
             </linearGradient>
           </defs>
           {ticks.map((t) => (
@@ -458,7 +458,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
           <polygon points={area} fill={`url(#${gid})`} />
           <polyline
             fill="none"
-            stroke="#d4d4d8"
+            stroke="#c4a36a"
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -470,8 +470,8 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
               cx={xAt(i)}
               cy={yAt(p.value)}
               r={2.5}
-              fill="#0b0c0e"
-              stroke="#ecece8"
+              fill="#16130f"
+              stroke="#ede8dc"
               strokeWidth={1.5}
             />
           ))}
@@ -482,15 +482,15 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                 x2={xAt(hover)}
                 y1={padT}
                 y2={padT + innerH}
-                stroke="#ecece8"
+                stroke="#ede8dc"
                 strokeOpacity={0.45}
               />
               <circle
                 cx={xAt(hover)}
                 cy={yAt(hoverPoint.value)}
                 r={4.5}
-                fill="#ecece8"
-                stroke="#0d110f"
+                fill="#ede8dc"
+                stroke="#1a2820"
                 strokeWidth={1.5}
               />
             </g>
@@ -506,7 +506,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
             return (
               <span
                 key={p.label}
-                className="absolute top-0 text-xs text-zinc-500"
+                className="absolute top-0 text-xs text-muted"
                 style={{
                   left: `${((xAt(i) - padL) / innerW) * 100}%`,
                   transform: isFirst
@@ -541,7 +541,7 @@ function SheetPath({
   ];
 
   return (
-    <div className="mt-4 border-t border-white/5 pt-4">
+    <div className="mt-4 border-t border-border pt-4">
       <SheetPathChart points={points} />
     </div>
   );
@@ -916,8 +916,8 @@ export function ForecastPanel({
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/80">
-      <header className="border-b border-zinc-800/80 p-5 sm:p-8">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
+      <header className="border-b border-border p-5 sm:p-8">
         <PanelHeader
           title="Forecast"
           subtitle="A yearly price for each holding, to 2030."
@@ -927,7 +927,7 @@ export function ForecastPanel({
                 <button
                   type="button"
                   onClick={onClearOverrides}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted transition hover:border-brand hover:text-foreground"
                   title="Throw away every price you or Margus changed on this sheet"
                 >
                   <RotateCcw className="h-3 w-3" aria-hidden />
@@ -938,7 +938,7 @@ export function ForecastPanel({
                 type="button"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-zinc-800 px-2.5 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-white/25 hover:bg-zinc-700 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-hover px-2.5 py-1.5 text-xs font-semibold text-foreground transition hover:border-brand hover:bg-select hover:text-select-ink disabled:opacity-40"
                 title="Work the whole forecast out again from scratch"
               >
                 {busy ? (
@@ -951,7 +951,7 @@ export function ForecastPanel({
             </>
           }
         />
-        <p className="mt-3 text-xs leading-relaxed text-zinc-400">
+        <p className="mt-3 text-xs leading-relaxed text-muted">
           {FORECAST_DISCLAIMER}
         </p>
         {statusHint && (
@@ -963,7 +963,7 @@ export function ForecastPanel({
           </p>
         )}
         {error && (
-          <p className="mt-1 text-xs text-rose-300">{error}</p>
+          <p className="mt-1 text-xs text-loss">{error}</p>
         )}
         {model.rows.length > 0 && (
           <SheetPath
@@ -975,7 +975,7 @@ export function ForecastPanel({
       </header>
 
       {model.rows.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-zinc-400">
+        <div className="px-4 py-10 text-center text-sm text-muted">
           Add a holding and Margus will work out where it could go.
         </div>
       ) : (
@@ -985,19 +985,19 @@ export function ForecastPanel({
             {model.rows.map((r) => (
               <div
                 key={r.ticker}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/30 px-3 py-3"
+                className="rounded-xl border border-border bg-well/30 px-3 py-3"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
-                    <p className="text-base font-semibold text-white">
+                    <p className="text-base font-semibold text-foreground">
                       {cashtag(r.ticker)}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-muted">
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · Margus is working on it"}
                     </p>
                     {mustBeTrue(r.ticker) ? (
-                      <p className="mt-1 text-xs leading-snug text-zinc-400">
+                      <p className="mt-1 text-xs leading-snug text-muted">
                         {mustBeTrue(r.ticker)}
                       </p>
                     ) : null}
@@ -1007,7 +1007,7 @@ export function ForecastPanel({
                       "text-sm font-medium tabular-nums",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
-                        : "text-zinc-400"
+                        : "text-muted"
                     )}
                   >
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
@@ -1015,8 +1015,8 @@ export function ForecastPanel({
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                   <div className="text-center">
-                    <p className="text-zinc-400">Price now</p>
-                    <p className="tabular-nums text-zinc-100">
+                    <p className="text-muted">Price now</p>
+                    <p className="tabular-nums text-foreground">
                       {currency(r.currentPrice)}
                     </p>
                   </div>
@@ -1024,8 +1024,8 @@ export function ForecastPanel({
                     <div key={y} className="text-center">
                       <p
                         className={cn(
-                          "text-zinc-400",
-                          isCurrentYear(y) && "text-zinc-200"
+                          "text-muted",
+                          isCurrentYear(y) && "text-foreground"
                         )}
                       >
                         <YearColHeader year={y} />
@@ -1041,11 +1041,11 @@ export function ForecastPanel({
               </div>
             ))}
 
-            <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 px-3 py-3">
-              <p className="text-xs font-medium text-zinc-400">
+            <div className="rounded-xl border border-border bg-well/60 px-3 py-3">
+              <p className="text-xs font-medium text-muted">
                 Whole sheet
               </p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-white">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
                 {currency(model.currentTotal)}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -1053,13 +1053,13 @@ export function ForecastPanel({
                   <div key={y}>
                     <p
                       className={cn(
-                        "text-zinc-400",
-                        isCurrentYear(y) && "text-zinc-200"
+                        "text-muted",
+                        isCurrentYear(y) && "text-foreground"
                       )}
                     >
                       <YearColHeader year={y} />
                     </p>
-                    <p className="tabular-nums text-zinc-100">
+                    <p className="tabular-nums text-foreground">
                       {currency(model.eoyTotals[y])}
                     </p>
                   </div>
@@ -1081,7 +1081,7 @@ export function ForecastPanel({
           {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
-              <FluidRow className="text-xs font-medium text-zinc-400">
+              <FluidRow className="text-xs font-medium text-muted">
                 <div className={cellLabel}>Ticker</div>
                 <div className={cellNum}>Price now</div>
                 {yearCols.map((y) => (
@@ -1089,7 +1089,7 @@ export function ForecastPanel({
                     key={y}
                     className={cn(
                       cellNum,
-                      isCurrentYear(y) && "text-zinc-200"
+                      isCurrentYear(y) && "text-foreground"
                     )}
                     title={isCurrentYear(y) ? "Year-end, not today's price" : undefined}
                   >
@@ -1100,21 +1100,21 @@ export function ForecastPanel({
               </FluidRow>
 
               {model.rows.map((r) => (
-                <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-zinc-900/40">
-                  <div className={cn(cellLabel, "font-semibold tracking-wide text-white")}>
+                <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-well/50">
+                  <div className={cn(cellLabel, "font-semibold tracking-wide text-foreground")}>
                     {cashtag(r.ticker)}
                     {!r.hasTargets && (
-                      <span className="mt-0.5 text-xs font-normal tracking-normal text-zinc-400">
+                      <span className="mt-0.5 text-xs font-normal tracking-normal text-muted">
                         working on it
                       </span>
                     )}
                     {mustBeTrue(r.ticker) ? (
-                      <span className="mt-1 max-w-[12rem] text-xs font-normal leading-snug tracking-normal text-zinc-400">
+                      <span className="mt-1 max-w-[12rem] text-xs font-normal leading-snug tracking-normal text-muted">
                         {mustBeTrue(r.ticker)}
                       </span>
                     ) : null}
                   </div>
-                  <div className={cn(cellNum, "text-zinc-100")}>
+                  <div className={cn(cellNum, "text-foreground")}>
                     {currency(r.currentPrice)}
                   </div>
                   {yearCols.map((y) => (
@@ -1132,7 +1132,7 @@ export function ForecastPanel({
                       "font-medium",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
-                        : "text-zinc-400"
+                        : "text-muted"
                     )}
                   >
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
@@ -1140,15 +1140,15 @@ export function ForecastPanel({
                 </FluidRow>
               ))}
 
-              <FluidRow className="border-t border-zinc-700 bg-zinc-900/60 font-semibold">
-                <div className={cn(cellLabel, "py-2.5 text-white")}>
+              <FluidRow className="border-t border-border bg-well/60 font-semibold">
+                <div className={cn(cellLabel, "py-2.5 text-foreground")}>
                   Portfolio
                 </div>
-                <div className={cn(cellNum, "py-2.5 text-white")}>
+                <div className={cn(cellNum, "py-2.5 text-foreground")}>
                   {currency(model.currentTotal)}
                 </div>
                 {yearCols.map((y) => (
-                  <div key={y} className={cn(cellNum, "py-2.5 text-white")}>
+                  <div key={y} className={cn(cellNum, "py-2.5 text-foreground")}>
                     {currency(model.eoyTotals[y])}
                   </div>
                 ))}
@@ -1158,7 +1158,7 @@ export function ForecastPanel({
                     "py-2.5",
                     model.gainPct != null
                       ? signedTone(model.gainPct)
-                      : "text-zinc-400"
+                      : "text-muted"
                   )}
                 >
                   {model.gainPct != null ? percent(model.gainPct) : "—"}
@@ -1169,13 +1169,13 @@ export function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-zinc-800/80 p-4 sm:p-6">
+      <div className="border-t border-border p-4 sm:p-6">
         <div>
-          <h3 className="text-base font-semibold text-white">
+          <h3 className="text-base font-semibold text-foreground">
             What Margus makes of it
           </h3>
           {plan?.generatedAt && (
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted">
               Worked out {formatGeneratedAt(plan.generatedAt)}
               {appliedFlash ? " · prices updated" : ""}
             </p>
@@ -1183,7 +1183,7 @@ export function ForecastPanel({
         </div>
 
         {error && (
-          <p className="mt-3 rounded-lg border border-rose-500/30 bg-rose-950/40 px-3 py-2 text-sm text-rose-100">
+          <p className="mt-3 rounded-lg border border-loss/30 bg-loss/10 px-3 py-2 text-sm text-loss">
             {error}
           </p>
         )}
@@ -1197,7 +1197,7 @@ export function ForecastPanel({
         )}
 
         {busy && !plan && (
-          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-hover px-4 py-6 text-sm text-zinc-300">
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-border bg-hover px-4 py-6 text-sm text-foreground/80">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Working through every holding on this sheet …
           </div>
@@ -1207,10 +1207,10 @@ export function ForecastPanel({
             {(plan.generalAdvice || plan.sectorRotation) && (
               <div className="space-y-2 text-sm leading-relaxed">
                 {plan.generalAdvice && (
-                  <p className="text-zinc-200">{plan.generalAdvice}</p>
+                  <p className="text-foreground">{plan.generalAdvice}</p>
                 )}
                 {plan.sectorRotation && (
-                  <p className="text-zinc-400">{plan.sectorRotation}</p>
+                  <p className="text-muted">{plan.sectorRotation}</p>
                 )}
               </div>
             )}
@@ -1221,11 +1221,11 @@ export function ForecastPanel({
                 <ul className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                   {plan.eoyTargets.map((t) => (
                     <li key={t.ticker} className="min-w-0">
-                      <p className="text-sm font-semibold text-zinc-100">
+                      <p className="text-sm font-semibold text-foreground">
                         {cashtag(t.ticker)}
                       </p>
                       {t.rationale ? (
-                        <p className="mt-0.5 text-sm leading-snug text-zinc-400">
+                        <p className="mt-0.5 text-sm leading-snug text-muted">
                           {t.rationale}
                         </p>
                       ) : null}
@@ -1238,10 +1238,10 @@ export function ForecastPanel({
             {lastPlanDiffs.length > 0 && (
               <div>
                 <MicroLabel>Vs last plan</MicroLabel>
-                <ul className="mt-2 space-y-1 text-sm text-zinc-400">
+                <ul className="mt-2 space-y-1 text-sm text-muted">
                   {lastPlanDiffs.map((d) => (
                     <li key={d.ticker}>
-                      <span className="font-semibold text-zinc-200">
+                      <span className="font-semibold text-foreground">
                         {cashtag(d.ticker)}
                       </span>
                       {` end ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}
@@ -1252,7 +1252,7 @@ export function ForecastPanel({
             )}
 
             {soldTickersInPlan.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-hover px-3 py-2.5 text-xs text-zinc-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-hover px-3 py-2.5 text-xs text-foreground">
                 <span>
                   This still mentions {soldTickersInPlan.join(", ")}, which you
                   no longer hold here.
@@ -1262,7 +1262,7 @@ export function ForecastPanel({
                   <button
                     type="button"
                     onClick={() => void askMargus()}
-                    className="shrink-0 rounded-lg border border-white/15 px-2.5 py-1 font-semibold text-zinc-100 transition hover:bg-white/5"
+                    className="shrink-0 rounded-lg border border-brand/40 px-2.5 py-1 font-semibold text-foreground transition hover:bg-hover"
                   >
                     Update it
                   </button>
@@ -1291,10 +1291,10 @@ export function ForecastPanel({
                   </div>
                 )}
                 <div className="mt-4">
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-foreground">
                     {activePeriod.theme}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-500">
+                  <p className="mt-0.5 text-xs text-muted">
                     {activePeriod.label}
                   </p>
                   <div className="mt-4 grid gap-6 sm:grid-cols-2">
@@ -1309,7 +1309,7 @@ export function ForecastPanel({
                       />
                     </div>
                     <div className="flex h-full flex-col">
-                      <MicroLabel className="text-rose-300">
+                      <MicroLabel className="text-loss">
                         Worth selling some
                       </MicroLabel>
                       <PlaybookList
@@ -1320,7 +1320,7 @@ export function ForecastPanel({
                     </div>
                   </div>
                   {activePeriod.notes?.trim() && (
-                    <p className="mt-4 text-sm leading-relaxed text-zinc-500">
+                    <p className="mt-4 text-sm leading-relaxed text-muted">
                       {activePeriod.notes}
                     </p>
                   )}

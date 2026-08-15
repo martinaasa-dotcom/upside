@@ -43,21 +43,21 @@ export function BookBottomNav({ className }: { className?: string }) {
     <nav
       aria-label="Back to your book"
       className={cn(
-        "sticky bottom-0 z-30 hidden border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
+        "sticky bottom-0 z-30 hidden border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
         className
       )}
     >
       <div className={cn(PAGE_COLUMN_CLASS, "py-2")}>
-        <p className="mb-1 text-xs font-medium text-zinc-400">
+        <p className="mb-1 text-xs font-medium text-muted">
           In your book
         </p>
-        <div className="grid h-12 w-full max-w-[36rem] grid-cols-4 overflow-hidden rounded-lg bg-zinc-900/80 ring-1 ring-inset ring-white/10">
+        <div className="grid h-12 w-full max-w-[36rem] grid-cols-4 overflow-hidden rounded-lg bg-well/80 ring-1 ring-inset ring-brand/30">
           {ITEMS.map(({ href, label, title, Icon }) => (
             <Link
               key={href}
               href={href}
               title={title}
-              className="touch-target flex min-w-0 items-center justify-center gap-1.5 px-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
+              className="touch-target flex min-w-0 items-center justify-center gap-1.5 px-2 text-sm font-medium text-muted transition hover:bg-hover hover:text-foreground"
             >
               <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
               <span className="whitespace-nowrap">{label}</span>

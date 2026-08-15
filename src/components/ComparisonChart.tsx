@@ -89,7 +89,7 @@ export function ComparisonChart({
   if (usable.length === 0 || !geometry) {
     return (
       <div
-        className="flex items-center justify-center text-sm text-zinc-400"
+        className="flex items-center justify-center text-sm text-muted"
         style={{ height }}
       >
         History builds up day by day. Check back tomorrow.
@@ -189,13 +189,13 @@ export function ComparisonChart({
             })}
         </svg>
         {active != null && dayLabel && (
-          <div className="pointer-events-none absolute left-1/2 top-1 z-10 -translate-x-1/2 rounded-md border border-zinc-700 bg-zinc-950/95 px-2 py-1 text-xs shadow-lg">
-            <p className="text-center font-medium text-zinc-200">{dayLabel}</p>
+          <div className="pointer-events-none absolute left-1/2 top-1 z-10 -translate-x-1/2 rounded-md border border-border bg-well/95 px-2 py-1 text-xs shadow-lg">
+            <p className="text-center font-medium text-foreground">{dayLabel}</p>
             <div className="mt-0.5 flex flex-wrap justify-center gap-x-3">
               {usable.map((s) => {
                 const v = s.points[active] ?? 0;
                 return (
-                  <span key={s.label} className="tabular-nums text-zinc-300">
+                  <span key={s.label} className="tabular-nums text-foreground/80">
                     <span style={{ color: s.color }}>{s.label}</span>{" "}
                     <span className={v >= 0 ? "text-gain" : "text-loss"}>
                       {percent(v)}
@@ -207,7 +207,7 @@ export function ComparisonChart({
           </div>
         )}
       </div>
-      <div className="mt-1 flex justify-between text-xs text-zinc-500">
+      <div className="mt-1 flex justify-between text-xs text-muted">
         <span>{startLabel}</span>
         <span>{endLabel}</span>
       </div>
@@ -230,12 +230,12 @@ export function ComparisonChart({
               value={percent(last)}
               sub={
                 s.hint ? (
-                  <span className={signedTone(last, "text-zinc-500")}>
+                  <span className={signedTone(last, "text-muted")}>
                     {s.hint}
                   </span>
                 ) : undefined
               }
-              valueClassName={signedTone(last, "text-zinc-100")}
+              valueClassName={signedTone(last, "text-foreground")}
             />
           );
         })}

@@ -106,7 +106,7 @@ export function SignInGate({ children }: Props) {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-app text-zinc-100">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-app text-foreground">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -133,7 +133,7 @@ export function SignInGate({ children }: Props) {
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
             {deletedNotice && (
-              <p className="signin-rise-2 mt-8 max-w-md rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm leading-relaxed text-emerald-200">
+              <p className="signin-rise-2 mt-8 max-w-md rounded-lg border border-gain/30 bg-gain/10 px-3 py-2 text-sm leading-relaxed text-gain">
                 {deletedNotice === "full"
                   ? "Account deleted. Your data and sign-in are both gone."
                   : `Your ${PRODUCT_NAME} data has been deleted. Signing in again starts a brand-new account.`}
@@ -142,23 +142,23 @@ export function SignInGate({ children }: Props) {
 
             <div className="signin-rise-2 mt-10 max-w-md space-y-4">
               {invite && (
-                <p className="text-xs font-medium text-zinc-400">
+                <p className="text-xs font-medium text-muted">
                   Invite
                 </p>
               )}
-              <h1 className="font-heading text-lg font-bold leading-snug text-white">
+              <h1 className="font-heading text-lg font-bold leading-snug text-foreground">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
-              <p className="text-sm leading-relaxed text-zinc-400">
+              <p className="text-sm leading-relaxed text-muted">
                 {invite ? inviteLandingCopy(invite).detail : SIGNIN_WHO}
               </p>
             </div>
 
-            <ul className="signin-rise-2 mt-8 max-w-md space-y-3.5 text-left text-sm leading-relaxed text-zinc-400">
+            <ul className="signin-rise-2 mt-8 max-w-md space-y-3.5 text-left text-sm leading-relaxed text-muted">
               {SIGNIN_POINTS.map((line) => (
                 <li key={line} className="flex gap-3">
                   <span
-                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-500"
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
                     aria-hidden
                   />
                   <span>{line}</span>
@@ -177,18 +177,18 @@ export function SignInGate({ children }: Props) {
             </button>
 
             {err && (
-              <p className="mt-4 text-xs text-red-400" role="alert">
+              <p className="mt-4 text-xs text-loss" role="alert">
                 {err}
               </p>
             )}
 
-            <p className="signin-rise-4 mt-6 max-w-sm text-xs leading-relaxed text-zinc-500">
+            <p className="signin-rise-4 mt-6 max-w-sm text-xs leading-relaxed text-muted">
               By continuing you agree to the{" "}
-              <Link href="/terms" className="underline hover:text-zinc-400">
+              <Link href="/terms" className="underline hover:text-muted">
                 Terms
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="underline hover:text-zinc-400">
+              <Link href="/privacy" className="underline hover:text-muted">
                 Privacy policy
               </Link>
               . Not financial advice.
@@ -216,7 +216,7 @@ function BookStill() {
         <MicroLabel>
           Today&apos;s briefing
         </MicroLabel>
-        <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-zinc-500">
+        <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
           Sample
         </span>
       </div>
@@ -244,7 +244,7 @@ function BookStill() {
               )}
               aria-hidden
             />
-            <span className="font-heading text-base font-bold text-white">
+            <span className="font-heading text-base font-bold text-foreground">
               ${row.ticker}
             </span>
             <span className="text-right">
@@ -273,24 +273,24 @@ function BookStill() {
         <InsightText text="$RKLB jumped 6.8% today. Amazon and Microsoft barely moved." />
       </Reading>
 
-      <div className="mt-3 rounded-xl border border-white/10 bg-card px-3.5 py-3">
+      <div className="mt-3 rounded-xl border border-border bg-card px-3.5 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-base font-semibold text-white">$RKLB</span>
+              <span className="text-base font-semibold text-foreground">$RKLB</span>
               <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-xs font-medium text-gain">
                 Up ≥5%
               </span>
             </div>
             <p className="mt-1 font-sans text-sm font-semibold tabular-nums text-gain">
               +6.8%{" "}
-              <span className="font-normal text-zinc-400">today</span>
+              <span className="font-normal text-muted">today</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">
             <Pill>Hold</Pill>
             <Pill tone="good">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-gain" />
               Thesis intact
             </Pill>
           </div>

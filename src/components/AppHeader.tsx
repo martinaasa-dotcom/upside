@@ -41,7 +41,7 @@ export function AppHeader({
   className,
 }: Props) {
   return (
-    <header className={cn("sticky top-0 z-40 border-b border-white/10 bg-app/95 backdrop-blur", className)}>
+    <header className={cn("sticky top-0 z-40 border-b border-border bg-app/95 backdrop-blur", className)}>
       <div className={cn(PAGE_COLUMN_CLASS, "flex h-14 items-center justify-between gap-2 sm:gap-3")}>
         <div className="flex min-w-0 items-center gap-2 text-sm leading-none sm:gap-3">
           <HeaderBrand
@@ -51,13 +51,13 @@ export function AppHeader({
           {title != null && (
             <>
               <span
-                className="hidden h-3.5 w-px shrink-0 bg-zinc-700 sm:block"
+                className="hidden h-3.5 w-px shrink-0 bg-border sm:block"
                 aria-hidden
               />
               <span
                 className={cn(
                   "min-w-0 truncate font-medium leading-none",
-                  "text-zinc-300"
+                  "text-foreground/80"
                 )}
               >
                 {title}

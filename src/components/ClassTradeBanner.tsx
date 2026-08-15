@@ -26,17 +26,17 @@ export function ClassTradeBanner({
 }) {
   const until = untilLabel(trade.until);
   return (
-    <div className="rounded-2xl border border-white/10 bg-card/80 px-4 py-3">
-      <p className="text-sm font-semibold text-white">{trade.label}</p>
-      <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+    <div className="rounded-2xl border border-border bg-card/80 px-4 py-3">
+      <p className="text-sm font-semibold text-foreground">{trade.label}</p>
+      <p className="mt-0.5 text-xs leading-relaxed text-muted">
         {trade.message}
         {until ? ` Until ${until}.` : ""}
       </p>
       {teacherNote ? (
-        <p className="mt-1 text-xs text-zinc-500">{teacherNote}</p>
+        <p className="mt-1 text-xs text-muted">{teacherNote}</p>
       ) : null}
       {!compact && trade.purpose ? (
-        <p className="mt-2 text-sm leading-relaxed text-zinc-200">
+        <p className="mt-2 text-sm leading-relaxed text-foreground">
           {trade.purpose}
         </p>
       ) : null}

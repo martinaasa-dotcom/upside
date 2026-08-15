@@ -264,7 +264,7 @@ function PricesAgeStatus({
 
   return (
     <span
-      className="shrink-0 whitespace-nowrap text-xs tabular-nums text-zinc-400"
+      className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted"
       title={
         source === "supabase"
           ? "Shared live book"
@@ -2789,7 +2789,7 @@ export function Dashboard() {
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return (
-      <div className="flex min-h-dvh flex-col bg-black text-zinc-100">
+      <div className="flex min-h-dvh flex-col bg-black text-foreground">
         <MobileTopBar
           title="Dashboard"
           avatar={{
@@ -2878,7 +2878,7 @@ export function Dashboard() {
                 }
               }}
               disabled={refreshing}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium text-foreground/80 hover:border-brand hover:text-foreground disabled:opacity-50"
               title={isLab ? "Fetch prices and option quotes now" : "Fetch prices now"}
               aria-label="Refresh prices"
             >
@@ -2902,7 +2902,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setInviteOpen(true)}
-                className="hidden h-8 items-center gap-1 rounded-md border border-zinc-700 px-2.5 text-xs font-medium text-zinc-300 hover:border-zinc-500 hover:text-white md:inline-flex"
+                className="hidden h-8 items-center gap-1 rounded-md border border-border px-2.5 text-xs font-medium text-foreground/80 hover:border-brand hover:text-foreground md:inline-flex"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Invite</span>
@@ -2917,7 +2917,7 @@ export function Dashboard() {
 
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
-      <div className="hidden border-b border-white/10 bg-app/80 backdrop-blur-sm md:block">
+      <div className="hidden border-b border-border bg-app/80 backdrop-blur-sm md:block">
         <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2")}>
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
@@ -2933,7 +2933,7 @@ export function Dashboard() {
       </div>
 
       {!isMetaTab && (
-        <div className="flex items-center gap-2 border-b border-white/5 px-3 py-2 md:hidden">
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2 md:hidden">
           <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto">
             {portfolios.map((p) => (
               <button
@@ -2943,8 +2943,8 @@ export function Dashboard() {
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-xs",
                   p.id === activeId
-                    ? "bg-zinc-100 text-zinc-900"
-                    : "bg-white/5 text-zinc-400"
+                    ? "bg-select text-select-ink"
+                    : "bg-hover text-muted"
                 )}
               >
                 {p.name}
@@ -2955,7 +2955,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-select px-3 py-1.5 text-xs font-medium text-select-ink"
           >
             <Plus className="h-3.5 w-3.5" />
             Add
@@ -2972,12 +2972,12 @@ export function Dashboard() {
         ) : null}
 
         {loadError && (
-          <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-rose-100">{loadError}</p>
+          <div className="flex flex-col gap-2 rounded-xl border border-loss/30 bg-loss/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-loss">{loadError}</p>
             <button
               type="button"
               onClick={() => void loadPortfolios()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-rose-400/40 px-3 py-1.5 text-xs font-medium text-rose-100 hover:bg-rose-900/50"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-1.5 text-xs font-medium text-loss hover:bg-loss/15"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Retry
@@ -2988,7 +2988,7 @@ export function Dashboard() {
         {isAlerts ? (
           <div className="space-y-4">
             {activeAlerts.length === 0 ? (
-              <p className="py-10 text-center text-sm text-zinc-400">
+              <p className="py-10 text-center text-sm text-muted">
                 Nothing waiting. That&apos;s a good hour.
               </p>
             ) : (
@@ -2997,10 +2997,10 @@ export function Dashboard() {
                   key={a.id}
                   type="button"
                   onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-                  className="w-full rounded-2xl border border-white/10 bg-card/80 p-4 text-left"
+                  className="w-full rounded-2xl border border-border bg-card/80 p-4 text-left"
                 >
-                  <p className="text-sm font-semibold text-white">{a.title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                  <p className="text-sm font-semibold text-foreground">{a.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
                     {a.detail}
                   </p>
                 </button>

@@ -23,7 +23,7 @@ export function StartingCashField({
   return (
     <div>
       <p className="text-xs font-medium text-muted">Starting cash</p>
-      <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+      <p className="mt-1 text-sm leading-relaxed text-muted">
         Every student gets this on a paper sheet. Same number for the whole
         class.
       </p>
@@ -37,8 +37,8 @@ export function StartingCashField({
             className={cn(
               "rounded-md px-3 py-1.5 text-sm tabular-nums transition disabled:opacity-50",
               value === n
-                ? "bg-zinc-100 font-semibold text-zinc-900"
-                : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                ? "bg-select font-semibold text-select-ink"
+                : "text-muted hover:bg-hover hover:text-foreground"
             )}
           >
             ${formatCashDigits(n)}
@@ -63,7 +63,7 @@ export function StartingCashField({
             setText(`$${formatCashDigits(next)}`);
             if (next >= MIN_STARTING_CASH) onChange(next);
           }}
-          className="mt-2 w-full max-w-xs rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm tabular-nums text-zinc-100 outline-none focus:border-zinc-500 disabled:opacity-50"
+          className="mt-2 w-full max-w-xs rounded-lg border border-border bg-well px-3 py-2.5 text-sm tabular-nums text-foreground outline-none focus:border-brand disabled:opacity-50"
         />
       </label>
     </div>

@@ -36,21 +36,21 @@ export function CashAlertCard({
       type="button"
       onClick={() => (openCash ? onOpenCash?.() : onOpenAlerts?.())}
       className={cn(
-        "w-full rounded-2xl border border-rose-500/30 bg-rose-950/20 p-5 text-left",
+        "w-full rounded-2xl border border-loss/30 bg-loss/10 p-5 text-left",
         className
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-base font-semibold text-white">
+        <p className="text-base font-semibold text-foreground">
           {openCash ? "Cash" : "Alert"}
         </p>
-        <ChevronRight className="h-4 w-4 text-zinc-400" aria-hidden />
+        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
       </div>
       <div className="mt-4 flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/15 text-rose-200">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-loss/15 text-loss">
           <AlertTriangle className="h-4 w-4" />
         </span>
-        <p className="text-base tabular-nums text-zinc-200">{body}</p>
+        <p className="text-base tabular-nums text-foreground">{body}</p>
       </div>
     </button>
   );

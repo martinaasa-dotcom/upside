@@ -288,35 +288,35 @@ function ChatMarkdown({ children }: { children: string }) {
             </h4>
           ),
           p: ({ children: c }) => (
-            <p className="mb-2.5 break-words text-base leading-relaxed text-zinc-200 last:mb-0">
+            <p className="mb-2.5 break-words text-base leading-relaxed text-foreground last:mb-0">
               {c}
             </p>
           ),
           ul: ({ children: c }) => (
-            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 text-base text-zinc-200 last:mb-0">
+            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 text-base text-foreground last:mb-0">
               {c}
             </ul>
           ),
           ol: ({ children: c }) => (
-            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 text-base text-zinc-200 last:mb-0">
+            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 text-base text-foreground last:mb-0">
               {c}
             </ol>
           ),
           li: ({ children: c }) => (
-            <li className="break-words leading-relaxed marker:text-zinc-500">{c}</li>
+            <li className="break-words leading-relaxed marker:text-muted">{c}</li>
           ),
           strong: ({ children: c }) => (
-            <strong className="font-semibold text-zinc-100">{c}</strong>
+            <strong className="font-semibold text-foreground">{c}</strong>
           ),
           em: ({ children: c }) => (
-            <em className="italic text-zinc-300">{c}</em>
+            <em className="italic text-foreground/80">{c}</em>
           ),
           a: ({ href, children: c }) => (
             <a
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="text-zinc-100 underline underline-offset-2 hover:text-white"
+              className="text-foreground underline underline-offset-2 hover:text-foreground"
             >
               {c}
             </a>
@@ -325,19 +325,19 @@ function ChatMarkdown({ children }: { children: string }) {
             const block = Boolean(className);
             if (block) {
               return (
-                <code className="block w-full overflow-x-auto rounded-md bg-zinc-800 px-2 py-1.5 font-mono text-xs text-zinc-200">
+                <code className="block w-full overflow-x-auto rounded-md bg-hover px-2 py-1.5 font-mono text-xs text-foreground">
                   {c}
                 </code>
               );
             }
             return (
-              <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-xs text-zinc-300">
+              <code className="rounded bg-hover px-1 py-0.5 font-mono text-xs text-foreground/80">
                 {c}
               </code>
             );
           },
           pre: ({ children: c }) => (
-            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-white/10 bg-zinc-800 p-2 last:mb-0">
+            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-border bg-hover p-2 last:mb-0">
               {c}
             </pre>
           ),
@@ -349,15 +349,15 @@ function ChatMarkdown({ children }: { children: string }) {
             </div>
           ),
           thead: ({ children: c }) => (
-            <thead className="border-b border-white/10 text-xs text-zinc-400">
+            <thead className="border-b border-border text-xs text-muted">
               {c}
             </thead>
           ),
           tbody: ({ children: c }) => (
-            <tbody className="text-zinc-200">{c}</tbody>
+            <tbody className="text-foreground">{c}</tbody>
           ),
           tr: ({ children: c }) => (
-            <tr className="border-t border-white/10 first:border-t-0">{c}</tr>
+            <tr className="border-t border-border first:border-t-0">{c}</tr>
           ),
           th: ({ children: c }) => (
             <th className="whitespace-nowrap py-2 pr-3 text-left font-medium first:pl-0">
@@ -365,13 +365,13 @@ function ChatMarkdown({ children }: { children: string }) {
             </th>
           ),
           td: ({ children: c }) => (
-            <td className="break-words py-2 pr-3 align-top tabular-nums text-zinc-200 first:pl-0">
+            <td className="break-words py-2 pr-3 align-top tabular-nums text-foreground first:pl-0">
               {c}
             </td>
           ),
-          hr: () => <hr className="my-3 border-white/10" />,
+          hr: () => <hr className="my-3 border-border" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 break-words border-l-2 border-white/20 pl-3 text-base text-zinc-400 last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-white/20 pl-3 text-base text-muted last:mb-0">
               {c}
             </blockquote>
           ),
@@ -817,7 +817,7 @@ export function CcAdvisorChat({
       {showSilentCard && (
         <div
           role="status"
-          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-card shadow-2xl shadow-black/60"
+          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/60"
           onClick={() => setOpen(true)}
         >
           <div className="flex items-start gap-2.5 px-3.5 py-3">
@@ -825,13 +825,13 @@ export function CcAdvisorChat({
               {silentPhase === "sending" ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : silentSummary?.kind === "error" ? (
-                <ImagePlus className="h-3.5 w-3.5 text-rose-400" />
+                <ImagePlus className="h-3.5 w-3.5 text-loss" />
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-white">
+              <p className="text-xs font-semibold text-foreground">
                 {silentPhase === "sending"
                   ? "Margus is reading your screenshot …"
                   : silentSummary?.kind === "error"
@@ -841,7 +841,7 @@ export function CcAdvisorChat({
                       : "Margus"}
               </p>
               {silentPhase === "sending" ? (
-                <p className="mt-0.5 text-xs text-zinc-400">
+                <p className="mt-0.5 text-xs text-muted">
                   Usually takes a few seconds.
                 </p>
               ) : (
@@ -851,10 +851,10 @@ export function CcAdvisorChat({
                       key={i}
                       className={`text-xs leading-relaxed ${
                         silentSummary.kind === "error"
-                          ? "text-rose-300"
+                          ? "text-loss"
                           : silentSummary.kind === "empty"
-                            ? "text-amber-200"
-                            : "text-zinc-300"
+                            ? "text-caution"
+                            : "text-foreground/80"
                       }`}
                     >
                       {line}
@@ -867,7 +867,7 @@ export function CcAdvisorChat({
                 (silentSummary?.kind === "error" ||
                   silentSummary?.kind === "empty") && (
                   <>
-                    <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted">
                       If the screenshot didn&apos;t read cleanly, upload a CSV.
                       Most brokers export one.
                     </p>
@@ -879,14 +879,14 @@ export function CcAdvisorChat({
                         setSilentSummary(null);
                         onSuggestCsv();
                       }}
-                      className="mt-2 rounded-md border border-zinc-700 px-2 py-1 text-xs font-medium text-zinc-200 hover:border-brand/50"
+                      className="mt-2 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:border-brand/50"
                     >
                       Upload a CSV instead
                     </button>
                   </>
                 )}
               {silentPhase === "result" && (
-                <p className="mt-1 text-xs text-zinc-400">
+                <p className="mt-1 text-xs text-muted">
                   Tap to open chat
                 </p>
               )}
@@ -898,7 +898,7 @@ export function CcAdvisorChat({
                 setSilentPhase("idle");
                 setSilentSummary(null);
               }}
-              className="shrink-0 rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              className="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-foreground"
               aria-label="Dismiss"
             >
               <X className="h-3.5 w-3.5" />
@@ -910,7 +910,7 @@ export function CcAdvisorChat({
       {open && (
         <section
           ref={panelRef}
-          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
+          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
             wide
               ? "w-[min(56rem,calc(100vw-1.5rem))]"
               : "w-[min(26rem,calc(100vw-1.5rem))]"
@@ -923,15 +923,15 @@ export function CcAdvisorChat({
           role="dialog"
           aria-label="Assistant Margus"
         >
-          <header className="flex shrink-0 items-center gap-2 border-b border-zinc-800/80 px-3 py-2.5">
+          <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5">
             <div className="rounded-lg bg-brand/10 p-1.5 text-brand">
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-white">
+              <h2 className="text-sm font-semibold text-foreground">
                 Assistant Margus
               </h2>
-              <p className="truncate text-xs text-zinc-400">
+              <p className="truncate text-xs text-muted">
                 {context.adviseOnly
                   ? "Advise-only · open a sheet to apply changes"
                   : `Chat for ${context.portfolioName}`}
@@ -940,7 +940,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={toggleWide}
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-300"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted transition hover:bg-hover hover:text-foreground/80"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
               title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >
@@ -963,7 +963,7 @@ export function CcAdvisorChat({
                     className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                       rulesOpen
                         ? "bg-brand/15 text-brand"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
+                        : "text-muted hover:bg-hover hover:text-foreground/80"
                     }`}
                     aria-label="Strategy rules"
                     aria-expanded={rulesOpen}
@@ -971,15 +971,15 @@ export function CcAdvisorChat({
                     <BookOpen className="h-4 w-4" />
                   </button>
                   {rulesOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
+                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-well p-3 shadow-2xl shadow-black/50">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-zinc-400">
+                        <p className="text-xs font-semibold text-muted">
                           Strategy rules
                         </p>
                         <button
                           type="button"
                           onClick={() => setRulesOpen(false)}
-                          className="rounded p-3 text-zinc-400 hover:text-zinc-300 sm:p-0.5"
+                          className="rounded p-3 text-muted hover:text-foreground/80 sm:p-0.5"
                           aria-label="Close rules"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -989,21 +989,21 @@ export function CcAdvisorChat({
                         {RULES.map((r) => (
                           <li
                             key={r.title}
-                            className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0"
+                            className="border-b border-border pb-2.5 last:border-0 last:pb-0"
                           >
-                            <p className="text-xs font-medium text-zinc-400">
+                            <p className="text-xs font-medium text-muted">
                               {r.title}
                             </p>
                             <p className="mt-0.5 text-sm font-semibold text-brand">
                               {r.rule}
                             </p>
-                            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                            <p className="mt-0.5 text-xs leading-relaxed text-muted">
                               {r.detail}
                             </p>
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-2.5 border-t border-zinc-800/80 pt-2.5 text-xs leading-relaxed text-zinc-400">
+                      <p className="mt-2.5 border-t border-border pt-2.5 text-xs leading-relaxed text-muted">
                         {ADVICE_DISCLAIMER_SHORT}
                       </p>
                     </div>
@@ -1014,14 +1014,14 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded-lg p-1.5 text-muted hover:bg-hover hover:text-foreground"
               aria-label="Close Margus"
             >
               <X className="h-4 w-4" />
             </button>
           </header>
 
-          <p className="shrink-0 border-b border-zinc-800/60 px-3 py-1.5 text-center text-xs leading-snug text-zinc-400">
+          <p className="shrink-0 border-b border-border px-3 py-1.5 text-center text-xs leading-snug text-muted">
             {ADVICE_DISCLAIMER_SHORT}
           </p>
 
@@ -1030,8 +1030,8 @@ export function CcAdvisorChat({
             className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
           >
             {messages.length === 0 && (
-              <div className="space-y-3 rounded-lg border border-dashed border-zinc-800 bg-zinc-900/30 p-3">
-                <p className="text-xs leading-relaxed text-zinc-400">
+              <div className="space-y-3 rounded-lg border border-dashed border-border bg-well/30 p-3">
+                <p className="text-xs leading-relaxed text-muted">
                   {context.hideOptions
                     ? "I can read holdings and update shares, buy price, cash, or add/remove tickers."
                     : "I can read holdings and covered calls, and update shares, buy price, cash, Call %, or add/remove tickers. Open the book icon for the strategy rules."}
@@ -1043,7 +1043,7 @@ export function CcAdvisorChat({
                       type="button"
                       disabled={busy}
                       onClick={() => sendMessage({ text: s })}
-                      className="rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
+                      className="rounded-full border border-border px-2.5 py-1 text-xs text-foreground/80 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
                     >
                       {s}
                     </button>
@@ -1092,15 +1092,15 @@ export function CcAdvisorChat({
                   key={message.id}
                   className={
                     message.role === "user"
-                      ? "ml-0 max-w-[95%] rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 sm:ml-6"
-                      : "w-full min-w-0 rounded-xl border border-white/10 bg-card px-4 py-3 text-base text-zinc-200"
+                      ? "ml-0 max-w-[95%] rounded-lg bg-hover/80 px-3 py-2 text-sm text-foreground sm:ml-6"
+                      : "w-full min-w-0 rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground"
                   }
                 >
                   <p
                     className={
                       message.role === "assistant"
-                        ? "mb-1 text-xs font-medium text-zinc-500"
-                        : "mb-1 text-xs font-medium text-zinc-400"
+                        ? "mb-1 text-xs font-medium text-muted"
+                        : "mb-1 text-xs font-medium text-muted"
                     }
                   >
                     {message.role === "user" ? "You" : "Margus"}
@@ -1113,7 +1113,7 @@ export function CcAdvisorChat({
                           key={`${message.id}-img-${i}`}
                           src={img.url}
                           alt="Attached"
-                          className="max-h-40 max-w-full rounded-md border border-zinc-700 object-contain"
+                          className="max-h-40 max-w-full rounded-md border border-border object-contain"
                         />
                       ))}
                     </div>
@@ -1128,7 +1128,7 @@ export function CcAdvisorChat({
                     </div>
                   ) : null}
                   {toolPending && !text && toolNotes.length === 0 ? (
-                    <p className="text-xs text-zinc-400">Running analysis …</p>
+                    <p className="text-xs text-muted">Running analysis …</p>
                   ) : null}
                   {toolNotes.map((note, i) => (
                     <p
@@ -1143,13 +1143,13 @@ export function CcAdvisorChat({
             })}
 
             {busy && (
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
+              <div className="flex items-center gap-2 text-xs text-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Thinking …
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-xs text-muted hover:border-loss/40 hover:text-loss"
                 >
                   <Square className="h-2.5 w-2.5 fill-current" />
                   Stop
@@ -1158,15 +1158,15 @@ export function CcAdvisorChat({
             )}
 
             {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-400">
+              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-xs text-muted">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : error && !isQuietChatFailure(error.message) ? (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-400">
+              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-xs text-muted">
                 {describeChatUiError(error.message)}
               </div>
             ) : lastIsEmptyAssistant && !error ? (
-              <div className="rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-400">
+              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-xs text-muted">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : null}
@@ -1174,14 +1174,14 @@ export function CcAdvisorChat({
 
           <form
             onSubmit={onSubmit}
-            className="flex shrink-0 flex-col gap-2 border-t border-zinc-800/80 p-3"
+            className="flex shrink-0 flex-col gap-2 border-t border-border p-3"
           >
             {pendingImages.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {pendingImages.map((img, i) => (
                   <div
                     key={`${img.filename ?? "img"}-${i}`}
-                    className="relative h-16 w-16 overflow-hidden rounded-md border border-zinc-700"
+                    className="relative h-16 w-16 overflow-hidden rounded-md border border-border"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -1196,7 +1196,7 @@ export function CcAdvisorChat({
                           prev.filter((_, j) => j !== i)
                         )
                       }
-                      className="absolute right-0.5 top-0.5 rounded bg-black/70 p-0.5 text-zinc-200 hover:text-white"
+                      className="absolute right-0.5 top-0.5 rounded bg-black/70 p-0.5 text-foreground hover:text-foreground"
                       aria-label="Remove image"
                     >
                       <X className="h-3 w-3" />
@@ -1221,7 +1221,7 @@ export function CcAdvisorChat({
                 type="button"
                 disabled={busy}
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center rounded-lg border border-zinc-700 px-2.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 text-muted hover:border-brand hover:text-foreground disabled:opacity-40"
                 aria-label="Attach image"
                 title="Attach screenshot"
               >
@@ -1233,7 +1233,7 @@ export function CcAdvisorChat({
                 onPaste={(e) => void onPaste(e)}
                 placeholder="Paste a screenshot or ask Margus …"
                 disabled={busy}
-                className="min-w-0 flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-brand/50 disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand disabled:opacity-50"
               />
               <button
                 type="submit"
@@ -1251,7 +1251,7 @@ export function CcAdvisorChat({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-paper text-ink shadow-lg shadow-black/40 transition hover:bg-[#ddd6c8] hover:scale-[1.03] active:scale-[0.97]"
+        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-mustard bg-mustard text-select-ink shadow-lg shadow-black/40 transition hover:bg-brand-bright hover:scale-[1.03] active:scale-[0.97]"
         aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
         aria-expanded={open}
         title="Assistant Margus"

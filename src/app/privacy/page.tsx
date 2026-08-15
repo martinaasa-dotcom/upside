@@ -9,30 +9,30 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1a241e_0%,_#0d110f_55%)] text-zinc-100">
-      <header className="border-b border-white/10 bg-app/90 backdrop-blur">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#2d3d32_0%,_#1a2820_55%)] text-foreground">
+      <header className="border-b border-border bg-app/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted hover:border-brand hover:text-foreground"
           >
             Back
           </Link>
         </div>
       </header>
 
-      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-zinc-300">
+      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
-          <h1 className="text-lg font-bold text-white">Privacy Policy</h1>
-          <p className="mt-1 text-xs text-zinc-400">Last updated {LAST_UPDATED}</p>
+          <h1 className="text-lg font-bold text-foreground">Privacy Policy</h1>
+          <p className="mt-1 text-xs text-muted">Last updated {LAST_UPDATED}</p>
         </div>
 
         <p>
           Short version: we store what you type in so the app can work, we
           don&apos;t sell your data, and you can export or delete it any time
           from{" "}
-          <Link href="/account" className="underline hover:text-white">
+          <Link href="/account" className="underline hover:text-foreground">
             My account
           </Link>
           . The long version is below.
@@ -41,19 +41,19 @@ export default function PrivacyPage() {
         <Section title="1. What we collect">
           <ul className="list-disc space-y-1.5 pl-5">
             <li>
-              <strong className="text-zinc-200">From Google sign-in:</strong>{" "}
+              <strong className="text-foreground">From Google sign-in:</strong>{" "}
               your email, name, and profile photo, used to create your
               account and identify you to co-owners/community members you
               choose to interact with.
             </li>
             <li>
-              <strong className="text-zinc-200">What you enter:</strong>{" "}
+              <strong className="text-foreground">What you enter:</strong>{" "}
               holdings, cash balances, notes, targets, forecast overrides,
               and anything you send Assistant Margus in
               chat.
             </li>
             <li>
-              <strong className="text-zinc-200">Usage &amp; performance:</strong>{" "}
+              <strong className="text-foreground">Usage &amp; performance:</strong>{" "}
               basic, privacy-respecting analytics and performance metrics via
               Vercel Analytics / Speed Insights (page views, load times), no
               cross-site tracking or ad identifiers.
@@ -77,12 +77,12 @@ export default function PrivacyPage() {
           </p>
           <ul className="list-disc space-y-1.5 pl-5">
             <li>
-              <strong className="text-zinc-200">Supabase</strong> (EU-hosted),
+              <strong className="text-foreground">Supabase</strong> (EU-hosted),
               our database and authentication provider. Everything you
               enter lives there.
             </li>
             <li>
-              <strong className="text-zinc-200">AI model providers</strong>{" "}
+              <strong className="text-foreground">AI model providers</strong>{" "}
               (OpenRouter and fallback providers). When you use Margus, ask
               for a forecast, or run Pulse, the relevant portfolio
               context and your message are sent to whichever provider
@@ -90,13 +90,13 @@ export default function PrivacyPage() {
               policies beyond what they publish.
             </li>
             <li>
-              <strong className="text-zinc-200">Market data providers</strong>{" "}
+              <strong className="text-foreground">Market data providers</strong>{" "}
               (Yahoo Finance and fallback quote providers). We send ticker
               symbols to fetch prices; we don&apos;t send your holdings or
               identity to these.
             </li>
             <li>
-              <strong className="text-zinc-200">Vercel</strong>: hosting,
+              <strong className="text-foreground">Vercel</strong>: hosting,
               plus the anonymized analytics mentioned above.
             </li>
           </ul>
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
 
         <Section title="7. Your rights (export &amp; deletion)">
           From{" "}
-          <Link href="/account" className="underline hover:text-white">
+          <Link href="/account" className="underline hover:text-foreground">
             My account
           </Link>{" "}
           you can download a complete export of your data as JSON, or
@@ -167,16 +167,16 @@ export default function PrivacyPage() {
           Questions, data requests, or concerns:{" "}
           <a
             href={`mailto:${PRODUCT_CONTACT_EMAIL}`}
-            className="underline hover:text-white"
+            className="underline hover:text-foreground"
           >
             {PRODUCT_CONTACT_EMAIL}
           </a>
           .
         </Section>
 
-        <p className="pt-4 text-xs text-zinc-400">
+        <p className="pt-4 text-xs text-muted">
           See also our{" "}
-          <Link href="/terms" className="underline hover:text-white">
+          <Link href="/terms" className="underline hover:text-foreground">
             Terms of service
           </Link>
           .
@@ -197,7 +197,7 @@ function Section({
 }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <div>{children}</div>
     </section>
   );

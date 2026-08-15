@@ -21,7 +21,7 @@ export function Sparkline({
   if (!points.length) {
     return (
       <div
-        className={cn("text-xs text-zinc-400", className)}
+        className={cn("text-xs text-muted", className)}
         style={fill ? { height } : { width, height }}
       >
         —
@@ -53,7 +53,7 @@ export function Sparkline({
     >
       <polyline
         fill="none"
-        stroke={up ? "#10B981" : "#F43F5E"}
+        stroke={up ? "#5a9a4a" : "#c46a58"}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"

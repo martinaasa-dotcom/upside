@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-border on bg-card. Selected is paper. Sage is a
- *              thread from the wall. Not a fill on sliders or chips.
+ *   Shell      border-border on bg-card. Selected is brass. Mustard is
+ *              the main button. Paper is type, never a white pill.
  *   Card       border-border on bg-card. The box has to lift off the field.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips
@@ -35,7 +35,7 @@ import { useState, type ReactNode } from "react";
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    a dark card, muted label, same type as the page. Thesis
+ *   Reading    a dark card, brass label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
  *              not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted for chrome
@@ -53,7 +53,7 @@ import { useState, type ReactNode } from "react";
 const SHELL_TONES = {
   default: "border-border bg-card/80",
   plain: "border-border bg-card/80",
-  brand: "border-white/15 bg-hover",
+  brand: "border-brand/40 bg-hover",
   warn: "border-caution/35 bg-caution/[0.08]",
   danger: "border-loss/30 bg-loss/[0.08]",
 } as const;
@@ -115,10 +115,10 @@ export function PanelHeader({
   className?: string;
 }) {
   const iconTones = {
-    brand: "bg-zinc-800 text-zinc-300",
-    violet: "bg-violet-500/15 text-violet-300",
-    emerald: "bg-emerald-500/15 text-emerald-300",
-    zinc: "bg-zinc-800 text-zinc-300",
+    brand: "bg-hover text-foreground/80",
+    violet: "bg-brand/15 text-brand-bright",
+    emerald: "bg-gain/15 text-gain",
+    zinc: "bg-hover text-foreground/80",
   } as const;
 
   return (
@@ -150,7 +150,7 @@ export function PanelHeader({
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
-              "font-heading font-bold text-white",
+              "font-heading font-bold text-foreground",
               hero ? "text-lg" : "text-base"
             )}
           >
@@ -175,7 +175,7 @@ export function PanelHeader({
 const CARD_TONES = {
   default: "border-border bg-card",
   raised: "border-border bg-hover",
-  brand: "border-white/15 bg-hover",
+  brand: "border-brand/40 bg-hover",
   good: "border-gain/25 bg-gain/[0.08]",
   warn: "border-caution/35 bg-caution/[0.08]",
   bad: "border-loss/25 bg-loss/[0.08]",
@@ -203,7 +203,7 @@ export function Card({
         "h-full rounded-xl border px-4 py-4",
         CARD_TONES[tone],
         interactive &&
-          "transition hover:border-white/25 hover:bg-hover active:scale-[0.995]",
+          "transition hover:border-brand/40 hover:bg-hover active:scale-[0.995]",
         className
       )}
       {...rest}
@@ -235,7 +235,7 @@ export function MicroLabel({
 
 /**
  * Long sentences a person actually reads. A dark card that lifts off
- * the field, muted label, warm type. Not a cream slab, and not loose
+ * the field, brass label, warm type. Not a cream slab, and not loose
  * type sitting on the page.
  */
 export function Reading({
@@ -250,12 +250,12 @@ export function Reading({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card px-4 py-3.5 text-zinc-100",
+        "rounded-xl border border-border bg-card px-4 py-3.5 text-foreground",
         className
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-muted">{label}</div>
+        <div className="text-xs font-medium text-brand-bright">{label}</div>
       ) : null}
       <div
         className={cn(
@@ -277,7 +277,7 @@ export function InsightText({ text }: { text: string }) {
       {chunks.map((chunk, i) => {
         if (/^\$[A-Z][A-Z0-9.]{0,11}$/.test(chunk)) {
           return (
-            <span key={i} className="font-semibold text-white">
+            <span key={i} className="font-semibold text-foreground">
               {chunk}
             </span>
           );
@@ -328,24 +328,24 @@ export function ScanList({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="border-b border-white/10 px-4 py-2.5">
-          <p className="text-xs font-medium text-muted">{label}</p>
+        <div className="border-b border-border px-4 py-2.5">
+          <p className="text-xs font-medium text-brand-bright">{label}</p>
         </div>
       ) : null}
       <ul>
         {rows.map((row) => {
           const body = (
             <>
-              <span className="w-[4.75rem] shrink-0 font-semibold tabular-nums text-white">
+              <span className="w-[4.75rem] shrink-0 font-semibold tabular-nums text-foreground">
                 {cashtag(row.ticker)}
               </span>
-              <span className="min-w-0 text-sm leading-snug text-zinc-300">
+              <span className="min-w-0 text-sm leading-snug text-foreground/80">
                 {row.text}
               </span>
             </>
           );
           return (
-            <li key={row.ticker} className="border-t border-white/10 first:border-t-0">
+            <li key={row.ticker} className="border-t border-border first:border-t-0">
               {onOpen ? (
                 <button
                   type="button"
@@ -383,12 +383,12 @@ export function Metric({
     <div className={cn("min-w-0", className)}>
       <MicroLabel>{label}</MicroLabel>
       <p
-        className={cn(FIGURE, "text-zinc-100", valueClassName)}
+        className={cn(FIGURE, "text-foreground", valueClassName)}
       >
         {children}
       </p>
       {hint != null && hint !== "" ? (
-        <p className="mt-0.5 truncate text-xs tabular-nums text-zinc-500">{hint}</p>
+        <p className="mt-0.5 truncate text-xs tabular-nums text-muted">{hint}</p>
       ) : null}
     </div>
   );
@@ -411,14 +411,14 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
         onBlur={() => setOpen(false)}
         aria-label={label ?? "What does this mean?"}
         aria-expanded={open}
-        className="touch-target inline-flex items-center justify-center p-1.5 text-zinc-400 transition hover:text-zinc-200"
+        className="touch-target inline-flex items-center justify-center p-1.5 text-muted transition hover:text-foreground"
       >
         <Info className="h-3 w-3" />
       </button>
       {open && (
         <span
           role="tooltip"
-          className="absolute left-1/2 top-full z-30 mt-1 w-48 -translate-x-1/2 rounded-lg border border-white/10 bg-card px-3 py-2 text-xs font-normal normal-case leading-relaxed tracking-normal text-zinc-200 shadow-xl"
+          className="absolute left-1/2 top-full z-30 mt-1 w-48 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-normal normal-case leading-relaxed tracking-normal text-foreground shadow-xl"
         >
           {text}
         </span>
@@ -466,7 +466,7 @@ export function Stat({
               ? "text-gain"
               : tone === "down"
                 ? "text-loss"
-                : "text-white")
+                : "text-foreground")
         )}
       >
         {value}
@@ -505,7 +505,7 @@ export function Segmented<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 rounded-lg border border-white/10 bg-app/50 p-0.5",
+        "inline-flex shrink-0 rounded-lg border border-border bg-app/50 p-0.5",
         className
       )}
     >
@@ -521,8 +521,8 @@ export function Segmented<T extends string>({
           className={cn(
             "touch-target rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
             value === o.id
-              ? "bg-zinc-100 text-zinc-900"
-              : "text-zinc-400 hover:text-zinc-200"
+              ? "bg-select text-select-ink"
+              : "text-muted hover:text-foreground"
           )}
         >
           {o.label}
@@ -533,12 +533,12 @@ export function Segmented<T extends string>({
 }
 
 const PILL_TONES = {
-  neutral: "border-border bg-card text-zinc-300",
-  brand: "border-white/15 bg-zinc-800 text-zinc-200",
+  neutral: "border-border bg-card text-foreground/80",
+  brand: "border-brand/40 bg-hover text-foreground",
   good: "border-gain/30 bg-gain/10 text-gain",
-  warn: "border-caution/40 bg-caution/10 text-zinc-200",
+  warn: "border-caution/40 bg-caution/10 text-foreground",
   bad: "border-loss/40 bg-loss/15 text-loss",
-  info: "border-border bg-hover text-zinc-200",
+  info: "border-border bg-hover text-foreground",
 } as const;
 
 export type PillTone = keyof typeof PILL_TONES;
@@ -584,13 +584,13 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-xl border border-dashed border-zinc-800 px-5 py-10 text-center",
+        "rounded-xl border border-dashed border-border px-5 py-10 text-center",
         className
       )}
     >
-      <p className="text-sm font-medium text-zinc-200">{title}</p>
+      <p className="text-sm font-medium text-foreground">{title}</p>
       {detail && (
-        <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-zinc-400">
+        <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-muted">
           {detail}
         </p>
       )}

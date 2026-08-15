@@ -35,17 +35,17 @@ export function ClassroomRoster({
   const rows = [...members].sort((a, b) => b.totalValue - a.totalValue);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/80">
-      <div className="border-b border-zinc-800 px-4 py-3">
-        <h2 className="text-sm font-semibold text-white">Roster</h2>
-        <p className="mt-0.5 text-xs text-zinc-400">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
+      <div className="border-b border-border px-4 py-3">
+        <h2 className="text-sm font-semibold text-foreground">Roster</h2>
+        <p className="mt-0.5 text-xs text-muted">
           Same start. Live prices. Who wrote a why, who is all-in on one name.
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[36rem] text-left text-xs">
           <thead>
-            <tr className="border-b border-zinc-800 text-zinc-400">
+            <tr className="border-b border-border text-muted">
               <th className="px-4 py-2 font-medium">Student</th>
               <th className="px-3 py-2 font-medium">Now</th>
               <th className="px-3 py-2 font-medium">vs start</th>
@@ -57,7 +57,7 @@ export function ClassroomRoster({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted">
                   Nobody in the class yet.
                 </td>
               </tr>
@@ -83,40 +83,40 @@ export function ClassroomRoster({
                 return (
                   <tr
                     key={m.id}
-                    className="border-b border-zinc-800/80 last:border-0"
+                    className="border-b border-border last:border-0"
                   >
                     <td className="px-4 py-2.5">
                       {m.sheetCount > 0 ? (
                         <button
                           type="button"
                           onClick={() => onOpen(m.id)}
-                          className="text-left font-medium text-zinc-100 hover:text-white"
+                          className="text-left font-medium text-foreground hover:text-foreground"
                         >
                           {m.name}
                           {m.isYou ? (
-                            <span className="ml-1.5 font-normal text-zinc-500">
+                            <span className="ml-1.5 font-normal text-muted">
                               you
                             </span>
                           ) : null}
                         </button>
                       ) : (
-                        <span className="font-medium text-zinc-300">
+                        <span className="font-medium text-foreground/80">
                           {m.name}
                           {m.isYou ? (
-                            <span className="ml-1.5 font-normal text-zinc-500">
+                            <span className="ml-1.5 font-normal text-muted">
                               you
                             </span>
                           ) : null}
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2.5 tabular-nums text-zinc-200">
+                    <td className="px-3 py-2.5 tabular-nums text-foreground">
                       {m.sheetCount ? currency(m.totalValue) : "—"}
                     </td>
                     <td
                       className={`px-3 py-2.5 tabular-nums ${
                         vsStart == null
-                          ? "text-zinc-500"
+                          ? "text-muted"
                           : signedTone(vsStart)
                       }`}
                     >
@@ -130,12 +130,12 @@ export function ClassroomRoster({
                     </td>
                     <td
                       className={`px-3 py-2.5 tabular-nums ${
-                        m.sheetCount ? signedTone(m.todayDollar) : "text-zinc-500"
+                        m.sheetCount ? signedTone(m.todayDollar) : "text-muted"
                       }`}
                     >
                       {m.sheetCount ? signedCurrency(m.todayDollar) : "—"}
                     </td>
-                    <td className="px-3 py-2.5 text-zinc-300">
+                    <td className="px-3 py-2.5 text-foreground/80">
                       {!m.sheetCount
                         ? "—"
                         : !thesis || thesis.names === 0
@@ -144,7 +144,7 @@ export function ClassroomRoster({
                             ? "No why yet"
                             : `${thesis.withWhy} of ${thesis.names}`}
                     </td>
-                    <td className="px-3 py-2.5 text-zinc-300">
+                    <td className="px-3 py-2.5 text-foreground/80">
                       {biggest?.ticker
                         ? `${biggest.ticker}${
                             biggest.weight != null

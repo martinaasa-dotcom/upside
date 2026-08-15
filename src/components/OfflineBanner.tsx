@@ -14,7 +14,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="border-b border-amber-500/25 bg-amber-950/50 py-2 text-xs text-amber-100"
+      className="border-b border-caution/35 bg-caution/15 py-2 text-xs text-caution"
     >
       <div className={PAGE_COLUMN_CLASS}>
         You&apos;re offline. Showing what we last had.

@@ -203,10 +203,10 @@ export function AdminPage() {
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">
+              <h1 className="text-lg font-bold text-foreground">
                 Superadmin
               </h1>
-              <p className="mt-1 text-sm text-zinc-400">
+              <p className="mt-1 text-sm text-muted">
                 Activation funnel, then every signed-in profile and community.
               </p>
             </div>
@@ -217,18 +217,18 @@ export function AdminPage() {
               This account is not a superadmin.
             </p>
           ) : loading ? (
-            <p className="text-sm text-zinc-400">Loading overview …</p>
+            <p className="text-sm text-muted">Loading overview …</p>
           ) : error ? (
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-sm text-loss">{error}</p>
           ) : (
             <WidgetErrorBoundary name="Admin">
             <>
               {funnel && (
                 <section className="space-y-2">
-                  <h2 className="text-sm font-semibold text-zinc-400">
+                  <h2 className="text-sm font-semibold text-muted">
                     Activation
                   </h2>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted">
                     Signed in, has a sheet, has holdings, signed in this week,
                     and holdings plus a visit in the last 7 days.
                   </p>
@@ -244,12 +244,12 @@ export function AdminPage() {
                     ).map(([label, n]) => (
                       <div
                         key={label}
-                        className="rounded-xl border border-white/10 bg-card/80 px-3 py-3"
+                        className="rounded-xl border border-border bg-card/80 px-3 py-3"
                       >
-                        <p className="text-lg font-semibold tabular-nums text-white">
+                        <p className="text-lg font-semibold tabular-nums text-foreground">
                           {n}
                         </p>
-                        <p className="mt-0.5 text-xs text-zinc-400">{label}</p>
+                        <p className="mt-0.5 text-xs text-muted">{label}</p>
                       </div>
                     ))}
                   </div>
@@ -258,12 +258,12 @@ export function AdminPage() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted">
                     <Bug className="h-3.5 w-3.5" />
                     Errors
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-muted">
                       {errorLog.length >= 150 ? "150+" : errorLog.length} recent
                     </span>
                     {errorLog.length > 0 && (
@@ -271,7 +271,7 @@ export function AdminPage() {
                         type="button"
                         onClick={() => setConfirmClearErrors(true)}
                         title="Clear log"
-                        className="rounded-md border border-zinc-700 p-1.5 text-zinc-400 hover:border-rose-700 hover:text-rose-300"
+                        className="rounded-md border border-border p-1.5 text-muted hover:border-loss/40 hover:text-loss"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -281,7 +281,7 @@ export function AdminPage() {
                       onClick={() => void loadErrorLog()}
                       disabled={errorLogLoading}
                       title="Refresh"
-                      className="rounded-md border border-zinc-700 p-1.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                      className="rounded-md border border-border p-1.5 text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${errorLogLoading ? "animate-spin" : ""}`}
@@ -290,13 +290,13 @@ export function AdminPage() {
                   </div>
                 </div>
                 {errorLogLoading && errorLog.length === 0 ? (
-                  <p className="text-sm text-zinc-400">Loading …</p>
+                  <p className="text-sm text-muted">Loading …</p>
                 ) : errorLog.length === 0 ? (
-                  <p className="rounded-2xl border border-emerald-900/40 bg-emerald-950/15 px-4 py-4 text-center text-sm text-emerald-300/90">
+                  <p className="rounded-2xl border border-gain/40 bg-gain/10 px-4 py-4 text-center text-sm text-gain">
                     Nothing logged, all clear.
                   </p>
                 ) : (
-                  <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-white/10 bg-card/80">
+                  <ul className="max-h-[28rem] divide-y divide-border overflow-y-auto rounded-2xl border border-border bg-card/80">
                     {errorLog.map((e) => {
                       const open = expandedError === e.id;
                       return (
@@ -311,31 +311,31 @@ export function AdminPage() {
                                 <span
                                   className={
                                     e.source === "server"
-                                      ? "rounded bg-rose-500/15 px-1.5 py-0.5 font-medium text-rose-300"
-                                      : "rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-300"
+                                      ? "rounded bg-loss/15 px-1.5 py-0.5 font-medium text-loss"
+                                      : "rounded bg-caution/15 px-1.5 py-0.5 font-medium text-caution"
                                   }
                                 >
                                   {e.source}
                                 </span>
-                                <span className="truncate text-zinc-400">
+                                <span className="truncate text-muted">
                                   {e.path || "—"}
                                 </span>
                               </p>
-                              <p className="mt-1 truncate text-sm text-zinc-200">
+                              <p className="mt-1 truncate text-sm text-foreground">
                                 {e.message}
                               </p>
                             </div>
-                            <span className="shrink-0 text-xs text-zinc-400">
+                            <span className="shrink-0 text-xs text-muted">
                               {fmtDate(e.created_at)}
                             </span>
                           </button>
                           {open && (
-                            <div className="mt-2 space-y-1 rounded-lg bg-zinc-950/60 p-2.5 text-xs text-zinc-400">
+                            <div className="mt-2 space-y-1 rounded-lg bg-well/80 p-2.5 text-xs text-muted">
                               {e.user_email && <p>User: {e.user_email}</p>}
                               {e.route_type && <p>Route type: {e.route_type}</p>}
                               {e.digest && <p>Digest: {e.digest}</p>}
                               {e.stack && (
-                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-xs text-zinc-400">
+                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-xs text-muted">
                                   {e.stack}
                                 </pre>
                               )}
@@ -350,11 +350,11 @@ export function AdminPage() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-zinc-400">
+                  <h2 className="text-sm font-semibold text-muted">
                     Users signed in
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-muted">
                       {filteredUsers.length}
                       {search ? ` of ${users.length}` : ""} profile
                       {users.length === 1 ? "" : "s"}
@@ -364,7 +364,7 @@ export function AdminPage() {
                       onClick={() => void load(true)}
                       disabled={refreshing}
                       title="Refresh"
-                      className="rounded-md border border-zinc-700 p-1.5 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                      className="rounded-md border border-border p-1.5 text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -374,18 +374,18 @@ export function AdminPage() {
                 </div>
                 {users.length > 3 && (
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search name, email, or sheet …"
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-900 py-2 pl-8 pr-3 text-sm text-white outline-none placeholder:text-zinc-400 focus:border-brand/50"
+                      className="w-full rounded-lg border border-border bg-well py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
                     />
                   </div>
                 )}
-                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
+                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card/80">
                   {filteredUsers.length === 0 ? (
-                    <li className="px-4 py-6 text-center text-sm text-zinc-400">
+                    <li className="px-4 py-6 text-center text-sm text-muted">
                       {users.length === 0
                         ? "No profiles yet."
                         : "No profiles match that search."}
@@ -399,21 +399,21 @@ export function AdminPage() {
                           className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-white">
+                            <p className="truncate text-sm font-medium text-foreground">
                               {u.display_name || "—"}
                             </p>
-                            <p className="truncate text-xs text-zinc-400">
+                            <p className="truncate text-xs text-muted">
                               {u.email || u.id}
                             </p>
                             {u.bio ? (
-                              <p className="mt-0.5 line-clamp-2 text-xs text-zinc-400">
+                              <p className="mt-0.5 line-clamp-2 text-xs text-muted">
                                 {u.bio}
                               </p>
                             ) : null}
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               {noPortfolios ? (
                                 <span
-                                  className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-xs font-medium text-amber-300"
+                                  className="inline-flex items-center gap-1 rounded-md bg-caution/15 px-1.5 py-0.5 text-xs font-medium text-caution"
                                   title="Signed in but owns/co-owns no sheet. Possible broken seed claim or invite redemption"
                                 >
                                   <AlertTriangle className="h-3 w-3" />
@@ -423,21 +423,21 @@ export function AdminPage() {
                                 u.portfolios!.map((p) => (
                                   <span
                                     key={p.id}
-                                    className="rounded-md bg-zinc-800/90 px-1.5 py-0.5 text-xs text-zinc-300"
+                                    className="rounded-md bg-hover/90 px-1.5 py-0.5 text-xs text-foreground/80"
                                   >
                                     {p.name}
                                   </span>
                                 ))
                               )}
                               {(u.holding_count ?? 0) > 0 && (
-                                <span className="text-xs text-zinc-500">
+                                <span className="text-xs text-muted">
                                   {u.holding_count} holding
                                   {u.holding_count === 1 ? "" : "s"}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="shrink-0 text-left text-xs text-zinc-400 sm:text-right">
+                          <div className="shrink-0 text-left text-xs text-muted sm:text-right">
                             <p>Last sign-in · {fmtDate(u.last_sign_in_at)}</p>
                             <p>Profile · {fmtDate(u.profile_created_at)}</p>
                           </div>
@@ -450,31 +450,31 @@ export function AdminPage() {
 
               <section className="space-y-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-zinc-400">
+                  <h2 className="text-sm font-semibold text-muted">
                     Communities
                   </h2>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-muted">
                     {communities.length}{" "}
                     {communities.length === 1 ? "community" : "communities"}
                   </span>
                 </div>
                 <div className="space-y-3">
                   {communities.length === 0 ? (
-                    <p className="rounded-2xl border border-white/10 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
+                    <p className="rounded-2xl border border-border bg-card/80 px-4 py-6 text-center text-sm text-muted">
                       No communities yet.
                     </p>
                   ) : (
                     communities.map((c) => (
                       <article
                         key={c.id}
-                        className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4"
+                        className="space-y-3 rounded-2xl border border-border bg-card/80 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>
-                            <h3 className="text-base font-semibold text-white">
+                            <h3 className="text-base font-semibold text-foreground">
                               {c.name}
                             </h3>
-                            <p className="text-xs text-zinc-400">
+                            <p className="text-xs text-muted">
                               Created {fmtDate(c.created_at)} ·{" "}
                               {c.member_count} member
                               {c.member_count === 1 ? "" : "s"}
@@ -487,18 +487,18 @@ export function AdminPage() {
                             Open
                           </Link>
                         </div>
-                        <ul className="divide-y divide-zinc-800/80 overflow-hidden rounded-xl border border-zinc-800/80">
+                        <ul className="divide-y divide-border/80 overflow-hidden rounded-xl border border-border">
                           {(c.members ?? []).map((m) => (
                             <li
                               key={`${c.id}-${m.user_id}`}
                               className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm"
                             >
                               <div className="min-w-0">
-                                <p className="truncate font-medium text-zinc-200">
+                                <p className="truncate font-medium text-foreground">
                                   {m.display_name || m.email || m.user_id}
                                 </p>
                                 {m.display_name && m.email ? (
-                                  <p className="truncate text-xs text-zinc-400">
+                                  <p className="truncate text-xs text-muted">
                                     {m.email}
                                   </p>
                                 ) : null}
@@ -507,7 +507,7 @@ export function AdminPage() {
                                 className={
                                   m.role === "admin"
                                     ? "shrink-0 rounded-md bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright"
-                                    : "shrink-0 text-xs text-zinc-400"
+                                    : "shrink-0 text-xs text-muted"
                                 }
                               >
                                 {m.role}

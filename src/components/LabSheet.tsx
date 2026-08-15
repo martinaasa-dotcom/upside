@@ -273,7 +273,7 @@ export function LabSheet({
       <Panel padded={false} className="px-4 py-3 sm:px-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <h2 className="shrink-0 text-base font-bold text-white">Lab</h2>
+            <h2 className="shrink-0 text-base font-bold text-foreground">Lab</h2>
             <div className="relative min-w-0 flex-1">
               <div
                 ref={tabScrollRef}
@@ -295,8 +295,8 @@ export function LabSheet({
                     className={cn(
                       "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
                       tab === t.id
-                        ? "bg-zinc-100 text-zinc-900"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                        ? "bg-select text-select-ink"
+                        : "text-muted hover:bg-hover hover:text-foreground"
                     )}
                   >
                     {t.label}
@@ -312,7 +312,7 @@ export function LabSheet({
             </div>
           </div>
           <label className="flex shrink-0 items-center gap-2">
-            <span className="shrink-0 text-xs font-medium text-zinc-400">
+            <span className="shrink-0 text-xs font-medium text-muted">
               Looking at
             </span>
             <select
@@ -320,7 +320,7 @@ export function LabSheet({
               onChange={(e) => setScopeId(e.target.value)}
               disabled={!scopeApplies}
               className={cn(
-                "min-w-0 rounded-lg border border-zinc-700 bg-zinc-950/50 px-2.5 py-1.5 text-xs text-white",
+                "min-w-0 rounded-lg border border-border bg-well/50 px-2.5 py-1.5 text-xs text-foreground",
                 !scopeApplies && "cursor-not-allowed opacity-40"
               )}
               title={
@@ -352,18 +352,18 @@ export function LabSheet({
               <Panel tone="plain">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-bold text-white">
+                    <h3 className="text-base font-bold text-foreground">
                       How spread out you are
                     </h3>
-                    <p className="mt-0.5 text-xs text-zinc-400">
+                    <p className="mt-0.5 text-xs text-muted">
                       {personality.diversificationBand.description} ·{" "}
                       {scopeLabel}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-semibold tabular-nums text-white">
+                    <p className="text-2xl font-semibold tabular-nums text-foreground">
                       {personality.diversificationScore}
-                      <span className="text-sm text-zinc-400">/100</span>
+                      <span className="text-sm text-muted">/100</span>
                     </p>
                     <p className="text-xs font-medium text-muted">
                       Diversified
@@ -374,15 +374,15 @@ export function LabSheet({
                 {/* A bare score gives no clue which end is which, so show the
                  * position on the scale and name both ends. */}
                 <div className="mt-3">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-hover">
                     <div
-                      className="h-full rounded-full bg-zinc-100 transition-all"
+                      className="h-full rounded-full bg-select transition-all"
                       style={{
                         width: `${Math.max(2, Math.min(100, personality.diversificationScore))}%`,
                       }}
                     />
                   </div>
-                  <div className="mt-1 flex justify-between text-xs text-zinc-400">
+                  <div className="mt-1 flex justify-between text-xs text-muted">
                     <span>0 · all in one name</span>
                     <span>100 · index-broad</span>
                   </div>
@@ -440,14 +440,14 @@ export function LabSheet({
 
               {themes.length > 0 && (
                 <Panel tone="plain">
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="text-base font-bold text-foreground">
                     What you&apos;re actually betting on
                   </h3>
-                  <p className="mt-0.5 mb-4 text-xs text-zinc-400">
+                  <p className="mt-0.5 mb-4 text-xs text-muted">
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
                   </p>
-                  <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
+                  <div className="flex h-3 overflow-hidden rounded-full bg-well">
                     {themes.map((t) => (
                       <div
                         key={t.theme}
@@ -463,16 +463,16 @@ export function LabSheet({
                     {themes.map((t) => (
                       <div
                         key={t.theme}
-                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-3 py-2"
+                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-well/40 px-3 py-2"
                       >
-                        <span className="flex items-center gap-2 text-xs text-zinc-300">
+                        <span className="flex items-center gap-2 text-xs text-foreground/80">
                           <span
                             className="h-2 w-2 shrink-0 rounded-full"
                             style={{ backgroundColor: THEME_COLOR[t.theme] }}
                           />
                           {t.label}
                         </span>
-                        <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-400">
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
                           {Math.round(t.pct * 100)}%
                         </span>
                       </div>
@@ -515,10 +515,10 @@ export function LabSheet({
       {tab === "risk" && !hiddenTabs.includes("risk") && (
         <Panel tone="plain" className="space-y-4">
           <div>
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-base font-bold text-foreground">
               Do these move together?
             </h3>
-            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+            <p className="mt-0.5 text-xs leading-relaxed text-muted">
               How closely each pair has tracked each other over the last 90
               days, up to 8 names. Near <span className="tabular-nums">+1</span> means they
               rise and fall as one, so holding both spreads your money without
@@ -528,7 +528,7 @@ export function LabSheet({
             </p>
           </div>
           {corrHeat.tickers.length < 2 ? (
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-muted">
               Need at least two names with price history to compare.
             </p>
           ) : (
@@ -549,14 +549,14 @@ export function LabSheet({
                       <div
                         key={`h-${t}`}
                         title={cashtag(t)}
-                        className="flex h-8 items-end justify-center pb-0.5 text-xs font-medium leading-none text-zinc-400"
+                        className="flex h-8 items-end justify-center pb-0.5 text-xs font-medium leading-none text-muted"
                       >
                         <span className="max-w-full truncate">{cashtag(t)}</span>
                       </div>
                     ))}
                     {corrHeat.tickers.map((row, i) => (
                       <div key={row} className="contents">
-                        <div className="flex h-10 items-center pr-2 text-xs font-medium text-zinc-400">
+                        <div className="flex h-10 items-center pr-2 text-xs font-medium text-muted">
                           {cashtag(row)}
                         </div>
                         {corrHeat.grid[i]!.map((c, j) => (
@@ -567,14 +567,14 @@ export function LabSheet({
                                 ? "—"
                                 : `${row} ↔ ${corrHeat.tickers[j]}: ${c.toFixed(2)}`
                             }
-                            className="flex h-10 w-10 items-center justify-center rounded-md tabular-nums text-xs font-medium text-zinc-100"
+                            className="flex h-10 w-10 items-center justify-center rounded-md tabular-nums text-xs font-medium text-foreground"
                             style={{
                               background:
                                 c == null
-                                  ? "#27272a"
+                                  ? "#16130f"
                                   : c >= 0
                                     ? `rgba(212, 160, 64, ${0.15 + Math.abs(c) * 0.7})`
-                                    : `rgba(56, 189, 248, ${0.15 + Math.abs(c) * 0.7})`,
+                                    : `rgba(196, 106, 88, ${0.15 + Math.abs(c) * 0.7})`,
                             }}
                           >
                             {c == null ? "—" : c.toFixed(1)}
@@ -586,16 +586,16 @@ export function LabSheet({
                 </div>
 
                 <div className="flex min-w-0 flex-col">
-                  <p className="flex h-8 items-end pb-0.5 text-xs text-zinc-400">
+                  <p className="flex h-8 items-end pb-0.5 text-xs text-muted">
                     Tightest pairs
                   </p>
                   <ul className="flex min-h-0 flex-1 flex-col gap-1">
                     {corrPairs.map((c) => (
                       <li
                         key={`${c.a}-${c.b}`}
-                        className="flex flex-1 items-center justify-between gap-3 rounded-md border border-zinc-800/80 px-2.5 text-xs"
+                        className="flex flex-1 items-center justify-between gap-3 rounded-md border border-border px-2.5 text-xs"
                       >
-                        <span className="truncate text-zinc-300">
+                        <span className="truncate text-foreground/80">
                           {cashtag(c.a)} ↔ {cashtag(c.b)}
                         </span>
                         <span
@@ -605,7 +605,7 @@ export function LabSheet({
                               ? "text-loss"
                               : c.corr <= -0.3
                                 ? "text-gain"
-                                : "text-zinc-400"
+                                : "text-muted"
                           )}
                         >
                           {c.corr.toFixed(2)}
@@ -615,7 +615,7 @@ export function LabSheet({
                   </ul>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
                 <span className="flex items-center gap-1.5">
                   <span
                     aria-hidden
@@ -651,26 +651,26 @@ function AllocCard({
 }) {
   return (
     <Panel tone="plain">
-      <h3 className="mb-3 text-base font-bold text-white">{title}</h3>
+      <h3 className="mb-3 text-base font-bold text-foreground">{title}</h3>
       <div className="space-y-2">
         {slices.map((s) => (
           <div key={s.label}>
-            <div className="mb-0.5 flex justify-between text-xs text-zinc-400">
+            <div className="mb-0.5 flex justify-between text-xs text-muted">
               <span>{s.label}</span>
               <span className="tabular-nums">
                 {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
+            <div className="h-1.5 overflow-hidden rounded-full bg-well">
               <div
-                className="h-full rounded-full bg-zinc-100"
+                className="h-full rounded-full bg-select"
                 style={{ width: `${Math.min(100, s.pct * 100)}%` }}
               />
             </div>
           </div>
         ))}
         {slices.length === 0 && (
-          <p className="text-sm text-zinc-400">No equity to allocate.</p>
+          <p className="text-sm text-muted">No equity to allocate.</p>
         )}
       </div>
     </Panel>

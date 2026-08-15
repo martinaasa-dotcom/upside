@@ -38,13 +38,13 @@ export function CostBasisModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-zinc-800 px-4 py-3">
+      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div>
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-semibold text-foreground">
               What you paid
             </h3>
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted">
               The import used today&apos;s prices as what you paid. Type your
               real average buy price in dollars, then apply, so the gain and
               loss numbers are right.
@@ -54,7 +54,7 @@ export function CostBasisModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -63,11 +63,11 @@ export function CostBasisModal({
           {rows.map((r) => (
             <label
               key={r.ticker}
-              className="grid grid-cols-[1fr_7rem] items-center gap-2 text-xs text-zinc-400"
+              className="grid grid-cols-[1fr_7rem] items-center gap-2 text-xs text-muted"
             >
               <span>
-                <span className="font-semibold text-white">{cashtag(r.ticker)}</span>
-                <span className="ml-2 text-zinc-400">
+                <span className="font-semibold text-foreground">{cashtag(r.ticker)}</span>
+                <span className="ml-2 text-muted">
                   {r.shares.toLocaleString("en-US")} sh · mark≈$
                   {r.suggestedBuy.toFixed(2)}
                 </span>
@@ -78,16 +78,16 @@ export function CostBasisModal({
                 digits={2}
                 value={r.buyPrice}
                 onChange={(n) => onChangeRow(r.ticker, n)}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-white outline-none focus:border-brand"
+                className="rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
               />
             </label>
           ))}
         </div>
-        <div className="flex justify-end gap-2 border-t border-zinc-800 px-4 py-3">
+        <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
           >
             Skip
           </button>

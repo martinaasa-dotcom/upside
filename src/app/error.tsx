@@ -28,18 +28,18 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#1a241e_0%,_#0d110f_52%)] px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#2d3d32_0%,_#1a2820_52%)] px-4 text-center">
       <UpsideLogo variant="icon" />
       <div className="max-w-sm space-y-2">
-        <h1 className="text-lg font-semibold text-white">
+        <h1 className="text-lg font-semibold text-foreground">
           Something broke on this screen
         </h1>
-        <p className="text-sm leading-relaxed text-zinc-400">
+        <p className="text-sm leading-relaxed text-muted">
           Your holdings are safe. This screen hit a snag. Try again, or
           reload if it keeps happening.
         </p>
         {error.digest && (
-          <p className="text-xs text-zinc-400">Ref: {error.digest}</p>
+          <p className="text-xs text-muted">Ref: {error.digest}</p>
         )}
       </div>
       <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export default function Error({
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:border-zinc-500 hover:text-white"
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground/80 hover:border-brand hover:text-foreground"
         >
           Reload page
         </button>

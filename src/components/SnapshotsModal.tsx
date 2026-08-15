@@ -153,22 +153,22 @@ export function SnapshotsModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative z-10 flex max-h-[min(90dvh,560px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-xl">
-        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="relative z-10 flex max-h-[min(90dvh,560px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-brand-bright" />
-            <h2 className="text-sm font-semibold text-zinc-100">Snapshots</h2>
+            <h2 className="text-sm font-semibold text-foreground">Snapshots</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-2">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2">
           <button
             type="button"
             onClick={() => void createManual()}
@@ -180,13 +180,13 @@ export function SnapshotsModal({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {loading && snapshots.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-400">
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading …
             </div>
           ) : error ? (
-            <p className="px-2 py-6 text-center text-sm text-red-400">{error}</p>
+            <p className="px-2 py-6 text-center text-sm text-loss">{error}</p>
           ) : snapshots.length === 0 ? (
-            <p className="px-2 py-6 text-center text-sm text-zinc-400">
+            <p className="px-2 py-6 text-center text-sm text-muted">
               No snapshots yet.
             </p>
           ) : (
@@ -194,12 +194,12 @@ export function SnapshotsModal({
               {snapshots.map((s) => (
                 <li
                   key={s.id}
-                  className="rounded-lg border border-zinc-800/80 px-3 py-2"
+                  className="rounded-lg border border-border px-3 py-2"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm text-zinc-200">{s.label}</p>
-                      <p className="text-xs text-zinc-400">
+                      <p className="truncate text-sm text-foreground">{s.label}</p>
+                      <p className="text-xs text-muted">
                         {s.kind} · {formatWhen(s.created_at)}
                       </p>
                     </div>
@@ -210,7 +210,7 @@ export function SnapshotsModal({
                         onClick={() =>
                           setPendingRestore({ kind: "book", id: s.id, label: s.label })
                         }
-                        className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                        className="rounded border border-border px-2 py-0.5 text-xs text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                       >
                         {busyId === s.id ? "…" : "Full book"}
                       </button>
@@ -225,7 +225,7 @@ export function SnapshotsModal({
                               label: s.label,
                             })
                           }
-                          className="rounded border border-zinc-700 px-2 py-0.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+                          className="rounded border border-border px-2 py-0.5 text-xs text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                         >
                           {busyId === `${s.id}:sheet` ? "…" : "This sheet"}
                         </button>

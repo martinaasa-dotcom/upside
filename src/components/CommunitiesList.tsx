@@ -190,10 +190,10 @@ export function CommunitiesList() {
         <AppHeader className="hidden md:block" title="Communities" />
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-lg font-bold text-white">
+            <h1 className="text-lg font-bold text-foreground">
               Communities
             </h1>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-1 text-sm leading-relaxed text-muted">
               Compare books with people you invite, or find a public circle
               below. You pick which sheets to share. Members see today&apos;s
               prices, not what you paid.
@@ -202,25 +202,25 @@ export function CommunitiesList() {
           <WidgetErrorBoundary name="Upside Fund">
             <HomeWorld fundOnly />
           </WidgetErrorBoundary>
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-loss">{error}</p>}
           {communities.length === 0 && loading ? (
             <div className="space-y-2" aria-hidden>
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="h-[3.75rem] animate-pulse rounded-2xl border border-white/10 bg-card/80"
+                  className="h-[3.75rem] animate-pulse rounded-2xl border border-border bg-card/80"
                 />
               ))}
             </div>
           ) : (
-            <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
+            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card/80">
               {communities.length === 0 && (
                 <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-                  <Users className="h-6 w-6 text-zinc-400" />
-                  <p className="text-sm text-zinc-200">
+                  <Users className="h-6 w-6 text-muted" />
+                  <p className="text-sm text-foreground">
                     You are not in a circle yet.
                   </p>
-                  <p className="text-sm leading-relaxed text-zinc-400">
+                  <p className="text-sm leading-relaxed text-muted">
                     Create one below for friends or family, or request to join
                     a public community further down.
                   </p>
@@ -238,15 +238,15 @@ export function CommunitiesList() {
                       {c.kind === "classroom" ? (
                         <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
                       ) : c.visibility === "public" ? (
-                        <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
+                        <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
                       ) : (
-                        <Lock className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                        <Lock className="h-3.5 w-3.5 shrink-0 text-muted" />
                       )}
-                      <span className="min-w-0 truncate text-sm font-semibold text-zinc-100">
+                      <span className="min-w-0 truncate text-sm font-semibold text-foreground">
                         {c.name}
                       </span>
                       {c.kind === "classroom" ? (
-                        <span className="shrink-0 text-xs text-zinc-500">
+                        <span className="shrink-0 text-xs text-muted">
                           Class
                         </span>
                       ) : null}
@@ -255,7 +255,7 @@ export function CommunitiesList() {
                       <span className="text-xs capitalize text-brand-bright/80">
                         {c.role}
                       </span>
-                      <ChevronRight className="h-4 w-4 text-zinc-400" />
+                      <ChevronRight className="h-4 w-4 text-muted" />
                     </span>
                   </Link>
                 </li>
@@ -265,22 +265,22 @@ export function CommunitiesList() {
 
           <div>
             <div className="mb-2 flex items-center gap-2">
-              <Compass className="h-4 w-4 text-sky-400/80" />
-              <h2 className="text-sm font-semibold text-zinc-200">
+              <Compass className="h-4 w-4 text-brand-bright" />
+              <h2 className="text-sm font-semibold text-foreground">
                 Discover public circles
               </h2>
             </div>
-            <p className="mb-3 text-xs text-zinc-400">
+            <p className="mb-3 text-xs text-muted">
               Anyone can ask to join. An admin still has to approve before
               you see any books.
             </p>
             {discover.length === 0 ? (
-              <p className="rounded-2xl border border-white/10 bg-card/80 px-4 py-6 text-sm leading-relaxed text-zinc-400">
+              <p className="rounded-2xl border border-border bg-card/80 px-4 py-6 text-sm leading-relaxed text-muted">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card/80">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -288,23 +288,23 @@ export function CommunitiesList() {
                   >
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="flex min-w-0 items-center gap-2">
-                        <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
-                        <span className="min-w-0 truncate text-sm font-medium text-zinc-100">
+                        <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
+                        <span className="min-w-0 truncate text-sm font-medium text-foreground">
                           {c.name}
                         </span>
-                        <span className="shrink-0 text-xs text-zinc-400">
+                        <span className="shrink-0 text-xs text-muted">
                           {c.memberCount}{" "}
                           {c.memberCount === 1 ? "member" : "members"}
                         </span>
                       </span>
                       {c.houseNote?.trim() ? (
-                        <span className="pl-5 text-xs leading-relaxed text-zinc-400">
+                        <span className="pl-5 text-xs leading-relaxed text-muted">
                           {c.houseNote.trim()}
                         </span>
                       ) : null}
                     </span>
                     {c.requestStatus === "pending" ? (
-                      <span className="shrink-0 text-xs font-medium text-amber-400">
+                      <span className="shrink-0 text-xs font-medium text-caution">
                         Requested · pending
                       </span>
                     ) : (
@@ -312,7 +312,7 @@ export function CommunitiesList() {
                         type="button"
                         onClick={() => void requestToJoin(c.id)}
                         disabled={requestBusyId === c.id}
-                        className="shrink-0 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-200 hover:border-brand/50 hover:text-white disabled:opacity-50"
+                        className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
                       >
                         {requestBusyId === c.id
                           ? "Requesting …"
@@ -362,7 +362,7 @@ export function CommunitiesList() {
                         ? "Econ 201"
                         : "Community name"
                     }
-                    className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-500"
+                    className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
                   />
                 </label>
 
@@ -372,7 +372,7 @@ export function CommunitiesList() {
                       <p className="text-xs font-medium text-muted">
                         How the class runs
                       </p>
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                      <p className="mt-1 text-sm leading-relaxed text-muted">
                         Pick the closest match. You can change the cash, the
                         note, and the trading rules after you start.
                       </p>
@@ -393,14 +393,14 @@ export function CommunitiesList() {
                               className={cn(
                                 "flex w-full flex-col gap-1 py-4 text-left transition first:pt-1 last:pb-1",
                                 on
-                                  ? "text-white"
-                                  : "text-zinc-300 hover:text-white"
+                                  ? "text-foreground"
+                                  : "text-foreground/80 hover:text-foreground"
                               )}
                             >
                               <span
                                 className={cn(
                                   "text-sm font-semibold",
-                                  on ? "text-white" : "text-zinc-100"
+                                  on ? "text-foreground" : "text-foreground"
                                 )}
                               >
                                 {t.title}
@@ -427,7 +427,7 @@ export function CommunitiesList() {
                         maxLength={800}
                         rows={4}
                         placeholder={DEFAULT_CLASS_ASSIGNMENT}
-                        className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-500"
+                        className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted focus:border-brand"
                       />
                     </label>
                   </>

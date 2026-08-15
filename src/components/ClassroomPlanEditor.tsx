@@ -76,14 +76,14 @@ export function ClassroomPlanEditor({
   }
 
   return (
-    <div className="mt-5 border-t border-zinc-800 pt-4">
-      <p className="text-xs font-medium text-zinc-400">What students can do</p>
-      <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+    <div className="mt-5 border-t border-border pt-4">
+      <p className="text-xs font-medium text-muted">What students can do</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
         Change this whenever the lesson changes. Buy week, closed, sell
         and move money, or leave it open.
       </p>
       {trade ? (
-        <p className="mt-2 text-sm text-zinc-200">
+        <p className="mt-2 text-sm text-foreground">
           Now: {trade.label}
           {trade.until
             ? ` until ${new Date(trade.until).toLocaleString(undefined, {
@@ -107,7 +107,7 @@ export function ClassroomPlanEditor({
               "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
               trade?.kind === k.id
                 ? "border-brand/50 bg-brand/20 text-brand-bright"
-                : "border-zinc-800 text-zinc-300 hover:border-zinc-600 hover:text-white"
+                : "border-border text-foreground/80 hover:border-brand-mid hover:text-foreground"
             )}
           >
             {k.label}
@@ -115,9 +115,9 @@ export function ClassroomPlanEditor({
         ))}
       </div>
 
-      <p className="mt-4 text-xs font-medium text-zinc-400">Schedule</p>
+      <p className="mt-4 text-xs font-medium text-muted">Schedule</p>
       {scheduled.length === 0 ? (
-        <p className="mt-1 text-xs text-zinc-500">
+        <p className="mt-1 text-xs text-muted">
           Nothing dated. Use the buttons above, or add a stretch with dates.
         </p>
       ) : (
@@ -125,11 +125,11 @@ export function ClassroomPlanEditor({
           {scheduled.map((p) => (
             <li
               key={p.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800 px-2.5 py-1.5"
+              className="flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5"
             >
-              <span className="min-w-0 text-xs text-zinc-300">
+              <span className="min-w-0 text-xs text-foreground/80">
                 {classPeriodLabel(p.kind)}
-                <span className="block text-zinc-500">
+                <span className="block text-muted">
                   {new Date(p.startsAt).toLocaleString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -150,7 +150,7 @@ export function ClassroomPlanEditor({
                 type="button"
                 disabled={busy}
                 onClick={() => remove(p.id)}
-                className="rounded-md p-1 text-zinc-500 hover:text-rose-300 disabled:opacity-50"
+                className="rounded-md p-1 text-muted hover:text-loss disabled:opacity-50"
                 title="Remove"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -160,12 +160,12 @@ export function ClassroomPlanEditor({
         </ul>
       )}
 
-      <div className="mt-3 space-y-2 rounded-lg border border-zinc-800 p-2.5">
-        <p className="text-xs font-medium text-zinc-400">Add a stretch</p>
+      <div className="mt-3 space-y-2 rounded-lg border border-border p-2.5">
+        <p className="text-xs font-medium text-muted">Add a stretch</p>
         <select
           value={draftKind}
           onChange={(e) => setDraftKind(e.target.value as ClassPeriodKind)}
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
+          className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground"
         >
           {KINDS.map((k) => (
             <option key={k.id} value={k.id}>
@@ -173,32 +173,32 @@ export function ClassroomPlanEditor({
             </option>
           ))}
         </select>
-        <label className="block text-xs text-zinc-500">
+        <label className="block text-xs text-muted">
           Starts
           <input
             type="datetime-local"
             value={draftStart}
             onChange={(e) => setDraftStart(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
+            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground"
           />
         </label>
-        <label className="block text-xs text-zinc-500">
+        <label className="block text-xs text-muted">
           Ends (optional)
           <input
             type="datetime-local"
             value={draftEnd}
             onChange={(e) => setDraftEnd(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
+            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground"
           />
         </label>
         {draftError ? (
-          <p className="text-xs text-rose-400">{draftError}</p>
+          <p className="text-xs text-loss">{draftError}</p>
         ) : null}
         <button
           type="button"
           disabled={busy || !draftStart}
           onClick={addStretch}
-          className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-200 hover:text-white disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:text-foreground disabled:opacity-40"
         >
           <Plus className="h-3.5 w-3.5" />
           Add stretch

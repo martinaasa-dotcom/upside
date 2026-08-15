@@ -84,10 +84,10 @@ export function ConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
-        className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+        className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
-          <h3 id="confirm-title" className="text-base font-semibold text-white">
+          <h3 id="confirm-title" className="text-base font-semibold text-foreground">
             {title}
           </h3>
           <button
@@ -96,19 +96,19 @@ export function ConfirmModal({
             disabled={busy}
             aria-label="Close"
             title="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white disabled:opacity-40 sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground disabled:opacity-40 sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="text-sm leading-relaxed text-zinc-400">{body}</p>
-        {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
+        <p className="text-sm leading-relaxed text-muted">{body}</p>
+        {error && <p className="mt-3 text-sm text-loss">{error}</p>}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="touch-target rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white disabled:opacity-40"
+            className="touch-target rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground disabled:opacity-40"
           >
             {cancelLabel}
           </button>
@@ -118,7 +118,7 @@ export function ConfirmModal({
             disabled={busy}
             className={
               destructive
-                ? "rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-40"
+                ? "rounded-lg bg-loss px-4 py-2 text-sm font-semibold text-paper hover:bg-loss/80 disabled:opacity-40"
                 : "btn-primary disabled:opacity-40"
             }
           >

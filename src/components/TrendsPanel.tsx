@@ -55,15 +55,15 @@ type TrendRow = TrendRowLike;
 const TONE_TEXT: Record<Tone, string> = {
   gain: "text-gain",
   loss: "text-loss",
-  warn: "text-amber-300",
-  neutral: "text-zinc-300",
+  warn: "text-caution",
+  neutral: "text-foreground/80",
 };
 
 const TONE_BADGE: Record<Tone, string> = {
-  gain: "bg-emerald-500/15 text-emerald-200 border-emerald-500/30",
-  loss: "bg-rose-500/15 text-rose-200 border-rose-500/30",
-  warn: "bg-amber-500/15 text-amber-200 border-amber-500/30",
-  neutral: "bg-zinc-800 text-zinc-300 border-zinc-700",
+  gain: "bg-gain/15 text-gain border-gain/30",
+  loss: "bg-loss/15 text-loss border-loss/30",
+  warn: "bg-caution/15 text-caution border-caution/40",
+  neutral: "bg-hover text-foreground/80 border-border",
 };
 
 function ToneIcon({ tone, className }: { tone: Tone; className?: string }) {
@@ -86,14 +86,14 @@ function TickerStoryCard({
   const story = useMemo(() => buildTrendStory(row), [row]);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-card/80 p-4 sm:p-5">
+    <div className="rounded-xl border border-border bg-card/80 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-base font-semibold text-white">
+          <span className="text-base font-semibold text-foreground">
             {cashtag(row.ticker)}
           </span>
           {!isHolding && (
-            <span className="rounded-full border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400">
+            <span className="rounded-full border border-border px-1.5 py-0.5 text-xs text-muted">
               watching
             </span>
           )}
@@ -109,7 +109,7 @@ function TickerStoryCard({
         </span>
       </div>
 
-      <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+      <p className="mt-2 text-sm leading-relaxed text-foreground/80">
         {story.sentence}
       </p>
 
@@ -122,13 +122,13 @@ function TickerStoryCard({
             sub={s.detail}
             explain={s.help}
             valueClassName={TONE_TEXT[s.tone]}
-            subClassName="text-xs leading-relaxed text-zinc-400"
+            subClassName="text-xs leading-relaxed text-muted"
           />
         ))}
       </div>
 
       {row.divergence && (
-        <p className="mt-3 text-xs leading-relaxed text-zinc-400">
+        <p className="mt-3 text-xs leading-relaxed text-muted">
           Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
           {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
           other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
@@ -276,7 +276,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             </button>
           }
         />
-        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           Showing up to {MAX_TICKERS} names at once
           {combined.length > MAX_TICKERS
             ? ` (${MAX_TICKERS} of ${combined.length} queued).`
@@ -288,11 +288,11 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           used.
         </p>
 
-        <div className="mt-5 border-t border-zinc-800 pt-5">
-          <h3 className="text-base font-bold text-white">
+        <div className="mt-5 border-t border-border pt-5">
+          <h3 className="text-base font-bold text-foreground">
             Watch anything, not just what you hold
           </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">
             Add a sector ETF, an index, or a crypto pair to read its trend the
             same way, e.g. $XLK for tech, $SPY for the index, or BTC-USD.
           </p>
@@ -307,7 +307,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 if (e.key === "Enter") addToWatchlist();
               }}
               placeholder="BTC-USD, XLK, SPY …"
-              className="h-9 w-40 rounded-lg border border-zinc-700 bg-black/20 px-2.5 text-sm text-white placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
+              className="h-9 w-40 rounded-lg border border-border bg-black/20 px-2.5 text-sm text-foreground placeholder:text-muted focus:border-brand focus:outline-none"
             />
             <button
               type="button"
@@ -321,14 +321,14 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             {watchlist.map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900/60 px-2 py-1 text-xs text-zinc-200"
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-well/60 px-2 py-1 text-xs text-foreground"
               >
                 {cashtag(t)}
                 <button
                   type="button"
                   onClick={() => removeFromWatchlist(t)}
                   aria-label={`Remove ${t} from watchlist`}
-                  className="text-zinc-500 hover:text-white"
+                  className="text-muted hover:text-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -342,19 +342,19 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       </Panel>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">
+        <div className="rounded-xl border border-loss/30 bg-loss/10 px-4 py-3 text-sm text-loss">
           {error}
         </div>
       )}
 
       {rows == null && !error && (
-        <div className="rounded-xl border border-zinc-800 bg-card/80 px-4 py-10 text-center text-sm text-zinc-400">
+        <div className="rounded-xl border border-border bg-card/80 px-4 py-10 text-center text-sm text-muted">
           Reading four years of weekly bars …
         </div>
       )}
 
       {rows != null && rows.length === 0 && !error && (
-        <div className="rounded-xl border border-zinc-800 bg-card/80 px-4 py-10 text-center text-sm text-zinc-400">
+        <div className="rounded-xl border border-border bg-card/80 px-4 py-10 text-center text-sm text-muted">
           Add a holding, or watch a ticker above, and its trend read shows up
           here.
         </div>
@@ -362,7 +362,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
       {rows != null && rows.length > 0 && (
         <>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-muted">
             {attentionCount === 0
               ? "Nothing below is diverging or rolling over right now. Sorted by who's beating the S&P."
               : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing, those come first.`}
@@ -381,7 +381,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           {leaders.length > 1 && (
             <Panel>
               <PanelHeader title="Who's leading, who's fading" />
-              <p className="mt-3 mb-4 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-3 mb-4 text-sm leading-relaxed text-muted">
                 The same names, ranked by how they did against the S&amp;P over
                 the last quarter. This is money moving from one group to
                 another, not just prices going up with everything else.
@@ -392,10 +392,10 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   const width = Math.min(100, Math.abs(v) * 100 * 1.6);
                   return (
                     <div key={r.ticker} className="flex items-center gap-3">
-                      <span className="w-16 shrink-0 truncate text-xs font-medium text-zinc-200">
+                      <span className="w-16 shrink-0 truncate text-xs font-medium text-foreground">
                         {cashtag(r.ticker)}
                       </span>
-                      <div className="relative h-2 min-w-0 flex-1 rounded-full bg-zinc-900">
+                      <div className="relative h-2 min-w-0 flex-1 rounded-full bg-well">
                         <div
                           className={cn(
                             "absolute top-0 h-full rounded-full",
@@ -403,7 +403,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                           )}
                           style={{ width: `${width / 2}%` }}
                         />
-                        <div className="absolute inset-y-0 left-1/2 w-px bg-zinc-700" />
+                        <div className="absolute inset-y-0 left-1/2 w-px bg-border" />
                       </div>
                       <span
                         className={cn(
@@ -417,13 +417,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   );
                 })}
               </div>
-              <p className="mt-3 text-right text-xs text-zinc-400">
+              <p className="mt-3 text-right text-xs text-muted">
                 vs S&amp;P, last 13 weeks
               </p>
             </Panel>
           )}
 
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-muted">
             Technical readings on past prices, not a forecast and not advice.
             Divergences can persist for months before anything happens, or
             resolve with no break at all.

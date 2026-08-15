@@ -89,21 +89,21 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[min(85dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
+      <div className="flex max-h-[min(85dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
               <p className="text-xs font-semibold text-muted">
                 Quick question · {step}/3
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-white">
+              <h2 className="mt-1 text-lg font-semibold text-foreground">
                 {step === 1
                   ? "How would you describe yourself as an investor?"
                   : step === 2
                     ? "Have you used covered calls or other options strategies?"
                     : "Want a report in your inbox?"}
               </h2>
-              <p className="mt-1 text-xs text-zinc-400">
+              <p className="mt-1 text-xs text-muted">
                 {step === 3
                   ? "Sunday is on. Weekdays only if you want them. These start once there are names in the book. Change this anytime in Account."
                   : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}
@@ -112,30 +112,30 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
             {step === 3 ? (
               <div className="space-y-3">
-                <label className="flex items-start gap-3 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-sm text-zinc-200">
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteMorning}
                     onChange={(e) => setNoteMorning(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-white/40"
+                    className="mt-0.5 h-4 w-4 rounded border-brand-mid bg-well text-foreground focus:ring-white/40"
                   />
                   <span>
-                    <span className="font-medium text-white">Weekdays</span>
-                    <span className="mt-0.5 block text-xs text-zinc-400">
+                    <span className="font-medium text-foreground">Weekdays</span>
+                    <span className="mt-0.5 block text-xs text-muted">
                       What to watch before the open, then a recap after the US close.
                     </span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-sm text-zinc-200">
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteSunday}
                     onChange={(e) => setNoteSunday(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-zinc-100 focus:ring-white/40"
+                    className="mt-0.5 h-4 w-4 rounded border-brand-mid bg-well text-foreground focus:ring-white/40"
                   />
                   <span>
-                    <span className="font-medium text-white">Sundays</span>
-                    <span className="mt-0.5 block text-xs text-zinc-400">
+                    <span className="font-medium text-foreground">Sundays</span>
+                    <span className="mt-0.5 block text-xs text-muted">
                       The week that just finished, plus a look at the next ones.
                     </span>
                   </span>
@@ -151,7 +151,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="w-full text-xs text-zinc-400 hover:text-zinc-300"
+                  className="w-full text-xs text-muted hover:text-foreground/80"
                 >
                   ← Back
                 </button>
@@ -171,10 +171,10 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           }}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-white/20 hover:bg-hover"
+                            "border-border bg-well/60 text-foreground hover:border-brand/40 hover:bg-hover"
                           )}
                         >
-                          <Icon className="h-4 w-4 shrink-0 text-zinc-300" />
+                          <Icon className="h-4 w-4 shrink-0 text-foreground/80" />
                           {opt.label}
                         </button>
                       );
@@ -187,7 +187,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-sm text-zinc-200 transition hover:border-white/20 hover:bg-hover"
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground transition hover:border-brand/40 hover:bg-hover"
                       >
                         {opt.label}
                       </button>
@@ -196,7 +196,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="mt-1 text-xs text-zinc-400 hover:text-zinc-300"
+                    className="mt-1 text-xs text-muted hover:text-foreground/80"
                   >
                     ← Back
                   </button>
@@ -206,22 +206,22 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
           </>
         ) : (
           <div className="space-y-4 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-zinc-800 text-zinc-100">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-hover text-foreground">
               <Check className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">
+              <h2 className="text-lg font-semibold text-foreground">
                 You&apos;re set to {resultLabel}
               </h2>
-              <p className="mt-1 text-sm text-zinc-400">
+              <p className="mt-1 text-sm text-muted">
                 Next, paste what you own. That is the whole start.
               </p>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-zinc-700 bg-zinc-900/60 px-3.5 py-3 text-left text-xs text-zinc-300">
-              <Settings className="h-4 w-4 shrink-0 text-zinc-300" />
+            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-xs text-foreground/80">
+              <Settings className="h-4 w-4 shrink-0 text-foreground/80" />
               <span>
                 Change the view and the email notes anytime in{" "}
-                <span className="font-semibold text-white">Account</span>.
+                <span className="font-semibold text-foreground">Account</span>.
               </span>
             </div>
             <button

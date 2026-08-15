@@ -9,23 +9,23 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#1a241e_0%,_#0d110f_55%)] text-zinc-100">
-      <header className="border-b border-white/10 bg-app/90 backdrop-blur">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#2d3d32_0%,_#1a2820_55%)] text-foreground">
+      <header className="border-b border-border bg-app/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted hover:border-brand hover:text-foreground"
           >
             Back
           </Link>
         </div>
       </header>
 
-      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-zinc-300">
+      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
-          <h1 className="text-lg font-bold text-white">Terms of Service</h1>
-          <p className="mt-1 text-xs text-zinc-400">Last updated {LAST_UPDATED}</p>
+          <h1 className="text-lg font-bold text-foreground">Terms of Service</h1>
+          <p className="mt-1 text-xs text-muted">Last updated {LAST_UPDATED}</p>
         </div>
 
         <p>
@@ -90,7 +90,7 @@ export default function TermsPage() {
           and features can change, be renamed, or be removed as the app
           develops. We take reasonable care with backups but you can export
           your own data at any time from{" "}
-          <Link href="/account" className="underline hover:text-white">
+          <Link href="/account" className="underline hover:text-foreground">
             My account
           </Link>
           , so please don&apos;t treat Upside Lab as your only record of anything
@@ -115,16 +115,16 @@ export default function TermsPage() {
           Questions about these terms:{" "}
           <a
             href={`mailto:${PRODUCT_CONTACT_EMAIL}`}
-            className="underline hover:text-white"
+            className="underline hover:text-foreground"
           >
             {PRODUCT_CONTACT_EMAIL}
           </a>
           .
         </Section>
 
-        <p className="pt-4 text-xs text-zinc-400">
+        <p className="pt-4 text-xs text-muted">
           See also our{" "}
-          <Link href="/privacy" className="underline hover:text-white">
+          <Link href="/privacy" className="underline hover:text-foreground">
             Privacy policy
           </Link>
           .
@@ -145,7 +145,7 @@ function Section({
 }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p>{children}</p>
     </section>
   );

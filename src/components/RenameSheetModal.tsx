@@ -62,21 +62,21 @@ export function RenameSheetModal({
       />
       <form
         onSubmit={submit}
-        className="relative w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-950 p-5 shadow-2xl"
+        className="relative w-full max-w-md rounded-2xl border border-border bg-well p-5 shadow-2xl"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h3 className="text-base font-semibold text-white">{title}</h3>
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <label className="grid gap-1 text-xs text-zinc-400">
+        <label className="grid gap-1 text-xs text-muted">
           {label}
           <input
             autoFocus
@@ -84,7 +84,7 @@ export function RenameSheetModal({
             onChange={(e) => setName(e.target.value.slice(0, 80))}
             maxLength={80}
             placeholder={placeholder}
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
             required
           />
         </label>
@@ -93,7 +93,7 @@ export function RenameSheetModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

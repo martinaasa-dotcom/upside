@@ -133,16 +133,16 @@ export function TickerDrawer({
         aria-label="Close drawer"
         onClick={onClose}
       />
-      <div className="relative flex h-full w-full max-w-none flex-col border-l border-zinc-700/80 bg-app shadow-2xl sm:max-w-md">
-        <div className="flex items-start justify-between gap-2 border-b border-zinc-800 px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
+      <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-app shadow-2xl sm:max-w-md">
+        <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-foreground">
                 {cashtag(ticker)}
               </h2>
               <Pill tone="neutral">{THEME_LABEL[theme] ?? "other businesses"}</Pill>
             </div>
-            <p className="mt-1 text-sm tabular-nums text-zinc-400">
+            <p className="mt-1 text-sm tabular-nums text-muted">
               {spot != null ? currency(spot) : "—"}
               {todayChangePct != null && (
                 <span
@@ -162,7 +162,7 @@ export function TickerDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="touch-target shrink-0 rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
+            className="touch-target shrink-0 rounded-lg p-2 text-muted transition hover:bg-hover hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -177,19 +177,19 @@ export function TickerDrawer({
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg border border-white/10 bg-app p-2.5 text-base leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/25"
+              className="mt-2 w-full rounded-lg border border-border bg-app p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted focus:border-white/25"
             />
-            <p className="mt-1.5 text-xs text-zinc-400">
+            <p className="mt-1.5 text-xs text-muted">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
             </p>
             {conviction?.stamps && conviction.stamps.length > 0 && (
-              <ul className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3">
+              <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
                 {conviction.stamps.slice(0, 3).map((s) => (
-                  <li key={s.at} className="text-xs text-zinc-400">
-                    <span className="text-zinc-300">{s.verdict}</span>
+                  <li key={s.at} className="text-xs text-muted">
+                    <span className="text-foreground/80">{s.verdict}</span>
                     {" · "}
                     {s.line}
-                    <span className="ml-1 text-zinc-600">
+                    <span className="ml-1 text-muted">
                       {new Date(s.at).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -203,13 +203,13 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4">
+          <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="text-base font-semibold text-white">
+                <h3 className="text-base font-semibold text-foreground">
                   Price path
                 </h3>
-                <p className="mt-0.5 text-sm text-zinc-400">
+                <p className="mt-0.5 text-sm text-muted">
                   A modeled scenario, not a target. Same numbers as Forecast.
                 </p>
               </div>
@@ -225,12 +225,12 @@ export function TickerDrawer({
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="min-w-0">
                   <MicroLabel>If it plays out by {targetYear}</MicroLabel>
-                  <p className="mt-1 text-2xl font-semibold tabular-nums text-white">
+                  <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
                     {currency(targetPrice, 2)}
                   </p>
-                  <p className="mt-0.5 text-sm text-zinc-400">
+                  <p className="mt-0.5 text-sm text-muted">
                     Works out to about{" "}
-                    <span className="font-medium tabular-nums text-emerald-300">
+                    <span className="font-medium tabular-nums text-gain">
                       {targetCagrPct >= 0 ? "+" : ""}
                       {targetCagrPct.toFixed(1)}%
                     </span>{" "}
@@ -247,7 +247,7 @@ export function TickerDrawer({
                     {targetGainPct >= 0 ? "+" : ""}
                     {percent(targetGainPct)}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-400">
+                  <p className="mt-0.5 text-xs text-muted">
                     from today&apos;s price
                   </p>
                 </div>
@@ -268,7 +268,7 @@ export function TickerDrawer({
                     return (
                       <div
                         key={yr}
-                        className="rounded-lg border border-brand bg-zinc-950 px-1 py-1.5 text-center"
+                        className="rounded-lg border border-brand bg-well px-1 py-1.5 text-center"
                       >
                         <p className="text-xs font-medium text-brand-bright">
                           &apos;{String(yr).slice(2)}
@@ -285,7 +285,7 @@ export function TickerDrawer({
                             if (e.key === "Escape") setEditingYear(null);
                           }}
                           aria-label={`Price at end of ${yr}`}
-                          className="mt-0.5 w-full bg-transparent text-center text-xs font-semibold tabular-nums text-white outline-none"
+                          className="mt-0.5 w-full bg-transparent text-center text-xs font-semibold tabular-nums text-foreground outline-none"
                         />
                       </div>
                     );
@@ -301,16 +301,16 @@ export function TickerDrawer({
                       }}
                       title={`Change the end-of-${yr} price`}
                       className={cn(
-                        "rounded-lg border px-1 py-2 text-center transition hover:border-zinc-600",
+                        "rounded-lg border px-1 py-2 text-center transition hover:border-brand-mid",
                         isCurrentHorizon
                           ? "border-brand/50 bg-brand/10"
-                          : "border-zinc-800 bg-zinc-950/40"
+                          : "border-border bg-well/40"
                       )}
                     >
-                      <p className="text-xs text-zinc-400">
+                      <p className="text-xs text-muted">
                         &apos;{String(yr).slice(2)}
                       </p>
-                      <p className="mt-0.5 text-xs font-semibold tabular-nums text-zinc-100">
+                      <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
                         ${Math.round(p)}
                       </p>
                       <p
@@ -332,13 +332,13 @@ export function TickerDrawer({
           <div className="grid gap-2 sm:grid-cols-2">
             <Card>
               <MicroLabel>Recent run</MicroLabel>
-              <p className="mt-1 text-sm font-medium text-zinc-200">
+              <p className="mt-1 text-sm font-medium text-foreground">
                 {streak.label}
               </p>
             </Card>
             <Card>
               <MicroLabel>Moves with</MicroLabel>
-              <p className="mt-1 truncate text-sm font-medium text-zinc-200">
+              <p className="mt-1 truncate text-sm font-medium text-foreground">
                 {shockProfile.label}
               </p>
             </Card>
@@ -349,29 +349,29 @@ export function TickerDrawer({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <MicroLabel>Your call plan</MicroLabel>
                 {coveredCallRow.yield2w != null && (
-                  <span className="text-xs font-medium tabular-nums text-sky-300">
+                  <span className="text-xs font-medium tabular-nums text-brand-bright">
                     {percent(coveredCallRow.yield2w)} for two weeks
                   </span>
                 )}
               </div>
               <div className="mt-2.5 grid grid-cols-3 gap-2">
                 <div>
-                  <p className="text-xs text-zinc-400">Strike</p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
+                  <p className="text-xs text-muted">Strike</p>
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {currency(coveredCallRow.nextStrike)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-400">Room above</p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-200">
+                  <p className="text-xs text-muted">Room above</p>
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {coveredCallRow.targetDistance != null
                       ? percent(coveredCallRow.targetDistance)
                       : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-400">Contracts</p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-200">
+                  <p className="text-xs text-muted">Contracts</p>
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {coveredCallRow.contracts}
                   </p>
                 </div>
@@ -382,7 +382,7 @@ export function TickerDrawer({
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <MicroLabel>How sure are you?</MicroLabel>
-              <span className="text-xs font-medium text-amber-300">
+              <span className="text-xs font-medium text-caution">
                 {level} of 5
               </span>
             </div>
@@ -403,14 +403,14 @@ export function TickerDrawer({
                     "touch-target h-10 flex-1 rounded-lg text-sm font-semibold tabular-nums transition",
                     level === n
                       ? "bg-brand/25 text-brand-bright ring-1 ring-brand/50"
-                      : "border border-zinc-800 bg-zinc-950/40 text-zinc-400 hover:text-white"
+                      : "border border-border bg-well/40 text-muted hover:text-foreground"
                   )}
                 >
                   {n}
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-sm text-zinc-300">
+            <p className="mt-2 text-sm text-foreground/80">
               {CONVICTION_LABELS[level]}
             </p>
           </Card>
@@ -422,7 +422,7 @@ export function TickerDrawer({
                 onClose();
                 onAskMargus();
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-well px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-hover"
             >
               <Bot className="h-4 w-4 text-brand-bright" />
               Ask Margus about {cashtag(ticker)}

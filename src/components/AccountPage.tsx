@@ -47,21 +47,21 @@ function VisitStreakCard() {
   );
   if (!streak || streak.totalVisits <= 0) return null;
   return (
-    <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
-      <h2 className="text-base font-bold text-white">Showing up</h2>
-      <p className="text-xs text-zinc-400">{streakFlavor(streak.currentStreak)}</p>
+    <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+      <h2 className="text-base font-bold text-foreground">Showing up</h2>
+      <p className="text-xs text-muted">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
         {last7DaysStrip(streak).map((visited, i) => (
           <span
             key={i}
             className={cn(
               "h-1.5 w-6 rounded-full",
-              visited ? "bg-zinc-100" : "bg-zinc-800"
+              visited ? "bg-select" : "bg-hover"
             )}
           />
         ))}
       </div>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-muted">
         {streak.currentStreak} day streak · best {streak.longestStreak} ·{" "}
         {streak.totalVisits} visits on this device
       </p>
@@ -265,7 +265,7 @@ export function AccountPage() {
                 router.push("/");
               })
             }
-            className="touch-target inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            className="touch-target inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs text-muted hover:border-brand hover:text-foreground"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Sign out</span>
@@ -275,7 +275,7 @@ export function AccountPage() {
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
             <h1 className="text-lg font-bold">My account</h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-muted">
               How you appear, your data, and the danger zone.
             </p>
           </div>
@@ -283,9 +283,9 @@ export function AccountPage() {
           <WidgetErrorBoundary name="Account">
           <VisitStreakCard />
 
-          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
-            <h2 className="text-base font-bold text-white">Email notes</h2>
-            <p className="text-xs text-zinc-400">
+          <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+            <h2 className="text-base font-bold text-foreground">Email notes</h2>
+            <p className="text-xs text-muted">
               {morningCanSend
                 ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
                 : "Notes also land in the app. Email is not set up on this server yet."}
@@ -310,7 +310,7 @@ export function AccountPage() {
             ).map((row) => (
               <label
                 key={row.id}
-                className="flex items-center gap-2 text-sm text-zinc-200"
+                className="flex items-center gap-2 text-sm text-foreground"
               >
                 <input
                   type="checkbox"
@@ -340,33 +340,33 @@ export function AccountPage() {
                         row.set(prev);
                       });
                   }}
-                  className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
+                  className="h-4 w-4 rounded border-brand-mid bg-well text-brand focus:ring-brand/50"
                 />
                 {row.label}
               </label>
             ))}
             {morningSaved && (
-              <p className="text-xs text-emerald-300">Saved.</p>
+              <p className="text-xs text-gain">Saved.</p>
             )}
           </section>
 
           {/* Profile / community appearance */}
-          <section className="space-y-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-foreground">
                   Community profile
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-muted">
                   Signed in as {user?.email ?? "—"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-3 py-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-well/60 px-3 py-3">
               {avatarUrl && !avatarBroken ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -376,15 +376,15 @@ export function AccountPage() {
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-sm font-semibold text-zinc-200">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-hover text-sm font-semibold text-foreground">
                   {(displayName || "?").slice(0, 1).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-white">
+                <p className="truncate text-sm font-medium text-foreground">
                   {displayName || "Your name"}
                 </p>
-                <p className="truncate text-xs text-zinc-400">
+                <p className="truncate text-xs text-muted">
                   {bio || "Add a short bio for the community scoreboard."}
                 </p>
               </div>
@@ -392,23 +392,23 @@ export function AccountPage() {
 
             <form onSubmit={(e) => void saveProfile(e)} className="space-y-3">
               <label className="block space-y-1">
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs text-muted">
                   Display name
                 </span>
                 <input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   maxLength={80}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
+                  className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                   required
                 />
               </label>
               <label className="block space-y-1">
                 <span className="flex items-baseline justify-between">
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-muted">
                     Bio · communities
                   </span>
-                  <span className="text-xs tabular-nums text-zinc-400">
+                  <span className="text-xs tabular-nums text-muted">
                     {bio.length}/280
                   </span>
                 </span>
@@ -422,11 +422,11 @@ export function AccountPage() {
                       ? "e.g. Long-term tech · covered calls · Tallinn"
                       : "e.g. Long-term tech · growth investor · Tallinn"
                   }
-                  className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
+                  className="w-full resize-none rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-xs text-zinc-400">
+                <span className="text-xs text-muted">
                   Avatar URL (optional)
                 </span>
                 <input
@@ -436,7 +436,7 @@ export function AccountPage() {
                     setAvatarBroken(false);
                   }}
                   placeholder="https://…"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
+                  className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                 />
                 {avatarBroken && (
                   <span className="text-xs text-loss">
@@ -445,10 +445,10 @@ export function AccountPage() {
                 )}
               </label>
               {profileErr && (
-                <p className="text-sm text-red-400">{profileErr}</p>
+                <p className="text-sm text-loss">{profileErr}</p>
               )}
               {profileMsg && (
-                <p className="text-sm text-emerald-400">{profileMsg}</p>
+                <p className="text-sm text-gain">{profileMsg}</p>
               )}
               <button
                 type="submit"
@@ -461,14 +461,14 @@ export function AccountPage() {
           </section>
 
           {/* Experience level */}
-          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <Gauge className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">Experience level</h2>
-                <p className="text-xs text-zinc-400">
+                <h2 className="text-base font-bold text-foreground">Experience level</h2>
+                <p className="text-xs text-muted">
                   Simplifies what&apos;s shown. Nothing is locked, change it anytime.
                 </p>
               </div>
@@ -482,23 +482,23 @@ export function AccountPage() {
                   className={cn(
                     "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
                     tier === t.id
-                      ? "border-white/25 bg-hover text-white"
-                      : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
+                      ? "border-white/25 bg-hover text-foreground"
+                      : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
                   )}
                 >
                   <span>
                     <span className="font-medium">{t.label}</span>
-                    <span className="mt-0.5 block text-xs text-zinc-400">{t.blurb}</span>
+                    <span className="mt-0.5 block text-xs text-muted">{t.blurb}</span>
                   </span>
-                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-zinc-100" />}
+                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-foreground" />}
                 </button>
               ))}
             </div>
             {tierSaved && <p className="text-xs text-gain">Saved.</p>}
 
-            <div className="mt-4 border-t border-zinc-800 pt-4">
-              <p className="text-sm font-medium text-white">Options experience</p>
-              <p className="mt-0.5 text-xs text-zinc-400">
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="text-sm font-medium text-foreground">Options experience</p>
+              <p className="mt-0.5 text-xs text-muted">
                 Controls covered calls, strike alerts, and Call % everywhere.
                 Separate from the level above.
               </p>
@@ -509,12 +509,12 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === true
-                      ? "border-white/25 bg-hover text-white"
-                      : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
+                      ? "border-white/25 bg-hover text-foreground"
+                      : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
                   )}
                 >
                   <span className="font-medium">Yes</span>
-                  <span className="mt-0.5 block text-xs text-zinc-400">
+                  <span className="mt-0.5 block text-xs text-muted">
                     Show covered calls
                   </span>
                 </button>
@@ -524,12 +524,12 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === false
-                      ? "border-white/25 bg-hover text-white"
-                      : "border-zinc-700 bg-zinc-900/60 text-zinc-300 hover:border-zinc-600"
+                      ? "border-white/25 bg-hover text-foreground"
+                      : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
                   )}
                 >
                   <span className="font-medium">No</span>
-                  <span className="mt-0.5 block text-xs text-zinc-400">
+                  <span className="mt-0.5 block text-xs text-muted">
                     Hide options entirely
                   </span>
                 </button>
@@ -539,24 +539,24 @@ export function AccountPage() {
           </section>
 
           {/* Sheet invites live next to the sheet, not here. */}
-          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <Link2 className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-foreground">
                   Invite a partner
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-muted">
                   That lives on the sheet now. Open a book, tap Invite next to
                   Add holding.
                 </p>
               </div>
             </div>
-            <p className="text-xs leading-relaxed text-zinc-400">
+            <p className="text-xs leading-relaxed text-muted">
               Redeem a code at{" "}
-              <Link href="/account/join" className="text-zinc-200 underline">
+              <Link href="/account/join" className="text-foreground underline">
                 /account/join
               </Link>
               .
@@ -564,27 +564,27 @@ export function AccountPage() {
           </section>
 
           {/* Data & privacy */}
-          <section className="space-y-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-zinc-800 text-zinc-300">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-foreground">
                   Data &amp; privacy
                 </h2>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-muted">
                   Your data, your call. Export it or wipe it any time.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800/80 bg-zinc-950/40 px-3 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-well/60 px-3 py-3">
               <div>
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-foreground">
                   Download everything
                 </p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-muted">
                   One JSON file: profile, sheets, holdings, Lab state.
                 </p>
               </div>
@@ -592,20 +592,20 @@ export function AccountPage() {
                 type="button"
                 onClick={() => void exportData()}
                 disabled={exporting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 hover:border-zinc-500 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-brand disabled:opacity-60"
               >
                 <Download className="h-3.5 w-3.5" />
                 {exporting ? "Preparing …" : "Export my data"}
               </button>
             </div>
-            {exportErr && <p className="text-sm text-red-400">{exportErr}</p>}
+            {exportErr && <p className="text-sm text-loss">{exportErr}</p>}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-900/40 bg-rose-950/10 px-3 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-loss/40 bg-loss/10 px-3 py-3">
               <div>
-                <p className="text-sm font-medium text-rose-200">
+                <p className="text-sm font-medium text-loss">
                   Delete my account
                 </p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-muted">
                   Removes your profile, deletes sheets only you own, and steps
                   you off any shared ones. Cannot be undone.
                 </p>
@@ -617,19 +617,19 @@ export function AccountPage() {
                   setDeleteText("");
                   setDeleteOpen(true);
                 }}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-rose-800 px-3 py-2 text-xs font-medium text-rose-300 hover:bg-rose-950/40"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-2 text-xs font-medium text-loss hover:bg-loss/10"
               >
                 <AlertTriangle className="h-3.5 w-3.5" />
                 Delete account
               </button>
             </div>
 
-            <p className="text-center text-xs text-zinc-400">
-              <Link href="/privacy" className="underline hover:text-zinc-400">
+            <p className="text-center text-xs text-muted">
+              <Link href="/privacy" className="underline hover:text-muted">
                 Privacy policy
               </Link>
               {" · "}
-              <Link href="/terms" className="underline hover:text-zinc-400">
+              <Link href="/terms" className="underline hover:text-muted">
                 Terms of service
               </Link>
             </p>
@@ -647,11 +647,11 @@ export function AccountPage() {
             aria-label="Close"
             onClick={() => !deleting && setDeleteOpen(false)}
           />
-          <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-rose-900/50 bg-zinc-950 p-5 shadow-2xl sm:max-w-md sm:rounded-2xl">
-            <h3 className="text-base font-semibold text-rose-200">
+          <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-loss/50 bg-well p-5 shadow-2xl sm:max-w-md sm:rounded-2xl">
+            <h3 className="text-base font-semibold text-loss">
               Delete your account?
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 text-sm leading-relaxed text-muted">
               This permanently deletes your profile and any sheet you&apos;re
               the sole owner of (holdings included). Shared sheets stay for
               your co-owner. Where possible this also removes your sign-in
@@ -660,7 +660,7 @@ export function AccountPage() {
               Google account separately if you want that severed too.
             </p>
             <label className="mt-4 block space-y-1">
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-muted">
                 Type DELETE to confirm
               </span>
               <input
@@ -668,18 +668,18 @@ export function AccountPage() {
                 value={deleteText}
                 onChange={(e) => setDeleteText(e.target.value)}
                 placeholder="DELETE"
-                className="w-full rounded-lg border border-rose-900/60 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-rose-500"
+                className="w-full rounded-lg border border-loss/60 bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-loss"
               />
             </label>
             {deleteErr && (
-              <p className="mt-3 text-sm text-rose-400">{deleteErr}</p>
+              <p className="mt-3 text-sm text-loss">{deleteErr}</p>
             )}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setDeleteOpen(false)}
                 disabled={deleting}
-                className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white disabled:opacity-40"
+                className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground disabled:opacity-40"
               >
                 Cancel
               </button>
@@ -687,7 +687,7 @@ export function AccountPage() {
                 type="button"
                 onClick={() => void deleteAccount()}
                 disabled={deleting || deleteText.trim() !== "DELETE"}
-                className="rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-40"
+                className="rounded-lg bg-loss px-4 py-2 text-sm font-semibold text-paper hover:bg-loss/80 disabled:opacity-40"
               >
                 {deleting ? "Deleting …" : "Permanently delete"}
               </button>

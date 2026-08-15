@@ -313,28 +313,28 @@ export function buildCompareScenarios(
       label: "Mattress",
       tagline: `0% nominal · loses ~${COMPOUND_INFLATION_ANNUAL_PCT}%/yr to inflation`,
       result: mattress,
-      color: "#71717a",
+      color: "#8a6a4a",
     },
     {
       id: "cash",
       label: "Cash / HYSA",
       tagline: `~${COMPOUND_CASH_YIELD_ANNUAL_PCT}% · savings / money-market yield`,
       result: cashYield,
-      color: "#a1a1aa",
+      color: "#a89878",
     },
     {
       id: "spy",
       label: "Index-ish",
       tagline: "~10% · a plain index bet",
       result: spy,
-      color: "#38bdf8",
+      color: "#c4a36a",
     },
     {
       id: "upside",
       label: "Upside path",
       tagline: `~${upsideRate.toFixed(0)}% · this book's assumed rate`,
       result: upside,
-      color: "#d4d4d8",
+      color: "#d4a24c",
     },
   ];
 }

@@ -82,7 +82,7 @@ export function HeaderOverflowMenu({
           setOpen((o) => !o);
         }}
         className={cn(
-          "inline-flex h-8 items-center justify-center gap-1 rounded-md border border-zinc-700 text-xs font-medium text-zinc-400 hover:border-zinc-500 hover:text-zinc-200",
+          "inline-flex h-8 items-center justify-center gap-1 rounded-md border border-border text-xs font-medium text-muted hover:border-brand hover:text-foreground",
           // A fixed height (rather than relying on padding to add up to the
           // same total as the icon+text buttons next to it) guarantees this
           // lines up with Refresh/View exactly, however the avatar image or
@@ -100,7 +100,7 @@ export function HeaderOverflowMenu({
               className="h-6 w-6 rounded-full object-cover"
             />
           ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold text-zinc-200">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-hover text-xs font-semibold text-foreground">
               {avatar.initial ?? "?"}
             </span>
           )
@@ -118,11 +118,11 @@ export function HeaderOverflowMenu({
           <div
             data-header-more={menuId}
             role="menu"
-            className="fixed z-[80] min-w-[11rem] overflow-hidden rounded-lg border border-zinc-700 bg-[#1a1a1c] py-1 shadow-xl"
+            className="fixed z-[80] min-w-[11rem] overflow-hidden rounded-lg border border-border bg-card py-1 shadow-xl"
             style={{ top: pos.top, right: pos.right }}
           >
             {avatar && (
-              <div className="truncate border-b border-zinc-800 px-3 py-2 text-xs font-medium text-zinc-300">
+              <div className="truncate border-b border-border px-3 py-2 text-xs font-medium text-foreground/80">
                 {label}
               </div>
             )}
@@ -144,16 +144,16 @@ export function HeaderOverflowMenu({
                       // exempts disabled controls from the contrast floor,
                       // and this keeps "unavailable" visually distinct from
                       // the normal muted text now that both greys resolved
-                      // to zinc-400.
-                      "cursor-not-allowed text-zinc-400 opacity-50"
+                      // to the same olive.
+                      "cursor-not-allowed text-muted opacity-50"
                     : item.danger
-                      ? "text-rose-300 hover:bg-rose-950/40"
-                      : "text-zinc-200 hover:bg-zinc-800"
+                      ? "text-loss hover:bg-loss/10"
+                      : "text-foreground hover:bg-hover"
                 )}
               >
                 <span>{item.label}</span>
                 {item.hint && (
-                  <span className="tabular-nums text-xs text-zinc-400">
+                  <span className="tabular-nums text-xs text-muted">
                     {item.hint}
                   </span>
                 )}

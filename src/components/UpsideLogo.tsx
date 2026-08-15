@@ -13,7 +13,7 @@ type Props = {
 
 /** Canonical header chrome size — keep every app bar on the same lockup. */
 export const UPSIDE_HEADER_WORDMARK_CLASS =
-  "text-[14px] leading-none text-white";
+  "text-[14px] leading-none text-foreground";
 
 /** Ten-facet gold A, traced from the source mark. Light from upper-right. */
 const MARK_FACETS: { points: string; hi: string; lo: string }[] = [
@@ -80,7 +80,7 @@ function LogoType({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "font-logo uppercase leading-none tracking-wide text-white",
+        "font-logo uppercase leading-none tracking-wide text-foreground",
         className
       )}
     >
@@ -111,10 +111,10 @@ export function UpsideLogo({
         aria-label={title}
       >
         <UpsideMark tight className="h-[10.5rem] w-[13rem]" />
-        <span className="mt-10 font-logo text-[2.75rem] font-bold uppercase leading-none tracking-wide text-white">
+        <span className="mt-10 font-logo text-[2.75rem] font-bold uppercase leading-none tracking-wide text-foreground">
           Upside
         </span>
-        <span className="mt-4 font-logo text-[2.05rem] font-normal uppercase leading-none tracking-wide text-white">
+        <span className="mt-4 font-logo text-[2.05rem] font-normal uppercase leading-none tracking-wide text-foreground">
           Lab
         </span>
       </span>

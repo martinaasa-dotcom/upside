@@ -28,13 +28,13 @@ type Props = {
 function retText(v: number): string {
   if (v > 0.05) return "text-gain";
   if (v < -0.05) return "text-loss";
-  return "text-zinc-400";
+  return "text-muted";
 }
 
 function retBarColor(v: number): string {
   if (v > 0.05) return "bg-gain";
   if (v < -0.05) return "bg-loss";
-  return "bg-zinc-600";
+  return "bg-muted";
 }
 
 function stanceStyles(stance: ActionStance): string {
@@ -59,10 +59,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
-      <h3 className="text-sm font-semibold text-white">{title}</h3>
+    <section className="rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {subtitle ? (
-        <p className="mt-1 text-xs text-zinc-400">{subtitle}</p>
+        <p className="mt-1 text-xs text-muted">{subtitle}</p>
       ) : null}
       <div className="mt-4">{children}</div>
     </section>
@@ -103,10 +103,10 @@ function CycleMonthlyChart({
             className={cn(
               "group flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-0.5 py-1 transition",
               isSelected
-                ? "bg-hover ring-2 ring-zinc-100"
+                ? "bg-hover ring-2 ring-select"
                 : isCurrent
-                  ? "ring-1 ring-white/20 hover:bg-hover"
-                  : "hover:bg-zinc-800/50"
+                  ? "ring-1 ring-brand/40 hover:bg-hover"
+                  : "hover:bg-hover"
             )}
             title={`${row.label}: avg ${v >= 0 ? "+" : ""}${v}% (${row.samples} prior ${row.label}s)`}
           >
@@ -123,10 +123,10 @@ function CycleMonthlyChart({
               className={cn(
                 "text-xs",
                 isSelected
-                  ? "font-bold text-white"
+                  ? "font-bold text-foreground"
                   : isCurrent
-                    ? "font-semibold text-zinc-200"
-                    : "text-zinc-400"
+                    ? "font-semibold text-foreground"
+                    : "text-muted"
               )}
             >
               {row.label}
@@ -160,7 +160,7 @@ function CycleHistoryBars({
       <div className="space-y-2.5">
         <div className="h-7" />
         <div className="flex h-44 items-center">
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-muted">
             No prior data in this cycle phase.
           </p>
         </div>
@@ -178,34 +178,34 @@ function CycleHistoryBars({
   return (
     <div className="space-y-2.5">
       <div className="flex h-7 flex-nowrap gap-1.5 overflow-x-auto text-xs">
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
+        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
           Best{" "}
           <span className={cn("font-semibold tabular-nums", retText(best.returnPct))}>
             {best.year} {best.returnPct >= 0 ? "+" : ""}
             {best.returnPct.toFixed(1)}%
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
+        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
           Worst{" "}
           <span className={cn("font-semibold tabular-nums", retText(worst.returnPct))}>
             {worst.year} {worst.returnPct >= 0 ? "+" : ""}
             {worst.returnPct.toFixed(1)}%
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
+        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
           Median{" "}
           <span className={cn("font-semibold tabular-nums", retText(median))}>
             {median >= 0 ? "+" : ""}
             {median.toFixed(1)}%
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
+        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
           Range{" "}
-          <span className="font-semibold tabular-nums text-zinc-300">
+          <span className="font-semibold tabular-nums text-foreground/80">
             {(best.returnPct - worst.returnPct).toFixed(1)}pp
           </span>
         </span>
-        <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
+        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
           {wins}/{sorted.length} green
         </span>
       </div>
@@ -228,14 +228,14 @@ function CycleHistoryBars({
                 className={cn(
                   "text-xs tabular-nums",
                   isHighlight
-                    ? "font-semibold text-white"
-                    : "text-zinc-400"
+                    ? "font-semibold text-foreground"
+                    : "text-muted"
                 )}
               >
                 {h.year}
               </span>
-              <div className="relative h-2.5 overflow-hidden rounded-sm bg-zinc-800/70">
-                <div className="absolute inset-y-0 left-1/2 w-px -translate-x-px bg-zinc-600/70" />
+              <div className="relative h-2.5 overflow-hidden rounded-sm bg-hover/70">
+                <div className="absolute inset-y-0 left-1/2 w-px -translate-x-px bg-border" />
                 <div
                   className={cn(
                     "absolute inset-y-0 rounded-sm opacity-90",
@@ -291,7 +291,7 @@ function DayHistoryTable({
 }
 
 function dayCellBg(v: number, mag: number, empty: boolean): string {
-  if (empty) return "bg-white/[0.03]";
+  if (empty) return "bg-hover/40";
   if (v > 0.05) {
     if (mag > 0.66) return "bg-gain/40";
     if (mag > 0.33) return "bg-gain/25";
@@ -302,7 +302,7 @@ function dayCellBg(v: number, mag: number, empty: boolean): string {
     if (mag > 0.33) return "bg-loss/25";
     return "bg-loss/15";
   }
-  return "bg-white/[0.04]";
+  return "bg-hover/50";
 }
 
 function DayOfMonthChart({
@@ -334,7 +334,7 @@ function DayOfMonthChart({
               <div
                 key={day}
                 aria-hidden
-                className="min-h-11 rounded-lg bg-white/[0.02]"
+                className="min-h-11 rounded-lg bg-hover/30"
               />
             );
           }
@@ -354,9 +354,9 @@ function DayOfMonthChart({
                 "flex min-h-11 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
                 dayCellBg(v, mag, empty),
                 isSelected
-                  ? "ring-2 ring-zinc-100"
+                  ? "ring-2 ring-select"
                   : isToday
-                    ? "ring-1 ring-white/25 hover:brightness-110"
+                    ? "ring-1 ring-brand/50 hover:brightness-110"
                     : "hover:brightness-110"
               )}
             >
@@ -364,8 +364,8 @@ function DayOfMonthChart({
                 className={cn(
                   "text-xs tabular-nums",
                   isSelected || isToday
-                    ? "font-bold text-white"
-                    : "text-zinc-300"
+                    ? "font-bold text-foreground"
+                    : "text-foreground/80"
                 )}
               >
                 {row.day}
@@ -373,7 +373,7 @@ function DayOfMonthChart({
               <span
                 className={cn(
                   "mt-0.5 text-xs font-semibold tabular-nums",
-                  empty ? "text-zinc-500" : retText(v)
+                  empty ? "text-muted" : retText(v)
                 )}
               >
                 {empty ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}`}
@@ -404,7 +404,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
         <p className="text-xs font-medium text-muted">
           {stanceLabel(s.stance)} · this month
         </p>
-        <p className="mt-1 text-base font-semibold text-white">{s.headline}</p>
+        <p className="mt-1 text-base font-semibold text-foreground">{s.headline}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">{s.detail}</p>
       </div>
       {typeof s.figurePct === "number" ? (
@@ -554,13 +554,13 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
             {model ? (
               <>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-md border border-white/10 bg-hover px-2 py-0.5 text-xs font-semibold text-white">
+                  <span className="rounded-md border border-border bg-hover px-2 py-0.5 text-xs font-semibold text-foreground">
                     {model.asOfYear}
                   </span>
-                  <span className="rounded-md border border-white/10 bg-hover px-2 py-0.5 text-xs font-medium text-zinc-200">
+                  <span className="rounded-md border border-border bg-hover px-2 py-0.5 text-xs font-medium text-foreground">
                     {model.currentCycleLabel} year
                   </span>
-                  <span className="rounded-md border border-white/10 bg-hover px-2 py-0.5 text-xs font-medium text-zinc-200">
+                  <span className="rounded-md border border-border bg-hover px-2 py-0.5 text-xs font-medium text-foreground">
                     {cashtag(model.ticker)} since {model.from.slice(0, 4)}
                   </span>
                 </div>
@@ -585,7 +585,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <select
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
-                className="ml-2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-sm text-white outline-none focus:border-zinc-500"
+                className="ml-2 rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-brand"
               >
                 {tickers.map((t) => (
                   <option key={t} value={t}>
@@ -598,7 +598,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               type="button"
               onClick={() => void load(ticker, true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground/80 hover:border-brand disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refresh
@@ -608,13 +608,13 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">
+        <div className="rounded-xl border border-loss/30 bg-loss/10 px-4 py-3 text-sm text-loss">
           {error}
         </div>
       )}
 
       {loading && !model ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-12 text-center text-sm text-zinc-400">
+        <div className="rounded-xl border border-border bg-well/40 px-4 py-12 text-center text-sm text-muted">
           Loading seasonality for {cashtag(ticker)}…
         </div>
       ) : null}
@@ -633,9 +633,9 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               currentMonth={model.asOfMonth}
               onSelectMonth={setPlaybookMonth}
             />
-            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-well/40 p-2.5">
               <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <p className="text-xs font-medium text-zinc-300">
+                <p className="text-xs font-medium text-foreground/80">
                   {MONTH_NAMES[playbookMonth - 1]} in years like this
                 </p>
                 {playbookMonthRow ? (
@@ -658,7 +658,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   highlightYear={model.asOfYear}
                 />
               ) : (
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-muted">
                   No prior sessions for this month.
                 </p>
               )}
@@ -673,23 +673,23 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <button
                 type="button"
                 onClick={() => shiftViewMonth(-1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted hover:border-brand hover:text-foreground"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Prev
               </button>
               <div className="h-10 text-center">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-foreground">
                   {viewMonthName} {selectedDay}
                 </p>
                 {viewMonth === marketToday.month &&
                 selectedDay === marketToday.day ? (
-                  <p className="text-xs text-zinc-400">Today</p>
+                  <p className="text-xs text-muted">Today</p>
                 ) : (
                   <button
                     type="button"
                     onClick={goToToday}
-                    className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+                    className="text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
                   >
                     Jump to today
                   </button>
@@ -698,7 +698,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <button
                 type="button"
                 onClick={() => shiftViewMonth(1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 px-2 py-1 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted hover:border-brand hover:text-foreground"
               >
                 Next
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -715,10 +715,10 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     className={cn(
                       "rounded-lg px-1 py-1.5 text-center text-xs font-medium transition",
                       viewMonth === m
-                        ? "bg-zinc-100 text-zinc-900"
+                        ? "bg-select text-select-ink"
                         : m === marketToday.month
-                          ? "text-zinc-200 ring-1 ring-white/20 hover:bg-hover"
-                          : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200"
+                          ? "text-foreground ring-1 ring-brand/40 hover:bg-hover"
+                          : "text-muted hover:bg-hover hover:text-foreground"
                     )}
                   >
                     {label}
@@ -735,9 +735,9 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               }
               onSelectDay={setSelectedDay}
             />
-            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-well/40 p-2.5">
               <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <p className="text-xs font-medium text-zinc-300">
+                <p className="text-xs font-medium text-foreground/80">
                   {selectedDayLabel}, prior sessions
                 </p>
                 {selectedDayRow ? (
@@ -759,7 +759,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   highlightYear={model.asOfYear}
                 />
               ) : (
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-muted">
                   No prior sessions for this day.
                 </p>
               )}

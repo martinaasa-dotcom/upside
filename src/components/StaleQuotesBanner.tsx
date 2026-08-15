@@ -27,8 +27,8 @@ export function StaleQuotesBanner({
       className={cn(
         "border-b py-2 text-xs",
         stale
-          ? "border-amber-500/30 bg-amber-950/40 text-amber-100"
-          : "border-zinc-800 bg-zinc-900/80 text-zinc-400"
+          ? "border-caution/40 bg-caution/10 text-caution"
+          : "border-border bg-well/80 text-muted"
       )}
     >
       <div className={cn(PAGE_COLUMN_CLASS, "flex flex-wrap items-center gap-x-3 gap-y-1")}>

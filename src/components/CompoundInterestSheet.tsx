@@ -138,8 +138,8 @@ function SegButton({
       className={cn(
         "rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
         active
-          ? "bg-zinc-100 text-zinc-900"
-          : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200",
+          ? "bg-select text-select-ink"
+          : "text-muted hover:bg-hover hover:text-foreground",
         className
       )}
     >
@@ -166,8 +166,8 @@ function ChipButton({
       className={cn(
         "rounded-md px-2 py-1 text-xs font-medium transition tabular-nums",
         active
-          ? "bg-zinc-100 text-zinc-900 font-semibold"
-          : "border border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-200",
+          ? "bg-select text-select-ink font-semibold"
+          : "border border-border bg-well/60 text-muted hover:border-border hover:bg-hover hover:text-foreground",
         className
       )}
     >
@@ -268,7 +268,7 @@ function ComparePathsChart({
                 x2={w - padR}
                 y1={y}
                 y2={y}
-                stroke="#27272a"
+                stroke="#352a20"
                 strokeWidth="1"
               />
               <text
@@ -277,7 +277,7 @@ function ComparePathsChart({
                 textAnchor="end"
                 dominantBaseline="middle"
                 fontSize="9"
-                fill="#71717a"
+                fill="#a89878"
               >
                 {compact(max * s)}
               </text>
@@ -292,7 +292,7 @@ function ComparePathsChart({
             y={h - 6}
             textAnchor="middle"
             fontSize="9"
-            fill="#71717a"
+            fill="#a89878"
           >
             Y{i}
           </text>
@@ -305,7 +305,7 @@ function ComparePathsChart({
               x2={xAt(tippingYear)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#10B981"
+              stroke="#5a9a4a"
               strokeWidth="1"
               strokeDasharray="3 3"
               opacity="0.6"
@@ -316,7 +316,7 @@ function ComparePathsChart({
               textAnchor="middle"
               fontSize="9"
               fontWeight="600"
-              fill="#10B981"
+              fill="#5a9a4a"
             >
               Tip Y{tippingYear}
             </text>
@@ -343,7 +343,7 @@ function ComparePathsChart({
               x2={xAt(hoverIdx)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#a1a1aa"
+              stroke="#a89878"
               strokeWidth="1"
               strokeDasharray="2 3"
               opacity="0.7"
@@ -355,14 +355,14 @@ function ComparePathsChart({
                 cy={yAt(p.series[hoverIdx] ?? 0)}
                 r={p.thick ? 4 : 3.25}
                 fill={p.color}
-                stroke="#0d110f"
+                stroke="#1a2820"
                 strokeWidth="1.5"
               />
             ))}
           </g>
         )}
       </svg>
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-zinc-400">
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
         {paths.map((p) => (
           <li key={p.id} className="inline-flex items-center gap-1.5">
             <span
@@ -380,7 +380,7 @@ function ComparePathsChart({
       </ul>
       {hoverIdx != null && (
         <div
-          className="pointer-events-none absolute top-2 rounded-md border border-white/10 bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
+          className="pointer-events-none absolute top-2 rounded-md border border-border bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
           style={{
             left: `${Math.min(
               82,
@@ -389,7 +389,7 @@ function ComparePathsChart({
             transform: "translateX(-50%)",
           }}
         >
-          <p className="font-semibold text-white">Year {hoverIdx}</p>
+          <p className="font-semibold text-foreground">Year {hoverIdx}</p>
           {paths.map((p) => (
             <p
               key={p.id}
@@ -688,10 +688,10 @@ export function CompoundInterestSheet({
         <div className="mt-6 divide-y divide-white/10">
         <section className="space-y-3 pb-6">
           <div className="flex items-center justify-between gap-2">
-            <label htmlFor="compound-principal-input" className="text-sm font-semibold text-zinc-100">
+            <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
               Starting from
             </label>
-            <span className="text-sm font-semibold text-zinc-100 tabular-nums">
+            <span className="text-sm font-semibold text-foreground tabular-nums">
               {show(draft.principal, 0)}
             </span>
           </div>
@@ -699,7 +699,7 @@ export function CompoundInterestSheet({
           <select
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+            className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-brand"
           >
             <option value="custom">Custom amount</option>
             {bookValue > 0 && (
@@ -723,7 +723,7 @@ export function CompoundInterestSheet({
               setPrincipalSource("custom");
               onMoneyUsdChange(n, (usd) => patchDraft("principal", usd));
             }}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-zinc-500"
+            className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
           />
 
           <div>
@@ -737,9 +737,9 @@ export function CompoundInterestSheet({
                 setPrincipalSource("custom");
                 patchDraft("principal", Number(e.target.value));
               }}
-              className="w-full cursor-pointer accent-zinc-400"
+              className="w-full cursor-pointer accent-brand"
             />
-            <div className="flex justify-between text-xs text-zinc-400">
+            <div className="flex justify-between text-xs text-muted">
               <span>{show(0)}</span>
               <span>{show(principalSliderMax)}</span>
             </div>
@@ -748,7 +748,7 @@ export function CompoundInterestSheet({
 
         <section className="space-y-3 py-6">
           <div className="flex items-center justify-between gap-2">
-            <label htmlFor="compound-rate-input" className="text-sm font-semibold text-zinc-100">
+            <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
               Growing at
             </label>
             <span className="text-sm font-semibold text-gain tabular-nums">
@@ -760,7 +760,7 @@ export function CompoundInterestSheet({
             <Sparkles className="h-3.5 w-3.5 shrink-0" />
             <span className="min-w-0 flex-1 leading-snug">
               Your book&apos;s own pace:{" "}
-              <strong className="whitespace-nowrap font-semibold text-zinc-200 tabular-nums">
+              <strong className="whitespace-nowrap font-semibold text-foreground tabular-nums">
                 {portfolioExpectedRatePct.toFixed(1)}% a year
               </strong>
             </span>
@@ -768,7 +768,7 @@ export function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={syncToPortfolioRate}
-                className="shrink-0 text-xs font-semibold text-zinc-200 underline-offset-2 hover:underline"
+                className="shrink-0 text-xs font-semibold text-foreground underline-offset-2 hover:underline"
               >
                 Use it
               </button>
@@ -786,14 +786,14 @@ export function CompoundInterestSheet({
               kind="percent"
               value={draft.ratePercent}
               onChange={(n) => patchDraft("ratePercent", Math.max(0, n))}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-zinc-500"
+              className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
             />
             <select
               value={draft.ratePeriod}
               onChange={(e) =>
                 patchDraft("ratePeriod", e.target.value as RatePeriod)
               }
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-xs text-white outline-none focus:border-zinc-500"
+              className="rounded-lg border border-border bg-well px-2.5 py-2 text-xs text-foreground outline-none focus:border-brand"
             >
               <option value="annual">annual</option>
               <option value="monthly">monthly</option>
@@ -801,7 +801,7 @@ export function CompoundInterestSheet({
           </div>
 
           <div>
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-muted">
               Or borrow one
             </span>
             <div className="mt-1 flex flex-wrap gap-1">
@@ -849,9 +849,9 @@ export function CompoundInterestSheet({
               step={0.5}
               value={Math.min(50, draft.ratePercent)}
               onChange={(e) => patchDraft("ratePercent", Number(e.target.value))}
-              className="w-full cursor-pointer accent-zinc-400"
+              className="w-full cursor-pointer accent-brand"
             />
-            <div className="flex justify-between text-xs text-zinc-400">
+            <div className="flex justify-between text-xs text-muted">
               <span>0%</span>
               <span>25%</span>
               <span>50%</span>
@@ -861,10 +861,10 @@ export function CompoundInterestSheet({
 
         <section className="space-y-3 py-6">
           <div className="flex items-center justify-between gap-2">
-            <label htmlFor="compound-duration-input" className="text-sm font-semibold text-zinc-100">
+            <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
               For how long
             </label>
-            <span className="text-sm font-semibold text-white tabular-nums">
+            <span className="text-sm font-semibold text-foreground tabular-nums">
               {durationLabel}
             </span>
           </div>
@@ -880,9 +880,9 @@ export function CompoundInterestSheet({
                 const val = parseInt(e.target.value, 10);
                 patchDraft("years", Number.isNaN(val) ? 1 : Math.min(50, Math.max(1, val)));
               }}
-              className="no-spinner w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 pr-14 text-sm font-semibold text-white outline-none focus:border-zinc-500"
+              className="no-spinner w-full rounded-lg border border-border bg-well px-3 py-2 pr-14 text-sm font-semibold text-foreground outline-none focus:border-brand"
             />
-            <span className="pointer-events-none absolute right-3 top-2.5 text-xs text-zinc-400">
+            <span className="pointer-events-none absolute right-3 top-2.5 text-xs text-muted">
               years
             </span>
           </div>
@@ -906,9 +906,9 @@ export function CompoundInterestSheet({
               max={40}
               value={draft.years}
               onChange={(e) => patchDraft("years", Number(e.target.value))}
-              className="w-full cursor-pointer accent-zinc-400"
+              className="w-full cursor-pointer accent-brand"
             />
-            <div className="flex justify-between text-xs text-zinc-400">
+            <div className="flex justify-between text-xs text-muted">
               <span>1 year</span>
               <span>20 years</span>
               <span>40 years</span>
@@ -923,7 +923,7 @@ export function CompoundInterestSheet({
           )}
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-zinc-100">
+            <span className="text-sm font-semibold text-foreground">
               Adding along the way
             </span>
             {tipping != null &&
@@ -957,10 +957,10 @@ export function CompoundInterestSheet({
             draft.contributionMode === "both") && (
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="compound-deposit-input" className="text-xs font-medium text-zinc-300">
+                <label htmlFor="compound-deposit-input" className="text-xs font-medium text-foreground/80">
                   How much, each time
                 </label>
-                <span className="text-xs font-semibold text-zinc-100 tabular-nums">
+                <span className="text-xs font-semibold text-foreground tabular-nums">
                   {show(draft.depositAmount, 0)} / {draft.depositFrequency === "annually" ? "yr" : "mo"}
                 </span>
               </div>
@@ -973,7 +973,7 @@ export function CompoundInterestSheet({
                 onChange={(n) =>
                   onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
                 }
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none focus:border-zinc-500"
+                className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
               />
 
               <div>
@@ -986,16 +986,16 @@ export function CompoundInterestSheet({
                   onChange={(e) =>
                     patchDraft("depositAmount", Number(e.target.value))
                   }
-                  className="w-full cursor-pointer accent-zinc-400"
+                  className="w-full cursor-pointer accent-brand"
                 />
-                <div className="flex justify-between text-xs text-zinc-400">
+                <div className="flex justify-between text-xs text-muted">
                   <span>{show(0)}</span>
                   <span>{show(depositSliderMax)}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <label className="block text-xs text-zinc-400">
+                <label className="block text-xs text-muted">
                   How often
                   <select
                     value={draft.depositFrequency}
@@ -1005,14 +1005,14 @@ export function CompoundInterestSheet({
                         e.target.value as ContributionFrequency
                       )
                     }
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-xs text-foreground outline-none focus:border-brand"
                   >
                     <option value="monthly">Monthly</option>
                     <option value="annually">Annually</option>
                   </select>
                 </label>
                 <label
-                  className="block text-xs text-zinc-400"
+                  className="block text-xs text-muted"
                   title="Bump what you pay in by this much every year, to keep pace with a rising salary"
                 >
                   Raise it yearly by
@@ -1020,7 +1020,7 @@ export function CompoundInterestSheet({
                     kind="percent"
                     value={draft.annualIncrease}
                     onChange={(n) => patchDraft("annualIncrease", n)}
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs text-white outline-none focus:border-zinc-500"
+                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-xs text-foreground outline-none focus:border-brand"
                   />
                 </label>
               </div>
@@ -1030,7 +1030,7 @@ export function CompoundInterestSheet({
           {(draft.contributionMode === "withdrawals" ||
             draft.contributionMode === "both") && (
             <div className="space-y-2">
-              <label className="block text-xs text-zinc-400">
+              <label className="block text-xs text-muted">
                 Taking out each month
                 <FormattedNumberInput
                   kind="money"
@@ -1041,7 +1041,7 @@ export function CompoundInterestSheet({
                       patchDraft("withdrawalAmount", usd)
                     )
                   }
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white outline-none focus:border-zinc-500"
+                  className="mt-1 w-full rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground outline-none focus:border-brand"
                 />
               </label>
             </div>
@@ -1049,7 +1049,7 @@ export function CompoundInterestSheet({
         </section>
 
         <section className="space-y-3 pt-6">
-          <span className="text-sm font-semibold text-zinc-100">
+          <span className="text-sm font-semibold text-foreground">
             If it starts badly
           </span>
           <Segmented
@@ -1063,7 +1063,7 @@ export function CompoundInterestSheet({
             value={shock}
             onChange={setShock}
           />
-          <p className="text-xs leading-relaxed text-zinc-400">
+          <p className="text-xs leading-relaxed text-muted">
             {shock === "none"
               ? "The same return every year. Markets don't do that. Try Crash first or Slow start to see the difference."
               : shock === "drawdown30"
@@ -1086,7 +1086,7 @@ export function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={() => void copyPostcard()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-zinc-500 hover:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-foreground/80 transition hover:border-brand hover:text-foreground"
               >
                 {copied ? (
                   <Copy className="h-3.5 w-3.5 text-gain" />
@@ -1113,20 +1113,20 @@ export function CompoundInterestSheet({
                 Of that, growth
                 <InfoTip text="Money the market made for you, on top of everything you put in yourself." />
               </MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400">
+              <p className="mt-1 text-2xl font-bold tabular-nums text-caution">
                 {show(result.totalInterest)}
               </p>
             </Card>
 
             <Card tone="info">
-              <MicroLabel className="text-sky-200/70">You put in</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-sky-300">
+              <MicroLabel className="text-brand-bright">You put in</MicroLabel>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-brand-bright">
                 {show(result.principal + result.totalDeposited)}
               </p>
             </Card>
           </div>
 
-          <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+          <p className="mt-3 text-sm leading-relaxed text-foreground/80">
             You put in {show(result.principal + result.totalDeposited)} and end
             with {show(result.futureValue)}, so growth did{" "}
             {show(result.totalInterest)} of the work
@@ -1136,7 +1136,7 @@ export function CompoundInterestSheet({
             .
           </p>
 
-          <div className="mt-4 grid gap-3 border-t border-zinc-800/80 pt-4 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
             <div>
               <MicroLabel>
                 Total return
@@ -1149,7 +1149,7 @@ export function CompoundInterestSheet({
             </div>
             <div>
               <MicroLabel>Doubles in</MicroLabel>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-200">
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                 {Number.isFinite(result.doubleYears)
                   ? `${result.doubleYears}y ${result.doubleMonths}m`
                   : "—"}
@@ -1160,7 +1160,7 @@ export function CompoundInterestSheet({
                 Growth overtakes you
                 <InfoTip text="The year growth starts adding more than you pay in yourself. After this, time matters more than saving harder." />
               </MicroLabel>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100">
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                 {tipping != null ? `Year ${tipping}` : "Not while you keep paying in"}
               </p>
             </div>
@@ -1196,17 +1196,17 @@ export function CompoundInterestSheet({
             title="When you cross each round number"
           />
           {milestoneTakeaway && (
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-3 text-sm leading-relaxed text-muted">
               {milestoneTakeaway}
             </p>
           )}
           <div
             ref={milestoneScrollRef}
-            className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-zinc-800"
+            className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-border"
           >
             <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
               <thead className="sticky top-0 z-10 bg-card">
-                <tr className="border-b border-zinc-800 text-xs text-zinc-400">
+                <tr className="border-b border-border text-xs text-muted">
                   <th className="py-2.5 px-3 font-medium">Milestone</th>
                   <th className="py-2.5 px-3 font-medium">On this plan</th>
                   <th className="py-2.5 px-3 font-medium">How far off</th>
@@ -1225,15 +1225,15 @@ export function CompoundInterestSheet({
                         key={row.goal}
                         ref={isFirstPending ? firstPendingRowRef : undefined}
                         className={cn(
-                          "border-b border-zinc-800/80 transition hover:bg-zinc-800/30",
-                          done && "bg-emerald-500/[0.06]"
+                          "border-b border-border transition hover:bg-hover/30",
+                          done && "bg-gain/[0.06]"
                         )}
                       >
                         <td className="py-2.5 px-3">
                           <span
                             className={cn(
                               "inline-flex items-center gap-2 tabular-nums font-medium",
-                              done ? "font-semibold text-gain" : "text-zinc-200"
+                              done ? "font-semibold text-gain" : "text-foreground"
                             )}
                           >
                             {done ? (
@@ -1243,14 +1243,14 @@ export function CompoundInterestSheet({
                               />
                             ) : (
                               <span
-                                className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-zinc-600 bg-transparent"
+                                className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-brand-mid bg-transparent"
                                 aria-hidden
                               />
                             )}
                             {show(row.goal)}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 tabular-nums text-zinc-300">
+                        <td className="py-2.5 px-3 tabular-nums text-foreground/80">
                           {row.hit ? (
                             <span className="font-semibold text-gain">
                               Already past it
@@ -1261,7 +1261,7 @@ export function CompoundInterestSheet({
                             "More than 50 years out"
                           )}
                         </td>
-                        <td className="py-2.5 px-3 tabular-nums text-zinc-300">
+                        <td className="py-2.5 px-3 tabular-nums text-foreground/80">
                           {row.hit
                             ? "—"
                             : row.yearsUntil != null
@@ -1277,10 +1277,10 @@ export function CompoundInterestSheet({
                               setMilestoneActual(row.goal, e.target.value)
                             }
                             className={cn(
-                              "max-w-[9.5rem] rounded border bg-zinc-900 px-1.5 py-1 text-xs tabular-nums outline-none focus:border-brand",
+                              "max-w-[9.5rem] rounded border bg-well px-1.5 py-1 text-xs tabular-nums outline-none focus:border-brand",
                               done
                                 ? "border-gain/40 text-gain"
-                                : "border-zinc-700 text-zinc-300"
+                                : "border-border text-foreground/80"
                             )}
                           />
                         </td>
@@ -1318,10 +1318,10 @@ export function CompoundInterestSheet({
           {storyRow && (
             <Card tone="raised" className="mt-4 p-4">
               <MicroLabel>After year {storyRow.index}</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-white">
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
                 {show(storyRow.balance)}
               </p>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+              <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 {yearStories.get(storyRow.index) ??
                   `Growth added ${show(storyRow.interest)} this year, ${show(storyRow.accruedInterest)} in total so far.`}
               </p>
@@ -1330,21 +1330,21 @@ export function CompoundInterestSheet({
 
           {/* The full grid used to be its own panel below. Same numbers, so it
             * lives here folded up instead of as a seventh thing to scroll past. */}
-          <details className="mt-4 rounded-xl border border-zinc-800/80">
-            <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-zinc-300 transition hover:text-white">
+          <details className="mt-4 rounded-xl border border-border">
+            <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>
-            <div className="overflow-x-auto border-t border-zinc-800/80">
+            <div className="overflow-x-auto border-t border-border">
               <table className="w-full min-w-[32rem] text-left text-xs">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-xs text-zinc-400">
+                  <tr className="border-b border-border text-xs text-muted">
                     <th className="px-4 py-2.5 font-medium">Year</th>
                     <th className="px-4 py-2.5 font-medium">Your money in</th>
                     <th className="px-4 py-2.5 font-medium">Growth that year</th>
-                    <th className="bg-orange-500/10 px-4 py-2.5 font-medium text-orange-300">
+                    <th className="bg-caution/15 px-4 py-2.5 font-medium text-caution">
                       Growth so far
                     </th>
-                    <th className="bg-emerald-500/10 px-4 py-2.5 font-medium text-emerald-300">
+                    <th className="bg-gain/10 px-4 py-2.5 font-medium text-gain">
                       Pot at year end
                     </th>
                   </tr>
@@ -1357,21 +1357,21 @@ export function CompoundInterestSheet({
                       <tr
                         key={row.index}
                         className={cn(
-                          "border-b border-zinc-900 transition hover:bg-zinc-800/30",
-                          isLast && "bg-zinc-800/20 font-semibold text-white"
+                          "border-b border-border transition hover:bg-hover/30",
+                          isLast && "bg-hover/20 font-semibold text-foreground"
                         )}
                       >
-                        <td className="px-4 py-2 text-zinc-300">{row.label}</td>
-                        <td className="px-4 py-2 tabular-nums text-zinc-300">
+                        <td className="px-4 py-2 text-foreground/80">{row.label}</td>
+                        <td className="px-4 py-2 tabular-nums text-foreground/80">
                           {show(principalShown)}
                         </td>
-                        <td className="px-4 py-2 tabular-nums text-orange-400">
+                        <td className="px-4 py-2 tabular-nums text-caution">
                           {show(row.interest)}
                         </td>
-                        <td className="bg-orange-500/5 px-4 py-2 tabular-nums text-orange-300">
+                        <td className="bg-caution/10 px-4 py-2 tabular-nums text-caution">
                           {show(row.accruedInterest)}
                         </td>
-                        <td className="bg-emerald-500/5 px-4 py-2 tabular-nums font-semibold text-gain">
+                        <td className="bg-gain/5 px-4 py-2 tabular-nums font-semibold text-gain">
                           {show(row.balance)}
                         </td>
                       </tr>
@@ -1389,7 +1389,7 @@ export function CompoundInterestSheet({
             title="The same money, invested differently"
           />
           {compareTakeaway && (
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-3 text-sm leading-relaxed text-muted">
               {compareTakeaway}
             </p>
           )}
@@ -1401,10 +1401,10 @@ export function CompoundInterestSheet({
                 className="row-span-4 grid h-full grid-rows-subgrid border-t-2"
                 style={{ borderTopColor: s.color }}
               >
-                <p className="text-sm font-semibold leading-5 text-white">
+                <p className="text-sm font-semibold leading-5 text-foreground">
                   {s.label}
                 </p>
-                <p className="mt-1 h-[2.5rem] text-xs leading-snug text-zinc-400">
+                <p className="mt-1 h-[2.5rem] text-xs leading-snug text-muted">
                   {s.tagline}
                 </p>
                 <p
@@ -1413,7 +1413,7 @@ export function CompoundInterestSheet({
                 >
                   {show(s.result.futureValue)}
                 </p>
-                <p className="mt-1 text-xs leading-4 text-zinc-400">
+                <p className="mt-1 text-xs leading-4 text-muted">
                   {show(s.result.totalInterest)} of that is growth
                 </p>
               </Card>
@@ -1430,7 +1430,7 @@ export function CompoundInterestSheet({
             {narrative.map((line) => (
               <li
                 key={line}
-                className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 px-3 py-2 text-sm leading-relaxed text-zinc-300"
+                className="rounded-lg border border-border bg-well/30 px-3 py-2 text-sm leading-relaxed text-foreground/80"
               >
                 {line}
               </li>

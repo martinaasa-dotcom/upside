@@ -55,7 +55,7 @@ export function MobileTabBar({
     <nav
       aria-label="App"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-app/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden",
+        "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-app/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden",
         className
       )}
     >
@@ -74,20 +74,20 @@ export function MobileTabBar({
                 if (onSelect(id)) e.preventDefault();
               }}
               className={cn(
-                "touch-target relative flex flex-col items-center justify-center gap-0.5 text-zinc-500",
-                on && "text-zinc-100"
+                "touch-target relative flex flex-col items-center justify-center gap-0.5 text-muted",
+                on && "text-foreground"
               )}
             >
               {on && (
                 <span
                   aria-hidden
-                  className="absolute top-0 h-0.5 w-8 rounded-full bg-zinc-100"
+                  className="absolute top-0 h-0.5 w-8 rounded-full bg-select"
                 />
               )}
               <span className="relative">
                 <Icon className="h-5 w-5" strokeWidth={on ? 2.2 : 1.75} />
                 {id === "home" && alertCount > 0 && (
-                  <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
+                  <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-mustard" />
                 )}
               </span>
               <span className="text-xs leading-none">{label}</span>

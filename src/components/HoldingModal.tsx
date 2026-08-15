@@ -109,25 +109,25 @@ export function HoldingModal({
       />
       <form
         onSubmit={submit}
-        className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+        className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-white">Add holding</h3>
-            <p className="text-xs text-zinc-400">{portfolioName}</p>
+            <h3 className="text-base font-semibold text-foreground">Add holding</h3>
+            <p className="text-xs text-muted">{portfolioName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="grid gap-3">
-          <label className="grid gap-1 text-xs text-zinc-400">
+          <label className="grid gap-1 text-xs text-muted">
             Ticker
             <input
               autoFocus
@@ -136,15 +136,15 @@ export function HoldingModal({
                 setTicker(sanitizeTickerDraft(e.target.value));
                 setError(null);
               }}
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+              className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
               placeholder="NBIS or VWCE.DE / VUSA.L"
               required
             />
-            <span className="text-xs leading-relaxed text-zinc-400">
+            <span className="text-xs leading-relaxed text-muted">
               US: bare symbol. London:{" "}
-              <span className="text-zinc-400">TICKER.L</span> or{" "}
-              <span className="text-zinc-400">LON:TICKER</span>. Xetra:{" "}
-              <span className="text-zinc-400">TICKER.DE</span>. Buy price in USD.
+              <span className="text-muted">TICKER.L</span> or{" "}
+              <span className="text-muted">LON:TICKER</span>. Xetra:{" "}
+              <span className="text-muted">TICKER.DE</span>. Buy price in USD.
               {exchangeHint && normalized !== ticker.trim().toUpperCase() && (
                 <> → {normalized}</>
               )}
@@ -152,7 +152,7 @@ export function HoldingModal({
             </span>
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-xs text-zinc-400">
+            <label className="grid gap-1 text-xs text-muted">
               Shares
               <input
                 type="text"
@@ -165,11 +165,11 @@ export function HoldingModal({
                   setError(null);
                 }}
                 onWheel={blockWheelChange}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+                className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
                 required
               />
             </label>
-            <label className="grid gap-1 text-xs text-zinc-400">
+            <label className="grid gap-1 text-xs text-muted">
               Buy price
               <input
                 type="text"
@@ -182,13 +182,13 @@ export function HoldingModal({
                   setError(null);
                 }}
                 onWheel={blockWheelChange}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+                className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
                 required
               />
             </label>
           </div>
           {!hideCallPct && (
-            <label className="grid gap-1 text-xs text-zinc-400">
+            <label className="grid gap-1 text-xs text-muted">
               How far above your target to sell (%)
               <input
                 type="text"
@@ -199,19 +199,19 @@ export function HoldingModal({
                   setError(null);
                 }}
                 onWheel={blockWheelChange}
-                className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+                className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
               />
             </label>
           )}
         </div>
 
-        {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
+        {error && <p className="mt-3 text-sm text-loss">{error}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
+            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

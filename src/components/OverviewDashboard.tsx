@@ -49,9 +49,9 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
 
-/** Overview sits on a dark field. Zinc-400 disappears; zinc-300 still reads. */
+/** Overview sits on a forest field. Muted olive still reads; cool gray does not. */
 const tone = (value: number | null | undefined) =>
-  signedTone(value, "text-zinc-300");
+  signedTone(value, "text-foreground/80");
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;
@@ -141,7 +141,7 @@ function MobileHomeHero({
     <div className="md:hidden">
       <p className="text-sm text-muted">Book</p>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-        <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-white">
+        <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-foreground">
           {currency(totals.totalValue, 0)}
         </p>
         <p
@@ -284,7 +284,7 @@ function EmptyBook({
 
   return (
     <Panel tone="brand" className="overview-fade">
-      <h2 className="text-lg font-bold text-white">
+      <h2 className="text-lg font-bold text-foreground">
         {homework ? "Your homework sheet is empty." : "Your book is empty."}
       </h2>
       {homework ? (
@@ -294,7 +294,7 @@ function EmptyBook({
             names with that paper money. Do not paste a real book in here.
           </p>
           {homeworkCash != null && homeworkCash > 0 ? (
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted">
               You have {currency(homeworkCash, 0)} sitting ready.
             </p>
           ) : null}
@@ -304,7 +304,7 @@ function EmptyBook({
           <p className="mt-3 text-sm text-muted">
             Paste what you own. One name per line: ticker, shares, cost.
           </p>
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-muted">
             This sheet is only yours until you invite someone.
           </p>
         </>
@@ -317,9 +317,9 @@ function EmptyBook({
             onChange={(e) => setPaste(e.target.value)}
             rows={5}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 font-mono text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+            className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
           />
-          {pasteErr && <p className="text-xs text-rose-300">{pasteErr}</p>}
+          {pasteErr && <p className="text-xs text-loss">{pasteErr}</p>}
           <button
             type="button"
             onClick={submitPaste}
@@ -341,11 +341,11 @@ function EmptyBook({
               className={cn(
                 "group h-full rounded-xl border p-5 text-left transition active:scale-[0.99]",
                 r.primary
-                  ? "border-white/20 bg-hover hover:border-white/30 hover:bg-zinc-800"
-                  : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700 hover:bg-zinc-900/70"
+                  ? "border-brand/40 bg-hover hover:border-brand hover:bg-hover"
+                  : "border-border bg-well/40 hover:border-border hover:bg-well/70"
               )}
             >
-              <p className="flex items-center gap-1.5 text-base font-semibold text-white">
+              <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">
                 {r.label}
                 <ArrowRight
                   className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100"
@@ -380,8 +380,8 @@ function HomeSheetChip({
         className={cn(
           "rounded-full border px-2.5 py-1 text-xs",
           value === "all"
-            ? "border-white/20 bg-zinc-100 text-zinc-900"
-            : "border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+            ? "border-select bg-select text-select-ink"
+            : "border-border text-muted hover:border-brand-mid hover:text-foreground"
         )}
       >
         All sheets
@@ -394,8 +394,8 @@ function HomeSheetChip({
           className={cn(
             "rounded-full border px-2.5 py-1 text-xs",
             value === s.id
-              ? "border-white/20 bg-zinc-100 text-zinc-900"
-              : "border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+              ? "border-select bg-select text-select-ink"
+              : "border-border text-muted hover:border-brand-mid hover:text-foreground"
           )}
         >
           {s.name}
@@ -461,7 +461,7 @@ function MorningStack({
         <>
           {!morning.afterClose &&
             (morning.quiet || morning.drivers.length === 0) && (
-            <p className="text-base leading-relaxed text-zinc-200">
+            <p className="text-base leading-relaxed text-foreground">
               {morning.sentence}
             </p>
           )}
@@ -496,7 +496,7 @@ function MorningStack({
       )}
       {morning.awayLines.length > 0 && (
         <div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted">
             Since you last looked
             {previousAt
               ? ` · ${new Date(previousAt).toLocaleString("en-GB", {
@@ -516,7 +516,7 @@ function MorningStack({
                     ? "text-gain"
                     : line.tone === "down"
                       ? "text-loss"
-                      : "text-zinc-300"
+                      : "text-foreground/80"
                 )}
               >
                 {line.text}
@@ -537,12 +537,12 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl border border-white/10 bg-card px-3.5 py-3 text-left"
+              className="w-full rounded-xl border border-border bg-card px-3.5 py-3 text-left"
             >
               <MicroLabel>
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
               </MicroLabel>
-              <p className="mt-1.5 text-base leading-relaxed text-zinc-200">
+              <p className="mt-1.5 text-base leading-relaxed text-foreground">
                 {flag.line}
               </p>
             </button>
@@ -573,7 +573,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card py-3.5 pl-5 pr-4 text-left transition hover:border-white/20 hover:bg-hover"
+      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card py-3.5 pl-5 pr-4 text-left transition hover:border-brand/40 hover:bg-hover"
     >
       <span
         className={cn(
@@ -582,10 +582,10 @@ function MoverTile({
         )}
         aria-hidden
       />
-      <span className="min-w-0 truncate font-heading text-base font-bold text-white">
+      <span className="min-w-0 truncate font-heading text-base font-bold text-foreground">
         {cashtag(ticker.ticker)}
       </span>
-      <span className="text-right font-sans text-base font-semibold tabular-nums text-white">
+      <span className="text-right font-sans text-base font-semibold tabular-nums text-foreground">
         {currency(ticker.price)}
       </span>
       <span className="text-right">
@@ -622,11 +622,11 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-white/10 bg-hover/60 px-4 py-4 text-left transition hover:border-white/20 hover:bg-hover sm:px-5 sm:py-5"
+      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 px-4 py-4 text-left transition hover:border-brand/40 hover:bg-hover sm:px-5 sm:py-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-heading text-lg font-bold text-white">
+          <p className="truncate font-heading text-lg font-bold text-foreground">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1.5 text-sm text-muted">
@@ -636,12 +636,12 @@ function PortfolioLane({
               : ""}
           </p>
         </div>
-        <p className="shrink-0 text-right font-sans text-lg font-semibold tabular-nums text-white">
+        <p className="shrink-0 text-right font-sans text-lg font-semibold tabular-nums text-foreground">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>
 
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-hover">
         <div
           className={cn(
             "overview-bar h-full rounded-full",
@@ -843,7 +843,7 @@ export function OverviewDashboard({
             actions={
               <>
                 <span
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted"
                   title={sessionLabel(marketState)}
                 >
                   <span
@@ -852,8 +852,8 @@ export function OverviewDashboard({
                       kind === "open"
                         ? "bg-gain"
                         : kind === "pre" || kind === "ah"
-                          ? "bg-zinc-300"
-                          : "bg-zinc-500"
+                          ? "bg-mustard"
+                          : "bg-muted"
                     )}
                     aria-hidden
                   />
@@ -954,7 +954,7 @@ export function OverviewDashboard({
         />
         <div className="mt-6">
           {movers.length === 0 ? (
-            <p className="py-5 text-center text-sm text-zinc-400">
+            <p className="py-5 text-center text-sm text-muted">
               Waiting on prices.
             </p>
           ) : (

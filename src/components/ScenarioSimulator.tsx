@@ -112,14 +112,14 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition",
                   isSelected
-                    ? "bg-zinc-100 text-zinc-900"
-                    : "border border-zinc-800/80 bg-zinc-950/40 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                    ? "bg-select text-select-ink"
+                    : "border border-border bg-well/60 text-muted hover:bg-hover hover:text-foreground"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 shrink-0",
-                    isSelected ? "text-zinc-900" : "text-zinc-400"
+                    isSelected ? "text-select-ink" : "text-muted"
                   )}
                   aria-hidden
                 />
@@ -131,26 +131,26 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
 
         {selectedShock !== "none" && (
           <Card className="mt-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/60 pb-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
               <div className="flex min-w-0 items-center gap-2">
                 <DriverIcon
                   className="h-4 w-4 shrink-0 text-brand-bright"
                   aria-hidden
                 />
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-foreground">
                   {activeScenario.label}
                 </h3>
                 <Pill tone="neutral">{activeScenario.driver}</Pill>
               </div>
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-muted">
                 Headline move{" "}
-                <span className="font-semibold tabular-nums text-zinc-200">
+                <span className="font-semibold tabular-nums text-foreground">
                   {activeScenario.headlinePct > 0 ? "+" : ""}
                   {(activeScenario.headlinePct * 100).toFixed(0)}%
                 </span>
               </span>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
               {activeScenario.mechanism}
             </p>
           </Card>
@@ -161,7 +161,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         <Panel tone="plain" padded={false} className="flex flex-col p-4">
           <MicroLabel>Book after this</MicroLabel>
           <div className="mt-1 flex items-baseline justify-between gap-2">
-            <span className="text-lg font-semibold tabular-nums text-white">
+            <span className="text-lg font-semibold tabular-nums text-foreground">
               {currency(analysis.shockedTotalVal, 0)}
             </span>
             <span
@@ -173,7 +173,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {percent(analysis.deltaPct)}
             </span>
           </div>
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
             <span>Today {currency(analysis.liveTotalVal, 0)}</span>
             <span
               className={cn(
@@ -210,21 +210,21 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           {analysis.margin.isUsingMargin ? (
             <>
               <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold tabular-nums text-white">
+                <span className="text-lg font-semibold tabular-nums text-foreground">
                   {analysis.margin.shockedLeverage.toFixed(2)}x
                 </span>
-                <span className="text-xs tabular-nums text-zinc-400">
+                <span className="text-xs tabular-nums text-muted">
                   You owe {analysis.margin.shockedDebtToEquityPct.toFixed(0)}%
                   of what you own
                 </span>
               </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
                 <span>Room before a margin call</span>
                 <span
                   className={cn(
                     "font-semibold tabular-nums",
                     analysis.margin.shockedEquityCushion > 0
-                      ? "text-zinc-200"
+                      ? "text-foreground"
                       : "text-loss"
                   )}
                 >
@@ -235,22 +235,22 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           ) : (
             <>
               <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold tabular-nums text-white">
+                <span className="text-lg font-semibold tabular-nums text-foreground">
                   {currency(analysis.cash, 0)}
                 </span>
-                <span className="text-xs tabular-nums text-zinc-400">
+                <span className="text-xs tabular-nums text-muted">
                   {analysis.margin.shockedCashPct.toFixed(1)}% of the book
                   after this
                 </span>
               </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
                 {analysis.cash > 0 ? (
                   <>
                     <span>Doesn&apos;t fall with the stocks</span>
                     {analysis.margin.shockedCashPct -
                       analysis.margin.liveCashPct >
                     0.05 ? (
-                      <span className="tabular-nums text-zinc-300">
+                      <span className="tabular-nums text-foreground/80">
                         Was {analysis.margin.liveCashPct.toFixed(1)}%
                       </span>
                     ) : null}
@@ -268,24 +268,24 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           {analysis.topVulnerability ? (
             <>
               <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold text-white">
+                <span className="text-lg font-semibold text-foreground">
                   {cashtag(analysis.topVulnerability.ticker)}
                 </span>
                 <span className="text-xs font-semibold tabular-nums text-loss">
                   {currency(analysis.topVulnerability.deltaVal, 0)}
                 </span>
               </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
                 <span className="truncate pr-1">
                   {analysis.topVulnerability.label}
                 </span>
-                <span className="shrink-0 font-medium tabular-nums text-zinc-300">
+                <span className="shrink-0 font-medium tabular-nums text-foreground/80">
                   {percent(analysis.topVulnerability.movePct)}
                 </span>
               </div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-zinc-400">Nothing held here yet.</p>
+            <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
           )}
         </Panel>
 
@@ -294,7 +294,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           {analysis.topShockAbsorber ? (
             <>
               <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold text-white">
+                <span className="text-lg font-semibold text-foreground">
                   {cashtag(analysis.topShockAbsorber.ticker)}
                 </span>
                 <span
@@ -302,14 +302,14 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     "text-xs font-semibold tabular-nums",
                     analysis.topShockAbsorber.deltaVal >= 0
                       ? "text-gain"
-                      : "text-zinc-300"
+                      : "text-foreground/80"
                   )}
                 >
                   {analysis.topShockAbsorber.deltaVal >= 0 ? "+" : ""}
                   {currency(analysis.topShockAbsorber.deltaVal, 0)}
                 </span>
               </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-zinc-800/60 pt-2 text-xs text-zinc-400">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
                 <span className="truncate pr-1">
                   {analysis.topShockAbsorber.label}
                 </span>
@@ -318,7 +318,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     "shrink-0 font-medium tabular-nums",
                     analysis.topShockAbsorber.movePct >= 0
                       ? "text-gain"
-                      : "text-zinc-300"
+                      : "text-foreground/80"
                   )}
                 >
                   {percent(analysis.topShockAbsorber.movePct)}
@@ -326,26 +326,26 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               </div>
             </>
           ) : (
-            <p className="mt-2 text-sm text-zinc-400">Nothing held here yet.</p>
+            <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
           )}
         </Panel>
       </div>
 
       {analysis.themeBreakdown.length > 1 && selectedShock !== "none" && (
         <Panel tone="plain">
-          <h3 className="text-base font-semibold text-white">
+          <h3 className="text-base font-semibold text-foreground">
             Where the damage lands
           </h3>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-muted">
             Your holdings pooled by what they actually bet on.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {analysis.themeBreakdown.map((t) => (
               <div
                 key={t.theme}
-                className="flex h-full items-center justify-between gap-3 rounded-lg border border-zinc-800/60 bg-zinc-950/40 px-3 py-2 text-sm"
+                className="flex h-full items-center justify-between gap-3 rounded-lg border border-border bg-well/60 px-3 py-2 text-sm"
               >
-                <span className="truncate text-zinc-300">{t.theme}</span>
+                <span className="truncate text-foreground/80">{t.theme}</span>
                 <span
                   className={cn(
                     "shrink-0 font-semibold tabular-nums",
@@ -364,14 +364,14 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
       <Panel tone="plain">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-semibold text-foreground">
               Every position
             </h3>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-muted">
               Sorted by the biggest dollar change. Tap a column to re-sort.
             </p>
           </div>
-          <span className="text-sm text-zinc-400">
+          <span className="text-sm text-muted">
             {sortedRows.length}{" "}
             {sortedRows.length === 1 ? "position" : "positions"}
           </span>
@@ -380,10 +380,10 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 text-xs text-zinc-400">
+              <tr className="border-b border-border text-xs text-muted">
                 <th
                   onClick={() => handleSort("ticker")}
-                  className="cursor-pointer py-2 pr-2 font-medium hover:text-white"
+                  className="cursor-pointer py-2 pr-2 font-medium hover:text-foreground"
                 >
                   <span className="flex items-center gap-1">
                     Ticker
@@ -395,7 +395,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 <th className="py-2 pr-2 font-medium">Bet</th>
                 <th
                   onClick={() => handleSort("move")}
-                  className="cursor-pointer py-2 pr-2 font-medium hover:text-white"
+                  className="cursor-pointer py-2 pr-2 font-medium hover:text-foreground"
                 >
                   <span className="flex items-center gap-1">
                     Move
@@ -408,7 +408,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 <th className="py-2 pr-2 font-medium">Price after</th>
                 <th
                   onClick={() => handleSort("liveVal")}
-                  className="cursor-pointer py-2 pr-2 font-medium hover:text-white"
+                  className="cursor-pointer py-2 pr-2 font-medium hover:text-foreground"
                 >
                   <span className="flex items-center gap-1">
                     Value now
@@ -420,7 +420,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 <th className="py-2 pr-2 font-medium">Value after</th>
                 <th
                   onClick={() => handleSort("delta")}
-                  className="cursor-pointer py-2 font-medium hover:text-white"
+                  className="cursor-pointer py-2 font-medium hover:text-foreground"
                 >
                   <span className="flex items-center gap-1">
                     Change
@@ -435,12 +435,12 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {sortedRows.map((r) => (
                 <tr
                   key={r.ticker}
-                  className="border-b border-zinc-900/80 transition hover:bg-zinc-800/30"
+                  className="border-b border-border transition hover:bg-hover/30"
                 >
-                  <td className="py-2 pr-2 font-semibold text-white">
+                  <td className="py-2 pr-2 font-semibold text-foreground">
                     {cashtag(r.ticker)}
                   </td>
-                  <td className="max-w-[11rem] truncate py-2 pr-2 text-zinc-400">
+                  <td className="max-w-[11rem] truncate py-2 pr-2 text-muted">
                     {r.label}
                   </td>
                   <td className="py-2 pr-2">
@@ -448,33 +448,33 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                       className={cn(
                         "inline-block rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums",
                         r.movePct === 0
-                          ? "bg-zinc-800 text-zinc-400"
+                          ? "bg-hover text-muted"
                           : r.movePct > 0
-                            ? "bg-emerald-950/60 text-emerald-300 ring-1 ring-emerald-500/30"
-                            : "bg-rose-950/60 text-rose-300 ring-1 ring-rose-500/30"
+                            ? "bg-gain/15 text-gain ring-1 ring-gain/30"
+                            : "bg-loss/15 text-loss ring-1 ring-loss/30"
                       )}
                     >
                       {r.movePct > 0 ? "+" : ""}
                       {percent(r.movePct)}
                     </span>
                   </td>
-                  <td className="py-2 pr-2 tabular-nums text-zinc-400">
+                  <td className="py-2 pr-2 tabular-nums text-muted">
                     {currency(r.livePx, 2)}
                   </td>
-                  <td className="py-2 pr-2 font-medium tabular-nums text-zinc-200">
+                  <td className="py-2 pr-2 font-medium tabular-nums text-foreground">
                     {currency(r.shockPx, 2)}
                   </td>
-                  <td className="py-2 pr-2 tabular-nums text-zinc-400">
+                  <td className="py-2 pr-2 tabular-nums text-muted">
                     {currency(r.liveVal, 0)}
                   </td>
-                  <td className="py-2 pr-2 tabular-nums text-zinc-300">
+                  <td className="py-2 pr-2 tabular-nums text-foreground/80">
                     {currency(r.shockVal, 0)}
                   </td>
                   <td
                     className={cn(
                       "py-2 font-semibold tabular-nums",
                       r.deltaVal === 0
-                        ? "text-zinc-400"
+                        ? "text-muted"
                         : r.deltaVal > 0
                           ? "text-gain"
                           : "text-loss"
@@ -489,7 +489,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 <tr>
                   <td
                     colSpan={8}
-                    className="py-6 text-center text-sm text-zinc-400"
+                    className="py-6 text-center text-sm text-muted"
                   >
                     Nothing held in this scope yet.
                   </td>

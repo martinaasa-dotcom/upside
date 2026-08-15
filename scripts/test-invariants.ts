@@ -943,14 +943,27 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
+  const frame = readFileSync(
+    join(process.cwd(), "src/lib/page-shell.ts"),
+    "utf8"
+  );
+  const tabs = readFileSync(
+    join(process.cwd(), "src/components/PortfolioTabs.tsx"),
+    "utf8"
+  );
   assert.match(css, /--paper: #ede8dc/);
-  assert.match(css, /--ink: #121612/);
-  assert.match(css, /--card: #1b221c/);
-  assert.match(css, /--app: #0d110f/);
-  assert.match(css, /--muted: #9a9488/);
-  assert.match(css, /--brand: #8a9a86/);
-  assert.match(css, /--gain: #6bb07a/);
-  assert.match(css, /--loss: #d07a6e/);
+  assert.match(css, /--ink: #1a1408/);
+  assert.match(css, /--card: #2a2218/);
+  assert.match(css, /--app: #1a2820/);
+  assert.match(css, /--muted: #a89878/);
+  assert.match(css, /--brand: #c4a36a/);
+  assert.match(css, /--select: #c4a36a/);
+  assert.match(css, /--mustard: #d4a24c/);
+  assert.match(css, /--gain: #5a9a4a/);
+  assert.match(css, /--loss: #c46a58/);
+  assert.match(css, /background: var\(--mustard\)/);
+  assert.doesNotMatch(css, /--app: #0d110f/);
+  assert.doesNotMatch(css, /--brand: #8a9a86/);
   assert.doesNotMatch(css, /--brand: #c4a574/);
   assert.doesNotMatch(css, /--brand: #b8b3aa/);
   assert.doesNotMatch(css, /--caution: #c4a574/);
@@ -970,21 +983,18 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
   assert.match(panel, /text-xs font-medium text-muted/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /text-xs font-medium text-muted/
+    /text-xs font-medium text-brand-bright/
   );
-  assert.doesNotMatch(
-    panel.slice(panel.indexOf("export function Reading")),
-    /text-brand-bright/
-  );
-  assert.match(panel, /bg-zinc-100 text-zinc-900/);
+  assert.match(panel, /bg-select text-select-ink/);
+  assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),
     /uppercase tracking-wide/
   );
   assert.match(panel, /const FIGURE/);
   assert.match(panel, /font-sans text-base font-semibold tabular-nums/);
-  assert.match(header, /border-b border-white\/10/);
-  assert.doesNotMatch(header, /border-brand\/25/);
+  assert.match(header, /border-b border-border bg-app\/95/);
+  assert.doesNotMatch(header, /border-b border-white\/10/);
   assert.match(home, /<Reading label="Worth noticing">/);
   assert.match(home, /<InsightText text=\{morning.insight\} \/>/);
   assert.doesNotMatch(home, /opened the book/);
@@ -994,6 +1004,40 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
   assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
+  assert.match(frame, /#2d3d32_0%,_#1a2820/);
+  assert.doesNotMatch(frame, /#0d110f/);
+  assert.match(tabs, /bg-select text-select-ink/);
+  assert.doesNotMatch(tabs, /bg-white text-black/);
+
+  const bland = [
+    /bg-zinc-100/,
+    /text-zinc-900/,
+    /bg-white text-black/,
+    /accent-zinc/,
+    /bg-emerald-/,
+    /text-emerald-/,
+    /border-emerald-/,
+    /bg-sky-/,
+    /text-sky-/,
+    /border-sky-/,
+    /bg-violet-/,
+    /text-violet-/,
+    /bg-rose-/,
+    /text-rose-/,
+    /border-rose-/,
+    /bg-amber-/,
+    /text-amber-/,
+    /#0d110f/,
+    /#1b221c/,
+  ];
+  for (const pattern of bland) {
+    const offenders = offendersOf(pattern);
+    assert.deepEqual(
+      offenders,
+      [],
+      `${pattern} is outside the office palette. Offenders: ${offenders.join(", ")}`
+    );
+  }
 });
 
 run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {
@@ -2958,7 +3002,8 @@ run("workspace nav marks the current room and the skip link exists", () => {
     "utf8"
   );
   assert.ok(/aria-current=\{active \? "page"/.test(switcher));
-  assert.ok(/bg-zinc-100 text-zinc-900/.test(switcher));
+  assert.ok(/bg-select text-select-ink/.test(switcher));
+  assert.ok(!/bg-zinc-100 text-zinc-900/.test(switcher));
   assert.ok(!/bg-brand\/20 text-brand-bright/.test(switcher));
   const providers = readFileSync(
     join(process.cwd(), "src/components/Providers.tsx"),

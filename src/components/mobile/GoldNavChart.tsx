@@ -526,9 +526,9 @@ export function GoldNavChart({
     <div className={className}>
       <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-11">
         {hoverPoint ? (
-          <div className="rounded-lg border border-white/10 bg-zinc-950/90 px-2.5 py-1.5 text-center">
-            <p className="text-xs text-zinc-400">{formatDay(hoverPoint.date)}</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
+          <div className="rounded-lg border border-border bg-well/90 px-2.5 py-1.5 text-center">
+            <p className="text-xs text-muted">{formatDay(hoverPoint.date)}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
               {currency(hoverPoint.nav, 0)}
             </p>
             {ytdRoi != null && ytdDollar != null && (
@@ -540,7 +540,7 @@ export function GoldNavChart({
               >
                 YTD {ytdRoi > 0 ? "+" : ""}
                 {percent(ytdRoi)}
-                <span className="text-zinc-500">
+                <span className="text-muted">
                   {" "}
                   · {signedCurrency(ytdDollar, 0)}
                 </span>
@@ -548,7 +548,7 @@ export function GoldNavChart({
             )}
           </div>
         ) : (
-          <p className="pb-1 text-xs text-zinc-500">
+          <p className="pb-1 text-xs text-muted">
             Drag across to read a day
           </p>
         )}
@@ -559,7 +559,7 @@ export function GoldNavChart({
             {ticks.map((t) => (
                 <span
                   key={t}
-                  className="absolute right-0 -translate-y-1/2 text-xs tabular-nums text-zinc-500"
+                  className="absolute right-0 -translate-y-1/2 text-xs tabular-nums text-muted"
                   style={{
                     top: `${(yAt(t) / height) * 100}%`,
                   }}
@@ -594,8 +594,8 @@ export function GoldNavChart({
           >
             <defs>
               <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#d4d4d8" stopOpacity="0.22" />
-                <stop offset="1" stopColor="#d4d4d8" stopOpacity="0" />
+                <stop offset="0" stopColor="#c4a36a" stopOpacity="0.22" />
+                <stop offset="1" stopColor="#c4a36a" stopOpacity="0" />
               </linearGradient>
             </defs>
             {ticks.map((t) => (
@@ -612,7 +612,7 @@ export function GoldNavChart({
             <polygon points={area} fill={`url(#${gid})`} />
             <polyline
               fill="none"
-              stroke="#d4d4d8"
+              stroke="#c4a36a"
               strokeWidth={2}
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -625,15 +625,15 @@ export function GoldNavChart({
                   x2={xAt(hover)}
                   y1={padT}
                   y2={padT + innerH}
-                  stroke="#ecece8"
+                  stroke="#ede8dc"
                   strokeOpacity={0.45}
                 />
                 <circle
                   cx={xAt(hover)}
                   cy={yAt(hoverPoint.nav)}
                   r={4.5}
-                  fill="#ecece8"
-                  stroke="#0d110f"
+                  fill="#ede8dc"
+                  stroke="#1a2820"
                   strokeWidth={1.5}
                 />
               </g>
@@ -649,7 +649,7 @@ export function GoldNavChart({
             return (
               <span
                 key={`${tick.i}-${tick.label}`}
-                className="absolute top-0 text-xs text-zinc-500"
+                className="absolute top-0 text-xs text-muted"
                 style={{
                   left: `${tick.left}%`,
                   transform: isFirst
@@ -773,17 +773,17 @@ export function BookNavChart({
       {assumed && hasChart && (
         <div className="mt-3 space-y-2">
           {anchored ? (
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted">
               Using the year you gave us. The shape still follows these names.
             </p>
           ) : (
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-muted">
               This line assumes you held these names, this size, all year.
               Close enough for a look. For the real year, upload a screenshot
               of your broker&apos;s year-to-date, or type the number.
             </p>
           )}
-          {readError && <p className="text-xs text-rose-400">{readError}</p>}
+          {readError && <p className="text-xs text-loss">{readError}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             {onApplyAnchor && !anchored && (
               <>
@@ -801,7 +801,7 @@ export function BookNavChart({
                     setReadError(null);
                     setManualOpen(true);
                   }}
-                  className="text-xs font-medium text-zinc-300 underline-offset-2 hover:text-white hover:underline"
+                  className="text-xs font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
                 >
                   Type the number
                 </button>
@@ -814,7 +814,7 @@ export function BookNavChart({
                   setReadError(null);
                   setManualOpen(true);
                 }}
-                className="text-xs font-medium text-zinc-300 underline-offset-2 hover:text-white hover:underline"
+                className="text-xs font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
               >
                 Change the number
               </button>
@@ -823,7 +823,7 @@ export function BookNavChart({
               <button
                 type="button"
                 onClick={onClearAnchor}
-                className="text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+                className="text-xs font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
               >
                 Back to assumed names
               </button>
@@ -832,7 +832,7 @@ export function BookNavChart({
               <button
                 type="button"
                 onClick={onDiscardAssumed}
-                className="text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
+                className="text-xs font-medium text-muted underline-offset-2 hover:text-foreground/80 hover:underline"
               >
                 {recorded ? `Start from ${recorded}` : "Only recorded nights"}
               </button>
@@ -852,7 +852,7 @@ export function BookNavChart({
           <button
             type="button"
             onClick={onRestoreAssumed}
-            className="text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+            className="text-xs font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
           >
             Fill in an assumed year
           </button>

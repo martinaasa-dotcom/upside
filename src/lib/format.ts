@@ -97,7 +97,7 @@ export function cashtag(ticker: string | null | undefined): string {
  */
 export function signedTone(
   value: number | null | undefined,
-  neutral = "text-zinc-300"
+  neutral = "text-foreground/80"
 ): string {
   if (!isRenderable(value)) return neutral;
   if (value > 0) return "text-gain";

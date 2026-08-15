@@ -173,24 +173,24 @@ export function HomeWorld({
           <Card
             tone="brand"
             interactive
-            className="h-full px-4 py-4 transition group-hover:border-white/25"
+            className="h-full px-4 py-4 transition group-hover:border-brand/40"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
                 <Bot className="h-3.5 w-3.5 text-muted" aria-hidden />
                 Upside Fund
               </MicroLabel>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-zinc-200" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             </div>
             {fund ? (
               <>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-white">
+                <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
                   {currency(fund.totalValue, 0)}
                 </p>
                 <p
                   className={cn(
                     "mt-0.5 text-sm tabular-nums",
-                    signedTone(fund.todayDollar, "text-zinc-400")
+                    signedTone(fund.todayDollar, "text-muted")
                   )}
                 >
                   {signedCurrency(fund.todayDollar)} today
@@ -206,7 +206,7 @@ export function HomeWorld({
               </>
             ) : (
               <>
-                <p className="mt-2 text-base font-semibold text-white">
+                <p className="mt-2 text-base font-semibold text-foreground">
                   Watch Margus trade
                 </p>
                 <p className="mt-3 text-sm text-muted">
@@ -221,16 +221,16 @@ export function HomeWorld({
         <Link href={communityHref} className="group block h-full">
           <Card
             interactive
-            className="h-full px-4 py-4 transition group-hover:border-white/25"
+            className="h-full px-4 py-4 transition group-hover:border-brand/40"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
                 <Users className="h-3.5 w-3.5 text-muted" aria-hidden />
                 Communities
               </MicroLabel>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition group-hover:translate-x-0.5 group-hover:text-zinc-200" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             </div>
-            <p className="mt-2 text-base font-semibold text-white">
+            <p className="mt-2 text-base font-semibold text-foreground">
               {communitiesError
                 ? "Couldn't load circles"
                 : communities === null
