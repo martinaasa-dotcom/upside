@@ -5,7 +5,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
-import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
+import { MicroLabel, Stat } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
@@ -1308,23 +1308,25 @@ export function UpsidePortfolioPage() {
                             {percent(pnlPct)}
                           </span>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-                          <Metric label="Entered">
-                            {fmtDate(h.entry_date)}
-                          </Metric>
-                          <Metric label="Cost">{currency(h.cost_basis)}</Metric>
-                          <Metric
+                        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          <Stat
+                            label="Entered"
+                            value={fmtDate(h.entry_date)}
+                          />
+                          <Stat
+                            label="Cost"
+                            value={currency(h.cost_basis)}
+                          />
+                          <Stat
                             label="Now"
+                            value={currency(price)}
                             valueClassName={signedTone(pnlPct, "text-zinc-100")}
-                          >
-                            {currency(price)}
-                          </Metric>
-                          <Metric
+                          />
+                          <Stat
                             label="Book"
-                            hint={`${h.shares.toLocaleString("en-US")} sh`}
-                          >
-                            {currency(marketValue, 0)}
-                          </Metric>
+                            value={currency(marketValue, 0)}
+                            sub={`${h.shares.toLocaleString("en-US")} sh`}
+                          />
                         </div>
                         <CopyBlock
                           label="Why he owns it"
