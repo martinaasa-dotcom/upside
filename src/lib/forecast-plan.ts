@@ -232,42 +232,34 @@ export type ForecastAutoRefresh =
   | { run: false; reason: "ok" | "empty" }
   | {
       run: true;
-      reason: "first-run" | "new-holding" | "thesis-changed";
+      reason: "first-run" | "new-holding";
     };
 
 /** Auto-run the model only when there is no reusable path yet: first visit
- * with nothing cached, a newly added ticker with no shared path, or a
- * thesis/conviction change. Opening another sheet that already has those
- * tickers reasoned (on any sheet) must not call the model. Manual
- * "Work it out again" is the user's override. */
+ * with nothing cached, or a newly added ticker with no shared path.
+ * A saved plan, a shared ticker path, or a filled grid is enough. Opening
+ * the sheet again, switching books, or convictions loading in late must
+ * not call the model. "Work it out again" is the user's override. */
 export function shouldAutoRefreshForecast(input: {
   plan: ForecastPlan | null;
   tickers: string[];
   fullyCovered: boolean;
   cachedTickers?: string[];
-  convictionKey?: string;
 }): ForecastAutoRefresh {
   const tickers = input.tickers.map((t) => t.toUpperCase());
   if (tickers.length === 0) return { run: false, reason: "empty" };
-
-  const plan = input.plan;
-  if (
-    plan?.convictionKey &&
-    input.convictionKey &&
-    plan.convictionKey !== input.convictionKey
-  ) {
-    return { run: true, reason: "thesis-changed" };
-  }
-
   if (input.fullyCovered) return { run: false, reason: "ok" };
 
   const cached = new Set(
     (input.cachedTickers ?? []).map((t) => t.toUpperCase())
   );
-  const uncovered = tickers.filter((t) => !cached.has(t));
+  const planned = new Set(
+    (input.plan?.eoyTargets ?? []).map((t) => t.ticker.toUpperCase())
+  );
+  const uncovered = tickers.filter((t) => !cached.has(t) && !planned.has(t));
   if (uncovered.length === 0) return { run: false, reason: "ok" };
 
-  if (!plan) return { run: true, reason: "first-run" };
+  if (!input.plan) return { run: true, reason: "first-run" };
   return { run: true, reason: "new-holding" };
 }
 

@@ -67,6 +67,9 @@ type Props = {
   /** Owner's per-ticker conviction, passed to Margus so a written thesis
    * actually influences the path instead of being ignored. */
   convictions?: ConvictionMap;
+  /** False until Lab conviction has loaded. Auto-run waits so a late
+   * hydrate cannot look like a missing cache and fire the model. */
+  labReady?: boolean;
 };
 
 function calibratedPaths(plan: ForecastPlan, model: ForecastModel) {
@@ -553,6 +556,7 @@ export function ForecastPanel({
   onApplyMargusPaths,
   onClearOverrides,
   convictions,
+  labReady = true,
 }: Props) {
   const yearCols = model.years;
   const mobileYears = yearCols.filter((y) => y !== 2030);
@@ -598,6 +602,8 @@ export function ForecastPanel({
   const askInFlight = useRef(false);
   const askAbortRef = useRef<AbortController | null>(null);
   const askGenRef = useRef(0);
+  const planRef = useRef<ForecastPlan | null>(null);
+  planRef.current = plan;
   useEffect(() => {
     return () => {
       askAbortRef.current?.abort();
@@ -691,6 +697,8 @@ export function ForecastPanel({
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
       if (isAbortError(err) || askGenRef.current !== gen) return;
+      // A failed background refresh must not hide a writeup we already have.
+      if (opts?.auto && planRef.current) return;
       setError(err instanceof Error ? err.message : "Couldn't build a forecast. Try again.");
       // Keep autoKeyRef set so a failed auto-run does not immediately
       // fire again. Clearing it used to retry in a tight loop, which
@@ -752,17 +760,17 @@ export function ForecastPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per sheet/holdings
   }, [portfolioId, holdingsKey, flatCount, plan]);
 
-  // Auto: first run with nothing cached, a new ticker with no shared path,
-  // or a thesis change. Cached reasoning is reused across sheets.
+  // Auto: first run with nothing cached, or a new ticker with no shared path.
+  // Cached reasoning is reused across sheets. Convictions loading in later
+  // is not a reason to call the model again.
   useEffect(() => {
-    if (!planHydrated || model.rows.length === 0) return;
+    if (!labReady || !planHydrated || model.rows.length === 0) return;
     if (askInFlight.current || busy) return;
     const decision = shouldAutoRefreshForecast({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
       cachedTickers,
-      convictionKey,
     });
     if (!decision.run) return;
     const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
@@ -770,7 +778,7 @@ export function ForecastPanel({
     autoKeyRef.current = key;
     void askMargus({ auto: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
-  }, [planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, convictionKey, cachedTickers.join("|")]);
+  }, [labReady, planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, cachedTickers.join("|")]);
 
   // If a sold ticker is still named in the playbook, say so. The model
   // does not auto-rerun for that; use "Work it out again" when you want
@@ -816,13 +824,12 @@ export function ForecastPanel({
       : null;
 
   const statusHint = useMemo(() => {
-    if (!planHydrated || model.rows.length === 0 || busy) return null;
+    if (!labReady || !planHydrated || model.rows.length === 0 || busy) return null;
     const decision = shouldAutoRefreshForecast({
       plan,
       tickers: model.rows.map((r) => r.ticker),
       fullyCovered,
       cachedTickers,
-      convictionKey,
     });
     if (decision.run && decision.reason === "first-run") {
       return "First time on this sheet, Margus is working out the prices …";
@@ -830,11 +837,8 @@ export function ForecastPanel({
     if (decision.run && decision.reason === "new-holding") {
       return "New holding, Margus is working out a path …";
     }
-    if (decision.run && decision.reason === "thesis-changed") {
-      return "Why you own it changed, Margus is updating the path …";
-    }
     return null;
-  }, [planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, convictionKey]);
+  }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers]);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">

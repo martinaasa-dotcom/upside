@@ -461,7 +461,7 @@ export function Dashboard() {
   const [labIntent, setLabIntent] = useState<LabDeepLink | null>(null);
   /** Home "Open covered calls" should land on the options table, not holdings. */
   const sheetFocusRef = useRef<"covered-calls" | null>(null);
-  const { labBundle, patchLab } = useLabSync();
+  const { labBundle, labReady, patchLab } = useLabSync();
   /** Browser Back/Forward: sync sheet from history without pushing again. */
   const historyFromPopRef = useRef(false);
   /** Until first book load settles, only replaceState (no fake history stack). */
@@ -3194,6 +3194,7 @@ export function Dashboard() {
                   onApplyMargusPaths={applyMargusEoyPaths}
                   onClearOverrides={() => setConfirmResetForecast(true)}
                   convictions={convictionMap}
+                  labReady={labReady}
                 />
                 </WidgetErrorBoundary>
               )

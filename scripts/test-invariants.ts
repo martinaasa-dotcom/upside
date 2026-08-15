@@ -21,6 +21,7 @@ import {
   startNavFromYtdPct,
 } from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
+import { shouldAutoRefreshForecast } from "../src/lib/forecast-plan";
 import {
   reconcilePulseCheck,
   statusLabel,
@@ -1156,6 +1157,56 @@ run("Forecast is always the base case", () => {
   assert.doesNotMatch(route, /body\.stance/);
   assert.doesNotMatch(plan, /STANCE = BEARISH/);
   assert.doesNotMatch(plan, /STANCE = BULLISH/);
+});
+
+run("Forecast does not call the model when a path is already saved", () => {
+  const saved = {
+    eoyTargets: [{ ticker: "NBIS", prices: { 2026: 1 } }],
+  } as Parameters<typeof shouldAutoRefreshForecast>[0]["plan"];
+  assert.equal(
+    shouldAutoRefreshForecast({
+      plan: saved,
+      tickers: ["NBIS"],
+      fullyCovered: false,
+      cachedTickers: [],
+    }).run,
+    false
+  );
+  assert.equal(
+    shouldAutoRefreshForecast({
+      plan: null,
+      tickers: ["NBIS"],
+      fullyCovered: false,
+      cachedTickers: ["NBIS"],
+    }).run,
+    false
+  );
+  assert.equal(
+    shouldAutoRefreshForecast({
+      plan: null,
+      tickers: ["NBIS"],
+      fullyCovered: true,
+    }).run,
+    false
+  );
+  assert.equal(
+    shouldAutoRefreshForecast({
+      plan: null,
+      tickers: ["NBIS"],
+      fullyCovered: false,
+      cachedTickers: [],
+    }).reason,
+    "first-run"
+  );
+  assert.equal(
+    shouldAutoRefreshForecast({
+      plan: saved,
+      tickers: ["NBIS", "CRWV"],
+      fullyCovered: false,
+      cachedTickers: ["NBIS"],
+    }).reason,
+    "new-holding"
+  );
 });
 
 run("Daily Duel is not on Home", () => {
