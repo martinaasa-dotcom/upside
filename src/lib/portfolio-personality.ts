@@ -443,18 +443,18 @@ function diversificationBandFor(score: number): ScoreBand {
     };
   return {
     label: "Broad",
-    description: "Index-fund-broad, very little single-name risk.",
+    description: "Index-fund-broad. No one name can wreck it.",
   };
 }
 
 function riskBandFor(score: number): ScoreBand {
   if (score < 30)
-    return { label: "Conservative", description: "Calm, defensive theme mix." };
+    return { label: "Conservative", description: "Calm mix. The names don't jump around much." };
   if (score < 55)
     return { label: "Balanced", description: "A mix of steady and speculative." };
   if (score < 75)
-    return { label: "Aggressive", description: "Leans hard into growth/momentum themes." };
-  return { label: "High-octane", description: "Concentrated in the hottest, most volatile themes." };
+    return { label: "Aggressive", description: "Leans hard into the jumpy, fast-moving names." };
+  return { label: "High-octane", description: "Most of the book is in the hottest, jumpiest names." };
 }
 
 function convictionBandFor(score: number): ScoreBand {

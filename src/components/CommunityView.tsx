@@ -2570,10 +2570,9 @@ export function CommunityView({ communityId }: Props) {
                   The power animal field guide
                 </h3>
                 <p className="mt-1 text-xs text-zinc-400">
-                  Every book gets scored on spread, risk, biggest bet, cash,
-                  and how many themes it actually lives in, then matched to
-                  whichever animal fits best. A fun lens, not an investing
-                  verdict.
+                  Every book gets scored on how spread out it is, how jumpy
+                  the names are, and how big the largest name is. Then it
+                  gets the animal that fits. A fun lens, not a grade.
                 </p>
               </div>
               <button
@@ -2733,18 +2732,29 @@ function PowerAnimalCard({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
-              Spread {Math.round(personality.diversificationScore)}
-            </span>
-            <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
-              Risk {Math.round(personality.riskScore)}
-            </span>
-            <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
-              {personality.topTicker
-                ? `${cashtag(personality.topTicker)} ${personality.convictionScore}%`
-                : `Biggest name ${personality.convictionScore}%`}
-            </span>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <ScoreRead
+              label="How spread out"
+              value={`${Math.round(personality.diversificationScore)}/100`}
+              band={personality.diversificationBand.label}
+              detail={personality.diversificationBand.description}
+            />
+            <ScoreRead
+              label="How jumpy"
+              value={`${Math.round(personality.riskScore)}/100`}
+              band={personality.riskBand.label}
+              detail={personality.riskBand.description}
+            />
+            <ScoreRead
+              label="Biggest name"
+              value={
+                personality.topTicker
+                  ? `${cashtag(personality.topTicker)} ${personality.convictionScore}%`
+                  : `${personality.convictionScore}%`
+              }
+              band={personality.convictionBand.label}
+              detail={personality.convictionBand.description}
+            />
           </div>
 
           <div className="mt-auto grid gap-3 sm:grid-cols-2">
@@ -2804,6 +2814,29 @@ function PowerAnimalCard({
         </div>
       )}
     </button>
+  );
+}
+
+function ScoreRead({
+  label,
+  value,
+  band,
+  detail,
+}: {
+  label: string;
+  value: string;
+  band: string;
+  detail: string;
+}) {
+  return (
+    <div className="h-full rounded-xl bg-black/20 px-3 py-2.5">
+      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold tabular-nums text-white">
+        {value}
+      </p>
+      <p className="mt-0.5 text-xs font-medium text-zinc-200">{band}</p>
+      <p className="mt-1 text-xs leading-relaxed text-zinc-400">{detail}</p>
+    </div>
   );
 }
 
