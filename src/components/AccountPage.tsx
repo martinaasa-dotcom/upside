@@ -290,13 +290,15 @@ export function AccountPage() {
                   id: "morning",
                   checked: noteMorning,
                   set: setNoteMorning,
-                  label: "Weekdays. Morning and after the US close.",
+                  label:
+                    "Weekdays. What to watch before the open, then a recap after the US close.",
                 },
                 {
                   id: "sunday",
                   checked: noteSunday,
                   set: setNoteSunday,
-                  label: "Sundays. A look at the week.",
+                  label:
+                    "Sundays. The week that just finished, and what to think about next.",
                 },
               ] as const
             ).map((row) => (

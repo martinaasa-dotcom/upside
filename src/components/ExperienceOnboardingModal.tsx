@@ -122,7 +122,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   <span>
                     <span className="font-medium text-white">Weekdays</span>
                     <span className="mt-0.5 block text-xs text-zinc-400">
-                      Morning, and again after the US close.
+                      What to watch before the open, then a recap after the US close.
                     </span>
                   </span>
                 </label>
@@ -136,7 +136,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   <span>
                     <span className="font-medium text-white">Sundays</span>
                     <span className="mt-0.5 block text-xs text-zinc-400">
-                      A look at the week before the next one starts.
+                      The week that just finished, plus a look at the next ones.
                     </span>
                   </span>
                 </label>

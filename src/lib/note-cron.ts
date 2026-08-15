@@ -1,5 +1,5 @@
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
-import { fetchWeekReturns } from "@/lib/market/yahoo";
+import { fetchMarketEvents, fetchWeekReturns } from "@/lib/market/yahoo";
 import {
   buildNoteReport,
   noteReportHtml,
@@ -113,6 +113,10 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
       kind === "sunday" && tickers.length > 0
         ? await fetchWeekReturns(tickers)
         : undefined;
+    const earnings =
+      (kind === "morning" || kind === "sunday") && tickers.length > 0
+        ? (await fetchMarketEvents(tickers)).earnings
+        : undefined;
     const cash = (books ?? []).reduce(
       (s, p) => s + Number(p.cash_balance ?? 0),
       0
@@ -130,6 +134,7 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
       quotes,
       conviction: parseConviction(lab?.conviction),
       weekReturns,
+      earnings,
     });
     const ok = await sendNoteEmail({
       to: email,
