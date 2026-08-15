@@ -1201,9 +1201,12 @@ run("signed-in pages share one column so rooms do not jump", () => {
   );
   assert.match(shell, /max-w-\[1400px\]/);
   assert.match(shell, /w-full/);
-  assert.match(shell, /\[--dock-pad:5.25rem\]/);
-  assert.match(shell, /md:\[--dock-pad:7.75rem\]/);
+  assert.match(shell, /\[--dock-pad:8rem\]/);
+  assert.match(shell, /md:\[--dock-pad:8.5rem\]/);
+  assert.match(shell, /sm:pt-8/);
+  assert.doesNotMatch(shell, /sm:py-8/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:5.5rem\]/);
+  assert.doesNotMatch(shell, /md:\[--dock-pad:7.75rem\]/);
 });
 
 run("Compound controls sit on one panel, not nested cards", () => {
