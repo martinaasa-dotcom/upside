@@ -37,15 +37,15 @@ type SortField = "delta" | "move" | "liveVal" | "ticker";
 
 const DRIVER_ICONS: Record<string, typeof Activity> = {
   Baseline: Activity,
-  "Rates & Duration": TrendingUp,
-  "Tech Valuation": Cpu,
-  Commodities: Flame,
-  "AI Infrastructure": Sparkles,
-  "Digital Assets": Snowflake,
-  Liquidity: TrendingDown,
-  "Foreign Exchange": DollarSign,
-  "Supply Chain": ShieldAlert,
-  "Risk Expansion": Layers,
+  "Interest rates": TrendingUp,
+  "Tech prices": Cpu,
+  "Oil and energy": Flame,
+  "AI computers": Sparkles,
+  Crypto: Snowflake,
+  "Everyone selling": TrendingDown,
+  "The dollar": DollarSign,
+  Factories: ShieldAlert,
+  "People buying": Layers,
 };
 
 export function ScenarioSimulator({ holdings, cash }: Props) {

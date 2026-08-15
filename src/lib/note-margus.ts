@@ -70,10 +70,12 @@ function facts(r: NoteReport): string {
   }
   if (r.thesis) {
     lines.push(
-      `Focus: ${cashtag(r.thesis.ticker)}`,
-      r.thesis.ownerThesis ? `Why they own it: ${r.thesis.ownerThesis}` : null,
-      r.thesis.status ? `Pulse: ${r.thesis.status}` : null,
-      r.thesis.pulseLine
+      ...[
+        `Focus: ${cashtag(r.thesis.ticker)}`,
+        r.thesis.ownerThesis ? `Why they own it: ${r.thesis.ownerThesis}` : null,
+        r.thesis.status ? `Pulse: ${r.thesis.status}` : null,
+        r.thesis.pulseLine,
+      ].filter((x): x is string => Boolean(x))
     );
   }
   if (r.perspective[0]) {
@@ -117,7 +119,7 @@ Hard rules for this block:
 - Only use names in the facts. Do not invent holdings.
 - Educational scenario, not advice. Do not say "you should buy" as an order. "I'd look to add if it dips" is fine.
 - If the day or week is quiet, say so and stop. Do not invent drama.
-- If "Worth noticing" mentions money moving between groups, use it. Do not invent new tickers.`;
+- If "Worth noticing" mentions money moving between groups, use it. Do not invent new tickers.`,
           prompt: facts(report),
           maxOutputTokens: report.kind === "sunday" ? 280 : 180,
           abortSignal: signal,

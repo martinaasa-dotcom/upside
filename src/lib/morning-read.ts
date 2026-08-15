@@ -227,6 +227,7 @@ export function buildMorningRead(
     quiet: quiet && awayLines.length === 0,
     sentence,
     insight,
+    pulseFlag: pulseFlagFor(model),
     awayLines,
     drivers: sunday || afterClose ? [] : driversFor(model),
     closeNote: !sunday && afterClose ? buildCloseNote(model) : null,

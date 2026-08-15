@@ -19,15 +19,15 @@ export type ShockId =
   | "soft_landing_rally";
 
 export type MacroShockCategory =
-  | "Rates & Duration"
-  | "Tech Valuation"
-  | "Commodities"
-  | "AI Infrastructure"
-  | "Digital Assets"
-  | "Liquidity"
-  | "Foreign Exchange"
-  | "Supply Chain"
-  | "Risk Expansion"
+  | "Interest rates"
+  | "Tech prices"
+  | "Oil and energy"
+  | "AI computers"
+  | "Crypto"
+  | "Everyone selling"
+  | "The dollar"
+  | "Factories"
+  | "People buying"
   | "Baseline";
 
 export type ShockDefinition = {
@@ -143,7 +143,7 @@ export const SHOCKS: ShockDefinition[] = [
     driver: "People buying",
     headlinePct: 0.12,
     mechanism: "Prices stop rising so fast and the economy stays ok. Money often flows into growth, tech, and the jumpiest names.",
-    tacticalAction: "Jumpy names usually lead. Watch ones that already ran a long way from what you paid.";
+    tacticalAction: "Jumpy names usually lead. Watch ones that already ran a long way from what you paid.",
   },
 ];
 

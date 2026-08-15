@@ -161,7 +161,15 @@ export async function POST(req: NextRequest) {
       if (error) failed.push(ticker);
       else {
         upserted += 1;
-        if (data) byTicker.set(String(data.ticker).toUpperCase(), data);
+        if (data) {
+          byTicker.set(String(data.ticker).toUpperCase(), {
+            id: data.id,
+            ticker: data.ticker,
+            shares,
+            buy_price: buyPrice,
+            sort_order: data.sort_order,
+          });
+        }
       }
     }
   }
