@@ -274,7 +274,7 @@ function PulseCard({
           </Metric>
         </div>
       ) : (
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs tabular-nums text-zinc-500">
           {currency(c.price)} · not in your book
         </p>
       )}

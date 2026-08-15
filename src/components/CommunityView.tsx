@@ -2764,7 +2764,7 @@ function Stat({
       >
         {value}
       </div>
-      {sub && <div className="text-xs text-zinc-400">{sub}</div>}
+      {sub && <div className="text-xs tabular-nums text-zinc-400">{sub}</div>}
     </div>
   );
 }

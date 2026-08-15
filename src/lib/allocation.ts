@@ -3,6 +3,7 @@ import {
   forecastThemeForTicker,
   type ForecastTheme,
 } from "@/lib/forecast-conviction";
+import { finiteNumber, safeDiv, sumMoney } from "@/lib/money";
 import { THEME_LABEL } from "@/lib/portfolio-personality";
 
 export type AllocationSlice = {
@@ -26,20 +27,20 @@ export function themeBreakdown(
   holdings: Array<{ ticker: string; currentValue: number }>
 ): ThemeSlice[] {
   const byTheme = new Map<ForecastTheme, number>();
-  let total = 0;
   for (const h of holdings) {
-    if (h.currentValue <= 0) continue;
+    const value = finiteNumber(h.currentValue);
+    if (value <= 0) continue;
     const theme = forecastThemeForTicker(h.ticker);
-    byTheme.set(theme, (byTheme.get(theme) ?? 0) + h.currentValue);
-    total += h.currentValue;
+    byTheme.set(theme, sumMoney([byTheme.get(theme) ?? 0, value]));
   }
+  const total = sumMoney(byTheme.values());
   if (total <= 0) return [];
   return [...byTheme.entries()]
     .map(([theme, value]) => ({
       theme,
       label: THEME_LABEL[theme] ?? theme,
       value,
-      pct: value / total,
+      pct: safeDiv(value, total),
     }))
     .sort((a, b) => b.value - a.value);
 }
@@ -62,8 +63,8 @@ export type ConcentrationRead = {
 export function concentrationRead(
   holdings: Array<{ ticker: string; currentValue: number }>
 ): ConcentrationRead {
-  const positive = holdings.filter((h) => h.currentValue > 0);
-  const total = positive.reduce((s, h) => s + h.currentValue, 0);
+  const positive = holdings.filter((h) => finiteNumber(h.currentValue) > 0);
+  const total = sumMoney(positive.map((h) => h.currentValue));
   if (total <= 0 || positive.length === 0) {
     return {
       effectivePositions: 0,
@@ -76,15 +77,15 @@ export function concentrationRead(
   }
   const sorted = [...positive].sort((a, b) => b.currentValue - a.currentValue);
   const hhi = sorted.reduce((s, h) => {
-    const w = h.currentValue / total;
+    const w = safeDiv(h.currentValue, total);
     return s + w * w;
   }, 0);
   const sumTop = (n: number) =>
-    sorted.slice(0, n).reduce((s, h) => s + h.currentValue, 0) / total;
+    safeDiv(sumMoney(sorted.slice(0, n).map((h) => h.currentValue)), total);
   return {
     effectivePositions: hhi > 0 ? 1 / hhi : 0,
     positionCount: sorted.length,
-    topWeightPct: sorted[0]!.currentValue / total,
+    topWeightPct: safeDiv(sorted[0]!.currentValue, total),
     topWeightTicker: sorted[0]!.ticker,
     topThreePct: sumTop(3),
     topFivePct: sumTop(5),
@@ -100,12 +101,13 @@ export function allocationBySector(
   // used to be summed into the denominator, which pushed one slice over
   // 100% and rendered the other as a negative bar width.
   for (const h of holdings) {
-    if (h.currentValue <= 0) continue;
+    const value = finiteNumber(h.currentValue);
+    if (value <= 0) continue;
     const base = h.ticker.split(".")[0]!.toUpperCase();
     const sector =
       TICKER_SECTORS[h.ticker] ?? TICKER_SECTORS[base] ?? "Unclassified";
-    totals.set(sector, (totals.get(sector) ?? 0) + h.currentValue);
-    sum += h.currentValue;
+    totals.set(sector, sumMoney([totals.get(sector) ?? 0, value]));
+    sum = sumMoney([sum, value]);
   }
   if (sum <= 0) return [];
   return [...totals.entries()]
@@ -113,7 +115,7 @@ export function allocationBySector(
       key: label,
       label,
       value,
-      pct: value / sum,
+      pct: safeDiv(value, sum),
     }))
     .sort((a, b) => b.value - a.value);
 }
@@ -122,20 +124,20 @@ export function allocationByTicker(
   holdings: Array<{ ticker: string; currentValue: number }>,
   topN = 8
 ): AllocationSlice[] {
-  const positive = holdings.filter((h) => h.currentValue > 0);
-  const sum = positive.reduce((s, h) => s + h.currentValue, 0);
+  const positive = holdings.filter((h) => finiteNumber(h.currentValue) > 0);
+  const sum = sumMoney(positive.map((h) => h.currentValue));
   if (sum <= 0) return [];
   const sorted = [...positive].sort((a, b) => b.currentValue - a.currentValue);
   const top = sorted.slice(0, topN);
-  const rest = sorted.slice(topN).reduce((s, h) => s + h.currentValue, 0);
+  const rest = sumMoney(sorted.slice(topN).map((h) => h.currentValue));
   const slices = top.map((h) => ({
     key: h.ticker,
     label: h.ticker,
     value: h.currentValue,
-    pct: h.currentValue / sum,
+    pct: safeDiv(h.currentValue, sum),
   }));
   if (rest > 0) {
-    slices.push({ key: "other", label: "Other", value: rest, pct: rest / sum });
+    slices.push({ key: "other", label: "Other", value: rest, pct: safeDiv(rest, sum) });
   }
   return slices;
 }

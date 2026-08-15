@@ -4,6 +4,8 @@
  * same formula so they never disagree.
  */
 
+import { finiteNumber, roundMoney, safeDiv, sumMoney } from "@/lib/money";
+
 export type FundMarkHolding = {
   ticker: string;
   shares: number;
@@ -19,11 +21,17 @@ export function liveFundTotalValue(input: {
   const open = input.holdings.filter(
     (h) => !h.status || h.status === "open"
   );
-  const holdingsValue = open.reduce(
-    (sum, h) => sum + h.shares * (input.quotes[h.ticker]?.price ?? h.cost_basis),
-    0
+  const holdingsValue = sumMoney(
+    open.map((h) => {
+      const quoted = input.quotes[h.ticker]?.price;
+      const px =
+        typeof quoted === "number" && Number.isFinite(quoted)
+          ? quoted
+          : finiteNumber(h.cost_basis);
+      return finiteNumber(h.shares) * px;
+    })
   );
-  return input.cash + holdingsValue;
+  return roundMoney(finiteNumber(input.cash) + holdingsValue);
 }
 
 /** Live NAV minus the last daily snapshot. Same math on Overview and Fund. */
@@ -32,13 +40,14 @@ export function liveFundTodayMove(input: {
   lastReportValue: number | null | undefined;
 }): { todayDollar: number; todayPct: number | null } {
   const prev = input.lastReportValue;
+  const live = finiteNumber(input.liveTotal);
   if (prev == null || !Number.isFinite(prev)) {
     return { todayDollar: 0, todayPct: null };
   }
-  const todayDollar = input.liveTotal - prev;
+  const todayDollar = roundMoney(live - prev);
   return {
     todayDollar,
-    todayPct: prev > 0 ? todayDollar / prev : null,
+    todayPct: prev > 0 ? safeDiv(todayDollar, prev) : null,
   };
 }
 

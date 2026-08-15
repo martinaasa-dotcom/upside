@@ -29,7 +29,21 @@ export function currency(
 /** `value` is a fraction (0.123 → 12.3%). Default: 1 decimal place. */
 export function percent(value: number | null | undefined, digits = 1): string {
   if (!isRenderable(value)) return "—";
-  return `${(value * 100).toFixed(digits)}%`;
+  // Multiply-then-toFixed hits the 1.005 → "1.00" trap. Round the displayed
+  // percent the same way money rounds, then format the already-clean number.
+  return `${roundMoney(value * 100, digits).toFixed(digits)}%`;
+}
+
+/** Same as percent, with an explicit + on gains so a row of P&L lines up. */
+export function signedPercent(
+  value: number | null | undefined,
+  digits = 1
+): string {
+  if (!isRenderable(value)) return "—";
+  const formatted = percent(Math.abs(value), digits);
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `-${formatted}`;
+  return formatted;
 }
 
 /** Plain number. Default: 0 decimals (shares). */

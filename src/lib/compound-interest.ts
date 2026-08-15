@@ -72,6 +72,7 @@ const CONTRIB_PER_YEAR: Record<ContributionFrequency, number> = {
 };
 
 export function toAnnualRate(ratePercent: number, period: RatePeriod): number {
+  if (!Number.isFinite(ratePercent)) return 0;
   const r = ratePercent / 100;
   switch (period) {
     case "annual":
@@ -95,10 +96,16 @@ export function effectiveAnnualRate(
   annualRate: number,
   freq: CompoundFrequency
 ): number {
-  if (annualRate <= 0) return 0;
-  if (freq === "continuous") return Math.exp(annualRate) - 1;
+  if (!Number.isFinite(annualRate) || annualRate === 0) return 0;
+  if (freq === "continuous") {
+    const e = Math.exp(annualRate);
+    return Number.isFinite(e) ? e - 1 : 0;
+  }
   const n = COMPOUND_PER_YEAR[freq];
-  return Math.pow(1 + annualRate / n, n) - 1;
+  const inner = 1 + annualRate / n;
+  if (!(inner > 0)) return 0;
+  const out = Math.pow(inner, n) - 1;
+  return Number.isFinite(out) ? out : 0;
 }
 
 /** Time to double principal at this nominal rate + compounding (no contributions). */
@@ -106,13 +113,20 @@ export function timeToDouble(
   annualRate: number,
   freq: CompoundFrequency
 ): { years: number; months: number } {
-  if (annualRate <= 0) return { years: Infinity, months: 0 };
+  if (!Number.isFinite(annualRate) || annualRate <= 0) {
+    return { years: Infinity, months: 0 };
+  }
   let yearsExact: number;
   if (freq === "continuous") {
     yearsExact = Math.log(2) / annualRate;
   } else {
     const n = COMPOUND_PER_YEAR[freq];
-    yearsExact = Math.log(2) / (n * Math.log(1 + annualRate / n));
+    const inner = 1 + annualRate / n;
+    if (!(inner > 0)) return { years: Infinity, months: 0 };
+    yearsExact = Math.log(2) / (n * Math.log(inner));
+  }
+  if (!Number.isFinite(yearsExact) || yearsExact < 0) {
+    return { years: Infinity, months: 0 };
   }
   const totalMonths = Math.round(yearsExact * 12);
   return {
@@ -145,8 +159,15 @@ function contribEachMonth(
  */
 export function calculateCompound(inputs: CompoundInputs): CompoundResult {
   const principal = Math.max(0, Number(inputs.principal) || 0);
-  const annualRate = toAnnualRate(inputs.ratePercent, inputs.ratePeriod);
-  const totalMonths = monthsInDuration(inputs.years, inputs.months);
+  const rawRate = toAnnualRate(inputs.ratePercent, inputs.ratePeriod);
+  // Cap so Math.exp / Math.pow stay finite. 2000%/yr is already a toy.
+  const annualRate = Number.isFinite(rawRate)
+    ? Math.min(20, Math.max(-0.99, rawRate))
+    : 0;
+  const totalMonths = Math.min(
+    80 * 12,
+    monthsInDuration(inputs.years, inputs.months)
+  );
   const durationYears = totalMonths / 12;
   const ear = effectiveAnnualRate(annualRate, inputs.compound);
   const double = timeToDouble(annualRate, inputs.compound);
@@ -270,7 +291,9 @@ export function calculateCompound(inputs: CompoundInputs): CompoundResult {
   const totalContributions = accruedContributions;
   const totalDeposited = principal + Math.max(0, totalContributions);
   const allTimeRoR =
-    totalDeposited > 0 ? totalInterest / totalDeposited : 0;
+    totalDeposited > 0 && Number.isFinite(totalInterest)
+      ? totalInterest / totalDeposited
+      : 0;
 
   return {
     futureValue,

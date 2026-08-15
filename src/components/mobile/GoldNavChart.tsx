@@ -2,6 +2,7 @@
 
 import { YtdAnchorModal } from "@/components/YtdAnchorModal";
 import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
+import { safeDiv } from "@/lib/money";
 import { applyYtdAnchor } from "@/lib/market/assumed-nav";
 import {
   clearYtdAnchor,
@@ -401,7 +402,7 @@ export function GoldNavChart({
   const hoverPoint = hover != null ? usable[hover] : null;
   const ytdRoi =
     hoverPoint && startNav > 0
-      ? (hoverPoint.nav - startNav) / startNav
+      ? safeDiv(hoverPoint.nav - startNav, startNav)
       : null;
   const ytdDollar =
     hoverPoint && startNav > 0 ? hoverPoint.nav - startNav : null;

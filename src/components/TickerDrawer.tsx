@@ -1,6 +1,6 @@
 "use client";
 
-import { currency, percent, cn, cashtag } from "@/lib/format";
+import { currency, percent, signedPercent, cn, cashtag } from "@/lib/format";
 import { Card, MicroLabel, Pill, Segmented } from "@/components/ui/Panel";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
@@ -155,7 +155,7 @@ export function TickerDrawer({
               </h2>
               <Pill tone="neutral">{THEME_LABELS[theme] ?? "Equities"}</Pill>
             </div>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm tabular-nums text-zinc-400">
               {spot != null ? currency(spot) : "—"}
               {todayChangePct != null && (
                 <span
@@ -164,8 +164,7 @@ export function TickerDrawer({
                     todayChangePct >= 0 ? "text-gain" : "text-loss"
                   )}
                 >
-                  ({todayChangePct >= 0 ? "+" : ""}
-                  {(todayChangePct * 100).toFixed(1)}%)
+                  ({signedPercent(todayChangePct)})
                 </span>
               )}
               {shares != null ? ` · ${shares.toLocaleString("en-US")} shares` : ""}

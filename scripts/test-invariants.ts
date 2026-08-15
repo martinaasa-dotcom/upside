@@ -11,7 +11,7 @@ import {
   buildInvestorBriefing,
 } from "../src/lib/investor-briefing";
 import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
-import { liveFundTodayMove } from "../src/lib/margus-fund-mark";
+import { liveFundTodayMove, liveFundTotalValue } from "../src/lib/margus-fund-mark";
 import { fundCopyBullets } from "../src/lib/fund-copy";
 import {
   applyYtdAnchor,
@@ -27,7 +27,7 @@ import {
   type PulseCheck,
 } from "../src/lib/thesis-pulse";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
-import { LAB_TAB_ID, PULSE_TAB_ID } from "../src/lib/overview";
+import { LAB_TAB_ID, PULSE_TAB_ID, todayDollarFor, buildOverview } from "../src/lib/overview";
 import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
 import {
   asSurpriseFraction,
@@ -61,7 +61,21 @@ import {
   snapshotSheetsForOwner,
 } from "../src/lib/book-snapshot";
 import { importCashDelta, tradeCashDelta } from "../src/lib/cash-delta";
-import { roundMoney, safeDiv, sumMoney } from "../src/lib/money";
+import {
+  cagr,
+  finiteNumber,
+  mean,
+  roundMoney,
+  safeDiv,
+  sumMoney,
+  weightedMean,
+} from "../src/lib/money";
+import { percent, signedPercent } from "../src/lib/format";
+import { priorPriceFromChange, synthesizeSparkline } from "../src/lib/market/sparkline";
+import { concentrationRead, themeBreakdown } from "../src/lib/allocation";
+import { analyzePortfolioShock } from "../src/lib/book-shock";
+import { enrichHoldings, buildSnapshot } from "../src/lib/calculations";
+import { effectiveAnnualRate, calculateCompound } from "../src/lib/compound-interest";
 import {
   allowClassAction,
   classifyHoldingWrite,
@@ -1611,6 +1625,116 @@ run("a round trip through cash leaves the balance where it started", () => {
     const back = tradeCashDelta({ sellShares: shares, sellPrice: price });
     assert.equal(out + back, 0, `${shares} @ ${price} did not net to zero`);
   }
+  assert.equal(tradeCashDelta({ buyShares: Number.NaN, buyPrice: 10 }), 0);
+});
+
+run("zero-balance books and junk inputs never emit NaN or Infinity", () => {
+  assert.equal(finiteNumber(Number.NaN), 0);
+  assert.equal(finiteNumber(Number.POSITIVE_INFINITY, 7), 7);
+  assert.equal(mean([Number.NaN, Number.POSITIVE_INFINITY]), 0);
+  assert.equal(weightedMean([{ value: 0.1, weight: 0 }]), null);
+  assert.equal(cagr(0, 200, 5), null);
+  assert.equal(cagr(100, 200, 0), null);
+  assert.ok(cagr(100, 200, 1) !== null);
+  assert.equal(cagr(100, 200, 1), 1);
+
+  const empty = todayDollarFor(0, 0.02);
+  assert.equal(empty.dollar, 0);
+  assert.ok(Number.isFinite(empty.dollar));
+  const wiped = todayDollarFor(100, -1);
+  assert.equal(wiped.dollar, 0);
+  assert.equal(wiped.pct, -1);
+  const junk = todayDollarFor(Number.NaN, Number.POSITIVE_INFINITY);
+  assert.equal(junk.dollar, 0);
+  assert.equal(junk.pct, null);
+
+  const rows = enrichHoldings(
+    [
+      {
+        id: "h1",
+        portfolio_id: "p1",
+        ticker: "AAA",
+        shares: 10,
+        buy_price: 0,
+        eoy_target: null,
+        target_call_pct: 0.14,
+        stock_target_override: null,
+        sort_order: 0,
+      },
+    ],
+    { AAA: { ticker: "AAA", price: 5, change: 0, changePercent: 0, previousClose: 5, sparkline: [], marketState: null, preMarketPrice: null, preMarketChange: null, preMarketChangePercent: null, postMarketPrice: null, postMarketChange: null, postMarketChangePercent: null } },
+    Number.NaN
+  );
+  assert.ok(rows.every((h) => Number.isFinite(h.pctOfTotal)));
+  assert.equal(rows[0]!.roiPct, 0);
+
+  const snap = buildSnapshot(
+    { id: "p1", name: "Empty", slug: "e", sort_order: 0, cash_balance: 0 },
+    [],
+    {},
+    {}
+  );
+  assert.equal(snap.totals.currentValue, 0);
+  assert.equal(snap.totals.roiPct, 0);
+  assert.equal(snap.totals.yield2wAvg, 0);
+
+  const overview = buildOverview(
+    [{ id: "p1", name: "Empty", slug: "e", sort_order: 0, cash_balance: Number.NaN }],
+    [],
+    {}
+  );
+  assert.equal(overview.totals.totalValue, 0);
+  assert.equal(overview.totals.roiPct, 0);
+  assert.equal(overview.totals.todayPct, null);
+  assert.ok(Number.isFinite(overview.totals.cash));
+
+  const fund = liveFundTotalValue({
+    cash: 100,
+    holdings: [{ ticker: "X", shares: 2, cost_basis: 10 }],
+    quotes: { X: { price: Number.NaN } },
+  });
+  assert.equal(fund, 120);
+
+  const conc = concentrationRead([]);
+  assert.equal(conc.effectivePositions, 0);
+  assert.equal(conc.topWeightPct, 0);
+  assert.deepEqual(themeBreakdown([]), []);
+
+  const shock = analyzePortfolioShock(
+    [{ ticker: "AAA", shares: 10, price: 10 }],
+    -100,
+    "broad_down15"
+  );
+  assert.ok(Number.isFinite(shock.margin.shockedLeverage));
+  assert.ok(Number.isFinite(shock.deltaPct));
+  assert.notEqual(shock.margin.shockedLeverage, Number.POSITIVE_INFINITY);
+
+  const ear = effectiveAnnualRate(-0.05, "monthly");
+  assert.ok(ear < 0);
+  assert.ok(Number.isFinite(ear));
+  const compound = calculateCompound({
+    principal: 0,
+    ratePercent: Number.NaN,
+    ratePeriod: "annual",
+    compound: "monthly",
+    years: 10,
+    months: 0,
+    contributionMode: "none",
+    depositAmount: 0,
+    depositFrequency: "monthly",
+    withdrawalAmount: 0,
+    withdrawalFrequency: "monthly",
+    increaseMode: "percent",
+    annualIncrease: 0,
+  });
+  assert.ok(Number.isFinite(compound.futureValue));
+  assert.ok(Number.isFinite(compound.allTimeRoR));
+
+  assert.equal(priorPriceFromChange(10, -100), 10);
+  assert.ok(synthesizeSparkline(10, -100).every(Number.isFinite));
+  assert.equal(percent(0.1 + 0.2), "30.0%");
+  assert.equal(signedPercent(0.123), "+12.3%");
+  assert.equal(percent(Number.POSITIVE_INFINITY), "—");
 });
 
 run("holdings writes are scoped to the portfolio they were cleared for", () => {

@@ -1,5 +1,5 @@
 import { nextStrikeFromTarget, resolveStockTarget } from "@/lib/market/resistance";
-import { roundMoney, safeDiv } from "@/lib/money";
+import { finiteNumber, mean, roundMoney, safeDiv, sumMoney } from "@/lib/money";
 import type {
   CoveredCallRow,
   EnrichedHolding,
@@ -17,7 +17,7 @@ export function enrichHoldings(
 ): EnrichedHolding[] {
   const withValues = holdings.map((h) => {
     const quote = quotes[h.ticker] ?? null;
-    const price = quote?.price ?? h.buy_price;
+    const price = Number.isFinite(quote?.price) ? quote!.price : h.buy_price;
     const buyValue = roundMoney(h.shares * h.buy_price);
     const currentValue = roundMoney(h.shares * price);
     const roiDollar = roundMoney(currentValue - buyValue);
@@ -33,8 +33,8 @@ export function enrichHoldings(
     };
   });
 
-  const equityTotal = withValues.reduce((sum, h) => sum + h.currentValue, 0);
-  const total = equityTotal + cashBalance;
+  const equityTotal = sumMoney(withValues.map((h) => h.currentValue));
+  const total = roundMoney(equityTotal + finiteNumber(cashBalance));
 
   return withValues.map((h) => ({
     ...h,
@@ -54,8 +54,8 @@ export function buildCoveredCallRows(
 ): CoveredCallRow[] {
   return holdings.map((holding) => {
     const quote = quotes[holding.ticker];
-    const spot = quote?.price ?? holding.buy_price;
-    const totalValue = holding.shares * spot;
+    const spot = finiteNumber(quote?.price ?? holding.buy_price);
+    const totalValue = roundMoney(holding.shares * spot);
     const option = optionsByTicker[holding.ticker] ?? null;
     const contracts = contractsFromShares(holding.shares);
 
@@ -78,10 +78,12 @@ export function buildCoveredCallRows(
 
     // Distance = spot → stock target (not the same as Call %)
     const targetDistance =
-      spot > 0 && stockTarget > 0 ? (stockTarget - spot) / spot : null;
+      spot > 0 && stockTarget > 0 ? safeDiv(stockTarget - spot, spot) : null;
 
     const premium =
-      option && contracts > 0 ? option.mid * 100 * contracts : null;
+      option && contracts > 0
+        ? roundMoney(option.mid * 100 * contracts)
+        : null;
 
     return {
       holding,
@@ -121,27 +123,20 @@ export function buildSnapshot(
     optionsByTicker
   );
 
-  const buyValue = roundMoney(
-    enriched.reduce((s, h) => s + h.buyValue, 0)
-  );
+  const buyValue = sumMoney(enriched.map((h) => h.buyValue));
   const currentValue = roundMoney(
-    enriched.reduce((s, h) => s + h.currentValue, 0) + portfolio.cash_balance
+    sumMoney(enriched.map((h) => h.currentValue)) +
+      finiteNumber(portfolio.cash_balance)
   );
   // Cost-weighted portfolio return: Σ(P&L) / Σ(cost) — not a simple average of row ROI%
-  const roiDollar = roundMoney(
-    enriched.reduce((s, h) => s + h.roiDollar, 0)
-  );
+  const roiDollar = sumMoney(enriched.map((h) => h.roiDollar));
   const roiPct = safeDiv(roiDollar, buyValue);
-  const premiumTotal = roundMoney(
-    coveredCallRows.reduce((s, r) => s + (r.premium ?? 0), 0)
+  const premiumTotal = sumMoney(coveredCallRows.map((r) => r.premium ?? 0));
+  const yield2wAvg = mean(
+    coveredCallRows
+      .map((r) => r.yield2w)
+      .filter((v): v is number => v !== null && Number.isFinite(v))
   );
-  const yieldVals = coveredCallRows
-    .map((r) => r.yield2w)
-    .filter((v): v is number => v !== null);
-  const yield2wAvg =
-    yieldVals.length > 0
-      ? yieldVals.reduce((a, b) => a + b, 0) / yieldVals.length
-      : 0;
 
   return {
     portfolio,

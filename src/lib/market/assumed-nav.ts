@@ -1,3 +1,5 @@
+import { finiteNumber, roundMoney, safeDiv } from "@/lib/money";
+
 /** Reconstruct a book's NAV path from current size × historical closes.
  * Assumes the viewer held the same names and share counts, and that cash
  * sat still. An educated fill-in, not a trade blotter. */
@@ -43,13 +45,15 @@ export function reconstructAssumedNav(
   const lastClose = legs.map(() => 0);
   const out: NavPoint[] = [];
   for (const date of allDates) {
-    let nav = Number.isFinite(cash) ? cash : 0;
+    let nav = finiteNumber(cash);
     legs.forEach((leg, i) => {
       const close = leg.byDate.get(date);
-      if (close != null && close > 0) lastClose[i] = close;
+      if (close != null && Number.isFinite(close) && close > 0) {
+        lastClose[i] = close;
+      }
       nav += leg.shares * (lastClose[i] ?? 0);
     });
-    out.push({ date, nav });
+    out.push({ date, nav: roundMoney(nav) });
   }
   return out;
 }
@@ -58,9 +62,9 @@ export function reconstructAssumedNav(
 export function startNavFromYtdPct(liveNav: number, ytdPct: number): number {
   const denom = 1 + ytdPct;
   if (!(liveNav > 0) || !Number.isFinite(denom) || Math.abs(denom) < 1e-6) {
-    return liveNav;
+    return finiteNumber(liveNav);
   }
-  return liveNav / denom;
+  return roundMoney(safeDiv(liveNav, denom));
 }
 
 /**
@@ -88,12 +92,12 @@ export function applyYtdAnchor(
     const n = points.length - 1;
     return points.map((p, i) => ({
       date: p.date,
-      nav: startNav + (dstSpan * i) / n,
+      nav: roundMoney(startNav + safeDiv(dstSpan * i, n)),
     }));
   }
   return points.map((p) => ({
     date: p.date,
-    nav: startNav + ((p.nav - first) / srcSpan) * dstSpan,
+    nav: roundMoney(startNav + safeDiv(p.nav - first, srcSpan) * dstSpan),
   }));
 }
 

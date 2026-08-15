@@ -50,7 +50,7 @@ export function CashAlertCard({
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/20">
           <AlertTriangle className="h-4 w-4" />
         </span>
-        <p className="text-sm text-white/90">{body}</p>
+        <p className="text-sm tabular-nums text-white/90">{body}</p>
       </div>
     </button>
   );

@@ -5,6 +5,7 @@
  * (Yahoo) couldn't price, so it's a light, optional second opinion rather
  * than a hard dependency.
  */
+import { synthesizeSparkline } from "@/lib/market/sparkline";
 import type { Quote } from "@/lib/types";
 
 type TwelveDataQuote = {
@@ -16,20 +17,6 @@ type TwelveDataQuote = {
   status?: string;
   code?: number;
 };
-
-function synthesizeSparkline(price: number, changePercent: number): number[] {
-  const points = 30;
-  const start = price / (1 + changePercent / 100);
-  const series: number[] = [];
-  for (let i = 0; i < points; i++) {
-    const t = i / (points - 1);
-    const drift = start + (price - start) * t;
-    const noise = Math.sin(i * 1.7) * price * 0.008;
-    series.push(Math.max(0.01, drift + noise));
-  }
-  series[series.length - 1] = price;
-  return series;
-}
 
 export function twelveDataConfigured(): boolean {
   const key = process.env.TWELVE_DATA_API_KEY;

@@ -1,5 +1,12 @@
 import { enrichHoldings } from "@/lib/calculations";
 import { buildDailyFunFacts } from "@/lib/fun-facts";
+import {
+  finiteNumber,
+  roundMoney,
+  safeDiv,
+  sumMoney,
+  weightedMean,
+} from "@/lib/money";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
 
 export const OVERVIEW_TAB_ID = "__overview__";
@@ -76,17 +83,24 @@ export function todayDollarFor(
   changePercent: number | null | undefined
 ): { dollar: number; pct: number | null } {
   if (
+    !Number.isFinite(currentValue) ||
     changePercent === null ||
     changePercent === undefined ||
-    Number.isNaN(changePercent)
+    !Number.isFinite(changePercent)
   ) {
-    return { dollar: 0, pct: null };
+    return {
+      dollar: 0,
+      pct: typeof changePercent === "number" && Number.isFinite(changePercent)
+        ? changePercent
+        : null,
+    };
   }
   // A -100% day would mean yesterday's close divides to zero; nothing
   // sensible to report, and the percent still stands on its own.
   if (changePercent <= -1) return { dollar: 0, pct: changePercent };
   const priorValue = currentValue / (1 + changePercent);
-  return { dollar: currentValue - priorValue, pct: changePercent };
+  if (!Number.isFinite(priorValue)) return { dollar: 0, pct: changePercent };
+  return { dollar: roundMoney(currentValue - priorValue), pct: changePercent };
 }
 
 export function buildOverview(
@@ -97,29 +111,30 @@ export function buildOverview(
   const sheets: SheetScore[] = portfolios.map((portfolio) => {
     const rows = holdings.filter((h) => h.portfolio_id === portfolio.id);
     const enriched = enrichHoldings(rows, quotes, portfolio.cash_balance);
-    const buyValue = enriched.reduce((s, h) => s + h.buyValue, 0);
-    const equityValue = enriched.reduce((s, h) => s + h.currentValue, 0);
-    const roiDollar = enriched.reduce((s, h) => s + h.roiDollar, 0);
-    let todayDollar = 0;
-    let todayWeighted = 0;
-    let todayWeight = 0;
-    for (const h of enriched) {
-      const t = todayDollarFor(h.currentValue, h.quote?.changePercent);
-      todayDollar += t.dollar;
-      if (t.pct !== null) {
-        todayWeighted += t.pct * h.currentValue;
-        todayWeight += h.currentValue;
-      }
-    }
+    const buyValue = sumMoney(enriched.map((h) => h.buyValue));
+    const equityValue = sumMoney(enriched.map((h) => h.currentValue));
+    const roiDollar = sumMoney(enriched.map((h) => h.roiDollar));
+    const cash = finiteNumber(portfolio.cash_balance);
+    const todayMoves = enriched.map((h) =>
+      todayDollarFor(h.currentValue, h.quote?.changePercent)
+    );
+    const todayDollar = sumMoney(todayMoves.map((t) => t.dollar));
+    const todayPct = weightedMean(
+      enriched.flatMap((h, i) => {
+        const pct = todayMoves[i]!.pct;
+        if (pct === null) return [];
+        return [{ value: pct, weight: h.currentValue }];
+      })
+    );
     return {
       portfolio,
       buyValue,
       equityValue,
-      totalValue: equityValue + portfolio.cash_balance,
+      totalValue: roundMoney(equityValue + cash),
       roiDollar,
-      roiPct: buyValue > 0 ? roiDollar / buyValue : 0,
+      roiPct: safeDiv(roiDollar, buyValue),
       todayDollar,
-      todayPct: todayWeight > 0 ? todayWeighted / todayWeight : null,
+      todayPct,
       holdingCount: enriched.length,
     };
   });
@@ -155,14 +170,14 @@ export function buildOverview(
       };
       existing.portfolios.add(portfolio.name);
       existing.portfolioIds.add(portfolio.id);
-      existing.shares += h.shares;
-      existing.buyValue += h.buyValue;
-      existing.currentValue += h.currentValue;
-      existing.roiDollar += h.roiDollar;
-      existing.todayDollar += todayDollarFor(
-        h.currentValue,
-        h.quote?.changePercent
-      ).dollar;
+      existing.shares += finiteNumber(h.shares);
+      existing.buyValue = roundMoney(existing.buyValue + h.buyValue);
+      existing.currentValue = roundMoney(existing.currentValue + h.currentValue);
+      existing.roiDollar = roundMoney(existing.roiDollar + h.roiDollar);
+      existing.todayDollar = roundMoney(
+        existing.todayDollar +
+          todayDollarFor(h.currentValue, h.quote?.changePercent).dollar
+      );
       if (h.quote) existing.quote = h.quote;
       byTicker.set(key, existing);
     }
@@ -178,10 +193,12 @@ export function buildOverview(
       buyValue: row.buyValue,
       currentValue: row.currentValue,
       roiDollar: row.roiDollar,
-      roiPct: row.buyValue > 0 ? row.roiDollar / row.buyValue : 0,
+      roiPct: safeDiv(row.roiDollar, row.buyValue),
       todayDollar: row.todayDollar,
       todayPct,
-      price: row.quote?.price ?? (row.shares > 0 ? row.currentValue / row.shares : 0),
+      price:
+        row.quote?.price ??
+        (row.shares > 0 ? safeDiv(row.currentValue, row.shares) : 0),
       sparkline: row.quote?.sparkline ?? [],
     };
   });
@@ -192,29 +209,26 @@ export function buildOverview(
     .sort((a, b) => (b.todayPct ?? 0) - (a.todayPct ?? 0));
   const byValue = [...tickers].sort((a, b) => b.currentValue - a.currentValue);
 
-  const buyValue = sheets.reduce((s, x) => s + x.buyValue, 0);
-  const equityValue = sheets.reduce((s, x) => s + x.equityValue, 0);
-  const cash = portfolios.reduce((s, p) => s + p.cash_balance, 0);
-  const roiDollar = sheets.reduce((s, x) => s + x.roiDollar, 0);
-  const todayDollar = sheets.reduce((s, x) => s + x.todayDollar, 0);
-  let todayWeighted = 0;
-  let todayWeight = 0;
-  for (const t of tickers) {
-    if (t.todayPct !== null) {
-      todayWeighted += t.todayPct * t.currentValue;
-      todayWeight += t.currentValue;
-    }
-  }
+  const buyValue = sumMoney(sheets.map((x) => x.buyValue));
+  const equityValue = sumMoney(sheets.map((x) => x.equityValue));
+  const cash = sumMoney(portfolios.map((p) => finiteNumber(p.cash_balance)));
+  const roiDollar = sumMoney(sheets.map((x) => x.roiDollar));
+  const todayDollar = sumMoney(sheets.map((x) => x.todayDollar));
+  const todayPct = weightedMean(
+    tickers.flatMap((t) =>
+      t.todayPct !== null ? [{ value: t.todayPct, weight: t.currentValue }] : []
+    )
+  );
 
   const totals = {
     buyValue,
     equityValue,
     cash,
-    totalValue: equityValue + cash,
+    totalValue: roundMoney(equityValue + cash),
     roiDollar,
-    roiPct: buyValue > 0 ? roiDollar / buyValue : 0,
+    roiPct: safeDiv(roiDollar, buyValue),
     todayDollar,
-    todayPct: todayWeight > 0 ? todayWeighted / todayWeight : null,
+    todayPct,
     sheetCount: portfolios.length,
     positionCount: holdings.length,
     uniqueTickers: tickers.length,

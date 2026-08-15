@@ -3,6 +3,7 @@
  * card) at https://finnhub.io/register. Only used when FINNHUB_API_KEY is
  * set and only for tickers no earlier provider in the chain could price.
  */
+import { synthesizeSparkline } from "@/lib/market/sparkline";
 import type { Quote } from "@/lib/types";
 
 type FinnhubQuote = {
@@ -11,20 +12,6 @@ type FinnhubQuote = {
   dp?: number; // percent change
   pc?: number; // previous close
 };
-
-function synthesizeSparkline(price: number, changePercent: number): number[] {
-  const points = 30;
-  const start = price / (1 + changePercent / 100);
-  const series: number[] = [];
-  for (let i = 0; i < points; i++) {
-    const t = i / (points - 1);
-    const drift = start + (price - start) * t;
-    const noise = Math.sin(i * 1.7) * price * 0.008;
-    series.push(Math.max(0.01, drift + noise));
-  }
-  series[series.length - 1] = price;
-  return series;
-}
 
 export function finnhubConfigured(): boolean {
   const key = process.env.FINNHUB_API_KEY;

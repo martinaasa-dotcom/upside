@@ -1,6 +1,7 @@
 import type { Holding, Quote } from "@/lib/types";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { forecastThemeForTicker, shapedFallbackPath } from "@/lib/forecast-conviction";
+import { cagr, finiteNumber, roundMoney, safeDiv, sumMoney } from "@/lib/money";
 
 /** EOY columns shown after Current — next 5 years from this year. */
 export const FORECAST_YEARS = [2026, 2027, 2028, 2029, 2030] as const;
@@ -81,7 +82,11 @@ export function buildForecast(
     .slice()
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((h) => {
-      const spot = quotes[h.ticker]?.price ?? h.buy_price;
+      const quoted = quotes[h.ticker]?.price;
+      const spot =
+        typeof quoted === "number" && Number.isFinite(quoted)
+          ? quoted
+          : h.buy_price;
       const eoyPrices = {} as Record<ForecastYear, number>;
       const eoyValues = {} as Record<ForecastYear, number>;
       const targetedYears = {} as Record<ForecastYear, boolean>;
@@ -95,13 +100,13 @@ export function buildForecast(
         );
         if (targeted) targetedCount += 1;
         eoyPrices[year] = price;
-        eoyValues[year] = h.shares * price;
+        eoyValues[year] = roundMoney(finiteNumber(h.shares) * price);
         targetedYears[year] = targeted;
       }
-      const currentValue = h.shares * spot;
+      const currentValue = roundMoney(finiteNumber(h.shares) * finiteNumber(spot));
       const lastYear = FORECAST_YEARS[FORECAST_YEARS.length - 1];
       const lastPrice = eoyPrices[lastYear];
-      const gainPct = spot !== 0 ? (lastPrice - spot) / spot : null;
+      const gainPct = spot !== 0 ? safeDiv(lastPrice - spot, spot) : null;
       return {
         ticker: h.ticker,
         shares: h.shares,
@@ -115,17 +120,19 @@ export function buildForecast(
       };
     });
 
-  const equityCurrent = rows.reduce((s, r) => s + r.currentValue, 0);
-  const currentTotal = equityCurrent + cashBalance;
+  const cash = finiteNumber(cashBalance);
+  const equityCurrent = sumMoney(rows.map((r) => r.currentValue));
+  const currentTotal = roundMoney(equityCurrent + cash);
   const eoyTotals = {} as Record<ForecastYear, number>;
   for (const year of FORECAST_YEARS) {
-    eoyTotals[year] =
-      rows.reduce((s, r) => s + r.eoyValues[year], 0) + cashBalance;
+    eoyTotals[year] = roundMoney(
+      sumMoney(rows.map((r) => r.eoyValues[year])) + cash
+    );
   }
   const lastYear = FORECAST_YEARS[FORECAST_YEARS.length - 1];
   const gainPct =
     currentTotal !== 0
-      ? (eoyTotals[lastYear] - currentTotal) / currentTotal
+      ? safeDiv(eoyTotals[lastYear] - currentTotal, currentTotal)
       : null;
 
   return {
@@ -184,25 +191,19 @@ export function resolveTickerForecastPath(
       targetedYears[year] = false;
     }
     eoyPrices[year] = price;
-    eoyGains[year] = spot > 0 ? (price - spot) / spot : 0;
+    eoyGains[year] = spot > 0 ? safeDiv(price - spot, spot) : 0;
   }
 
   // 3-year horizon = EOY 2028 (index 2 in FORECAST_YEARS [2026, 2027, 2028, 2029, 2030])
   const threeYearPrice = eoyPrices[2028] ?? eoyPrices[FORECAST_YEARS[2]] ?? spot;
-  const threeYearGainPct = spot > 0 ? (threeYearPrice - spot) / spot : 0;
-  const threeYearCagrPct =
-    spot > 0 && threeYearPrice > 0
-      ? (Math.pow(threeYearPrice / spot, 1 / 3) - 1) * 100
-      : 0;
+  const threeYearGainPct = spot > 0 ? safeDiv(threeYearPrice - spot, spot) : 0;
+  const threeYearCagrPct = (cagr(spot, threeYearPrice, 3) ?? 0) * 100;
 
   // 5-year terminal horizon = EOY 2030 (index 4)
   const fiveYearPrice =
     eoyPrices[2030] ?? eoyPrices[FORECAST_YEARS[FORECAST_YEARS.length - 1]] ?? spot;
-  const fiveYearGainPct = spot > 0 ? (fiveYearPrice - spot) / spot : 0;
-  const fiveYearCagrPct =
-    spot > 0 && fiveYearPrice > 0
-      ? (Math.pow(fiveYearPrice / spot, 1 / 5) - 1) * 100
-      : 0;
+  const fiveYearGainPct = spot > 0 ? safeDiv(fiveYearPrice - spot, spot) : 0;
+  const fiveYearCagrPct = (cagr(spot, fiveYearPrice, 5) ?? 0) * 100;
 
   return {
     ticker: normTicker,

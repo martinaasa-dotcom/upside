@@ -252,7 +252,7 @@ export function Metric({
         {children}
       </p>
       {hint != null && hint !== "" ? (
-        <p className="mt-0.5 truncate text-xs text-zinc-500">{hint}</p>
+        <p className="mt-0.5 truncate text-xs tabular-nums text-zinc-500">{hint}</p>
       ) : null}
     </div>
   );
@@ -329,7 +329,7 @@ export function Stat({
         {value}
       </p>
       {sub != null && (
-        <p className={cn("mt-0.5 text-xs", subClassName ?? "text-muted")}>
+        <p className={cn("mt-0.5 text-xs tabular-nums", subClassName ?? "text-muted")}>
           {sub}
         </p>
       )}

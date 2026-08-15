@@ -73,7 +73,8 @@ export const INDEX_EOY_MULTS = THEME_BASE_MULTS.index;
 export function impliedAnnualReturnForTheme(theme: ForecastTheme): number {
   const mults = THEME_BASE_MULTS[theme];
   const finalMult = mults[mults.length - 1]!;
-  return Math.pow(finalMult, 1 / FORECAST_YEARS.length) - 1;
+  const out = Math.pow(finalMult, 1 / FORECAST_YEARS.length) - 1;
+  return Number.isFinite(out) ? out : 0;
 }
 
 /** Value-weighted blend of impliedAnnualReturnForTheme across whatever a
@@ -88,17 +89,27 @@ export function blendedExpectedAnnualReturn(
     annualReturnPct: 0,
   }
 ): number {
-  const equityTotal = holdings.reduce((s, h) => s + Math.max(0, h.value), 0);
-  const total = equityTotal + Math.max(0, cash.balance);
-  if (total <= 0) return impliedAnnualReturnForTheme("other");
-
-  let sum = (Math.max(0, cash.balance) / total) * (cash.annualReturnPct / 100);
-  for (const h of holdings) {
-    if (h.value <= 0) continue;
-    const theme = forecastThemeForTicker(h.ticker);
-    sum += (h.value / total) * impliedAnnualReturnForTheme(theme);
+  const equityTotal = holdings.reduce(
+    (s, h) => s + Math.max(0, Number.isFinite(h.value) ? h.value : 0),
+    0
+  );
+  const cashBal = Number.isFinite(cash.balance) ? Math.max(0, cash.balance) : 0;
+  const total = equityTotal + cashBal;
+  if (!(total > 0) || !Number.isFinite(total)) {
+    return impliedAnnualReturnForTheme("other");
   }
-  return sum;
+
+  const cashRate = Number.isFinite(cash.annualReturnPct)
+    ? cash.annualReturnPct / 100
+    : 0;
+  let sum = (cashBal / total) * cashRate;
+  for (const h of holdings) {
+    if (!Number.isFinite(h.value) || h.value <= 0) continue;
+    const theme = forecastThemeForTicker(h.ticker);
+    const add = (h.value / total) * impliedAnnualReturnForTheme(theme);
+    if (Number.isFinite(add)) sum += add;
+  }
+  return Number.isFinite(sum) ? sum : impliedAnnualReturnForTheme("other");
 }
 
 /**

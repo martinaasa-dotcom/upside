@@ -108,7 +108,7 @@ export function WatchlistStrip({
               onClick={() => onOpenPulse?.(j.ticker)}
               className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3 py-2 text-left"
             >
-              <p className="text-sm text-zinc-200">
+              <p className="text-sm tabular-nums text-zinc-200">
                 {cashtag(j.ticker)}{" "}
                 {j.pct > 0 ? "jumped" : "dropped"} {percent(Math.abs(j.pct))}{" "}
                 today. Not in your book.

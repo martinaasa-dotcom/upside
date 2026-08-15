@@ -1,4 +1,4 @@
-import { roundMoney } from "@/lib/money";
+import { finiteNumber, roundMoney } from "@/lib/money";
 
 /** Buy spends cash. Sell adds it back. */
 export function tradeCashDelta(opts: {
@@ -7,8 +7,8 @@ export function tradeCashDelta(opts: {
   sellShares?: number;
   sellPrice?: number;
 }): number {
-  const spend = (opts.buyShares ?? 0) * (opts.buyPrice ?? 0);
-  const take = (opts.sellShares ?? 0) * (opts.sellPrice ?? 0);
+  const spend = finiteNumber(opts.buyShares) * finiteNumber(opts.buyPrice);
+  const take = finiteNumber(opts.sellShares) * finiteNumber(opts.sellPrice);
   return roundMoney(take - spend);
 }
 

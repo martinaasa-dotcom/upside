@@ -1,3 +1,4 @@
+import { finiteNumber, roundMoney, safeDiv, sumMoney } from "@/lib/money";
 import type { Quote } from "@/lib/types";
 
 export type SheetMeta = {
@@ -41,13 +42,16 @@ function portfolioValueAt(
   quotes: Record<string, Quote>,
   priceOf: (q: Quote | undefined, fallback: number) => number
 ): number {
-  const equity = holdings
-    .filter((h) => h.portfolio_id === meta.id)
-    .reduce(
-      (sum, h) => sum + h.shares * priceOf(quotes[h.ticker], h.buy_price),
-      0
-    );
-  return meta.cash_balance + equity;
+  const equity = sumMoney(
+    holdings
+      .filter((h) => h.portfolio_id === meta.id)
+      .map((h) => {
+        const quoted = priceOf(quotes[h.ticker], h.buy_price);
+        const px = Number.isFinite(quoted) ? quoted : finiteNumber(h.buy_price);
+        return finiteNumber(h.shares) * px;
+      })
+  );
+  return roundMoney(finiteNumber(meta.cash_balance) + equity);
 }
 
 export function quotesCoverDate(
@@ -81,10 +85,12 @@ export function portfolioCostValue(
   meta: SheetMeta,
   holdings: SheetHolding[]
 ): number {
-  const cost = holdings
-    .filter((h) => h.portfolio_id === meta.id)
-    .reduce((sum, h) => sum + h.shares * h.buy_price, 0);
-  return meta.cash_balance + cost;
+  const cost = sumMoney(
+    holdings
+      .filter((h) => h.portfolio_id === meta.id)
+      .map((h) => finiteNumber(h.shares) * finiteNumber(h.buy_price))
+  );
+  return roundMoney(finiteNumber(meta.cash_balance) + cost);
 }
 
 /** Mark-to-market on a past NY session, using dated daily bars when we have them. */
@@ -130,15 +136,15 @@ export function sheetReturnPathSince({
       last = 0;
       return 0;
     }
-    if (!(baselineValue > 0)) return last;
+    if (!(baselineValue > 0) || !Number.isFinite(baselineValue)) return last;
     if (label === "Live") {
-      if (liveValue == null) return last;
-      last = (liveValue - baselineValue) / baselineValue;
+      if (liveValue == null || !Number.isFinite(liveValue)) return last;
+      last = safeDiv(liveValue - baselineValue, baselineValue);
       return last;
     }
     if (!quotesCoverDate(quotes, holdings, meta.id, label)) return last;
     const v = portfolioValueOnDate(meta, holdings, quotes, label);
-    last = (v - baselineValue) / baselineValue;
+    last = safeDiv(v - baselineValue, baselineValue);
     return last;
   });
 }

@@ -54,7 +54,17 @@ export function roundMoney(n: number, digits = 2): number {
 }
 
 export function roundShares(n: number, digits = 4): number {
+  if (!Number.isFinite(n)) return 0;
+  if (Math.abs(n) > MAX_SAFE_SHARES) {
+    return n < 0 ? -MAX_SAFE_SHARES : MAX_SAFE_SHARES;
+  }
   return roundHalfAwayFromZero(n, digits);
+}
+
+/** Coerce junk (NaN, Infinity, non-numbers) to a finite fallback. */
+export function finiteNumber(n: unknown, fallback = 0): number {
+  const v = typeof n === "number" ? n : Number(n);
+  return Number.isFinite(v) ? v : fallback;
 }
 
 /** Safe ratio; returns 0 when the denominator is 0 or either side is junk. */
@@ -62,6 +72,63 @@ export function safeDiv(num: number, den: number): number {
   if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return 0;
   const out = num / den;
   return Number.isFinite(out) ? out : 0;
+}
+
+/** Simple mean of finite values. Empty / all-junk → 0. */
+export function mean(values: Iterable<number>): number {
+  let n = 0;
+  let s = 0;
+  for (const v of values) {
+    if (!Number.isFinite(v)) continue;
+    s += v;
+    n += 1;
+  }
+  return n > 0 ? s / n : 0;
+}
+
+/**
+ * Weight-weighted mean. Returns null when every weight is junk or ≤ 0 so
+ * callers can tell "no reading" from "the reading is actually zero".
+ */
+export function weightedMean(
+  items: Iterable<{ value: number; weight: number }>
+): number | null {
+  let num = 0;
+  let den = 0;
+  for (const { value, weight } of items) {
+    if (!Number.isFinite(value) || !Number.isFinite(weight) || weight <= 0) {
+      continue;
+    }
+    num += value * weight;
+    den += weight;
+  }
+  if (den <= 0) return null;
+  const out = num / den;
+  return Number.isFinite(out) ? out : null;
+}
+
+/**
+ * Compound annual growth as a fraction (0.12 = 12%/yr).
+ * Null when start/end/years aren't a real growth interval: zero start,
+ * non-positive years, or a path that would overflow.
+ */
+export function cagr(
+  start: number,
+  end: number,
+  years: number
+): number | null {
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    !Number.isFinite(years) ||
+    start <= 0 ||
+    end <= 0 ||
+    years <= 0
+  ) {
+    return null;
+  }
+  const out = Math.pow(end / start, 1 / years) - 1;
+  return Number.isFinite(out) ? out : null;
 }
 
 /**

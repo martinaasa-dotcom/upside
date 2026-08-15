@@ -1,4 +1,5 @@
 import type { WheelEvent } from "react";
+import { roundMoney } from "@/lib/money";
 
 /** Prevent mouse-wheel from changing focused number inputs while scrolling the page. */
 export function blockWheelChange(e: WheelEvent<HTMLInputElement>) {
@@ -14,7 +15,5 @@ export function parseDecimal(raw: string): number {
 /** Fixed decimal string with period separator (never locale commas). */
 export function formatDecimal(value: number, digits: number): string {
   if (!Number.isFinite(value)) return "";
-  return digits === 0
-    ? String(Math.round(value))
-    : value.toFixed(digits);
+  return roundMoney(value, digits).toFixed(digits);
 }

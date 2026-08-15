@@ -4,6 +4,7 @@ import {
   type CompoundResult,
   type PeriodRow,
 } from "@/lib/compound-interest";
+import { cagr, finiteNumber } from "@/lib/money";
 import { hashSeed, mulberry32, pick, shuffleInPlace } from "@/lib/seeded-rng";
 
 export type ShockKind = "none" | "drawdown30" | "flat2y";
@@ -45,7 +46,9 @@ export function yearsToGoal(
 
 /** Fraction of goal reached (0–1+). */
 export function goalProgress(balance: number, goal: number): number {
-  if (goal <= 0) return 0;
+  if (!(goal > 0) || !Number.isFinite(goal) || !Number.isFinite(balance)) {
+    return 0;
+  }
   return Math.max(0, balance / goal);
 }
 
@@ -240,13 +243,21 @@ function applyInflationErosion(
   result: CompoundResult,
   annualInflationPct: number
 ): CompoundResult {
-  const infl = annualInflationPct / 100;
-  const yearly = result.yearly.map((row) => ({
-    ...row,
-    balance: row.balance / Math.pow(1 + infl, row.index),
-  }));
+  const infl = finiteNumber(annualInflationPct) / 100;
+  if (!(infl > -1) || !Number.isFinite(infl)) return result;
+  const yearly = result.yearly.map((row) => {
+    const factor = Math.pow(1 + infl, row.index);
+    const balance =
+      Number.isFinite(factor) && factor > 0
+        ? row.balance / factor
+        : row.balance;
+    return { ...row, balance: Number.isFinite(balance) ? balance : 0 };
+  });
   const endFactor = Math.pow(1 + infl, Math.max(result.durationYears, 0));
-  const futureValue = result.futureValue / endFactor;
+  const futureValue =
+    Number.isFinite(endFactor) && endFactor > 0
+      ? result.futureValue / endFactor
+      : result.futureValue;
   return {
     ...result,
     futureValue,
@@ -896,8 +907,9 @@ export function buildCompoundMilestones(opts: {
     if (!prev.actualDate || !cur.actualDate || prev.goal <= 0) continue;
     const yrs = yearsBetweenKeys(prev.actualDate, cur.actualDate);
     if (yrs == null || yrs <= 0) continue;
-    cur.cagrPct =
-      Math.round((Math.pow(cur.goal / prev.goal, 1 / yrs) - 1) * 1000) / 10;
+    const growth = cagr(prev.goal, cur.goal, yrs);
+    if (growth == null) continue;
+    cur.cagrPct = Math.round(growth * 1000) / 10;
   }
 
   return rows;

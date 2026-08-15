@@ -1,4 +1,5 @@
 import { forecastThemeForTicker } from "@/lib/forecast-conviction";
+import { finiteNumber, roundMoney, safeDiv, sumMoney } from "@/lib/money";
 
 /**
  * Macro shock scenarios with per-ticker thematic and factor sensitivities.
@@ -468,9 +469,11 @@ export function shockedPrice(
   spot: number,
   shock: ShockId
 ): number {
-  if (!(spot > 0) || shock === "none") return spot;
+  if (!(spot > 0) || !Number.isFinite(spot) || shock === "none") {
+    return finiteNumber(spot);
+  }
   const pct = shockedPct(ticker, shock);
-  return spot * (1 + pct);
+  return roundMoney(spot * (1 + pct));
 }
 
 export type ShockHoldingImpact = {
@@ -540,12 +543,12 @@ export function analyzePortfolioShock(
   const rows: ShockHoldingImpact[] = holdings
     .filter((h) => h.shares > 0 && h.price > 0)
     .map((h) => {
-      const livePx = h.price;
+      const livePx = finiteNumber(h.price);
       const shockPx = shockedPrice(h.ticker, livePx, shockId);
-      const liveVal = h.shares * livePx;
-      const shockVal = h.shares * shockPx;
-      const deltaVal = shockVal - liveVal;
-      const deltaPct = liveVal > 0 ? deltaVal / liveVal : 0;
+      const liveVal = roundMoney(finiteNumber(h.shares) * livePx);
+      const shockVal = roundMoney(finiteNumber(h.shares) * shockPx);
+      const deltaVal = roundMoney(shockVal - liveVal);
+      const deltaPct = safeDiv(deltaVal, liveVal);
       const movePct = shockedPct(h.ticker, shockId);
       const profile = getShockProfile(h.ticker);
 
@@ -565,17 +568,18 @@ export function analyzePortfolioShock(
     })
     .sort((a, b) => a.deltaVal - b.deltaVal);
 
-  const liveHoldingsVal = rows.reduce((s, r) => s + r.liveVal, 0);
-  const shockedHoldingsVal = rows.reduce((s, r) => s + r.shockVal, 0);
-  const liveTotalVal = liveHoldingsVal + cash;
-  const shockedTotalVal = shockedHoldingsVal + cash;
-  const deltaVal = shockedTotalVal - liveTotalVal;
-  const deltaPct = liveTotalVal > 0 ? deltaVal / liveTotalVal : 0;
+  const liveHoldingsVal = sumMoney(rows.map((r) => r.liveVal));
+  const shockedHoldingsVal = sumMoney(rows.map((r) => r.shockVal));
+  const cashAmt = finiteNumber(cash);
+  const liveTotalVal = roundMoney(liveHoldingsVal + cashAmt);
+  const shockedTotalVal = roundMoney(shockedHoldingsVal + cashAmt);
+  const deltaVal = roundMoney(shockedTotalVal - liveTotalVal);
+  const deltaPct = safeDiv(deltaVal, liveTotalVal);
 
   // Calculate share of total dollar drop / gain
   if (Math.abs(deltaVal) > 0) {
     for (const r of rows) {
-      r.lossSharePct = r.deltaVal / deltaVal;
+      r.lossSharePct = safeDiv(r.deltaVal, deltaVal);
     }
   }
 
@@ -585,8 +589,13 @@ export function analyzePortfolioShock(
   const liveEquity = liveTotalVal;
   const shockedEquity = shockedTotalVal;
 
-  const liveLeverage = liveEquity > 0 ? liveHoldingsVal / liveEquity : 1;
-  const shockedLeverage = shockedEquity > 0 ? shockedHoldingsVal / shockedEquity : (marginDebt > 0 ? Infinity : 1);
+  const liveLeverage = liveEquity > 0 ? Math.min(99, liveHoldingsVal / liveEquity) : 1;
+  const shockedLeverage =
+    shockedEquity > 0
+      ? Math.min(99, shockedHoldingsVal / shockedEquity)
+      : marginDebt > 0
+        ? 99
+        : 1;
   const liveDebtToEquityPct = liveEquity > 0 ? (marginDebt / liveEquity) * 100 : 0;
   const shockedDebtToEquityPct = shockedEquity > 0 ? (marginDebt / shockedEquity) * 100 : (marginDebt > 0 ? 999 : 0);
 
@@ -660,7 +669,7 @@ export function analyzePortfolioShock(
       theme,
       deltaVal: data.deltaVal,
       liveVal: data.liveVal,
-      pctOfLoss: deltaVal !== 0 ? (data.deltaVal / deltaVal) * 100 : 0,
+      pctOfLoss: safeDiv(data.deltaVal, deltaVal) * 100,
     }))
     .sort((a, b) => a.deltaVal - b.deltaVal);
 

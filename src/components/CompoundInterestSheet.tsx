@@ -27,7 +27,8 @@ import {
   type ShockKind,
 } from "@/lib/compound-play";
 import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
-import { cn } from "@/lib/format";
+import { cn, percent } from "@/lib/format";
+import { safeDiv } from "@/lib/money";
 import {
   displayToUsd,
   formatEurUsdHint,
@@ -1134,7 +1135,7 @@ Optimistic (25%)
             with {show(result.futureValue)}, so growth did{" "}
             {show(result.totalInterest)} of the work
             {result.futureValue > 0
-              ? `, which is ${((result.totalInterest / result.futureValue) * 100).toFixed(0)}% of the final number`
+              ? `, which is ${percent(safeDiv(result.totalInterest, result.futureValue), 0)} of the final number`
               : ""}
             .
           </p>

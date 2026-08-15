@@ -1,5 +1,6 @@
 import type { Quote } from "@/lib/types";
 import { sessionMark } from "@/lib/market-session";
+import { synthesizeSparkline } from "@/lib/market/sparkline";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import type { EarningsPrint } from "@/lib/earnings-brief";
@@ -15,20 +16,6 @@ async function getYahoo(): Promise<YahooFinanceInstance> {
   const { default: YahooFinance } = await import("yahoo-finance2");
   yahoo = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
   return yahoo;
-}
-
-function synthesizeSparkline(price: number, changePercent: number): number[] {
-  const points = 30;
-  const start = price / (1 + changePercent / 100);
-  const series: number[] = [];
-  for (let i = 0; i < points; i++) {
-    const t = i / (points - 1);
-    const drift = start + (price - start) * t;
-    const noise = Math.sin(i * 1.7) * price * 0.008;
-    series.push(Math.max(0.01, drift + noise));
-  }
-  series[series.length - 1] = price;
-  return series;
 }
 
 function hashTicker(ticker: string): number {

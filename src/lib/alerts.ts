@@ -1,4 +1,5 @@
-import { cashtag } from "@/lib/format";
+import { cashtag, currency, percent } from "@/lib/format";
+import { safeDiv } from "@/lib/money";
 /** Client alerts: earnings, strike breach, goal, decision cards. */
 
 export type UpsideAlert = {
@@ -83,20 +84,20 @@ export function buildDecisionAlerts(input: {
       id: "decision-margin",
       kind: "info",
       title: "You're using borrowed money",
-      detail: `Cash is ${input.cash.toFixed(0)}, so part of this book is on margin. Losses get amplified the same way gains do.`,
+      detail: `Cash is ${currency(input.cash, 0)}, so part of this book is on margin. Losses get amplified the same way gains do.`,
       at: Date.now(),
     });
   }
   if (
     input.topTicker &&
     input.equityValue > 0 &&
-    input.topTicker.value / input.equityValue >= 0.35
+    safeDiv(input.topTicker.value, input.equityValue) >= 0.35
   ) {
-    const share = (input.topTicker.value / input.equityValue) * 100;
+    const share = safeDiv(input.topTicker.value, input.equityValue);
     out.push({
       id: `decision-conc-${cashtag(input.topTicker.ticker)}`,
       kind: "info",
-      title: `${cashtag(input.topTicker.ticker)} is ${share.toFixed(0)}% of your stocks`,
+      title: `${cashtag(input.topTicker.ticker)} is ${percent(share, 0)} of your stocks`,
       detail:
         "One name this big means your year mostly rides on it. Fine if you meant it. A problem if you didn't.",
       ticker: input.topTicker.ticker,

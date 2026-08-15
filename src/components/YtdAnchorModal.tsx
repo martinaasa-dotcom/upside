@@ -145,7 +145,7 @@ export function YtdAnchorModal({
         </label>
 
         {impliedPct != null && startNav != null && (
-          <p className="mt-3 text-sm text-zinc-400">
+          <p className="mt-3 text-sm tabular-nums text-zinc-400">
             That makes this year {impliedPct >= 0 ? "+" : ""}
             {percent(impliedPct)}, from {currency(startNav, 0)} to{" "}
             {currency(liveNav, 0)}.

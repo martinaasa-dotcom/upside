@@ -2,16 +2,17 @@
  * Find local highs / resistance levels from price history.
  */
 export function findLocalHighs(prices: number[], window = 2): number[] {
-  if (prices.length < window * 2 + 1) {
-    return prices.length ? [Math.max(...prices)] : [];
+  const finite = prices.filter((p) => Number.isFinite(p) && p > 0);
+  if (finite.length < window * 2 + 1) {
+    return finite.length ? [Math.max(...finite)] : [];
   }
 
   const highs: number[] = [];
-  for (let i = window; i < prices.length - window; i++) {
-    const p = prices[i];
+  for (let i = window; i < finite.length - window; i++) {
+    const p = finite[i]!;
     let isHigh = true;
     for (let j = 1; j <= window; j++) {
-      if (prices[i - j] > p || prices[i + j] > p) {
+      if (finite[i - j]! > p || finite[i + j]! > p) {
         isHigh = false;
         break;
       }
@@ -19,9 +20,9 @@ export function findLocalHighs(prices: number[], window = 2): number[] {
     if (isHigh) highs.push(p);
   }
 
-  const recent = prices.slice(-20);
+  const recent = finite.slice(-20);
   if (recent.length) highs.push(Math.max(...recent));
-  highs.push(Math.max(...prices));
+  highs.push(Math.max(...finite));
 
   return [...new Set(highs.map((h) => Math.round(h * 100) / 100))].sort(
     (a, b) => a - b
@@ -30,6 +31,7 @@ export function findLocalHighs(prices: number[], window = 2): number[] {
 
 /** Round to a typical equity option strike increment */
 export function roundToStrike(price: number): number {
+  if (!Number.isFinite(price) || price <= 0) return 0;
   if (price < 25) return Math.round(price * 2) / 2;
   if (price < 200) return Math.round(price);
   return Math.round(price / 5) * 5;

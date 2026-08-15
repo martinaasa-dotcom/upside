@@ -256,7 +256,9 @@ export function realizedVolAnnual(prices: number[]): number | null {
   for (let i = 1; i < prices.length; i++) {
     const a = prices[i - 1];
     const b = prices[i];
-    if (a > 0 && b > 0) rets.push(Math.log(b / a));
+    if (Number.isFinite(a) && Number.isFinite(b) && a > 0 && b > 0) {
+      rets.push(Math.log(b / a));
+    }
   }
   if (rets.length < 5) return null;
   const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
