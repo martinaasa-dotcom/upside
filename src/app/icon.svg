@@ -1,10 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Upside Lab">
   <defs>
-    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#F0D7A4"/>
-      <stop offset="0.45" stop-color="#D6AD69"/>
-      <stop offset="1" stop-color="#9C723F"/>
-    </linearGradient>
     <linearGradient id="f0" x1="78" y1="18" x2="28" y2="108" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#dfc59a"/>
       <stop offset="1" stop-color="#a6875d"/>
@@ -46,7 +41,7 @@
       <stop offset="1" stop-color="#764b1e"/>
     </linearGradient>
   </defs>
-  <rect x="3" y="3" width="122" height="122" rx="28" ry="28" fill="#08090C" stroke="url(#rim)" stroke-width="3.5"/>
+  <rect width="128" height="128" rx="28" ry="28" fill="#08090C"/>
   <polygon points="62.61,20.27 62.72,56.43 40.43,56.53" fill="url(#f0)"/>
   <polygon points="65.71,20.27 87.89,56.53 65.60,56.43" fill="url(#f1)"/>
   <polygon points="40.75,59.52 62.93,59.52 52.37,78.93" fill="url(#f2)"/>

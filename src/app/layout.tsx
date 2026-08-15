@@ -45,12 +45,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/upside-icon.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon.ico", sizes: "16x16 32x32" },
+      { url: "/upside-icon.svg?v=2", type: "image/svg+xml" },
+      { url: "/icons/icon-32.png?v=2", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico?v=2", sizes: "16x16 32x32" },
     ],
-    shortcut: "/upside-icon.svg",
-    apple: "/icons/icon-192.png",
+    shortcut: "/upside-icon.svg?v=2",
+    apple: "/icons/icon-192.png?v=2",
   },
   openGraph: {
     title: PRODUCT_NAME,
