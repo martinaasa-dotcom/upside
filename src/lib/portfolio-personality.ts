@@ -408,11 +408,11 @@ export const THEME_COLOR: Record<ForecastTheme, string> = {
 };
 
 export const THEME_LABEL: Record<ForecastTheme, string> = {
-  ai_infra: "AI computers",
+  ai_infra: "AI computer builders",
   ai_power: "electricity for AI",
   crypto: "crypto",
   space: "space",
-  semi: "computer chips",
+  semi: "chip makers",
   fintech: "money apps",
   software: "software",
   healthcare: "healthcare",

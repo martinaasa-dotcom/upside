@@ -5,11 +5,34 @@
  */
 
 import { themeBreakdown } from "@/lib/allocation";
+import { cashtag } from "@/lib/format";
 import {
   forecastThemeForTicker,
   type ForecastTheme,
 } from "@/lib/forecast-conviction";
 import { THEME_LABEL } from "@/lib/portfolio-personality";
+
+/** Kitchen-table names for the day-move sentence. Charts keep THEME_LABEL. */
+const THEME_PLAIN: Record<ForecastTheme, string> = {
+  ai_infra: "companies that build or rent AI computers",
+  ai_power: "power companies that feed data centers",
+  crypto: "crypto names",
+  space: "space names",
+  semi: "chip makers",
+  fintech: "money-app names",
+  software: "software names",
+  healthcare: "healthcare names",
+  drones: "defense and drone names",
+  index: "broad market funds",
+  other: "the rest of the book",
+};
+
+const AI_NEIGHBORS = new Set<ForecastTheme>([
+  "semi",
+  "ai_infra",
+  "ai_power",
+  "software",
+]);
 
 export type InsightHolding = {
   ticker: string;
@@ -112,6 +135,37 @@ function structuralRotation(
   return `Most of this sheet is ${label}. If that group has a bad year, the whole sheet feels it, not just one name.`;
 }
 
+function loudestInTheme(
+  holdings: InsightHolding[],
+  theme: ForecastTheme
+): string | null {
+  let best: InsightHolding | null = null;
+  let bestAbs = 0;
+  for (const h of holdings) {
+    if (forecastThemeForTicker(h.ticker) !== theme) continue;
+    const pct = h.todayPct;
+    if (pct == null || !Number.isFinite(pct)) continue;
+    const abs = Math.abs(pct);
+    if (abs >= bestAbs) {
+      bestAbs = abs;
+      best = h;
+    }
+  }
+  return best?.ticker ?? null;
+}
+
+function aboutPct(pct: number): string {
+  const n = Math.max(1, Math.round(Math.abs(pct) * 100));
+  if (pct > 0) return `up about ${n}%`;
+  if (pct < 0) return `down about ${n}%`;
+  return "about flat";
+}
+
+function groupLead(ticker: string | null, group: string): string {
+  if (ticker) return `${cashtag(ticker)} and the other ${group}`;
+  return group.charAt(0).toUpperCase() + group.slice(1);
+}
+
 function dayRotation(holdings: InsightHolding[]): string | null {
   const withMove = holdings.filter(
     (h) => h.value > 0 && h.todayPct != null && Number.isFinite(h.todayPct)
@@ -146,7 +200,13 @@ function dayRotation(holdings: InsightHolding[]): string | null {
   if (best.pct - worst.pct < 0.03) return null;
   if (best.pct <= 0 && worst.pct >= 0) return null;
 
-  return `Today the money is leaving ${THEME_LABEL[worst.theme]} and showing up in ${THEME_LABEL[best.theme]}. If you didn't mean to take that bet, this is the day to notice.`;
+  const down = groupLead(loudestInTheme(withMove, worst.theme), THEME_PLAIN[worst.theme]);
+  const up = groupLead(loudestInTheme(withMove, best.theme), THEME_PLAIN[best.theme]);
+  const closer =
+    AI_NEIGHBORS.has(best.theme) && AI_NEIGHBORS.has(worst.theme)
+      ? "Both sit in the AI story, but they are not the same bet."
+      : "Those are two different parts of the book. Today's prices treated them that way.";
+  return `${down} are ${aboutPct(worst.pct)} today. ${up} are ${aboutPct(best.pct)}. ${closer}`;
 }
 
 export function buildBookInsights(holdings: InsightHolding[]): BookInsights {

@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { buildBookInsights } from "../src/lib/book-insights";
 import {
   BRIEFING_KIND_LABEL,
   BRIEFING_PULSE_CTA,
@@ -1239,6 +1240,23 @@ run("community invite landing names the circle", () => {
     readFileSync(join(process.cwd(), "src/app/api/communities/join/route.ts"), "utf8"),
     /export async function GET/
   );
+});
+
+run("Worth noticing names the two groups in plain English", () => {
+  const out = buildBookInsights([
+    { ticker: "AVGO", value: 20_000, todayPct: -0.06 },
+    { ticker: "CRWV", value: 18_000, todayPct: 0.05 },
+    { ticker: "MSFT", value: 5_000, todayPct: 0.01 },
+  ]);
+  const line = out.rotation ?? "";
+  assert.match(line, /\$AVGO/);
+  assert.match(line, /chip makers/);
+  assert.match(line, /\$CRWV/);
+  assert.match(line, /AI computer/);
+  assert.match(line, /not the same bet/);
+  assert.doesNotMatch(line, /money is leaving/);
+  assert.doesNotMatch(line, /computer chips/);
+  assert.doesNotMatch(line, /If you didn't mean to take that bet/);
 });
 
 run("empty book does not lead with Fund", () => {
