@@ -771,14 +771,14 @@ export function noteReportText(r: NoteReport): string {
 }
 
 const APP = "#0d110f";
-const CARD = "#151716";
+const CARD = "#1a1f1c";
 const CREAM = "#ede8dc";
-const MUTED = "#9a9488";
+const MUTED = "#a89e8c";
 const GOLD = "#c4a36a";
-const GAIN = "#5a9a4a";
-const LOSS = "#c46a58";
-const LINE = "#1c1e1c";
-const EDGE = "#1c1e1c";
+const GAIN = "#6db85c";
+const LOSS = "#d47a6c";
+const LINE = "#242b27";
+const EDGE = "#2c342f";
 const SANS =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const BOOK_URL = "https://upsidelab.app";

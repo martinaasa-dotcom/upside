@@ -953,17 +953,19 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(css, /--paper: #ede8dc/);
   assert.match(css, /--ink: #0c0e0d/);
-  assert.match(css, /--card: #151716/);
+  assert.match(css, /--card: #1a1f1c/);
+  assert.match(css, /--raised: #242b27/);
   assert.match(css, /--app: #0d110f/);
-  assert.match(css, /--muted: #9a9488/);
+  assert.match(css, /--muted: #a89e8c/);
   assert.match(css, /--brand: #c4a36a/);
   assert.match(css, /--select: #c4a36a/);
   assert.match(css, /--mustard: #d4a24c/);
-  assert.match(css, /--gain: #5a9a4a/);
-  assert.match(css, /--loss: #c46a58/);
+  assert.match(css, /--gain: #6db85c/);
+  assert.match(css, /--loss: #d47a6c/);
   assert.match(css, /background: var\(--mustard\)/);
   assert.doesNotMatch(css, /--app: #1a2820/);
   assert.doesNotMatch(css, /--card: #2a2218/);
+  assert.doesNotMatch(css, /--card: #151716/);
   assert.doesNotMatch(css, /--brand: #8a9a86/);
   assert.doesNotMatch(css, /--brand: #c4a574/);
   assert.doesNotMatch(css, /--brand: #b8b3aa/);
@@ -974,14 +976,14 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(panel, /export function InsightText/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /rounded-xl border border-border bg-card/
+    /rounded-xl border border-border bg-raised/
   );
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Reading")),
     /bg-paper/
   );
-  assert.match(panel, /default: "border-border bg-card\/80"/);
-  assert.match(panel, /h-full rounded-xl border border-border bg-card px-4 py-3.5/);
+  assert.match(panel, /default: "border-border bg-card"/);
+  assert.match(panel, /h-full rounded-xl border border-border bg-raised px-4 py-3.5/);
   assert.match(panel, /text-xs font-medium text-muted/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),

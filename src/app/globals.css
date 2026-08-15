@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  /* Black stage. Charcoal cards. Cream type for a little warmth.
-     Brass is selected chrome only. Mustard is the main button only.
-     Do not paint the room brown. */
+  /* Black stage. Cards lift in two steps so a box is not the field.
+     Raised is the nested card. Brass is selected. Mustard is the button.
+     Gain and loss have to read on these darks. Do not paint the room brown. */
   --background: #0d110f;
   --foreground: #ede8dc;
   --paper: #ede8dc;
   --ink: #0c0e0d;
-  --muted: #9a9488;
+  --muted: #a89e8c;
   --app: #0d110f;
-  --card: #151716;
-  --hover: #1c1e1c;
-  --well: #0a0b0a;
+  --well: #080a09;
+  --card: #1a1f1c;
+  --raised: #242b27;
+  --hover: #2c342f;
   --brand: #c4a36a;
   --brand-bright: #e0c48a;
   --brand-mid: #a68654;
@@ -22,11 +23,11 @@
   --select-ink: #0c0e0d;
   --mustard: #d4a24c;
   --caution: #d4a24c;
-  --gain: #5a9a4a;
-  --loss: #c46a58;
-  --surface: #151716;
-  --panel: #151716;
-  --border: rgb(237 232 220 / 0.10);
+  --gain: #6db85c;
+  --loss: #d47a6c;
+  --surface: #1a1f1c;
+  --panel: #1a1f1c;
+  --border: rgb(237 232 220 / 0.16);
 }
 
 @theme inline {
@@ -37,6 +38,7 @@
   --color-muted: var(--muted);
   --color-app: var(--app);
   --color-card: var(--card);
+  --color-raised: var(--raised);
   --color-hover: var(--hover);
   --color-well: var(--well);
   --color-select: var(--select);

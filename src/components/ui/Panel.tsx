@@ -19,7 +19,7 @@ import { useState, type ReactNode } from "react";
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
  *   Shell      black field, charcoal card. Selected is brass. Mustard is
  *              the main button. Paper is type, never a white pill.
- *   Card       border-border on bg-card. The box has to lift off the field.
+ *   Card       border-border on bg-raised. Nested boxes lift off the panel.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips
  *   text-sm    14  chrome, inputs, buttons, nav
@@ -51,8 +51,8 @@ import { useState, type ReactNode } from "react";
  */
 
 const SHELL_TONES = {
-  default: "border-border bg-card/80",
-  plain: "border-border bg-card/80",
+  default: "border-border bg-card",
+  plain: "border-border bg-card",
   brand: "border-brand/40 bg-hover",
   warn: "border-caution/35 bg-caution/[0.08]",
   danger: "border-loss/30 bg-loss/[0.08]",
@@ -173,7 +173,7 @@ export function PanelHeader({
 }
 
 const CARD_TONES = {
-  default: "border-border bg-card",
+  default: "border-border bg-raised",
   raised: "border-border bg-hover",
   brand: "border-brand/40 bg-hover",
   good: "border-gain/25 bg-gain/[0.08]",
@@ -250,7 +250,7 @@ export function Reading({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card px-4 py-3.5 text-foreground",
+        "rounded-xl border border-border bg-raised px-4 py-3.5 text-foreground",
         className
       )}
     >
@@ -323,7 +323,7 @@ export function ScanList({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-card",
+        "overflow-hidden rounded-xl border border-border bg-raised",
         className
       )}
     >
@@ -450,7 +450,7 @@ export function Stat({
   return (
     <div
       className={cn(
-        "h-full rounded-xl border border-border bg-card px-4 py-3.5",
+        "h-full rounded-xl border border-border bg-raised px-4 py-3.5",
         className
       )}
     >
@@ -533,7 +533,7 @@ export function Segmented<T extends string>({
 }
 
 const PILL_TONES = {
-  neutral: "border-border bg-card text-foreground/80",
+  neutral: "border-border bg-raised text-foreground/80",
   brand: "border-brand/40 bg-hover text-foreground",
   good: "border-gain/30 bg-gain/10 text-gain",
   warn: "border-caution/40 bg-caution/10 text-foreground",
