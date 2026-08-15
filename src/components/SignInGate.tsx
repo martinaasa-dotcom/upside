@@ -135,7 +135,7 @@ export function SignInGate({ children }: Props) {
 
             <div className="signin-rise-2 mt-10 max-w-md space-y-4">
               {invite && (
-                <p className="text-xs font-medium text-brand-bright">
+                <p className="text-xs font-medium text-zinc-400">
                   Invite
                 </p>
               )}
@@ -151,7 +151,7 @@ export function SignInGate({ children }: Props) {
               {SIGNIN_POINTS.map((line) => (
                 <li key={line} className="flex gap-3">
                   <span
-                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-500"
                     aria-hidden
                   />
                   <span>{line}</span>
@@ -206,7 +206,7 @@ function BookStill() {
   return (
     <Panel className="signin-rise-3 hidden h-auto md:block" aria-hidden>
       <div className="flex items-center justify-between gap-3">
-        <MicroLabel className="text-brand-bright/80">
+        <MicroLabel>
           Today&apos;s briefing
         </MicroLabel>
         <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-zinc-500">
@@ -266,7 +266,7 @@ function BookStill() {
         $RKLB jumped 6.8% today. Amazon and Microsoft barely moved.
       </Reading>
 
-      <div className="mt-3 rounded-xl border border-brand/30 bg-brand/[0.07] px-3.5 py-3">
+      <div className="mt-3 rounded-xl border border-white/10 bg-card px-3.5 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">

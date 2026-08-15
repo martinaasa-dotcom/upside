@@ -205,7 +205,7 @@ export function PortfolioTabs({
               role="tablist"
               aria-label="In your book"
               className={cn(
-                "grid h-12 w-full overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35 sm:h-12",
+                "grid h-12 w-full overflow-hidden rounded-lg bg-zinc-900/80 ring-1 ring-inset ring-white/10 sm:h-12",
                 modeCols === 2 && "grid-cols-2 sm:w-[18rem]",
                 modeCols === 3 && "grid-cols-3 sm:w-[28rem]",
                 modeCols === 4 && "grid-cols-4 sm:w-[36rem]",
@@ -230,7 +230,7 @@ export function PortfolioTabs({
                       "sm:flex-row sm:gap-1.5 sm:px-2",
                       active
                         ? "bg-white text-black shadow-sm"
-                        : "text-brand-bright/80 hover:bg-brand/15 hover:text-brand-bright"
+                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />
@@ -308,7 +308,7 @@ export function PortfolioTabs({
                   {active && (
                     <span
                       aria-hidden
-                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-brand"
+                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-zinc-100"
                     />
                   )}
                 </button>

@@ -75,13 +75,13 @@ export function MobileTabBar({
               }}
               className={cn(
                 "touch-target relative flex flex-col items-center justify-center gap-0.5 text-zinc-500",
-                on && "text-brand"
+                on && "text-zinc-100"
               )}
             >
               {on && (
                 <span
                   aria-hidden
-                  className="absolute top-0 h-0.5 w-8 rounded-full bg-brand"
+                  className="absolute top-0 h-0.5 w-8 rounded-full bg-zinc-100"
                 />
               )}
               <span className="relative">

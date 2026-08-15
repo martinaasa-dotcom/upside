@@ -325,7 +325,7 @@ export function LabSheet({
                 className={cn(
                   "shrink-0 rounded-md px-2.5 py-2 text-xs font-medium transition touch-target",
                   tab === t.id
-                    ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40"
+                    ? "bg-zinc-100 text-zinc-900"
                     : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
                 )}
               >

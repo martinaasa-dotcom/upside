@@ -109,7 +109,7 @@ function thesisDisplayBullets(text: string | undefined): string[] {
 }
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
-  if (status === "watch") return <Eye className="h-4 w-4 text-brand-mid" />;
+  if (status === "watch") return <Eye className="h-4 w-4 text-zinc-400" />;
   if (status === "broken") return <XCircle className="h-4 w-4 text-rose-400" />;
   return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
 }
@@ -121,20 +121,20 @@ function ActionBadge({ action }: { action: PulseAction }) {
       : action === "sell"
         ? "bad"
         : action === "trim"
-          ? "brand"
+          ? "info"
           : action === "watch"
-            ? "brand"
+            ? "info"
             : "neutral";
   return <Pill tone={tone}>{actionLabel(action)}</Pill>;
 }
 
 function statusBorder(status: ThesisStatus, urgent: boolean, pinned: boolean) {
-  if (pinned) return "border-brand/50 bg-brand/10 ring-1 ring-brand/30";
+  if (pinned) return "border-white/20 bg-hover ring-1 ring-white/10";
   if (urgent && status !== "intact") {
     return "border-loss/40 bg-loss/[0.10]";
   }
   if (status === "intact") return "border-gain/30 bg-gain/[0.08]";
-  if (status === "watch") return "border-brand/30 bg-brand/[0.07]";
+  if (status === "watch") return "border-white/12 bg-hover";
   return "border-loss/30 bg-loss/[0.08]";
 }
 
@@ -182,7 +182,7 @@ function PulseCard({
         shown
           ? statusBorder(status, c.isBigMove || leftHold, pinned)
           : pinned
-            ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30"
+            ? "border-white/20 bg-hover ring-1 ring-white/10"
             : "border-zinc-800 bg-zinc-950/40"
       )}
     >
@@ -193,7 +193,7 @@ function PulseCard({
               {cashtag(c.ticker)}
             </span>
             {pinned && (
-              <span className="rounded bg-brand/20 px-1.5 py-0.5 text-xs font-medium text-brand-bright">
+              <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-zinc-300">
                 Your check
               </span>
             )}
@@ -203,7 +203,7 @@ function PulseCard({
               </span>
             )}
             {leftHold && (
-              <span className="rounded-lg bg-brand/20 px-1.5 py-0.5 text-xs font-medium text-brand-bright">
+              <span className="rounded-lg bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-zinc-300">
                 Was Hold
               </span>
             )}
@@ -307,7 +307,7 @@ function PulseCard({
                   <button
                     type="button"
                     onClick={onWriteThesis}
-                    className="text-xs font-medium text-brand-dark/70 hover:text-ink"
+                    className="text-xs font-medium text-zinc-500 hover:text-zinc-200"
                   >
                     {writtenThesis.length > 0 ? "Edit" : "Add yours"}
                   </button>
@@ -320,7 +320,7 @@ function PulseCard({
                 <li key={i} className="flex gap-2">
                   <span
                     aria-hidden
-                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-dark"
+                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-500"
                   />
                   <span className="leading-snug">{point}</span>
                 </li>
@@ -334,7 +334,7 @@ function PulseCard({
           </p>
         ) : null}
         {shown?.addLevel ? (
-          <p className="font-medium text-brand-bright">{shown.addLevel}</p>
+          <p className="font-medium text-zinc-200">{shown.addLevel}</p>
         ) : null}
         {shown?.verdict &&
         !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
@@ -360,7 +360,7 @@ function PulseCard({
                   href={h.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs leading-snug text-zinc-500 hover:text-brand-bright"
+                  className="text-xs leading-snug text-zinc-500 hover:text-zinc-200"
                 >
                   {h.title}
                 </a>
@@ -915,7 +915,7 @@ export function PulsePage({
         </form>
 
         {pinnedTicker && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-brand-bright">
+          <div className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
             <span>Pinned: {pinnedTicker}</span>
             <button
               type="button"
@@ -982,7 +982,7 @@ export function PulsePage({
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-2 text-xs font-medium text-brand-bright">
+          <h3 className="mb-2 text-xs font-medium text-zinc-400">
             The one you asked about
           </h3>
           <ul className="space-y-3">
@@ -1021,7 +1021,7 @@ export function PulsePage({
         <div className="space-y-6">
           {attention.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-medium text-brand-bright">
+              <h3 className="mb-2 text-xs font-medium text-zinc-400">
                 Needs a look
               </h3>
               <ul className="space-y-3">

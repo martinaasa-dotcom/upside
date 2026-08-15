@@ -112,14 +112,14 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition",
                   isSelected
-                    ? "bg-brand/25 text-brand-bright ring-1 ring-inset ring-brand/50"
+                    ? "bg-zinc-100 text-zinc-900"
                     : "border border-zinc-800/80 bg-zinc-950/40 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 shrink-0",
-                    isSelected ? "text-brand-bright" : "text-zinc-400"
+                    isSelected ? "text-zinc-900" : "text-zinc-400"
                   )}
                   aria-hidden
                 />

@@ -177,7 +177,7 @@ export function TickerDrawer({
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg bg-paper p-2.5 text-base leading-relaxed text-ink outline-none placeholder:text-brand-dark/50 focus:ring-2 focus:ring-brand/40"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-app p-2.5 text-base leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/25"
             />
             <p className="mt-1.5 text-xs text-zinc-400">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.

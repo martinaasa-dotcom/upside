@@ -334,7 +334,7 @@ export function buildCompareScenarios(
       label: "Upside path",
       tagline: `~${upsideRate.toFixed(0)}% · this book's assumed rate`,
       result: upside,
-      color: "#c5a059",
+      color: "#d4d4d8",
     },
   ];
 }

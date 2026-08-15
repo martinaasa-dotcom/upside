@@ -288,35 +288,35 @@ function ChatMarkdown({ children }: { children: string }) {
             </h4>
           ),
           p: ({ children: c }) => (
-            <p className="mb-2.5 break-words text-base leading-relaxed text-ink last:mb-0">
+            <p className="mb-2.5 break-words text-base leading-relaxed text-zinc-200 last:mb-0">
               {c}
             </p>
           ),
           ul: ({ children: c }) => (
-            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 text-base text-ink last:mb-0">
+            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 text-base text-zinc-200 last:mb-0">
               {c}
             </ul>
           ),
           ol: ({ children: c }) => (
-            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 text-base text-ink last:mb-0">
+            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 text-base text-zinc-200 last:mb-0">
               {c}
             </ol>
           ),
           li: ({ children: c }) => (
-            <li className="break-words leading-relaxed marker:text-brand-dark">{c}</li>
+            <li className="break-words leading-relaxed marker:text-zinc-500">{c}</li>
           ),
           strong: ({ children: c }) => (
-            <strong className="font-semibold text-ink">{c}</strong>
+            <strong className="font-semibold text-zinc-100">{c}</strong>
           ),
           em: ({ children: c }) => (
-            <em className="italic text-ink/80">{c}</em>
+            <em className="italic text-zinc-300">{c}</em>
           ),
           a: ({ href, children: c }) => (
             <a
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="text-brand-deep underline underline-offset-2 hover:text-brand-dark"
+              className="text-zinc-100 underline underline-offset-2 hover:text-white"
             >
               {c}
             </a>
@@ -325,19 +325,19 @@ function ChatMarkdown({ children }: { children: string }) {
             const block = Boolean(className);
             if (block) {
               return (
-                <code className="block w-full overflow-x-auto rounded-md bg-brand-dark/10 px-2 py-1.5 font-mono text-xs text-ink">
+                <code className="block w-full overflow-x-auto rounded-md bg-zinc-800 px-2 py-1.5 font-mono text-xs text-zinc-200">
                   {c}
                 </code>
               );
             }
             return (
-              <code className="rounded bg-brand-dark/10 px-1 py-0.5 font-mono text-xs text-brand-dark">
+              <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-xs text-zinc-300">
                 {c}
               </code>
             );
           },
           pre: ({ children: c }) => (
-            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-brand-dark/15 bg-brand-dark/10 p-2 last:mb-0">
+            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-white/10 bg-zinc-800 p-2 last:mb-0">
               {c}
             </pre>
           ),
@@ -349,15 +349,15 @@ function ChatMarkdown({ children }: { children: string }) {
             </div>
           ),
           thead: ({ children: c }) => (
-            <thead className="border-b border-brand-dark/20 text-xs text-brand-dark">
+            <thead className="border-b border-white/10 text-xs text-zinc-400">
               {c}
             </thead>
           ),
           tbody: ({ children: c }) => (
-            <tbody className="text-ink">{c}</tbody>
+            <tbody className="text-zinc-200">{c}</tbody>
           ),
           tr: ({ children: c }) => (
-            <tr className="border-t border-brand-dark/15 first:border-t-0">{c}</tr>
+            <tr className="border-t border-white/10 first:border-t-0">{c}</tr>
           ),
           th: ({ children: c }) => (
             <th className="whitespace-nowrap py-2 pr-3 text-left font-medium first:pl-0">
@@ -365,13 +365,13 @@ function ChatMarkdown({ children }: { children: string }) {
             </th>
           ),
           td: ({ children: c }) => (
-            <td className="break-words py-2 pr-3 align-top tabular-nums text-ink first:pl-0">
+            <td className="break-words py-2 pr-3 align-top tabular-nums text-zinc-200 first:pl-0">
               {c}
             </td>
           ),
-          hr: () => <hr className="my-3 border-brand-dark/20" />,
+          hr: () => <hr className="my-3 border-white/10" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 break-words border-l-2 border-brand-dark/40 pl-3 text-base text-brand-dark last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-white/20 pl-3 text-base text-zinc-400 last:mb-0">
               {c}
             </blockquote>
           ),
@@ -1093,13 +1093,13 @@ export function CcAdvisorChat({
                   className={
                     message.role === "user"
                       ? "ml-0 max-w-[95%] rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 sm:ml-6"
-                      : "w-full min-w-0 rounded-xl bg-paper px-4 py-3 text-base text-ink"
+                      : "w-full min-w-0 rounded-xl border border-white/10 bg-card px-4 py-3 text-base text-zinc-200"
                   }
                 >
                   <p
                     className={
                       message.role === "assistant"
-                        ? "mb-1 text-xs font-medium text-brand-dark"
+                        ? "mb-1 text-xs font-medium text-zinc-500"
                         : "mb-1 text-xs font-medium text-zinc-400"
                     }
                   >
@@ -1251,7 +1251,7 @@ export function CcAdvisorChat({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-brand-mid/50 bg-brand-bright text-[#1a1510] shadow-lg shadow-black/40 transition hover:bg-[#F0E4C8] hover:scale-[1.03] active:scale-[0.97]"
+        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-paper text-ink shadow-lg shadow-black/40 transition hover:bg-[#d8d8d4] hover:scale-[1.03] active:scale-[0.97]"
         aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
         aria-expanded={open}
         title="Assistant Margus"

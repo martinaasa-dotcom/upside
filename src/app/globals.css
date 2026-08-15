@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  /* Desk and paper. One warm family. Boxes have to lift off the field. */
-  --background: #08090c;
-  --foreground: #f3ede3;
-  --paper: #f3ede3;
+  /* Cool field. Gold lives on the A only. Chrome is stone. */
+  --background: #0b0c0e;
+  --foreground: #ecece8;
+  --paper: #ecece8;
   --ink: #14161c;
-  --muted: #b8b4ab; /* warm stone, sits with gold */
-  --app: #08090c;
-  --card: #1a1c22;
-  --hover: #22252c;
-  --brand: #c9a56a;
-  --brand-bright: #e8d4b0;
-  --brand-mid: #b8924a;
-  --brand-deep: #8b6b3c;
-  --brand-dark: #6b5330;
-  --caution: #d2a05c;
-  --gain: #6fcf97;
-  --loss: #e0727a;
-  --surface: #1a1c22;
-  --panel: #1a1c22;
-  --border: rgb(243 237 227 / 0.16);
+  --muted: #8b8e93;
+  --app: #0b0c0e;
+  --card: #16181c;
+  --hover: #1e2126;
+  --brand: #b4b7bc;
+  --brand-bright: #d8dadc;
+  --brand-mid: #8e9298;
+  --brand-deep: #6a6e74;
+  --brand-dark: #8b8e93;
+  --caution: #b8956a;
+  --gain: #6fbf94;
+  --loss: #d97a80;
+  --surface: #16181c;
+  --panel: #16181c;
+  --border: rgb(255 255 255 / 0.1);
 }
 
 @theme inline {
@@ -132,11 +132,11 @@ h4 {
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 .inline-edit:hover {
-  border-bottom-color: rgba(201, 165, 106, 0.7);
+  border-bottom-color: rgba(232, 232, 228, 0.55);
 }
 .inline-edit:focus {
   border-bottom-style: solid;
-  border-bottom-color: var(--brand);
+  border-bottom-color: rgb(232 232 228 / 0.7);
 }
 
 * {
@@ -167,12 +167,12 @@ button:disabled,
 /* One focus ring for every control. btn-primary already sets the same
  * outline, so this only fills the gaps (tabs, icon buttons, raw links). */
 :focus-visible {
-  outline: 2px solid rgb(201 165 106 / 0.5);
+  outline: 2px solid rgb(255 255 255 / 0.35);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: rgba(201, 165, 106, 0.22);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 /* Financial figures stay on the body face, with lining tabular digits. */
@@ -180,24 +180,23 @@ button:disabled,
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Brand CTA: cream fill from the board, hover into muted gold. */
+/* Primary CTA: paper on the field. Not gold. */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
   border-radius: 0.5rem;
-  background: var(--brand-bright);
+  background: var(--paper);
   color: var(--ink);
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25rem;
   padding: 0.5rem 1rem;
-  transition: background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  transition: background-color 120ms ease, transform 120ms ease;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--brand-mid);
-  box-shadow: 0 8px 28px -12px rgb(201 165 106 / 0.45);
+  background: #d8d8d4;
 }
 .btn-primary:active:not(:disabled) {
   transform: scale(0.985);
@@ -207,7 +206,7 @@ button:disabled,
 }
 .btn-primary:focus-visible,
 .btn-secondary:focus-visible {
-  outline: 2px solid rgb(201 165 106 / 0.5);
+  outline: 2px solid rgb(255 255 255 / 0.35);
   outline-offset: 2px;
 }
 
@@ -217,21 +216,20 @@ button:disabled,
   justify-content: center;
   gap: 0.375rem;
   border-radius: 0.5rem;
-  border: 1px solid rgb(201 165 106 / 0.45);
+  border: 1px solid rgb(255 255 255 / 0.16);
   background: transparent;
-  color: var(--brand-bright);
+  color: var(--foreground);
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25rem;
   padding: 0.5rem 1rem;
   transition: background-color 120ms ease, border-color 120ms ease,
-    color 120ms ease, box-shadow 120ms ease;
+    color 120ms ease;
 }
 .btn-secondary:hover:not(:disabled) {
-  background: var(--brand);
-  border-color: var(--brand);
+  background: var(--paper);
+  border-color: var(--paper);
   color: var(--ink);
-  box-shadow: 0 8px 28px -12px rgb(201 165 106 / 0.45);
 }
 .btn-secondary:disabled {
   opacity: 0.6;
@@ -262,10 +260,10 @@ button:disabled,
 @keyframes overview-pulse-soft {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(201, 165, 106, 0);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
   }
   50% {
-    box-shadow: 0 0 28px 0 rgba(201, 165, 106, 0.16);
+    box-shadow: 0 0 24px 0 rgba(255, 255, 255, 0.06);
   }
 }
 

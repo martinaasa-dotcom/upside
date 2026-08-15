@@ -921,7 +921,7 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
-run("chrome is quiet and prose sits on paper", () => {
+run("chrome is quiet and prose is type, not a billboard", () => {
   const panel = readFileSync(
     join(process.cwd(), "src/components/ui/Panel.tsx"),
     "utf8"
@@ -943,17 +943,24 @@ run("chrome is quiet and prose sits on paper", () => {
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #f3ede3/);
+  assert.match(css, /--paper: #ecece8/);
   assert.match(css, /--ink: #14161c/);
-  assert.match(css, /--card: #1a1c22/);
-  assert.match(css, /--muted: #b8b4ab/);
-  assert.match(css, /--gain: #6fcf97/);
-  assert.match(css, /--loss: #e0727a/);
+  assert.match(css, /--card: #16181c/);
+  assert.match(css, /--muted: #8b8e93/);
+  assert.match(css, /--brand: #b4b7bc/);
+  assert.match(css, /--gain: #6fbf94/);
+  assert.match(css, /--loss: #d97a80/);
+  assert.doesNotMatch(css, /--brand: #c9a56a/);
   assert.match(panel, /export function Reading/);
-  assert.match(panel, /bg-paper/);
+  assert.doesNotMatch(
+    panel.slice(panel.indexOf("export function Reading")),
+    /bg-paper/
+  );
+  assert.match(panel, /Same dark field as the rest/);
   assert.match(panel, /default: "border-border bg-card\/80"/);
   assert.match(panel, /h-full rounded-xl border border-border bg-card px-4 py-3.5/);
   assert.match(panel, /text-xs font-medium text-muted/);
+  assert.match(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),
     /uppercase tracking-wide/
@@ -963,9 +970,10 @@ run("chrome is quiet and prose sits on paper", () => {
   assert.match(header, /border-b border-white\/10/);
   assert.doesNotMatch(header, /border-brand\/25/);
   assert.match(home, /<Reading label="Worth noticing">/);
-  assert.match(home, /border-brand\/30 bg-brand\/\[0\.07\]/);
+  assert.match(home, /border-white\/10 bg-card/);
+  assert.doesNotMatch(home, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
-  assert.match(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
+  assert.doesNotMatch(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
   assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);

@@ -594,8 +594,8 @@ export function GoldNavChart({
           >
             <defs>
               <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#D6AD69" stopOpacity="0.28" />
-                <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
+                <stop offset="0" stopColor="#d4d4d8" stopOpacity="0.22" />
+                <stop offset="1" stopColor="#d4d4d8" stopOpacity="0" />
               </linearGradient>
             </defs>
             {ticks.map((t) => (
@@ -612,7 +612,7 @@ export function GoldNavChart({
             <polygon points={area} fill={`url(#${gid})`} />
             <polyline
               fill="none"
-              stroke="#D6AD69"
+              stroke="#d4d4d8"
               strokeWidth={2}
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -625,14 +625,14 @@ export function GoldNavChart({
                   x2={xAt(hover)}
                   y1={padT}
                   y2={padT + innerH}
-                  stroke="#E8C989"
+                  stroke="#ecece8"
                   strokeOpacity={0.45}
                 />
                 <circle
                   cx={xAt(hover)}
                   cy={yAt(hoverPoint.nav)}
                   r={4.5}
-                  fill="#E8C989"
+                  fill="#ecece8"
                   stroke="#08090C"
                   strokeWidth={1.5}
                 />

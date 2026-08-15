@@ -440,8 +440,8 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
         >
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#D6AD69" stopOpacity="0.28" />
-              <stop offset="1" stopColor="#D6AD69" stopOpacity="0" />
+              <stop offset="0" stopColor="#d4d4d8" stopOpacity="0.22" />
+              <stop offset="1" stopColor="#d4d4d8" stopOpacity="0" />
             </linearGradient>
           </defs>
           {ticks.map((t) => (
@@ -458,7 +458,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
           <polygon points={area} fill={`url(#${gid})`} />
           <polyline
             fill="none"
-            stroke="#D6AD69"
+            stroke="#d4d4d8"
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -470,8 +470,8 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
               cx={xAt(i)}
               cy={yAt(p.value)}
               r={2.5}
-              fill="#08090C"
-              stroke="#E8C989"
+              fill="#0b0c0e"
+              stroke="#ecece8"
               strokeWidth={1.5}
             />
           ))}
@@ -482,14 +482,14 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                 x2={xAt(hover)}
                 y1={padT}
                 y2={padT + innerH}
-                stroke="#E8C989"
+                stroke="#ecece8"
                 strokeOpacity={0.45}
               />
               <circle
                 cx={xAt(hover)}
                 cy={yAt(hoverPoint.value)}
                 r={4.5}
-                fill="#E8C989"
+                fill="#ecece8"
                 stroke="#08090C"
                 strokeWidth={1.5}
               />
@@ -938,7 +938,7 @@ export function ForecastPanel({
                 type="button"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-2.5 py-1.5 text-xs font-semibold text-brand-bright transition hover:border-brand/70 hover:bg-brand/15 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-zinc-800 px-2.5 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-white/25 hover:bg-zinc-700 disabled:opacity-40"
                 title="Work the whole forecast out again from scratch"
               >
                 {busy ? (
@@ -1025,7 +1025,7 @@ export function ForecastPanel({
                       <p
                         className={cn(
                           "text-zinc-400",
-                          isCurrentYear(y) && "text-brand-bright"
+                          isCurrentYear(y) && "text-zinc-200"
                         )}
                       >
                         <YearColHeader year={y} />
@@ -1054,7 +1054,7 @@ export function ForecastPanel({
                     <p
                       className={cn(
                         "text-zinc-400",
-                        isCurrentYear(y) && "text-brand-bright"
+                        isCurrentYear(y) && "text-zinc-200"
                       )}
                     >
                       <YearColHeader year={y} />
@@ -1089,7 +1089,7 @@ export function ForecastPanel({
                     key={y}
                     className={cn(
                       cellNum,
-                      isCurrentYear(y) && "text-brand-bright"
+                      isCurrentYear(y) && "text-zinc-200"
                     )}
                     title={isCurrentYear(y) ? "Year-end, not today's price" : undefined}
                   >
@@ -1197,7 +1197,7 @@ export function ForecastPanel({
         )}
 
         {busy && !plan && (
-          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-brand/5 px-4 py-6 text-sm text-brand-bright">
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-hover px-4 py-6 text-sm text-zinc-300">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Working through every holding on this sheet …
           </div>
@@ -1299,7 +1299,7 @@ export function ForecastPanel({
                   </p>
                   <div className="mt-4 grid gap-6 sm:grid-cols-2">
                     <div className="flex h-full flex-col">
-                      <MicroLabel className="text-brand-bright">
+                      <MicroLabel>
                         Worth adding
                       </MicroLabel>
                       <PlaybookList

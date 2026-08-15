@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-white/10 on bg-card. Gold is the mark, the primary
- *              button, and the one thing that matters today. Not every box.
+ *   Shell      border-white/10 on bg-card. Selected is white. Gold is
+ *              the A in the lockup, not chrome, sliders, or chips.
  *   Card       border-white/10 on bg-card
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips
@@ -35,8 +35,8 @@ import { useState, type ReactNode } from "react";
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    cream paper, dark ink, text-base. Thesis, Worth noticing,
- *              briefing body. Not another dark card.
+ *   Reading    type on the same dark field. A muted label, then the
+ *              sentence. Not a cream slab. Thesis is not a billboard.
  *   Body       text-sm leading-relaxed text-muted for chrome
  *   Floor      nothing below text-xs. Ever.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
@@ -52,7 +52,7 @@ import { useState, type ReactNode } from "react";
 const SHELL_TONES = {
   default: "border-border bg-card/80",
   plain: "border-border bg-card/80",
-  brand: "border-brand/35 bg-brand/[0.07]",
+  brand: "border-white/15 bg-hover",
   warn: "border-caution/35 bg-caution/[0.08]",
   danger: "border-loss/30 bg-loss/[0.08]",
 } as const;
@@ -114,7 +114,7 @@ export function PanelHeader({
   className?: string;
 }) {
   const iconTones = {
-    brand: "bg-brand/15 text-brand-bright",
+    brand: "bg-zinc-800 text-zinc-300",
     violet: "bg-violet-500/15 text-violet-300",
     emerald: "bg-emerald-500/15 text-emerald-300",
     zinc: "bg-zinc-800 text-zinc-300",
@@ -174,7 +174,7 @@ export function PanelHeader({
 const CARD_TONES = {
   default: "border-border bg-card",
   raised: "border-border bg-hover",
-  brand: "border-brand/30 bg-brand/10",
+  brand: "border-white/15 bg-hover",
   good: "border-gain/25 bg-gain/[0.08]",
   warn: "border-caution/35 bg-caution/[0.08]",
   bad: "border-loss/25 bg-loss/[0.08]",
@@ -233,8 +233,8 @@ export function MicroLabel({
 }
 
 /**
- * Long sentences a person actually reads. Cream paper on the dark field.
- * Use for Worth noticing, thesis, briefing body. Not for numbers.
+ * Long sentences a person actually reads. Same dark field as the rest
+ * of the page. A muted label, then the sentence. Not a cream slab.
  */
 export function Reading({
   label,
@@ -246,9 +246,9 @@ export function Reading({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-xl bg-paper px-4 py-3.5 text-ink", className)}>
+    <div className={cn("text-zinc-200", className)}>
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-brand-dark">{label}</div>
+        <div className="text-xs font-medium text-muted">{label}</div>
       ) : null}
       <div
         className={cn(
@@ -418,7 +418,7 @@ export function Segmented<T extends string>({
           className={cn(
             "touch-target rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
             value === o.id
-              ? "bg-brand/20 text-brand-bright"
+              ? "bg-zinc-100 text-zinc-900"
               : "text-zinc-400 hover:text-zinc-200"
           )}
         >
@@ -431,9 +431,9 @@ export function Segmented<T extends string>({
 
 const PILL_TONES = {
   neutral: "border-border bg-card text-zinc-300",
-  brand: "border-brand/40 bg-brand/15 text-brand-bright",
+  brand: "border-white/15 bg-zinc-800 text-zinc-200",
   good: "border-gain/30 bg-gain/10 text-gain",
-  warn: "border-caution/40 bg-caution/10 text-brand-bright",
+  warn: "border-caution/40 bg-caution/10 text-zinc-200",
   bad: "border-loss/40 bg-loss/15 text-loss",
   info: "border-border bg-hover text-zinc-200",
 } as const;

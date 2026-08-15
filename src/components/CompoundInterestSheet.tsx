@@ -138,7 +138,7 @@ function SegButton({
       className={cn(
         "rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
         active
-          ? "bg-brand/20 text-brand-bright ring-1 ring-inset ring-brand/40 shadow-sm"
+          ? "bg-zinc-100 text-zinc-900"
           : "text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200",
         className
       )}
@@ -166,7 +166,7 @@ function ChipButton({
       className={cn(
         "rounded-md px-2 py-1 text-xs font-medium transition tabular-nums",
         active
-          ? "bg-brand/25 text-brand-bright ring-1 ring-brand/50 font-semibold"
+          ? "bg-zinc-100 text-zinc-900 font-semibold"
           : "border border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-200",
         className
       )}
@@ -690,7 +690,7 @@ export function CompoundInterestSheet({
             <label htmlFor="compound-principal-input" className="text-sm font-semibold text-zinc-100">
               Starting from
             </label>
-            <span className="text-sm font-semibold text-brand-bright tabular-nums">
+            <span className="text-sm font-semibold text-zinc-100 tabular-nums">
               {show(draft.principal, 0)}
             </span>
           </div>
@@ -741,7 +741,7 @@ export function CompoundInterestSheet({
                 setPrincipalSource("custom");
                 patchDraft("principal", Number(e.target.value));
               }}
-              className="w-full accent-[var(--brand)] cursor-pointer"
+              className="w-full accent-zinc-400 cursor-pointer"
             />
             <div className="flex justify-between text-xs text-zinc-400">
               <span>{show(0)}</span>
@@ -761,11 +761,11 @@ export function CompoundInterestSheet({
           </div>
 
           {/* Portfolio Sync Badge / Button */}
-          <div className="flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1.5 text-xs">
-            <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
-            <span className="min-w-0 flex-1 text-xs leading-snug text-zinc-300">
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-app/40 px-2.5 py-1.5 text-xs">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+            <span className="min-w-0 flex-1 text-xs leading-snug text-zinc-400">
               Your book&apos;s own pace:{" "}
-              <strong className="whitespace-nowrap text-brand-bright tabular-nums">
+              <strong className="whitespace-nowrap text-zinc-200 tabular-nums">
                 {portfolioExpectedRatePct.toFixed(1)}% a year
               </strong>
             </span>
@@ -773,7 +773,7 @@ export function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={syncToPortfolioRate}
-                className="shrink-0 rounded bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright transition hover:bg-brand/30"
+                className="shrink-0 rounded bg-zinc-800 px-2 py-0.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-700"
               >
                 Use it
               </button>
@@ -858,7 +858,7 @@ Optimistic (25%)
               step={0.5}
               value={Math.min(50, draft.ratePercent)}
               onChange={(e) => patchDraft("ratePercent", Number(e.target.value))}
-              className="w-full accent-[var(--brand)] cursor-pointer"
+              className="w-full accent-zinc-400 cursor-pointer"
             />
             <div className="flex justify-between text-xs text-zinc-400">
               <span>0%</span>
@@ -919,7 +919,7 @@ Optimistic (25%)
               max={40}
               value={draft.years}
               onChange={(e) => patchDraft("years", Number(e.target.value))}
-              className="w-full accent-[var(--brand)] cursor-pointer"
+              className="w-full accent-zinc-400 cursor-pointer"
             />
             <div className="flex justify-between text-xs text-zinc-400">
               <span>1 year</span>
@@ -975,7 +975,7 @@ Optimistic (25%)
                 <label htmlFor="compound-deposit-input" className="text-xs font-medium text-zinc-300">
                   How much, each time
                 </label>
-                <span className="text-xs font-bold text-brand-bright tabular-nums">
+                <span className="text-xs font-semibold text-zinc-100 tabular-nums">
                   {show(draft.depositAmount, 0)} / {draft.depositFrequency === "annually" ? "yr" : "mo"}
                 </span>
               </div>
@@ -1003,7 +1003,7 @@ Optimistic (25%)
                   onChange={(e) =>
                     patchDraft("depositAmount", Number(e.target.value))
                   }
-                  className="w-full accent-[var(--brand)] cursor-pointer"
+                  className="w-full accent-zinc-400 cursor-pointer"
                 />
                 <div className="flex justify-between text-xs text-zinc-400">
                   <span>{show(0)}</span>
@@ -1178,7 +1178,7 @@ Optimistic (25%)
                 Growth overtakes you
                 <InfoTip text="The year growth starts adding more than you pay in yourself. After this, time matters more than saving harder." />
               </MicroLabel>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-brand-bright">
+              <p className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-100">
                 {tipping != null ? `Year ${tipping}` : "Not while you keep paying in"}
               </p>
             </div>
@@ -1214,7 +1214,7 @@ Optimistic (25%)
             title="When you cross each round number"
           />
           {milestoneTakeaway && (
-            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm leading-relaxed text-brand-bright">
+            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
               {milestoneTakeaway}
             </p>
           )}
@@ -1407,7 +1407,7 @@ Optimistic (25%)
             title="The same money, invested differently"
           />
           {compareTakeaway && (
-            <p className="mt-3 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-sm leading-relaxed text-brand-bright">
+            <p className="mt-3 text-sm leading-relaxed text-zinc-400">
               {compareTakeaway}
             </p>
           )}

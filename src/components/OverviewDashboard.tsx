@@ -340,7 +340,7 @@ function EmptyBook({
               className={cn(
                 "group h-full rounded-xl border p-5 text-left transition active:scale-[0.99]",
                 r.primary
-                  ? "border-brand/40 bg-brand/10 hover:border-brand/70 hover:bg-brand/15"
+                  ? "border-white/20 bg-hover hover:border-white/30 hover:bg-zinc-800"
                   : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700 hover:bg-zinc-900/70"
               )}
             >
@@ -379,7 +379,7 @@ function HomeSheetChip({
         className={cn(
           "rounded-full border px-2.5 py-1 text-xs",
           value === "all"
-            ? "border-brand/50 bg-brand/15 text-brand-bright"
+            ? "border-white/20 bg-zinc-100 text-zinc-900"
             : "border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
         )}
       >
@@ -393,7 +393,7 @@ function HomeSheetChip({
           className={cn(
             "rounded-full border px-2.5 py-1 text-xs",
             value === s.id
-              ? "border-brand/50 bg-brand/15 text-brand-bright"
+              ? "border-white/20 bg-zinc-100 text-zinc-900"
               : "border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
           )}
         >
@@ -539,9 +539,9 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl border border-brand/30 bg-brand/[0.07] px-3.5 py-3 text-left"
+              className="w-full rounded-xl border border-white/10 bg-card px-3.5 py-3 text-left"
             >
-              <MicroLabel className="text-brand-bright">
+              <MicroLabel>
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
               </MicroLabel>
               <p className="mt-1.5 text-base leading-relaxed text-zinc-200">
