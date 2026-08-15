@@ -265,7 +265,7 @@ function BookStill() {
       <Card tone="raised" className="mt-5 h-auto px-3.5 py-3">
         <MicroLabel>Worth noticing</MicroLabel>
         <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
-          The price ran. Why you own it didn&apos;t change.
+          $RKLB jumped 6.8% today. Amazon and Microsoft barely moved.
         </p>
       </Card>
 

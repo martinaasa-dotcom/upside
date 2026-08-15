@@ -1206,7 +1206,7 @@ run("sign-in reads as a product", () => {
   assert.match(gate, /ticker: "RKLB"/);
   assert.match(gate, /ticker: "AMZN"/);
   assert.match(gate, /ticker: "MSFT"/);
-  assert.match(gate, /Why you own it/);
+  assert.match(gate, /\$RKLB jumped 6\.8% today/);
   assert.match(gate, /Thesis intact/);
   assert.match(gate, /Up ≥5%/);
   assert.doesNotMatch(gate, /did most of today/);
