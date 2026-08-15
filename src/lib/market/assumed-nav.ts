@@ -54,6 +54,49 @@ export function reconstructAssumedNav(
   return out;
 }
 
+/** Year-start book value implied by a live total and a year-to-date fraction. */
+export function startNavFromYtdPct(liveNav: number, ytdPct: number): number {
+  const denom = 1 + ytdPct;
+  if (!(liveNav > 0) || !Number.isFinite(denom) || Math.abs(denom) < 1e-6) {
+    return liveNav;
+  }
+  return liveNav / denom;
+}
+
+/**
+ * Keep the assumed path's shape, but pin the year to a real start value
+ * and today's live total. Buys and sells still aren't in the line. The
+ * size of the year is.
+ */
+export function applyYtdAnchor(
+  points: NavPoint[],
+  startNav: number,
+  liveNav?: number
+): NavPoint[] {
+  if (points.length < 2 || !(startNav > 0) || !Number.isFinite(startNav)) {
+    return points;
+  }
+  const first = points[0]!.nav;
+  const last = points[points.length - 1]!.nav;
+  const end =
+    liveNav != null && Number.isFinite(liveNav) && liveNav > 0
+      ? liveNav
+      : last;
+  const srcSpan = last - first;
+  const dstSpan = end - startNav;
+  if (Math.abs(srcSpan) < 1e-6) {
+    const n = points.length - 1;
+    return points.map((p, i) => ({
+      date: p.date,
+      nav: startNav + (dstSpan * i) / n,
+    }));
+  }
+  return points.map((p) => ({
+    date: p.date,
+    nav: startNav + ((p.nav - first) / srcSpan) * dstSpan,
+  }));
+}
+
 function isoWeekKey(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1));

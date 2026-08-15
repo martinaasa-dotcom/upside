@@ -1,0 +1,166 @@
+"use client";
+
+import { currency, percent } from "@/lib/format";
+import { startNavFromYtdPct } from "@/lib/market/assumed-nav";
+import type { YtdAnchor } from "@/lib/market/ytd-anchor";
+import { blockWheelChange, parseDecimal } from "@/lib/number-input";
+import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+
+type Props = {
+  open: boolean;
+  liveNav: number;
+  initialStartNav?: number | null;
+  onClose: () => void;
+  onSave: (anchor: YtdAnchor) => void;
+};
+
+function parseStart(raw: string): number | null {
+  const n = parseDecimal(raw.replace(/\$/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function parseYtdPct(raw: string): number | null {
+  const cleaned = raw.replace(/%/g, "").trim();
+  if (!cleaned) return null;
+  const n = parseDecimal(cleaned);
+  if (!Number.isFinite(n)) return null;
+  return n / 100;
+}
+
+export function YtdAnchorModal({
+  open,
+  liveNav,
+  initialStartNav,
+  onClose,
+  onSave,
+}: Props) {
+  const [start, setStart] = useState("");
+  const [ytd, setYtd] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setStart(
+      initialStartNav != null && initialStartNav > 0
+        ? String(Math.round(initialStartNav))
+        : ""
+    );
+    setYtd("");
+  }, [open, initialStartNav]);
+
+  if (!open) return null;
+
+  const typedStart = parseStart(start);
+  const typedPct = parseYtdPct(ytd);
+  const startNav =
+    typedStart ??
+    (typedPct != null && liveNav > 0
+      ? startNavFromYtdPct(liveNav, typedPct)
+      : null);
+  const impliedPct =
+    startNav != null && liveNav > 0 ? (liveNav - startNav) / startNav : null;
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (startNav == null) return;
+    onSave({
+      v: 1,
+      source: "manual",
+      startNav,
+      ytdPct: impliedPct ?? undefined,
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        aria-label="Close"
+        onClick={onClose}
+      />
+      <form
+        onSubmit={submit}
+        className="relative w-full max-w-md rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5"
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-white">
+              Your real year
+            </h3>
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+              The chart still uses today&apos;s names for the shape. This
+              number sets how big the year actually was.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-3.5 text-zinc-400 hover:bg-zinc-800 hover:text-white sm:p-1.5"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <label className="grid gap-1 text-xs text-zinc-400">
+          Book on January 1
+          <input
+            autoFocus
+            type="text"
+            inputMode="decimal"
+            value={start}
+            onChange={(e) =>
+              setStart(
+                e.target.value.replace(/,/g, ".").replace(/[^\d.]/g, "")
+              )
+            }
+            onWheel={blockWheelChange}
+            placeholder="120000"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+          />
+        </label>
+
+        <p className="mt-3 text-xs text-zinc-500">or</p>
+
+        <label className="mt-3 grid gap-1 text-xs text-zinc-400">
+          Year-to-date your broker shows
+          <input
+            type="text"
+            inputMode="decimal"
+            value={ytd}
+            onChange={(e) =>
+              setYtd(
+                e.target.value.replace(/,/g, ".").replace(/[^\d.+%-]/g, "")
+              )
+            }
+            onWheel={blockWheelChange}
+            placeholder="+18.4"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand"
+          />
+        </label>
+
+        {impliedPct != null && startNav != null && (
+          <p className="mt-3 text-sm text-zinc-400">
+            That makes this year {impliedPct >= 0 ? "+" : ""}
+            {percent(impliedPct)}, from {currency(startNav, 0)} to{" "}
+            {currency(liveNav, 0)}.
+          </p>
+        )}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
+          >
+            Cancel
+          </button>
+          <button type="submit" disabled={startNav == null} className="btn-primary">
+            Use this number
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

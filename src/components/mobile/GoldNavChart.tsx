@@ -1,6 +1,14 @@
 "use client";
 
+import { YtdAnchorModal } from "@/components/YtdAnchorModal";
 import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
+import { applyYtdAnchor } from "@/lib/market/assumed-nav";
+import {
+  clearYtdAnchor,
+  readYtdAnchor,
+  writeYtdAnchor,
+  type YtdAnchor,
+} from "@/lib/market/ytd-anchor";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 export type NavPoint = { date: string; nav: number };
@@ -63,11 +71,11 @@ function cacheMatches(
 }
 
 function loadAssumedPref(): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") return true;
   try {
-    return localStorage.getItem(ASSUMED_PREF_KEY) === "1";
+    return localStorage.getItem(ASSUMED_PREF_KEY) !== "0";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -86,21 +94,27 @@ export function useBookNavHistory(input: {
 }): {
   points: NavPoint[];
   assumed: boolean;
+  anchored: boolean;
+  anchor: YtdAnchor | null;
   firstRealDate: string | null;
   loading: boolean;
   discardAssumed: () => void;
   restoreAssumed: () => void;
+  applyAnchor: (next: YtdAnchor) => void;
+  clearAnchor: () => void;
 } {
   const posKey = fingerprintPositions(input.positions);
   const [hist, setHist] = useState<NavPoint[]>([]);
-  const [assumed, setAssumed] = useState(false);
+  const [assumed, setAssumed] = useState(loadAssumedPref);
   const [serverAssumed, setServerAssumed] = useState(false);
   const [firstRealDate, setFirstRealDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [anchor, setAnchor] = useState<YtdAnchor | null>(null);
 
   useLayoutEffect(() => {
     const pref = loadAssumedPref();
     setAssumed(pref);
+    setAnchor(readYtdAnchor());
     const cached = readNavCache();
     if (cached && cacheMatches(cached, posKey, pref, input.cash)) {
       setHist(cached.points);
@@ -175,7 +189,7 @@ export function useBookNavHistory(input: {
   }, [assumed, posKey, input.cash]);
 
   const points = useMemo(() => {
-    const next = [...hist];
+    let next = [...hist];
     if (input.liveNav > 0) {
       const last = next[next.length - 1];
       if (!last || Math.abs(last.nav - input.liveNav) > 0.5) {
@@ -184,12 +198,17 @@ export function useBookNavHistory(input: {
         next[next.length - 1] = { ...last, nav: input.liveNav };
       }
     }
+    if (assumed && anchor && next.length >= 2) {
+      next = applyYtdAnchor(next, anchor.startNav, input.liveNav);
+    }
     return next;
-  }, [hist, input.liveNav]);
+  }, [hist, input.liveNav, assumed, anchor]);
 
   return {
     points,
     assumed: assumed && serverAssumed,
+    anchored: Boolean(assumed && anchor),
+    anchor,
     firstRealDate,
     loading,
     discardAssumed: () => {
@@ -202,6 +221,16 @@ export function useBookNavHistory(input: {
     restoreAssumed: () => {
       saveAssumedPref(true);
       setAssumed(true);
+    },
+    applyAnchor: (next) => {
+      writeYtdAnchor(next);
+      setAnchor(next);
+      saveAssumedPref(true);
+      setAssumed(true);
+    },
+    clearAnchor: () => {
+      clearYtdAnchor();
+      setAnchor(null);
     },
   };
 }
@@ -580,20 +609,34 @@ export function GoldNavChart({
 export function BookNavChart({
   points,
   assumed,
+  anchored,
+  anchor,
+  liveNav,
   loading,
   firstRealDate,
   onDiscardAssumed,
   onRestoreAssumed,
+  onApplyAnchor,
+  onClearAnchor,
   className,
 }: {
   points: NavPoint[];
   assumed: boolean;
+  anchored?: boolean;
+  anchor?: YtdAnchor | null;
+  liveNav?: number;
   loading?: boolean;
   firstRealDate?: string | null;
   onDiscardAssumed?: () => void;
   onRestoreAssumed?: () => void;
+  onApplyAnchor?: (next: YtdAnchor) => void;
+  onClearAnchor?: () => void;
   className?: string;
 }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [readError, setReadError] = useState<string | null>(null);
   const usable = points.filter((p) => Number.isFinite(p.nav));
   const hasChart = usable.length >= 2;
   const recorded =
@@ -607,6 +650,43 @@ export function BookNavChart({
       });
     })();
 
+  async function onPickFile(file: File | undefined) {
+    if (!file || !onApplyAnchor) return;
+    setReading(true);
+    setReadError(null);
+    try {
+      const body = new FormData();
+      body.set("image", file);
+      if (liveNav != null) body.set("liveNav", String(liveNav));
+      const res = await fetch("/api/book/ytd-from-image", {
+        method: "POST",
+        body,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        startNav?: number;
+        ytdPct?: number | null;
+        error?: string;
+      };
+      if (!res.ok || !(data.startNav != null && data.startNav > 0)) {
+        setReadError(
+          data.error || "Couldn't read a year-to-date from that. Type the number instead."
+        );
+        return;
+      }
+      onApplyAnchor({
+        v: 1,
+        source: "screenshot",
+        startNav: data.startNav,
+        ytdPct: data.ytdPct ?? undefined,
+      });
+    } catch {
+      setReadError("Couldn't read that screenshot. Type the number instead.");
+    } finally {
+      setReading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   return (
     <div className={className}>
       {loading && !hasChart ? (
@@ -617,22 +697,80 @@ export function BookNavChart({
         <GoldNavChart points={points} />
       )}
       {assumed && hasChart && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          <p className="text-xs text-zinc-400">
-            Drawn as if you held the same names all year. Not your actual
-            buys and sells.
-          </p>
-          {onDiscardAssumed && (
-            <button
-              type="button"
-              onClick={onDiscardAssumed}
-              className="shrink-0 text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
-            >
-              {recorded
-                ? `Start from ${recorded}`
-                : "Drop assumed path"}
-            </button>
+        <div className="mt-3 space-y-2">
+          {anchored ? (
+            <p className="text-xs text-zinc-400">
+              Using the year you gave us. The shape still follows these names.
+            </p>
+          ) : (
+            <p className="text-xs text-zinc-400">
+              This line assumes you held these names, this size, all year.
+              Close enough for a look. For the real year, upload a screenshot
+              of your broker&apos;s year-to-date, or type the number.
+            </p>
           )}
+          {readError && <p className="text-xs text-rose-400">{readError}</p>}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            {onApplyAnchor && !anchored && (
+              <>
+                <button
+                  type="button"
+                  disabled={reading}
+                  onClick={() => fileRef.current?.click()}
+                  className="text-xs font-medium text-brand-bright underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  {reading ? "Reading screenshot…" : "Upload screenshot"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReadError(null);
+                    setManualOpen(true);
+                  }}
+                  className="text-xs font-medium text-zinc-300 underline-offset-2 hover:text-white hover:underline"
+                >
+                  Type the number
+                </button>
+              </>
+            )}
+            {anchored && onApplyAnchor && (
+              <button
+                type="button"
+                onClick={() => {
+                  setReadError(null);
+                  setManualOpen(true);
+                }}
+                className="text-xs font-medium text-zinc-300 underline-offset-2 hover:text-white hover:underline"
+              >
+                Change the number
+              </button>
+            )}
+            {anchored && onClearAnchor && (
+              <button
+                type="button"
+                onClick={onClearAnchor}
+                className="text-xs font-medium text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
+              >
+                Back to assumed names
+              </button>
+            )}
+            {onDiscardAssumed && (
+              <button
+                type="button"
+                onClick={onDiscardAssumed}
+                className="text-xs font-medium text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
+              >
+                {recorded ? `Start from ${recorded}` : "Only recorded nights"}
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => void onPickFile(e.target.files?.[0])}
+          />
         </div>
       )}
       {!assumed && !loading && onRestoreAssumed && (
@@ -645,6 +783,18 @@ export function BookNavChart({
             Fill in an assumed year
           </button>
         </div>
+      )}
+      {onApplyAnchor && (
+        <YtdAnchorModal
+          open={manualOpen}
+          liveNav={liveNav ?? 0}
+          initialStartNav={anchor?.startNav}
+          onClose={() => setManualOpen(false)}
+          onSave={(next) => {
+            onApplyAnchor(next);
+            setManualOpen(false);
+          }}
+        />
       )}
     </div>
   );

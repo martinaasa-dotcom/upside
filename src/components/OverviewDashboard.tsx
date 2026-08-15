@@ -26,6 +26,7 @@ import {
   cashtag,
 } from "@/lib/format";
 import { parseHoldingsPaste, type CsvHoldingRow } from "@/lib/csv-import";
+import type { YtdAnchor } from "@/lib/market/ytd-anchor";
 import { buildMorningRead } from "@/lib/morning-read";
 import type { HomeSheetId } from "@/lib/home-sheet";
 import type { UpsideAlert } from "@/lib/alerts";
@@ -90,10 +91,15 @@ function MobileHomeHero({
   alerts,
   points,
   assumed,
+  anchored,
+  anchor,
+  liveNav,
   loading,
   firstRealDate,
   onDiscardAssumed,
   onRestoreAssumed,
+  onApplyAnchor,
+  onClearAnchor,
   onOpenCash,
   onOpenAlerts,
   morning,
@@ -107,10 +113,15 @@ function MobileHomeHero({
   alerts: UpsideAlert[];
   points: NavPoint[];
   assumed: boolean;
+  anchored: boolean;
+  anchor: YtdAnchor | null;
+  liveNav: number;
   loading: boolean;
   firstRealDate: string | null;
   onDiscardAssumed: () => void;
   onRestoreAssumed: () => void;
+  onApplyAnchor: (next: YtdAnchor) => void;
+  onClearAnchor: () => void;
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
   morning: ReturnType<typeof buildMorningRead>;
@@ -164,10 +175,15 @@ function MobileHomeHero({
         <BookNavChart
           points={points}
           assumed={assumed}
+          anchored={anchored}
+          anchor={anchor}
+          liveNav={liveNav}
           loading={loading}
           firstRealDate={firstRealDate}
           onDiscardAssumed={onDiscardAssumed}
           onRestoreAssumed={onRestoreAssumed}
+          onApplyAnchor={onApplyAnchor}
+          onClearAnchor={onClearAnchor}
         />
       </div>
       <CashAlertCard
@@ -739,10 +755,15 @@ export function OverviewDashboard({
         alerts={activeAlerts}
         points={nav.points}
         assumed={nav.assumed}
+        anchored={nav.anchored}
+        anchor={nav.anchor}
+        liveNav={totals.totalValue}
         loading={nav.loading}
         firstRealDate={nav.firstRealDate}
         onDiscardAssumed={nav.discardAssumed}
         onRestoreAssumed={nav.restoreAssumed}
+        onApplyAnchor={nav.applyAnchor}
+        onClearAnchor={nav.clearAnchor}
         onOpenCash={onOpenCash}
         onOpenAlerts={onOpenAlerts}
         morning={morning}
@@ -844,10 +865,15 @@ export function OverviewDashboard({
           <BookNavChart
             points={nav.points}
             assumed={nav.assumed}
+            anchored={nav.anchored}
+            anchor={nav.anchor}
+            liveNav={totals.totalValue}
             loading={nav.loading}
             firstRealDate={nav.firstRealDate}
             onDiscardAssumed={nav.discardAssumed}
             onRestoreAssumed={nav.restoreAssumed}
+            onApplyAnchor={nav.applyAnchor}
+            onClearAnchor={nav.clearAnchor}
             className="mt-6"
           />
         </div>
