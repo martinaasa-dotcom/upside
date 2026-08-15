@@ -467,7 +467,7 @@ export function UpsidePortfolioPage() {
     const callId = ++loadCallIdRef.current;
     // A cached paint means the first fetch is really a background refresh:
     // never swap a populated page back to a loading line.
-    else if (mode === "initial" && !cachedRef.current) setLoading(true);
+    if (mode === "initial" && !cachedRef.current) setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/upside-portfolio", {
