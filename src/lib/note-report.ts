@@ -333,11 +333,6 @@ export function noteReportText(r: NoteReport): string {
     if (r.thesis.ownerThesis) lines.push(r.thesis.ownerThesis);
     if (r.thesis.status) lines.push(`Last Pulse: ${r.thesis.status}.`);
     if (r.thesis.pulseLine) lines.push(r.thesis.pulseLine);
-    if (!r.thesis.ownerThesis && !r.thesis.pulseLine) {
-      lines.push(
-        `No thesis on file for ${cashtag(r.thesis.ticker)} yet. One sentence in the app is enough.`
-      );
-    }
   }
   lines.push("", r.closer, "", "Account turns this off.");
   return lines.join("\n");
@@ -476,11 +471,6 @@ export function noteReportHtml(r: NoteReport): string {
     if (r.thesis.pulseLine) {
       bits.push(
         `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
-      );
-    }
-    if (!r.thesis.ownerThesis && !r.thesis.pulseLine) {
-      bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">No thesis on file for ${escapeHtml(cashtag(r.thesis.ticker))} yet. One sentence in the app is enough.</p>`
       );
     }
     const heading = r.thesis.ownerThesis ? "Thesis" : "Focus";
