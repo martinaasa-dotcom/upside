@@ -1,4 +1,4 @@
-import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
+import { resolveYahooEarnings } from "@/lib/market/earnings-dates";
 import { sectorForTicker, type PulseHeadline } from "@/lib/thesis-pulse";
 import { unstable_cache } from "next/cache";
 
@@ -25,18 +25,9 @@ export type TickerPulseContext = {
   lastSurprisePct: number | null;
   lastEpsActual: number | null;
   lastEpsEstimate: number | null;
+  nextIsEstimate?: boolean;
   news: PulseHeadline[];
 };
-
-function toDateKey(d: Date): string {
-  return dateKeyInTz(d);
-}
-
-function daysSince(date: Date): number {
-  const today = new Date();
-  const ms = today.getTime() - date.getTime();
-  return Math.floor(ms / (24 * 60 * 60 * 1000));
-}
 
 async function fetchTickerNewsUncached(
   ticker: string,
@@ -76,6 +67,7 @@ async function fetchTickerPulseContextUncached(
     lastSurprisePct: null,
     lastEpsActual: null,
     lastEpsEstimate: null,
+    nextIsEstimate: false,
     news: [],
   };
 
@@ -84,7 +76,7 @@ async function fetchTickerPulseContextUncached(
       try {
         const yf = await getYahoo();
         return await yf.quoteSummary(ticker, {
-          modules: ["earningsHistory", "calendarEvents"],
+          modules: ["earningsHistory", "calendarEvents", "earnings"],
         });
       } catch (err) {
         console.error(`Pulse context failed for ${ticker}`, err);
@@ -101,47 +93,24 @@ async function fetchTickerPulseContextUncached(
   try {
     const summary = summaryResult;
 
-    const history = summary.earningsHistory?.history ?? [];
-    const latest = history[0];
-    if (latest?.period) {
-      const d = new Date(latest.period);
-      if (!Number.isNaN(d.getTime())) {
-        base.lastEarningsDate = toDateKey(d);
-        base.daysSinceLastEarnings = daysSince(d);
-      }
-      if (typeof latest.surprisePercent === "number") {
-        base.lastSurprisePct = latest.surprisePercent;
-      }
-      const epsActual =
-        typeof latest.epsActual === "number"
-          ? latest.epsActual
-          : typeof latest.epsActual === "object" &&
-              latest.epsActual &&
-              "raw" in latest.epsActual
-            ? (latest.epsActual as { raw?: number }).raw
-            : null;
-      const epsEstimate =
-        typeof latest.epsEstimate === "number"
-          ? latest.epsEstimate
-          : typeof latest.epsEstimate === "object" &&
-              latest.epsEstimate &&
-              "raw" in latest.epsEstimate
-            ? (latest.epsEstimate as { raw?: number }).raw
-            : null;
-      if (typeof epsActual === "number") base.lastEpsActual = epsActual;
-      if (typeof epsEstimate === "number") base.lastEpsEstimate = epsEstimate;
-    }
-
-    const nextRaw =
-      summary.calendarEvents?.earnings?.earningsDate?.[0] ??
-      summary.calendarEvents?.earnings?.earningsDate?.[1];
-    if (nextRaw) {
-      const d = nextRaw instanceof Date ? nextRaw : new Date(nextRaw);
-      if (!Number.isNaN(d.getTime())) {
-        base.nextEarningsDate = toDateKey(d);
-        base.daysUntilNextEarnings = daysUntilInTz(d);
-      }
-    }
+    const calendar = summary.calendarEvents?.earnings;
+    const resolved = resolveYahooEarnings({
+      history: summary.earningsHistory?.history ?? [],
+      earningsDates: [
+        ...(calendar?.earningsDate ?? []),
+        ...(summary.earnings?.earningsChart?.earningsDate ?? []),
+      ],
+      earningsCallDates: calendar?.earningsCallDate ?? [],
+      nextIsEstimate: calendar?.isEarningsDateEstimate,
+    });
+    base.lastEarningsDate = resolved.lastKey;
+    base.daysSinceLastEarnings = resolved.daysSinceLast;
+    base.nextEarningsDate = resolved.nextKey;
+    base.daysUntilNextEarnings = resolved.daysUntilNext;
+    base.nextIsEstimate = resolved.nextIsEstimate;
+    base.lastSurprisePct = resolved.lastSurprisePct;
+    base.lastEpsActual = resolved.lastEpsActual;
+    base.lastEpsEstimate = resolved.lastEpsEstimate;
   } catch (err) {
     console.error(`Pulse earnings parse failed for ${ticker}`, err);
   }
@@ -151,7 +120,7 @@ async function fetchTickerPulseContextUncached(
 
 const fetchTickerPulseContextCached = unstable_cache(
   async (ticker: string) => fetchTickerPulseContextUncached(ticker),
-  ["pulse-ticker-context-v1"],
+  ["pulse-ticker-context-v2"],
   { revalidate: 60 * 60 }
 );
 

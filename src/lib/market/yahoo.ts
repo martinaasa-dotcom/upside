@@ -2,6 +2,7 @@ import type { Quote } from "@/lib/types";
 import { sessionMark } from "@/lib/market-session";
 import { synthesizeSparkline } from "@/lib/market/sparkline";
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { resolveYahooEarnings } from "@/lib/market/earnings-dates";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import type { EarningsPrint } from "@/lib/earnings-brief";
 
@@ -550,18 +551,19 @@ export async function fetchNextEarningsDate(
   try {
     const yf = await getYahoo();
     const summary = await yf.quoteSummary(ticker, {
-      modules: ["earnings", "calendarEvents"],
+      modules: ["earnings", "calendarEvents", "earningsHistory"],
     });
-
-    const fromEarnings = summary.earnings?.earningsChart?.earningsDate?.[0];
-    const fromCalendar =
-      summary.calendarEvents?.earnings?.earningsDate?.[0] ??
-      summary.calendarEvents?.earnings?.earningsDate?.[1];
-
-    const raw = fromEarnings ?? fromCalendar;
-    if (!raw) return null;
-    const d = raw instanceof Date ? raw : new Date(raw);
-    return Number.isNaN(d.getTime()) ? null : d;
+    const calendar = summary.calendarEvents?.earnings;
+    const resolved = resolveYahooEarnings({
+      history: summary.earningsHistory?.history ?? [],
+      earningsDates: [
+        ...(calendar?.earningsDate ?? []),
+        ...(summary.earnings?.earningsChart?.earningsDate ?? []),
+      ],
+      earningsCallDates: calendar?.earningsCallDate ?? [],
+      nextIsEstimate: calendar?.isEarningsDateEstimate,
+    });
+    return resolved.nextDate;
   } catch (err) {
     console.error(`Earnings lookup failed for ${ticker}`, err);
     return null;

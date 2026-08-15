@@ -1,6 +1,10 @@
 import { STRATEGY } from "@/lib/calculations";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { insightsPromptBlock } from "@/lib/book-insights";
+import {
+  formatEarningsCalendarBlock,
+  type EarningsCalendarRow,
+} from "@/lib/market/earnings-dates";
 import { resolveImportTicker } from "@/lib/ticker";
 import { tool } from "ai";
 import { z } from "zod";
@@ -78,6 +82,8 @@ export type CcChatContext = {
   watchlist?: string[];
   /** Paper class sheet. Margus is the lab assistant, not a stock picker. */
   classroom?: boolean;
+  /** Live Yahoo calendar for the book + watchlist. Do not invent dates. */
+  earnings?: EarningsCalendarRow[];
 };
 
 type AdvisorFx = { eurUsd: number | null; gbpUsd: number | null };
@@ -819,6 +825,7 @@ None of this is personalized investment advice — you're reasoning about the nu
 
 Market session: ${ctx.marketState ?? "unknown"}
 Watchlist (not owned, discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}
+${formatEarningsCalendarBlock(ctx.earnings ?? [])}
 ${insightsPromptBlock(
   ctx.holdings.map((h) => ({
     ticker: h.ticker,

@@ -12,6 +12,7 @@ import {
   pickStreamingProvider,
   rememberStreamingProvider,
 } from "@/lib/ai/model";
+import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
@@ -142,6 +143,31 @@ export async function POST(req: Request) {
 
     const vision = messagesHaveImages(messages);
     const adviseOnly = Boolean(ccContext.adviseOnly);
+    const calendarTickers = [
+      ...ccContext.holdings.map((h) => h.ticker),
+      ...(ccContext.watchlist ?? []),
+    ]
+      .map((t) => t.trim().toUpperCase())
+      .filter(Boolean)
+      .slice(0, 16);
+    if (calendarTickers.length > 0) {
+      try {
+        const contexts = await fetchPulseContexts(calendarTickers);
+        ccContext.earnings = calendarTickers.map((ticker) => {
+          const ctx = contexts[ticker];
+          return {
+            ticker,
+            lastDate: ctx?.lastEarningsDate ?? null,
+            daysSinceLast: ctx?.daysSinceLastEarnings ?? null,
+            nextDate: ctx?.nextEarningsDate ?? null,
+            daysUntilNext: ctx?.daysUntilNextEarnings ?? null,
+            nextIsEstimate: ctx?.nextIsEstimate,
+          };
+        });
+      } catch (err) {
+        console.error("[chat] earnings calendar failed", err);
+      }
+    }
     const tools = adviseOnly
       ? undefined
       : buildCcAdvisorTools(

@@ -74,6 +74,11 @@ import {
   mergeTickerSuggestions,
 } from "../src/lib/market/ticker-search";
 import { watchLook } from "../src/lib/watch-look";
+import {
+  formatEarningsCalendarBlock,
+  resolveYahooEarnings,
+} from "../src/lib/market/earnings-dates";
+import { buildCcSystemPrompt, type CcChatContext } from "../src/lib/ai/cc-advisor";
 import { buildTrendStory } from "../src/lib/market/trend-story";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
@@ -1348,6 +1353,73 @@ run("popular ticker snapshot is 30 names, one month at a time", () => {
     "AAPL",
   ]);
   assert.match(currentPopularMonth(new Date("2026-08-15T12:00:00Z")), /^2026-08$/);
+});
+
+run("earnings dates use the call when it already happened", () => {
+  const now = new Date("2026-08-15T12:00:00Z");
+  const crwv = resolveYahooEarnings(
+    {
+      history: [{ period: "-1q", quarter: "2026-03-31T00:00:00.000Z" }],
+      earningsDates: ["2026-11-11T12:00:00.000Z"],
+      earningsCallDates: ["2026-08-11T12:00:00.000Z"],
+      nextIsEstimate: true,
+    },
+    now
+  );
+  assert.equal(crwv.lastKey, "2026-08-11");
+  assert.equal(crwv.nextKey, "2026-11-11");
+  assert.equal(crwv.nextIsEstimate, true);
+  const nvda = resolveYahooEarnings(
+    {
+      history: [{ period: "-1q", quarter: "2026-04-30T00:00:00.000Z" }],
+      earningsDates: ["2026-08-26T12:00:00.000Z"],
+      earningsCallDates: ["2026-08-26T12:00:00.000Z"],
+      nextIsEstimate: false,
+    },
+    now
+  );
+  assert.equal(nvda.nextKey, "2026-08-26");
+  assert.ok((nvda.daysUntilNext ?? 0) > 7);
+  const block = formatEarningsCalendarBlock([
+    {
+      ticker: "CRWV",
+      lastDate: "2026-08-11",
+      daysSinceLast: 4,
+      nextDate: "2026-11-11",
+      daysUntilNext: 88,
+      nextIsEstimate: true,
+    },
+  ]);
+  assert.match(block, /Do not invent/);
+  assert.match(block, /\$CRWV/);
+  assert.match(block, /2026-08-11/);
+  const prompt = buildCcSystemPrompt({
+    portfolioName: "Test",
+    cashBalance: 0,
+    holdings: [],
+    rows: [],
+    totals: {
+      cost: 0,
+      value: 0,
+      roiPct: 0,
+      roiDollar: 0,
+      yield2wAvg: 0,
+      premiumTotal: 0,
+    },
+    otherPortfolios: [],
+    earnings: [
+      {
+        ticker: "NVDA",
+        lastDate: null,
+        daysSinceLast: null,
+        nextDate: "2026-08-26",
+        daysUntilNext: 11,
+      },
+    ],
+  } as CcChatContext);
+  assert.match(prompt, /Do not invent/);
+  assert.match(prompt, /\$NVDA/);
+  assert.match(prompt, /2026-08-26/);
 });
 
 run("watchlist look is a range read, not a made-up target", () => {
