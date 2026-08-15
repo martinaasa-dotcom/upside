@@ -226,11 +226,11 @@ export function PortfolioTabs({
                       onChange(id);
                     }}
                     className={cn(
-                      "touch-target flex min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
+                      "flex h-full w-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
                       "sm:flex-row sm:gap-1.5 sm:px-2",
                       active
-                        ? "bg-select text-select-ink shadow-sm"
-                        : "text-muted hover:bg-hover hover:text-foreground"
+                        ? "bg-select text-select-ink"
+                        : "text-muted hover:text-brand-bright"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />

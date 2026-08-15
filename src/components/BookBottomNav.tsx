@@ -57,7 +57,7 @@ export function BookBottomNav({ className }: { className?: string }) {
               key={href}
               href={href}
               title={title}
-              className="touch-target flex min-w-0 items-center justify-center gap-1.5 px-2 text-sm font-medium text-muted transition hover:bg-hover hover:text-foreground"
+              className="flex h-full w-full min-h-0 min-w-0 items-center justify-center gap-1.5 px-2 text-sm font-medium text-muted transition hover:text-brand-bright"
             >
               <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
               <span className="whitespace-nowrap">{label}</span>

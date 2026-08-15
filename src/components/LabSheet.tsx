@@ -296,7 +296,7 @@ export function LabSheet({
                       "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
                       tab === t.id
                         ? "bg-select text-select-ink"
-                        : "text-muted hover:bg-hover hover:text-foreground"
+                        : "text-muted hover:text-brand-bright"
                     )}
                   >
                     {t.label}
