@@ -73,6 +73,14 @@ import {
 } from "../src/lib/sheet-mark";
 import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
 import {
+  EMPTY_BOOK_NUDGE_AFTER_DAYS,
+  emptyBookNudgeSubject,
+  emptyBookNudgeText,
+  hasLiveHoldings,
+  isEmptyBookNudgeDue,
+  shouldSkipEmptyBookNudge,
+} from "../src/lib/empty-book-nudge";
+import {
   FALLBACK_POPULAR_TICKERS,
   POPULAR_TICKER_COUNT,
   currentPopularMonth,
@@ -2727,6 +2735,83 @@ run("Lab market reads are shared per ticker, not fetched per visitor", () => {
     "Trends should mount when that tab is open, not on every Lab visit"
   );
   assert.ok(/tab === "seasonality"/.test(lab));
+});
+
+run("empty books skip holdings emails and get one week-later nudge", () => {
+  assert.equal(EMPTY_BOOK_NUDGE_AFTER_DAYS, 7);
+  assert.equal(hasLiveHoldings([]), false);
+  assert.equal(hasLiveHoldings([{ ticker: "RKLB", shares: 0 }]), false);
+  assert.equal(hasLiveHoldings([{ ticker: "RKLB", shares: 10 }]), true);
+  assert.equal(
+    shouldSkipEmptyBookNudge({
+      hasClassroomSheet: true,
+      hasLiveHoldings: false,
+    }),
+    true
+  );
+  assert.equal(
+    shouldSkipEmptyBookNudge({
+      hasClassroomSheet: false,
+      hasLiveHoldings: true,
+    }),
+    true
+  );
+  assert.equal(
+    shouldSkipEmptyBookNudge({
+      hasClassroomSheet: false,
+      hasLiveHoldings: false,
+    }),
+    false
+  );
+  const now = new Date("2026-08-15T12:00:00Z");
+  assert.equal(
+    isEmptyBookNudgeDue({
+      createdAt: "2026-08-14T12:00:00Z",
+      sentAt: null,
+      now,
+    }),
+    false
+  );
+  assert.equal(
+    isEmptyBookNudgeDue({
+      createdAt: "2026-08-08T12:00:00Z",
+      sentAt: null,
+      now,
+    }),
+    true
+  );
+  assert.equal(
+    isEmptyBookNudgeDue({
+      createdAt: "2026-08-01T12:00:00Z",
+      sentAt: "2026-08-08T12:00:00Z",
+      now,
+    }),
+    false
+  );
+
+  const text = emptyBookNudgeText("Martin Aasa");
+  assert.equal(emptyBookNudgeSubject(), "Your book is still empty");
+  assert.match(text, /Hi Martin\./);
+  assert.match(text, /Import the names you already own/);
+  assert.match(text, /upsidelab\.app/);
+  assert.match(text, /one-time note/);
+  assert.doesNotMatch(text, /\u2014/);
+  assert.doesNotMatch(text, /spam/i);
+  assert.doesNotMatch(text, /sleeve|dry powder|conviction|drawdown/i);
+
+  const cron = readFileSync(
+    join(process.cwd(), "src/lib/note-cron.ts"),
+    "utf8"
+  );
+  const vercel = readFileSync(join(process.cwd(), "vercel.json"), "utf8");
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/cron/empty-book-nudge/route.ts"),
+    "utf8"
+  );
+  assert.match(cron, /hasLiveHoldings\(holdings\)/);
+  assert.match(vercel, /\/api\/cron\/empty-book-nudge/);
+  assert.match(vercel, /0 14 \* \* \*/);
+  assert.match(route, /dispatchEmptyBookNudges/);
 });
 
 if (failed > 0) {

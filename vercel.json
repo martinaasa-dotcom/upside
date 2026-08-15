@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/popular-tickers",
       "schedule": "0 7 1 * *"
+    },
+    {
+      "path": "/api/cron/empty-book-nudge",
+      "schedule": "0 14 * * *"
     }
   ]
 }

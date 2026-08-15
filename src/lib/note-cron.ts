@@ -1,4 +1,5 @@
 import { realBookPortfolios } from "@/lib/classroom";
+import { hasLiveHoldings } from "@/lib/empty-book-nudge";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchMarketEvents, fetchWeekReturns } from "@/lib/market/yahoo";
 import {
@@ -120,6 +121,10 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
       shares: Number(h.shares ?? 0),
       buy_price: Number(h.buy_price ?? 0),
     }));
+    if (!hasLiveHoldings(holdings)) {
+      skipped += 1;
+      continue;
+    }
     const tickers = [...new Set(holdings.map((h) => h.ticker))].filter(Boolean);
     const quotes =
       tickers.length > 0

@@ -778,6 +778,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          empty_book_nudge_sent_at: string | null
           experience_tier: string | null
           id: string
           knows_options: boolean | null
@@ -792,6 +793,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          empty_book_nudge_sent_at?: string | null
           experience_tier?: string | null
           id: string
           knows_options?: boolean | null
@@ -806,6 +808,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          empty_book_nudge_sent_at?: string | null
           experience_tier?: string | null
           id?: string
           knows_options?: boolean | null

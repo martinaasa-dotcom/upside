@@ -18,7 +18,9 @@ function noteHtml(text: string): string {
   const last = blocks[blocks.length - 1];
   const body = blocks
     .map((block, i) => {
-      const muted = block === last && /Turn these notes off/i.test(block);
+      const muted =
+        block === last &&
+        (/Turn these notes off/i.test(block) || /one-time note/i.test(block));
       const style = muted
         ? "margin:20px 0 0 0;font-size:12px;line-height:1.4;color:#6b7280"
         : i === 0
