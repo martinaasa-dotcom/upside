@@ -349,26 +349,6 @@ function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   return `Prices ${mins}m old`;
 }
 
-function FundStat({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div>
-      <p className="text-xs uppercase tracking-wide text-zinc-400">
-        {label}
-      </p>
-      <p className="mt-0.5 text-sm font-semibold text-zinc-100">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-zinc-400">{hint}</p>}
-    </div>
-  );
-}
-
 function CopyBlock({
   label,
   items,
@@ -1227,28 +1207,29 @@ export function UpsidePortfolioPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 grid gap-2 border-t border-zinc-800/60 pt-4 sm:grid-cols-4">
-                    <FundStat
+                  <div className="mt-4 grid gap-3 border-t border-zinc-800/60 pt-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Stat
                       label="Spread"
                       value={fundPersonality.diversificationBand.label}
-                      hint={`Behaves like ${fundConcentration.effectivePositions.toFixed(1)} names`}
+                      sub={`Behaves like ${fundConcentration.effectivePositions.toFixed(1)} names`}
                     />
-                    <FundStat
+                    <Stat
                       label="Biggest bet"
                       value={`${(fundConcentration.topWeightPct * 100).toFixed(0)}%`}
-                      hint={fundConcentration.topWeightTicker ?? ""}
+                      sub={fundConcentration.topWeightTicker ?? undefined}
                     />
-                    <FundStat
+                    <Stat
                       label="Risk"
                       value={fundPersonality.riskBand.label}
-                      hint={`Could fall ${fundPersonality.maxDrawdownPct}% in a bad stretch`}
+                      sub={`Could fall ${fundPersonality.maxDrawdownPct}% in a bad stretch`}
                     />
-                    <FundStat
+                    <Stat
                       label="Cash"
                       value={`${totalValue > 0 ? Math.round((cash / totalValue) * 100) : 0}%`}
-                      hint={
-                        fund?.cash_purpose?.trim() ||
-                        `of ${currency(fund?.starting_capital ?? 0, 0)} start`
+                      sub={
+                        fund?.starting_capital
+                          ? `of ${currency(fund.starting_capital, 0)} start`
+                          : undefined
                       }
                     />
                   </div>
