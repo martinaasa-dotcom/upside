@@ -2,7 +2,7 @@
 
 import { Resend } from "resend";
 
-const DEFAULT_FROM = "Upside Lab <onboarding@resend.dev>";
+const DEFAULT_FROM = "Upside Lab <notes@upsidelab.app>";
 
 export function noteEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
