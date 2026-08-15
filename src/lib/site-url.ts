@@ -25,6 +25,7 @@ export function siteUrl(): string {
 
 const LEGACY_HOSTS = new Set([
   "upside-upthink-solutions.vercel.app",
+  "upside-git-main-upthink-solutions.vercel.app",
   "upside-upthink1.vercel.app",
   "upside-git-main-upthink1.vercel.app",
   "portfolio.vercel.app",
