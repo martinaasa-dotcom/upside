@@ -69,6 +69,10 @@ import {
   currentPopularMonth,
   sanitizePopularTickers,
 } from "../src/lib/popular-tickers";
+import {
+  localTickerSuggestions,
+  mergeTickerSuggestions,
+} from "../src/lib/market/ticker-search";
 import { buildTrendStory } from "../src/lib/market/trend-story";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
@@ -1343,6 +1347,30 @@ run("popular ticker snapshot is 30 names, one month at a time", () => {
     "AAPL",
   ]);
   assert.match(currentPopularMonth(new Date("2026-08-15T12:00:00Z")), /^2026-08$/);
+});
+
+run("watchlist typeahead matches names as you type", () => {
+  const local = localTickerSuggestions(
+    "GOO",
+    ["GOOGL", "GOOG", "MSFT"],
+    new Set()
+  );
+  assert.deepEqual(
+    local.map((r) => r.symbol),
+    ["GOOGL", "GOOG"]
+  );
+  const merged = mergeTickerSuggestions(
+    local,
+    [{ symbol: "GOOGL", name: "Alphabet Inc." }],
+    new Set(["MSFT"])
+  );
+  assert.equal(merged[0]?.symbol, "GOOGL");
+  assert.equal(merged[0]?.name, "Alphabet Inc.");
+  const strip = readFileSync(
+    join(process.cwd(), "src/components/WatchlistStrip.tsx"),
+    "utf8"
+  );
+  assert.match(strip, /\/api\/market\/search/);
 });
 
 run("onboarding lets you pick this month's popular names", () => {
