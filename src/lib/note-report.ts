@@ -770,15 +770,15 @@ export function noteReportText(r: NoteReport): string {
   return lines.join("\n");
 }
 
-const APP = "#08090c";
-const CARD = "#111318";
-const CREAM = "#f4f1ea";
-const MUTED = "#9aa3ad";
-const GOLD = "#d6ad69";
-const GAIN = "#10b981";
-const LOSS = "#f43f5e";
-const LINE = "#1c1f27";
-const EDGE = "#2a261e";
+const APP = "#0d110f";
+const CARD = "#1b221c";
+const CREAM = "#ede8dc";
+const MUTED = "#9a9488";
+const GOLD = "#b4c2ae";
+const GAIN = "#6bb07a";
+const LOSS = "#d07a6e";
+const LINE = "#26302a";
+const EDGE = "#2a332c";
 const SANS =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const BOOK_URL = "https://upsidelab.app";
@@ -825,7 +825,7 @@ function weightBar(weight: number): string {
 function openBookButton(): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:32px 0 0 0">
   <tr>
-    <td bgcolor="${GOLD}" style="border-radius:10px">
+    <td bgcolor="${CREAM}" style="border-radius:10px">
       <a href="${BOOK_URL}" style="display:inline-block;padding:12px 18px;font-family:${SANS};font-size:14px;font-weight:600;color:${APP};text-decoration:none">Open the book</a>
     </td>
   </tr>

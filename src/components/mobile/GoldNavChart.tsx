@@ -633,7 +633,7 @@ export function GoldNavChart({
                   cy={yAt(hoverPoint.nav)}
                   r={4.5}
                   fill="#ecece8"
-                  stroke="#08090C"
+                  stroke="#0d110f"
                   strokeWidth={1.5}
                 />
               </g>

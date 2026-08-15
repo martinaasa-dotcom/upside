@@ -921,7 +921,7 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
-run("chrome is quiet, pewter not bronze, prose sits in a dark box", () => {
+run("chrome is quiet, forest desk, prose sits in a dark box", () => {
   const panel = readFileSync(
     join(process.cwd(), "src/components/ui/Panel.tsx"),
     "utf8"
@@ -943,15 +943,16 @@ run("chrome is quiet, pewter not bronze, prose sits in a dark box", () => {
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #f2efe8/);
-  assert.match(css, /--ink: #14161c/);
-  assert.match(css, /--card: #1a1c22/);
-  assert.match(css, /--muted: #9a9690/);
-  assert.match(css, /--brand: #b8b3aa/);
-  assert.match(css, /--gain: #5fcb96/);
-  assert.match(css, /--loss: #e07a7a/);
+  assert.match(css, /--paper: #ede8dc/);
+  assert.match(css, /--ink: #121612/);
+  assert.match(css, /--card: #1b221c/);
+  assert.match(css, /--app: #0d110f/);
+  assert.match(css, /--muted: #9a9488/);
+  assert.match(css, /--brand: #8a9a86/);
+  assert.match(css, /--gain: #6bb07a/);
+  assert.match(css, /--loss: #d07a6e/);
   assert.doesNotMatch(css, /--brand: #c4a574/);
-  assert.doesNotMatch(css, /--brand: #c9a56a/);
+  assert.doesNotMatch(css, /--brand: #b8b3aa/);
   assert.doesNotMatch(css, /--caution: #c4a574/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);

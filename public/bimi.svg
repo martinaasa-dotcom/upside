@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg version="1.2" baseProfile="tiny-ps" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <title>Upside Lab</title>
-  <rect x="0" y="0" width="128" height="128" fill="#08090C"/>
+  <rect x="0" y="0" width="128" height="128" fill="#0d110f"/>
   <polygon points="62.61,20.27 62.72,56.43 40.43,56.53" fill="#C4A67A"/>
   <polygon points="65.71,20.27 87.89,56.53 65.60,56.43" fill="#D0B68A"/>
   <polygon points="40.75,59.52 62.93,59.52 52.37,78.93" fill="#B08C58"/>

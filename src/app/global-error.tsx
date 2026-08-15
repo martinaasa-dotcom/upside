@@ -46,8 +46,8 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#08090C",
-          color: "#f5f2eb",
+          background: "#0d110f",
+          color: "#ede8dc",
         }}
       >
         <div>

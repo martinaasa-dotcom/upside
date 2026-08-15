@@ -1,28 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark desk. Cards lift. The A on the logo is the only gold.
-     Brand is pewter: a quiet metal thread, never a jewelry wash.
-     Selected chrome is white. Gain and loss do the loud work. */
-  --background: #08090b;
-  --foreground: #f2efe8;
-  --paper: #f2efe8;
-  --ink: #14161c;
-  --muted: #9a9690;
-  --app: #08090b;
-  --card: #1a1c22;
-  --hover: #24272e;
-  --brand: #b8b3aa;
-  --brand-bright: #d4cfc6;
-  --brand-mid: #8f8a82;
-  --brand-deep: #6a665e;
-  --brand-dark: #7a756c;
-  --caution: #b8b3aa;
-  --gain: #5fcb96;
-  --loss: #e07a7a;
-  --surface: #1a1c22;
-  --panel: #1a1c22;
-  --border: rgb(242 239 232 / 0.16);
+  /* Forest desk. Coffee cards. Paper type.
+     The wall green is the field. Wood is the box. Brass stays on the A.
+     Brand is sage, a thread from the wall, never a gold wash.
+     Selected is paper. Gain is the plant. Loss is the rug. */
+  --background: #0d110f;
+  --foreground: #ede8dc;
+  --paper: #ede8dc;
+  --ink: #121612;
+  --muted: #9a9488;
+  --app: #0d110f;
+  --card: #1b221c;
+  --hover: #26302a;
+  --brand: #8a9a86;
+  --brand-bright: #b4c2ae;
+  --brand-mid: #6d7c6a;
+  --brand-deep: #4a5648;
+  --brand-dark: #5a6658;
+  --caution: #b8a06a;
+  --gain: #6bb07a;
+  --loss: #d07a6e;
+  --surface: #1b221c;
+  --panel: #1b221c;
+  --border: rgb(237 232 220 / 0.14);
 }
 
 @theme inline {
@@ -174,7 +175,7 @@ button:disabled,
 }
 
 ::selection {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(138, 154, 134, 0.32);
 }
 
 /* Financial figures stay on the body face, with lining tabular digits. */
@@ -198,7 +199,7 @@ button:disabled,
   transition: background-color 120ms ease, transform 120ms ease;
 }
 .btn-primary:hover:not(:disabled) {
-  background: #d8d8d4;
+  background: #ddd6c8;
 }
 .btn-primary:active:not(:disabled) {
   transform: scale(0.985);

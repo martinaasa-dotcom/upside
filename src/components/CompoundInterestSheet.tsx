@@ -355,7 +355,7 @@ function ComparePathsChart({
                 cy={yAt(p.series[hoverIdx] ?? 0)}
                 r={p.thick ? 4 : 3.25}
                 fill={p.color}
-                stroke="#08090C"
+                stroke="#0d110f"
                 strokeWidth="1.5"
               />
             ))}

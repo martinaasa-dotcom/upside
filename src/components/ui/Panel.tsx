@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-border on bg-card. Selected is white. Pewter is a
- *              thread (quiet metal). Not a fill on sliders or chips.
+ *   Shell      border-border on bg-card. Selected is paper. Sage is a
+ *              thread from the wall. Not a fill on sliders or chips.
  *   Card       border-border on bg-card. The box has to lift off the field.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips

@@ -1251,7 +1251,7 @@ export function CcAdvisorChat({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-paper text-ink shadow-lg shadow-black/40 transition hover:bg-[#d8d8d4] hover:scale-[1.03] active:scale-[0.97]"
+        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-paper text-ink shadow-lg shadow-black/40 transition hover:bg-[#ddd6c8] hover:scale-[1.03] active:scale-[0.97]"
         aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
         aria-expanded={open}
         title="Assistant Margus"
