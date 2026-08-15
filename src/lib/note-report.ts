@@ -73,15 +73,31 @@ const TITLE: Record<NoteKind, string> = {
   sunday: "Sunday look",
 };
 
+function groupUs(n: number): string {
+  const neg = n < 0;
+  const grouped = String(Math.round(Math.abs(n))).replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    ","
+  );
+  return `${neg ? "-" : ""}${grouped}`;
+}
+
 function money(n: number): string {
-  return `$${Math.round(n).toLocaleString("en-US")}`;
+  return `$${groupUs(n)}`;
 }
 
 function priceMoney(n: number): string {
-  return `$${n.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  const neg = n < 0;
+  const [whole, frac] = Math.abs(n).toFixed(2).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${neg ? "-" : ""}$${grouped}.${frac}`;
+}
+
+export function notePreview(r: NoteReport): string {
+  const pnl = signedMoney(r.todayDollar);
+  const pct = r.todayPct != null ? ` (${signedPct(r.todayPct)})` : "";
+  const when = r.kind === "sunday" ? "last session" : "today";
+  return `${pnl}${pct} ${when} · ${money(r.book)}`;
 }
 
 function signedMoney(n: number): string {
@@ -291,6 +307,8 @@ export function noteReportText(r: NoteReport): string {
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
   const lines = [
+    notePreview(r),
+    "",
     r.title,
     r.dateLine,
     "",
@@ -389,7 +407,8 @@ export function noteReportHtml(r: NoteReport): string {
   }`;
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
-  const preview = `${r.title}. ${money(r.book)}. ${r.todayLabel} ${signedMoney(r.todayDollar)}.`;
+  const preview = notePreview(r);
+  const previewPad = Array.from({ length: 12 }, () => "\u00a0\u200c").join("");
 
   const moverRows = r.movers
     .map((m, i) => {
@@ -491,7 +510,7 @@ export function noteReportHtml(r: NoteReport): string {
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background:${APP};color:${CREAM}" bgcolor="${APP}">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preview)}</div>
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeHtml(preview)}${previewPad}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${APP}" style="width:100%;background:${APP}">
   <tr>
     <td style="padding:0;background:${APP}" bgcolor="${APP}">
