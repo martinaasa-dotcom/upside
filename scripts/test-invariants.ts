@@ -1242,6 +1242,43 @@ run("community invite landing names the circle", () => {
   );
 });
 
+run("the recent Pulse and briefing bugs stay gone", () => {
+  const morning = readFileSync(
+    join(process.cwd(), "src/lib/morning-read.ts"),
+    "utf8"
+  );
+  const notes = readFileSync(
+    join(process.cwd(), "src/lib/note-report.ts"),
+    "utf8"
+  );
+  const briefing = readFileSync(
+    join(process.cwd(), "src/lib/investor-briefing.ts"),
+    "utf8"
+  );
+  const shock = readFileSync(
+    join(process.cwd(), "src/lib/book-shock.ts"),
+    "utf8"
+  );
+  const sim = readFileSync(
+    join(process.cwd(), "src/components/ScenarioSimulator.tsx"),
+    "utf8"
+  );
+  const drawer = readFileSync(
+    join(process.cwd(), "src/components/TickerDrawer.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(morning, /did most of today's move/);
+  assert.doesNotMatch(notes, /did most of the move/);
+  assert.doesNotMatch(briefing, /usually one name/);
+  assert.doesNotMatch(shock, /driver: "AI computers"/);
+  assert.doesNotMatch(sim, /"AI computers":/);
+  assert.match(drawer, /THEME_LABEL\[theme\]/);
+  assert.match(notes, /if \(action === "trim"\)/);
+  const trimAt = notes.indexOf('if (action === "trim")');
+  const watchAt = notes.indexOf("if (watch || action === \"watch\")");
+  assert.ok(trimAt > 0 && watchAt > trimAt, "trim must beat watch in email copy");
+});
+
 run("Worth noticing names the two groups in plain English", () => {
   const out = buildBookInsights([
     { ticker: "AVGO", value: 20_000, todayPct: -0.06 },

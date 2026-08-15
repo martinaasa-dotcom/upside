@@ -463,7 +463,8 @@ function MorningStack({
         </div>
       ) : (
         <>
-          {!morning.afterClose && (
+          {!morning.afterClose &&
+            (morning.quiet || morning.drivers.length === 0) && (
             <p className="text-sm text-zinc-200">{morning.sentence}</p>
           )}
           {!morning.quiet && morning.drivers.length > 0 && (

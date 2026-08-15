@@ -113,11 +113,11 @@ export function buildInvestorBriefing(input: {
             ])
           : hideOptions
             ? pick(dayRng, [
-                "A move this size is usually one name. Pulse will show which.",
+                "Big enough to check. Pulse will show which names moved.",
                 "Big enough to check. Did the story change, or just the price?",
               ])
             : pick(dayRng, [
-                "A move this size is usually one name. Pulse will show which.",
+                "Big enough to check. Pulse will show which names moved.",
                 "Big enough to check. If a call plan needs adjusting, it would be today.",
               ]);
 

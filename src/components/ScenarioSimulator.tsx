@@ -40,7 +40,7 @@ const DRIVER_ICONS: Record<string, typeof Activity> = {
   "Interest rates": TrendingUp,
   "Tech prices": Cpu,
   "Oil and energy": Flame,
-  "AI computers": Sparkles,
+  "AI computer builders": Sparkles,
   Crypto: Snowflake,
   "Everyone selling": TrendingDown,
   "The dollar": DollarSign,

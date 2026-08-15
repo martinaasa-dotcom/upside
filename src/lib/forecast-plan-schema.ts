@@ -69,7 +69,7 @@ export const forecastPlanSchema = z.object({
           .string()
           .describe("Exact ticker as listed in holdings (keep exchange suffix)"),
         prices: yearPriceSchema.describe(
-          "NON-LINEAR EOY prices 2026-2030. Forbidden: equal steps / flat CAGR. Crypto needs a winter year; AI computers can rip with a quieter year as slower-up, not a collapse."
+          "NON-LINEAR EOY prices 2026-2030. Forbidden: equal steps / flat CAGR. Crypto needs a winter year; AI computer builders can rip with a quieter year as slower-up, not a collapse."
         ),
         rationale: z
           .string()
@@ -80,6 +80,6 @@ export const forecastPlanSchema = z.object({
       })
     )
     .describe(
-      "EOY SP for EVERY holding, all years 2026-2030. Big-bet AI computers / electricity for AI / crypto magnitudes. Never paste spot across years. Never draw a straight line."
+      "EOY SP for EVERY holding, all years 2026-2030. Big-bet AI computer builders / chip makers / electricity for data centers / crypto magnitudes. Never paste spot across years. Never draw a straight line."
     ),
 });

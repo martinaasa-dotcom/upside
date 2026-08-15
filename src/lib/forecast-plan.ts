@@ -338,7 +338,7 @@ function themeDynamicsLabel(
 ): string {
   switch (theme) {
     case "ai_infra":
-      return "AI computers S-curve with quiet years, not a straight line";
+      return "AI computer builders S-curve with quiet years, not a straight line";
     case "ai_power":
       return "datacenter power bottleneck compounding through buildout";
     case "crypto":
@@ -547,7 +547,7 @@ Requirements:
    - Plain English only. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.
    - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
    - Never use em dashes or en-dash clause breaks in add/trim lines.
-4. sectorRotation: talk through money moving between groups (AI computers, electricity for AI, crypto, space, chips, software, healthcare, drones, money apps, etc.). Do not stay stuck in one box. Plain speech, no em dashes.
+4. sectorRotation: talk through money moving between groups (AI computer builders, chip makers, electricity for data centers, crypto, space, software, healthcare, drones, money apps, etc.). Chip makers and AI computer builders are different bets. Do not stay stuck in one box. Plain speech, no em dashes.
 5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.

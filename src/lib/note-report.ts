@@ -132,7 +132,7 @@ export function notePreview(r: NoteReport): string {
     if (next) return `${pctBit}. ${next}`;
   }
   if (top) {
-    return `${pctBit}. ${cashtag(top.ticker)} did most of the move.`;
+    return `${pctBit}. ${cashtag(top.ticker)} was the biggest name.`;
   }
   return `${pctBit}. Open the note for the full look.`;
 }
@@ -358,10 +358,10 @@ function weekActionLine(input: {
   const upHot = input.weekPct != null && input.weekPct >= 0.08;
 
   if (risk || action === "sell") return "Thesis broken. Do not add this week.";
-  if (watch || action === "watch") return "Wait. Best thing this week is to wait.";
   if (action === "trim") {
     return "Thesis intact. If it ran too far, sell some. Otherwise do nothing.";
   }
+  if (watch || action === "watch") return "Wait. Best thing this week is to wait.";
   if (action === "add" || (intact && down)) {
     return "Thesis intact. Look to add this week on the dip.";
   }
@@ -431,8 +431,8 @@ function dayActionLine(input: {
   const down = input.overnightPct != null && input.overnightPct <= -0.02;
 
   if (risk || action === "sell") return "Do not add today.";
-  if (watch || action === "watch") return "Wait. Best thing today is to wait.";
   if (action === "trim") return "If it runs, sell some. Don't chase.";
+  if (watch || action === "watch") return "Wait. Best thing today is to wait.";
   if (action === "add" || (intact && down)) {
     return "Thesis intact. Look to add if it dips.";
   }
@@ -581,7 +581,7 @@ function closeLead(input: {
   const top = input.movers[0];
   return {
     lead: top
-      ? `${signedMoney(input.today)} on the book. ${cashtag(top.ticker)} was the name that did it.`
+      ? `${signedMoney(input.today)} on the book. ${cashtag(top.ticker)} moved the most.`
       : `${signedMoney(input.today)} on the book.`,
     subjectHook: hook,
   };

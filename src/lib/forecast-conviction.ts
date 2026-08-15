@@ -376,7 +376,7 @@ target to match, and no ticker has a predetermined destination.
 ### Required dynamics
 - Non-linear paths: bull runs and/or consolidation years, reasoned from that specific company's fundamentals and cycle. Never a flat CAGR line.
 - Crypto-adjacent names: consider a violent mid-path winter, then recovery, if that fits the specific asset.
-- The first forecast year is this calendar year. That cell is December 31, not today's price. There are still months left. Do not paste spot into it as a default. A name can finish the year close to spot only when that company's own remaining-year setup is genuinely dead; most AI computers, crypto, power and space names still have a year-end move.
+- The first forecast year is this calendar year. That cell is December 31, not today's price. There are still months left. Do not paste spot into it as a default. A name can finish the year close to spot only when that company's own remaining-year setup is genuinely dead; most AI computer builders, chip makers, crypto, power and space names still have a year-end move.
 - Heavy building-spend / infra names: a quiet year can mean a slower-up year, not necessarily a collapse.
 - Trim/add lines may list multiple names or groups of similar stocks, not one ticker only.
 - Be honest: some names deserve a modest, unglamorous path. Not every holding is a multi-bagger candidate.

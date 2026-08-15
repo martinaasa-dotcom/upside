@@ -5,6 +5,7 @@ import { Card, MicroLabel, Pill, Segmented } from "@/components/ui/Panel";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
 import { forecastThemeForTicker } from "@/lib/forecast-conviction";
+import { THEME_LABEL } from "@/lib/portfolio-personality";
 import { getShockProfile } from "@/lib/book-shock";
 import {
   FORECAST_YEARS,
@@ -22,20 +23,6 @@ const CONVICTION_LABELS: Record<ConvictionLevel, string> = {
   3: "Neutral, holding as-is",
   4: "Strong, comfortable adding",
   5: "Max, you're sure why you own it",
-};
-
-const THEME_LABELS: Record<string, string> = {
-  ai_infra: "AI infrastructure",
-  ai_power: "Data centre power",
-  crypto: "Crypto",
-  space: "Space and defence",
-  semi: "Semiconductors",
-  fintech: "Fintech",
-  software: "Software",
-  healthcare: "Healthcare",
-  drones: "Autonomous systems",
-  index: "Index fund",
-  other: "Diversified",
 };
 
 const HORIZONS = [
@@ -153,7 +140,7 @@ export function TickerDrawer({
               <h2 className="text-base font-bold text-white">
                 {cashtag(ticker)}
               </h2>
-              <Pill tone="neutral">{THEME_LABELS[theme] ?? "Equities"}</Pill>
+              <Pill tone="neutral">{THEME_LABEL[theme] ?? "other businesses"}</Pill>
             </div>
             <p className="mt-1 text-sm tabular-nums text-zinc-400">
               {spot != null ? currency(spot) : "—"}

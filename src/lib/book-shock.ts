@@ -23,7 +23,7 @@ export type MacroShockCategory =
   | "Interest rates"
   | "Tech prices"
   | "Oil and energy"
-  | "AI computers"
+  | "AI computer builders"
   | "Crypto"
   | "Everyone selling"
   | "The dollar"
@@ -90,11 +90,11 @@ export const SHOCKS: ShockDefinition[] = [
     id: "ai_down20",
     label: "AI −20%",
     shortLabel: "AI −20%",
-    tagline: "AI computer and chip names take the hit. A chip fund is not the whole market.",
-    driver: "AI computers",
+    tagline: "Chip makers and the companies that build or rent AI computers take the hit. A chip fund is not the whole market.",
+    driver: "AI computer builders",
     headlinePct: -0.20,
-    mechanism: "Companies pause spending on AI computers. Cloud, chips, AI software, and data-center power all feel it.",
-    tacticalAction: "Check how much of the sheet is AI computers. Don't let one group become the whole sheet.",
+    mechanism: "Companies pause spending on AI computers. Cloud, chip makers, AI software, and data-center power all feel it.",
+    tacticalAction: "Check how much of the sheet is chip makers and AI computer builders. Don't let one group become the whole sheet.",
   },
   {
     id: "btc_winter35",

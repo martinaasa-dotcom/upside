@@ -49,20 +49,12 @@ export type MorningRead = {
   sunday: SundayRecap | null;
 };
 
-function loudestName(model: OverviewModel): string | null {
-  const ranked = [...model.tickers].sort(
-    (a, b) => Math.abs(b.todayDollar) - Math.abs(a.todayDollar)
-  );
-  return ranked[0]?.ticker ?? null;
-}
-
 function daySentence(model: OverviewModel): { quiet: boolean; sentence: string } {
   const pct = model.totals.todayPct;
   if (pct == null) {
     return { quiet: true, sentence: "Prices are still coming in." };
   }
   const dollars = signedCurrency(model.totals.todayDollar, 0);
-  const loud = loudestName(model);
   const swing = Math.abs(pct);
   if (swing < 0.005) {
     return { quiet: true, sentence: "Quiet day. Book barely moved." };
@@ -75,9 +67,7 @@ function daySentence(model: OverviewModel): { quiet: boolean; sentence: string }
   }
   return {
     quiet: false,
-    sentence: loud
-      ? `${cashtag(loud)} did most of today's move.`
-      : "Check if the story changed.",
+    sentence: "A few names did the work.",
   };
 }
 

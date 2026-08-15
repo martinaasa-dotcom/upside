@@ -146,7 +146,7 @@ ${insightsPromptBlock(
 - **trim** and **sell** are opposites in spirit, don't blur them:
   - **trim** = taking a little off a winner that ran. The reason they own it is **intact**. A run-up is the story working. Never mark Thesis watch just because the price went up.
   - **sell** = the reason they own it is actually **broken**. You're exiting because that reason is gone, not because it went up too much.
-- **intact reason + red day** on a name they are very sure about (AI computers, electricity for AI, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A quiet down day that didn't break the multi-year story is a **steal**, not a trim signal. This is about why they own it, not a fixed ticker list; apply it to whatever the user actually holds.
+- **intact reason + red day** on a name they are very sure about (AI computer builders, chip makers, electricity for data centers, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A quiet down day that didn't break the multi-year story is a **steal**, not a trim signal. This is about why they own it, not a fixed ticker list; apply it to whatever the user actually holds.
 - If a line ran hard and the reason is still intact: prefer **trim** with a size, and set thesisStatus to **intact**. Happy news. Not a warning.
 - **addLevel**: always give a concrete, self-explanatory price plan when the reason is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
