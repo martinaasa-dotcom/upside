@@ -24,10 +24,10 @@ import {
   type ClassroomTrade,
   type ThesisCoverage,
 } from "@/lib/classroom";
-import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
+import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
 import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
-import { overlapSentences } from "@/lib/circle-overlap";
+import { overlapRows } from "@/lib/circle-overlap";
 import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
@@ -745,9 +745,9 @@ export function CommunityView({ communityId }: Props) {
     }
   }
 
-  const overlapLines = useMemo(
+  const sharedNames = useMemo(
     () =>
-      overlapSentences(overview.tickers, (portfolioIds) => {
+      overlapRows(overview.tickers, (portfolioIds) => {
         const names = new Set<string>();
         for (const pid of portfolioIds) {
           for (const o of ownership.filter((x) => x.portfolio_id === pid)) {
@@ -1751,7 +1751,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {effectiveView === "overview" && !isClassroom && overlapLines.length > 0 && (
+                  {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
                     <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
@@ -1767,9 +1767,36 @@ export function CommunityView({ communityId }: Props) {
                         </div>
                       </div>
                       <ul className="space-y-2">
-                        {overlapLines.map((line) => (
-                          <li key={line} className="text-sm text-zinc-200">
-                            {line}
+                        {sharedNames.map((row) => (
+                          <li
+                            key={row.ticker}
+                            className="rounded-xl border border-white/10 bg-app/40 px-4 py-3"
+                          >
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="font-heading text-base font-bold text-white">
+                                {cashtag(row.ticker)}
+                              </span>
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold tabular-nums",
+                                  signedTone(row.todayPct, "text-zinc-400")
+                                )}
+                              >
+                                {row.todayPct != null
+                                  ? signedPercent(row.todayPct)
+                                  : "—"}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {row.people.map((name) => (
+                                <span
+                                  key={name}
+                                  className="rounded-lg border border-zinc-800 bg-zinc-900/50 px-2 py-1 text-xs text-zinc-300"
+                                >
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
                           </li>
                         ))}
                       </ul>
