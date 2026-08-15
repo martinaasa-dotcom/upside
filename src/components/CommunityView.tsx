@@ -1527,16 +1527,10 @@ export function CommunityView({ communityId }: Props) {
                   {effectiveView === "overview" &&
                     !isClassroom &&
                     membersWithBooks.length === 0 && (
-                    <div className="space-y-4">
-                      <p className="text-sm text-zinc-400">
-                        Nobody has shared a sheet here yet. Pick which of
-                        yours belong in this circle.
-                      </p>
-                      <ShareSheets
-                        communityId={communityId}
-                        onChanged={() => void load()}
-                      />
-                    </div>
+                    <p className="text-sm text-zinc-400">
+                      Nobody has shared a sheet here yet. Pick which of
+                      yours belong in this circle.
+                    </p>
                   )}
                   {effectiveView === "overview" &&
                     isClassroom &&
@@ -1903,14 +1897,25 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               )}
 
-              {effectiveView === "members" && (
-                <>
-                  {!isClassroom && (
+              {!isClassroom && (
+                <div
+                  className={
+                    effectiveView === "members" ||
+                    (effectiveView === "overview" &&
+                      membersWithBooks.length === 0)
+                      ? undefined
+                      : "hidden"
+                  }
+                >
                   <ShareSheets
                     communityId={communityId}
                     onChanged={() => void load()}
                   />
-                  )}
+                </div>
+              )}
+
+              {effectiveView === "members" && (
+                <>
                   <section className="space-y-3">
                     <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
                       <Users className="h-4 w-4 text-zinc-400" />

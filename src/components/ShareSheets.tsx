@@ -1,9 +1,15 @@
 "use client";
 
 import { plainError } from "@/lib/plain-error";
-import { useCallback, useEffect, useState } from "react";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import {
+  loadCommunitySheetsCache,
+  saveCommunitySheetsCache,
+  type CommunitySheetRow,
+} from "@/lib/community-cache";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 
-type SheetRow = { id: string; name: string; shared: boolean };
+type SheetRow = CommunitySheetRow;
 
 export function ShareSheets({
   communityId,
@@ -12,34 +18,67 @@ export function ShareSheets({
   communityId: string;
   onChanged?: () => void;
 }) {
-  const [sheets, setSheets] = useState<SheetRow[] | null>(null);
+  const [sheets, setSheets] = useHydratedCache<SheetRow[] | null>(
+    () => loadCommunitySheetsCache(communityId),
+    null
+  );
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/communities/${communityId}/sheets`, {
-        cache: "no-store",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(
-          plainError(data.error, "Couldn't load your sheets.")
+  const commit = useCallback(
+    (next: SheetRow[]) => {
+      saveCommunitySheetsCache(communityId, next);
+      setSheets(next);
+    },
+    [communityId, setSheets]
+  );
+
+  const load = useCallback(
+    async (signal?: AbortSignal) => {
+      try {
+        const res = await fetch(`/api/communities/${communityId}/sheets`, {
+          cache: "no-store",
+          signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(
+            plainError(data.error, "Couldn't load your sheets.")
+          );
+        }
+        commit((data.sheets ?? []) as SheetRow[]);
+        setError(null);
+      } catch (e) {
+        if (signal?.aborted) return;
+        // Keep the last cached list on screen. Only show an error when
+        // there was nothing to paint.
+        if (loadCommunitySheetsCache(communityId) != null) return;
+        setError(
+          e instanceof Error ? e.message : "Couldn't load your sheets."
         );
       }
-      setSheets((data.sheets ?? []) as SheetRow[]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't load your sheets.");
-    }
-  }, [communityId]);
+    },
+    [communityId, commit]
+  );
+
+  useLayoutEffect(() => {
+    setSheets(loadCommunitySheetsCache(communityId));
+    setError(null);
+  }, [communityId, setSheets]);
 
   useEffect(() => {
-    void load();
+    const ctrl = new AbortController();
+    void load(ctrl.signal);
+    return () => ctrl.abort();
   }, [load]);
 
   async function toggle(sheet: SheetRow) {
     setBusyId(sheet.id);
     setError(null);
+    const next = (sheets ?? []).map((s) =>
+      s.id === sheet.id ? { ...s, shared: !sheet.shared } : s
+    );
+    commit(next);
     try {
       const res = await fetch(`/api/communities/${communityId}/sheets`, {
         method: "POST",
@@ -52,13 +91,9 @@ export function ShareSheets({
           plainError(data.error, "Couldn't update that.")
         );
       }
-      setSheets((prev) =>
-        (prev ?? []).map((s) =>
-          s.id === sheet.id ? { ...s, shared: !sheet.shared } : s
-        )
-      );
       onChanged?.();
     } catch (e) {
+      commit(sheets ?? []);
       setError(e instanceof Error ? e.message : "Couldn't update that.");
     } finally {
       setBusyId(null);
@@ -75,8 +110,8 @@ export function ShareSheets({
           Sheets you share here
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-          Off means this circle cannot see that book. Today’s prices only. Cost
-          stays on your sheet.
+          Off means this circle cannot see that book. Today&apos;s prices only.
+          Cost stays on your sheet.
         </p>
       </div>
       {error && <p className="text-xs text-rose-300">{error}</p>}

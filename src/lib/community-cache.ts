@@ -13,6 +13,7 @@ import type { DuelPick } from "@/lib/daily-duel";
 const CACHE_PREFIX = "upside-community-v1:";
 const LIST_CACHE_KEY = "upside-communities-list-v1";
 const DUEL_CACHE_PREFIX = "upside-community-duel-v1:";
+const SHEETS_CACHE_PREFIX = "upside-community-sheets-v1:";
 const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes — communities update slowly
 
 export type CommunityDuelCache = {
@@ -72,6 +73,60 @@ export function saveCommunityDuelCache(
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(duelCacheKey(communityId), JSON.stringify(duel));
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export type CommunitySheetRow = { id: string; name: string; shared: boolean };
+
+const sheetsMemory = new Map<string, CommunitySheetRow[]>();
+
+function sheetsCacheKey(communityId: string): string {
+  return `${SHEETS_CACHE_PREFIX}${communityId}`;
+}
+
+function isSheetsShape(v: unknown): v is CommunitySheetRow[] {
+  if (!Array.isArray(v)) return false;
+  return v.every(
+    (row) =>
+      row &&
+      typeof row === "object" &&
+      typeof (row as CommunitySheetRow).id === "string" &&
+      typeof (row as CommunitySheetRow).name === "string" &&
+      typeof (row as CommunitySheetRow).shared === "boolean"
+  );
+}
+
+export function loadCommunitySheetsCache(
+  communityId: string
+): CommunitySheetRow[] | null {
+  const mem = sheetsMemory.get(communityId);
+  if (mem) return mem;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(sheetsCacheKey(communityId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isSheetsShape(parsed)) return null;
+    sheetsMemory.set(communityId, parsed);
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCommunitySheetsCache(
+  communityId: string,
+  sheets: CommunitySheetRow[]
+) {
+  sheetsMemory.set(communityId, sheets);
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      sheetsCacheKey(communityId),
+      JSON.stringify(sheets)
+    );
   } catch {
     /* quota / private mode */
   }
@@ -168,9 +223,11 @@ export function isCommunityCacheFresh(entry: CommunityCacheEntry | null): boolea
  * stale copy doesn't linger in localStorage forever. */
 export function clearCommunityCache(communityId: string) {
   detailMemory.delete(communityId);
+  sheetsMemory.delete(communityId);
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(cacheKey(communityId));
+    window.localStorage.removeItem(sheetsCacheKey(communityId));
   } catch {
     /* ignore */
   }
@@ -180,17 +237,18 @@ export function prefetchCommunityList(rows: CommunityListRow[]) {
   for (const row of rows) void prefetchCommunity(row.id);
 }
 
-/** Fetch + cache one community's meta+book in the background — used by
- * CommunitiesList to warm the cache for every row as soon as the list is
- * known, so clicking in (even for the first time this session) already
- * has data ready instead of starting the fetch from zero. */
+/** Fetch + cache one community's meta, book, duel, and share toggles
+ * in the background. CommunitiesList warms every row as soon as the
+ * list is known, so clicking in (and then Members) already has data
+ * instead of starting those fetches from zero. */
 export async function prefetchCommunity(communityId: string): Promise<void> {
   try {
     const cached = loadCommunityCache(communityId);
     const needBook = !isCommunityCacheFresh(cached);
     const needDuel = loadCommunityDuelCache(communityId) == null;
-    if (!needBook && !needDuel) return;
-    const [metaRes, bookRes, duelRes] = await Promise.all([
+    const needSheets = loadCommunitySheetsCache(communityId) == null;
+    if (!needBook && !needDuel && !needSheets) return;
+    const [metaRes, bookRes, duelRes, sheetsRes] = await Promise.all([
       needBook
         ? fetch(`/api/communities/${communityId}`, { cache: "no-store" })
         : null,
@@ -200,6 +258,9 @@ export async function prefetchCommunity(communityId: string): Promise<void> {
       needDuel
         ? fetch(`/api/communities/${communityId}/duel`, { cache: "no-store" })
         : null,
+      needSheets
+        ? fetch(`/api/communities/${communityId}/sheets`, { cache: "no-store" })
+        : null,
     ]);
     if (needBook && metaRes && bookRes && metaRes.ok && bookRes.ok) {
       const [meta, book] = await Promise.all([metaRes.json(), bookRes.json()]);
@@ -208,6 +269,12 @@ export async function prefetchCommunity(communityId: string): Promise<void> {
     if (needDuel && duelRes?.ok) {
       const duel = (await duelRes.json()) as CommunityDuelCache;
       if (isDuelShape(duel)) saveCommunityDuelCache(communityId, duel);
+    }
+    if (needSheets && sheetsRes?.ok) {
+      const data = (await sheetsRes.json()) as { sheets?: unknown };
+      if (isSheetsShape(data.sheets)) {
+        saveCommunitySheetsCache(communityId, data.sheets);
+      }
     }
   } catch {
     /* best-effort prefetch — CommunityView's own fetch is the source of truth */
