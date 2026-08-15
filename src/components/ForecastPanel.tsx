@@ -702,12 +702,7 @@ export function ForecastPanel({
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
       if (isAbortError(err) || askGenRef.current !== gen) return;
-      // A failed background refresh must not hide a writeup we already have.
-      if (opts?.auto && planRef.current) return;
-      setError(err instanceof Error ? err.message : "Couldn't build a forecast. Try again.");
-      // Keep autoKeyRef set so a failed auto-run does not immediately
-      // fire again. Clearing it used to retry in a tight loop, which
-      // burned the forecast rate limit and left Thinking stuck on.
+      // Keep the last plan on screen. Do not paint a "couldn't load" line.
     } finally {
       if (askGenRef.current === gen) {
         askInFlight.current = false;

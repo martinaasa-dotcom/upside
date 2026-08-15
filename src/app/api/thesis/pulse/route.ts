@@ -1,5 +1,6 @@
 import {
   beginBackgroundLlm,
+  chatIsBusy,
   endBackgroundLlm,
 } from "@/lib/ai/llm-slots";
 import {
@@ -13,7 +14,6 @@ import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
-  buildFallbackPulseCheck,
   formatMovePct,
   reconcilePulseCheck,
   type PulseCheck,
@@ -47,6 +47,25 @@ type Body = {
   fearGreed?: { score?: number; rating?: string } | null;
   force?: boolean;
 };
+
+type CachedPulse = { check: PulseCheck; headlines: PulseHeadline[] };
+
+function reuseCachedPulse(
+  candidates: PulseCandidate[],
+  cachedMap: Map<string, CachedPulse>,
+  headlines: Record<string, PulseHeadline[]>
+) {
+  const checks = candidates.flatMap((c) => {
+    const cached = cachedMap.get(c.ticker.toUpperCase());
+    return cached ? [reconcilePulseCheck(cached.check)] : [];
+  });
+  const report: PulseReport = {
+    summary: humanizeMargusText(getCachedPulseSummary() ?? ""),
+    checks,
+    generatedAt: new Date().toISOString(),
+  };
+  return Response.json({ report, headlines, reused: true });
+}
 
 function newsBlock(headlines: PulseHeadline[]): string {
   if (headlines.length === 0) return "  (no recent headlines fetched)";
@@ -177,22 +196,21 @@ export async function POST(req: Request) {
   const force = Boolean(body.force);
   const convictions = body.convictions ?? {};
 
-  // Check server-side SWR cache for each candidate
-  const cachedMap = new Map<string, { check: PulseCheck; headlines: PulseHeadline[] }>();
+  const cachedMap = new Map<string, CachedPulse>();
   const uncachedCandidates: PulseCandidate[] = [];
 
   for (const c of candidates) {
     const symbol = c.ticker.toUpperCase();
     const conv = convictions[symbol];
     const cacheKey = getPulseCacheKey(symbol, c.effectivePct, conv?.thesis, conv?.level);
-    const cachedEntry = getCachedPulseCheck(cacheKey, { force });
-
+    const cachedEntry = getCachedPulseCheck(cacheKey);
     if (cachedEntry) {
       cachedMap.set(symbol, {
         check: cachedEntry.check,
         headlines: cachedEntry.headlines,
       });
-    } else {
+    }
+    if (!cachedEntry || force) {
       uncachedCandidates.push(c);
     }
   }
@@ -202,86 +220,24 @@ export async function POST(req: Request) {
     headlines[symbol] = cached.headlines;
   }
 
-  // If all candidates are cached, return immediately without LLM invocation
   if (uncachedCandidates.length === 0) {
-    const checks: PulseCheck[] = candidates.map((c) => {
-      const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
-    });
-
-    const summary =
-      getCachedPulseSummary() ??
-      "Dips on names you are sure about stay add opportunities.";
-
-    const report: PulseReport = {
-      summary: humanizeMargusText(summary),
-      checks,
-      generatedAt: new Date().toISOString(),
-    };
-
-    return Response.json(
-      { report, headlines, cachedCount: candidates.length, freshCount: 0 },
-      {
-        headers: {
-          "Cache-Control": "private, s-maxage=300, stale-while-revalidate=1800",
-          "x-pulse-cache": "HIT_ALL",
-        },
-      }
-    );
+    return reuseCachedPulse(candidates, cachedMap, headlines);
   }
 
-  // Rate limit check before making external LLM calls
   const limit = checkRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
-    // If rate limited, return cached checks if possible or fallback reads
-    const checks = candidates.map((c) => {
-      const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
-    });
-    const report: PulseReport = {
-      summary: humanizeMargusText(
-        "Couldn't get a full model read. Here's what today's prices and the book say."
-      ),
-      checks,
-      generatedAt: new Date().toISOString(),
-    };
-    return Response.json({ report, headlines, degraded: true });
+    return reuseCachedPulse(candidates, cachedMap, headlines);
   }
 
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {
-    const checks = candidates.map((c) => {
-      const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
-    });
-    const report: PulseReport = {
-      summary: humanizeMargusText(
-        "Couldn't reach the model. Here's what today's prices and the book say."
-      ),
-      checks,
-      generatedAt: new Date().toISOString(),
-    };
-    return Response.json({ report, headlines, degraded: true });
+    return reuseCachedPulse(candidates, cachedMap, headlines);
   }
 
-  // Auto Pulse yields when someone is in chat, or another background
-  // read is already on the model. Manual Check again still goes through.
-  const heldSlot = force ? false : beginBackgroundLlm();
-  if (!force && !heldSlot) {
-    const checks = candidates.map((c) => {
-      const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
-    });
-    const report: PulseReport = {
-      summary: humanizeMargusText(
-        getCachedPulseSummary() ??
-          "Couldn't get a full model read. Here's what today's prices and the book say."
-      ),
-      checks,
-      generatedAt: new Date().toISOString(),
-    };
-    return Response.json({ report, headlines, deferred: true });
+  if (chatIsBusy() || !beginBackgroundLlm()) {
+    return reuseCachedPulse(candidates, cachedMap, headlines);
   }
+  const heldSlot = true;
 
   const uncachedTickers = uncachedCandidates.map((c) => c.ticker);
   const contexts = await fetchPulseContexts(uncachedTickers, { force });
@@ -321,18 +277,16 @@ export async function POST(req: Request) {
       newlyGeneratedMap.set(check.ticker.toUpperCase(), check);
     }
 
-    // Cache the newly generated checks per ticker
     for (const candidate of uncachedCandidates) {
       const symbol = candidate.ticker.toUpperCase();
       const fromModel = newlyGeneratedMap.get(symbol);
-      const check: PulseCheck = fromModel
-        ? reconcilePulseCheck({
-            ...fromModel,
-            ticker: symbol,
-            trimPct:
-              fromModel.action === "trim" ? (fromModel.trimPct ?? null) : null,
-          })
-        : buildFallbackPulseCheck(candidate);
+      if (!fromModel) continue;
+      const check = reconcilePulseCheck({
+        ...fromModel,
+        ticker: symbol,
+        trimPct:
+          fromModel.action === "trim" ? (fromModel.trimPct ?? null) : null,
+      });
 
       const conv = convictions[symbol];
       const cacheKey = getPulseCacheKey(
@@ -354,15 +308,13 @@ export async function POST(req: Request) {
       setCachedPulseSummary(object.summary);
     }
 
-    // Reconstruct checks in original candidate order
-    const checks: PulseCheck[] = candidates.map((candidate) => {
-      const key = candidate.ticker.toUpperCase();
-      const entry = cachedMap.get(key);
-      return entry ? reconcilePulseCheck(entry.check) : buildFallbackPulseCheck(candidate);
+    const checks: PulseCheck[] = candidates.flatMap((candidate) => {
+      const entry = cachedMap.get(candidate.ticker.toUpperCase());
+      return entry ? [reconcilePulseCheck(entry.check)] : [];
     });
 
     const report: PulseReport = humanizeMargusTree({
-      summary: object.summary || getCachedPulseSummary() || "Thesis review complete.",
+      summary: object.summary || getCachedPulseSummary() || "",
       checks,
       generatedAt: new Date().toISOString(),
     });
@@ -384,19 +336,7 @@ export async function POST(req: Request) {
     );
   } catch (err) {
     console.error("Pulse report failed", err);
-
-    const checks = candidates.map((c) => {
-      const cached = cachedMap.get(c.ticker.toUpperCase());
-      return cached ? reconcilePulseCheck(cached.check) : buildFallbackPulseCheck(c);
-    });
-    const report: PulseReport = {
-      summary: humanizeMargusText(
-        "The model was busy. Here's what today's prices and the book say."
-      ),
-      checks,
-      generatedAt: new Date().toISOString(),
-    };
-    return Response.json({ report, headlines, degraded: true });
+    return reuseCachedPulse(candidates, cachedMap, headlines);
   } finally {
     if (heldSlot) endBackgroundLlm();
   }

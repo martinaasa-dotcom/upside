@@ -659,6 +659,10 @@ run("humanize kills leftover market slang", () => {
     humanizeMargusText("Tape read from the move and the book while the model was busy."),
     /\btape\b/i
   );
+  assert.doesNotMatch(
+    humanizeMargusText("Tape read from the move and the book while the model was busy."),
+    /Couldn't get a full model|model was busy/i
+  );
 });
 
 run("novice hides Lab, not Pulse", () => {
@@ -1363,6 +1367,10 @@ run("Pulse never nags that it is guessing", () => {
     join(process.cwd(), "src/components/PulsePage.tsx"),
     "utf8"
   );
+  const pulseApi = readFileSync(
+    join(process.cwd(), "src/app/api/thesis/pulse/route.ts"),
+    "utf8"
+  );
   const chat = readFileSync(
     join(process.cwd(), "src/app/api/chat/route.ts"),
     "utf8"
@@ -1374,7 +1382,13 @@ run("Pulse never nags that it is guessing", () => {
   assert.doesNotMatch(pulse, /Pulse is guessing/);
   assert.doesNotMatch(pulse, /Write why you own/);
   assert.doesNotMatch(pulse, /Pulling news/);
-  assert.match(pulse, /buildFallbackPulseCheck/);
+  assert.doesNotMatch(pulse, /Couldn't get a full model/);
+  assert.doesNotMatch(pulse, /The model was busy/);
+  assert.doesNotMatch(pulse, /buildFallbackPulseCheck/);
+  assert.doesNotMatch(pulseApi, /Couldn't get a full model/);
+  assert.doesNotMatch(pulseApi, /The model was busy/);
+  assert.doesNotMatch(pulseApi, /Couldn't reach the model/);
+  assert.match(pulseApi, /reuseCachedPulse/);
   assert.match(pulse, /<ActionBadge action=\{action\} \/>/);
   assert.doesNotMatch(chat, /backup on your next/);
   assert.doesNotMatch(chat, /The model provider is overloaded/);

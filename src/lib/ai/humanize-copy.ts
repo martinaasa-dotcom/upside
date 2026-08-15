@@ -81,7 +81,7 @@ function scrubMarketJargon(text: string): string {
   let s = text;
   s = s.replace(
     /\btape read from the move and the book(?:, no model in the loop)?(?: while the model was busy)?\.?/gi,
-    "Couldn't get a full model read. Here's what today's prices and the book say."
+    ""
   );
   s = s.replace(/\btape read\b/gi, "Read");
   s = s.replace(/\bbest tape\b/gi, "biggest gainer");

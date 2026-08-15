@@ -29,7 +29,6 @@ import { formatRelativeTime } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
   PULSE_DOWN_THRESHOLD,
-  buildFallbackPulseCheck,
   buildPulseCandidate,
   buildPulseCandidates,
   formatMovePct,
@@ -172,11 +171,11 @@ function PulseCard({
   // an already-cached "broken" + "hold" contradiction from before this
   // guardrail existed, or from a stale server/localStorage entry, clears
   // immediately instead of waiting out the cache window.
-  const shown = reconcilePulseCheck(check ?? buildFallbackPulseCheck(c));
-  const status = shown.thesisStatus;
-  const action = shown.action;
+  const shown = check ? reconcilePulseCheck(check) : null;
+  const status = shown?.thesisStatus ?? "intact";
+  const action = shown?.action ?? "hold";
   const writtenThesis = thesisDisplayBullets(convictionThesis);
-  const situation = normalizePulseSituation(shown.situation);
+  const situation = shown ? normalizePulseSituation(shown.situation) : [];
   const thesisBullets = writtenThesis.length > 0 ? writtenThesis : situation;
 
   return (
@@ -184,7 +183,11 @@ function PulseCard({
       id={`pulse-card-${c.ticker}`}
       className={cn(
         "rounded-xl border px-4 py-4 scroll-mt-28",
-        statusBorder(status, c.needsAttention, pinned)
+        shown
+          ? statusBorder(status, c.needsAttention, pinned)
+          : pinned
+            ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30"
+            : "border-zinc-800 bg-zinc-950/40"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -225,11 +228,17 @@ function PulseCard({
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-          <ActionBadge action={action} />
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
-            <StatusIcon status={status} />
-            {statusLabel(status)}
-          </span>
+          {shown ? (
+            <>
+              <ActionBadge action={action} />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
+                <StatusIcon status={status} />
+                {statusLabel(status)}
+              </span>
+            </>
+          ) : loading ? (
+            <span className="text-xs text-zinc-400">Checking …</span>
+          ) : null}
           {onRefresh && (
             <button
               type="button"
@@ -308,22 +317,22 @@ function PulseCard({
             </ul>
           </div>
         )}
-        {shown.action === "trim" && shown.trimPct ? (
+        {shown?.action === "trim" && shown.trimPct ? (
           <p className="font-medium text-violet-200">
             Trim about {shown.trimPct}% into this strength.
           </p>
         ) : null}
-        {shown.addLevel ? (
+        {shown?.addLevel ? (
           <p className="font-medium text-brand-bright">{shown.addLevel}</p>
         ) : null}
-        {shown.verdict &&
+        {shown?.verdict &&
         !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
           <p className="text-zinc-100">{shown.verdict}</p>
         ) : null}
-        {shown.earningsNote ? (
+        {shown?.earningsNote ? (
           <p className="text-xs text-zinc-400">{shown.earningsNote}</p>
         ) : null}
-        {shown.thesisBreak ? (
+        {shown?.thesisBreak ? (
           <div>
             <MicroLabel>Breaks if</MicroLabel>
             <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
@@ -634,11 +643,13 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
         const data = await readJsonOrThrow<{
           report: PulseReport;
           headlines?: Record<string, PulseHeadline[]>;
+          reused?: boolean;
         }>(res, "Pulse check failed");
         if (opts?.signal?.aborted) return;
         const newReport = data.report as PulseReport;
         const newHeadlines =
           (data.headlines as Record<string, PulseHeadline[]>) ?? {};
+        const reused = Boolean(data.reused);
         const now = new Date().toISOString();
 
         setChecksByTicker((prev) => {
@@ -649,9 +660,36 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
           return next;
         });
         setHeadlinesByTicker((prev) => ({ ...prev, ...newHeadlines }));
+        if (reused) {
+          setCheckedAtByTicker((prev) => {
+            const next = { ...prev };
+            for (const check of newReport.checks ?? []) {
+              const key = check.ticker.toUpperCase();
+              if (!next[key]) next[key] = now;
+            }
+            return next;
+          });
+          for (const check of newReport.checks ?? []) {
+            const key = check.ticker.toUpperCase();
+            const reconciled = reconcilePulseCheck(check);
+            const cachedAt =
+              checkedAtByTickerRef.current[key] ?? now;
+            savePulseTickerCache(key, {
+              check: reconciled,
+              headlines: newHeadlines[key] ?? [],
+              cachedAt,
+            });
+          }
+          if (newReport.summary?.trim()) {
+            setSummary((prev) => prev || newReport.summary);
+          }
+          return;
+        }
         setCheckedAtByTicker((prev) => {
           const next = { ...prev };
-          for (const key of staleKeys) next[key] = now;
+          for (const check of newReport.checks ?? []) {
+            next[check.ticker.toUpperCase()] = now;
+          }
           return next;
         });
         for (const check of newReport.checks ?? []) {
@@ -681,14 +719,6 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
         setLastGeneratedAt(now);
       } catch (err) {
         if (isAbortError(err)) return;
-        setChecksByTicker((prev) => {
-          const next = { ...prev };
-          for (const c of stale) {
-            const key = c.ticker.toUpperCase();
-            if (!next[key]) next[key] = buildFallbackPulseCheck(c);
-          }
-          return next;
-        });
       } finally {
         for (const key of staleKeys) inFlightRef.current.delete(key);
         setCheckingTickers((prev) => {
