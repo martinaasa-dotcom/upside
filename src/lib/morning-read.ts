@@ -25,15 +25,15 @@ export type MorningDriver = {
   share: number | null;
 };
 
-export type CloseNote = {
-  book: string;
-  loud: string;
-  pulse: string;
+export type SundayName = {
+  ticker: string;
+  pct: number;
 };
 
 export type SundayRecap = {
-  headline: string;
-  lines: string[];
+  best: SundayName | null;
+  worst: SundayName | null;
+  openedDays: number | null;
 };
 
 export type MorningRead = {
@@ -43,7 +43,7 @@ export type MorningRead = {
   pulseFlag: MorningPulseFlag | null;
   awayLines: VisitDiff["lines"];
   drivers: MorningDriver[];
-  closeNote: CloseNote | null;
+  afterClose: boolean;
   sunday: SundayRecap | null;
 };
 
@@ -74,8 +74,8 @@ function daySentence(model: OverviewModel): { quiet: boolean; sentence: string }
   return {
     quiet: false,
     sentence: loud
-      ? `${dollars} on the book. ${cashtag(loud)} is making the noise.`
-      : `${dollars} on the book. Check if the story changed.`,
+      ? `${cashtag(loud)} did most of today's move.`
+      : "Check if the story changed.",
   };
 }
 
@@ -114,37 +114,6 @@ function driversFor(model: OverviewModel): MorningDriver[] {
     }));
 }
 
-function pulseLineForTicker(ticker: string): string {
-  const cached = loadPulseTickerCache(ticker);
-  if (!cached?.check) {
-    return `No Pulse on ${cashtag(ticker)} yet.`;
-  }
-  const status = cached.check.thesisStatus;
-  if (status === "intact") {
-    return `Last Pulse on ${cashtag(ticker)} is intact.`;
-  }
-  return `Last Pulse on ${cashtag(ticker)}: ${statusLabel(status).toLowerCase()}.`;
-}
-
-export function buildCloseNote(model: OverviewModel): CloseNote | null {
-  if (model.tickers.length === 0 || model.totals.todayPct == null) return null;
-  const loud = loudestName(model);
-  return {
-    book: `${signedCurrency(model.totals.todayDollar, 0)} on the book.`,
-    loud: loud
-      ? `${cashtag(loud)} was the name that did it.`
-      : "No single name stood out.",
-    pulse: loud ? pulseLineForTicker(loud) : "Pulse is quiet.",
-  };
-}
-
-function signedPct(pct: number): string {
-  const n = `${(Math.abs(pct) * 100).toFixed(1)}%`;
-  if (pct > 0) return `+${n}`;
-  if (pct < 0) return `-${n}`;
-  return n;
-}
-
 export function buildSundayRecap(model: OverviewModel): SundayRecap | null {
   if (model.tickers.length === 0) return null;
   const week = loadWeekMarks();
@@ -164,36 +133,16 @@ export function buildSundayRecap(model: OverviewModel): SundayRecap | null {
   const bestPct = weekBest?.bestPct ?? liveBest?.todayPct ?? null;
   const worstTicker = weekWorst?.worstTicker ?? liveWorst?.ticker ?? null;
   const worstPct = weekWorst?.worstPct ?? liveWorst?.todayPct ?? null;
-  const flag = pulseFlagFor(model);
-  const lines = [
-    `Book $${Math.round(model.totals.totalValue).toLocaleString("en-US")}.`,
-    bestTicker && bestPct != null
-      ? `Biggest gainer: ${cashtag(bestTicker)} ${signedPct(bestPct)}.`
-      : null,
-    worstTicker &&
-    worstPct != null &&
-    worstTicker !== bestTicker
-      ? `Biggest drop: ${cashtag(worstTicker)} ${signedPct(worstPct)}.`
-      : null,
-    week.days.length >= 2
-      ? `You opened the book ${week.days.length} days this week.`
-      : null,
-    flag
-      ? `Pulse: ${cashtag(flag.ticker)} ${statusLabel(flag.status).toLowerCase()}.`
-      : bestTicker
-        ? pulseLineForTicker(bestTicker)
-        : null,
-    buildBookInsights(
-      model.tickers.map((t) => ({
-        ticker: t.ticker,
-        value: t.currentValue,
-        todayPct: t.todayPct,
-      }))
-    ).lines[0] ?? null,
-  ].filter((x): x is string => Boolean(x));
+  const best =
+    bestTicker && bestPct != null ? { ticker: bestTicker, pct: bestPct } : null;
+  const worst =
+    worstTicker && worstPct != null && worstTicker !== bestTicker
+      ? { ticker: worstTicker, pct: worstPct }
+      : null;
   return {
-    headline: "Sunday look",
-    lines,
+    best,
+    worst,
+    openedDays: week.days.length >= 2 ? week.days.length : null,
   };
 }
 
@@ -229,8 +178,8 @@ export function buildMorningRead(
     insight,
     pulseFlag: pulseFlagFor(model),
     awayLines,
-    drivers: sunday || afterClose ? [] : driversFor(model),
-    closeNote: !sunday && afterClose ? buildCloseNote(model) : null,
+    drivers: sunday ? [] : driversFor(model),
+    afterClose: !sunday && afterClose,
     sunday,
   };
 }

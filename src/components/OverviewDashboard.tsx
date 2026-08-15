@@ -9,6 +9,8 @@ import {
   type NavPoint,
 } from "@/components/mobile/GoldNavChart";
 import {
+  Card,
+  MicroLabel,
   Panel,
   PanelHeader,
   Segmented,
@@ -359,6 +361,13 @@ function HomeSheetChip({
   );
 }
 
+function signedMovePct(pct: number): string {
+  const n = percent(Math.abs(pct));
+  if (pct > 0) return `+${n}`;
+  if (pct < 0) return `-${n}`;
+  return n;
+}
+
 function MorningStack({
   morning,
   previousAt,
@@ -370,77 +379,51 @@ function MorningStack({
   onOpenPulse?: () => void;
   className?: string;
 }) {
-  const special = Boolean(morning.sunday || morning.closeNote);
+  const sunday = morning.sunday;
   return (
     <div className={cn("space-y-3", className)}>
-      {morning.sunday ? (
-        <div>
-          <p className="text-sm font-semibold text-white">
-            {morning.sunday.headline}
-          </p>
-          <ul className="mt-1.5 space-y-1">
-            {morning.sunday.lines.map((line) => {
-              const pulseLine =
-                line.startsWith("Pulse:") ||
-                line.startsWith("Last Pulse") ||
-                line.startsWith("No Pulse");
-              if (pulseLine && onOpenPulse) {
-                return (
-                  <li key={line}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenPulse()}
-                      className="text-left text-sm text-zinc-200 hover:text-white"
-                    >
-                      {line}
-                    </button>
-                  </li>
-                );
-              }
-              return (
-                <li key={line} className="text-sm text-zinc-200">
-                  {line}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : morning.closeNote ? (
-        <div className="space-y-1">
-          <p className="text-sm text-zinc-200">{morning.closeNote.book}</p>
-          <p className="text-sm text-zinc-200">{morning.closeNote.loud}</p>
-          {onOpenPulse ? (
-            <button
-              type="button"
-              onClick={() => onOpenPulse()}
-              className="text-left text-sm text-zinc-400 hover:text-zinc-200"
-            >
-              {morning.closeNote.pulse}
-            </button>
-          ) : (
-            <p className="text-sm text-zinc-400">{morning.closeNote.pulse}</p>
+      {sunday ? (
+        <div className="space-y-2">
+          <MicroLabel>Sunday look</MicroLabel>
+          {sunday.best && (
+            <p className={cn("text-sm tabular-nums", tone(sunday.best.pct))}>
+              {cashtag(sunday.best.ticker)} {signedMovePct(sunday.best.pct)}
+              <span className="text-zinc-400"> · biggest week move</span>
+            </p>
+          )}
+          {sunday.worst && (
+            <p className={cn("text-sm tabular-nums", tone(sunday.worst.pct))}>
+              {cashtag(sunday.worst.ticker)} {signedMovePct(sunday.worst.pct)}
+              <span className="text-zinc-400"> · biggest drop</span>
+            </p>
+          )}
+          {sunday.openedDays != null && (
+            <p className="text-sm text-zinc-400">
+              You opened the book {sunday.openedDays} days this week.
+            </p>
           )}
         </div>
       ) : (
-        <p className="text-sm text-zinc-200">{morning.sentence}</p>
-      )}
-      {morning.insight && (
-        <p className="text-sm text-zinc-400">{morning.insight}</p>
-      )}
-      {!special && !morning.quiet && morning.drivers.length > 0 && (
-        <ul className="space-y-1">
-          {morning.drivers.map((d) => (
-            <li
-              key={d.ticker}
-              className={cn("text-sm tabular-nums", tone(d.dollar))}
-            >
-              {cashtag(d.ticker)} {signedCurrency(d.dollar, 0)}
-              {d.share != null
-                ? ` · ${Math.round(d.share * 100)}% of the day's swing`
-                : ""}
-            </li>
-          ))}
-        </ul>
+        <>
+          {!morning.afterClose && (
+            <p className="text-sm text-zinc-200">{morning.sentence}</p>
+          )}
+          {!morning.quiet && morning.drivers.length > 0 && (
+            <ul className="space-y-1">
+              {morning.drivers.map((d) => (
+                <li
+                  key={d.ticker}
+                  className={cn("text-sm tabular-nums", tone(d.dollar))}
+                >
+                  {cashtag(d.ticker)} {signedCurrency(d.dollar, 0)}
+                  {d.share != null
+                    ? ` · ${Math.round(d.share * 100)}% of the day's swing`
+                    : ""}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
       {morning.awayLines.length > 0 && (
         <div>
@@ -473,17 +456,25 @@ function MorningStack({
           </ul>
         </div>
       )}
-      {!special && morning.pulseFlag && (
+      {morning.insight && (
+        <Card tone="raised" className="px-3.5 py-3">
+          <MicroLabel>Worth noticing</MicroLabel>
+          <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
+            {morning.insight}
+          </p>
+        </Card>
+      )}
+      {morning.pulseFlag && (
         <button
           type="button"
           onClick={() => onOpenPulse?.()}
-          className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3 py-2.5 text-left"
+          className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3 text-left"
         >
-          <p className="text-xs uppercase tracking-wide text-amber-200/80">
+          <MicroLabel className="text-amber-200/80">
             Pulse · {cashtag(morning.pulseFlag.ticker)} ·{" "}
             {statusLabel(morning.pulseFlag.status)}
-          </p>
-          <p className="mt-1 text-sm text-zinc-200">{morning.pulseFlag.line}</p>
+          </MicroLabel>
+          <p className="mt-1.5 text-sm text-zinc-200">{morning.pulseFlag.line}</p>
         </button>
       )}
     </div>
