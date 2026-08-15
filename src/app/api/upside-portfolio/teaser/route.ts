@@ -1,6 +1,6 @@
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { MARGUS_FUND_COLUMNS, PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import {
   fundDayNumber,
@@ -29,7 +29,11 @@ export async function GET() {
     { data: holdings, error: holdingsErr },
     { data: latestReport, error: reportErr },
   ] = await Promise.all([
-    supabase.from(PORTFELL_TABLES.margusFund).select("*").eq("id", "main").maybeSingle(),
+    supabase
+      .from(PORTFELL_TABLES.margusFund)
+      .select(MARGUS_FUND_COLUMNS)
+      .eq("id", "main")
+      .maybeSingle(),
     supabase
       .from(PORTFELL_TABLES.margusFundHoldings)
       .select("ticker, shares, cost_basis, status")

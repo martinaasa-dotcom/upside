@@ -9,6 +9,7 @@ import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { isSafePositiveMoney, isSafeShares } from "@/lib/input-guard";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { isPlausibleTicker, normalizeYahooTicker } from "@/lib/ticker";
 import { roundMoney, roundShares } from "@/lib/money";
@@ -205,52 +206,55 @@ export async function PATCH(req: NextRequest) {
   if ("error" in loaded) return loaded.error;
   const { row: existing, portfolioId } = loaded;
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  for (const key of [
-    "ticker",
-    "shares",
-    "buy_price",
-    "eoy_target",
-    "target_call_pct",
-    "stock_target_override",
-    "sort_order",
-  ]) {
-    if (body[key] !== undefined) {
-      if (key === "ticker") {
-        const t = normalizeYahooTicker(String(body[key]));
-        if (!isPlausibleTicker(t)) {
-          return NextResponse.json(
-            { error: "That ticker doesn't look like a real symbol." },
-            { status: 400 }
-          );
-        }
-        patch[key] = t;
-      }
-      else if (
-        (key === "eoy_target" || key === "stock_target_override") &&
-        body[key] === null
-      ) {
-        patch[key] = null;
-      } else if (key === "shares") {
-        const n = roundShares(Number(body[key]));
-        if (!isSafeShares(n)) {
-          return NextResponse.json(
-            { error: "Shares must be a positive number" },
-            { status: 400 }
-          );
-        }
-        patch[key] = n;
-      } else if (key === "buy_price") {
-        const n = roundMoney(Number(body[key]));
-        if (!isSafePositiveMoney(n)) {
-          return NextResponse.json(
-            { error: "Buy price must be a positive number" },
-            { status: 400 }
-          );
-        }
-        patch[key] = n;
-      } else patch[key] = Number(body[key]);
+  const patch: TablesUpdate<"portfell_holdings"> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (body.ticker !== undefined) {
+    const t = normalizeYahooTicker(String(body.ticker));
+    if (!isPlausibleTicker(t)) {
+      return NextResponse.json(
+        { error: "That ticker doesn't look like a real symbol." },
+        { status: 400 }
+      );
     }
+    patch.ticker = t;
+  }
+  if (body.eoy_target === null) patch.eoy_target = null;
+  if (body.stock_target_override === null) patch.stock_target_override = null;
+  if (body.shares !== undefined) {
+    const n = roundShares(Number(body.shares));
+    if (!isSafeShares(n)) {
+      return NextResponse.json(
+        { error: "Shares must be a positive number" },
+        { status: 400 }
+      );
+    }
+    patch.shares = n;
+  }
+  if (body.buy_price !== undefined) {
+    const n = roundMoney(Number(body.buy_price));
+    if (!isSafePositiveMoney(n)) {
+      return NextResponse.json(
+        { error: "Buy price must be a positive number" },
+        { status: 400 }
+      );
+    }
+    patch.buy_price = n;
+  }
+  if (body.eoy_target !== undefined && body.eoy_target !== null) {
+    patch.eoy_target = Number(body.eoy_target);
+  }
+  if (
+    body.stock_target_override !== undefined &&
+    body.stock_target_override !== null
+  ) {
+    patch.stock_target_override = Number(body.stock_target_override);
+  }
+  if (body.target_call_pct !== undefined) {
+    patch.target_call_pct = Number(body.target_call_pct);
+  }
+  if (body.sort_order !== undefined) {
+    patch.sort_order = Number(body.sort_order);
   }
 
   const prevShares = Number(existing.shares) || 0;

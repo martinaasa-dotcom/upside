@@ -1,18 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
+import type { AppSupabaseClient } from "@/lib/supabase/client-types";
+import type { Database } from "@/lib/supabase/database.types";
 import { NextResponse } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
 /** Cookie-session Supabase client (RLS as the signed-in user). */
-export async function createSupabaseServerAuth(): Promise<SupabaseClient | null> {
+export async function createSupabaseServerAuth(): Promise<AppSupabaseClient | null> {
   const url = supabaseUrl();
   const key = supabaseAnonKey();
   if (!url || !key) return null;
 
   const cookieStore = await cookies();
 
-  return createServerClient(url, key, {
+  return createServerClient<Database>(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

@@ -1,6 +1,7 @@
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -54,7 +55,7 @@ export async function PATCH(req: NextRequest) {
     avatar_url?: string | null;
   };
 
-  const patch: Record<string, unknown> = {
+  const patch: TablesUpdate<"portfell_profiles"> = {
     updated_at: new Date().toISOString(),
   };
 

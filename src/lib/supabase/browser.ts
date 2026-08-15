@@ -1,16 +1,17 @@
 import { createBrowserClient } from "@supabase/ssr";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { AppSupabaseClient } from "@/lib/supabase/client-types";
+import type { Database } from "@/lib/supabase/database.types";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
-let browserClient: SupabaseClient | null = null;
+let browserClient: AppSupabaseClient | null = null;
 
 /** Cookie-aware browser client for Google SSO sessions. */
-export function createSupabaseBrowser(): SupabaseClient | null {
+export function createSupabaseBrowser(): AppSupabaseClient | null {
   const url = supabaseUrl();
   const key = supabaseAnonKey();
   if (!url || !key) return null;
   if (!browserClient) {
-    browserClient = createBrowserClient(url, key);
+    browserClient = createBrowserClient<Database>(url, key);
   }
   return browserClient;
 }

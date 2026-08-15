@@ -1,3 +1,4 @@
+import type { Json } from "@/lib/supabase/database.types";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
@@ -35,7 +36,7 @@ export async function logError(entry: ErrorLogEntry): Promise<void> {
       user_id: entry.userId ?? null,
       user_email: entry.userEmail ?? null,
       user_agent: entry.userAgent?.slice(0, 500) ?? null,
-      context: entry.context ?? null,
+      context: (entry.context as Json | null) ?? null,
     });
   } catch {
     // Logging the error is best-effort only — swallow so a Supabase blip

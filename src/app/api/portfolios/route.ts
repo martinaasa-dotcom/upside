@@ -15,6 +15,7 @@ import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { sanitizeSheetName } from "@/lib/input-guard";
 import { roundMoney } from "@/lib/money";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import {
   HOLDING_COLUMNS,
@@ -217,7 +218,7 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const patch: Record<string, unknown> = {
+  const patch: TablesUpdate<"portfell_portfolios"> = {
     updated_at: new Date().toISOString(),
   };
   if (body.cash_balance !== undefined) {

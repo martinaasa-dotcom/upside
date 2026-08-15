@@ -2,7 +2,11 @@ import { requireCronAuth } from "@/lib/cron-auth";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { getAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import {
+  MARGUS_FUND_COLUMNS,
+  MARGUS_FUND_HOLDING_COLUMNS,
+  PORTFELL_TABLES,
+} from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed";
 import { buildAdvisorProviderChain, withAdvisorFallback } from "@/lib/ai/model";
@@ -237,12 +241,12 @@ export async function GET(req: Request) {
       try {
         const { data: fundRow } = await supabase
           .from(PORTFELL_TABLES.margusFund)
-          .select("*")
+          .select(MARGUS_FUND_COLUMNS)
           .eq("id", "main")
           .maybeSingle();
         const { data: holdingRows } = await supabase
           .from(PORTFELL_TABLES.margusFundHoldings)
-          .select("*")
+          .select(MARGUS_FUND_HOLDING_COLUMNS)
           .eq("status", "open");
         const filled = fundRow
           ? await maybeFillFundIntent(
@@ -273,14 +277,14 @@ export async function GET(req: Request) {
 
     const { data: fundRow, error: fundErr } = await supabase
       .from(PORTFELL_TABLES.margusFund)
-      .select("*")
+      .select(MARGUS_FUND_COLUMNS)
       .eq("id", "main")
       .single();
     if (fundErr || !fundRow) throw new Error(fundErr?.message ?? "Fund row missing");
 
     const { data: holdingRows, error: holdingsErr } = await supabase
       .from(PORTFELL_TABLES.margusFundHoldings)
-      .select("*")
+      .select(MARGUS_FUND_HOLDING_COLUMNS)
       .eq("status", "open")
       .order("entry_date", { ascending: true });
     if (holdingsErr) throw new Error(holdingsErr.message);

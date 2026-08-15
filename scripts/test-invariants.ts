@@ -1792,6 +1792,67 @@ run("cash RPC still fails closed and money has a hard ceiling", () => {
   assert.ok(/export const MAX_SAFE_SHARES/.test(money));
 });
 
+run("email and admin RPCs are not callable with a user JWT", () => {
+  const migration = readFileSync(
+    join(
+      process.cwd(),
+      "supabase/migrations/043_rls_grants_oracles_initplan.sql"
+    ),
+    "utf8"
+  );
+  assert.ok(
+    /revoke execute on function public\.portfell_lookup_profile_id_by_email\(text\)[\s\S]{0,40}from authenticated/.test(
+      migration
+    ),
+    "lookup-by-email must not stay on authenticated"
+  );
+  assert.ok(
+    /revoke execute on function public\.portfell_superadmin_overview\(\)[\s\S]{0,40}from authenticated/.test(
+      migration
+    ),
+    "admin overview must not stay on authenticated"
+  );
+  assert.ok(
+    /with check \(false\)/.test(migration),
+    "error-log inserts must fail closed for JWT roles"
+  );
+  assert.ok(
+    /revoke all on table public\.%I from anon/.test(migration),
+    "anon must lose table grants, including TRUNCATE"
+  );
+  const ownership = readFileSync(
+    join(process.cwd(), "src/lib/auth/ownership.ts"),
+    "utf8"
+  );
+  assert.ok(
+    /portfell_lookup_profile_id_by_email/.test(ownership),
+    "co-owner add still goes through the service-role RPC"
+  );
+  const redeem = readFileSync(
+    join(process.cwd(), "supabase/migrations/044_redeem_invite_rpcs.sql"),
+    "utf8"
+  );
+  assert.ok(
+    /create or replace function public\.portfell_redeem_community_invite/.test(
+      redeem
+    )
+  );
+  assert.ok(
+    /create or replace function public\.portfell_redeem_portfolio_invite/.test(
+      redeem
+    )
+  );
+  assert.ok(
+    /set accepted_at = now\(\)/.test(redeem),
+    "redeem must claim the invite row in the same statement"
+  );
+  assert.ok(
+    /revoke all on function public\.portfell_redeem_community_invite\(text\) from public, anon/.test(
+      redeem
+    )
+  );
+});
+
 run("offline status is not read during render", () => {
   const src = readFileSync(
     join(process.cwd(), "src/lib/use-online-status.ts"),

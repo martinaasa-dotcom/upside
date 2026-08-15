@@ -20,6 +20,7 @@ import {
 import { roundMoney } from "@/lib/money";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -330,7 +331,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     startingCash?: unknown;
   };
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const patch: TablesUpdate<"portfell_communities"> = {
+    updated_at: new Date().toISOString(),
+  };
   if (body.name !== undefined) {
     const name = String(body.name).trim().slice(0, 80);
     if (!name) {

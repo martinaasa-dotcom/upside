@@ -1,6 +1,12 @@
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import {
+  MARGUS_FUND_COLUMNS,
+  MARGUS_FUND_HOLDING_COLUMNS,
+  MARGUS_FUND_RECAP_COLUMNS,
+  MARGUS_FUND_REPORT_COLUMNS,
+  PORTFELL_TABLES,
+} from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { NextResponse } from "next/server";
 
@@ -22,19 +28,23 @@ export async function GET() {
     { data: reports, error: reportsErr },
     { data: weeklyRecaps, error: weeklyErr },
   ] = await Promise.all([
-    supabase.from(PORTFELL_TABLES.margusFund).select("*").eq("id", "main").maybeSingle(),
+    supabase
+      .from(PORTFELL_TABLES.margusFund)
+      .select(MARGUS_FUND_COLUMNS)
+      .eq("id", "main")
+      .maybeSingle(),
     supabase
       .from(PORTFELL_TABLES.margusFundHoldings)
-      .select("*")
+      .select(MARGUS_FUND_HOLDING_COLUMNS)
       .order("entry_date", { ascending: false }),
     supabase
       .from(PORTFELL_TABLES.margusFundReports)
-      .select("*")
+      .select(MARGUS_FUND_REPORT_COLUMNS)
       .order("report_date", { ascending: false })
       .limit(60),
     supabase
       .from(PORTFELL_TABLES.margusFundWeeklyRecaps)
-      .select("*")
+      .select(MARGUS_FUND_RECAP_COLUMNS)
       .order("week_ending", { ascending: false })
       .limit(20),
   ]);

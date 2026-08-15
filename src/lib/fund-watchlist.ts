@@ -5,7 +5,7 @@ export type FundWatchItem = {
 
 /** Drop held names, junk tickers, and empties so the public list stays honest. */
 export function sanitizeFundWatchlist(
-  items: { ticker: string; waitFor: string }[] | null | undefined,
+  items: unknown[] | null | undefined,
   heldTickers: string[]
 ): FundWatchItem[] {
   const held = new Set(
@@ -13,7 +13,9 @@ export function sanitizeFundWatchlist(
   );
   const seen = new Set<string>();
   const out: FundWatchItem[] = [];
-  for (const item of items ?? []) {
+  for (const raw of items ?? []) {
+    if (!raw || typeof raw !== "object") continue;
+    const item = raw as { ticker?: unknown; waitFor?: unknown };
     const ticker = String(item.ticker ?? "")
       .trim()
       .toUpperCase()

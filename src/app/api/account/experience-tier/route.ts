@@ -1,5 +1,6 @@
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -49,7 +50,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const patch: TablesUpdate<"portfell_profiles"> = {
+    updated_at: new Date().toISOString(),
+  };
   if (tier !== undefined) patch.experience_tier = tier;
   if (knowsOptions !== undefined) patch.knows_options = knowsOptions;
 

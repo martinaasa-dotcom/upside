@@ -1,7 +1,7 @@
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { ERROR_LOG_COLUMNS, PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.errorLog)
-    .select("*")
+    .select(ERROR_LOG_COLUMNS)
     .order("created_at", { ascending: false })
     .limit(150);
 

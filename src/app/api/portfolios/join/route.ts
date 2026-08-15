@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   }
 
   const result = data as { ok: boolean; error?: string; portfolio_id?: string };
-  if (!result?.ok) {
+  if (!result?.ok || !result.portfolio_id) {
     return NextResponse.json(
       { error: result?.error ?? "Invalid invite code" },
       { status: 404 }

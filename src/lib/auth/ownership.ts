@@ -58,12 +58,11 @@ export async function requirePortfolioOwner(
  * Add a co-owner by email. Caller must already be a co-owner.
  * Creates a profile stub only if the target has already signed in (has a profile).
  *
- * The email->profile lookup goes through a security-definer RPC: the caller
- * has no existing relationship with the target (that's the whole point of
- * adding them), so ownership/community-based RLS can never authorize a
- * regular cross-user profile lookup. The actual ownership insert uses the
- * caller's own session — that one *is* authorized normally, since the caller
- * is already verified as a co-owner before this runs.
+ * The email->profile lookup goes through a security-definer RPC on the
+ * service-role client. Execute was revoked from authenticated in migration
+ * 043 so a stolen user JWT cannot enumerate profiles by email. The insert
+ * still goes through the same data client; production always has the
+ * service-role key.
  */
 export async function addCoOwnerToPortfolio(
   portfolioId: string,
