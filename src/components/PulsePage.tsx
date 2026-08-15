@@ -28,11 +28,12 @@ import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
 import type { Quote } from "@/lib/types";
 import {
-  PULSE_DOWN_THRESHOLD,
   buildPulseCandidate,
   buildPulseCandidates,
   formatMovePct,
+  pulseLeftHold,
   shouldAutoPulseTicker,
+  sortPulseCandidates,
   loadPulseSummary,
   loadPulseTickerCache,
   reconcilePulseCheck,
@@ -156,6 +157,7 @@ function PulseCard({
   onRefresh,
   onWriteThesis,
   pinned = false,
+  leftHold = false,
 }: {
   candidate: PulseCandidate;
   check?: PulseCheck;
@@ -166,6 +168,7 @@ function PulseCard({
   onRefresh?: () => void;
   onWriteThesis?: () => void;
   pinned?: boolean;
+  leftHold?: boolean;
 }) {
   const pct = c.effectivePct ?? 0;
   const up = pct >= 0;
@@ -186,7 +189,7 @@ function PulseCard({
       className={cn(
         "rounded-xl border px-4 py-4 scroll-mt-28",
         shown
-          ? statusBorder(status, c.needsAttention, pinned)
+          ? statusBorder(status, c.isBigMove || leftHold, pinned)
           : pinned
             ? "border-brand/50 bg-brand/10 ring-1 ring-brand/30"
             : "border-zinc-800 bg-zinc-950/40"
@@ -208,9 +211,21 @@ function PulseCard({
                 Lookup
               </span>
             )}
-            {c.needsAttention && (
-              <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-xs font-medium text-rose-200">
-                Down ≥5%
+            {leftHold && (
+              <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-200">
+                Was Hold
+              </span>
+            )}
+            {c.isBigMove && (
+              <span
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-xs font-medium",
+                  (c.effectivePct ?? 0) < 0
+                    ? "bg-rose-500/20 text-rose-200"
+                    : "bg-emerald-500/20 text-emerald-200"
+                )}
+              >
+                {(c.effectivePct ?? 0) < 0 ? "Down ≥5%" : "Up ≥5%"}
               </span>
             )}
           </div>
@@ -515,20 +530,50 @@ export function PulsePage({
     return buildPulseCandidate(pinnedTicker, model, mergedQuotes);
   }, [pinnedTicker, model, mergedQuotes]);
 
+  const leftHoldTickers = useMemo(() => {
+    const left = new Set<string>();
+    for (const c of candidates) {
+      const key = c.ticker.toUpperCase();
+      if (pulseLeftHold(checksByTicker[key]?.action, loadPulseHistory(key))) {
+        left.add(key);
+      }
+    }
+    if (pinnedTicker) {
+      const key = pinnedTicker.toUpperCase();
+      if (pulseLeftHold(checksByTicker[key]?.action, loadPulseHistory(key))) {
+        left.add(key);
+      }
+    }
+    return left;
+  }, [candidates, checksByTicker, pinnedTicker]);
+
+  const ranked = useMemo(
+    () => sortPulseCandidates(candidates, { leftHoldTickers }),
+    [candidates, leftHoldTickers]
+  );
+
   const attention = useMemo(
     () =>
-      candidates.filter(
-        (c) => c.needsAttention && c.ticker.toUpperCase() !== pinnedTicker
-      ),
-    [candidates, pinnedTicker]
+      ranked.filter((c) => {
+        const key = c.ticker.toUpperCase();
+        return (
+          key !== pinnedTicker &&
+          (c.isBigMove || leftHoldTickers.has(key))
+        );
+      }),
+    [ranked, pinnedTicker, leftHoldTickers]
   );
   const rest = useMemo(
     () =>
-      candidates.filter(
-        (c) =>
-          !c.needsAttention && c.ticker.toUpperCase() !== pinnedTicker
-      ),
-    [candidates, pinnedTicker]
+      ranked.filter((c) => {
+        const key = c.ticker.toUpperCase();
+        return (
+          key !== pinnedTicker &&
+          !c.isBigMove &&
+          !leftHoldTickers.has(key)
+        );
+      }),
+    [ranked, pinnedTicker, leftHoldTickers]
   );
 
   useEffect(() => {
@@ -597,7 +642,7 @@ export function PulsePage({
 
   /**
    * Checks a set of tickers in one request. Auto only covers a name that
-   * was never checked, or a hard-down name whose last read is stale.
+   * was never checked, or a 5% mover whose last read is stale.
    * Tickers being refreshed keep showing their old result.
    */
   const runPulse = useCallback(
@@ -611,7 +656,7 @@ export function PulsePage({
         ? notInFlight
         : notInFlight.filter((c) =>
             shouldAutoPulseTicker({
-              needsAttention: c.needsAttention,
+              needsAttention: c.isBigMove,
               cachedAt:
                 checkedAtByTickerRef.current[c.ticker.toUpperCase()] ?? "",
             })
@@ -751,7 +796,7 @@ export function PulsePage({
     .join(",");
 
   // First paint + whenever the candidate SET actually changes: fill in
-  // names that were never checked, or a hard-down name whose last read
+  // names that were never checked, or a 5% mover whose last read
   // is stale. Quiet names keep the last read. Check again is the override.
   useEffect(() => {
     if (candidates.length === 0) return;
@@ -961,6 +1006,9 @@ export function PulsePage({
                   : undefined
               }
               pinned
+              leftHold={leftHoldTickers.has(
+                pinnedCandidate.ticker.toUpperCase()
+              )}
             />
           </ul>
         </section>
@@ -975,8 +1023,8 @@ export function PulsePage({
         <div className="space-y-6">
           {attention.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-rose-300">
-                Down {formatMovePct(-PULSE_DOWN_THRESHOLD)} or more
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-200">
+                Needs a look
               </h3>
               <ul className="space-y-3">
                 {attention.map((c) => (
@@ -994,6 +1042,7 @@ export function PulsePage({
                     onWriteThesis={
                       onWriteThesis ? () => onWriteThesis(c.ticker) : undefined
                     }
+                    leftHold={leftHoldTickers.has(c.ticker.toUpperCase())}
                   />
                 ))}
               </ul>
@@ -1023,6 +1072,7 @@ export function PulsePage({
                     onWriteThesis={
                       onWriteThesis ? () => onWriteThesis(c.ticker) : undefined
                     }
+                    leftHold={leftHoldTickers.has(c.ticker.toUpperCase())}
                   />
                 ))}
               </ul>

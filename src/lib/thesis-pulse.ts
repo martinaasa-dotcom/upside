@@ -7,6 +7,8 @@ import type { Quote } from "@/lib/types";
 export const PULSE_DOWN_THRESHOLD = 0.05;
 export const PULSE_MIN_BOOK_PCT = 0.02;
 export const PULSE_DEFAULT_TOP_N = 10;
+/** A Hold → other call stays pinned to the top of Pulse for this long. */
+export const PULSE_HOLD_EXIT_MS = 24 * 60 * 60 * 1000;
 
 export type PulseMoveSource = "regular" | "pre" | "post";
 
@@ -28,6 +30,8 @@ export type PulseCandidate = {
   moveSource: PulseMoveSource;
   /** Down ≥5% on effective move — the “should I sell?” flag */
   needsAttention: boolean;
+  /** Up or down ≥5% on the effective move */
+  isBigMove: boolean;
   inBook: boolean;
 };
 
@@ -153,6 +157,59 @@ export function effectiveMove(quote: Quote | null | undefined): {
   };
 }
 
+export function isBigPulseMove(pct: number | null | undefined): boolean {
+  return pct != null && Number.isFinite(pct) && Math.abs(pct) >= PULSE_DOWN_THRESHOLD;
+}
+
+/**
+ * True when the latest Pulse call left Hold for add / trim / sell / wait,
+ * and that change is still inside the pin window.
+ */
+export function pulseLeftHold(
+  currentAction: PulseAction | undefined,
+  history: ReadonlyArray<{ action: PulseAction; at: string }>,
+  now = Date.now(),
+  windowMs = PULSE_HOLD_EXIT_MS
+): boolean {
+  if (!currentAction || currentAction === "hold") return false;
+  if (history.length < 2) return false;
+  for (let i = history.length - 1; i >= 1; i--) {
+    if (history[i].action !== currentAction) continue;
+    if (history[i - 1].action !== "hold") return false;
+    const ts = new Date(history[i].at).getTime();
+    return Number.isFinite(ts) && now - ts <= windowMs;
+  }
+  return false;
+}
+
+export function sortPulseCandidates<
+  T extends {
+    ticker: string;
+    effectivePct: number | null;
+    bookPct: number;
+    currentValue?: number;
+  },
+>(
+  candidates: readonly T[],
+  opts?: { leftHoldTickers?: ReadonlySet<string> }
+): T[] {
+  const left = opts?.leftHoldTickers ?? new Set<string>();
+  return [...candidates].sort((a, b) => {
+    const aLeft = left.has(a.ticker.toUpperCase());
+    const bLeft = left.has(b.ticker.toUpperCase());
+    if (aLeft !== bLeft) return aLeft ? -1 : 1;
+    const aBig = isBigPulseMove(a.effectivePct);
+    const bBig = isBigPulseMove(b.effectivePct);
+    if (aBig !== bBig) return aBig ? -1 : 1;
+    if (aBig && bBig) {
+      return Math.abs(b.effectivePct ?? 0) - Math.abs(a.effectivePct ?? 0);
+    }
+    return (
+      b.bookPct - a.bookPct || (b.currentValue ?? 0) - (a.currentValue ?? 0)
+    );
+  });
+}
+
 function toCandidate(
   ticker: string,
   row: TickerScore | null,
@@ -185,11 +242,12 @@ function toCandidate(
     moveSource: move.source,
     needsAttention:
       effectivePct != null && effectivePct <= -PULSE_DOWN_THRESHOLD,
+    isBigMove: isBigPulseMove(effectivePct),
     inBook: Boolean(row),
   };
 }
 
-/** Default Pulse set: all big book lines + anything down ≥5% (incl. pre/after). */
+/** Default Pulse set: all big book lines + anything up or down ≥5% (incl. pre/after). */
 export function buildPulseCandidates(
   overview: OverviewModel,
   quotes: Record<string, Quote>,
@@ -213,7 +271,7 @@ export function buildPulseCandidates(
   for (const t of overview.tickers) {
     const q = quotes[t.ticker];
     const move = effectiveMove(q);
-    if (move.pct != null && move.pct <= -PULSE_DOWN_THRESHOLD) {
+    if (isBigPulseMove(move.pct)) {
       keys.add(t.ticker.toUpperCase());
     }
   }
@@ -228,13 +286,7 @@ export function buildPulseCandidates(
     return toCandidate(ticker, row, quotes[ticker] ?? null, equity);
   });
 
-  return candidates.sort((a, b) => {
-    if (a.needsAttention !== b.needsAttention) return a.needsAttention ? -1 : 1;
-    if (a.needsAttention && b.needsAttention) {
-      return (a.effectivePct ?? 0) - (b.effectivePct ?? 0);
-    }
-    return b.bookPct - a.bookPct || b.currentValue - a.currentValue;
-  });
+  return sortPulseCandidates(candidates);
 }
 
 /** Build one pulse row — for search / single-ticker check. */
@@ -341,8 +393,8 @@ export function isPulseCacheFresh(
 
 /**
  * Auto Pulse may call the model only for a name that was never checked,
- * or a name that is down hard and whose last check is stale. Quiet names
- * keep the last read until the person hits Check again.
+ * or a name that moved 5% or more (up or down) whose last check is stale.
+ * Quiet names keep the last read until the person hits Check again.
  */
 export function shouldAutoPulseTicker(input: {
   needsAttention: boolean;

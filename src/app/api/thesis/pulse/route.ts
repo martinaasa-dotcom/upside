@@ -16,6 +16,7 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   formatMovePct,
+  isBigPulseMove,
   reconcilePulseCheck,
   type PulseCheck,
   type PulseCandidate,
@@ -95,7 +96,11 @@ function buildPrompt(
     const move = formatMovePct(c.effectivePct);
     const bookPct = (c.bookPct * 100).toFixed(1);
     const roiPct = (c.roiPct * 100).toFixed(0);
-    const flag = c.needsAttention ? " **NEEDS ATTENTION: down ≥5%**" : "";
+    const flag = isBigPulseMove(c.effectivePct)
+      ? c.needsAttention
+        ? " **NEEDS ATTENTION: down ≥5%**"
+        : " **NEEDS ATTENTION: up ≥5%**"
+      : "";
     const parts = [
       `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup, not in book)"}`,
       conv?.thesis ? `  Why they own it: ${conv.thesis}` : "",
@@ -120,9 +125,9 @@ function buildPrompt(
   return `${MARGUS_PERSONA}
 
 ## Task: Pulse
-Martin uses this when a **big line drops hard**. He asks: *should I sell, or add the dip?*
+Martin uses this when a **big line moves hard**. He asks: *should I sell, add the dip, or take some off after a run?*
 
-Primary job: **down ≥5% moves** (including pre-market / after-hours). Also covers other big book lines for context.
+Primary job: **moves of 5% or more, up or down** (including pre-market / after-hours). Also covers other big book lines for context.
 
 ${fg}
 

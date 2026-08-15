@@ -23,8 +23,11 @@ import {
 import { playbookBullets } from "../src/lib/forecast-playbook";
 import { shouldAutoRefreshForecast } from "../src/lib/forecast-plan";
 import {
+  isBigPulseMove,
+  pulseLeftHold,
   reconcilePulseCheck,
   shouldAutoPulseTicker,
+  sortPulseCandidates,
   statusLabel,
   verdictRepeatsTrim,
   type PulseCheck,
@@ -1261,6 +1264,77 @@ run("chat does not ping the model before the first token", () => {
   assert.doesNotMatch(
     readFileSync(join(process.cwd(), "src/app/api/forecast/plan/route.ts"), "utf8"),
     /effort:\s*"high"/
+  );
+});
+
+run("Pulse puts hold-exits and 5% movers on top", () => {
+  assert.equal(isBigPulseMove(0.05), true);
+  assert.equal(isBigPulseMove(-0.05), true);
+  assert.equal(isBigPulseMove(0.049), false);
+  assert.equal(isBigPulseMove(null), false);
+
+  const now = Date.parse("2026-08-15T12:00:00Z");
+  assert.equal(
+    pulseLeftHold(
+      "add",
+      [
+        { action: "hold", at: "2026-08-14T10:00:00Z" },
+        { action: "add", at: "2026-08-15T10:00:00Z" },
+      ],
+      now
+    ),
+    true
+  );
+  assert.equal(
+    pulseLeftHold(
+      "add",
+      [
+        { action: "hold", at: "2026-08-13T10:00:00Z" },
+        { action: "add", at: "2026-08-13T11:00:00Z" },
+      ],
+      now
+    ),
+    false
+  );
+  assert.equal(
+    pulseLeftHold("hold", [{ action: "hold", at: "2026-08-15T10:00:00Z" }], now),
+    false
+  );
+  assert.equal(
+    pulseLeftHold(
+      "trim",
+      [
+        { action: "hold", at: "2026-08-14T10:00:00Z" },
+        { action: "add", at: "2026-08-15T09:00:00Z" },
+        { action: "trim", at: "2026-08-15T10:00:00Z" },
+      ],
+      now
+    ),
+    false
+  );
+
+  const ranked = sortPulseCandidates(
+    [
+      { ticker: "QUIET", effectivePct: 0.01, bookPct: 0.4, currentValue: 400 },
+      { ticker: "UP", effectivePct: 0.08, bookPct: 0.05, currentValue: 50 },
+      { ticker: "DOWN", effectivePct: -0.06, bookPct: 0.05, currentValue: 50 },
+      { ticker: "LEFT", effectivePct: 0.01, bookPct: 0.1, currentValue: 100 },
+    ],
+    { leftHoldTickers: new Set(["LEFT"]) }
+  );
+  assert.deepEqual(
+    ranked.map((r) => r.ticker),
+    ["LEFT", "UP", "DOWN", "QUIET"]
+  );
+
+  const movers = sortPulseCandidates([
+    { ticker: "A", effectivePct: 0.06, bookPct: 0.5 },
+    { ticker: "B", effectivePct: -0.11, bookPct: 0.1 },
+    { ticker: "C", effectivePct: 0.09, bookPct: 0.2 },
+  ]);
+  assert.deepEqual(
+    movers.map((r) => r.ticker),
+    ["B", "C", "A"]
   );
 });
 
