@@ -154,7 +154,14 @@ function CycleHistoryBars({
 }) {
   if (history.length === 0) {
     return (
-      <p className="text-xs text-zinc-400">No prior data in this cycle phase.</p>
+      <div className="space-y-2.5">
+        <div className="h-7" />
+        <div className="flex h-44 items-center">
+          <p className="text-sm text-zinc-400">
+            No prior data in this cycle phase.
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -167,7 +174,7 @@ function CycleHistoryBars({
 
   return (
     <div className="space-y-2.5">
-      <div className="flex flex-wrap gap-1.5 text-xs">
+      <div className="flex h-7 flex-nowrap gap-1.5 overflow-x-auto text-xs">
         <span className="rounded-md border border-zinc-800/80 bg-zinc-950/50 px-2 py-0.5 text-zinc-400">
           Best{" "}
           <span className={cn("font-semibold tabular-nums", retText(best.returnPct))}>
@@ -200,7 +207,8 @@ function CycleHistoryBars({
         </span>
       </div>
 
-      <div className="grid gap-0.5">
+      <div className="h-44 overflow-y-auto overscroll-contain">
+        <div className="grid gap-0.5">
         {sorted.map((h) => {
           const barW = (Math.abs(h.returnPct) / maxAbs) * 50;
           const isHighlight = highlightYear === h.year;
@@ -249,6 +257,7 @@ function CycleHistoryBars({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );
@@ -307,23 +316,37 @@ function DayOfMonthChart({
   onSelectDay: (day: number) => void;
 }) {
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.avgReturnPct)), 0.05);
+  const cells = Array.from({ length: 31 }, (_, i) => {
+    const day = i + 1;
+    return rows.find((r) => r.day === day) ?? null;
+  });
 
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-8 gap-1 md:grid-cols-11">
-        {rows.map((row) => {
+        {cells.map((row, i) => {
+          const day = i + 1;
+          if (!row) {
+            return (
+              <div
+                key={day}
+                aria-hidden
+                className="min-h-11 rounded-lg bg-white/[0.02]"
+              />
+            );
+          }
           const v = row.avgReturnPct;
           const mag = Math.min(1, Math.abs(v) / maxAbs);
           const empty = row.samples === 0;
-          const isSelected = selectedDay === row.day;
-          const isToday = todayDay === row.day;
+          const isSelected = selectedDay === day;
+          const isToday = todayDay === day;
           return (
             <button
-              key={row.day}
+              key={day}
               type="button"
-              onClick={() => onSelectDay(row.day)}
+              onClick={() => onSelectDay(day)}
               aria-pressed={isSelected}
-              title={`Day ${row.day}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · ${row.winRate}% up · n=${row.samples}`}
+              title={`Day ${day}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · ${row.winRate}% up · n=${row.samples}`}
               className={cn(
                 "flex min-h-11 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
                 dayCellBg(v, mag, empty),
@@ -449,13 +472,15 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   const selectedDayRow = dayRows.find((r) => r.day === selectedDay);
   const selectedDayLabel = `${viewMonthName} ${selectedDay}`;
 
+  function goToMonth(next: number) {
+    const month = next < 1 ? 12 : next > 12 ? 1 : next;
+    const lastDay = new Date(2024, month, 0).getDate();
+    setViewMonth(month);
+    setSelectedDay((d) => Math.min(d, lastDay));
+  }
+
   function shiftViewMonth(delta: number) {
-    setViewMonth((m) => {
-      let next = m + delta;
-      if (next < 1) next = 12;
-      if (next > 12) next = 1;
-      return next;
-    });
+    goToMonth(viewMonth + delta);
   }
 
   function goToToday() {
@@ -542,12 +567,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               currentMonth={model.asOfMonth}
               onSelectMonth={setPlaybookMonth}
             />
-            {playbookMonthRow && (
-              <div className="mt-4 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
-                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <p className="text-xs font-medium text-zinc-300">
-                    {MONTH_NAMES[playbookMonth - 1]} in years like this
-                  </p>
+            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+              <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <p className="text-xs font-medium text-zinc-300">
+                  {MONTH_NAMES[playbookMonth - 1]} in years like this
+                </p>
+                {playbookMonthRow ? (
                   <p
                     className={cn(
                       "text-xs tabular-nums font-semibold",
@@ -559,13 +584,19 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     {playbookMonthRow.winRate}% win · n=
                     {playbookMonthRow.samples}
                   </p>
-                </div>
+                ) : null}
+              </div>
+              {playbookMonthRow ? (
                 <MonthHistoryTable
                   row={playbookMonthRow}
                   highlightYear={model.asOfYear}
                 />
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-zinc-400">
+                  No prior sessions for this month.
+                </p>
+              )}
+            </div>
           </Section>
 
           <Section
@@ -581,7 +612,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Prev
               </button>
-              <div className="text-center">
+              <div className="h-10 text-center">
                 <p className="text-sm font-semibold text-white">
                   {viewMonthName} {selectedDay}
                 </p>
@@ -614,7 +645,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setViewMonth(m)}
+                    onClick={() => goToMonth(m)}
                     className={cn(
                       "rounded-lg px-1 py-1.5 text-center text-xs font-medium transition",
                       viewMonth === m
@@ -638,12 +669,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               }
               onSelectDay={setSelectedDay}
             />
-            {selectedDayRow && (
-              <div className="mt-4 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
-                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <p className="text-xs font-medium text-zinc-300">
-                    {selectedDayLabel}, prior sessions
-                  </p>
+            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
+              <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <p className="text-xs font-medium text-zinc-300">
+                  {selectedDayLabel}, prior sessions
+                </p>
+                {selectedDayRow ? (
                   <p
                     className={cn(
                       "text-xs tabular-nums font-semibold",
@@ -654,13 +685,19 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     {selectedDayRow.avgReturnPct}% · {selectedDayRow.winRate}%
                     win · n={selectedDayRow.samples}
                   </p>
-                </div>
+                ) : null}
+              </div>
+              {selectedDayRow ? (
                 <DayHistoryTable
                   row={selectedDayRow}
                   highlightYear={model.asOfYear}
                 />
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-zinc-400">
+                  No prior sessions for this day.
+                </p>
+              )}
+            </div>
           </Section>
         </>
       )}
