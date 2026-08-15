@@ -63,6 +63,7 @@ export type NoteReport = {
   kind: NoteKind;
   title: string;
   dateLine: string;
+  shortDate: string;
   book: number;
   nameCount: number;
   todayLabel: string;
@@ -345,6 +346,11 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
     kind: input.kind,
     title: TITLE[input.kind],
     dateLine: dateLine(now),
+    shortDate: new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Tallinn",
+      day: "numeric",
+      month: "short",
+    }).format(now),
     book: t.book,
     nameCount: t.nameCount,
     todayLabel: input.kind === "sunday" ? "This week" : "Today",
@@ -479,7 +485,6 @@ export function noteReportHtml(r: NoteReport): string {
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
   const preview =
     r.todayPct != null ? signedPct(r.todayPct) : notePreview(r);
-  const previewPad = Array.from({ length: 20 }, () => "\u00a0\u200c").join("");
 
   const moverRows = r.movers
     .map((m, i) => {
@@ -620,7 +625,8 @@ export function noteReportHtml(r: NoteReport): string {
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background:${APP};color:${CREAM}" bgcolor="${APP}">
-<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeHtml(preview)}${previewPad}</div>
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeHtml(preview)}</div>
+<!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${APP}" style="width:100%;background:${APP}">
   <tr>
     <td style="padding:0;background:${APP}" bgcolor="${APP}">
@@ -664,5 +670,5 @@ export function noteReportHtml(r: NoteReport): string {
 }
 
 export function noteSubject(r: NoteReport): string {
-  return `${TITLE[r.kind]} · ${signedMoney(r.todayDollar)}`;
+  return `${TITLE[r.kind]} · ${r.shortDate} · ${signedMoney(r.todayDollar)}`;
 }

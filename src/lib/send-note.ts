@@ -55,6 +55,7 @@ export async function sendNoteEmail(input: {
     html: input.html ?? noteHtml(input.text),
     headers: {
       "List-Unsubscribe": "<https://upsidelab.app/account>",
+      "X-Entity-Ref-ID": crypto.randomUUID(),
     },
   });
   return !error;
