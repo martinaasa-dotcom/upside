@@ -2322,6 +2322,31 @@ run("pages reconnect after offline and back-forward cache", () => {
   assert.ok(/useNetworkResume/.test(community));
 });
 
+run("Lab market reads are shared per ticker, not fetched per visitor", () => {
+  const trends = readFileSync(
+    join(process.cwd(), "src/lib/market/trends-cache.ts"),
+    "utf8"
+  );
+  const seasonality = readFileSync(
+    join(process.cwd(), "src/lib/market/seasonality-fetch.ts"),
+    "utf8"
+  );
+  const lab = readFileSync(
+    join(process.cwd(), "src/components/LabSheet.tsx"),
+    "utf8"
+  );
+  assert.ok(/unstable_cache/.test(trends));
+  assert.ok(/trends-weekly-closes-v1/.test(trends));
+  assert.ok(/trends-row-v1/.test(trends));
+  assert.ok(/unstable_cache/.test(seasonality));
+  assert.ok(/seasonality-model-v1/.test(seasonality));
+  assert.ok(
+    /tab === "trends"/.test(lab),
+    "Trends should mount when that tab is open, not on every Lab visit"
+  );
+  assert.ok(/tab === "seasonality"/.test(lab));
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

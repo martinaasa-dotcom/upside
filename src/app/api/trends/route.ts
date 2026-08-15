@@ -27,10 +27,9 @@ export async function POST(req: NextRequest) {
   const result = await fetchTrendsBatch(unique, { force: Boolean(body.force) });
 
   const headers = new Headers();
-  headers.set(
-    "Cache-Control",
-    "private, s-maxage=300, stale-while-revalidate=3600"
-  );
+  // Auth cookies keep this off the public CDN. The payload itself is
+  // shared per ticker in trends-cache (Next data cache), so the second
+  // person to ask for $NBIS does not hit Yahoo again.
   headers.set(
     "x-trends-cache-hit-ratio",
     `${result.cachedCount}/${unique.length}`

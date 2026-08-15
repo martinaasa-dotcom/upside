@@ -1,5 +1,10 @@
-import type { DailyBar } from "@/lib/market/seasonality";
+import {
+  buildSeasonalityModel,
+  type DailyBar,
+  type SeasonalityModel,
+} from "@/lib/market/seasonality";
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { unstable_cache } from "next/cache";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -54,4 +59,30 @@ export async function fetchSeasonalityBars(ticker: string): Promise<{
   }
 
   return { daily };
+}
+
+async function buildSeasonalityUncached(
+  ticker: string
+): Promise<SeasonalityModel | null> {
+  const symbol = ticker.trim().toUpperCase();
+  const { daily } = await fetchSeasonalityBars(symbol);
+  if (daily.length < 50) return null;
+  return buildSeasonalityModel({ ticker: symbol, daily });
+}
+
+/** One shared model per ticker. Weekly calendar shape. Not per-user. */
+const getSeasonalityModelShared = unstable_cache(
+  async (ticker: string) => buildSeasonalityUncached(ticker),
+  ["seasonality-model-v1"],
+  { revalidate: 6 * 60 * 60 }
+);
+
+export async function getSeasonalityModel(
+  ticker: string,
+  opts?: { force?: boolean }
+): Promise<SeasonalityModel | null> {
+  const symbol = ticker.trim().toUpperCase();
+  if (!symbol) return null;
+  if (opts?.force) return buildSeasonalityUncached(symbol);
+  return getSeasonalityModelShared(symbol);
 }

@@ -448,23 +448,25 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   const [selectedDay, setSelectedDay] = useState(marketToday.day);
   const loadCtrlRef = useRef<AbortController | null>(null);
 
-  const load = useCallback(async (sym: string) => {
+  const load = useCallback(async (sym: string, force = false) => {
     loadCtrlRef.current?.abort();
     const ctrl = new AbortController();
     loadCtrlRef.current = ctrl;
     const cached = loadSeasonalityPaint(sym);
-    if (cached) {
+    if (cached && !force) {
       setModel(cached);
       setLoading(false);
-    } else {
+    } else if (!cached) {
       setLoading(true);
     }
     setError(null);
     try {
-      const res = await fetch(
-        `/api/market/seasonality?ticker=${encodeURIComponent(sym)}`,
-        { cache: "no-store", signal: ctrl.signal }
-      );
+      const qs = new URLSearchParams({ ticker: sym });
+      if (force) qs.set("force", "1");
+      const res = await fetch(`/api/market/seasonality?${qs}`, {
+        cache: force ? "no-store" : "default",
+        signal: ctrl.signal,
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(plainError(body.error, "Couldn't load those charts."));
@@ -549,7 +551,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
           </label>
           <button
             type="button"
-            onClick={() => void load(ticker)}
+            onClick={() => void load(ticker, true)}
             disabled={loading}
             className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs text-zinc-300 hover:border-zinc-500 disabled:opacity-50"
           >

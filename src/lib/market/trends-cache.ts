@@ -1,10 +1,13 @@
 /**
- * SWR (Stale-While-Revalidate) in-memory and edge cache for weekly market trends.
- * Minimizes redundant historical bar fetches and indicator calculations during
- * volatile market sessions.
+ * Weekly trend reads, shared across every user.
+ *
+ * The numbers are the same for $NBIS no matter who asked. An in-memory
+ * Map covers this serverless instance. `unstable_cache` is the copy that
+ * the next person (and the next cold start) actually gets.
  */
 
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { unstable_cache } from "next/cache";
 import {
   macd,
   nWeekChange,
@@ -123,6 +126,15 @@ async function fetchWeeklyClosesUncached(
   }
 }
 
+/** Shared across every signed-in user. Weekly bars are the same for $NBIS
+ * whether Martin or a classmate asked. The in-memory Map above is only
+ * this instance; this is the copy that survives a cold start. */
+const getWeeklyClosesShared = unstable_cache(
+  async (ticker: string) => fetchWeeklyClosesUncached(ticker),
+  ["trends-weekly-closes-v1"],
+  { revalidate: 30 * 60 }
+);
+
 export async function getWeeklyCloses(
   ticker: string,
   opts?: { force?: boolean }
@@ -144,7 +156,7 @@ export async function getWeeklyCloses(
 
   // If stale, return stale immediately and revalidate in background
   if (!opts?.force && cached && now - cached.cachedAt < STALE_TTL_MS) {
-    const backgroundPromise = fetchWeeklyClosesUncached(symbol)
+    const backgroundPromise = getWeeklyClosesShared(symbol)
       .then((closes) => {
         if (closes && closes.length >= 30) {
           CLOSES_CACHE.set(symbol, { closes, cachedAt: Date.now() });
@@ -159,8 +171,11 @@ export async function getWeeklyCloses(
     return cached.closes;
   }
 
-  // Fetch fresh
-  const fetchPromise = fetchWeeklyClosesUncached(symbol)
+  const fetchPromise = (
+    opts?.force
+      ? fetchWeeklyClosesUncached(symbol)
+      : getWeeklyClosesShared(symbol)
+  )
     .then((closes) => {
       if (closes && closes.length >= 30) {
         CLOSES_CACHE.set(symbol, { closes, cachedAt: Date.now() });
@@ -174,6 +189,85 @@ export async function getWeeklyCloses(
 
   IN_FLIGHT_CLOSES.set(symbol, fetchPromise);
   return fetchPromise;
+}
+
+function rowFromCloses(
+  ticker: string,
+  closes: number[],
+  bench: number[] | null
+): TrendRow {
+  const rsiSeries = rsi(closes, 14);
+  const m = macd(closes);
+  const regime = trendRegime(closes);
+  const div = rsiDivergence(closes, rsiSeries, { window: 3, maxBarsAgo: 8 });
+  const hist = m.histogram.at(-1) ?? null;
+  const histPrev = m.histogram.at(-4) ?? null;
+
+  return {
+    ticker,
+    regime: regime.regime,
+    aboveLongMa: regime.aboveLong,
+    rsi: rsiSeries.at(-1) ?? null,
+    macdHistogram: hist,
+    macdHistogramPrev: histPrev,
+    macdBuilding: hist != null && histPrev != null ? hist > histPrev : null,
+    divergence: div
+      ? {
+          kind: div.kind,
+          weeksAgo: div.barsAgo,
+          priceFrom: div.priceFrom,
+          priceTo: div.priceTo,
+          rsiFrom: div.rsiFrom,
+          rsiTo: div.rsiTo,
+        }
+      : null,
+    rs13: bench ? relativeStrength(closes, bench, 13) : null,
+    rs26: bench ? relativeStrength(closes, bench, 26) : null,
+    chg2w: nWeekChange(closes, 2),
+    chg4w: nWeekChange(closes, 4),
+    lastClose: closes.at(-1) ?? regime.price,
+    longMa: regime.longMa,
+    vsLongMaPct:
+      regime.longMa != null &&
+      regime.price != null &&
+      regime.longMa > 0
+        ? regime.price / regime.longMa - 1
+        : null,
+    longSlopePct: regime.longSlopePct,
+  };
+}
+
+async function computeTrendRowUncached(ticker: string): Promise<TrendRow | null> {
+  const symbol = ticker.toUpperCase();
+  const [closes, bench] = await Promise.all([
+    getWeeklyCloses(symbol),
+    getWeeklyCloses(BENCHMARK),
+  ]);
+  if (!closes || closes.length < 30) return null;
+  return rowFromCloses(symbol, closes, bench);
+}
+
+const getTrendRowShared = unstable_cache(
+  async (ticker: string) => computeTrendRowUncached(ticker),
+  ["trends-row-v1"],
+  { revalidate: 30 * 60 }
+);
+
+async function getTrendRow(
+  ticker: string,
+  opts?: { force?: boolean }
+): Promise<TrendRow | null> {
+  const symbol = ticker.toUpperCase();
+  const now = Date.now();
+  const mem = ROW_CACHE.get(symbol);
+  if (!opts?.force && mem && now - mem.cachedAt < FRESH_TTL_MS) {
+    return mem.row;
+  }
+  const row = opts?.force
+    ? await computeTrendRowUncached(symbol)
+    : await getTrendRowShared(symbol);
+  if (row) ROW_CACHE.set(symbol, { row, cachedAt: Date.now() });
+  return row;
 }
 
 export async function fetchTrendsBatch(
@@ -203,8 +297,6 @@ export async function fetchTrendsBatch(
   const now = Date.now();
   let cachedCount = 0;
   let freshCount = 0;
-
-  // Track cache hits
   for (const t of unique) {
     const rowEntry = ROW_CACHE.get(t);
     if (!opts?.force && rowEntry && now - rowEntry.cachedAt < FRESH_TTL_MS) {
@@ -214,72 +306,10 @@ export async function fetchTrendsBatch(
     }
   }
 
-  const symbols = [...new Set([...unique, BENCHMARK])];
   const settled = await Promise.all(
-    symbols.map(async (t) => [t, await getWeeklyCloses(t, opts)] as const)
+    unique.map((ticker) => getTrendRow(ticker, opts))
   );
-  const bySymbol = new Map(settled);
-  const bench = bySymbol.get(BENCHMARK) ?? null;
-
-  const rows: TrendRow[] = [];
-  for (const ticker of unique) {
-    // Check if row calculation is cached and valid
-    const cachedRow = ROW_CACHE.get(ticker);
-    if (
-      !opts?.force &&
-      cachedRow &&
-      now - cachedRow.cachedAt < FRESH_TTL_MS
-    ) {
-      rows.push(cachedRow.row);
-      continue;
-    }
-
-    const closes = bySymbol.get(ticker);
-    if (!closes || closes.length < 30) continue;
-
-    const rsiSeries = rsi(closes, 14);
-    const m = macd(closes);
-    const regime = trendRegime(closes);
-    const div = rsiDivergence(closes, rsiSeries, { window: 3, maxBarsAgo: 8 });
-    const hist = m.histogram.at(-1) ?? null;
-    const histPrev = m.histogram.at(-4) ?? null;
-
-    const row: TrendRow = {
-      ticker,
-      regime: regime.regime,
-      aboveLongMa: regime.aboveLong,
-      rsi: rsiSeries.at(-1) ?? null,
-      macdHistogram: hist,
-      macdHistogramPrev: histPrev,
-      macdBuilding: hist != null && histPrev != null ? hist > histPrev : null,
-      divergence: div
-        ? {
-            kind: div.kind,
-            weeksAgo: div.barsAgo,
-            priceFrom: div.priceFrom,
-            priceTo: div.priceTo,
-            rsiFrom: div.rsiFrom,
-            rsiTo: div.rsiTo,
-          }
-        : null,
-      rs13: bench ? relativeStrength(closes, bench, 13) : null,
-      rs26: bench ? relativeStrength(closes, bench, 26) : null,
-      chg2w: nWeekChange(closes, 2),
-      chg4w: nWeekChange(closes, 4),
-      lastClose: closes.at(-1) ?? regime.price,
-      longMa: regime.longMa,
-      vsLongMaPct:
-        regime.longMa != null &&
-        regime.price != null &&
-        regime.longMa > 0
-          ? regime.price / regime.longMa - 1
-          : null,
-      longSlopePct: regime.longSlopePct,
-    };
-
-    ROW_CACHE.set(ticker, { row, cachedAt: Date.now() });
-    rows.push(row);
-  }
+  const rows = settled.filter((row): row is TrendRow => row != null);
 
   return {
     rows,
