@@ -761,14 +761,14 @@ export function CommunityView({ communityId }: Props) {
       out.push({
         id: "conviction",
         emoji: "🎯",
-        title: "Highest conviction",
+        title: "Biggest bet",
         winner: mostConviction.name,
         stat: `${mostConviction.personality!.convictionScore}%${
           mostConviction.personality!.topTicker
             ? ` ${cashtag(mostConviction.personality!.topTicker)}`
             : ""
         }`,
-        description: "Biggest single name relative to the rest of the book.",
+        description: "Biggest single name relative to the rest of the sheet.",
       });
     }
 
@@ -1216,7 +1216,7 @@ export function CommunityView({ communityId }: Props) {
                 <p className="text-xs uppercase tracking-wide text-zinc-400">
                   {isClassroom
                     ? "Paper class. Same starting cash. Real prices."
-                    : "Shared sheets added together. Live marks only. Members do not see what you paid."}
+                    : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
                 </p>
                 {community?.house_note?.trim() ? (
                   <p className="text-sm leading-relaxed text-zinc-200">
@@ -2000,7 +2000,7 @@ export function CommunityView({ communityId }: Props) {
                       <p className="text-xs text-zinc-400">
                         {isClassroom
                           ? "Students join with this link. Each one gets the same paper cash and an empty sheet."
-                          : "Invites join the community. Each person picks which sheets to share. Live marks only."}
+                          : "Invites join the community. Each person picks which sheets to share. Today's prices only."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input
@@ -2233,7 +2233,7 @@ export function CommunityView({ communityId }: Props) {
               maxLength={400}
               rows={3}
               disabled={settingsBusy}
-              placeholder="Family books, live marks, no advice."
+              placeholder="Family books, today's prices, no advice."
               className="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
             />
             <div className="mt-2 flex justify-end">
@@ -2333,7 +2333,7 @@ export function CommunityView({ communityId }: Props) {
                   The power animal field guide
                 </h3>
                 <p className="mt-1 text-xs text-zinc-400">
-                  Every book gets scored on spread, risk, conviction, cash,
+                  Every book gets scored on spread, risk, biggest bet, cash,
                   and how many themes it actually lives in, then matched to
                   whichever animal fits best. A fun lens, not an investing
                   verdict.
@@ -2506,7 +2506,7 @@ function PowerAnimalCard({
             <span className="rounded-md bg-black/25 px-2.5 py-1.5 text-xs tabular-nums text-zinc-300">
               {personality.topTicker
                 ? `${cashtag(personality.topTicker)} ${personality.convictionScore}%`
-                : `Conviction ${personality.convictionScore}%`}
+                : `Biggest name ${personality.convictionScore}%`}
             </span>
           </div>
 

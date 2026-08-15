@@ -75,7 +75,7 @@ export function ShareSheets({
           Sheets you share here
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-          Off means this circle cannot see that book. Live marks only. Cost
+          Off means this circle cannot see that book. Today's prices only. Cost
           stays on your sheet.
         </p>
       </div>

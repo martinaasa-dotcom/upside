@@ -341,9 +341,9 @@ export function isPulseCacheFresh(
 
 export function statusLabel(status: ThesisStatus | string): string {
   const s = String(status ?? "").trim().toLowerCase();
-  if (s === "watch") return "Watch";
-  if (s === "broken") return "Thesis at risk";
-  return "Thesis intact";
+  if (s === "watch") return "Keep an eye on it";
+  if (s === "broken") return "Reason looks shaky";
+  return "Reason still holds";
 }
 
 export function actionLabel(action: PulseAction | string): string {
@@ -480,7 +480,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     return {
       ticker: candidate.ticker,
       situation: [
-        "Down hard enough to check the thesis.",
+        "Down hard enough to check why you own it.",
         "Price alone doesn't mean the story broke.",
       ],
       moveReason: `${candidate.moveLabel} move is ${movePct}.`,

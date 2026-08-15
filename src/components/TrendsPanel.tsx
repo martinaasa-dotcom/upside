@@ -370,10 +370,9 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 Who&apos;s leading, who&apos;s fading
               </p>
               <p className="mt-0.5 mb-4 text-xs leading-relaxed text-zinc-400">
-                The same names, ranked by performance against the S&amp;P over
-                the last quarter. This is what sector rotation actually looks
-                like: money moving toward a theme, not just prices going up
-                with everything else.
+                The same names, ranked by how they did against the S&amp;P over
+                the last quarter. This is money moving from one group to
+                another, not just prices going up with everything else.
               </p>
               <div className="space-y-1.5">
                 {leaders.map((r) => {

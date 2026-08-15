@@ -803,7 +803,7 @@ ${ccGuidanceBlock}
 Bullets, never paragraphs. Four to six bullets, one line each, and no bullet
 longer than about twenty words. Cut every word that isn't load-bearing.
 
-- **What it is**: one plain line a non-expert would understand. No jargon.
+- **What it is**: one plain line a grandma would understand. No jargon. Never say sleeve, marks, thesis, conviction, digestion, or beta.
 - **What moves it**: the one or two things that actually set the price.
 - **Bull case**: the specific thing that has to go right, not a vibe.
 - **The risk**: the specific thing that breaks it. Name it, don't hedge it.

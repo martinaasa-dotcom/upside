@@ -15,7 +15,7 @@ export const PRODUCT_SENTENCE =
   "A daily read of your book, with Margus to think it through.";
 
 export const PRODUCT_BLURB =
-  "See what moved, check the thesis, and ask when you're unsure.";
+  "See what moved, check why you own it, and ask when you're unsure.";
 
 /** Name used when a first-run import creates the sheet for you. */
 export const FIRST_SHEET_NAME = "My book";
@@ -26,7 +26,7 @@ export const SIGNIN_WHO =
 
 export const SIGNIN_POINTS = [
   "Your holdings, what you paid, and how today went.",
-  "Pulse checks the thesis when a name moves.",
+  "Pulse checks why you own a name when the price jumps.",
   "Margus can read the sheet and edit it with you.",
   "Invite a partner when you want company. Optional.",
 ] as const;

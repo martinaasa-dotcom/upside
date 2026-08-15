@@ -120,7 +120,7 @@ const MAKERS: FactMaker[] = [
     const top = ranked[0];
     if (!top?.personality || top.personality.diversificationScore >= 40) return null;
     return pick(rng, [
-      `${top.name} is all-in on conviction, just ${top.personality.diversificationScore}/100 diversification.`,
+      `${top.name} is all-in on a few names, just ${top.personality.diversificationScore}/100 spread.`,
       `${top.name} keeps it tight, the most concentrated book in the group.`,
     ]);
   },
@@ -184,7 +184,7 @@ const MAKERS: FactMaker[] = [
     const f = pick(rng, falcons);
     return pick(rng, [
       `${f.name} is a Falcon: small book, sharp aim.`,
-      `Don't underestimate ${f.name}'s Falcon book, few positions, high conviction.`,
+      `Don't underestimate ${f.name}'s Falcon book, few positions, big bets.`,
     ]);
   },
   // Octopus: most habitats.
@@ -224,8 +224,8 @@ const MAKERS: FactMaker[] = [
     )[0]!;
     const name = top.personality!.topTicker ?? "one name";
     return pick(rng, [
-      `${top.name}'s largest position is ${top.personality!.convictionScore}% (${name}). That's conviction.`,
-      `Highest conviction in the circle: ${top.name}, ${top.personality!.convictionScore}% in ${name}.`,
+      `${top.name}'s largest position is ${top.personality!.convictionScore}% (${name}). That's a big bet.`,
+      `Biggest single bet in the circle: ${top.name}, ${top.personality!.convictionScore}% in ${name}.`,
     ]);
   },
   // Panda specialist.

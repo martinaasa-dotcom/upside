@@ -1105,11 +1105,11 @@ export function ForecastPanel({
                     </div>
                     <div>
                       <MicroLabel className="text-rose-300">
-                        Worth trimming
+                        Worth selling some
                       </MicroLabel>
                       <PlaybookList
                         text={activePeriod.trim}
-                        empty="Nothing to trim"
+                        empty="Nothing to sell"
                         tone="trim"
                       />
                     </div>

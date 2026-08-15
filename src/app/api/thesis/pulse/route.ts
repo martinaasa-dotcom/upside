@@ -125,7 +125,7 @@ ${insightsPromptBlock(
   - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
   - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
 - Use **hold** only when you would not deploy (max concentration, no cash story) but aren't ready to sell either. Hold never pairs with a broken thesis.
-- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis. Never use **hold** for a broken thesis either: that's what puts a Hold badge next to "Thesis at risk".
+- Use **sell** only when thesisStatus is broken. Never use **trim** for a broken thesis. Never use **hold** for a broken thesis either: that's what puts a Hold badge next to "Reason looks shaky".
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 ### thesisStatus — start from intact. Watch and broken have to be earned

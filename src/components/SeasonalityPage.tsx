@@ -533,7 +533,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
           <ActionCards signals={model.signals} />
 
           <Section
-            title="Monthly playbook (this cycle phase)"
+            title="What this month usually does"
             subtitle={`Total month return in each calendar month, historical ${model.currentCycleLabel.toLowerCase()} years only. Click a month to inspect its days.`}
           >
             <CycleMonthlyChart
@@ -546,7 +546,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <div className="mt-4 rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-2.5">
                 <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <p className="text-xs font-medium text-zinc-300">
-                    {MONTH_NAMES[playbookMonth - 1]} in this cycle phase
+                    {MONTH_NAMES[playbookMonth - 1]} in years like this
                   </p>
                   <p
                     className={cn(

@@ -21,7 +21,7 @@ const CONVICTION_LABELS: Record<ConvictionLevel, string> = {
   2: "Below average, trimming candidate",
   3: "Neutral, holding as-is",
   4: "Strong, comfortable adding",
-  5: "Max, highest-confidence thesis",
+  5: "Max, you're sure why you own it",
 };
 
 const THEME_LABELS: Record<string, string> = {
@@ -168,7 +168,7 @@ export function TickerDrawer({
                   {(todayChangePct * 100).toFixed(1)}%)
                 </span>
               )}
-              {shares != null ? ` · ${shares.toLocaleString("en-US")} sh` : ""}
+              {shares != null ? ` · ${shares.toLocaleString("en-US")} shares` : ""}
               {roi != null ? ` · ${percent(roi)} vs cost` : ""}
             </p>
           </div>
@@ -402,7 +402,7 @@ export function TickerDrawer({
             </div>
             <div
               role="radiogroup"
-              aria-label="Conviction level"
+              aria-label="How sure are you"
               className="mt-2.5 flex gap-1.5"
             >
               {([1, 2, 3, 4, 5] as ConvictionLevel[]).map((n) => (

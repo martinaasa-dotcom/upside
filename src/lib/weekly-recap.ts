@@ -10,12 +10,12 @@ function weekKey(d: Date): string {
 }
 
 const SIGN_OFFS = [
-  "Margus: stay thesis-first. Breathers are resets, not broken narratives. Write CCs on green rebounds.",
-  "Margus: the thesis didn't change just because the ticker did. Sell the news, not the vibes.",
+  "Margus: stick to why you bought. A quiet week is a reset, not a broken story.",
+  "Margus: the reason you own it didn't change just because the price did. Don't sell the news.",
   "Margus: green weeks feel earned, red weeks feel personal. Neither one is. Same plan either way.",
-  "Margus: boredom isn't a signal. If nothing broke the thesis, nothing needs to change.",
-  "Margus: premium is for the patient. Write calls on strength, not out of anxiety.",
-  "Margus: the book doesn't know what day it is. Judge the thesis on quarters, not candles.",
+  "Margus: boredom isn't a signal. If nothing broke why you own it, nothing needs to change.",
+  "Margus: patience pays. Don't tinker just because the week was dull.",
+  "Margus: the sheet doesn't know what day it is. Judge the idea over months, not one week.",
 ];
 
 export function buildWeeklyRecap(model: OverviewModel): string {

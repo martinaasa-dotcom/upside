@@ -83,6 +83,25 @@ function scrubMarketJargon(text: string): string {
   s = s.replace(/\bworst tape\b/gi, "biggest drop");
   s = s.replace(/\bon the tape\b/gi, "in the prices");
   s = s.replace(/\bthe tape\b/gi, "prices");
+  s = s.replace(/\blive marks\b/gi, "today's prices");
+  s = s.replace(/\bAI power sleeves?\b/gi, "electricity-for-AI names");
+  s = s.replace(/\bindex sleeves?\b/gi, "a mix of many companies");
+  s = s.replace(/\bSaaS sleeves?\b/gi, "software names");
+  s = s.replace(/\bsleeves\b/gi, "groups of similar stocks");
+  s = s.replace(/\bsleeve\b/gi, "group of similar stocks");
+  s = s.replace(/\bdry powder\b/gi, "cash sitting ready");
+  s = s.replace(/\bdigestion years?\b/gi, "quiet years");
+  s = s.replace(/\bdigestion\b/gi, "a pause");
+  s = s.replace(/\brisk-off\b/gi, "when people are selling");
+  s = s.replace(/\brisk-on\b/gi, "when people are buying");
+  s = s.replace(/\bhigh-beta\b/gi, "jumpy");
+  s = s.replace(/\bdrawdowns?\b/gi, "drops");
+  s = s.replace(/\bcost basis\b/gi, "what you paid");
+  s = s.replace(/\bhighest conviction\b/gi, "biggest bet");
+  s = s.replace(/\bhigh conviction\b/gi, "a big bet");
+  s = s.replace(/\bthe thesis\b/gi, "the reason you own it");
+  s = s.replace(/\byour thesis\b/gi, "why you own it");
+  s = s.replace(/\bsector rotation\b/gi, "money moving between groups");
   return s;
 }
 

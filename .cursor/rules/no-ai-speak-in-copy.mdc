@@ -36,6 +36,23 @@ summary paragraph, or excessive symmetrical rule-of-three lists.
 Short, plain, slightly opinionated sentences beat balanced, hedge-everything
 ones.
 
+## No market slang
+
+A 12-year-old and a 75-year-old should get every sentence. Never use
+trader words in anything a person reads: sleeve, marks, live marks, tape,
+thesis, conviction, digestion, dry powder, beta, risk-on, risk-off,
+liquidity, drawdown, rotation, cadence, print (for a number), candles,
+OTM, NAV, alpha, moat, TAM, capex.
+
+Say the plain thing: group of similar stocks, today's prices, why you own
+it, how sure you are, a quiet year, cash sitting ready, a jumpy name,
+people buying, people selling, a drop, money moving from one group to
+another.
+
+This includes Margus output. Ban the words in `MARGUS_PERSONA` and scrub
+leftovers in `humanizeMargusText`. Do not tell the model to "talk in
+sleeves."
+
 ## Where this is already enforced
 
 `MARGUS_PERSONA` in `src/lib/ai/margus-persona.ts` carries a hard Voice ban

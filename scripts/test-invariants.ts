@@ -547,9 +547,9 @@ run("title-cased Pulse enums no longer paint intact as at-risk", () => {
   );
   assert.equal(next.thesisStatus, "intact");
   assert.equal(next.action, "hold");
-  assert.equal(statusLabel(next.thesisStatus), "Thesis intact");
-  assert.equal(statusLabel("Intact"), "Thesis intact");
-  assert.equal(statusLabel("broken"), "Thesis at risk");
+  assert.equal(statusLabel(next.thesisStatus), "Reason still holds");
+  assert.equal(statusLabel("Intact"), "Reason still holds");
+  assert.equal(statusLabel("broken"), "Reason looks shaky");
 });
 
 run("humanize does not title-case Pulse enums", () => {
@@ -567,6 +567,17 @@ run("humanize still recapitalizes after stripping a leading opener", () => {
   assert.equal(
     humanizeMargusText("it's important to note that the dip is noise."),
     "The dip is noise."
+  );
+});
+
+run("humanize kills leftover market slang", () => {
+  assert.match(
+    humanizeMargusText("Add an AI power sleeve next to the compute names."),
+    /electricity-for-AI names/i
+  );
+  assert.doesNotMatch(
+    humanizeMargusText("A calmer sleeve next to it keeps one delay from being the whole year."),
+    /\bsleeve\b/i
   );
 });
 

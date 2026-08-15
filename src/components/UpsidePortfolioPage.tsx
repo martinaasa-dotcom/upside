@@ -1022,7 +1022,7 @@ export function UpsidePortfolioPage() {
         <div>
           <h1 className="sr-only">Upside Fund</h1>
           <p className="text-sm leading-relaxed text-zinc-400">
-            One decision a day in public. Every trade has a thesis, a timeline,
+            One decision a day in public. Every trade has a why, a timeline,
             and an exit plan.
             <span className="text-zinc-500">
               {" "}

@@ -1,6 +1,7 @@
 /**
- * Book-level ideas and rotation reads. Theme sleeves only, never a
- * hardcoded ticker list. Used by Margus, emails, Pulse, Forecast, and Home.
+ * Book-level ideas and "money is moving" reads. Groups of similar
+ * businesses only, never a hardcoded ticker list. Used by Margus, emails,
+ * Pulse, Forecast, and Home.
  */
 
 import { themeBreakdown } from "@/lib/allocation";
@@ -25,60 +26,60 @@ export type BookInsights = {
 
 const GAP = 0.08;
 
-/** Next sleeve that usually sits next to a dominant theme. No tickers. */
-const NEXT_SLEEVE: Partial<
+/** Next group that usually sits next to a dominant theme. No tickers. */
+const NEXT_GROUP: Partial<
   Record<ForecastTheme, { need: ForecastTheme; line: string }[]>
 > = {
   ai_infra: [
     {
       need: "ai_power",
-      line: "This book is the compute side. Power and grid names are the usual next sleeve if the story is data centers.",
+      line: "This sheet is mostly the computer side. Electricity and power-grid names usually sit next to that if the story is data centers.",
     },
     {
       need: "semi",
-      line: "The picks are the cloud layer. Chip names are how this theme usually sits next door.",
+      line: "These picks are the cloud layer. Chip makers are the usual neighbor.",
     },
   ],
   ai_power: [
     {
       need: "ai_infra",
-      line: "You're on the electricity side. GPU cloud names are the other half of the same buildout.",
+      line: "You're on the electricity side. Cloud computer names are the other half of the same build.",
     },
   ],
   crypto: [
     {
       need: "index",
-      line: "Crypto is most of the diet. A broad index sleeve is how people usually keep a winter from being the only story.",
+      line: "Crypto is most of the mix. A fund that owns a bit of everything is how people usually keep a bad crypto year from being the only story.",
     },
   ],
   space: [
     {
       need: "index",
-      line: "Space is a cadence story. A calmer sleeve next to it keeps one delay from being the whole year.",
+      line: "Space depends on launch dates. A calmer group next to it keeps one delay from being the whole year.",
     },
   ],
   semi: [
     {
       need: "ai_infra",
-      line: "The chips are in. The cloud names that buy those chips are the usual next sleeve.",
+      line: "The chips are in. The cloud companies that buy those chips are the usual next group.",
     },
   ],
   software: [
     {
       need: "semi",
-      line: "This book is software. The hardware underneath it is the usual missing piece when the theme runs hot.",
+      line: "This sheet is software. The hardware underneath it is the usual missing piece when that group runs hot.",
     },
   ],
   drones: [
     {
       need: "software",
-      line: "Defense and drones are the bet. A software or sensor name is how that theme usually sits next door.",
+      line: "Defense and drones are the bet. A software or sensor name is how that group usually sits next door.",
     },
   ],
   fintech: [
     {
       need: "index",
-      line: "Fintech is rate-sensitive. A broader sleeve next to it keeps one credit cycle from being the whole book.",
+      line: "Money-app names move when interest rates move. A broader mix next to them keeps one rate cycle from being the whole sheet.",
     },
   ],
 };
@@ -95,7 +96,7 @@ function ideaFor(
 ): string | null {
   const top = slices[0];
   if (!top || top.pct < 0.35) return null;
-  const options = NEXT_SLEEVE[top.theme] ?? [];
+  const options = NEXT_GROUP[top.theme] ?? [];
   for (const opt of options) {
     if (themePct(slices, opt.need) < GAP) return opt.line;
   }
@@ -108,7 +109,7 @@ function structuralRotation(
   const top = slices[0];
   if (!top || top.pct < 0.55) return null;
   const label = THEME_LABEL[top.theme];
-  return `Most of this book is ${label}. A rotation away from that theme hits the whole sheet, not one name.`;
+  return `Most of this sheet is ${label}. If that group has a bad year, the whole sheet feels it, not just one name.`;
 }
 
 function dayRotation(holdings: InsightHolding[]): string | null {
@@ -160,7 +161,7 @@ export function buildBookInsights(holdings: InsightHolding[]): BookInsights {
       ? ""
       : `Book insights (use when relevant, do not force into every reply):
 ${lines.map((l) => `- ${l}`).join("\n")}
-Talk in sleeves and themes, not a shopping list of new tickers, unless the user asks for names. Educational scenario, not an order to buy.`;
+Talk about groups of similar businesses, not a shopping list of new tickers, unless the user asks for names. Educational scenario, not an order to buy. Use plain words a grandma would get. Never say sleeve, marks, thesis, conviction, digestion, beta, or rotation.`;
 
   return { idea, rotation, lines, promptBlock };
 }

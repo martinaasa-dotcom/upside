@@ -2365,7 +2365,7 @@ export function Dashboard() {
       },
       {
         id: "pulse",
-        label: "Pulse: thesis check",
+        label: "Pulse: check why you own it",
         group: "Go",
         hint: "Big movers",
         run: () => setActiveId(PULSE_TAB_ID),

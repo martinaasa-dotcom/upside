@@ -180,7 +180,7 @@ export function CommunitiesList() {
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
               A private league for books you actually want to compare. You
-              pick which sheets to share. Members see live marks, not what
+              pick which sheets to share. Members see today's prices, not what
               you paid.
             </p>
           </div>

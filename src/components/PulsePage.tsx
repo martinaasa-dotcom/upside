@@ -282,7 +282,7 @@ function PulseCard({
         {thesisBullets.length > 0 && (
           <div>
             <div className="flex items-baseline justify-between gap-2">
-              <MicroLabel>Thesis</MicroLabel>
+              <MicroLabel>Why you own it</MicroLabel>
               {onWriteThesis && (
                 <button
                   type="button"

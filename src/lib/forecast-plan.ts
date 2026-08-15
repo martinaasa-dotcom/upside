@@ -547,21 +547,22 @@ Requirements:
    - Next year (label "${year + 1}" or "Next year (${year + 1})")
    - Then 2-3 longer horizons aligned to the EOY path (e.g. 2028, 2029, 2030) if useful. Not more than 6 total.
 2. Themes should be memorable but practical (not marketing fluff).
-3. Add and Trim are SEPARATE bullet lists. Semicolon-separated. ONE name or sleeve per item, never two tickers packed with a slash.
-   - Reference each name's CURRENT weight (given above) and state the size of the move: a target weight or a rough trim/add fraction (e.g. "trim $RKLB from 14% to ~9%", "add ~3-5% of book into SaaS"), not just a direction with no size.
+3. Add and Trim are SEPARATE bullet lists. Semicolon-separated. ONE name or group per item, never two tickers packed with a slash.
+   - Reference each name's CURRENT weight (given above) and state the size of the move: a target weight or a rough trim/add fraction (e.g. "trim $RKLB from 14% to ~9%", "add ~3-5% of the sheet into software"), not just a direction with no size.
    - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing). Never a generic sector vibe that could be pasted onto any ticker in the theme.
-   - Name the trigger/condition when it isn't "do this now": a level, an earnings date, a macro print. So it reads as a plan, not a headline.
-   - Each item: "TICKER (current% -> target%): specific why + trigger". Sleeves: "AI power sleeve (~0% to 5%): why + size". Book tickers preferred; NEW tickers and sectors are welcome when the thesis needs them.
+   - Name the trigger/condition when it isn't "do this now": a price, an earnings date, a number that just came out. So it reads as a plan, not a headline.
+   - Each item: "TICKER (current% -> target%): specific why + trigger". Groups: "electricity for AI (~0% to 5%): why + size". Sheet tickers preferred; NEW tickers and sectors are welcome when the reason you own the sheet needs them.
+   - Plain English only. Never say sleeve, marks, thesis, conviction, digestion, beta, or rotation.
    - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
    - Never use em dashes or en-dash clause breaks in add/trim lines.
-4. sectorRotation: talk through plausible rotations (AI infra, AI power, crypto, space, semis, SaaS, healthcare, drones, fintech, etc.). Do not stay stuck in one box. Plain speech, no em dashes.
+4. sectorRotation: talk through money moving between groups (AI computers, electricity for AI, crypto, space, chips, software, healthcare, drones, money apps, etc.). Do not stay stuck in one box. Plain speech, no em dashes.
 5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
    - Year ${year} is December 31 ${year}, not today's spot. Do not paste the current print into that cell.
-   - NON-LINEAR only. Crypto: include a winter year. AI infra / AI power: multi-bagger magnitude. Space: digestion year.
-   - rationale: one human sentence on micro-thesis + dynamics. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes.
-7. Consistency: if macro / company / sector thesis is unchanged from a prior run, keep EOY magnitudes in a similar neighborhood. Do not randomly reshuffle for no reason.
+   - NON-LINEAR only. Crypto: include a winter year. AI computers / electricity for AI: big multi-year upside. Space: a quiet year in the middle.
+   - rationale: one human sentence on why this company + how the path wiggles. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes. No sleeve/thesis/conviction/digestion.
+7. Consistency: if the reason you own the names is unchanged from a prior run, keep year-end prices in a similar neighborhood. Do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.
 9. Be concise.
 10. Frame everything as a modeled scenario for the user's own thinking, never as a personalized recommendation or a guarantee.`;

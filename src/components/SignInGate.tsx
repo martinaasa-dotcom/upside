@@ -176,7 +176,7 @@ function BookStill() {
       <div className="mt-3 rounded-lg border border-brand/25 bg-brand/10 px-3 py-2.5">
         <p className="text-xs font-medium text-brand-bright">Look at this</p>
         <p className="mt-1 text-xs leading-snug text-zinc-200">
-          Check the thesis on names that moved.
+          Check why you own the names that moved.
         </p>
       </div>
       <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/40 px-3 py-2.5">

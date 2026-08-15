@@ -111,13 +111,13 @@ ${JOB[report.kind]}
 
 Hard rules for this block:
 - Plain English a 12-year-old and a 75-year-old both get.
-- Never say "tape".
+- Never say "tape", "sleeve", "marks", "thesis", "conviction", "digestion", "beta", or "rotation".
 - No greeting, no sign-off, no "as an AI".
 - Tickers as cashtags: $NBIS, not NBIS.
 - Only use names in the facts. Do not invent holdings.
 - Educational scenario, not advice. Do not say "you should buy" as an order. "I'd look to add if it dips" is fine.
 - If the day or week is quiet, say so and stop. Do not invent drama.
-- If "Worth noticing" has a rotation or an adjacent sleeve, use it. Do not invent new tickers.`;
+- If "Worth noticing" mentions money moving between groups, use it. Do not invent new tickers.`;
           prompt: facts(report),
           maxOutputTokens: report.kind === "sunday" ? 280 : 180,
           abortSignal: signal,

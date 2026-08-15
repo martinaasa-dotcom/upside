@@ -200,16 +200,16 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     tagline: "A tentacle in every pond. Many habitats, no single bet on the weather.",
     vibe: "Rotated, collected, or just curious. The book is not one story. It is several, running in parallel.",
     strength: "A bad year in one habitat does not empty the tank.",
-    watchFor: "Eight tentacles can become eight half-finished theses.",
+    watchFor: "Eight tentacles can become eight half-finished reasons.",
   },
   {
     id: "shark",
     animal: "Shark",
     emoji: "🦈",
     criteria: "Hot themes and a fat largest position",
-    tagline: "A few high-conviction bets, hunted with total focus.",
-    vibe: "No wasted motion and no hedge. Every position earned its spot through conviction, not comfort.",
-    strength: "Maximum upside when the thesis is right, with nothing diluting the payoff.",
+    tagline: "A few big bets, hunted with total focus.",
+    vibe: "No wasted motion and no safety net. Every name earned its spot because you meant it, not because it felt comfortable.",
+    strength: "Maximum upside when you're right, with nothing watering down the payoff.",
     watchFor: "One bad call and there's no net underneath to catch it.",
   },
   {
@@ -229,7 +229,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     criteria: "Three names or fewer",
     tagline: "Small, sharp-eyed, and diving hard on very few targets.",
     vibe: "Precision over volume. Every position was picked, not just added, and there's nowhere for a bad call to hide.",
-    strength: "Laser focus on the highest-conviction ideas, no clutter.",
+    strength: "Laser focus on the names you're surest about, no clutter.",
     watchFor: "A falcon with a bad target has nowhere else to turn.",
   },
   {
@@ -408,21 +408,21 @@ export const THEME_COLOR: Record<ForecastTheme, string> = {
 };
 
 export const THEME_LABEL: Record<ForecastTheme, string> = {
-  ai_infra: "AI infra",
-  ai_power: "AI power",
+  ai_infra: "AI computers",
+  ai_power: "electricity for AI",
   crypto: "crypto",
   space: "space",
-  semi: "semis",
-  fintech: "fintech",
+  semi: "computer chips",
+  fintech: "money apps",
   software: "software",
   healthcare: "healthcare",
   // Covers the defense primes as well as pure drone/autonomy names, so
   // "drones" alone would mislabel a Lockheed or an RTX.
-  drones: "defense & drones",
-  index: "index funds",
+  drones: "defense and drones",
+  index: "a bit of everything",
   // Not "a mixed bag": this is the bucket for names the sector map doesn't
   // recognise, and as the label on a 51% slice it explained nothing.
-  other: "other sectors",
+  other: "other businesses",
 };
 
 function diversificationBandFor(score: number): ScoreBand {
@@ -465,7 +465,7 @@ function convictionBandFor(score: number): ScoreBand {
     };
   if (score >= 35)
     return {
-      label: "High conviction",
+      label: "A big bet",
       description: "The largest position really decides the year.",
     };
   if (score >= 20)

@@ -341,19 +341,19 @@ function weekActionLine(input: {
   const down = input.weekPct != null && input.weekPct <= -0.03;
   const upHot = input.weekPct != null && input.weekPct >= 0.08;
 
-  if (risk || action === "sell") return "Thesis at risk. Do not add this week.";
-  if (watch || action === "watch") return "Watch. Best thing this week is to wait.";
+  if (risk || action === "sell") return "Reason looks shaky. Do not add this week.";
+  if (watch || action === "watch") return "Wait. Best thing this week is to wait.";
   if (action === "trim") {
-    return "Thesis intact. If it ran too far, trim. Otherwise do nothing.";
+    return "Reason still holds. If it ran too far, sell some. Otherwise do nothing.";
   }
   if (action === "add" || (intact && down)) {
-    return "Thesis intact. Look to add this week on the dip.";
+    return "Reason still holds. Look to add this week on the dip.";
   }
   if (intact && upHot) {
-    return "Thesis intact. If it ran too far, trim. Otherwise do nothing.";
+    return "Reason still holds. If it ran too far, sell some. Otherwise do nothing.";
   }
   if (intact || action === "hold") {
-    return "Thesis intact. Best thing this week is nothing.";
+    return "Reason still holds. Best thing this week is nothing.";
   }
   return null;
 }
@@ -412,10 +412,10 @@ function dayActionLine(input: {
   const down = input.overnightPct != null && input.overnightPct <= -0.02;
 
   if (risk || action === "sell") return "Do not add today.";
-  if (watch || action === "watch") return "Watch. Best thing today is to wait.";
-  if (action === "trim") return "If it runs, trim. Don't chase.";
+  if (watch || action === "watch") return "Wait. Best thing today is to wait.";
+  if (action === "trim") return "If it runs, sell some. Don't chase.";
   if (action === "add" || (intact && down)) {
-    return "Thesis intact. Look to add if it dips.";
+    return "Reason still holds. Look to add if it dips.";
   }
   return null;
 }
@@ -528,7 +528,7 @@ function morningLead(input: {
   const add = input.watches.find((w) => /look to add/i.test(w.line));
   if (add?.ticker) {
     return {
-      lead: `${cashtag(add.ticker)}. Thesis intact. Look to add if it dips.`,
+      lead: `${cashtag(add.ticker)}. Reason still holds. Look to add if it dips.`,
       subjectHook: `Look to add ${cashtag(add.ticker)}`,
     };
   }
