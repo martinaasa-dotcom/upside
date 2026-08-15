@@ -3,8 +3,8 @@
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { Card, Metric, MicroLabel, Panel } from "@/components/ui/Panel";
 import {
-  PRODUCT_BLURB,
   PRODUCT_NAME,
   PRODUCT_SENTENCE,
   SIGNIN_POINTS,
@@ -74,46 +74,48 @@ export function SignInGate({ children }: Props) {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 90% 70% at 50% -10%, #1a1612 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 80% 110%, rgba(214,173,105,0.06) 0%, transparent 50%)",
+            "radial-gradient(ellipse 80% 55% at 20% 0%, #1c1814 0%, transparent 58%), radial-gradient(ellipse 45% 40% at 92% 88%, rgba(214,173,105,0.07) 0%, transparent 52%)",
         }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }}
       />
 
-      <main id="main" className="relative z-10 mx-auto flex w-full min-w-0 max-w-3xl flex-1 flex-col justify-center px-6 py-[max(2rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] md:px-8">
-        <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_16.5rem] md:gap-12">
+      <main
+        id="main"
+        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-center px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:px-10"
+      >
+        <div className="signin-rise grid items-center gap-14 md:grid-cols-[minmax(0,1fr)_22rem] md:gap-16 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
-            <UpsideLogo variant="icon" className="signin-rise-1 mb-8" />
+            <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
             {deletedNotice && (
-              <p className="signin-rise-2 mb-4 max-w-sm rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm leading-relaxed text-emerald-200">
+              <p className="signin-rise-2 mt-8 max-w-md rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm leading-relaxed text-emerald-200">
                 {deletedNotice === "full"
                   ? "Account deleted. Your data and sign-in are both gone."
                   : `Your ${PRODUCT_NAME} data has been deleted. Signing in again starts a brand-new account.`}
               </p>
             )}
 
-            <p className="signin-rise-2 max-w-md text-base font-medium leading-snug text-zinc-100">
-              {PRODUCT_SENTENCE}
-            </p>
-            <p className="signin-rise-2 mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
-              {PRODUCT_BLURB}
-            </p>
-            <p className="signin-rise-2 mt-2 max-w-md text-sm leading-relaxed text-zinc-500">
-              {SIGNIN_WHO}
-            </p>
+            <div className="signin-rise-2 mt-10 max-w-md space-y-4">
+              <h1 className="font-heading text-lg font-bold leading-snug text-white">
+                {PRODUCT_SENTENCE}
+              </h1>
+              <p className="text-sm leading-relaxed text-zinc-400">
+                {SIGNIN_WHO}
+              </p>
+            </div>
 
-            <ul className="signin-rise-2 mt-5 max-w-md space-y-2 text-left text-sm leading-relaxed text-zinc-400">
+            <ul className="signin-rise-2 mt-8 max-w-md space-y-3.5 text-left text-sm leading-relaxed text-zinc-400">
               {SIGNIN_POINTS.map((line) => (
-                <li key={line} className="flex gap-2">
+                <li key={line} className="flex gap-3">
                   <span
-                    className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-bright/80"
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
                     aria-hidden
                   />
                   <span>{line}</span>
@@ -125,7 +127,7 @@ export function SignInGate({ children }: Props) {
               type="button"
               disabled={busy}
               onClick={() => void onSignIn()}
-              className="btn-primary signin-rise-3 mt-8 h-12 w-full max-w-sm rounded-full gap-2.5 md:w-auto md:min-w-[16rem]"
+              className="btn-primary signin-rise-3 mt-10 h-12 w-full max-w-sm rounded-xl gap-2.5 md:w-auto md:min-w-[17rem]"
             >
               <GoogleMark />
               {busy ? "Redirecting …" : "Continue with Google"}
@@ -146,8 +148,7 @@ export function SignInGate({ children }: Props) {
               <Link href="/privacy" className="underline hover:text-zinc-400">
                 Privacy policy
               </Link>
-              . Not financial advice. Communities stay read-only for everyone
-              else.
+              . Not financial advice.
             </p>
           </div>
 
@@ -158,40 +159,52 @@ export function SignInGate({ children }: Props) {
   );
 }
 
-/** Static chrome of the daily read. Labels only, no fake P&L. */
+/** Static chrome of the daily read. Sample figures, written like Home. */
 function BookStill() {
   return (
-    <div
-      className="signin-rise-3 hidden w-full rounded-2xl border border-white/10 bg-card/80 p-4 md:block"
+    <Panel
+      className="signin-rise-3 hidden md:block"
       aria-hidden
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright/80">
-        Today’s briefing
+      <div className="flex items-center justify-between gap-3">
+        <MicroLabel className="text-brand-bright/80">
+          Today&apos;s briefing
+        </MicroLabel>
+        <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs text-zinc-500">
+          Sample
+        </span>
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <Metric label="Book">$84,200</Metric>
+        <Metric label="Today" valueClassName="text-gain">
+          +$620
+        </Metric>
+        <Metric label="All time" valueClassName="text-gain">
+          +12%
+        </Metric>
+      </div>
+
+      <p className="mt-5 text-sm text-zinc-200">
+        $RKLB did most of today&apos;s move.
       </p>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {["Book", "Today", "All time"].map((label) => (
-          <div
-            key={label}
-            className="rounded-lg border border-zinc-800/80 bg-zinc-950/50 px-2 py-2"
-          >
-            <p className="text-xs text-zinc-500">{label}</p>
-            <p className="mt-1 h-2.5 w-10 rounded-sm bg-zinc-700/80" />
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 rounded-lg border border-brand/25 bg-brand/10 px-3 py-2.5">
-        <p className="text-xs font-medium text-brand-bright">Look at this</p>
-        <p className="mt-1 text-xs leading-snug text-zinc-200">
-          Check why you own the names that moved.
+
+      <Card tone="raised" className="mt-4 px-3.5 py-3">
+        <MicroLabel>Worth noticing</MicroLabel>
+        <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
+          A quiet down day. The thesis didn&apos;t move with the price.
+        </p>
+      </Card>
+
+      <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3">
+        <MicroLabel className="text-amber-200/80">
+          Pulse · $RKLB · Thesis intact
+        </MicroLabel>
+        <p className="mt-1.5 text-sm text-zinc-200">
+          Hold. Come back if the story actually changes.
         </p>
       </div>
-      <div className="mt-2 rounded-lg border border-zinc-800 bg-zinc-950/40 px-3 py-2.5">
-        <p className="text-xs font-medium text-zinc-500">Note</p>
-        <p className="mt-1 text-xs leading-snug text-zinc-400">
-          What moved, in a few lines. Then ask Margus if you want.
-        </p>
-      </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -208,7 +221,7 @@ function GoogleMark() {
       />
       <path
         fill="#FBBC05"
-        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+        d="M10.53 28.59c-0.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
       />
       <path
         fill="#34A853"

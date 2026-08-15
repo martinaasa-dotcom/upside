@@ -1106,6 +1106,7 @@ run("sign-in reads as a product", () => {
   );
   assert.match(product, /SIGNIN_WHO/);
   assert.match(product, /SIGNIN_POINTS/);
+  assert.match(product, /See what your book did/);
   const gate = readFileSync(
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
@@ -1113,7 +1114,10 @@ run("sign-in reads as a product", () => {
   assert.match(gate, /PRODUCT_SENTENCE/);
   assert.match(gate, /SIGNIN_WHO/);
   assert.match(gate, /SIGNIN_POINTS/);
+  assert.match(gate, /Sample/);
   assert.doesNotMatch(gate, /\$50k|AI manage/);
+  assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
+  assert.doesNotMatch(gate, /Communities stay read-only/);
 });
 
 run("empty book does not lead with Fund", () => {

@@ -1,6 +1,6 @@
 # Upside Lab
 
-A daily read of your book, with Margus to think it through. Live prices, Thesis Pulse, and an open paper fund (Upside Fund). Communities are optional.
+See what your book did. Ask Margus if the thesis still holds. Live prices, Thesis Pulse, and an open paper fund (Upside Fund). Communities are optional.
 
 Production: [https://upsidelab.app](https://upsidelab.app)
 
