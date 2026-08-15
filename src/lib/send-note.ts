@@ -20,15 +20,15 @@ function noteHtml(text: string): string {
     .map((block, i) => {
       const muted = block === last && /Account turns this off/i.test(block);
       const style = muted
-        ? "margin:28px 0 0 0;font-size:13px;line-height:1.4;color:#6b6b6b"
+        ? "margin:20px 0 0 0;font-size:12px;line-height:1.4;color:#6b7280"
         : i === 0
-          ? "margin:0 0 18px 0;font-size:18px;line-height:1.4;color:#111"
-          : "margin:0 0 14px 0;font-size:16px;line-height:1.5;color:#1a1a1a";
+          ? "margin:0 0 16px 0;font-size:18px;line-height:1.4;font-weight:700;color:#f4f1ea"
+          : "margin:0 0 14px 0;font-size:15px;line-height:1.5;color:#9aa3ad";
       return `<p style="${style}">${escapeHtml(block).replace(/\n/g, "<br>")}</p>`;
     })
     .join("");
-  return `<div style="max-width:420px;padding:8px 0;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a">
-<img src="${MARK_URL}" width="28" height="28" alt="" style="display:block;margin:0 0 20px 0;border:0" />
+  return `<div style="width:100%;padding:22px 16px;background:#08090c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#f4f1ea">
+<img src="${MARK_URL}" width="28" height="28" alt="" style="display:block;margin:0 0 16px 0;border:0;border-radius:8px" />
 ${body}
 </div>`;
 }

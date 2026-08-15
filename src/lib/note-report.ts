@@ -343,10 +343,48 @@ export function noteReportText(r: NoteReport): string {
   return lines.join("\n");
 }
 
+const APP = "#08090c";
+const CARD = "#111318";
+const CREAM = "#f4f1ea";
+const MUTED = "#9aa3ad";
+const GOLD = "#d6ad69";
+const GAIN = "#10b981";
+const LOSS = "#f43f5e";
+const LINE = "#1c1f27";
+const SANS =
+  "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+
 function toneColor(n: number): string {
-  if (n > 0) return "#2f6b45";
-  if (n < 0) return "#9a3f3f";
-  return "#5c574e";
+  if (n > 0) return GAIN;
+  if (n < 0) return LOSS;
+  return MUTED;
+}
+
+function label(text: string): string {
+  return `<p style="margin:0 0 10px 0;font-family:${SANS};font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:${GOLD}">${escapeHtml(text)}</p>`;
+}
+
+function panel(inner: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${CARD};border:1px solid #3c352a;border-radius:16px">
+  <tr><td style="padding:18px 18px">${inner}</td></tr>
+</table>`;
+}
+
+function section(title: string, inner: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0 0 0">
+  <tr><td>${label(title)}</td></tr>
+  <tr><td>${panel(inner)}</td></tr>
+</table>`;
+}
+
+function weightBar(weight: number): string {
+  const pct = Math.max(4, Math.min(100, Math.round(Math.abs(weight) * 100)));
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${LINE};border-radius:2px">
+  <tr>
+    <td width="${pct}%" style="height:4px;background:${GOLD};font-size:0;line-height:0;border-radius:2px">&nbsp;</td>
+    <td style="height:4px;font-size:0;line-height:0">&nbsp;</td>
+  </tr>
+</table>`;
 }
 
 export function noteReportHtml(r: NoteReport): string {
@@ -361,19 +399,56 @@ export function noteReportHtml(r: NoteReport): string {
   const moverRows = r.movers
     .map((m, i) => {
       const c = toneColor(m.dollar);
-      const border = i === r.movers.length - 1 ? "none" : "1px solid #ece7dc";
+      const border = i === r.movers.length - 1 ? "none" : `1px solid ${LINE}`;
       return `<tr>
-  <td style="padding:10px 8px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:#1a1814;border-bottom:${border}">${escapeHtml(cashtag(m.ticker))}</td>
-  <td style="padding:10px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;text-align:right;color:#8a7d68;border-bottom:${border}">${escapeHtml(priceMoney(m.price))}</td>
-  <td style="padding:10px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;text-align:right;color:${c};border-bottom:${border}">${escapeHtml(signedPct(m.pct))}</td>
-  <td style="padding:10px 0 10px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;text-align:right;color:${c};border-bottom:${border}">${escapeHtml(signedMoney(m.dollar))}</td>
+  <td style="padding:12px 8px 12px 0;font-family:${SANS};font-size:15px;font-weight:600;color:${CREAM};border-bottom:${border}">${escapeHtml(cashtag(m.ticker))}</td>
+  <td style="padding:12px 8px;font-family:${SANS};font-size:14px;text-align:right;color:${MUTED};border-bottom:${border}">${escapeHtml(priceMoney(m.price))}</td>
+  <td style="padding:12px 8px;font-family:${SANS};font-size:15px;font-weight:600;text-align:right;color:${c};border-bottom:${border}">${escapeHtml(signedPct(m.pct))}</td>
+  <td style="padding:12px 0 12px 8px;font-family:${SANS};font-size:15px;font-weight:600;text-align:right;color:${c};border-bottom:${border}">${escapeHtml(signedMoney(m.dollar))}</td>
 </tr>`;
     })
     .join("");
 
+  const moversInner =
+    r.movers.length > 0
+      ? section(
+          "What moved",
+          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${moverRows}</table>`
+        )
+      : "";
+
+  const weightRows = r.weights
+    .map((w, i) => {
+      const pad = i === r.weights.length - 1 ? "0" : "0 0 14px 0";
+      return `<tr>
+  <td style="padding:${pad}">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">
+      <tr>
+        <td style="font-family:${SANS};font-size:15px;font-weight:600;color:${CREAM}">${escapeHtml(cashtag(w.ticker))}</td>
+        <td style="font-family:${SANS};font-size:15px;font-weight:600;text-align:right;color:${CREAM}">${escapeHtml(weightPct(w.weight))}</td>
+      </tr>
+    </table>
+    <div style="height:8px;font-size:0;line-height:0">&nbsp;</div>
+    ${weightBar(w.weight)}
+  </td>
+</tr>`;
+    })
+    .join("");
+
+  const weightsInner =
+    r.weights.length > 0
+      ? section(
+          "Where it sits",
+          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${weightRows}</table>`
+        )
+      : "";
+
   let thesisInner = "";
   if (r.thesis) {
     const bits: string[] = [];
+    bits.push(
+      `<p style="margin:0;font-family:${SANS};font-size:18px;font-weight:700;color:${CREAM}">${escapeHtml(cashtag(r.thesis.ticker))}</p>`
+    );
     const factBits = [
       `${Math.round(r.thesis.shares).toLocaleString("en-US")} shares at ${priceMoney(r.thesis.price)}`,
       r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of the book` : null,
@@ -381,112 +456,86 @@ export function noteReportHtml(r: NoteReport): string {
       .filter((x): x is string => Boolean(x))
       .join(" · ");
     bits.push(
-      `<p style="margin:0 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#8a7d68">${escapeHtml(factBits)}</p>`
+      `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(factBits)}</p>`
     );
     if (r.thesis.todayPct != null) {
       bits.push(
-        `<p style="margin:0 0 12px 0;font-family:Georgia,'Times New Roman',serif;font-size:16px;color:${toneColor(r.thesis.todayDollar)}">${escapeHtml(r.todayLabel)} ${escapeHtml(signedPct(r.thesis.todayPct))}&nbsp;&nbsp;${escapeHtml(signedMoney(r.thesis.todayDollar))}</p>`
+        `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${toneColor(r.thesis.todayDollar)}">${escapeHtml(r.todayLabel)} ${escapeHtml(signedPct(r.thesis.todayPct))}&nbsp;&nbsp;${escapeHtml(signedMoney(r.thesis.todayDollar))}</p>`
       );
     }
     if (r.thesis.ownerThesis) {
       bits.push(
-        `<p style="margin:0 0 12px 0;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.5;color:#1a1814">${escapeHtml(r.thesis.ownerThesis)}</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(r.thesis.ownerThesis)}</p>`
       );
     }
     if (r.thesis.status) {
       bits.push(
-        `<p style="margin:0 0 6px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#8a7d68">Last Pulse · ${escapeHtml(r.thesis.status)}</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:${GOLD}">Last Pulse · ${escapeHtml(r.thesis.status)}</p>`
       );
     }
     if (r.thesis.pulseLine) {
       bits.push(
-        `<p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.5;color:#3d3830">${escapeHtml(r.thesis.pulseLine)}</p>`
+        `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
       );
     }
     if (!r.thesis.ownerThesis && !r.thesis.pulseLine) {
       bits.push(
-        `<p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;line-height:1.5;color:#3d3830">No thesis on file for ${escapeHtml(cashtag(r.thesis.ticker))} yet. One sentence in the app is enough.</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">No thesis on file for ${escapeHtml(cashtag(r.thesis.ticker))} yet. One sentence in the app is enough.</p>`
       );
     }
-    const heading = r.thesis.ownerThesis
-      ? `Thesis · ${cashtag(r.thesis.ticker)}`
-      : `Focus · ${cashtag(r.thesis.ticker)}`;
-    thesisInner = `
-      <p style="margin:28px 0 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8a7d68">${escapeHtml(heading)}</p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe6;border-left:3px solid #c4a67a">
-        <tr><td style="padding:16px 18px">${bits.join("")}</td></tr>
-      </table>`;
+    const heading = r.thesis.ownerThesis ? "Thesis" : "Focus";
+    thesisInner = section(heading, bits.join(""));
   }
-
-  const weightRows = r.weights
-    .map((w, i) => {
-      const border = i === r.weights.length - 1 ? "none" : "1px solid #ece7dc";
-      return `<tr>
-  <td style="padding:10px 8px 10px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;color:#1a1814;border-bottom:${border}">${escapeHtml(cashtag(w.ticker))}</td>
-  <td style="padding:10px 0 10px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;text-align:right;color:#1a1814;border-bottom:${border}">${escapeHtml(weightPct(w.weight))}</td>
-</tr>`;
-    })
-    .join("");
-
-  const weightsInner =
-    r.weights.length > 0
-      ? `<p style="margin:28px 0 4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8a7d68">Where it sits</p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${weightRows}</table>`
-      : "";
-
-  const moversInner =
-    r.movers.length > 0
-      ? `<p style="margin:28px 0 4px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8a7d68">What moved</p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${moverRows}</table>`
-      : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<meta name="supported-color-schemes" content="dark" />
 <title>${escapeHtml(r.title)}</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin:0 !important; padding:0 !important; background:${APP} !important; width:100% !important; }
+</style>
 </head>
-<body style="margin:0;padding:0;background:#efeae0">
+<body style="margin:0;padding:0;width:100%;background:${APP};color:${CREAM}" bgcolor="${APP}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preview)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efeae0">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${APP}" style="width:100%;background:${APP}">
   <tr>
-    <td align="center" style="padding:28px 16px 40px 16px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fbf8f1;border:1px solid #e4ddcf">
+    <td style="padding:0;background:${APP}" bgcolor="${APP}">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${APP}">
         <tr>
-          <td style="padding:28px 28px 0 28px">
-            <img src="https://www.upsidelab.app/icons/icon-192.png" width="36" height="36" alt="" style="display:block;border:0;border-radius:8px" />
-            <p style="margin:16px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#8a7d68">Upside Lab</p>
-            <h1 style="margin:8px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;font-weight:normal;color:#1a1814">${escapeHtml(r.title)}</h1>
-            <p style="margin:8px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#8a7d68">${escapeHtml(r.dateLine)}</p>
-            <div style="height:1px;background:#c4a67a;margin:22px 0 0 0;line-height:1px;font-size:1px">&nbsp;</div>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:22px 28px 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1.5;color:#3d3830">
-            <p style="margin:0">${escapeHtml(r.greeting)}</p>
-            <p style="margin:8px 0 0 0">${escapeHtml(r.lead)}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:26px 28px 0 28px">
-            <p style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#8a7d68">Your book</p>
-            <p style="margin:8px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:36px;line-height:1.1;color:#1a1814">${escapeHtml(money(r.book))}</p>
-            <p style="margin:8px 0 0 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#8a7d68">${escapeHtml(names)}</p>
-            <p style="margin:14px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:18px;color:${todayColor}">${escapeHtml(r.todayLabel)} ${todayLine}</p>
+          <td style="padding:22px 16px 28px 16px;background:${APP}">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">
+              <tr>
+                <td style="vertical-align:middle">
+                  <img src="https://www.upsidelab.app/icons/icon-192.png" width="28" height="28" alt="" style="display:block;border:0;border-radius:8px" />
+                </td>
+                <td style="vertical-align:middle;padding-left:10px;font-family:${SANS};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${GOLD}">Upside Lab</td>
+                <td style="vertical-align:middle;text-align:right;font-family:${SANS};font-size:12px;color:${MUTED}">${escapeHtml(r.dateLine)}</td>
+              </tr>
+            </table>
+            <h1 style="margin:22px 0 0 0;font-family:${SANS};font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.title)}</h1>
+            <p style="margin:10px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${MUTED}">${escapeHtml(r.greeting)} ${escapeHtml(r.lead)}</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:22px 0 0 0">
+              <tr>
+                <td>
+                  ${panel(`
+                    ${label("Your book")}
+                    <p style="margin:0;font-family:${SANS};font-size:32px;line-height:1.1;font-weight:700;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(money(r.book))}</p>
+                    <p style="margin:8px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(names)}</p>
+                    <p style="margin:14px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(r.todayLabel)} ${todayLine}</p>
+                  `)}
+                </td>
+              </tr>
+            </table>
             ${moversInner}
             ${weightsInner}
             ${thesisInner}
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:28px 28px 0 28px;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.5;color:#3d3830">
-            ${escapeHtml(r.closer)}
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:28px 28px 28px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;line-height:1.5;color:#9a9386">
-            Account turns this off · upsidelab.app
+            <p style="margin:24px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${MUTED}">${escapeHtml(r.closer)}</p>
+            <p style="margin:20px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Account turns this off · upsidelab.app</p>
           </td>
         </tr>
       </table>
