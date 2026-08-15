@@ -24,6 +24,9 @@ export async function sendNoteEmail(input: {
     subject: input.subject,
     text: input.text,
     html: input.html,
+    headers: {
+      "List-Unsubscribe": "<https://upsidelab.app/account>",
+    },
   });
   return !error;
 }
