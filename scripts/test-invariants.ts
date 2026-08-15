@@ -988,6 +988,17 @@ run("options onboarding is regularly-only", () => {
   assert.doesNotMatch(onboarding, /q2 !== "never"/);
 });
 
+run("onboarding asks for weekday and Sunday notes", () => {
+  const onboarding = readFileSync(
+    join(process.cwd(), "src/components/ExperienceOnboardingModal.tsx"),
+    "utf8"
+  );
+  assert.match(onboarding, /Want a report in your inbox/);
+  assert.match(onboarding, /noteMorning/);
+  assert.match(onboarding, /noteSunday/);
+  assert.match(onboarding, /\{step\}\/3/);
+});
+
 run("nightly snapshots can store mark-to-market", () => {
   const snap = readFileSync(
     join(process.cwd(), "src/lib/book-snapshot.ts"),

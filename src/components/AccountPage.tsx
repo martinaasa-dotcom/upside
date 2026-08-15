@@ -87,7 +87,8 @@ export function AccountPage() {
     loadStoredKnowsOptions
   );
   const [knowsOptionsSaved, setKnowsOptionsSaved] = useState(false);
-  const [morningNote, setMorningNote] = useState(false);
+  const [noteMorning, setNoteMorning] = useState(false);
+  const [noteSunday, setNoteSunday] = useState(false);
   const [morningSaved, setMorningSaved] = useState(false);
   const [morningCanSend, setMorningCanSend] = useState(false);
 
@@ -119,15 +120,25 @@ export function AccountPage() {
       .catch(() => {});
     void fetch("/api/account/morning-note")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { enabled?: boolean; canSend?: boolean } | null) => {
+      .then(
+        (
+          data: {
+            morning?: boolean;
+            sunday?: boolean;
+            enabled?: boolean;
+            canSend?: boolean;
+          } | null
+        ) => {
         if (cancelled) return;
-        if (typeof data?.enabled === "boolean") {
-          setMorningNote(data.enabled);
-        }
+        if (typeof data?.morning === "boolean") setNoteMorning(data.morning);
+        else if (typeof data?.enabled === "boolean") setNoteMorning(data.enabled);
+        if (typeof data?.sunday === "boolean") setNoteSunday(data.sunday);
+        else if (typeof data?.enabled === "boolean") setNoteSunday(data.enabled);
         if (typeof data?.canSend === "boolean") {
           setMorningCanSend(data.canSend);
         }
-      })
+        }
+      )
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -266,38 +277,60 @@ export function AccountPage() {
           <VisitStreakCard />
 
           <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-white">Morning note</h2>
+            <h2 className="text-sm font-semibold text-white">Email notes</h2>
             <p className="text-xs text-zinc-400">
               {morningCanSend
-                ? "A short weekday note around 7am Tallinn, another after the US close, and a Sunday look. Book move, the name that did it, and Pulse if it changed. Off until you ask."
-                : "The note lands in the app each weekday morning, after the close, and on Sunday. Email is not set up on this server yet."}
+                ? "Pick weekdays, Sundays, both, or none. Off until you ask."
+                : "Notes also land in the app. Email is not set up on this server yet."}
             </p>
-            <label className="flex items-center gap-2 text-sm text-zinc-200">
-              <input
-                type="checkbox"
-                checked={morningNote}
-                onChange={(e) => {
-                  const next = e.target.checked;
-                  setMorningNote(next);
-                  void fetch("/api/account/morning-note", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ enabled: next }),
-                  })
-                    .then((r) => {
-                      if (r.ok) {
-                        setMorningSaved(true);
-                        window.setTimeout(() => setMorningSaved(false), 2000);
-                      }
+            {(
+              [
+                {
+                  id: "morning",
+                  checked: noteMorning,
+                  set: setNoteMorning,
+                  label: "Weekdays. Morning and after the US close.",
+                },
+                {
+                  id: "sunday",
+                  checked: noteSunday,
+                  set: setNoteSunday,
+                  label: "Sundays. A look at the week.",
+                },
+              ] as const
+            ).map((row) => (
+              <label
+                key={row.id}
+                className="flex items-center gap-2 text-sm text-zinc-200"
+              >
+                <input
+                  type="checkbox"
+                  checked={row.checked}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    row.set(next);
+                    void fetch("/api/account/morning-note", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(
+                        row.id === "morning"
+                          ? { morning: next }
+                          : { sunday: next }
+                      ),
                     })
-                    .catch(() => {});
-                }}
-                className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
-              />
-              {morningCanSend
-                ? "Email me the weekday, close, and Sunday notes"
-                : "Turn this on so email starts when it is set up"}
-            </label>
+                      .then((r) => {
+                        if (r.ok) {
+                          setMorningSaved(true);
+                          window.setTimeout(() => setMorningSaved(false), 2000);
+                        }
+                      })
+                      .catch(() => {});
+                  }}
+                  className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
+                />
+                {row.label}
+              </label>
+            ))}
             {morningSaved && (
               <p className="text-xs text-emerald-300">Saved.</p>
             )}

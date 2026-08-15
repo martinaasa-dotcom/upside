@@ -47,10 +47,11 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
     };
   }
 
+  const flag = kind === "sunday" ? "note_sunday" : "note_morning";
   const { data: profiles, error } = await supabase
     .from(PORTFELL_TABLES.profiles)
     .select("id, email, display_name")
-    .eq("morning_note", true);
+    .eq(flag, true);
   if (error) {
     return {
       ok: false,
