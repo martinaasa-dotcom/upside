@@ -1,6 +1,11 @@
 import { createHash } from "crypto";
 import { provisionClassroomSheet } from "@/lib/classroom";
-import { getSupabaseDataClient } from "@/lib/supabase/server";
+import { clipInviteName } from "@/lib/invite-landing";
+import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  getSupabaseDataClient,
+  getSupabaseServer,
+} from "@/lib/supabase/server";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -9,6 +14,67 @@ export const dynamic = "force-dynamic";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+const TOKEN_RE = /^[A-Za-z0-9_-]{12,128}$/;
+
+/**
+ * Public peek for the sign-in page. Token possession is the only gate.
+ * Returns the community name and kind, nothing else.
+ */
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get("token")?.trim() ?? "";
+  if (!TOKEN_RE.test(token)) {
+    return NextResponse.json({ error: "token required" }, { status: 400 });
+  }
+
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const limit = checkRateLimit(`invite-peek:${ip}`, 30, 5 * 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Try again in a minute." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 60) } }
+    );
+  }
+
+  const supabase = getSupabaseServer();
+  if (!supabase) {
+    return NextResponse.json({ name: null, kind: "community" });
+  }
+
+  const { data: invite } = await supabase
+    .from(PORTFELL_TABLES.communityInvites)
+    .select("community_id, expires_at, accepted_at, revoked_at")
+    .eq("token_hash", hashToken(token))
+    .maybeSingle();
+
+  const row = invite as {
+    community_id?: string;
+    expires_at?: string | null;
+    accepted_at?: string | null;
+    revoked_at?: string | null;
+  } | null;
+
+  if (!row?.community_id || row.accepted_at || row.revoked_at) {
+    return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
+  }
+  if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
+    return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
+  }
+
+  const { data: community } = await supabase
+    .from(PORTFELL_TABLES.communities)
+    .select("name, kind")
+    .eq("id", row.community_id)
+    .maybeSingle();
+
+  const meta = community as { name?: string; kind?: string } | null;
+  const classroom = meta?.kind === "classroom";
+  return NextResponse.json({
+    name: clipInviteName(meta?.name),
+    kind: classroom ? "classroom" : "community",
+  });
 }
 
 /**

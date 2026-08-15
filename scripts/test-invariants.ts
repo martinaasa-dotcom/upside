@@ -41,6 +41,10 @@ import {
   markChatActive,
 } from "../src/lib/ai/llm-slots";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
+import {
+  inviteFromLocation,
+  inviteLandingCopy,
+} from "../src/lib/invite-landing";
 import { LAB_TAB_ID, PULSE_TAB_ID, todayDollarFor, buildOverview } from "../src/lib/overview";
 import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
 import {
@@ -1118,6 +1122,31 @@ run("sign-in reads as a product", () => {
   assert.doesNotMatch(gate, /\$50k|AI manage/);
   assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
   assert.doesNotMatch(gate, /Communities stay read-only/);
+  assert.match(gate, /inviteLandingCopy/);
+});
+
+run("community invite landing names the circle", () => {
+  assert.deepEqual(inviteFromLocation("/communities/join", "?token=abc"), {
+    kind: "community",
+    name: null,
+  });
+  assert.equal(inviteFromLocation("/", "?token=abc"), null);
+  assert.equal(
+    inviteLandingCopy({ kind: "community", name: null }).title,
+    "You've been invited to join a community."
+  );
+  assert.equal(
+    inviteLandingCopy({ kind: "community", name: "Upside Circle" }).title,
+    "You've been invited to join Upside Circle."
+  );
+  assert.equal(
+    inviteLandingCopy({ kind: "classroom", name: null }).title,
+    "You've been invited to a class."
+  );
+  assert.match(
+    readFileSync(join(process.cwd(), "src/app/api/communities/join/route.ts"), "utf8"),
+    /export async function GET/
+  );
 });
 
 run("empty book does not lead with Fund", () => {
