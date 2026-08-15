@@ -1,3 +1,5 @@
+import { plainError } from "@/lib/plain-error";
+
 /**
  * Safe JSON reading for API responses.
  *
@@ -54,9 +56,7 @@ export async function readJsonOrThrow<T>(
   if (parsed !== null && typeof parsed === "object") {
     if (!res.ok) {
       const message = (parsed as { error?: unknown }).error;
-      throw new Error(
-        typeof message === "string" && message.trim() ? message : fallback
-      );
+      throw new Error(plainError(message, fallback));
     }
     return parsed as T;
   }

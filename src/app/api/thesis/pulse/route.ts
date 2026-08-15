@@ -138,7 +138,7 @@ For **each** ticker:
 
 **summary**: one sentence, lead with dips that are add opportunities vs real thesis breaks.
 
-If the owner didn't write a thesis, still pick action and thesisStatus from headlines and the tape. Never ask them to write a thesis. Never say you are guessing.
+If the owner didn't write a thesis, still pick action and thesisStatus from headlines and today's prices. Never ask them to write a thesis. Never say you are guessing. Never say "tape".
 
 Keep fields short. Use the headlines, don't invent news.
 

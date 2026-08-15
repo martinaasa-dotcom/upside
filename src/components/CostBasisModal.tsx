@@ -42,11 +42,12 @@ export function CostBasisModal({
         <div className="flex items-start justify-between gap-3 border-b border-zinc-800 px-4 py-3">
           <div>
             <h3 className="text-base font-semibold text-white">
-              Cost basis pass
+              What you paid
             </h3>
             <p className="text-xs text-zinc-400">
-              Import used market marks as cost. Put in your real average buy
-              price (USD) and apply, then ROI actually means something.
+              The import used today&apos;s prices as what you paid. Type your
+              real average buy price in dollars, then apply, so the gain and
+              loss numbers are right.
             </p>
           </div>
           <button

@@ -35,8 +35,8 @@ export default function Error({
           Something broke on this screen
         </h1>
         <p className="text-sm leading-relaxed text-zinc-400">
-          Your book is safe. This was just a rendering hiccup, so try again,
-          or reload if it keeps happening.
+          Your holdings are safe. This screen hit a snag. Try again, or
+          reload if it keeps happening.
         </p>
         {error.digest && (
           <p className="text-xs text-zinc-400">Ref: {error.digest}</p>

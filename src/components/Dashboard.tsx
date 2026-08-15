@@ -88,6 +88,7 @@ import {
   type DisplayCurrency,
 } from "@/lib/display-currency";
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { plainError } from "@/lib/plain-error";
 import {
   clearBookCache,
   markSeedClaimed,
@@ -1320,7 +1321,7 @@ export function Dashboard() {
             fetchedAt: Date.now(),
           });
         }
-        toast("Book updated elsewhere, synced", "info");
+        toast("This sheet changed on another device. We pulled in the latest.", "info");
       } catch {
         /* ignore */
       }
@@ -1499,9 +1500,7 @@ export function Dashboard() {
             return prev.filter((h) => h.id !== optimistic.id);
           });
           toast(
-            typeof data.error === "string"
-              ? data.error
-              : "Could not save holding, reverted",
+            plainError(data.error, "Couldn't save that holding. We put it back how it was."),
             "error"
           );
           return;
@@ -1569,9 +1568,7 @@ export function Dashboard() {
             );
           }
           toast(
-            typeof data.error === "string"
-              ? data.error
-              : "Failed to update holding, reverted",
+            plainError(data.error, "Couldn't update that holding. We put it back how it was."),
             "error"
           );
         }
@@ -1905,9 +1902,7 @@ export function Dashboard() {
             if (!res.ok) {
               failures += 1;
               toast(
-                typeof data.error === "string"
-                  ? data.error
-                  : "Import failed",
+                plainError(data.error, "Couldn't import that file. Try again."),
                 "error"
               );
             } else {
@@ -1981,7 +1976,12 @@ export function Dashboard() {
         }
 
         if (failures > 0) {
-          toast(`${failures} advisor write(s) failed`, "error");
+          toast(
+            failures === 1
+              ? "Couldn't save what Margus suggested. Try again."
+              : `Couldn't save ${failures} of Margus's suggestions. Try again.`,
+            "error"
+          );
           await loadPortfolios({ silent: true });
         }
       })();
@@ -2096,9 +2096,7 @@ export function Dashboard() {
             setHoldings((prev) => [...prev, removed]);
           }
           toast(
-            typeof data.error === "string"
-              ? data.error
-              : "Failed to delete holding, restored",
+            plainError(data.error, "Couldn't delete that holding. It's still there."),
             "error"
           );
           return;
@@ -2126,7 +2124,7 @@ export function Dashboard() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast(
-          typeof data.error === "string" ? data.error : "Failed to add sheet",
+          plainError(data.error, "Couldn't add that sheet. Try again."),
           "error"
         );
         return undefined;
@@ -2183,9 +2181,7 @@ export function Dashboard() {
             );
           }
           toast(
-            typeof data.error === "string"
-              ? data.error
-              : "Failed to rename sheet, reverted",
+            plainError(data.error, "Couldn't rename that sheet. We put the old name back."),
             "error"
           );
         }
@@ -2203,7 +2199,7 @@ export function Dashboard() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         toast(
-          typeof data.error === "string" ? data.error : "Failed to delete sheet",
+          plainError(data.error, "Couldn't delete that sheet. Try again."),
           "error"
         );
         return false;
@@ -2252,9 +2248,7 @@ export function Dashboard() {
             )
           );
           toast(
-            typeof data.error === "string"
-              ? data.error
-              : "Failed to update cash, reverted",
+            plainError(data.error, "Couldn't update cash. We put the old number back."),
             "error"
           );
         }
@@ -3005,7 +2999,7 @@ export function Dashboard() {
         }
         body={
           confirmDelete?.kind === "sheet"
-            ? `Delete “${confirmDelete.label}” and all of its holdings? A safety snapshot is saved first.`
+            ? `Delete “${confirmDelete.label}” and all of its holdings? We take a backup save first.`
             : `Remove ${confirmDelete?.label ?? "this holding"} from the sheet?`
         }
         confirmLabel="Delete"
@@ -3063,8 +3057,8 @@ export function Dashboard() {
         onRestored={(mode) => {
           toast(
             mode === "sheet"
-              ? "Sheet restored from snapshot"
-              : "Book restored from snapshot",
+              ? "Sheet put back to how it looked in that save"
+              : "All sheets put back to how they looked in that save",
             "success"
           );
           void loadPortfolios({ silent: true });
@@ -3116,7 +3110,7 @@ export function Dashboard() {
             });
           }
           setCostBasisOpen(false);
-          toast("Cost basis updated", "success");
+          toast("Buy prices saved", "success");
         }}
       />
 

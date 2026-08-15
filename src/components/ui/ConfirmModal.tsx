@@ -47,12 +47,12 @@ export function ConfirmModal({
     try {
       const result = await onConfirm();
       if (result === false) {
-        setError("Action failed");
+        setError("That didn't work. Try again.");
         return;
       }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Action failed");
+      setError(err instanceof Error ? err.message : "That didn't work. Try again.");
     } finally {
       setBusy(false);
     }

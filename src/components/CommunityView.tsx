@@ -9,6 +9,7 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
+import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
 import { overlapSentences } from "@/lib/circle-overlap";
 import { buildOverview } from "@/lib/overview";
@@ -269,13 +270,13 @@ export function CommunityView({ communityId }: Props) {
       if (!metaRes.ok) {
         const err = await metaRes.json().catch(() => ({}));
         throw new Error(
-          (err as { error?: string }).error ?? `Failed (${metaRes.status})`
+          plainError((err as { error?: string }).error, "Couldn't load this circle.")
         );
       }
       if (!bookRes.ok) {
         const err = await bookRes.json().catch(() => ({}));
         throw new Error(
-          (err as { error?: string }).error ?? `Book failed (${bookRes.status})`
+          plainError((err as { error?: string }).error, "Couldn't load this circle's books.")
         );
       }
       const meta = await metaRes.json();
@@ -298,7 +299,7 @@ export function CommunityView({ communityId }: Props) {
       // content shouldn't slap an error over it — only surface the error
       // when there was nothing on screen to begin with.
       if (!isBackgroundRefresh) {
-        setError(e instanceof Error ? e.message : "Failed to load community");
+        setError(e instanceof Error ? e.message : "Couldn't load this circle.");
       }
     } finally {
       if (callId === loadCallIdRef.current) setLoading(false);
@@ -901,13 +902,13 @@ export function CommunityView({ communityId }: Props) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Invite failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't send that invite."));
       track("community_invite_created");
       const url = `${window.location.origin}${data.path}`;
       setInviteUrl(url);
       await navigator.clipboard.writeText(url).catch(() => undefined);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Invite failed");
+      setError(e instanceof Error ? e.message : "Couldn't send that invite.");
     } finally {
       setBusy(false);
     }
@@ -922,12 +923,12 @@ export function CommunityView({ communityId }: Props) {
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Remove failed");
+        throw new Error(plainError((data as { error?: string }).error, "Couldn't remove that person."));
       }
       await load();
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Remove failed");
+      setError(e instanceof Error ? e.message : "Couldn't remove that person.");
       return false;
     } finally {
       setBusy(false);
@@ -948,12 +949,12 @@ export function CommunityView({ communityId }: Props) {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(
-          (data as { error?: string }).error ?? "Role update failed"
+          plainError((data as { error?: string }).error, "Couldn't change that role.")
         );
       }
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Role update failed");
+      setError(e instanceof Error ? e.message : "Couldn't change that role.");
     } finally {
       setBusy(false);
     }
@@ -979,11 +980,11 @@ export function CommunityView({ communityId }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error((data as { error?: string }).error ?? "Save failed");
+        throw new Error(plainError((data as { error?: string }).error, "Couldn't save that note."));
       }
       setCommunity((data as { community: CommunityMeta }).community);
     } catch (e) {
-      setSettingsError(e instanceof Error ? e.message : "Save failed");
+      setSettingsError(e instanceof Error ? e.message : "Couldn't save that note.");
     } finally {
       setSettingsBusy(false);
     }
@@ -1002,12 +1003,12 @@ export function CommunityView({ communityId }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error((data as { error?: string }).error ?? "Rename failed");
+        throw new Error(plainError((data as { error?: string }).error, "Couldn't rename this circle."));
       }
       setCommunity((data as { community: CommunityMeta }).community);
       setSettingsOpen(false);
     } catch (e) {
-      setSettingsError(e instanceof Error ? e.message : "Rename failed");
+      setSettingsError(e instanceof Error ? e.message : "Couldn't rename this circle.");
     } finally {
       setSettingsBusy(false);
     }
@@ -1025,11 +1026,11 @@ export function CommunityView({ communityId }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error((data as { error?: string }).error ?? "Update failed");
+        throw new Error(plainError((data as { error?: string }).error, "Couldn't update that."));
       }
       setCommunity((data as { community: CommunityMeta }).community);
     } catch (e) {
-      setSettingsError(e instanceof Error ? e.message : "Update failed");
+      setSettingsError(e instanceof Error ? e.message : "Couldn't update that.");
     } finally {
       setSettingsBusy(false);
     }
@@ -1045,12 +1046,12 @@ export function CommunityView({ communityId }: Props) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Decision failed");
+        throw new Error(plainError((data as { error?: string }).error, "Couldn't save that decision."));
       }
       setJoinRequests((rows) => rows.filter((r) => r.user_id !== userId));
       if (decision === "approve") await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Decision failed");
+      setError(e instanceof Error ? e.message : "Couldn't save that decision.");
     } finally {
       setJoinDecisionBusyId(null);
     }
@@ -1058,14 +1059,14 @@ export function CommunityView({ communityId }: Props) {
 
   async function handleLeaveCommunity() {
     const me = members.find((m) => m.is_you);
-    if (!me) throw new Error("Could not work out which member you are");
+    if (!me) throw new Error("Couldn't tell which member you are. Try again.");
     const res = await fetch(
       `/api/communities/${communityId}/members/${me.user_id}`,
       { method: "DELETE" }
     );
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error((data as { error?: string }).error ?? "Leave failed");
+      throw new Error(plainError((data as { error?: string }).error, "Couldn't leave this circle."));
     }
     clearCommunityCache(communityId);
     router.push("/communities");
@@ -1078,7 +1079,7 @@ export function CommunityView({ communityId }: Props) {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error((data as { error?: string }).error ?? "Delete failed");
+      throw new Error(plainError((data as { error?: string }).error, "Couldn't delete this circle."));
     }
     clearCommunityCache(communityId);
     router.push("/communities");

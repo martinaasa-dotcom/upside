@@ -161,7 +161,7 @@ type Position = {
   dollar: number;
 };
 
-function tape(input: NoteReportInput) {
+function sessionMoves(input: NoteReportInput) {
   const useWeek = input.kind === "sunday";
   let equity = 0;
   let today = 0;
@@ -334,7 +334,7 @@ function weekNotesFor(
 
 export function buildNoteReport(input: NoteReportInput): NoteReport {
   const now = input.now ?? new Date();
-  const t = tape(input);
+  const t = sessionMoves(input);
   const top = t.movers[0] ?? null;
 
   const thesisTicker = top?.ticker;

@@ -703,7 +703,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
         setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
         quoteMap = { ...quoteMap, [ticker]: q };
       } else {
-        setError(`Could not fetch a quote for ${cashtag(ticker)}. Check the symbol.`);
+        setError(`Couldn't get a price for ${cashtag(ticker)}. Check the ticker.`);
         return;
       }
     }

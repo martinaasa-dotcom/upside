@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { SignInGate } from "@/components/SignInGate";
+import { plainError } from "@/lib/plain-error";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -15,7 +16,7 @@ function JoinInner() {
 
   useEffect(() => {
     if (!token) {
-      setError("Missing invite token");
+      setError("That invite link is missing a code.");
       return;
     }
     let cancelled = false;
@@ -27,14 +28,14 @@ function JoinInner() {
           body: JSON.stringify({ token }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Join failed");
+        if (!res.ok) throw new Error(plainError(data.error, "Couldn't join. Try the link again."));
         if (cancelled) return;
         track("community_invite_redeemed");
         setDone(true);
         router.replace(`/communities/${data.communityId}`);
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Join failed");
+          setError(e instanceof Error ? e.message : "Couldn't join. Try the link again.");
         }
       }
     })();

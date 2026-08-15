@@ -1,6 +1,7 @@
 "use client";
 
 import { cn, cashtag } from "@/lib/format";
+import { plainError } from "@/lib/plain-error";
 import {
   MONTH_NAMES,
   MONTH_SHORT,
@@ -427,12 +428,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       );
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Failed to load seasonality");
+        throw new Error(plainError(body.error, "Couldn't load those charts."));
       }
       setModel((await res.json()) as SeasonalityModel);
     } catch (e) {
       setModel(null);
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : "Couldn't load those charts.");
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { useAuth } from "@/components/AuthProvider";
+import { plainError } from "@/lib/plain-error";
 import { SignInGate } from "@/components/SignInGate";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -29,7 +30,7 @@ function JoinInner() {
         body: JSON.stringify({ code: inviteCode }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Join failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't join. Try the link again."));
       track("portfolio_invite_redeemed");
       setStatus(
         data.portfolio?.name
@@ -39,7 +40,7 @@ function JoinInner() {
       router.replace("/");
     } catch (e) {
       setStatus(null);
-      setError(e instanceof Error ? e.message : "Join failed");
+      setError(e instanceof Error ? e.message : "Couldn't join. Try the link again.");
     }
   }
 

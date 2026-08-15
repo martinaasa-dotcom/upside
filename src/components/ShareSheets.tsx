@@ -1,5 +1,6 @@
 "use client";
 
+import { plainError } from "@/lib/plain-error";
 import { useCallback, useEffect, useState } from "react";
 
 type SheetRow = { id: string; name: string; shared: boolean };
@@ -23,12 +24,12 @@ export function ShareSheets({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          typeof data.error === "string" ? data.error : "Could not load sheets"
+          plainError(data.error, "Couldn't load your sheets.")
         );
       }
       setSheets((data.sheets ?? []) as SheetRow[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load sheets");
+      setError(e instanceof Error ? e.message : "Couldn't load your sheets.");
     }
   }, [communityId]);
 
@@ -48,7 +49,7 @@ export function ShareSheets({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          typeof data.error === "string" ? data.error : "Update failed"
+          plainError(data.error, "Couldn't update that.")
         );
       }
       setSheets((prev) =>
@@ -58,7 +59,7 @@ export function ShareSheets({
       );
       onChanged?.();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : "Couldn't update that.");
     } finally {
       setBusyId(null);
     }

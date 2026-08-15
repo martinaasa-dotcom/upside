@@ -167,7 +167,7 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   {
     label: "Buy",
     key: "buy",
-    explain: "Average price you paid per share: your cost basis",
+    explain: "Average price you paid per share",
   },
   { label: "Price", key: "price", explain: "Current market price per share" },
   {

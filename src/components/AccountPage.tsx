@@ -6,6 +6,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
+import { plainError } from "@/lib/plain-error";
 import {
   last7DaysStrip,
   loadVisitStreak,
@@ -197,11 +198,11 @@ export function AccountPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Save failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't save your profile."));
       setProfileMsg("Saved. This is how you appear in communities.");
       await refresh();
     } catch (err) {
-      setProfileErr(err instanceof Error ? err.message : "Save failed");
+      setProfileErr(err instanceof Error ? err.message : "Couldn't save your profile.");
     } finally {
       setSavingProfile(false);
     }
@@ -214,7 +215,7 @@ export function AccountPage() {
       const res = await fetch("/api/account/export", { cache: "no-store" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Export failed");
+        throw new Error(plainError(data.error, "Couldn't download your data."));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -226,7 +227,7 @@ export function AccountPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setExportErr(err instanceof Error ? err.message : "Export failed");
+      setExportErr(err instanceof Error ? err.message : "Couldn't download your data.");
     } finally {
       setExporting(false);
     }
@@ -238,11 +239,11 @@ export function AccountPage() {
     try {
       const res = await fetch("/api/account/delete", { method: "POST" });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Delete failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't delete your account."));
       await signOut();
       router.push(data.authDeleted ? "/?accountDeleted=full" : "/?accountDeleted=data");
     } catch (err) {
-      setDeleteErr(err instanceof Error ? err.message : "Delete failed");
+      setDeleteErr(err instanceof Error ? err.message : "Couldn't delete your account.");
       setDeleting(false);
     }
   }

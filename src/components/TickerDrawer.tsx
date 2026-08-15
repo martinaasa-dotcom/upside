@@ -194,7 +194,7 @@ export function TickerDrawer({
               className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500 focus:border-brand focus:ring-1 focus:ring-brand/40"
             />
             <p className="mt-1.5 text-xs text-zinc-400">
-              Pulse reads this first. Leave it blank and it still works off headlines and the tape.
+              Pulse reads this first. Leave it blank and it still works from headlines and today's prices.
             </p>
             {conviction?.stamps && conviction.stamps.length > 0 && (
               <ul className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3">

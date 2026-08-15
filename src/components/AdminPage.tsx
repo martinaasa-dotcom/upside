@@ -6,6 +6,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { SignInGate } from "@/components/SignInGate";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
+import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   AlertTriangle,
@@ -123,14 +124,14 @@ export function AdminPage() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(
-            typeof data.error === "string" ? data.error : "Failed to load"
+            plainError(data.error, "Couldn't load that page.")
           );
         }
         setUsers(data.users ?? []);
         setCommunities(data.communities ?? []);
         setFunnel(data.funnel ?? null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
+        setError(e instanceof Error ? e.message : "Couldn't load that page.");
       } finally {
         setLoading(false);
         setRefreshing(false);

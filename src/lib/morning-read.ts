@@ -166,12 +166,12 @@ export function buildSundayRecap(model: OverviewModel): SundayRecap | null {
   const lines = [
     `Book $${Math.round(model.totals.totalValue).toLocaleString("en-US")}.`,
     bestTicker && bestPct != null
-      ? `Best tape: ${cashtag(bestTicker)} ${signedPct(bestPct)}.`
+      ? `Biggest gainer: ${cashtag(bestTicker)} ${signedPct(bestPct)}.`
       : null,
     worstTicker &&
     worstPct != null &&
     worstTicker !== bestTicker
-      ? `Worst tape: ${cashtag(worstTicker)} ${signedPct(worstPct)}.`
+      ? `Biggest drop: ${cashtag(worstTicker)} ${signedPct(worstPct)}.`
       : null,
     week.days.length >= 2
       ? `You opened the book ${week.days.length} days this week.`

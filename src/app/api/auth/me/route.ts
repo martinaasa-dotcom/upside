@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
     const name = String(body.display_name).trim();
     if (!name || name.length > 80) {
       return NextResponse.json(
-        { error: "Display name must be 1–80 characters" },
+        { error: "Display name has to be between 1 and 80 characters" },
         { status: 400 }
       );
     }
@@ -82,7 +82,7 @@ export async function PATCH(req: NextRequest) {
         : String(body.avatar_url).trim().slice(0, 500) || null;
     if (url && !/^https?:\/\//i.test(url)) {
       return NextResponse.json(
-        { error: "Avatar URL must start with http(s)://" },
+        { error: "Photo link has to start with http:// or https://" },
         { status: 400 }
       );
     }

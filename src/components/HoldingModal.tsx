@@ -54,19 +54,19 @@ export function HoldingModal({
     const buyN = parseDecimal(buyPrice);
     const callN = Math.round(parseDecimal(targetCall));
     if (!ticker.trim()) {
-      setError("Ticker is required");
+      setError("Type a ticker first.");
       return;
     }
     if (!Number.isFinite(sharesN) || sharesN <= 0) {
-      setError("Shares must be a positive number");
+      setError("Share count has to be bigger than 0.");
       return;
     }
     if (!Number.isFinite(buyN) || buyN <= 0) {
-      setError("Buy price must be a positive number");
+      setError("Buy price has to be bigger than 0.");
       return;
     }
     if (!Number.isFinite(callN) || callN < 0 || callN > 100) {
-      setError("That has to be a number between 0 and 100");
+      setError("That has to be a number between 0 and 100.");
       return;
     }
 

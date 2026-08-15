@@ -181,11 +181,11 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       });
       const data = await readJsonOrThrow<{ rows: TrendRow[] }>(
         res,
-        "Could not load trend signals"
+        "Couldn't load trends. Try again."
       );
       setRows(data.rows ?? []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load trend signals");
+      setError(e instanceof Error ? e.message : "Couldn't load trends. Try again.");
     } finally {
       setBusy(false);
     }
@@ -254,8 +254,8 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               Everything here runs on weekly bars, so it answers &quot;has the
               story changed&quot; rather than &quot;what happened today&quot;.
               A signal that fired every week would be noise. That slowness is
-              deliberate, but it means a sudden catalyst, a blowout earnings
-              print, can move the price hard for a week or two before the
+              deliberate, but it means a sudden news event, a blowout earnings
+              report, can move the price hard for a week or two before the
               trend line catches up. The &quot;Last 2 weeks&quot; number on
               each card exists specifically to catch that: when it flatly
               disagrees with the slower trend read, the recent move wins the

@@ -151,7 +151,7 @@ export function parseHoldingsCsv(text: string): CsvImportResult {
 
     const ticker = resolveImportTicker(tickerRaw);
     if (!ticker) {
-      result.skipped.push({ line: i + 1, raw, reason: "Unrecognized ticker" });
+      result.skipped.push({ line: i + 1, raw, reason: "Don't recognize that ticker" });
       continue;
     }
 
@@ -160,7 +160,7 @@ export function parseHoldingsCsv(text: string): CsvImportResult {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Missing or invalid share count",
+        reason: "Share count is missing or isn't a number",
       });
       continue;
     }
@@ -170,7 +170,7 @@ export function parseHoldingsCsv(text: string): CsvImportResult {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Missing or invalid buy price",
+        reason: "Buy price is missing or isn't a number",
       });
       continue;
     }
@@ -223,7 +223,7 @@ export function parseHoldingsPaste(text: string): CsvImportResult {
     }
     const ticker = resolveImportTicker(tickerRaw);
     if (!ticker) {
-      result.skipped.push({ line: i + 1, raw, reason: "Unrecognized ticker" });
+      result.skipped.push({ line: i + 1, raw, reason: "Don't recognize that ticker" });
       return;
     }
     const shares = parseNumber(cells[1]);

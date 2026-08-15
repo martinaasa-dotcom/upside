@@ -6,6 +6,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
+import { plainError } from "@/lib/plain-error";
 import { prefetchCommunity } from "@/lib/community-cache";
 import { ChevronRight, Compass, Globe, Lock, Users } from "lucide-react";
 import Link from "next/link";
@@ -72,7 +73,7 @@ export function CommunitiesList() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          typeof data.error === "string" ? data.error : "Failed to load"
+          plainError(data.error, "Couldn't load your circles.")
         );
       }
       const rows = (data.communities ?? []) as CommunityRow[];
@@ -83,7 +84,7 @@ export function CommunitiesList() {
       // itself.
       for (const c of rows.slice(0, 2)) void prefetchCommunity(c.id);
     } catch (e) {
-      if (!hadCache) setError(e instanceof Error ? e.message : "Failed to load");
+      if (!hadCache) setError(e instanceof Error ? e.message : "Couldn't load your circles.");
     } finally {
       setLoading(false);
     }
@@ -113,7 +114,7 @@ export function CommunitiesList() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "Request failed");
+        setError(plainError(data.error, "Couldn't send that request."));
         return;
       }
       setDiscover((rows) =>
@@ -135,7 +136,7 @@ export function CommunitiesList() {
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? "Create failed");
+      setError(plainError(data.error, "Couldn't create that circle."));
       return;
     }
     setName("");

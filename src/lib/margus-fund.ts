@@ -57,7 +57,7 @@ const fundDecisionSchema = z.object({
   marketNote: z
     .string()
     .describe(
-      "One short sentence on the tape as it hits this book. Not a generic wrap."
+      "One short sentence on how today's prices hit this book. Not a generic wrap. Never say tape."
     ),
   holdingDecisions: z
     .array(

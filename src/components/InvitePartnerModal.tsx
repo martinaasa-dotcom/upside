@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { track } from "@vercel/analytics";
 import { Check, Copy, UserMinus, X } from "lucide-react";
@@ -79,7 +80,7 @@ export function InvitePartnerModal({
           return;
         }
         if (add.status !== 404) {
-          throw new Error(addData.error ?? "Invite failed");
+          throw new Error(plainError(addData.error, "Couldn't add that person."));
         }
       }
       const res = await fetch(`/api/portfolios/${portfolioId}/invites`, {
@@ -93,7 +94,7 @@ export function InvitePartnerModal({
         code?: string;
         token?: string;
       };
-      if (!res.ok) throw new Error(data.error ?? "Could not create invite");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't create an invite."));
       track("portfolio_invite_created");
       setLink(data.url ?? null);
       setCode(data.code ?? data.token ?? null);
@@ -103,7 +104,7 @@ export function InvitePartnerModal({
           : "Invite ready. Share the link or code with your partner."
       );
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Invite failed");
+      setErr(e instanceof Error ? e.message : "Couldn't create an invite.");
     } finally {
       setBusy(false);
     }

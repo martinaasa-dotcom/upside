@@ -226,7 +226,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          err instanceof Error ? err.message : "Failed to snapshot before delete",
+          "Couldn't take a backup before deleting. Try again.",
       },
       { status: 500 }
     );

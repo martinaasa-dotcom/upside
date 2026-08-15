@@ -6,6 +6,7 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
+import { plainError } from "@/lib/plain-error";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
@@ -478,7 +479,7 @@ export function UpsidePortfolioPage() {
     try {
       const res = await fetch("/api/upside-portfolio", { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Failed to load");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't load the Fund."));
       if (callId !== loadCallIdRef.current) return;
       setFund(data.fund);
       setHoldings(data.holdings ?? []);
@@ -500,7 +501,7 @@ export function UpsidePortfolioPage() {
       // over a perfectly readable page helps nobody.
       if (callId !== loadCallIdRef.current) return;
       if (mode !== "background" && !cachedRef.current) {
-        setError(e instanceof Error ? e.message : "Failed to load");
+        setError(e instanceof Error ? e.message : "Couldn't load the Fund.");
       }
     } finally {
       // A superseded call must not clear the spinner belonging to the
@@ -743,7 +744,7 @@ export function UpsidePortfolioPage() {
   }> => {
     const res = await fetch("/api/portfolios", { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error ?? "Failed to load your sheets");
+    if (!res.ok) throw new Error(plainError(data.error, "Couldn't load your sheets."));
     const portfolios: MyPortfolioMeta[] = (data.portfolios ?? []).map(
       (p: { id: string; name: string; cash_balance?: number }) => ({
         id: p.id,
@@ -921,7 +922,7 @@ export function UpsidePortfolioPage() {
       try {
         await fetchMyPortfolios();
       } catch (e) {
-        setBenchmarkError(e instanceof Error ? e.message : "Failed to load your sheets");
+        setBenchmarkError(e instanceof Error ? e.message : "Couldn't load your sheets.");
       }
     }
   }, [myPortfolios, fetchMyPortfolios]);
@@ -960,7 +961,7 @@ export function UpsidePortfolioPage() {
       setBenchmarkQuotes(liveQuotes);
       setPickerOpen(false);
     } catch (e) {
-      setBenchmarkError(e instanceof Error ? e.message : "Failed to set benchmark");
+      setBenchmarkError(e instanceof Error ? e.message : "Couldn't set that comparison.");
     } finally {
       setBenchmarkBusy(false);
     }
@@ -989,7 +990,7 @@ export function UpsidePortfolioPage() {
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
           className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"
-          title="Prices follow the live print, including pre-market and after hours"
+          title="Prices include pre-market and after hours, not just the regular close"
           aria-label={freshnessLabel(quotesAt, nowMs)}
         >
           {quotesAt != null && (

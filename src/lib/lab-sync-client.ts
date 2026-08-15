@@ -48,13 +48,16 @@ export async function pushLabBundle(
     }
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      return { ok: false, error: data.error ?? `Lab sync failed (${res.status})` };
+      return {
+        ok: false,
+        error: "Couldn't save your Lab notes. They're still on this device.",
+      };
     }
     return { ok: true };
   } catch (e) {
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Lab sync failed",
+      error: "Couldn't save your Lab notes. They're still on this device.",
     };
   }
 }

@@ -75,10 +75,21 @@ export function scrubAiPhrases(text: string): string {
   return s;
 }
 
+/** Kill leftover market slang the model still emits. */
+function scrubMarketJargon(text: string): string {
+  if (!text) return text;
+  let s = text;
+  s = s.replace(/\bbest tape\b/gi, "biggest gainer");
+  s = s.replace(/\bworst tape\b/gi, "biggest drop");
+  s = s.replace(/\bon the tape\b/gi, "in the prices");
+  s = s.replace(/\bthe tape\b/gi, "prices");
+  return s;
+}
+
 /** Full pass for a single Margus string. */
 export function humanizeMargusText(text: string): string {
   if (!text) return text;
-  return scrubAiPhrases(stripAiDashes(text));
+  return scrubAiPhrases(stripAiDashes(scrubMarketJargon(text)));
 }
 
 /**

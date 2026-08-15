@@ -537,7 +537,7 @@ export function ForecastPanel({
       });
       const data = await readJsonOrThrow<{ plan: ForecastPlan }>(
         res,
-        "Failed to generate plan"
+        "Couldn't build a forecast. Try again."
       );
       const convictionKey = bookConvictionKey(
         model.rows.map((r) => r.ticker),
@@ -566,7 +566,7 @@ export function ForecastPanel({
       reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate plan");
+      setError(err instanceof Error ? err.message : "Couldn't build a forecast. Try again.");
       // Keep autoKeyRef set so a failed auto-run does not immediately
       // fire again. Clearing it used to retry in a tight loop, which
       // burned the forecast rate limit and left Thinking stuck on.

@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { plainError } from "@/lib/plain-error";
 import { History, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -55,10 +56,10 @@ export function SnapshotsModal({
     try {
       const res = await fetch("/api/snapshots");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to load snapshots");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't load those saves."));
       setSnapshots(data.snapshots ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
+      setError(err instanceof Error ? err.message : "Couldn't load those saves.");
     } finally {
       setLoading(false);
     }
@@ -84,12 +85,12 @@ export function SnapshotsModal({
         body: JSON.stringify({ action: "restore", snapshotId: id }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Restore failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't put that save back."));
       onRestored("book");
       onClose();
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Restore failed");
+      setError(err instanceof Error ? err.message : "Couldn't put that save back.");
       return false;
     } finally {
       setBusyId(null);
@@ -111,12 +112,12 @@ export function SnapshotsModal({
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Sheet restore failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't put that sheet back."));
       onRestored("sheet");
       onClose();
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sheet restore failed");
+      setError(err instanceof Error ? err.message : "Couldn't put that sheet back.");
       return false;
     } finally {
       setBusyId(null);
@@ -130,13 +131,13 @@ export function SnapshotsModal({
       const res = await fetch("/api/snapshots", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", label: "Manual snapshot" }),
+        body: JSON.stringify({ action: "create", label: "Manual save" }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Snapshot failed");
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't take a save."));
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Snapshot failed");
+      setError(err instanceof Error ? err.message : "Couldn't take a save.");
     } finally {
       setLoading(false);
     }
