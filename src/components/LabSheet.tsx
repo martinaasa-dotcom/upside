@@ -438,12 +438,6 @@ export function LabSheet({
                     />
                   )}
                 </div>
-
-                <p className="mt-3 text-xs leading-relaxed text-zinc-400">
-                  The score above is how spread out the book is. Theme bars
-                  below are a blunt read of what you&apos;re betting on, not a
-                  return forecast.
-                </p>
               </Panel>
 
               {themes.length > 0 && (
