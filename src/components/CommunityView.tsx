@@ -25,6 +25,7 @@ import {
   type ThesisCoverage,
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
+import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
 import { overlapRows } from "@/lib/circle-overlap";
@@ -1291,7 +1292,7 @@ export function CommunityView({ communityId }: Props) {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col bg-app text-zinc-100">
+      <div className={PAGE_FRAME_CLASS}>
         <MobileChrome
           title={community?.name ?? "Community"}
           active="circle"
@@ -1355,7 +1356,7 @@ export function CommunityView({ communityId }: Props) {
           )}
         </AppHeader>
 
-        <main id="main" className="mx-auto w-full min-w-0 max-w-6xl flex-1 space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className={PAGE_MAIN_CLASS}>
           {loading && (
             <p className="text-sm text-zinc-400">Loading community …</p>
           )}

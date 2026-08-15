@@ -7,6 +7,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
+import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { prefetchCommunity } from "@/lib/community-cache";
 import {
@@ -195,10 +196,10 @@ export function CommunitiesList() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+      <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="Communities" active="circle" />
         <AppHeader className="hidden md:block" title="Communities" />
-        <main id="main" className="mx-auto min-w-0 max-w-3xl flex-1 space-y-6 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
             <h1 className="text-lg font-bold text-white">
               Communities

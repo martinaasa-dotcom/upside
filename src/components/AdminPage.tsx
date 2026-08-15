@@ -7,6 +7,7 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { SignInGate } from "@/components/SignInGate";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
+import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
@@ -190,11 +191,11 @@ export function AdminPage() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+      <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="Admin" active="settings" />
         <AppHeader className="hidden md:block" title="Admin" />
 
-        <main id="main" className="mx-auto min-w-0 max-w-4xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className={PAGE_MAIN_CLASS}>
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
               <Shield className="h-5 w-5" />

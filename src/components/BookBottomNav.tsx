@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import { Activity, Calculator, FlaskConical, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 
@@ -46,7 +47,7 @@ export function BookBottomNav({ className }: { className?: string }) {
         className
       )}
     >
-      <div className="mx-auto max-w-[1400px] px-4 py-2">
+      <div className={cn(PAGE_COLUMN_CLASS, "py-2")}>
         <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
           In your book
         </p>

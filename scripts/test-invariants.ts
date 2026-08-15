@@ -874,6 +874,31 @@ run("live price polls back off when New York is closed", () => {
   );
 });
 
+run("signed-in pages share one column so rooms do not jump", () => {
+  const pages = [
+    "Dashboard.tsx",
+    "CommunitiesList.tsx",
+    "CommunityView.tsx",
+    "UpsidePortfolioPage.tsx",
+    "AccountPage.tsx",
+    "AdminPage.tsx",
+    "AppHeader.tsx",
+    "BookBottomNav.tsx",
+    "PortfolioTabs.tsx",
+  ];
+  for (const name of pages) {
+    const src = readFileSync(join(process.cwd(), "src/components", name), "utf8");
+    assert.match(src, /PAGE_(MAIN|COLUMN|FRAME)_CLASS/, name);
+    assert.doesNotMatch(src, /max-w-3xl|max-w-4xl|max-w-6xl/, name);
+  }
+  const shell = readFileSync(
+    join(process.cwd(), "src/lib/page-shell.ts"),
+    "utf8"
+  );
+  assert.match(shell, /max-w-\[1400px\]/);
+  assert.match(shell, /w-full/);
+});
+
 run("every tier's default surface uses the shared Panel shell", () => {
   // The drift this catches: a new screen hand-rolls its own border+bg and the
   // app grows a fourth dialect. If a file draws a top-level section, it should

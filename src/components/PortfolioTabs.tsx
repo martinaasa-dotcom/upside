@@ -4,6 +4,7 @@ import { Activity, Calculator, FlaskConical, LayoutDashboard, Plus } from "lucid
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
+import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import {
   COMPOUND_TAB_ID,
   LAB_TAB_ID,
@@ -193,7 +194,7 @@ export function PortfolioTabs({
 
   return (
     <nav className={cn("sticky bottom-0 z-30 border-t border-zinc-800/80 bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
-      <div className="mx-auto flex max-w-[1400px] flex-col-reverse gap-1.5 px-3 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:px-4 sm:py-2">
+      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-1.5 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:py-2")}>
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">

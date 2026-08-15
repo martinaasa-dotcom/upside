@@ -3,6 +3,7 @@
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { cn } from "@/lib/format";
+import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -24,10 +25,8 @@ type Props = {
 /**
  * The one header every page uses.
  *
- * Each page used to roll its own: four different max-widths (1400px, 6xl,
- * 4xl, 3xl) and two padding scales, so the bar visibly resized and the
- * logo jumped every time you moved between My book and Communities. A
- * fixed height and a single container width make it identical everywhere.
+ * Same column as every page main (PAGE_COLUMN_CLASS). A fixed height and
+ * one gutter so the logo does not jump when you move between rooms.
  *
  * Layout rule: the left is only ever the wordmark plus where you are; every
  * control lives on the right.
@@ -43,7 +42,7 @@ export function AppHeader({
 }: Props) {
   return (
     <header className={cn("sticky top-0 z-40 border-b border-brand/25 bg-app/95 backdrop-blur", className)}>
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4">
+      <div className={cn(PAGE_COLUMN_CLASS, "flex h-14 items-center justify-between gap-2 sm:gap-3")}>
         <div className="flex min-w-0 items-center gap-2 text-sm leading-none sm:gap-3">
           <HeaderBrand
             onClick={onBrandClick}

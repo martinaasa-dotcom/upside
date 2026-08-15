@@ -49,6 +49,7 @@ import { buildSnapshot, STRATEGY } from "@/lib/calculations";
 import type { CsvHoldingRow } from "@/lib/csv-import";
 import { clearChatHistory } from "@/lib/chat-history";
 import { loadWatchlist } from "@/lib/watchlist";
+import { PAGE_COLUMN_CLASS, PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import {
   loadDismissedAlertIds,
   saveDismissedAlertIds,
@@ -2814,7 +2815,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-app text-zinc-100 [--dock-pad:5.25rem] md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_52%)] md:[--dock-pad:5.5rem]">
+    <div className={PAGE_FRAME_CLASS}>
       <StaleQuotesBanner
         delayed={quotesDelayed}
         updatedAt={quotesUpdatedAt}
@@ -2918,7 +2919,7 @@ export function Dashboard() {
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
       <div className="hidden border-b border-brand-deep/25 bg-app/80 backdrop-blur-sm md:block">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-1 px-3 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4 sm:py-2">
+        <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2")}>
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
             quotesDelayed={quotesDelayed}
@@ -2964,7 +2965,7 @@ export function Dashboard() {
         </div>
       )}
 
-      <main id="main" className="mx-auto flex w-full min-w-0 max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-8 sm:px-6 sm:py-8">
+      <main id="main" className={PAGE_MAIN_CLASS}>
         {!isMetaTab &&
         classTrade &&
         (classTrade.kind !== "open" || classTrade.until) ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 
 type Props = {
   delayed?: boolean;
@@ -24,13 +25,13 @@ export function StaleQuotesBanner({
   return (
     <div
       className={cn(
-        "border-b px-4 py-2 text-xs",
+        "border-b py-2 text-xs",
         stale
           ? "border-amber-500/30 bg-amber-950/40 text-amber-100"
           : "border-zinc-800 bg-zinc-900/80 text-zinc-400"
       )}
     >
-      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-3 gap-y-1">
+      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-wrap items-center gap-x-3 gap-y-1")}>
         {stale && (
           <span>
             Quotes may be stale

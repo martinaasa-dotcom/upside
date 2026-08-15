@@ -11,6 +11,7 @@ import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
+import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
@@ -993,7 +994,7 @@ export function UpsidePortfolioPage() {
   }, []);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+    <div className={PAGE_FRAME_CLASS}>
       <MobileChrome title="Upside Fund" active="circle" />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
@@ -1026,7 +1027,7 @@ export function UpsidePortfolioPage() {
         </button>
       </AppHeader>
 
-      <main id="main" className="mx-auto min-w-0 max-w-4xl flex-1 space-y-6 px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main id="main" className={PAGE_MAIN_CLASS}>
         <div>
           <h1 className="sr-only">Upside Fund</h1>
           <p className="text-sm leading-relaxed text-zinc-400">

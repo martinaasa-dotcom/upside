@@ -7,6 +7,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { cn } from "@/lib/format";
+import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import {
   last7DaysStrip,
@@ -253,7 +254,7 @@ export function AccountPage() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
+      <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="Account" active="settings" />
         <AppHeader className="hidden md:block" title="Account">
           <button
@@ -270,7 +271,7 @@ export function AccountPage() {
           </button>
         </AppHeader>
 
-        <main id="main" className="mx-auto min-w-0 max-w-3xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
             <h1 className="text-lg font-bold">My account</h1>
             <p className="mt-1 text-sm text-zinc-400">
