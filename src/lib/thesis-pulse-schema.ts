@@ -67,7 +67,7 @@ export const pulseReportSchema = z.object({
       thesisBreak: z
         .string()
         .describe(
-          "One or two short sentences. Concrete and falsifiable: what would actually invalidate the reason this name is in the book. Not 'the stock goes down'. Example: capacity bookings stall for two quarters, or the core contract gets cancelled. Required on every ticker."
+          "One or two short sentences naming the actual thing that would kill why they own THIS name. Use their note, the sector, and headlines. Example: data-center bookings stall for two quarters. Empty if you cannot name something specific to this company or fund. Never a generic lost-customer / restatement / quiet-day line that could sit on every card."
         ),
     })
   ),

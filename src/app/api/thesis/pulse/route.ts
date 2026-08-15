@@ -157,8 +157,8 @@ ${insightsPromptBlock(
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
 
 ### thesisStatus — start from intact. Watch and broken have to be earned
-- First write **thesisBreak**: the concrete thing that would invalidate the reason this is in the book. Falsifiable. Not "the price drops."
-- Then look at today's headlines and the move. **intact** unless those facts actually match the break list (watch) or show the break already happened (broken).
+- Write **thesisBreak** only if you can name a real, name-specific reason this holding would stop making sense. Otherwise leave it empty and still score intact / watch / broken from headlines.
+- Then look at today's headlines and the move. **intact** unless those facts actually match that reason (watch) or show it already happened (broken).
 - **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT breaks. If your situation bullets say nothing unusual happened, thesisStatus MUST be intact.
 - **watch**: something on the break list is starting to show up (a soft quarter, a competitive wrinkle, a guidance nuance) but the core story still holds.
 - **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the staying power is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the reason isn't broken, it's at most "watch".
@@ -167,7 +167,7 @@ ${insightsPromptBlock(
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
 2. **moveReason**: one sentence (cite headline when possible).
-3. **thesisBreak**: one or two short sentences, concrete, what would actually break the reason they own it.
+3. **thesisBreak**: one or two short sentences naming the actual thing that would kill why they own THIS name (a customer, a product, a filing, a launch). Use their "why they own it" note when they wrote one. Empty string if you cannot name something specific. Never a generic lost-customer / restatement / "quiet day is not that" line that could sit on every card.
 4. **thesisStatus**: intact / watch / broken, scored against thesisBreak and today's facts. Default intact.
 5. **action**: add / hold / trim / sell / watch per rules above.
 6. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.

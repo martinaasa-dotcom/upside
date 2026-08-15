@@ -23,7 +23,9 @@ import {
 import { playbookBullets } from "../src/lib/forecast-playbook";
 import { shouldAutoRefreshForecast } from "../src/lib/forecast-plan";
 import {
+  cleanThesisBreak,
   isBigPulseMove,
+  isGenericThesisBreak,
   pulseLeftHold,
   reconcilePulseCheck,
   shouldAutoPulseTicker,
@@ -1265,6 +1267,28 @@ run("chat does not ping the model before the first token", () => {
     readFileSync(join(process.cwd(), "src/app/api/forecast/plan/route.ts"), "utf8"),
     /effort:\s*"high"/
   );
+});
+
+run("Pulse Breaks-if hides the copy-paste kill switch", () => {
+  const boilerplate =
+    "This breaks if the reason you own it disappears. Lost the customer, a restatement, or guidance that kills the multi-year case. A quiet day is not that.";
+  assert.equal(isGenericThesisBreak(boilerplate), true);
+  assert.equal(
+    isGenericThesisBreak(
+      "the reason you own it disappears. Lost the customer, a restatement, or guidance that kills the multi-year case. A quiet day is not that."
+    ),
+    true
+  );
+  assert.equal(cleanThesisBreak(boilerplate), "");
+  assert.equal(cleanThesisBreak(""), "");
+  assert.equal(
+    cleanThesisBreak(
+      "Data-center bookings stall for two quarters and the big cloud contracts slip."
+    ),
+    "Data-center bookings stall for two quarters and the big cloud contracts slip."
+  );
+  const next = reconcilePulseCheck(check({ thesisBreak: boilerplate }));
+  assert.equal(next.thesisBreak, "");
 });
 
 run("Pulse scan sits in its own card, not under the mood line", () => {

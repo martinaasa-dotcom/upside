@@ -354,7 +354,7 @@ function PulseCard({
           <div>
             <MicroLabel>Breaks if</MicroLabel>
             <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
-              {shown.thesisBreak.replace(/^this breaks if\s+/i, "")}
+              {shown.thesisBreak}
             </p>
           </div>
         ) : null}

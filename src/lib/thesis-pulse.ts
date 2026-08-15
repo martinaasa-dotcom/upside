@@ -444,8 +444,34 @@ function asEnum<T extends string>(
   return (allowed as readonly string[]).includes(key) ? (key as T) : fallback;
 }
 
-const DEFAULT_THESIS_BREAK =
+const GENERIC_THESIS_BREAK =
   "This breaks if the reason you own it disappears. Lost the customer, a restatement, or guidance that kills the multi-year case. A quiet day is not that.";
+
+const GENERIC_BREAK_BITS = [
+  "reason you own it disappears",
+  "lost the customer",
+  "quiet day is not that",
+  "kills the multi-year case",
+];
+
+/** True for the old copy-paste kill switch that sat on every card. */
+export function isGenericThesisBreak(text: string | undefined | null): boolean {
+  const t = String(text ?? "")
+    .trim()
+    .replace(/^this breaks if\s+/i, "")
+    .toLowerCase();
+  if (!t) return true;
+  const generic = GENERIC_THESIS_BREAK.replace(/^this breaks if\s+/i, "").toLowerCase();
+  if (t === generic) return true;
+  return GENERIC_BREAK_BITS.filter((bit) => t.includes(bit)).length >= 2;
+}
+
+export function cleanThesisBreak(text: unknown): string {
+  if (typeof text !== "string") return "";
+  const raw = text.trim().replace(/^this breaks if\s+/i, "");
+  if (!raw || isGenericThesisBreak(raw)) return "";
+  return raw;
+}
 
 /**
  * Cached Pulse rows went through a sanitizer that title-cased enums
@@ -458,10 +484,7 @@ export function normalizePulseCheck(check: PulseCheck): PulseCheck {
     ticker: String(check.ticker ?? "").toUpperCase(),
     thesisStatus: asEnum(check.thesisStatus, THESIS_STATUSES, "intact"),
     action: asEnum(check.action, PULSE_ACTIONS, "hold"),
-    thesisBreak:
-      typeof check.thesisBreak === "string" && check.thesisBreak.trim()
-        ? check.thesisBreak.trim()
-        : DEFAULT_THESIS_BREAK,
+    thesisBreak: cleanThesisBreak(check.thesisBreak),
   };
 }
 
@@ -557,7 +580,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       trimPct,
       addLevel: "",
       verdict: "",
-      thesisBreak: DEFAULT_THESIS_BREAK,
+      thesisBreak: "",
     };
   }
 
@@ -579,7 +602,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       ).toFixed(2)}`,
       verdict:
         "If you still believe the story, this is a dip to add, not a sell.",
-      thesisBreak: DEFAULT_THESIS_BREAK,
+      thesisBreak: "",
     };
   }
 
@@ -596,6 +619,6 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     trimPct: null,
     addLevel: "",
     verdict: "Hold. Come back if the story actually changes.",
-    thesisBreak: DEFAULT_THESIS_BREAK,
+    thesisBreak: "",
   };
 }
