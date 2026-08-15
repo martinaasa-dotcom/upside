@@ -3,7 +3,7 @@
 import { YtdAnchorModal } from "@/components/YtdAnchorModal";
 import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
 import { safeDiv } from "@/lib/money";
-import { applyYtdAnchor } from "@/lib/market/assumed-nav";
+import { paintBookNavSeries, usableNavPoints } from "@/lib/market/assumed-nav";
 import {
   clearYtdAnchor,
   readYtdAnchor,
@@ -31,6 +31,13 @@ type NavCacheV1 = {
   firstRealDate: string | null;
 };
 
+type NavCacheV2 = {
+  v: 2;
+  entries: NavCacheV1[];
+};
+
+const MAX_NAV_CACHE = 8;
+
 function fingerprintPositions(positions: AssumedPosition[]): string {
   return positions
     .map((p) => `${p.ticker.toUpperCase()}:${p.shares}`)
@@ -38,25 +45,67 @@ function fingerprintPositions(positions: AssumedPosition[]): string {
     .join("|");
 }
 
-function readNavCache(): NavCacheV1 | null {
-  if (typeof window === "undefined") return null;
+function readNavCacheList(): NavCacheV1[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(NAV_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as NavCacheV1;
-    if (parsed?.v !== 1 || !Array.isArray(parsed.points)) return null;
-    return parsed;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as NavCacheV1 | NavCacheV2;
+    if (parsed?.v === 2 && Array.isArray(parsed.entries)) {
+      return parsed.entries.filter(
+        (e) => e?.v === 1 && Array.isArray(e.points) && e.points.length >= 2
+      );
+    }
+    if (parsed?.v === 1 && Array.isArray(parsed.points) && parsed.points.length >= 2) {
+      return [parsed];
+    }
+    return [];
   } catch {
-    return null;
+    return [];
   }
 }
 
 function writeNavCache(entry: NavCacheV1) {
   try {
-    window.localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(entry));
+    const key = memoryKey(entry.posKey, entry.assumed, entry.cash);
+    const rest = readNavCacheList().filter(
+      (e) => memoryKey(e.posKey, e.assumed, e.cash) !== key
+    );
+    const payload: NavCacheV2 = {
+      v: 2,
+      entries: [entry, ...rest].slice(0, MAX_NAV_CACHE),
+    };
+    window.localStorage.setItem(NAV_CACHE_KEY, JSON.stringify(payload));
   } catch {
     /* quota / private mode */
   }
+}
+
+const navMemory = new Map<string, NavCacheV1>();
+
+function memoryKey(posKey: string, assumed: boolean, cash: number): string {
+  return `${assumed ? "1" : "0"}:${Math.round(cash)}:${posKey}`;
+}
+
+function rememberNav(entry: NavCacheV1) {
+  navMemory.set(memoryKey(entry.posKey, entry.assumed, entry.cash), entry);
+  writeNavCache(entry);
+}
+
+function lookupNav(
+  posKey: string,
+  assumed: boolean,
+  cash: number
+): NavCacheV1 | null {
+  const mem = navMemory.get(memoryKey(posKey, assumed, cash));
+  if (mem && cacheMatches(mem, posKey, assumed, cash)) return mem;
+  for (const disk of readNavCacheList()) {
+    if (cacheMatches(disk, posKey, assumed, cash)) {
+      navMemory.set(memoryKey(posKey, assumed, cash), disk);
+      return disk;
+    }
+  }
+  return null;
 }
 
 function cacheMatches(
@@ -107,33 +156,46 @@ export function useBookNavHistory(input: {
   clearAnchor: () => void;
 } {
   const posKey = fingerprintPositions(input.positions);
-  const [hist, setHist] = useState<NavPoint[]>([]);
   const [assumed, setAssumed] = useHydratedCache(loadAssumedPref, true);
+  const paintKey = memoryKey(posKey, assumed, input.cash);
+  const [hist, setHist] = useState<NavPoint[]>([]);
+  const [histKey, setHistKey] = useState<string | null>(null);
+  const histKeyRef = useRef<string | null>(null);
+  histKeyRef.current = histKey;
   const [serverAssumed, setServerAssumed] = useState(false);
   const [firstRealDate, setFirstRealDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [anchor, setAnchor] = useState<YtdAnchor | null>(null);
 
-  useLayoutEffect(() => {
-    const pref = loadAssumedPref();
-    setAssumed(pref);
-    setAnchor(readYtdAnchor());
-    const cached = readNavCache();
-    if (cached && cacheMatches(cached, posKey, pref, input.cash)) {
+  function applyCached(nextPosKey: string, nextAssumed: boolean, cash: number) {
+    const nextPaintKey = memoryKey(nextPosKey, nextAssumed, cash);
+    const cached = lookupNav(nextPosKey, nextAssumed, cash);
+    if (cached) {
       setHist(cached.points);
+      setHistKey(nextPaintKey);
       setServerAssumed(cached.serverAssumed);
       setFirstRealDate(cached.firstRealDate);
       setLoading(false);
+      return true;
     }
-    // First client paint only. Later holding changes go through the fetch effect.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (histKeyRef.current === nextPaintKey) return false;
+    setHistKey(null);
+    setLoading(true);
+    return false;
+  }
+
+  useLayoutEffect(() => {
+    setAnchor(readYtdAnchor());
   }, []);
+
+  useLayoutEffect(() => {
+    applyCached(posKey, assumed, input.cash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- posKey fingerprints holdings
+  }, [assumed, posKey, input.cash]);
 
   useEffect(() => {
     const ctrl = new AbortController();
-    const painted = readNavCache();
-    const havePaint =
-      painted != null && cacheMatches(painted, posKey, assumed, input.cash);
+    const havePaint = lookupNav(posKey, assumed, input.cash) != null;
     if (!havePaint) setLoading(true);
     const body = assumed
       ? {
@@ -163,12 +225,7 @@ export function useBookNavHistory(input: {
             setLoading(false);
             return;
           }
-          const next = raw.filter(
-            (p): p is NavPoint =>
-              Boolean(p) &&
-              typeof p.date === "string" &&
-              Number.isFinite(p.nav)
-          );
+          const next = usableNavPoints(raw);
           if (next.length < 2) {
             setLoading(false);
             return;
@@ -176,10 +233,11 @@ export function useBookNavHistory(input: {
           const nextAssumed = Boolean(data?.assumed);
           const nextFirst = data?.firstRealDate ?? null;
           setHist(next);
+          setHistKey(paintKey);
           setServerAssumed(nextAssumed);
           setFirstRealDate(nextFirst);
           setLoading(false);
-          writeNavCache({
+          rememberNav({
             v: 1,
             posKey,
             assumed,
@@ -200,21 +258,18 @@ export function useBookNavHistory(input: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- posKey fingerprints holdings
   }, [assumed, posKey, input.cash]);
 
-  const points = useMemo(() => {
-    let next = [...hist];
-    if (input.liveNav > 0) {
-      const last = next[next.length - 1];
-      if (!last || Math.abs(last.nav - input.liveNav) > 0.5) {
-        next.push({ date: "Live", nav: input.liveNav });
-      } else {
-        next[next.length - 1] = { ...last, nav: input.liveNav };
-      }
-    }
-    if (assumed && anchor && next.length >= 2) {
-      next = applyYtdAnchor(next, anchor.startNav, input.liveNav);
-    }
-    return next;
-  }, [hist, input.liveNav, assumed, anchor]);
+  const histReady = histKey === paintKey;
+  const points = useMemo(
+    () =>
+      paintBookNavSeries({
+        hist,
+        histBelongsToBook: histReady,
+        liveNav: input.liveNav,
+        assumed,
+        startNav: anchor?.startNav ?? null,
+      }),
+    [hist, histReady, input.liveNav, assumed, anchor]
+  );
 
   return {
     points,
@@ -222,7 +277,7 @@ export function useBookNavHistory(input: {
     anchored: Boolean(assumed && anchor),
     anchor,
     firstRealDate,
-    loading,
+    loading: !histReady || loading,
     discardAssumed: () => {
       saveAssumedPref(false);
       setAssumed(false);
@@ -351,10 +406,7 @@ export function GoldNavChart({
   const padR = 12;
   const padT = 12;
   const padB = 8;
-  const usable = useMemo(
-    () => points.filter((p) => Number.isFinite(p.nav)),
-    [points]
-  );
+  const usable = useMemo(() => usableNavPoints(points), [points]);
 
   useEffect(() => {
     if (!pinned) return;
@@ -653,7 +705,7 @@ export function BookNavChart({
   useEffect(() => {
     return () => readAbortRef.current?.abort();
   }, []);
-  const usable = points.filter((p) => Number.isFinite(p.nav));
+  const usable = usableNavPoints(points);
   const hasChart = usable.length >= 2;
   const recorded =
     firstRealDate &&

@@ -101,6 +101,57 @@ export function applyYtdAnchor(
   }));
 }
 
+export function isUsableNav(n: unknown): n is number {
+  return typeof n === "number" && Number.isFinite(n) && n > 0;
+}
+
+export function usableNavPoints(points: NavPoint[]): NavPoint[] {
+  return points.filter(
+    (p): p is NavPoint =>
+      Boolean(p) && typeof p.date === "string" && isUsableNav(p.nav)
+  );
+}
+
+/**
+ * Build the line we actually draw. A history that belongs to a different
+ * book, a zero live total, or a trailing empty point must not reach the
+ * SVG. Switching sheets used to stitch today's number onto last sheet's
+ * path and drop the line to the floor for a frame.
+ */
+export function paintBookNavSeries(input: {
+  hist: NavPoint[];
+  histBelongsToBook: boolean;
+  liveNav: number;
+  assumed?: boolean;
+  startNav?: number | null;
+}): NavPoint[] {
+  if (!input.histBelongsToBook) return [];
+  const hist = usableNavPoints(input.hist);
+  if (hist.length < 2) return [];
+  let next = [...hist];
+  if (isUsableNav(input.liveNav)) {
+    const last = next[next.length - 1]!;
+    if (Math.abs(last.nav - input.liveNav) > 0.5) {
+      next.push({ date: "Live", nav: input.liveNav });
+    } else {
+      next[next.length - 1] = { ...last, nav: input.liveNav };
+    }
+  }
+  if (
+    input.assumed &&
+    input.startNav != null &&
+    isUsableNav(input.startNav) &&
+    next.length >= 2
+  ) {
+    next = applyYtdAnchor(
+      next,
+      input.startNav,
+      isUsableNav(input.liveNav) ? input.liveNav : undefined
+    );
+  }
+  return next;
+}
+
 function isoWeekKey(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1));

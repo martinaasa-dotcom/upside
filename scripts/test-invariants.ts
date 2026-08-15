@@ -16,6 +16,7 @@ import { fundCopyBullets } from "../src/lib/fund-copy";
 import {
   applyYtdAnchor,
   downsampleToWeeks,
+  paintBookNavSeries,
   reconstructAssumedNav,
   startNavFromYtdPct,
 } from "../src/lib/market/assumed-nav";
@@ -1289,6 +1290,51 @@ run("assumed YTD NAV uses current size and forward-fills gaps", () => {
   const weeks = downsampleToWeeks(points);
   assert.ok(weeks.length >= 1);
   assert.equal(weeks[weeks.length - 1]!.nav, 1220);
+});
+
+run("year chart never stitches a live total onto another book's path", () => {
+  const hist = [
+    { date: "2026-01-02", nav: 400_000 },
+    { date: "2026-01-03", nav: 620_000 },
+    { date: "2026-01-04", nav: 780_000 },
+  ];
+  assert.deepEqual(
+    paintBookNavSeries({
+      hist,
+      histBelongsToBook: false,
+      liveNav: 210_000,
+    }),
+    []
+  );
+  const painted = paintBookNavSeries({
+    hist,
+    histBelongsToBook: true,
+    liveNav: 790_000,
+  });
+  assert.equal(painted[painted.length - 1]!.nav, 790_000);
+  assert.equal(painted[painted.length - 1]!.date, "Live");
+});
+
+run("year chart never paints a zero or empty live tip", () => {
+  const hist = [
+    { date: "2026-01-02", nav: 400_000 },
+    { date: "2026-01-03", nav: 620_000 },
+    { date: "2026-01-04", nav: 0 },
+  ];
+  const noLive = paintBookNavSeries({
+    hist,
+    histBelongsToBook: true,
+    liveNav: 0,
+  });
+  assert.equal(noLive.length, 2);
+  assert.equal(noLive[noLive.length - 1]!.nav, 620_000);
+  const withLive = paintBookNavSeries({
+    hist,
+    histBelongsToBook: true,
+    liveNav: 790_000,
+  });
+  assert.equal(withLive[withLive.length - 1]!.nav, 790_000);
+  assert.ok(withLive.every((p) => p.nav > 0));
 });
 
 run("YTD anchor keeps the assumed shape and pins the year size", () => {
