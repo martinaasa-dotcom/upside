@@ -90,7 +90,7 @@ export function MobileTabBar({
                   <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
                 )}
               </span>
-              <span className="text-[10px] leading-none">{label}</span>
+              <span className="text-xs leading-none">{label}</span>
             </Link>
           );
         })}

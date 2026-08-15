@@ -1,5 +1,6 @@
 "use client";
 
+import { HomeWorld } from "@/components/HomeWorld";
 import { CashAlertCard } from "@/components/mobile/CashAlertCard";
 import { WatchlistStrip } from "@/components/WatchlistStrip";
 import {
@@ -623,6 +624,7 @@ export function OverviewDashboard({
   onAskMargus,
   onOpenCash,
   onOpenAlerts,
+  showCommunities = false,
   homeSheetId = "all",
   homeSheets = [],
   onHomeSheet,
@@ -929,6 +931,8 @@ export function OverviewDashboard({
           onOpenPulse={() => onOpenPulse?.()}
         />
       </Panel>
+
+      {showCommunities ? <HomeWorld /> : null}
     </div>
   );
 }

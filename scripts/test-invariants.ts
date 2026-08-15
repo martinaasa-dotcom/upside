@@ -43,6 +43,7 @@ import {
 import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
+import { snapshotSheetsForOwner } from "../src/lib/book-snapshot";
 import {
   allowClassAction,
   classifyHoldingWrite,
@@ -925,7 +926,7 @@ run("empty book does not lead with Fund", () => {
   // The empty return must not render HomeWorld.
   const emptyFn = overview.slice(
     overview.indexOf("function EmptyBook"),
-    overview.indexOf("function BriefingCard")
+    overview.indexOf("function HomeSheetChip")
   );
   assert.doesNotMatch(emptyFn, /HomeWorld/);
   void emptyBlock;
@@ -1275,6 +1276,22 @@ run("holding write classify buy sell adjust", () => {
     }),
     ["buy", "sell"]
   );
+});
+
+run("full-book restore only touches sheets you own", () => {
+  const ids = snapshotSheetsForOwner(
+    {
+      portfolios: [
+        { id: "mine-a" },
+        { id: "theirs" },
+        { id: "mine-b" },
+        { name: "no-id" },
+      ],
+      holdings: [],
+    },
+    ["mine-a", "mine-b", "ghost"]
+  );
+  assert.deepEqual(ids, ["mine-a", "mine-b"]);
 });
 
 run("import classify treats default replace as a sell", () => {

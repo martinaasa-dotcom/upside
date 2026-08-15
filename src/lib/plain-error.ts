@@ -13,6 +13,8 @@ const KNOWN: Record<string, string> = {
   "Invite code required": "Paste an invite code first.",
   "snapshotId required": "Pick a save first.",
   "snapshotId and portfolioId required": "Pick a save and a sheet first.",
+  "This save has none of your sheets.":
+    "This save has none of your sheets.",
   "Unknown action": "That action isn't recognized.",
   "No pulse candidates supplied": "Nothing to check yet.",
   "morning or sunday required": "Pick weekdays, Sundays, or both.",

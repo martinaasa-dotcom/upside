@@ -29,22 +29,50 @@ const KEEP_PRE_DELETE = 30;
 const KEEP_MANUAL = 20;
 
 export async function captureBookPayload(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  opts?: { portfolioIds?: string[] }
 ): Promise<BookSnapshotPayload> {
+  const ids = opts?.portfolioIds;
+  if (ids && ids.length === 0) {
+    return { portfolios: [], holdings: [] };
+  }
+
+  let portQ = supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .select("*")
+    .order("sort_order");
+  let holdQ = supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("*")
+    .order("sort_order");
+  if (ids?.length) {
+    portQ = portQ.in("id", ids);
+    holdQ = holdQ.in("portfolio_id", ids);
+  }
+
   const [{ data: portfolios, error: pErr }, { data: holdings, error: hErr }] =
-    await Promise.all([
-      supabase
-        .from(PORTFELL_TABLES.portfolios)
-        .select("*")
-        .order("sort_order"),
-      supabase.from(PORTFELL_TABLES.holdings).select("*").order("sort_order"),
-    ]);
+    await Promise.all([portQ, holdQ]);
   if (pErr) throw new Error(pErr.message);
   if (hErr) throw new Error(hErr.message);
   return {
     portfolios: portfolios ?? [],
     holdings: holdings ?? [],
   };
+}
+
+/** Snapshot sheet ids that this person actually owns. */
+export function snapshotSheetsForOwner(
+  payload: BookSnapshotPayload,
+  ownedIds: string[]
+): string[] {
+  const owned = new Set(ownedIds.filter(Boolean));
+  const rows = Array.isArray(payload.portfolios) ? payload.portfolios : [];
+  const out: string[] = [];
+  for (const raw of rows) {
+    const id = (raw as { id?: string }).id;
+    if (id && owned.has(id)) out.push(id);
+  }
+  return out;
 }
 
 /**
@@ -142,12 +170,13 @@ export async function pruneOldSnapshots(supabase: SupabaseClient) {
 }
 
 /**
- * Replace live book with snapshot payload.
- * Inserts portfolios first (preserving ids when present), then holdings.
+ * Put the caller's own sheets back from a save. Never deletes a sheet,
+ * never touches a book they do not own.
  */
 export async function restoreBookFromSnapshot(
   supabase: SupabaseClient,
-  snapshotId: string
+  snapshotId: string,
+  ownedPortfolioIds: string[]
 ): Promise<{ portfolios: number; holdings: number }> {
   const { data: snap, error: sErr } = await supabase
     .from(PORTFELL_TABLES.snapshots)
@@ -157,32 +186,17 @@ export async function restoreBookFromSnapshot(
   if (sErr || !snap) throw new Error(sErr?.message ?? "Snapshot not found");
 
   const payload = snap.payload as BookSnapshotPayload;
-  const portfolios = Array.isArray(payload.portfolios)
-    ? payload.portfolios
-    : [];
-  const holdings = Array.isArray(payload.holdings) ? payload.holdings : [];
-
-  // Wipe current book (holdings cascade from portfolios)
-  const { error: delErr } = await supabase
-    .from(PORTFELL_TABLES.portfolios)
-    .delete()
-    .neq("id", "00000000-0000-0000-0000-000000000000");
-  if (delErr) throw new Error(delErr.message);
-
-  if (portfolios.length > 0) {
-    const { error: pIns } = await supabase
-      .from(PORTFELL_TABLES.portfolios)
-      .insert(portfolios);
-    if (pIns) throw new Error(pIns.message);
-  }
-  if (holdings.length > 0) {
-    const { error: hIns } = await supabase
-      .from(PORTFELL_TABLES.holdings)
-      .insert(holdings);
-    if (hIns) throw new Error(hIns.message);
+  const ids = snapshotSheetsForOwner(payload, ownedPortfolioIds);
+  if (ids.length === 0) {
+    throw new Error("This save has none of your sheets.");
   }
 
-  return { portfolios: portfolios.length, holdings: holdings.length };
+  let holdings = 0;
+  for (const id of ids) {
+    const counts = await applySheetFromPayload(supabase, id, payload);
+    holdings += counts.holdings;
+  }
+  return { portfolios: ids.length, holdings };
 }
 
 type SnapshotPortfolio = {
@@ -207,22 +221,11 @@ type SnapshotHolding = {
   [key: string]: unknown;
 };
 
-/**
- * Replace one live sheet's cash + holdings from a book snapshot.
- * Matches snapshot portfolio by id, then slug, then name.
- */
-export async function restoreSheetFromSnapshot(
+async function applySheetFromPayload(
   supabase: SupabaseClient,
-  snapshotId: string,
-  livePortfolioId: string
+  livePortfolioId: string,
+  payload: BookSnapshotPayload
 ): Promise<{ holdings: number; cash: number }> {
-  const { data: snap, error: sErr } = await supabase
-    .from(PORTFELL_TABLES.snapshots)
-    .select("id, payload")
-    .eq("id", snapshotId)
-    .single();
-  if (sErr || !snap) throw new Error(sErr?.message ?? "Snapshot not found");
-
   const { data: live, error: liveErr } = await supabase
     .from(PORTFELL_TABLES.portfolios)
     .select("id, slug, name")
@@ -230,7 +233,6 @@ export async function restoreSheetFromSnapshot(
     .single();
   if (liveErr || !live) throw new Error(liveErr?.message ?? "Sheet not found");
 
-  const payload = snap.payload as BookSnapshotPayload;
   const portfolios = (Array.isArray(payload.portfolios)
     ? payload.portfolios
     : []) as SnapshotPortfolio[];
@@ -261,9 +263,7 @@ export async function restoreSheetFromSnapshot(
 
   const snapPortfolioId = match.id;
   const sheetHoldings = holdings.filter((h) =>
-    snapPortfolioId
-      ? h.portfolio_id === snapPortfolioId
-      : false
+    snapPortfolioId ? h.portfolio_id === snapPortfolioId : false
   );
 
   const cash = Number(match.cash_balance ?? 0);
@@ -300,4 +300,27 @@ export async function restoreSheetFromSnapshot(
   }
 
   return { holdings: sheetHoldings.length, cash };
+}
+
+/**
+ * Replace one live sheet's cash + holdings from a book snapshot.
+ * Matches snapshot portfolio by id, then slug, then name.
+ */
+export async function restoreSheetFromSnapshot(
+  supabase: SupabaseClient,
+  snapshotId: string,
+  livePortfolioId: string
+): Promise<{ holdings: number; cash: number }> {
+  const { data: snap, error: sErr } = await supabase
+    .from(PORTFELL_TABLES.snapshots)
+    .select("id, payload")
+    .eq("id", snapshotId)
+    .single();
+  if (sErr || !snap) throw new Error(sErr?.message ?? "Snapshot not found");
+
+  return applySheetFromPayload(
+    supabase,
+    livePortfolioId,
+    snap.payload as BookSnapshotPayload
+  );
 }

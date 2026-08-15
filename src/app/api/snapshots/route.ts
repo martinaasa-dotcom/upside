@@ -5,7 +5,10 @@ import {
   restoreSheetFromSnapshot,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
-import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import {
+  listOwnedPortfolioIds,
+  requirePortfolioOwner,
+} from "@/lib/auth/ownership";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
@@ -90,13 +93,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      const { data: owned } = await supabase
-        .from(PORTFELL_TABLES.portfolioOwners)
-        .select("portfolio_id")
-        .eq("user_id", auth.user.id);
-      const ownedIds = ((owned ?? []) as { portfolio_id: string }[]).map(
-        (r) => r.portfolio_id
-      );
+      const ownedIds = await listOwnedPortfolioIds(auth.user.id);
       if (ownedIds.length) {
         const { data: classSheets } = await supabase
           .from(PORTFELL_TABLES.portfolios)
@@ -112,8 +109,15 @@ export async function POST(req: NextRequest) {
           if (blocked) return blocked;
         }
       }
-      await saveBookSnapshot(supabase, "pre_delete", "Before restore");
-      const counts = await restoreBookFromSnapshot(supabase, snapshotId);
+      const safety = await captureBookPayload(supabase, {
+        portfolioIds: ownedIds,
+      });
+      await saveBookSnapshot(supabase, "pre_delete", "Before restore", safety);
+      const counts = await restoreBookFromSnapshot(
+        supabase,
+        snapshotId,
+        ownedIds
+      );
       return NextResponse.json({ ok: true, restored: counts });
     }
 
@@ -135,10 +139,14 @@ export async function POST(req: NextRequest) {
         action: ["buy", "sell", "cash"],
       });
       if (blocked) return blocked;
+      const safety = await captureBookPayload(supabase, {
+        portfolioIds: [body.portfolioId],
+      });
       await saveBookSnapshot(
         supabase,
         "pre_delete",
-        "Before sheet restore"
+        "Before sheet restore",
+        safety
       );
       const counts = await restoreSheetFromSnapshot(
         supabase,
@@ -149,7 +157,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.action === "create" || !body.action) {
-      const payload = await captureBookPayload(supabase);
+      const ownedIds = await listOwnedPortfolioIds(auth.user.id);
+      const payload = await captureBookPayload(supabase, {
+        portfolioIds: ownedIds,
+      });
       const snap = await saveBookSnapshot(
         supabase,
         "manual",

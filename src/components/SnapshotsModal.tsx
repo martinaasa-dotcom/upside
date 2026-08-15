@@ -243,12 +243,12 @@ export function SnapshotsModal({
         open={Boolean(pendingRestore)}
         title={
           pendingRestore?.kind === "book"
-            ? "Restore full book?"
+            ? "Restore your sheets?"
             : "Restore this sheet?"
         }
         body={
           pendingRestore?.kind === "book"
-            ? `Restore full book "${pendingRestore.label}"? This replaces every sheet. A safety snapshot of the current state is taken first.`
+            ? `Put "${pendingRestore.label}" back on the sheets you own? Other people's books stay as they are. A safety save of your book is taken first.`
             : `Restore "${pendingRestore?.label}" into ${
                 activePortfolioName ?? "this sheet"
               } only? Other sheets are untouched.`

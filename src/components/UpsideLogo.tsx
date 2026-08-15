@@ -111,10 +111,10 @@ export function UpsideLogo({
         aria-label={title}
       >
         <UpsideMark tight className="h-[10.5rem] w-[13rem]" />
-        <span className="mt-10 font-logo text-[2.75rem] font-bold uppercase leading-none tracking-[0.08em] text-white">
+        <span className="mt-10 font-logo text-[2.75rem] font-bold uppercase leading-none tracking-wide text-white">
           Upside
         </span>
-        <span className="mt-4 font-logo text-[2.05rem] font-normal uppercase leading-none tracking-[0.2em] text-white">
+        <span className="mt-4 font-logo text-[2.05rem] font-normal uppercase leading-none tracking-wide text-white">
           Lab
         </span>
       </span>

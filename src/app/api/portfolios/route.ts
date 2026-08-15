@@ -1,5 +1,5 @@
 import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
-import { saveBookSnapshot } from "@/lib/book-snapshot";
+import { captureBookPayload, saveBookSnapshot } from "@/lib/book-snapshot";
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import {
   listOwnedPortfolioIds,
@@ -281,7 +281,8 @@ export async function DELETE(req: NextRequest) {
       "pre_delete",
       sheet?.name
         ? `Before delete · ${sheet.name}`
-        : "Before delete"
+        : "Before delete",
+      await captureBookPayload(supabase, { portfolioIds: [id] })
     );
 
     const { error } = await supabase
