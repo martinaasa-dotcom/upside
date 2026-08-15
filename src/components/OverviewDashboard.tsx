@@ -125,7 +125,7 @@ function MobileHomeHero({
     <div className="md:hidden">
       <p className="text-sm text-muted">Book</p>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-        <p className="font-logo text-4xl font-bold tabular-nums leading-none text-white">
+        <p className="font-logo text-2xl font-bold tabular-nums leading-none text-white">
           {currency(totals.totalValue, 0)}
         </p>
         <p
@@ -246,7 +246,7 @@ function EmptyBook({
 
   return (
     <Panel tone="brand" className="overview-fade">
-      <h2 className="text-lg font-semibold text-white sm:text-2xl">
+      <h2 className="text-lg font-bold text-white">
         Your book is empty.
       </h2>
       <p className="mt-3 text-sm text-muted">

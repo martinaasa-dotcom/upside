@@ -44,7 +44,7 @@ function VisitStreakCard() {
   if (!streak || streak.totalVisits <= 0) return null;
   return (
     <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
-      <h2 className="text-sm font-semibold text-white">Showing up</h2>
+      <h2 className="text-base font-bold text-white">Showing up</h2>
       <p className="text-xs text-zinc-400">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
         {last7DaysStrip(streak).map((visited, i) => (
@@ -269,7 +269,7 @@ export function AccountPage() {
 
         <main className="mx-auto max-w-3xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div>
-            <h1 className="text-2xl font-semibold">My account</h1>
+            <h1 className="text-lg font-bold">My account</h1>
             <p className="mt-1 text-sm text-zinc-400">
               How you appear, your data, and the danger zone.
             </p>
@@ -278,7 +278,7 @@ export function AccountPage() {
           <VisitStreakCard />
 
           <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-white">Email notes</h2>
+            <h2 className="text-base font-bold text-white">Email notes</h2>
             <p className="text-xs text-zinc-400">
               {morningCanSend
                 ? "Pick weekdays, Sundays, both, or none. Off until you ask."
@@ -346,7 +346,7 @@ export function AccountPage() {
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-white">
+                <h2 className="text-base font-bold text-white">
                   Community profile
                 </h2>
                 <p className="text-xs text-zinc-400">
@@ -456,7 +456,7 @@ export function AccountPage() {
                 <Gauge className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-white">Experience level</h2>
+                <h2 className="text-base font-bold text-white">Experience level</h2>
                 <p className="text-xs text-zinc-400">
                   Simplifies what&apos;s shown. Nothing is locked, change it anytime.
                 </p>
@@ -534,7 +534,7 @@ export function AccountPage() {
                 <Link2 className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-white">
+                <h2 className="text-base font-bold text-white">
                   Invite a partner
                 </h2>
                 <p className="text-xs text-zinc-400">
@@ -559,7 +559,7 @@ export function AccountPage() {
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-white">
+                <h2 className="text-base font-bold text-white">
                   Data &amp; privacy
                 </h2>
                 <p className="text-xs text-zinc-400">

@@ -55,7 +55,7 @@ function JoinInner() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)] px-4 text-zinc-100">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="w-full max-w-sm space-y-4 text-center">
-          <h1 className="text-xl font-semibold">Join a portfolio</h1>
+          <h1 className="text-lg font-bold">Join a portfolio</h1>
           <p className="text-sm text-zinc-400">
             Enter an invite code from your partner to get live edit access.
           </p>

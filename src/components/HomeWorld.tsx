@@ -161,7 +161,7 @@ export function HomeWorld({
             </div>
             {fund ? (
               <>
-                <p className="mt-2 text-xl font-semibold tabular-nums text-white">
+                <p className="mt-2 text-2xl font-bold tabular-nums text-white">
                   {currency(fund.totalValue, 0)}
                 </p>
                 <p

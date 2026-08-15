@@ -340,7 +340,7 @@ export function LabSheet({
               <Panel tone="plain">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-semibold text-white">
+                    <h3 className="text-base font-bold text-white">
                       How spread out you are
                     </h3>
                     <p className="mt-0.5 text-xs text-zinc-400">
@@ -432,7 +432,7 @@ export function LabSheet({
 
               {themes.length > 0 && (
                 <Panel tone="plain">
-                  <h3 className="text-base font-semibold text-white">
+                  <h3 className="text-base font-bold text-white">
                     What you&apos;re actually betting on
                   </h3>
                   <p className="mt-0.5 mb-4 text-xs text-zinc-400">
@@ -501,7 +501,7 @@ export function LabSheet({
       {tab === "risk" && (
         <Panel tone="plain" className="space-y-4">
           <div>
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-bold text-white">
               Do these move together?
             </h3>
             <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
@@ -673,7 +673,7 @@ function AllocCard({
 }) {
   return (
     <Panel tone="plain">
-      <h3 className="mb-3 text-base font-semibold text-white">{title}</h3>
+      <h3 className="mb-3 text-base font-bold text-white">{title}</h3>
       <div className="space-y-2">
         {slices.map((s) => (
           <div key={s.label}>

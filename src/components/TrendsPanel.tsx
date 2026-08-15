@@ -1,5 +1,6 @@
 "use client";
 
+import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -238,47 +239,38 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-800 bg-card/80 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-white">
-              Is the trend changing?
-            </p>
-            <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
-              Showing up to {MAX_TICKERS} names at once
-              {combined.length > MAX_TICKERS
-                ? ` (${MAX_TICKERS} of ${combined.length} queued).`
-                : combined.length > 0
-                  ? ` (${Math.min(combined.length, MAX_TICKERS)} on the list).`
-                  : "."}{" "}
-              Everything here runs on weekly bars, so it answers &quot;has the
-              story changed&quot; rather than &quot;what happened today&quot;.
-              A signal that fired every week would be noise. That slowness is
-              deliberate, but it means a sudden news event, a blowout earnings
-              report, can move the price hard for a week or two before the
-              trend line catches up. The &quot;Last 2 weeks&quot; number on
-              each card exists specifically to catch that: when it flatly
-              disagrees with the slower trend read, the recent move wins the
-              headline. Hover any box below for exactly how it&apos;s
-              calculated.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void load(true)}
-            disabled={busy}
-            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-50"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", busy && "animate-spin")} />
-            {busy ? "Reading …" : "Recheck"}
-          </button>
-        </div>
+      <Panel>
+        <PanelHeader
+          title="Is the trend changing?"
+          actions={
+            <button
+              type="button"
+              onClick={() => void load(true)}
+              disabled={busy}
+              className="btn-secondary"
+            >
+              <RefreshCw className={cn("h-3.5 w-3.5", busy && "animate-spin")} />
+              {busy ? "Reading …" : "Recheck"}
+            </button>
+          }
+        />
+        <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          Showing up to {MAX_TICKERS} names at once
+          {combined.length > MAX_TICKERS
+            ? ` (${MAX_TICKERS} of ${combined.length} queued).`
+            : combined.length > 0
+              ? ` (${Math.min(combined.length, MAX_TICKERS)} on the list).`
+              : "."}{" "}
+          Weekly bars, so this answers whether the story changed, not what
+          happened today. Hover any box below for exactly how it&apos;s
+          calculated.
+        </p>
 
-        <div className="mt-4 border-t border-zinc-800 pt-4">
-          <p className="text-xs font-medium text-zinc-300">
+        <div className="mt-5 border-t border-zinc-800 pt-5">
+          <h3 className="text-base font-bold text-white">
             Watch anything, not just what you hold
-          </p>
-          <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+          </h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
             Add a sector ETF, an index, or a crypto pair to read its trend the
             same way, e.g. $XLK for tech, $SPY for the index, or BTC-USD.
           </p>
@@ -293,13 +285,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 if (e.key === "Enter") addToWatchlist();
               }}
               placeholder="BTC-USD, XLK, SPY …"
-              className="h-8 w-40 rounded-md border border-zinc-700 bg-black/20 px-2.5 text-xs text-white placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
+              className="h-9 w-40 rounded-lg border border-zinc-700 bg-black/20 px-2.5 text-sm text-white placeholder:text-zinc-500 focus:border-zinc-500 focus:outline-none"
             />
             <button
               type="button"
               onClick={addToWatchlist}
               disabled={!draft.trim()}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-300 hover:border-zinc-500 hover:text-white disabled:opacity-40"
+              className="btn-secondary disabled:opacity-40"
             >
               <Plus className="h-3.5 w-3.5" />
               Add
@@ -325,7 +317,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             <p className="mt-1.5 text-xs text-loss">{addError}</p>
           )}
         </div>
-      </div>
+      </Panel>
 
       {error && (
         <div className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-4 py-3 text-sm text-rose-100">
@@ -348,7 +340,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
       {rows != null && rows.length > 0 && (
         <>
-          <p className="px-1 text-xs text-zinc-400">
+          <p className="text-sm text-zinc-400">
             {attentionCount === 0
               ? "Nothing below is diverging or rolling over right now. Sorted by who's beating the S&P."
               : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing, those come first.`}
@@ -365,11 +357,9 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           </div>
 
           {leaders.length > 1 && (
-            <div className="rounded-xl border border-zinc-800 bg-card/80 p-4 sm:p-5">
-              <p className="text-sm font-semibold text-white">
-                Who&apos;s leading, who&apos;s fading
-              </p>
-              <p className="mt-0.5 mb-4 text-xs leading-relaxed text-zinc-400">
+            <Panel>
+              <PanelHeader title="Who's leading, who's fading" />
+              <p className="mt-3 mb-4 text-sm leading-relaxed text-zinc-400">
                 The same names, ranked by how they did against the S&amp;P over
                 the last quarter. This is money moving from one group to
                 another, not just prices going up with everything else.
@@ -408,10 +398,10 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               <p className="mt-3 text-right text-xs text-zinc-400">
                 vs S&amp;P, last 13 weeks
               </p>
-            </div>
+            </Panel>
           )}
 
-          <p className="px-1 text-xs text-zinc-400">
+          <p className="text-sm text-zinc-400">
             Technical readings on past prices, not a forecast and not advice.
             Divergences can persist for months before anything happens, or
             resolve with no break at all.

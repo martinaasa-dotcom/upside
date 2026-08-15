@@ -283,22 +283,22 @@ function ChatMarkdown({ children }: { children: string }) {
             </h3>
           ),
           h3: ({ children: c }) => (
-            <h4 className="mb-1 mt-2.5 text-[13px] font-semibold text-zinc-100 first:mt-0">
+            <h4 className="mb-1 mt-2.5 text-sm font-semibold text-zinc-100 first:mt-0">
               {c}
             </h4>
           ),
           p: ({ children: c }) => (
-            <p className="mb-2.5 break-words last:mb-0 text-[13px] leading-relaxed text-zinc-300">
+            <p className="mb-2.5 break-words last:mb-0 text-sm leading-relaxed text-zinc-300">
               {c}
             </p>
           ),
           ul: ({ children: c }) => (
-            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
+            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 last:mb-0 text-sm text-zinc-300">
               {c}
             </ul>
           ),
           ol: ({ children: c }) => (
-            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 last:mb-0 text-[13px] text-zinc-300">
+            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 last:mb-0 text-sm text-zinc-300">
               {c}
             </ol>
           ),
@@ -343,7 +343,7 @@ function ChatMarkdown({ children }: { children: string }) {
           ),
           table: ({ children: c }) => (
             <div className="mb-3 w-full min-w-0 overflow-x-auto last:mb-0">
-              <table className="w-full border-collapse text-left text-[12px]">
+              <table className="w-full border-collapse text-left text-xs">
                 {c}
               </table>
             </div>
@@ -371,7 +371,7 @@ function ChatMarkdown({ children }: { children: string }) {
           ),
           hr: () => <hr className="my-3 border-zinc-800" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 break-words border-l-2 border-brand/40 pl-3 text-[13px] text-zinc-400 last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-brand/40 pl-3 text-sm text-zinc-400 last:mb-0">
               {c}
             </blockquote>
           ),

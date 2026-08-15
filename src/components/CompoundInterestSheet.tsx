@@ -1106,7 +1106,7 @@ Optimistic (25%)
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Card tone="good">
               <MicroLabel>Ends up at</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-gain sm:text-3xl">
+              <p className="mt-1 text-2xl font-bold tabular-nums text-gain">
                 {show(result.futureValue)}
               </p>
             </Card>
@@ -1116,14 +1116,14 @@ Optimistic (25%)
                 Of that, growth
                 <InfoTip text="Money the market made for you, on top of everything you put in yourself." />
               </MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400 sm:text-3xl">
+              <p className="mt-1 text-2xl font-bold tabular-nums text-orange-400">
                 {show(result.totalInterest)}
               </p>
             </Card>
 
             <Card tone="info">
               <MicroLabel className="text-sky-200/70">You put in</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-sky-300 sm:text-3xl">
+              <p className="mt-1 text-2xl font-bold tabular-nums text-sky-300">
                 {show(result.principal + result.totalDeposited)}
               </p>
             </Card>

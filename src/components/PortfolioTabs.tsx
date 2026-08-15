@@ -236,7 +236,7 @@ export function PortfolioTabs({
                     <span className="max-w-full text-xs leading-none sm:hidden">
                       {shortLabel}
                     </span>
-                    <span className="hidden whitespace-nowrap text-[13px] sm:inline">
+                    <span className="hidden whitespace-nowrap text-sm sm:inline">
                       {label}
                     </span>
                   </button>
@@ -283,7 +283,7 @@ export function PortfolioTabs({
                   onTouchMove={cancelSheetLongPress}
                   onTouchCancel={cancelSheetLongPress}
                   className={cn(
-                    "touch-target relative shrink-0 snap-start px-3 text-[13px] transition",
+                    "touch-target relative shrink-0 snap-start px-3 text-sm transition",
                     active
                       ? "font-semibold text-white"
                       : "text-zinc-400 hover:text-zinc-200"
@@ -334,7 +334,7 @@ export function PortfolioTabs({
                     }
                   }}
                   placeholder="Name"
-                  className="h-7 w-28 rounded border border-zinc-600 bg-zinc-900 px-2 text-[13px] text-white outline-none focus:border-brand"
+                  className="h-7 w-28 rounded border border-zinc-600 bg-zinc-900 px-2 text-sm text-white outline-none focus:border-brand"
                 />
               </form>
             ) : !guest ? (

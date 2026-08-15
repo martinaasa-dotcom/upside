@@ -19,6 +19,14 @@ import { useState, type ReactNode } from "react";
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
  *   Shell      border-brand/20 on bg-card
  *   Card       border-white/10 on bg-card
+ *   Type scale, the only sizes a person should see:
+ *   text-xs    12  labels, meta, table, chips
+ *   text-sm    14  body, inputs, buttons, nav
+ *   text-base  16  section titles, tickers, figures
+ *   text-lg    18  hero panel title (one opener per page)
+ *   text-2xl   24  display numbers only (book value, compound result)
+ *              No text-[Npx]. No sm:text-xl jumps on titles.
+ *              No text-3xl or text-4xl. The logo lockup is the exception.
  *   Headings   text-base font-bold (hero: text-lg) · sentence case
  *   Type       Montserrat Bold for titles and figures. Inter Regular
  *              for body, labels, and glacier-grey supporting copy.
@@ -136,7 +144,7 @@ export function PanelHeader({
           <h2
             className={cn(
               "font-heading font-bold text-white",
-              hero ? "text-lg sm:text-xl" : "text-base"
+              hero ? "text-lg" : "text-base"
             )}
           >
             {title}
@@ -237,7 +245,7 @@ export function Metric({
       <MicroLabel>{label}</MicroLabel>
       <p
         className={cn(
-          "mt-1 font-heading text-sm font-bold tabular-nums text-zinc-100",
+          "mt-1 font-heading text-base font-bold tabular-nums text-zinc-100",
           valueClassName
         )}
       >
@@ -314,7 +322,7 @@ export function Stat({
       </MicroLabel>
       <p
         className={cn(
-          "mt-1 font-heading text-base font-bold tabular-nums sm:text-lg",
+          "mt-1 font-heading text-base font-bold tabular-nums",
           valueClassName ?? "text-white"
         )}
       >
