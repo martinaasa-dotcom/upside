@@ -1677,7 +1677,6 @@ export function Dashboard() {
 
       if (source === "demo") {
         let store = loadDemoStore();
-        let portfolios = store.portfolios;
         let nextHoldings = store.holdings;
 
         for (const action of actions) {
@@ -1723,7 +1722,6 @@ export function Dashboard() {
             }
           } else if (action.action === "set_cash") {
             store = updateCash(store, activePortfolio.id, action.cash);
-            portfolios = store.portfolios;
           } else if (action.action === "add_holding") {
             const existing = findHolding(action.ticker, nextHoldings);
             store = upsertHolding(store, {
@@ -1747,10 +1745,6 @@ export function Dashboard() {
               nextHoldings.filter((h) => h.portfolio_id === activePortfolio.id)
             );
           } else if (action.action === "import_sheet") {
-            if (action.cash != null) {
-              store = updateCash(store, activePortfolio.id, action.cash);
-              portfolios = store.portfolios;
-            }
             let sortBase = nextHoldings.filter(
               (h) => h.portfolio_id === activePortfolio.id
             ).length;
@@ -1800,6 +1794,9 @@ export function Dashboard() {
               }))
             );
             setCostBasisOpen(true);
+            if (action.cash != null) {
+              store = updateCash(store, activePortfolio.id, action.cash);
+            }
           } else if (action.action === "remove_holding") {
             const h = findHolding(action.ticker, nextHoldings);
             if (!h) continue;
@@ -1850,8 +1847,8 @@ export function Dashboard() {
           }
         }
 
-        setPortfolios(portfolios);
-        setHoldings(nextHoldings);
+        setPortfolios(store.portfolios);
+        setHoldings(store.holdings);
         return;
       }
 

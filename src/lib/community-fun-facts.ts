@@ -174,7 +174,7 @@ const MAKERS: FactMaker[] = [
     if (total <= 0) return null;
     return pick(rng, [
       `The circle is sitting on $${money(total)} combined. Not a small group project.`,
-      `Circle NAV: $${money(total)} across ${members.length} book${members.length === 1 ? "" : "s"}.`,
+      `Circle total: $${money(total)} across ${members.length} book${members.length === 1 ? "" : "s"}.`,
     ]);
   },
   // Falcon/small-book flex.
@@ -208,7 +208,7 @@ const MAKERS: FactMaker[] = [
     )[0]!;
     return pick(rng, [
       `${top.name} is sitting on ${top.personality!.cashPct}% cash. Squirrel energy, whether the badge says so or not.`,
-      `Biggest dry-powder stash: ${top.name} at ${top.personality!.cashPct}% cash.`,
+      `Biggest cash stash: ${top.name} at ${top.personality!.cashPct}% cash.`,
     ]);
   },
   // Highest conviction name.

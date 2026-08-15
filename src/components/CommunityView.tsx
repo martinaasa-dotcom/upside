@@ -811,7 +811,7 @@ export function CommunityView({ communityId }: Props) {
       out.push({
         id: "dry-powder",
         emoji: "💧",
-        title: "Driest powder",
+        title: "Most cash",
         winner: mostCash.name,
         stat: `${mostCash.personality!.cashPct}% cash`,
         description: "Largest cash stash relative to the book.",
@@ -1153,6 +1153,7 @@ export function CommunityView({ communityId }: Props) {
         );
       }
       setCommunity((data as { community: CommunityMeta }).community);
+      void load();
     } catch (e) {
       setSettingsError(
         e instanceof Error ? e.message : "Couldn't update starting cash."

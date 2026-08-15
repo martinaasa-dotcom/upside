@@ -759,11 +759,11 @@ Covered-call strategy:
 - Prefer intraday green rebound to sell.
 - Expiry: ${STRATEGY.minDaysPreferred}–${STRATEGY.maxDaysPreferred} days (~2–3 weeks); up to ~${STRATEGY.maxDaysExtended}d if earnings forces a longer dated.
 - Prefer expire BEFORE earnings when possible; otherwise go past earnings and widen Call %.
-- Call % MUST always reflect each name's own realized volatility / beta — never a flat portfolio-wide default.
-  · Low-vol / defensive names: about ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}%.
+- Call % MUST always reflect each name's own realized volatility. Never a flat portfolio-wide default.
+  · Calmer / defensive names: about ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}%.
   · Typical growth names: around ${(STRATEGY.callPctSafeMax * 100).toFixed(0)}–${(STRATEGY.callPctMid * 100).toFixed(0)}%.
-  · High-beta / speculative names: around ${(STRATEGY.callPctMid * 100).toFixed(0)}–${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%.
-  · "I want safety" means scale UP high-beta names and keep calm names near their own vol-implied level — NOT setUniformCallPct to one number for everything.
+  · Jumpy / speculative names: around ${(STRATEGY.callPctMid * 100).toFixed(0)}–${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%.
+  · "I want safety" means scale UP jumpy names and keep calm names near their own vol-implied level. NOT setUniformCallPct to one number for everything.
   · Prefer proposeWritePlan or setCallPctBulk with per-ticker values, each reasoned from that name's own realized volatility (higher vol → wider Call %). Explain the vol rationale briefly.
   · Still nudge Call % for earnings and distance to stock target after the vol baseline.
 - Target ~${(STRATEGY.targetYield * 100).toFixed(0)}% period yield (floor ~${(STRATEGY.minYield * 100).toFixed(0)}%).

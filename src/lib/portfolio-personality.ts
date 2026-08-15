@@ -168,7 +168,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     emoji: "🐿️",
     criteria: "Cash is at least ~28% of the book",
     tagline: "Keeps a fat cash stash so a dry season doesn't starve the book.",
-    vibe: "Positions exist, but dry powder is the real personality. Ready to pounce, or just nervously hoarding.",
+    vibe: "Positions exist, but cash sitting ready is the real personality. Ready to pounce, or just nervously hoarding.",
     strength: "Can buy the dip without selling something else first.",
     watchFor: "Cash that never gets deployed is just a savings account with extra steps.",
   },

@@ -204,13 +204,13 @@ export function buildCompareTakeaway(scenarios: CompareScenario[]): string | nul
   if (vsMattress != null && vsSpy != null) {
     return pick(rng, [
       `Upside path clears the inflation-eroded mattress by ${fmt(vsMattress)} and the index by ${fmt(vsSpy)} over the same stretch.`,
-      `Same principal, same years. Upside beats doing nothing by ${fmt(vsMattress)} (mattress loses real value to inflation) and beats index-ish beta by ${fmt(vsSpy)}.`,
+      `Same principal, same years. Upside beats doing nothing by ${fmt(vsMattress)} (mattress loses real value to inflation) and beats a plain index bet by ${fmt(vsSpy)}.`,
       `The gap: +${fmt(vsMattress)} over letting inflation eat idle cash, +${fmt(vsSpy)} over a plain index bet.`,
     ]);
   }
   if (vsSpy != null) {
     return pick(rng, [
-      `Upside path clears index-ish beta by ${fmt(vsSpy)} over the same stretch.`,
+      `Upside path clears a plain index bet by ${fmt(vsSpy)} over the same stretch.`,
       `+${fmt(vsSpy)} ahead of a plain index bet, same principal and years.`,
     ]);
   }
@@ -314,7 +314,7 @@ export function buildCompareScenarios(
     {
       id: "spy",
       label: "Index-ish",
-      tagline: "~10% · long-only beta",
+      tagline: "~10% · a plain index bet",
       result: spy,
       color: "#38bdf8",
     },
@@ -401,7 +401,7 @@ const NARRATIVE_ANGLES: NarrativeAngle[] = [
     );
     if (!mid || mid.index <= 0) return null;
     return pick(rng, [
-      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already on the books. Pullbacks along the way are resets, not thesis breaks.`,
+      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already on the books. Pullbacks along the way are resets, not a reason to quit.`,
       `By the midpoint (year ${mid.index}) you're already sitting on ${fmt(mid.balance)}. The back half does the heavier lifting.`,
     ]);
   },

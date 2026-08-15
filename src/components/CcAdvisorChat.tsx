@@ -439,7 +439,7 @@ const RULES = [
   {
     title: "Call %",
     rule: "Scaled to each ticker's own volatility",
-    detail: `Roughly ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}% for low-vol names up to ${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%+ for high-beta ones, nudged for earnings / distance. Never one flat "safety" % for the whole book.`,
+    detail: `Roughly ${(STRATEGY.callPctSafeMin * 100).toFixed(0)}–${(STRATEGY.callPctSafeMax * 100).toFixed(0)}% for calmer names up to ${(STRATEGY.callPctHighBeta * 100).toFixed(0)}%+ for jumpy ones, nudged for earnings / distance. Never one flat "safety" % for the whole book.`,
   },
   {
     title: "Earnings",

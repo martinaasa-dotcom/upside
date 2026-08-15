@@ -84,7 +84,7 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-zinc-200">AI model providers</strong>{" "}
               (OpenRouter and fallback providers). When you use Margus, ask
-              for a forecast, or run Thesis Pulse, the relevant portfolio
+              for a forecast, or run Pulse, the relevant portfolio
               context and your message are sent to whichever provider
               answers that request. We don&apos;t control their retention
               policies beyond what they publish.

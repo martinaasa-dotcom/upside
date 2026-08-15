@@ -37,6 +37,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.snapshots)
     .select("id, kind, label, created_at, payload")
+    .neq("kind", "nightly")
     .order("created_at", { ascending: false })
     .limit(80);
 

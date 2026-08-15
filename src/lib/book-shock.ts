@@ -598,21 +598,21 @@ export function analyzePortfolioShock(
   const shockedCushionPct = shockedEquity > 0 ? (shockedEquityCushion / shockedEquity) * 100 : -100;
 
   let marginCallRisk: "safe" | "caution" | "critical" = "safe";
-  let statusBlurb = "Fully covered with positive liquidity.";
+  let statusBlurb = "Cash covers the sheet. Nothing borrowed.";
 
   if (isUsingMargin) {
     if (shockedEquityCushion <= 0) {
       marginCallRisk = "critical";
-      statusBlurb = "Equity drops below broker 30% maintenance threshold. High probability of forced margin calls.";
+      statusBlurb = "What you own drops below the broker's 30% floor. They could force a sale.";
     } else if (shockedCushionPct < 20) {
       marginCallRisk = "caution";
-      statusBlurb = "Margin buffer drops below 20%. Leverage expands significantly in this scenario.";
+      statusBlurb = "Room before a forced sale drops below 20%. Borrowed money gets heavier in this scenario.";
     } else {
       marginCallRisk = "safe";
-      statusBlurb = "Healthy equity buffer above maintenance requirements.";
+      statusBlurb = "Still enough room above the broker's floor.";
     }
   } else if (cash > 0) {
-    statusBlurb = `Cash provides full capital insulation. Dry powder expands from ${(liveTotalVal > 0 ? (cash / liveTotalVal) * 100 : 0).toFixed(1)}% to ${(shockedTotalVal > 0 ? (cash / shockedTotalVal) * 100 : 0).toFixed(1)}% of the book.`;
+    statusBlurb = `Cash does not fall with the stocks. The cash share goes from ${(liveTotalVal > 0 ? (cash / liveTotalVal) * 100 : 0).toFixed(1)}% to ${(shockedTotalVal > 0 ? (cash / shockedTotalVal) * 100 : 0).toFixed(1)}% of the book.`;
   }
 
   const liveCashPct = liveTotalVal > 0 ? (cash / liveTotalVal) * 100 : 0;
@@ -671,18 +671,18 @@ export function analyzePortfolioShock(
 
     if (isUsingMargin) {
       if (marginCallRisk === "critical") {
-        tacticalNotes.push("Margin debt warning: Portfolio equity breaches maintenance margin minimums.");
+        tacticalNotes.push("Borrowed-money warning: what you own drops below the broker's floor.");
       } else if (marginCallRisk === "caution") {
-        tacticalNotes.push(`Leverage expands from ${liveLeverage.toFixed(2)}x to ${shockedLeverage.toFixed(2)}x. Maintain debt discipline.`);
+        tacticalNotes.push(`Borrowed money goes from ${liveLeverage.toFixed(2)}x to ${shockedLeverage.toFixed(2)}x. Keep the debt in check.`);
       } else {
-        tacticalNotes.push(`Equity buffer stays comfortable with $${Math.max(0, Math.round(shockedEquityCushion)).toLocaleString()} in excess capital.`);
+        tacticalNotes.push(`Still comfortable, with $${Math.max(0, Math.round(shockedEquityCushion)).toLocaleString()} of room before a forced sale.`);
       }
     } else if (cash > 0) {
-      tacticalNotes.push(`Cash buffers the drawdown. Dry powder grows to ${shockedCashPct.toFixed(1)}% of total account value.`);
+      tacticalNotes.push(`Cash cushions the drop. Cash sitting ready grows to ${shockedCashPct.toFixed(1)}% of the book.`);
     }
 
     if (topVulnerability && Math.abs(topVulnerability.lossSharePct) >= 0.35) {
-      tacticalNotes.push(`${topVulnerability.ticker} represents ${(topVulnerability.lossSharePct * 100).toFixed(0)}% of the modeled drawdown.`);
+      tacticalNotes.push(`${topVulnerability.ticker} represents ${(topVulnerability.lossSharePct * 100).toFixed(0)}% of the modeled drop.`);
     }
   }
 

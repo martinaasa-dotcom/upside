@@ -75,7 +75,7 @@ const fundDecisionSchema = z.object({
         reasoning: z
           .string()
           .describe(
-            "1-2 sentences, specific to this ticker's thesis/timeline/price action today -- never a generic filler line, even for hold."
+            "1-2 sentences, specific to why you own this ticker, the timeline, and today's price -- never a generic filler line, even for hold."
           ),
       })
     )
@@ -125,7 +125,7 @@ const fundDecisionSchema = z.object({
         waitFor: z
           .string()
           .describe(
-            "One concrete sentence: the price, dip, or print you are waiting for. Not a thesis paragraph."
+            "One concrete sentence: the price or dip you are waiting for. Not a why-you-own-it paragraph."
           ),
       })
     )
@@ -164,14 +164,14 @@ export function buildFundSystemPrompt(): string {
 You run a single, fully simulated (paper money) portfolio that started at ${money(
     MARGUS_FUND_START_CAPITAL
   )} and is shown publicly as a daily, followable feed. Think of it like a public "AI managed portfolio" account. People may glance at this for ideas, so:
-- Every position needs a genuine, specific, fundamentals-based thesis (growth drivers, moat, unit economics, TAM). Never momentum, never "it's up a lot," never because it's trending.
-- Every new position needs a concrete timeframe and a concrete exit condition (a price/return level, a thesis-break condition, or a hard time stop) decided at entry, not improvised later.
-- Review EVERY currently open holding, every day, even when the action is "hold." When it's hold, say specifically why the original thesis and timeline still stand, not a generic "staying the course" line.
+- Every position needs a genuine, specific, fundamentals-based reason (growth drivers, staying power, unit economics, how big the market can get). Never momentum, never "it's up a lot," never because it's trending.
+- Every new position needs a concrete timeframe and a concrete exit condition (a price/return level, a reason-broke condition, or a hard time stop) decided at entry, not improvised later.
+- Review EVERY currently open holding, every day, even when the action is "hold." When it's hold, say specifically why the original reason and timeline still stand, not a generic "staying the course" line.
 - Position sizing discipline: don't let any single new position exceed roughly 25% of total portfolio value, and don't deploy all available cash even on a great idea. Leave room to be wrong and to add later.
-- Most days should have zero or one action. A portfolio that trades every single day isn't disciplined, it's noisy. Only act when something genuinely changed (thesis progressed/broke, timeline elapsed, price hit your own stated level) or a new idea truly clears the bar.
+- Most days should have zero or one action. A portfolio that trades every single day isn't disciplined, it's noisy. Only act when something genuinely changed (the reason moved or broke, the timeline elapsed, price hit your own stated level) or a new idea truly clears the bar.
 - Keep every field SHORT. This report gets read daily; nobody wants a wall of text. 1-3 sentences per field, always.
 - thesis and exitPlan are bullet lists, not paragraphs. Semicolon-separated. Each bullet is one fact, under 14 words.
-- Always fill watchlist with 1-4 names you do not already hold, each with a concrete wait (a price, a dip, a print). Not "keeping an eye on tech."
+- Always fill watchlist with 1-4 names you do not already hold, each with a concrete wait (a price, a dip). Not "keeping an eye on tech."
 - Always fill cashPurpose in one sentence: what the undeployed cash is waiting for. Sitting in cash without saying why is hiding the ball.`;
 }
 
@@ -277,7 +277,7 @@ export function buildFundUserPrompt(input: {
               `### ${h.ticker}`,
               `- Entry: ${h.entry_date} (${h.daysHeld}d ago) at $${h.cost_basis.toFixed(2)}, now $${h.price.toFixed(2)} (${h.unrealizedPnlPct >= 0 ? "+" : ""}${(h.unrealizedPnlPct * 100).toFixed(1)}%, ${money(h.unrealizedPnl)})`,
               `- Position size: ${money(h.marketValue)} (${((h.marketValue / totalValue) * 100).toFixed(1)}% of book)`,
-              `- Original thesis: ${h.thesis}`,
+              `- Why he owns it: ${h.thesis}`,
               `- Target timeframe: ${h.target_timeframe ?? "not set"}`,
               `- Exit plan: ${h.exit_plan ?? "not set"}`,
             ].join("\n");

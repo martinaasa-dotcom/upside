@@ -44,9 +44,9 @@ const MAKERS: FactMaker[] = [
     if (!biggest || totals.totalValue <= 0) return null;
     const share = Math.round((biggest.totalValue / totals.totalValue) * 100);
     return pick(rng, [
-      `${biggest.portfolio.name} is the heavyweight book, ${share}% of combined NAV.`,
-      `${biggest.portfolio.name} is carrying ${share}% of combined NAV. No pressure.`,
-      `If these sheets were a group, ${biggest.portfolio.name} would be the admin (${share}% of NAV).`,
+      `${biggest.portfolio.name} is the heavyweight book, ${share}% of everything together.`,
+      `${biggest.portfolio.name} is carrying ${share}% of everything together. No pressure.`,
+      `If these sheets were a group, ${biggest.portfolio.name} would be the admin (${share}% of the pile).`,
       `${biggest.portfolio.name} ate ${share}% of the pie. The others are sharing crumbs politely.`,
     ]);
   },
@@ -146,10 +146,10 @@ const MAKERS: FactMaker[] = [
     const croissants = Math.max(1, Math.round(totals.cash / 3.2));
     const coffees = Math.max(1, Math.round(totals.cash / 4.5));
     return pick(rng, [
-      `There's $${money(totals.cash)} in dry powder across the sheets.`,
+      `There's $${money(totals.cash)} sitting ready across the sheets.`,
       `Cash pile: $${money(totals.cash)}, enough for ~${croissants.toLocaleString("en-US")} Tallinn croissants (theoretically).`,
       `$${money(totals.cash)} idle cash ≈ ${coffees.toLocaleString("en-US")} fancy coffees. Deploy wisely.`,
-      `Dry powder report: $${money(totals.cash)} waiting for a spicy dip.`,
+      `Cash report: $${money(totals.cash)} waiting for a spicy dip.`,
     ]);
   },
 
@@ -279,9 +279,9 @@ const MAKERS: FactMaker[] = [
     if (totals.totalValue <= 0) return null;
     const cashShare = totals.cash / totals.totalValue;
     return pick(rng, [
-      `Cash is ${pct1(cashShare)} of combined NAV: ${cashShare < 0 ? "levered chaos" : cashShare < 0.05 ? "fully invested energy" : "some dry powder left"}.`,
-      `NAV vibe check: $${money(totals.totalValue)} total · cash share ${pct1(cashShare)}.`,
-      `Family NAV: $${money(totals.totalValue)}. Not a small group project.`,
+      `Cash is ${pct1(cashShare)} of everything together: ${cashShare < 0 ? "levered chaos" : cashShare < 0.05 ? "fully invested energy" : "some cash sitting ready"}.`,
+      `Book vibe check: $${money(totals.totalValue)} total · cash share ${pct1(cashShare)}.`,
+      `Family total: $${money(totals.totalValue)}. Not a small group project.`,
     ]);
   },
 
@@ -326,9 +326,9 @@ const MAKERS: FactMaker[] = [
   ({ totals, rng }) => {
     const pizzas = Math.max(1, Math.round(totals.totalValue / 25));
     return pick(rng, [
-      `Combined NAV could fund ~${pizzas.toLocaleString("en-US")} very serious pizzas (do not).`,
+      `The combined book could fund ~${pizzas.toLocaleString("en-US")} very serious pizzas (do not).`,
       `In pizza units, the books are worth ~${pizzas.toLocaleString("en-US")} larges. Hungry yet?`,
-      `Fun conversion: NAV ÷ €25 ≈ ${pizzas.toLocaleString("en-US")} imaginary pizzas.`,
+      `Fun conversion: the book ÷ €25 ≈ ${pizzas.toLocaleString("en-US")} imaginary pizzas.`,
     ]);
   },
 
@@ -336,7 +336,7 @@ const MAKERS: FactMaker[] = [
     const hours = Math.max(1, Math.round(totals.totalValue / 40));
     return pick(rng, [
       `At a fake €40/hr, the books equal ~${hours.toLocaleString("en-US")} hours of labor. Touch grass accordingly.`,
-      `Roughly ${hours.toLocaleString("en-US")} “hourly wage units” of NAV. Capitalism speedrun.`,
+      `Roughly ${hours.toLocaleString("en-US")} “hourly wage units” of book value. Capitalism speedrun.`,
     ]);
   },
 
@@ -353,7 +353,7 @@ const MAKERS: FactMaker[] = [
   ({ sheets, rng }) => {
     const s = pick(rng, sheets);
     return pick(rng, [
-      `${s.portfolio.name} flashcard: $${money(s.totalValue)} NAV · ${pct1(s.roiPct)} ROI · ${plural(s.holdingCount, "holding")}.`,
+      `${s.portfolio.name} flashcard: $${money(s.totalValue)} · ${pct1(s.roiPct)} vs cost · ${plural(s.holdingCount, "holding")}.`,
       `Sheet of the RNG: ${s.portfolio.name} is ${s.roiPct >= 0 ? "up" : "down"} ${pct1(Math.abs(s.roiPct))} lifetime.`,
       `${s.portfolio.name} today: ${s.todayPct == null ? "quotes pending" : pct1(s.todayPct)} / $${money(s.todayDollar)}.`,
     ]);

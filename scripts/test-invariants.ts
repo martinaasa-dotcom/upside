@@ -1355,7 +1355,27 @@ run("saves list hides nightly rows", () => {
     join(process.cwd(), "src/app/api/snapshots/route.ts"),
     "utf8"
   );
+  assert.match(src, /neq\("kind", "nightly"\)/);
   assert.match(src, /kind === "nightly"/);
+});
+
+run("fun facts and circle facts do not say NAV or dry powder", () => {
+  const facts = readFileSync(join(process.cwd(), "src/lib/fun-facts.ts"), "utf8");
+  const circle = readFileSync(
+    join(process.cwd(), "src/lib/community-fun-facts.ts"),
+    "utf8"
+  );
+  const compound = readFileSync(
+    join(process.cwd(), "src/lib/compound-play.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(facts, /dry powder/i);
+  assert.doesNotMatch(facts, /\bNAV\b/);
+  assert.doesNotMatch(circle, /dry-powder stash|dry powder/i);
+  assert.doesNotMatch(circle, /Circle NAV/);
+  assert.doesNotMatch(compound, /thesis breaks/);
+  assert.doesNotMatch(compound, /index-ish beta/);
+  assert.doesNotMatch(compound, /long-only beta/);
 });
 
 run("Fund page does not label Margus's note Thesis", () => {
@@ -1384,12 +1404,18 @@ run("prompts do not teach the model trader words as working vocab", () => {
     join(process.cwd(), "src/lib/note-margus.ts"),
     "utf8"
   );
+  const fund = readFileSync(
+    join(process.cwd(), "src/lib/margus-fund.ts"),
+    "utf8"
+  );
   assert.doesNotMatch(persona, /high-conviction, forward-looking/);
   assert.doesNotMatch(persona, /liquidity expansion, risk-on/);
   assert.doesNotMatch(forecast, /OWNER CONVICTION/);
   assert.doesNotMatch(forecast, /owner's thesis/);
   assert.doesNotMatch(pulse, /Owner thesis:/);
   assert.doesNotMatch(notes, /Owner thesis:/);
+  assert.doesNotMatch(fund, /Original thesis:/);
+  assert.doesNotMatch(fund, /fundamentals-based thesis/);
 });
 
 run("import classify treats default replace as a sell", () => {
