@@ -33,12 +33,12 @@ export const pulseReportSchema = z.object({
       thesisStatus: z
         .enum(["intact", "watch", "broken"])
         .describe(
-          "Be conservative. intact = the reason you own it hasn't changed, including a normal red day, sector-wide weakness, or profit-taking. watch = something worth tracking emerged but hasn't invalidated the story. broken = the actual reason you bought this is gone (guidance genuinely cut, staying power gone, fraud/restatement). Rare, and must pair with action=sell, never hold/add/trim. If you'd still hold it, use watch."
+          "Be conservative. intact = the reason you own it hasn't changed, including a normal red day, a green day that ran, sector-wide weakness, or taking a little profit. A trim into strength is intact, never watch. watch = something in the story is worth tracking, not a price that went up. broken = the actual reason you bought this is gone (guidance genuinely cut, staying power gone, fraud/restatement). Rare, and must pair with action=sell, never hold/add/trim. If you'd still hold it, use watch."
         ),
       action: z
         .enum(["add", "hold", "trim", "sell", "watch"])
         .describe(
-          "add = buy more on an intact dip. hold = no change, reason intact or watch, never broken. trim = take some profit on a winner that ran too hot (reason intact or at most watch), never a broken reason. sell = the reason is broken and you're exiting, not taking profit. watch = wait for clarity."
+          "add = buy more on an intact dip. hold = no change, reason intact or watch, never broken. trim = take some profit on a winner that ran too hot. Pair with intact. A run-up is the story working, never Thesis watch. sell = the reason is broken and you're exiting, not taking profit. watch = wait for clarity."
         ),
       trimPct: z
         .number()

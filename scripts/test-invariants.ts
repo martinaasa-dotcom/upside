@@ -616,6 +616,29 @@ run("trim verdict that restates the size line is dropped", () => {
   );
 });
 
+run("trim on a run is Thesis intact", () => {
+  const next = reconcilePulseCheck(
+    check({ thesisStatus: "watch", action: "trim", trimPct: 10 })
+  );
+  assert.equal(next.thesisStatus, "intact");
+  assert.equal(next.action, "trim");
+  assert.equal(next.trimPct, 10);
+  const prompt = readFileSync(
+    join(process.cwd(), "src/app/api/thesis/pulse/route.ts"),
+    "utf8"
+  );
+  const fallback = readFileSync(
+    join(process.cwd(), "src/lib/thesis-pulse.ts"),
+    "utf8"
+  );
+  assert.match(prompt, /Never mark Thesis watch just because the price went up/);
+  assert.match(fallback, /The story is working/);
+  assert.doesNotMatch(
+    fallback,
+    /euphoric[\s\S]{0,400}thesisStatus: "watch"/
+  );
+});
+
 run("broken + trim becomes sell", () => {
   const next = reconcilePulseCheck(
     check({ thesisStatus: "broken", action: "trim", trimPct: 20 })

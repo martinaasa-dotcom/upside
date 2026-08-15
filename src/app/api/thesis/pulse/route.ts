@@ -144,10 +144,10 @@ ${insightsPromptBlock(
 ### Action rules (do NOT default everything to hold)
 - **action** = \`add\` | \`hold\` | \`trim\` | \`sell\` | \`watch\`
 - **trim** and **sell** are opposites in spirit, don't blur them:
-  - **trim** = disciplined profit-taking on a winner that ran too hot (parabolic move, crowd chase). The reason they own it is **intact or at most watch**. This is "take some money off the table because it went up a lot", never a reaction to bad news.
+  - **trim** = taking a little off a winner that ran. The reason they own it is **intact**. A run-up is the story working. Never mark Thesis watch just because the price went up.
   - **sell** = the reason they own it is actually **broken**. You're exiting because that reason is gone, not because it went up too much.
 - **intact reason + red day** on a name they are very sure about (AI computers, electricity for AI, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A quiet down day that didn't break the multi-year story is a **steal**, not a trim signal. This is about why they own it, not a fixed ticker list; apply it to whatever the user actually holds.
-- If a line is in **rapid euphoria** (parabolic move / crowd chase) with the reason still intact: prefer **trim** with explicit take-profit sizing.
+- If a line ran hard and the reason is still intact: prefer **trim** with a size, and set thesisStatus to **intact**. Happy news. Not a warning.
 - **addLevel**: always give a concrete, self-explanatory price plan when the reason is intact or action is add:
   - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
   - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
@@ -159,8 +159,8 @@ ${insightsPromptBlock(
 ### thesisStatus — start from intact. Watch and broken have to be earned
 - Write **thesisBreak** only if you can name a real, name-specific reason this holding would stop making sense. Otherwise leave it empty and still score intact / watch / broken from headlines.
 - Then look at today's headlines and the move. **intact** unless those facts actually match that reason (watch) or show it already happened (broken).
-- **intact**: the reason you own it hasn't changed. A normal red or green day, sector-wide noise, profit-taking after a run, or after-hours drift are NOT breaks. If your situation bullets say nothing unusual happened, thesisStatus MUST be intact.
-- **watch**: something on the break list is starting to show up (a soft quarter, a competitive wrinkle, a guidance nuance) but the core story still holds.
+- **intact**: the reason you own it hasn't changed. A normal red or green day, a name that ran, sector-wide noise, taking a little profit, or after-hours drift are NOT breaks. If you are trimming into strength, thesisStatus MUST be intact.
+- **watch**: something on the break list is starting to show up (a soft quarter, a competitive wrinkle, a guidance nuance) but the core story still holds. A green day is not watch.
 - **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the staying power is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the reason isn't broken, it's at most "watch".
 - Do not mark watch or broken just because you mentioned a risk. The risk has to be happening now.
 

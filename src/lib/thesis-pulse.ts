@@ -40,10 +40,10 @@ export type ThesisStatus = "intact" | "watch" | "broken";
 
 /**
  * trim and sell look similar but mean opposite situations: trim is
- * disciplined profit-taking on a winner that ran too hot (thesis still
- * intact or at most "watch"), sell is what you do when the thesis is
- * actually broken. Collapsing them into one "reduce" action is what made
- * a euphoric name and a genuinely broken one look the same on screen.
+ * taking a little off a winner that ran (thesis intact), sell is what
+ * you do when the thesis is actually broken. Collapsing them into one
+ * "reduce" action is what made a strong name and a broken one look the
+ * same on screen.
  */
 export type PulseAction = "add" | "hold" | "trim" | "sell" | "watch";
 
@@ -533,6 +533,11 @@ export function reconcilePulseCheck(check: PulseCheck): PulseCheck {
   if (thesisStatus === "intact" && action === "sell") {
     action = "hold";
   }
+  // Trim is taking a little off a winner. That is the story working,
+  // not a reason to put Thesis watch on a green card.
+  if (action === "trim" && thesisStatus === "watch") {
+    thesisStatus = "intact";
+  }
 
   return { ...n, thesisStatus, action };
 }
@@ -637,16 +642,16 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     return {
       ticker: candidate.ticker,
       situation: [
-        "It's running hot.",
-        "This looks stretched for a normal day.",
+        "The story is working.",
+        "Price ran ahead of a normal day.",
       ],
-      moveReason: "Looks like a chase, not a new story.",
-      thesisStatus: "watch",
+      moveReason: "A strong day, not a new worry.",
+      thesisStatus: "intact",
       earningsNote: "",
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: "",
+      verdict: "Take a little off. The reason you own it is the same.",
       thesisBreak: "",
     };
   }

@@ -517,7 +517,7 @@ export function PulsePage({
     const cached = loadPulseTickerCache(key);
     if (!cached) return;
     setChecksByTicker((prev) =>
-      prev[key] ? prev : { ...prev, [key]: cached.check }
+      prev[key] ? prev : { ...prev, [key]: reconcilePulseCheck(cached.check) }
     );
     setHeadlinesByTicker((prev) =>
       prev[key] ? prev : { ...prev, [key]: cached.headlines }
