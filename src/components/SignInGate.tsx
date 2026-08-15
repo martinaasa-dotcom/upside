@@ -3,7 +3,8 @@
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
-import { Card, Metric, MicroLabel, Panel } from "@/components/ui/Panel";
+import { Card, Metric, MicroLabel, Panel, Stat } from "@/components/ui/Panel";
+import { CheckCircle2 } from "lucide-react";
 import {
   inviteFromLocation,
   inviteLandingCopy,
@@ -119,7 +120,7 @@ export function SignInGate({ children }: Props) {
         id="main"
         className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-center px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:px-10"
       >
-        <div className="signin-rise grid items-center gap-14 md:grid-cols-[minmax(0,1fr)_22rem] md:gap-16 lg:gap-20">
+        <div className="signin-rise grid items-center gap-14 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
@@ -193,13 +194,10 @@ export function SignInGate({ children }: Props) {
   );
 }
 
-/** Static chrome of the daily read. Sample figures, written like Home. */
+/** Static chrome of a day that moved. Sample figures, written like Home + Pulse. */
 function BookStill() {
   return (
-    <Panel
-      className="signin-rise-3 hidden h-auto md:block"
-      aria-hidden
-    >
+    <Panel className="signin-rise-3 hidden h-auto md:block" aria-hidden>
       <div className="flex items-center justify-between gap-3">
         <MicroLabel className="text-brand-bright/80">
           Today&apos;s briefing
@@ -210,12 +208,12 @@ function BookStill() {
       </div>
 
       <div className="mt-5 grid grid-cols-3 gap-3">
-        <Metric label="Book">$84,200</Metric>
+        <Metric label="Book">$91,400</Metric>
         <Metric label="Today" valueClassName="text-gain">
-          +$620
+          +$4,180
         </Metric>
         <Metric label="All time" valueClassName="text-gain">
-          +12%
+          +18%
         </Metric>
       </div>
 
@@ -223,20 +221,56 @@ function BookStill() {
         $RKLB did most of today&apos;s move.
       </p>
 
+      <div className="mt-3 max-w-[13rem]">
+        <Stat
+          label="$RKLB"
+          value="+$3,640"
+          sub="87% of today's move"
+          valueClassName="text-gain"
+          subClassName="text-gain"
+        />
+      </div>
+
       <Card tone="raised" className="mt-4 h-auto px-3.5 py-3">
         <MicroLabel>Worth noticing</MicroLabel>
         <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
-          A quiet down day. The thesis didn&apos;t move with the price.
+          Price jumped. The thesis didn&apos;t move with it.
         </p>
       </Card>
 
       <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3">
-        <MicroLabel className="text-amber-200/80">
-          Pulse · $RKLB · Thesis intact
-        </MicroLabel>
-        <p className="mt-1.5 text-sm text-zinc-200">
-          Hold. Come back if the story actually changes.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-base font-semibold text-white">$RKLB</span>
+              <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs font-medium text-emerald-200">
+                Up ≥5%
+              </span>
+            </div>
+            <p className="mt-1 text-sm font-medium tabular-nums text-gain">
+              +6.8%{" "}
+              <span className="font-normal text-zinc-400">today</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <span className="inline-flex items-center rounded-full border border-zinc-600/80 bg-zinc-900/60 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-300">
+              Hold
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              Thesis intact
+            </span>
+          </div>
+        </div>
+        <div className="mt-3 border-t border-amber-500/15 pt-3">
+          <MicroLabel>Thesis</MicroLabel>
+          <p className="mt-1.5 text-sm leading-snug text-zinc-100">
+            Cheaper launches. That&apos;s the whole reason it&apos;s here.
+          </p>
+          <p className="mt-2 text-sm text-zinc-200">
+            Hold. The jump is the story working, not breaking.
+          </p>
+        </div>
       </div>
     </Panel>
   );

@@ -1127,6 +1127,10 @@ run("sign-in reads as a product", () => {
   assert.match(gate, /SIGNIN_WHO/);
   assert.match(gate, /SIGNIN_POINTS/);
   assert.match(gate, /Sample/);
+  assert.match(gate, /Price jumped/);
+  assert.match(gate, /Thesis intact/);
+  assert.match(gate, /Up ≥5%/);
+  assert.doesNotMatch(gate, /quiet down day/);
   assert.doesNotMatch(gate, /\$50k|AI manage/);
   assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
   assert.match(gate, /signin-rise-3 hidden h-auto md:block/);
