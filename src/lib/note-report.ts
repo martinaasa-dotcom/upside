@@ -53,8 +53,6 @@ export type NoteReport = {
   kind: NoteKind;
   title: string;
   dateLine: string;
-  greeting: string;
-  lead: string;
   book: number;
   nameCount: number;
   todayLabel: string;
@@ -64,7 +62,6 @@ export type NoteReport = {
   movers: NoteMover[];
   weights: NoteWeight[];
   thesis: NoteThesis | null;
-  closer: string;
 };
 
 const TITLE: Record<NoteKind, string> = {
@@ -256,27 +253,6 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
   const t = tape(input);
   const top = t.movers[0] ?? null;
   const byPct = [...t.movers].sort((a, b) => b.pct - a.pct);
-  const name = input.name?.trim() || null;
-  const greeting = name ? `${name},` : "Hey,";
-
-  let lead: string;
-  let closer: string;
-  if (input.kind === "sunday") {
-    lead = t.quiet
-      ? "A quiet stretch. The book is where you left it."
-      : "A look at the book before the week starts.";
-    closer = "That's enough for a Sunday.";
-  } else if (input.kind === "close") {
-    lead = t.quiet
-      ? "The session is over. Not much happened."
-      : "The session is over. Here is what actually moved.";
-    closer = "See you in the morning.";
-  } else {
-    lead = t.quiet
-      ? "Prices are in. The book barely moved."
-      : "Prices are in. Here is the day so far.";
-    closer = "Nothing you have to do.";
-  }
 
   const thesisTicker =
     input.kind === "sunday" ? (byPct[0]?.ticker ?? top?.ticker) : top?.ticker;
@@ -288,8 +264,6 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
     kind: input.kind,
     title: TITLE[input.kind],
     dateLine: dateLine(now),
-    greeting,
-    lead,
     book: t.book,
     nameCount: t.nameCount,
     todayLabel: input.kind === "sunday" ? "Last session" : "Today",
@@ -299,7 +273,6 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
     movers: t.movers.slice(0, 5),
     weights: t.weights,
     thesis: thesisPos ? thesisFor(thesisPos, t.book, input.conviction) : null,
-    closer,
   };
 }
 
@@ -311,9 +284,6 @@ export function noteReportText(r: NoteReport): string {
     "",
     r.title,
     r.dateLine,
-    "",
-    r.greeting,
-    r.lead,
     "",
     `Your book  ${money(r.book)}`,
     names,
@@ -352,7 +322,7 @@ export function noteReportText(r: NoteReport): string {
     if (r.thesis.status) lines.push(`Last Pulse: ${r.thesis.status}.`);
     if (r.thesis.pulseLine) lines.push(r.thesis.pulseLine);
   }
-  lines.push("", r.closer, "", "Account turns this off.");
+  lines.push("", "Account turns this off.");
   return lines.join("\n");
 }
 
@@ -527,7 +497,6 @@ export function noteReportHtml(r: NoteReport): string {
               </tr>
             </table>
             <h1 style="margin:22px 0 0 0;font-family:${SANS};font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.title)}</h1>
-            <p style="margin:10px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${MUTED}">${escapeHtml(r.greeting)} ${escapeHtml(r.lead)}</p>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:22px 0 0 0">
               <tr>
                 <td>
@@ -543,7 +512,6 @@ export function noteReportHtml(r: NoteReport): string {
             ${moversInner}
             ${weightsInner}
             ${thesisInner}
-            <p style="margin:24px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${MUTED}">${escapeHtml(r.closer)}</p>
             <p style="margin:20px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Account turns this off · upsidelab.app</p>
           </td>
         </tr>
