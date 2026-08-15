@@ -432,6 +432,53 @@ export async function fetchYtdDailyCloses(
   }
 }
 
+export type WeekReturn = { start: number; end: number; pct: number };
+
+/** Prior Friday close to the latest close. Sunday look uses this, not today's session. */
+export async function fetchWeekReturns(
+  tickers: string[]
+): Promise<Record<string, WeekReturn>> {
+  const unique = [
+    ...new Set(tickers.map((t) => t.trim().toUpperCase()).filter(Boolean)),
+  ];
+  if (unique.length === 0) return {};
+  const period1 = new Date(Date.now() - 18 * 24 * 60 * 60 * 1000);
+  try {
+    const yf = await getYahoo();
+    const fx = await fetchFxRates(yf);
+    const out: Record<string, WeekReturn> = {};
+    await Promise.all(
+      unique.map(async (ticker) => {
+        const symbol = normalizeYahooTicker(ticker);
+        if (!symbol) return;
+        try {
+          const chart = await yf.chart(symbol, { period1, interval: "1d" });
+          const currency =
+            typeof chart.meta?.currency === "string"
+              ? chart.meta.currency
+              : undefined;
+          const rows = chartRowsToDailyCloses(chart.quotes ?? [], currency, fx);
+          if (rows.length < 2) return;
+          const end = rows[rows.length - 1];
+          const start = rows.length >= 6 ? rows[rows.length - 6] : rows[0];
+          if (start.close <= 0) return;
+          out[ticker] = {
+            start: start.close,
+            end: end.close,
+            pct: (end.close - start.close) / start.close,
+          };
+        } catch (err) {
+          console.error(`Week return failed for ${ticker}`, err);
+        }
+      })
+    );
+    return out;
+  } catch (err) {
+    console.error("Week return fetch unavailable", err);
+    return {};
+  }
+}
+
 /** Synthetic placeholder prices — absolute last resort when every real
  * provider (Yahoo, and any configured fallback providers) failed. Not real
  * market data; callers should surface `delayed`/degraded state to the UI. */

@@ -6,6 +6,8 @@ export type PulseStamp = {
   at: string;
   verdict: string;
   line: string;
+  action?: string;
+  thesisStatus?: string;
 };
 
 export type ConvictionEntry = {

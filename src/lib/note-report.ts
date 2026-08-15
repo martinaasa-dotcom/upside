@@ -4,6 +4,7 @@ import { cashtag } from "@/lib/format";
 import { stripAiDashes } from "@/lib/ai/humanize-copy";
 import { todayDollarFor } from "@/lib/overview";
 import type { ConvictionMap } from "@/lib/conviction";
+import type { WeekReturn } from "@/lib/market/yahoo";
 import type { Quote } from "@/lib/types";
 
 export type NoteKind = "morning" | "close" | "sunday";
@@ -21,6 +22,7 @@ export type NoteReportInput = {
   holdings: HoldingRow[];
   quotes: Record<string, Quote>;
   conviction?: ConvictionMap;
+  weekReturns?: Record<string, WeekReturn>;
   now?: Date;
 };
 
@@ -49,6 +51,14 @@ export type NoteThesis = {
   status: string | null;
 };
 
+export type NoteWeekNote = {
+  ticker: string;
+  status: string | null;
+  ownerThesis: string | null;
+  pulseLine: string | null;
+  actionLine: string;
+};
+
 export type NoteReport = {
   kind: NoteKind;
   title: string;
@@ -62,6 +72,7 @@ export type NoteReport = {
   movers: NoteMover[];
   weights: NoteWeight[];
   thesis: NoteThesis | null;
+  weekNotes: NoteWeekNote[];
 };
 
 const TITLE: Record<NoteKind, string> = {
@@ -93,7 +104,7 @@ function priceMoney(n: number): string {
 export function notePreview(r: NoteReport): string {
   const pnl = signedMoney(r.todayDollar);
   const pct = r.todayPct != null ? ` (${signedPct(r.todayPct)})` : "";
-  const when = r.kind === "sunday" ? "last session" : "today";
+  const when = r.kind === "sunday" ? "this week" : "today";
   return `${pnl}${pct} ${when} · ${money(r.book)}`;
 }
 
@@ -151,6 +162,7 @@ type Position = {
 };
 
 function tape(input: NoteReportInput) {
+  const useWeek = input.kind === "sunday";
   let equity = 0;
   let today = 0;
   const byTicker = new Map<string, Position>();
@@ -160,7 +172,15 @@ function tape(input: NoteReportInput) {
     const q = input.quotes[ticker];
     const price = q?.price ?? h.buy_price;
     const value = h.shares * price;
-    const move = todayDollarFor(value, q?.changePercent);
+    const week = input.weekReturns?.[ticker];
+    const move = useWeek
+      ? week
+        ? {
+            dollar: h.shares * (price - week.start),
+            pct: week.pct,
+          }
+        : { dollar: 0, pct: null }
+      : todayDollarFor(value, q?.changePercent);
     equity += value;
     today += move.dollar;
     const prev = byTicker.get(ticker);
@@ -248,14 +268,76 @@ export function parseConviction(raw: unknown): ConvictionMap {
   return raw as ConvictionMap;
 }
 
+function weekActionLine(input: {
+  status: string | null;
+  action: string | null;
+  weekPct: number | null;
+}): string | null {
+  const status = (input.status ?? "").toLowerCase();
+  const action = (input.action ?? "").toLowerCase();
+  const intact = status.includes("intact");
+  const watch = status.includes("watch");
+  const risk = status.includes("risk") || status.includes("broken");
+  const down = input.weekPct != null && input.weekPct <= -0.03;
+  const upHot = input.weekPct != null && input.weekPct >= 0.08;
+
+  if (risk || action === "sell") return "Thesis at risk. Do not add this week.";
+  if (watch || action === "watch") return "Watch. Best thing this week is to wait.";
+  if (action === "trim") {
+    return "Thesis intact. If it ran too far, trim. Otherwise do nothing.";
+  }
+  if (action === "add" || (intact && down)) {
+    return "Thesis intact. Look to add this week on the dip.";
+  }
+  if (intact && upHot) {
+    return "Thesis intact. If it ran too far, trim. Otherwise do nothing.";
+  }
+  if (intact || action === "hold") {
+    return "Thesis intact. Best thing this week is nothing.";
+  }
+  return null;
+}
+
+function weekNotesFor(
+  positions: Position[],
+  conviction: ConvictionMap | undefined
+): NoteWeekNote[] {
+  const notes: NoteWeekNote[] = [];
+  for (const pos of positions) {
+    const thesis = thesisFor(pos, pos.value, conviction);
+    const entry = conviction?.[pos.ticker] ?? conviction?.[pos.ticker.toUpperCase()];
+    const stamp = entry?.stamps?.[0];
+    const action = stamp?.action ?? null;
+    const actionLine = weekActionLine({
+      status: thesis.status,
+      action,
+      weekPct: pos.pct,
+    });
+    if (!actionLine && !thesis.ownerThesis && !thesis.pulseLine) continue;
+    notes.push({
+      ticker: pos.ticker,
+      status: thesis.status,
+      ownerThesis: thesis.ownerThesis,
+      pulseLine: thesis.pulseLine,
+      actionLine: actionLine ?? "",
+    });
+  }
+  notes.sort((a, b) => {
+    const pa = positions.find((p) => p.ticker === a.ticker);
+    const pb = positions.find((p) => p.ticker === b.ticker);
+    return Math.abs(pb?.dollar ?? 0) - Math.abs(pa?.dollar ?? 0);
+  });
+  return notes
+    .filter((n) => n.actionLine.trim().length > 0)
+    .slice(0, 3);
+}
+
 export function buildNoteReport(input: NoteReportInput): NoteReport {
   const now = input.now ?? new Date();
   const t = tape(input);
   const top = t.movers[0] ?? null;
-  const byPct = [...t.movers].sort((a, b) => b.pct - a.pct);
 
-  const thesisTicker =
-    input.kind === "sunday" ? (byPct[0]?.ticker ?? top?.ticker) : top?.ticker;
+  const thesisTicker = top?.ticker;
   const thesisPos = thesisTicker
     ? t.positions.find((p) => p.ticker === thesisTicker) ?? null
     : null;
@@ -266,13 +348,22 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
     dateLine: dateLine(now),
     book: t.book,
     nameCount: t.nameCount,
-    todayLabel: input.kind === "sunday" ? "Last session" : "Today",
+    todayLabel: input.kind === "sunday" ? "This week" : "Today",
     todayDollar: t.today,
     todayPct: t.todayPct,
     quiet: t.quiet,
     movers: t.movers.slice(0, 5),
     weights: t.weights,
-    thesis: thesisPos ? thesisFor(thesisPos, t.book, input.conviction) : null,
+    thesis:
+      input.kind === "sunday"
+        ? null
+        : thesisPos
+          ? thesisFor(thesisPos, t.book, input.conviction)
+          : null,
+    weekNotes:
+      input.kind === "sunday"
+        ? weekNotesFor(t.positions, input.conviction)
+        : [],
   };
 }
 
@@ -321,6 +412,16 @@ export function noteReportText(r: NoteReport): string {
     if (r.thesis.ownerThesis) lines.push(r.thesis.ownerThesis);
     if (r.thesis.status) lines.push(`Last Pulse: ${r.thesis.status}.`);
     if (r.thesis.pulseLine) lines.push(r.thesis.pulseLine);
+  }
+  if (r.weekNotes.length > 0) {
+    lines.push("", "Pulse");
+    for (const n of r.weekNotes) {
+      lines.push(cashtag(n.ticker));
+      if (n.status) lines.push(n.status);
+      if (n.ownerThesis) lines.push(n.ownerThesis);
+      if (n.pulseLine) lines.push(n.pulseLine);
+      if (n.actionLine) lines.push(n.actionLine);
+    }
   }
   lines.push("", "Account turns this off.");
   return lines.join("\n");
@@ -466,6 +567,45 @@ export function noteReportHtml(r: NoteReport): string {
     thesisInner = section(heading, bits.join(""));
   }
 
+  const weekNoteCards = r.weekNotes
+    .map((n, i) => {
+      const bits: string[] = [];
+      bits.push(
+        `<p style="margin:0;font-family:${SANS};font-size:18px;font-weight:700;color:${CREAM}">${escapeHtml(cashtag(n.ticker))}</p>`
+      );
+      if (n.status) {
+        bits.push(
+          `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:${GOLD}">${escapeHtml(n.status)}</p>`
+        );
+      }
+      if (n.ownerThesis) {
+        bits.push(
+          `<p style="margin:10px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(n.ownerThesis)}</p>`
+        );
+      }
+      if (n.pulseLine) {
+        bits.push(
+          `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">${escapeHtml(n.pulseLine)}</p>`
+        );
+      }
+      if (n.actionLine) {
+        bits.push(
+          `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;line-height:1.45;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
+        );
+      }
+      const pad = i === r.weekNotes.length - 1 ? "0" : "0 0 16px 0";
+      return `<tr><td style="padding:${pad}">${bits.join("")}</td></tr>`;
+    })
+    .join("");
+
+  const weekNotesInner =
+    r.weekNotes.length > 0
+      ? section(
+          "Pulse",
+          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${weekNoteCards}</table>`
+        )
+      : "";
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -512,6 +652,7 @@ export function noteReportHtml(r: NoteReport): string {
             ${moversInner}
             ${weightsInner}
             ${thesisInner}
+            ${weekNotesInner}
             <p style="margin:20px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#6b7280">Account turns this off · upsidelab.app</p>
           </td>
         </tr>

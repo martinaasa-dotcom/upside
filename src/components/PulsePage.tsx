@@ -72,7 +72,16 @@ type Props = {
   quotes: Record<string, Quote>;
   convictions: ConvictionMap;
   onWriteThesis?: (ticker: string) => void;
-  onStamp?: (ticker: string, stamp: { at: string; verdict: string; line: string }) => void;
+  onStamp?: (
+    ticker: string,
+    stamp: {
+      at: string;
+      verdict: string;
+      line: string;
+      action?: string;
+      thesisStatus?: string;
+    }
+  ) => void;
 };
 
 function PulseHistory({ ticker }: { ticker: string }) {
@@ -616,6 +625,8 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
               reconciled.verdict?.trim() ||
               reconciled.thesisBreak?.trim() ||
               actionLabel(reconciled.action),
+            action: reconciled.action,
+            thesisStatus: reconciled.thesisStatus,
           });
         }
         if (newReport.summary?.trim()) {

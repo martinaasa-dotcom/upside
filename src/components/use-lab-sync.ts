@@ -24,15 +24,22 @@ export function useLabSync() {
       const remote = await fetchLabBundle();
       if (cancelled) return;
       if (remote.source === "supabase") {
-        const merged: LabBundle = {
-          conviction:
-            Object.keys(remote.bundle.conviction ?? {}).length > 0
-              ? remote.bundle.conviction
-              : local.conviction,
-          updatedAt: remote.bundle.updatedAt,
-        };
-        setLabBundle(merged);
-        mirrorLabLocal(merged);
+        const remoteEmpty =
+          Object.keys(remote.bundle.conviction ?? {}).length === 0;
+        const localHas = Object.keys(local.conviction ?? {}).length > 0;
+        if (remoteEmpty && localHas) {
+          setLabBundle(local);
+          labDirtyRef.current = true;
+        } else {
+          const merged: LabBundle = {
+            conviction: remoteEmpty
+              ? local.conviction
+              : remote.bundle.conviction,
+            updatedAt: remote.bundle.updatedAt,
+          };
+          setLabBundle(merged);
+          mirrorLabLocal(merged);
+        }
       } else {
         setLabBundle(local);
       }
