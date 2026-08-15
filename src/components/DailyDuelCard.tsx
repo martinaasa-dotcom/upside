@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import {
+  loadCommunityDuelCache,
+  saveCommunityDuelCache,
+  type CommunityDuelCache,
+} from "@/lib/community-cache";
 import { Swords } from "lucide-react";
 import { cn, percent, cashtag } from "@/lib/format";
 import {
@@ -28,15 +33,7 @@ type Props = {
   communityId?: string;
 };
 
-type CommunityDuel = {
-  dayKey: string;
-  pair: { a: string; b: string } | null;
-  myPick: DuelPick | null;
-  counts: { a: number; b: number };
-  names?: { a: string[]; b: string[] };
-  settled: boolean;
-  pickCount: number;
-};
+type CommunityDuel = CommunityDuelCache;
 
 /** Pick who finishes the US cash session higher — reveal only after the close. */
 export function DailyDuelCard({
@@ -56,7 +53,15 @@ export function DailyDuelCard({
   }, [tickers]);
 
   const [record, setRecord] = useState<DuelRecord | null>(null);
-  const [community, setCommunity] = useState<CommunityDuel | null>(null);
+  const [community, setCommunity] = useHydratedCache<CommunityDuel | null>(
+    () => (communityId ? loadCommunityDuelCache(communityId, dayKey) : null),
+    null
+  );
+
+  function commitCommunity(next: CommunityDuel | null) {
+    if (communityId && next) saveCommunityDuelCache(communityId, next);
+    setCommunity(next);
+  }
   // Both read browser-only state, so they start at the server-safe value and
   // hydrate before paint rather than during render.
   const [stats, setStats] = useHydratedCache(
@@ -65,11 +70,17 @@ export function DailyDuelCard({
   );
   const [canSettle, setCanSettle] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (communityId) return;
     setRecord(getOrCreateTodaysDuel(tickerList, dayKey));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on tickerKey, not the array identity
   }, [communityId, dayKey, tickerKey]);
+
+  useLayoutEffect(() => {
+    if (!communityId) return;
+    const cached = loadCommunityDuelCache(communityId, dayKey);
+    if (cached) setCommunity(cached);
+  }, [communityId, dayKey, setCommunity]);
 
   useEffect(() => {
     if (!communityId) return;
@@ -80,7 +91,7 @@ export function DailyDuelCard({
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: CommunityDuel | null) => {
-        if (!ctrl.signal.aborted && data) setCommunity(data);
+        if (!ctrl.signal.aborted && data) commitCommunity(data);
       })
       .catch(() => {
         /* keep whatever we have */
@@ -88,6 +99,7 @@ export function DailyDuelCard({
     return () => {
       ctrl.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- commitCommunity is local
   }, [communityId, dayKey]);
 
   useEffect(() => {
@@ -155,19 +167,25 @@ export function DailyDuelCard({
     if (communityId) {
       if (community?.myPick) return;
       const previous = community;
-      setCommunity((prev) =>
-        prev
-          ? {
-              ...prev,
-              myPick: choice,
-              pickCount: prev.pickCount + 1,
-              counts: {
-                ...prev.counts,
-                [choice]: prev.counts[choice] + 1,
-              },
-            }
-          : prev
-      );
+      const optimistic: CommunityDuel = previous
+        ? {
+            ...previous,
+            myPick: choice,
+            pickCount: previous.pickCount + 1,
+            counts: {
+              ...previous.counts,
+              [choice]: previous.counts[choice] + 1,
+            },
+          }
+        : {
+            dayKey,
+            pair,
+            myPick: choice,
+            counts: { a: choice === "a" ? 1 : 0, b: choice === "b" ? 1 : 0 },
+            settled: false,
+            pickCount: 1,
+          };
+      commitCommunity(optimistic);
       void fetch(`/api/communities/${communityId}/duel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -179,10 +197,11 @@ export function DailyDuelCard({
         )
         .then((r) => (r && r.ok ? r.json() : null))
         .then((data: CommunityDuel | null) => {
-          if (data) setCommunity(data);
+          if (data) commitCommunity(data);
         })
         .catch(() => {
-          setCommunity(previous);
+          if (previous) commitCommunity(previous);
+          else setCommunity(null);
         });
       return;
     }

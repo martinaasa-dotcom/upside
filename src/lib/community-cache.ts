@@ -7,9 +7,75 @@
  * background the moment the list loads (before the user even clicks in).
  */
 
+import { todayKeyInTz } from "@/lib/timezone";
+import type { DuelPick } from "@/lib/daily-duel";
+
 const CACHE_PREFIX = "upside-community-v1:";
 const LIST_CACHE_KEY = "upside-communities-list-v1";
+const DUEL_CACHE_PREFIX = "upside-community-duel-v1:";
 const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes — communities update slowly
+
+export type CommunityDuelCache = {
+  dayKey: string;
+  pair: { a: string; b: string } | null;
+  myPick: DuelPick | null;
+  counts: { a: number; b: number };
+  names?: { a: string[]; b: string[] };
+  settled: boolean;
+  pickCount: number;
+};
+
+const duelMemory = new Map<string, CommunityDuelCache>();
+
+function duelCacheKey(communityId: string): string {
+  return `${DUEL_CACHE_PREFIX}${communityId}`;
+}
+
+function isDuelShape(v: unknown): v is CommunityDuelCache {
+  if (!v || typeof v !== "object") return false;
+  const o = v as CommunityDuelCache;
+  return (
+    typeof o.dayKey === "string" &&
+    (o.myPick === "a" || o.myPick === "b" || o.myPick == null) &&
+    typeof o.pickCount === "number" &&
+    typeof o.settled === "boolean" &&
+    o.counts != null &&
+    typeof o.counts.a === "number" &&
+    typeof o.counts.b === "number"
+  );
+}
+
+export function loadCommunityDuelCache(
+  communityId: string,
+  dayKey: string = todayKeyInTz()
+): CommunityDuelCache | null {
+  const mem = duelMemory.get(communityId);
+  if (mem && mem.dayKey === dayKey) return mem;
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(duelCacheKey(communityId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CommunityDuelCache;
+    if (!isDuelShape(parsed) || parsed.dayKey !== dayKey) return null;
+    duelMemory.set(communityId, parsed);
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveCommunityDuelCache(
+  communityId: string,
+  duel: CommunityDuelCache
+) {
+  duelMemory.set(communityId, duel);
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(duelCacheKey(communityId), JSON.stringify(duel));
+  } catch {
+    /* quota / private mode */
+  }
+}
 
 export type CommunityListRow = {
   id: string;
@@ -121,14 +187,28 @@ export function prefetchCommunityList(rows: CommunityListRow[]) {
 export async function prefetchCommunity(communityId: string): Promise<void> {
   try {
     const cached = loadCommunityCache(communityId);
-    if (isCommunityCacheFresh(cached)) return;
-    const [metaRes, bookRes] = await Promise.all([
-      fetch(`/api/communities/${communityId}`, { cache: "no-store" }),
-      fetch(`/api/communities/${communityId}/book`, { cache: "no-store" }),
+    const needBook = !isCommunityCacheFresh(cached);
+    const needDuel = loadCommunityDuelCache(communityId) == null;
+    if (!needBook && !needDuel) return;
+    const [metaRes, bookRes, duelRes] = await Promise.all([
+      needBook
+        ? fetch(`/api/communities/${communityId}`, { cache: "no-store" })
+        : null,
+      needBook
+        ? fetch(`/api/communities/${communityId}/book`, { cache: "no-store" })
+        : null,
+      needDuel
+        ? fetch(`/api/communities/${communityId}/duel`, { cache: "no-store" })
+        : null,
     ]);
-    if (!metaRes.ok || !bookRes.ok) return;
-    const [meta, book] = await Promise.all([metaRes.json(), bookRes.json()]);
-    saveCommunityCache(communityId, { meta, book });
+    if (needBook && metaRes && bookRes && metaRes.ok && bookRes.ok) {
+      const [meta, book] = await Promise.all([metaRes.json(), bookRes.json()]);
+      saveCommunityCache(communityId, { meta, book });
+    }
+    if (needDuel && duelRes?.ok) {
+      const duel = (await duelRes.json()) as CommunityDuelCache;
+      if (isDuelShape(duel)) saveCommunityDuelCache(communityId, duel);
+    }
   } catch {
     /* best-effort prefetch — CommunityView's own fetch is the source of truth */
   }
