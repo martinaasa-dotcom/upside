@@ -1099,7 +1099,7 @@ export function UpsidePortfolioPage() {
                     onClick={() => void handleOpenPicker()}
                     className="shrink-0 text-xs font-medium text-brand-bright hover:text-brand"
                   >
-                    Add your book
+                    Compare my sheet
                   </button>
                 ) : null}
               </div>

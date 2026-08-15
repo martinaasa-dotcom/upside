@@ -61,6 +61,37 @@ export function sessionMark(input: {
   return { price, previousClose: baseline };
 }
 
+export function nyClock(now = new Date()): { weekday: string; hour: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+    hour: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  return {
+    weekday: parts.find((p) => p.type === "weekday")?.value ?? "",
+    hour: Number(parts.find((p) => p.type === "hour")?.value ?? 0),
+  };
+}
+
+export function isNyWeekday(now = new Date()): boolean {
+  const { weekday } = nyClock(now);
+  return weekday !== "Sat" && weekday !== "Sun";
+}
+
+/** After the US cash session, including Saturday leftover of Friday. */
+export function isUsAfterCashClose(
+  session: SessionKind,
+  now = new Date()
+): boolean {
+  const { weekday, hour } = nyClock(now);
+  if (weekday === "Sat") return true;
+  if (weekday === "Sun") return false;
+  if (session === "open" || session === "pre") return false;
+  if (session === "ah") return true;
+  return hour >= 16;
+}
+
 export function sessionKind(state: string | null | undefined): SessionKind {
   const s = (state ?? "").toUpperCase();
   if (s === "REGULAR") return "open";

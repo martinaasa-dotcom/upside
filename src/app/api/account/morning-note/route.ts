@@ -1,3 +1,4 @@
+import { noteEmailConfigured } from "@/lib/send-note";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -9,14 +10,22 @@ export async function GET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
   const supabase = await getSupabaseDataClient();
-  if (!supabase) return NextResponse.json({ enabled: false });
+  if (!supabase) {
+    return NextResponse.json({
+      enabled: false,
+      canSend: noteEmailConfigured(),
+    });
+  }
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.profiles)
     .select("morning_note")
     .eq("id", auth.user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ enabled: Boolean(data?.morning_note) });
+  return NextResponse.json({
+    enabled: Boolean(data?.morning_note),
+    canSend: noteEmailConfigured(),
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -38,5 +47,9 @@ export async function POST(req: NextRequest) {
     })
     .eq("id", auth.user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, enabled: body.enabled });
+  return NextResponse.json({
+    ok: true,
+    enabled: body.enabled,
+    canSend: noteEmailConfigured(),
+  });
 }

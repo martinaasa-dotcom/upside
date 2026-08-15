@@ -8,6 +8,6 @@ export const maxDuration = 60;
 export async function GET(req: Request) {
   const denied = requireCronAuth(req);
   if (denied) return denied;
-  const result = await dispatchOptedInNotes("morning");
+  const result = await dispatchOptedInNotes("close");
   return NextResponse.json(result, { status: result.status ?? 200 });
 }

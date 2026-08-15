@@ -89,6 +89,7 @@ export function AccountPage() {
   const [knowsOptionsSaved, setKnowsOptionsSaved] = useState(false);
   const [morningNote, setMorningNote] = useState(false);
   const [morningSaved, setMorningSaved] = useState(false);
+  const [morningCanSend, setMorningCanSend] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
@@ -118,9 +119,13 @@ export function AccountPage() {
       .catch(() => {});
     void fetch("/api/account/morning-note")
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { enabled?: boolean } | null) => {
-        if (!cancelled && typeof data?.enabled === "boolean") {
+      .then((data: { enabled?: boolean; canSend?: boolean } | null) => {
+        if (cancelled) return;
+        if (typeof data?.enabled === "boolean") {
           setMorningNote(data.enabled);
+        }
+        if (typeof data?.canSend === "boolean") {
+          setMorningCanSend(data.canSend);
         }
       })
       .catch(() => {});
@@ -263,9 +268,9 @@ export function AccountPage() {
           <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-white">Morning note</h2>
             <p className="text-xs text-zinc-400">
-              A short weekday email around 7am Tallinn. Book move, the name
-              making noise, and a reminder to open Pulse if you want it. Off
-              until you ask.
+              {morningCanSend
+                ? "A short weekday note around 7am Tallinn, another after the US close, and a Sunday look. Book move, the name that did it, and Pulse if it changed. Off until you ask."
+                : "The note lands in the app each weekday morning, after the close, and on Sunday. Email is not set up on this server yet."}
             </p>
             <label className="flex items-center gap-2 text-sm text-zinc-200">
               <input
@@ -289,7 +294,9 @@ export function AccountPage() {
                 }}
                 className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
               />
-              Email me on weekday mornings
+              {morningCanSend
+                ? "Email me the weekday, close, and Sunday notes"
+                : "Turn this on so email starts when it is set up"}
             </label>
             {morningSaved && (
               <p className="text-xs text-emerald-300">Saved.</p>

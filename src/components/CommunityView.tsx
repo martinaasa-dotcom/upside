@@ -9,6 +9,8 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
+import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
+import { overlapSentences } from "@/lib/circle-overlap";
 import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
@@ -222,7 +224,8 @@ export function CommunityView({ communityId }: Props) {
   const [view, setView] = useState<"overview" | "play" | "members">(() => {
     if (typeof window === "undefined") return "overview";
     const raw = new URLSearchParams(window.location.search).get("view");
-    if (raw === "members" || raw === "play") return raw;
+    if (raw === "members") return raw;
+    if (raw === "play" || raw === "league") return "play";
     return "overview";
   });
   const [bestiaryOpen, setBestiaryOpen] = useState(false);
@@ -331,7 +334,13 @@ export function CommunityView({ communityId }: Props) {
       setSelectedOwnerId(params.get("member"));
       setSelectedPortfolioId(params.get("portfolio"));
       const raw = params.get("view");
-      setView(raw === "members" || raw === "play" ? raw : "overview");
+      setView(
+        raw === "members"
+          ? raw
+          : raw === "play" || raw === "league"
+            ? "play"
+            : "overview"
+      );
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -344,7 +353,8 @@ export function CommunityView({ communityId }: Props) {
     else url.searchParams.delete("member");
     if (selectedPortfolioId) url.searchParams.set("portfolio", selectedPortfolioId);
     else url.searchParams.delete("portfolio");
-    if (view === "members" || view === "play") url.searchParams.set("view", view);
+    if (view === "members") url.searchParams.set("view", view);
+    else if (view === "play") url.searchParams.set("view", "league");
     else url.searchParams.delete("view");
     const href = `${url.pathname}${url.search}`;
 
@@ -613,6 +623,34 @@ export function CommunityView({ communityId }: Props) {
     () => memberStats.filter((m) => m.sheetCount > 0),
     [memberStats]
   );
+
+  const overlapLines = useMemo(
+    () =>
+      overlapSentences(overview.tickers, (portfolioIds) => {
+        const names = new Set<string>();
+        for (const pid of portfolioIds) {
+          for (const o of ownership.filter((x) => x.portfolio_id === pid)) {
+            names.add(profileName(o.user_id));
+          }
+        }
+        return [...names];
+      }),
+    [overview.topHoldings, ownership, profileName]
+  );
+
+  const [leaguePrize, setLeaguePrize] = useState(() =>
+    circleWeekBoard(communityId)
+  );
+
+  useEffect(() => {
+    if (membersWithBooks.length < 2) return;
+    const winner = [...membersWithBooks].sort(
+      (a, b) => (b.todayPct ?? -1) - (a.todayPct ?? -1)
+    )[0];
+    if (!winner || winner.todayPct == null) return;
+    recordCircleSession(communityId, winner.name);
+    setLeaguePrize(circleWeekBoard(communityId));
+  }, [communityId, membersWithBooks]);
 
   // Fun superlative badges — deliberately don't repeat what the leaderboard
   // already shows (today's move, lifetime return); these highlight the
@@ -1164,7 +1202,7 @@ export function CommunityView({ communityId }: Props) {
                 {(
                   [
                     ["overview", "Overview", LayoutGrid],
-                    ["play", "Play", Sparkles],
+                    ["play", "League", Award],
                     ["members", "Members", Users],
                   ] as const
                 ).map(([id, label, Icon]) => (
@@ -1208,6 +1246,13 @@ export function CommunityView({ communityId }: Props) {
                         todayPct: t.todayPct,
                       }))}
                     />
+                  )}
+                  {view === "play" && leaguePrize && leaguePrize.wins >= 1 && (
+                    <p className="text-sm text-zinc-300">
+                      {leaguePrize.name} took {leaguePrize.wins}{" "}
+                      {leaguePrize.wins === 1 ? "session" : "sessions"} this
+                      week.
+                    </p>
                   )}
                   {view === "play" && membersWithBooks.length > 0 && (
                     <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
@@ -1384,55 +1429,28 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {view === "overview" && overview.topHoldings.length > 0 && (
+                  {view === "overview" && overlapLines.length > 0 && (
                     <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
-                      <div className="mb-5 flex items-center gap-2.5">
+                      <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
                           <Layers className="h-4 w-4" />
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-white">
-                            What the community is holding
+                            Shared names
                           </h3>
                           <p className="mt-0.5 text-sm text-zinc-400">
-                            Biggest combined positions, and how many books
-                            each one turns up in
+                            Who else is in the same name today
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {overview.topHoldings.slice(0, 10).map((t) => (
-                          <div
-                            key={t.ticker}
-                            className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-3 py-2"
-                          >
-                            <span className="text-sm font-semibold text-white">
-                              {cashtag(t.ticker)}
-                            </span>
-                            <span className="text-xs text-zinc-400">
-                              {currency(t.currentValue, 0)}
-                            </span>
-                            {t.todayPct != null && (
-                              <span
-                                className={cn(
-                                  "text-xs tabular-nums",
-                                  signedTone(t.todayPct, "text-zinc-400")
-                                )}
-                              >
-                                {percent(t.todayPct)}
-                              </span>
-                            )}
-                            {t.portfolios.length > 1 && (
-                              <span
-                                className="rounded-full bg-brand/15 px-1.5 py-0.5 text-xs font-medium text-brand-bright"
-                                title={`Held in ${t.portfolios.join(", ")}`}
-                              >
-                                ×{t.portfolios.length} books
-                              </span>
-                            )}
-                          </div>
+                      <ul className="space-y-2">
+                        {overlapLines.map((line) => (
+                          <li key={line} className="text-sm text-zinc-200">
+                            {line}
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </section>
                   )}
 

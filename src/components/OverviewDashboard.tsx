@@ -29,6 +29,8 @@ import type { UpsideAlert } from "@/lib/alerts";
 import { statusLabel } from "@/lib/thesis-pulse";
 import { sessionLabel, sessionKind } from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
+import { loadVisitStreak } from "@/lib/visit-streak";
+import { recordWeekMark } from "@/lib/week-marks";
 import type { CoveredCallRow } from "@/lib/types";
 import {
   captureVisitSnapshot,
@@ -95,6 +97,7 @@ function MobileHomeHero({
   morning,
   previousAt,
   onOpenPulse,
+  streak,
   homeSheetId,
   homeSheets,
   onHomeSheet,
@@ -112,6 +115,7 @@ function MobileHomeHero({
   morning: ReturnType<typeof buildMorningRead>;
   previousAt: string | null;
   onOpenPulse?: () => void;
+  streak: number;
   homeSheetId: HomeSheetId;
   homeSheets: Array<{ id: string; name: string }>;
   onHomeSheet?: (id: HomeSheetId) => void;
@@ -119,7 +123,10 @@ function MobileHomeHero({
   const up = totals.roiPct >= 0;
   return (
     <div className="md:hidden">
-      <p className="text-sm text-muted">Book</p>
+      <p className="text-sm text-muted">
+        Book
+        {streak >= 2 ? ` · ${streak}-day streak` : ""}
+      </p>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
         <p className="font-logo text-4xl font-bold tabular-nums leading-none text-white">
           {currency(totals.totalValue, 0)}
@@ -248,6 +255,9 @@ function EmptyBook({
       <p className="mt-3 text-sm text-muted">
         Paste what you own. One name per line: ticker, shares, cost.
       </p>
+      <p className="mt-2 text-xs text-zinc-500">
+        This sheet is only yours until you share it with a circle.
+      </p>
 
       {onPasteHoldings && (
         <div className="mt-6 space-y-2">
@@ -365,10 +375,61 @@ function MorningStack({
   onOpenPulse?: () => void;
   className?: string;
 }) {
+  const special = Boolean(morning.sunday || morning.closeNote);
   return (
     <div className={cn("space-y-3", className)}>
-      <p className="text-sm text-zinc-200">{morning.sentence}</p>
-      {!morning.quiet && morning.drivers.length > 0 && (
+      {morning.sunday ? (
+        <div>
+          <p className="text-sm font-semibold text-white">
+            {morning.sunday.headline}
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {morning.sunday.lines.map((line) => {
+              const pulseLine =
+                line.startsWith("Pulse:") ||
+                line.startsWith("Last Pulse") ||
+                line.startsWith("No Pulse");
+              if (pulseLine && onOpenPulse) {
+                return (
+                  <li key={line}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenPulse()}
+                      className="text-left text-sm text-zinc-200 hover:text-white"
+                    >
+                      {line}
+                    </button>
+                  </li>
+                );
+              }
+              return (
+                <li key={line} className="text-sm text-zinc-200">
+                  {line}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : morning.closeNote ? (
+        <div className="space-y-1">
+          <p className="text-sm text-zinc-200">{morning.closeNote.book}</p>
+          <p className="text-sm text-zinc-200">{morning.closeNote.loud}</p>
+          {onOpenPulse ? (
+            <button
+              type="button"
+              onClick={() => onOpenPulse()}
+              className="text-left text-sm text-zinc-400 hover:text-zinc-200"
+            >
+              {morning.closeNote.pulse}
+            </button>
+          ) : (
+            <p className="text-sm text-zinc-400">{morning.closeNote.pulse}</p>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-zinc-200">{morning.sentence}</p>
+      )}
+      {!special && !morning.quiet && morning.drivers.length > 0 && (
         <ul className="space-y-1">
           {morning.drivers.map((d) => (
             <li
@@ -414,7 +475,7 @@ function MorningStack({
           </ul>
         </div>
       )}
-      {morning.pulseFlag && (
+      {!special && morning.pulseFlag && (
         <button
           type="button"
           onClick={() => onOpenPulse?.()}
@@ -577,8 +638,32 @@ export function OverviewDashboard({
   const [moverHorizon, setMoverHorizon] = useState<"today" | "lifetime">(
     "today"
   );
+  const [streak, setStreak] = useState(0);
+  const kind = sessionKind(marketState);
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
+
+  useEffect(() => {
+    setStreak(loadVisitStreak().currentStreak);
+  }, []);
+
+  useEffect(() => {
+    if (!model.tickers.length || model.totals.todayPct == null) return;
+    const best = [...model.tickers].sort(
+      (a, b) => (b.todayPct ?? -99) - (a.todayPct ?? -99)
+    )[0];
+    const worst = [...model.tickers].sort(
+      (a, b) => (a.todayPct ?? 99) - (b.todayPct ?? 99)
+    )[0];
+    recordWeekMark({
+      totalValue: model.totals.totalValue,
+      todayDollar: model.totals.todayDollar,
+      bestTicker: best?.ticker ?? null,
+      bestPct: best?.todayPct ?? null,
+      worstTicker: worst?.ticker ?? null,
+      worstPct: worst?.todayPct ?? null,
+    });
+  }, [tickerKey, model.totals.totalValue, model.totals.todayDollar, model.totals.todayPct, model.tickers]);
 
   useEffect(() => {
     if (!model.tickers.length) return;
@@ -607,8 +692,8 @@ export function OverviewDashboard({
   }, [tickerKey, model.totals.totalValue, model.totals.cash]);
 
   const morning = useMemo(
-    () => buildMorningRead(model, visitDiff),
-    [model, visitDiff]
+    () => buildMorningRead(model, visitDiff, kind),
+    [model, visitDiff, kind]
   );
 
   const nav = useBookNavHistory({
@@ -640,7 +725,6 @@ export function OverviewDashboard({
   }, [moverHorizon, todayWinners, todayLosers, winners, losers]);
 
   const multiSheet = sheets.length > 1;
-  const kind = sessionKind(marketState);
 
   function openFirstPortfolio(t: TickerScore) {
     const id = t.portfolioIds[0];
@@ -679,6 +763,7 @@ export function OverviewDashboard({
         morning={morning}
         previousAt={visitDiff?.previousAt ?? null}
         onOpenPulse={onOpenPulse}
+        streak={streak}
         homeSheetId={homeSheetId}
         homeSheets={homeSheets}
         onHomeSheet={onHomeSheet}
@@ -693,7 +778,7 @@ export function OverviewDashboard({
         <div className="relative">
           <PanelHeader
             hero
-            title="Today"
+            title={streak >= 2 ? `Today · ${streak} days` : "Today"}
             actions={
               <>
                 <span

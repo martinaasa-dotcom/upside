@@ -24,6 +24,17 @@ export function WatchlistStrip({
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
 
   const names = list.filter((t) => !held.has(t)).slice(0, 8);
+  const jumps = names
+    .map((ticker) => ({
+      ticker,
+      pct: quotes[ticker]?.changePercent ?? null,
+    }))
+    .filter(
+      (row): row is { ticker: string; pct: number } =>
+        row.pct != null && Math.abs(row.pct) >= 0.06
+    )
+    .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
+    .slice(0, 2);
 
   useEffect(() => {
     if (names.length === 0) return;
@@ -75,6 +86,24 @@ export function WatchlistStrip({
           </button>
         </form>
       </div>
+      {jumps.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {jumps.map((j) => (
+            <button
+              key={j.ticker}
+              type="button"
+              onClick={() => onOpenPulse?.(j.ticker)}
+              className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3 py-2 text-left"
+            >
+              <p className="text-sm text-zinc-200">
+                {cashtag(j.ticker)}{" "}
+                {j.pct > 0 ? "jumped" : "dropped"} {percent(Math.abs(j.pct))}{" "}
+                today. Not in your book.
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
       {names.length === 0 ? (
         <p className="mt-2 text-xs text-zinc-500">
           Names you don&apos;t own yet. Add one to keep an eye on it.
