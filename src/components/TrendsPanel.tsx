@@ -1,6 +1,6 @@
 "use client";
 
-import { Panel, PanelHeader } from "@/components/ui/Panel";
+import { Panel, PanelHeader, Stat } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -111,20 +111,17 @@ function TickerStoryCard({
         {story.sentence}
       </p>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
         {story.signals.map((s) => (
-          <div
+          <Stat
             key={s.key}
-            title={s.help}
-            className="h-full rounded-lg border border-zinc-800 bg-black/20 px-2.5 py-2"
-          >
-            <p className="text-xs uppercase tracking-wide text-zinc-500">
-              {s.label}
-            </p>
-            <p className={cn("mt-0.5 text-sm font-semibold tabular-nums", TONE_TEXT[s.tone])}>
-              {s.value}
-            </p>
-          </div>
+            label={s.label}
+            value={s.value}
+            sub={s.detail}
+            explain={s.help}
+            valueClassName={TONE_TEXT[s.tone]}
+            subClassName="text-xs leading-relaxed text-zinc-400"
+          />
         ))}
       </div>
 
@@ -269,8 +266,8 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               ? ` (${Math.min(combined.length, MAX_TICKERS)} on the list).`
               : "."}{" "}
           Weekly bars, so this answers whether the story changed, not what
-          happened today. Hover any box below for exactly how it&apos;s
-          calculated.
+          happened today. Each box shows the verdict and the numbers it
+          used.
         </p>
 
         <div className="mt-5 border-t border-zinc-800 pt-5">

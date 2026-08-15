@@ -222,6 +222,8 @@ export function trendRegime(weeklyCloses: number[]): {
   regime: TrendRegime;
   aboveLong: boolean | null;
   longSlopePct: number | null;
+  longMa: number | null;
+  price: number | null;
 } {
   const long = sma(weeklyCloses, 40);
   const short = sma(weeklyCloses, 10);
@@ -230,7 +232,13 @@ export function trendRegime(weeklyCloses: number[]): {
   const s = short[i];
   const lPrev = long[i - 8] ?? null;
   if (l == null || s == null) {
-    return { regime: "flat", aboveLong: null, longSlopePct: null };
+    return {
+      regime: "flat",
+      aboveLong: null,
+      longSlopePct: null,
+      longMa: null,
+      price: null,
+    };
   }
   const price = weeklyCloses[i]!;
   const aboveLong = price > l;
@@ -244,7 +252,7 @@ export function trendRegime(weeklyCloses: number[]): {
   else if (!aboveLong && falling) regime = "strong-down";
   else if (!aboveLong && rising) regime = "recovering";
 
-  return { regime, aboveLong, longSlopePct: slope };
+  return { regime, aboveLong, longSlopePct: slope, longMa: l, price };
 }
 
 /**

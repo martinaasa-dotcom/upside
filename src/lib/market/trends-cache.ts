@@ -40,6 +40,10 @@ export type TrendRow = {
   chg2w: number | null;
   chg4w: number | null;
   lastClose: number | null;
+  longMa: number | null;
+  vsLongMaPct: number | null;
+  longSlopePct: number | null;
+  macdHistogramPrev: number | null;
 };
 
 type YahooFinanceInstance = InstanceType<
@@ -246,6 +250,7 @@ export async function fetchTrendsBatch(
       aboveLongMa: regime.aboveLong,
       rsi: rsiSeries.at(-1) ?? null,
       macdHistogram: hist,
+      macdHistogramPrev: histPrev,
       macdBuilding: hist != null && histPrev != null ? hist > histPrev : null,
       divergence: div
         ? {
@@ -261,7 +266,15 @@ export async function fetchTrendsBatch(
       rs26: bench ? relativeStrength(closes, bench, 26) : null,
       chg2w: nWeekChange(closes, 2),
       chg4w: nWeekChange(closes, 4),
-      lastClose: closes.at(-1) ?? null,
+      lastClose: closes.at(-1) ?? regime.price,
+      longMa: regime.longMa,
+      vsLongMaPct:
+        regime.longMa != null &&
+        regime.price != null &&
+        regime.longMa > 0
+          ? regime.price / regime.longMa - 1
+          : null,
+      longSlopePct: regime.longSlopePct,
     };
 
     ROW_CACHE.set(ticker, { row, cachedAt: Date.now() });

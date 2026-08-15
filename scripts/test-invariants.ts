@@ -60,6 +60,7 @@ import {
   currentPopularMonth,
   sanitizePopularTickers,
 } from "../src/lib/popular-tickers";
+import { buildTrendStory } from "../src/lib/market/trend-story";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 import {
@@ -872,6 +873,34 @@ run("live price polls back off when New York is closed", () => {
     [],
     `these poll prices without checking the session: ${offenders.join(", ")}`
   );
+});
+
+run("weakening trend names the 40-week average and the slope", () => {
+  const story = buildTrendStory({
+    ticker: "RDDT",
+    regime: "weakening",
+    aboveLongMa: true,
+    rsi: 62,
+    macdBuilding: true,
+    divergence: null,
+    rs13: 0.04,
+    rs26: 0.08,
+    chg2w: 0.266,
+    chg4w: 0.31,
+    lastClose: 45.2,
+    longMa: 43.84,
+    vsLongMaPct: 45.2 / 43.84 - 1,
+    longSlopePct: -0.012,
+    macdHistogram: 0.18,
+    macdHistogramPrev: 0.24,
+  });
+  const trend = story.signals.find((s) => s.key === "trend");
+  assert.ok(trend);
+  assert.equal(trend!.value, "Weakening");
+  assert.match(trend!.detail, /40-week average/);
+  assert.match(trend!.detail, /falling/);
+  assert.match(trend!.detail, /8 weeks/);
+  assert.match(trend!.detail, /45\.20|\$45/);
 });
 
 run("signed-in pages share one column so rooms do not jump", () => {

@@ -7,6 +7,7 @@
  * it's the same story-building logic on server and client, and testable
  * without touching the network.
  */
+import { currency } from "@/lib/format";
 
 export type TrendRegime =
   | "strong-up"
@@ -36,6 +37,12 @@ export type TrendRowLike = {
    * below have had time to react to it. */
   chg2w: number | null;
   chg4w: number | null;
+  lastClose?: number | null;
+  longMa?: number | null;
+  vsLongMaPct?: number | null;
+  longSlopePct?: number | null;
+  macdHistogram?: number | null;
+  macdHistogramPrev?: number | null;
 };
 
 export type Tone = "gain" | "loss" | "warn" | "neutral";
@@ -45,6 +52,8 @@ export type Signal = {
   label: string;
   value: string;
   tone: Tone;
+  /** The inputs, always visible. Hover help is not enough on a phone. */
+  detail: string;
   help: string;
 };
 
@@ -227,12 +236,47 @@ function rsText(v: number | null): string {
   return `${v > 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
 }
 
+function signedPct(v: number | null, digits = 1): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(digits)}%`;
+}
+
+function trendDetail(row: TrendRowLike): string {
+  const price = row.lastClose;
+  const ma = row.longMa;
+  const vs = row.vsLongMaPct;
+  const slope = row.longSlopePct;
+  if (price == null || ma == null || vs == null) {
+    return "Needs about 40 weekly closes before the 40-week average exists.";
+  }
+  const side = vs >= 0 ? "above" : "below";
+  const vsText = `${(Math.abs(vs) * 100).toFixed(1)}%`;
+  const slopeBit =
+    slope == null
+      ? "Not enough history to say whether that average is rising or falling."
+      : `That average is ${slope >= 0 ? "up" : "down"} ${(Math.abs(slope) * 100).toFixed(1)}% over the last 8 weeks.`;
+  const rule =
+    row.regime === "weakening"
+      ? "Weakening means price is still above the 40-week average, but that average itself is falling."
+      : row.regime === "recovering"
+        ? "Turning up means price is still below the 40-week average, but that average itself is rising."
+        : row.regime === "strong-up"
+          ? "Uptrend means price is above the 40-week average, and that average is still rising."
+          : row.regime === "strong-down"
+            ? "Downtrend means price is below the 40-week average, and that average is still falling."
+            : "No trend means the 40-week average is not sloping enough to call a direction.";
+  return `Price ${currency(price)} is ${vsText} ${side} the 40-week average (${currency(ma)}). ${slopeBit} ${rule}`;
+}
+
 export function buildTrendStory(row: TrendRowLike): TrendStory {
   const base = REGIME_BASE[row.regime];
   const withDivergence = applyDivergence(base, row.divergence);
   const surge = detectSurge(row);
   const withSurge = applySurge(withDivergence, surge);
   const zone = rsiZone(row.rsi);
+
+  const hist = row.macdHistogram ?? null;
+  const histPrev = row.macdHistogramPrev ?? null;
 
   const signals: Signal[] = [
     {
@@ -249,14 +293,19 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
                 ? "Turning up"
                 : "No trend",
       tone: REGIME_BASE[row.regime].tone,
-      help: "Calculated as: price vs. its own 40-week (~200-day) simple moving average, plus whether that average's slope over the trailing 8 weeks is rising or falling. Deliberately slow on purpose, so a sudden 2-3 week move (see \u201cLast 2 weeks\u201d) can outrun this reading for a few weeks before it catches up.",
+      detail: trendDetail(row),
+      help: "Price versus its own 40-week average, plus whether that average rose or fell over the last 8 weeks. Rising or falling needs more than a 0.5% slope. This is slow on purpose, so a sharp 2-week move can disagree with it for a while.",
     },
     {
       key: "recent",
       label: "Last 2 weeks",
-      value: row.chg2w == null ? "—" : `${row.chg2w >= 0 ? "+" : ""}${(row.chg2w * 100).toFixed(1)}%`,
+      value: signedPct(row.chg2w),
       tone: row.chg2w == null ? "neutral" : row.chg2w >= 0 ? "gain" : "loss",
-      help: "Calculated as: raw price change over the last two weekly closes. The fastest-moving number on this card, so it's usually the first place a real catalyst, an earnings beat, a guidance cut, shows up, well before the slower Trend and Momentum reads have had time to react.",
+      detail:
+        row.chg2w == null && row.chg4w == null
+          ? "Not enough weekly closes yet."
+          : `Last two weekly closes ${signedPct(row.chg2w)}. Last four ${signedPct(row.chg4w)}. Raw price change, no average.`,
+      help: "Raw price change over the last two weekly closes, and the four-week change next to it. Usually the first place a real catalyst shows up.",
     },
     {
       key: "momentum",
@@ -269,21 +318,33 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
           : row.macdBuilding
             ? "gain"
             : "neutral",
-      help: "Calculated as: whether the weekly MACD histogram (12/26/9-week EMAs) is larger now than it was 4 weeks ago. A read on whether the move is speeding up or losing pace, separate from which direction it's going.",
+      detail:
+        hist != null && histPrev != null
+          ? `Weekly momentum reading ${hist.toFixed(2)} now, ${histPrev.toFixed(2)} four weeks ago. Building means today's reading is larger.`
+          : "Not enough weekly history for a momentum comparison.",
+      help: "Whether the weekly momentum reading (12/26/9-week averages) is larger now than it was 4 weeks ago. Speeding up or losing pace, separate from which way price is going.",
     },
     {
       key: "rsi",
       label: "RSI",
       value: row.rsi == null ? "—" : `${row.rsi.toFixed(0)} · ${zone.label}`,
       tone: zone.tone,
-      help: `Calculated as: 14-week Wilder RSI, the same formula your charting app shows, just computed weekly instead of daily. ${zone.help}`,
+      detail:
+        row.rsi == null
+          ? "Not enough weekly history for a 14-week RSI."
+          : `14-week RSI at ${row.rsi.toFixed(0)}. Overbought starts at 70, oversold at 30. ${zone.help}`,
+      help: "14-week RSI, the same formula a charting app shows, computed on weekly closes instead of daily.",
     },
     {
       key: "rs",
       label: "vs S&P (13w)",
       value: rsText(row.rs13),
       tone: row.rs13 == null ? "neutral" : row.rs13 >= 0 ? "gain" : "loss",
-      help: "Calculated as: this name's cumulative return minus the S&P 500's cumulative return over the trailing 13 weeks (~1 quarter). Positive means money is rotating toward it specifically, not just floating up with everything else.",
+      detail:
+        row.rs13 == null && row.rs26 == null
+          ? "S&P comparison needs history for both this name and the index."
+          : `13 weeks ${rsText(row.rs13)}. 26 weeks ${rsText(row.rs26)}. This name's return minus the S&P, so you can see if it is just floating with the market.`,
+      help: "This name's return minus the S&P 500 over 13 weeks, and 26 weeks. Positive means it beat the index, not just rose with everything else.",
     },
   ];
 
