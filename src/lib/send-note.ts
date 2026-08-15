@@ -3,7 +3,7 @@
 import { Resend } from "resend";
 
 const DEFAULT_FROM = "Upside Lab <notes@upsidelab.app>";
-const MARK_URL = "https://upsidelab.app/upside-icon.svg";
+const MARK_URL = "https://www.upsidelab.app/icons/email-lockup.png?v=1";
 
 function escapeHtml(s: string): string {
   return s
@@ -28,7 +28,7 @@ function noteHtml(text: string): string {
     })
     .join("");
   return `<div style="width:100%;padding:22px 16px;background:#08090c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#f4f1ea">
-<img src="${MARK_URL}" width="28" height="28" alt="" style="display:block;margin:0 0 16px 0;border:0;border-radius:8px" />
+<img src="${MARK_URL}" width="180" height="33" alt="Upside Lab" style="display:block;margin:0 0 16px 0;border:0" />
 ${body}
 </div>`;
 }

@@ -630,9 +630,8 @@ export function noteReportHtml(r: NoteReport): string {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">
               <tr>
                 <td style="vertical-align:middle">
-                  <img src="https://www.upsidelab.app/icons/icon-192.png" width="28" height="28" alt="" style="display:block;border:0;border-radius:8px" />
+                  <img src="https://www.upsidelab.app/icons/email-lockup.png?v=1" width="180" height="33" alt="Upside Lab" style="display:block;border:0" />
                 </td>
-                <td style="vertical-align:middle;padding-left:10px;font-family:${SANS};font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${GOLD}">Upside Lab</td>
                 <td style="vertical-align:middle;text-align:right;font-family:${SANS};font-size:12px;color:${MUTED}">${escapeHtml(r.dateLine)}</td>
               </tr>
             </table>
