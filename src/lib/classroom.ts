@@ -71,7 +71,7 @@ function isIso(v: unknown): v is string {
   return typeof v === "string" && Number.isFinite(Date.parse(v));
 }
 
-export function parseClassPlan(raw: unknown): ClassPlan {
+export function parseClassPlan(raw: unknown, now = new Date()): ClassPlan {
   if (!raw || typeof raw !== "object") return emptyClassPlan();
   const o = raw as { purpose?: unknown; periods?: unknown };
   const purpose =
@@ -86,14 +86,19 @@ export function parseClassPlan(raw: unknown): ClassPlan {
     if (endsAt && !isIso(endsAt)) continue;
     if (endsAt && Date.parse(endsAt) <= Date.parse(String(r.startsAt))) continue;
     periods.push({
-      id: typeof r.id === "string" && r.id.trim() ? r.id.trim() : crypto.randomUUID(),
+      id:
+        typeof r.id === "string" && r.id.trim()
+          ? r.id.trim().slice(0, 80)
+          : crypto.randomUUID(),
       kind: r.kind,
       startsAt: new Date(String(r.startsAt)).toISOString(),
       endsAt: endsAt ? new Date(endsAt).toISOString() : null,
     });
   }
-  periods.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
-  return { purpose: purpose || undefined, periods };
+  const t = now.getTime();
+  const live = periods.filter((p) => !p.endsAt || Date.parse(p.endsAt) > t);
+  live.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  return { purpose: purpose || undefined, periods: live.slice(-24) };
 }
 
 export function resolveClassroomTrade(
@@ -115,7 +120,7 @@ export function resolveClassroomTrade(
     kind,
     canBuy: kind === "open" || kind === "buy",
     canSell: kind === "open" || kind === "fix",
-    canAdjust: kind === "open" || kind === "fix",
+    canAdjust: kind !== "closed",
     canCash: kind !== "closed",
     purpose,
     until: current?.endsAt ?? null,
@@ -130,6 +135,8 @@ export function startPeriodNow(
   kind: ClassPeriodKind,
   now = new Date()
 ): ClassPlan {
+  const current = resolveClassroomTrade(plan, now);
+  if (current.kind === kind) return plan;
   const iso = now.toISOString();
   const t = now.getTime();
   const periods = plan.periods.map((p) => {
@@ -145,7 +152,7 @@ export function startPeriodNow(
     startsAt: iso,
     endsAt: null,
   });
-  return parseClassPlan({ ...plan, periods });
+  return parseClassPlan({ ...plan, periods }, now);
 }
 
 export function allowClassAction(
@@ -167,6 +174,7 @@ export function classifyHoldingWrite(opts: {
   isDelete: boolean;
   existingShares?: number;
   nextShares?: number;
+  tickerChanged?: boolean;
 }): ClassAction {
   if (opts.isDelete) return "sell";
   if (opts.isNew) return "buy";
@@ -175,6 +183,50 @@ export function classifyHoldingWrite(opts: {
   if (next > prev) return "buy";
   if (next < prev) return "sell";
   return "adjust";
+}
+
+/** Renaming a ticker is selling one name and buying another. */
+export function holdingWriteActions(opts: {
+  isNew: boolean;
+  isDelete: boolean;
+  existingShares?: number;
+  nextShares?: number;
+  tickerChanged?: boolean;
+}): ClassAction[] {
+  if (opts.tickerChanged && !opts.isNew && !opts.isDelete) {
+    return ["buy", "sell"];
+  }
+  return [classifyHoldingWrite(opts)];
+}
+
+export function classifyImportWrite(opts: {
+  cash: boolean;
+  replace: boolean;
+  rows: { ticker: string; shares: number }[];
+  existing: { ticker: string; shares: number }[];
+}): ClassAction[] {
+  const needs = new Set<ClassAction>();
+  if (opts.cash) needs.add("cash");
+  const have = new Map(
+    opts.existing.map((h) => [h.ticker.trim().toUpperCase(), h.shares])
+  );
+  const keep = new Set<string>();
+  for (const row of opts.rows) {
+    const ticker = row.ticker.trim().toUpperCase();
+    if (!ticker) continue;
+    keep.add(ticker);
+    const prev = have.get(ticker);
+    if (prev == null) needs.add("buy");
+    else if (row.shares > prev) needs.add("buy");
+    else if (row.shares < prev) needs.add("sell");
+    else needs.add("adjust");
+  }
+  if (opts.replace) {
+    for (const ticker of have.keys()) {
+      if (!keep.has(ticker)) needs.add("sell");
+    }
+  }
+  return [...needs];
 }
 
 export type ThesisCoverage = {

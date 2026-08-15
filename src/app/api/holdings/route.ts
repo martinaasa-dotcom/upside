@@ -1,5 +1,5 @@
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
-import { classifyHoldingWrite } from "@/lib/classroom";
+import { holdingWriteActions } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const blocked = await denyClassroomWrite(supabase, {
     portfolioId,
     userId: auth.user.id,
-    action: classifyHoldingWrite({
+    action: holdingWriteActions({
       isNew: !existingRow,
       isDelete: false,
       existingShares: existingRow
@@ -111,7 +111,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from(PORTFELL_TABLES.holdings)
-    .select("portfolio_id, shares")
+    .select("portfolio_id, shares, ticker")
     .eq("id", id)
     .maybeSingle();
 
@@ -160,14 +160,25 @@ export async function PATCH(req: NextRequest) {
       body.shares !== undefined
         ? roundShares(Number(body.shares))
         : Number((existing as { shares?: number } | null)?.shares ?? 0);
+    const nextTicker =
+      body.ticker !== undefined
+        ? normalizeYahooTicker(String(body.ticker))
+        : String((existing as { ticker?: string } | null)?.ticker ?? "");
+    const prevTicker = String(
+      (existing as { ticker?: string } | null)?.ticker ?? ""
+    );
     const blocked = await denyClassroomWrite(supabase, {
       portfolioId,
       userId: auth.user.id,
-      action: classifyHoldingWrite({
+      action: holdingWriteActions({
         isNew: false,
         isDelete: false,
         existingShares: Number((existing as { shares?: number } | null)?.shares ?? 0),
         nextShares,
+        tickerChanged:
+          Boolean(prevTicker) &&
+          Boolean(nextTicker) &&
+          prevTicker.toUpperCase() !== nextTicker.toUpperCase(),
       }),
     });
     if (blocked) return blocked;

@@ -5,6 +5,8 @@ import {
   restoreSheetFromSnapshot,
   saveBookSnapshot,
 } from "@/lib/book-snapshot";
+import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import {
   getSupabaseDataClient,
@@ -88,6 +90,28 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      const { data: owned } = await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id")
+        .eq("user_id", auth.user.id);
+      const ownedIds = ((owned ?? []) as { portfolio_id: string }[]).map(
+        (r) => r.portfolio_id
+      );
+      if (ownedIds.length) {
+        const { data: classSheets } = await supabase
+          .from(PORTFELL_TABLES.portfolios)
+          .select("id")
+          .in("id", ownedIds)
+          .not("classroom_community_id", "is", null);
+        for (const sheet of (classSheets ?? []) as { id: string }[]) {
+          const blocked = await denyClassroomWrite(supabase, {
+            portfolioId: sheet.id,
+            userId: auth.user.id,
+            action: ["buy", "sell", "cash"],
+          });
+          if (blocked) return blocked;
+        }
+      }
       await saveBookSnapshot(supabase, "pre_delete", "Before restore");
       const counts = await restoreBookFromSnapshot(supabase, snapshotId);
       return NextResponse.json({ ok: true, restored: counts });
@@ -100,6 +124,17 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      const notOwner = await requirePortfolioOwner(
+        auth.user.id,
+        body.portfolioId
+      );
+      if (notOwner) return notOwner;
+      const blocked = await denyClassroomWrite(supabase, {
+        portfolioId: body.portfolioId,
+        userId: auth.user.id,
+        action: ["buy", "sell", "cash"],
+      });
+      if (blocked) return blocked;
       await saveBookSnapshot(
         supabase,
         "pre_delete",

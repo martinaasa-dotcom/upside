@@ -1279,8 +1279,18 @@ export function CommunityView({ communityId }: Props) {
                     ? "Paper class. Same starting cash. Real prices."
                     : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
                 </p>
-                {isClassroom && community?.classTrade ? (
-                  <ClassTradeBanner trade={community.classTrade} />
+                {isClassroom &&
+                community?.classTrade &&
+                (community.classTrade.kind !== "open" ||
+                  community.classTrade.until) ? (
+                  <ClassTradeBanner
+                    trade={community.classTrade}
+                    teacherNote={
+                      isAdmin
+                        ? "You can still edit. Students cannot."
+                        : undefined
+                    }
+                  />
                 ) : community?.house_note?.trim() ? (
                   <p className="text-sm leading-relaxed text-zinc-200">
                     {community.house_note.trim()}

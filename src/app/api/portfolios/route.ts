@@ -95,12 +95,16 @@ export async function GET(req: NextRequest) {
       .from(PORTFELL_TABLES.communities)
       .select("id, class_plan, house_note")
       .in("id", classIds);
-    for (const row of (classes ?? []) as {
+    const classRows = (classes ?? []) as {
       id: string;
       class_plan?: unknown;
       house_note?: string | null;
-    }[]) {
-      const isTeacher = await userIsCommunityAdmin(auth.user.id, row.id);
+    }[];
+    const teacherFlags = await Promise.all(
+      classRows.map((row) => userIsCommunityAdmin(auth.user.id, row.id))
+    );
+    classRows.forEach((row, i) => {
+      const isTeacher = teacherFlags[i];
       const trade = resolveClassroomTrade(
         parseClassPlan(row.class_plan),
         new Date(),
@@ -117,7 +121,7 @@ export async function GET(req: NextRequest) {
           ? `Students: ${trade.label.toLowerCase()}. ${trade.message}`
           : trade.message,
       });
-    }
+    });
   }
 
   return NextResponse.json({

@@ -46,6 +46,8 @@ import type { UpsideAlert } from "../src/lib/alerts";
 import {
   allowClassAction,
   classifyHoldingWrite,
+  classifyImportWrite,
+  holdingWriteActions,
   parseClassPlan,
   resolveClassroomTrade,
   startPeriodNow,
@@ -1110,38 +1112,44 @@ run("empty class plan is anything goes", () => {
 });
 
 run("buy week blocks sell", () => {
-  const plan = parseClassPlan({
-    periods: [
-      {
-        id: "a",
-        kind: "buy",
-        startsAt: "2026-08-10T00:00:00Z",
-        endsAt: "2026-08-20T00:00:00Z",
-      },
-    ],
-  });
-  const trade = resolveClassroomTrade(
-    plan,
-    new Date("2026-08-15T12:00:00Z")
+  const now = new Date("2026-08-15T12:00:00Z");
+  const plan = parseClassPlan(
+    {
+      periods: [
+        {
+          id: "a",
+          kind: "buy",
+          startsAt: "2026-08-10T00:00:00Z",
+          endsAt: "2026-08-20T00:00:00Z",
+        },
+      ],
+    },
+    now
   );
+  const trade = resolveClassroomTrade(plan, now);
   assert.equal(trade.kind, "buy");
   assert.equal(trade.canBuy, true);
   assert.equal(trade.canSell, false);
+  assert.equal(trade.canAdjust, true);
   assert.equal(allowClassAction(trade, "sell"), false);
 });
 
 run("startPeriodNow ends the live stretch", () => {
-  const plan = parseClassPlan({
-    periods: [
-      {
-        id: "a",
-        kind: "buy",
-        startsAt: "2026-08-10T00:00:00Z",
-        endsAt: null,
-      },
-    ],
-  });
-  const next = startPeriodNow(plan, "closed", new Date("2026-08-15T12:00:00Z"));
+  const now = new Date("2026-08-15T12:00:00Z");
+  const plan = parseClassPlan(
+    {
+      periods: [
+        {
+          id: "a",
+          kind: "buy",
+          startsAt: "2026-08-10T00:00:00Z",
+          endsAt: null,
+        },
+      ],
+    },
+    now
+  );
+  const next = startPeriodNow(plan, "closed", now);
   const trade = resolveClassroomTrade(
     next,
     new Date("2026-08-15T12:00:01Z")
@@ -1151,27 +1159,73 @@ run("startPeriodNow ends the live stretch", () => {
   assert.equal(trade.canCash, false);
 });
 
-run("latest overlapping stretch wins", () => {
-  const plan = parseClassPlan({
-    periods: [
-      {
-        id: "a",
-        kind: "buy",
-        startsAt: "2026-08-01T00:00:00Z",
-        endsAt: "2026-08-30T00:00:00Z",
-      },
-      {
-        id: "b",
-        kind: "fix",
-        startsAt: "2026-08-14T00:00:00Z",
-        endsAt: "2026-08-16T00:00:00Z",
-      },
-    ],
-  });
-  const trade = resolveClassroomTrade(
-    plan,
-    new Date("2026-08-15T12:00:00Z")
+run("startPeriodNow is a no-op when that rule is already on", () => {
+  const now = new Date("2026-08-15T12:00:00Z");
+  const plan = parseClassPlan(
+    {
+      periods: [
+        {
+          id: "a",
+          kind: "buy",
+          startsAt: "2026-08-10T00:00:00Z",
+          endsAt: null,
+        },
+      ],
+    },
+    now
   );
+  const next = startPeriodNow(plan, "buy", now);
+  assert.equal(next.periods.length, 1);
+  assert.equal(next.periods[0]!.id, "a");
+});
+
+run("parseClassPlan drops stretches that already ended", () => {
+  const now = new Date("2026-08-15T12:00:00Z");
+  const plan = parseClassPlan(
+    {
+      periods: [
+        {
+          id: "old",
+          kind: "buy",
+          startsAt: "2026-08-01T00:00:00Z",
+          endsAt: "2026-08-10T00:00:00Z",
+        },
+        {
+          id: "live",
+          kind: "closed",
+          startsAt: "2026-08-10T00:00:00Z",
+          endsAt: null,
+        },
+      ],
+    },
+    now
+  );
+  assert.equal(plan.periods.length, 1);
+  assert.equal(plan.periods[0]!.id, "live");
+});
+
+run("latest overlapping stretch wins", () => {
+  const now = new Date("2026-08-15T12:00:00Z");
+  const plan = parseClassPlan(
+    {
+      periods: [
+        {
+          id: "a",
+          kind: "buy",
+          startsAt: "2026-08-01T00:00:00Z",
+          endsAt: "2026-08-30T00:00:00Z",
+        },
+        {
+          id: "b",
+          kind: "fix",
+          startsAt: "2026-08-14T00:00:00Z",
+          endsAt: "2026-08-16T00:00:00Z",
+        },
+      ],
+    },
+    now
+  );
+  const trade = resolveClassroomTrade(plan, now);
   assert.equal(trade.kind, "fix");
   assert.equal(trade.canSell, true);
   assert.equal(trade.canBuy, false);
@@ -1213,6 +1267,28 @@ run("holding write classify buy sell adjust", () => {
     }),
     "adjust"
   );
+  assert.deepEqual(
+    holdingWriteActions({
+      isNew: false,
+      isDelete: false,
+      tickerChanged: true,
+    }),
+    ["buy", "sell"]
+  );
+});
+
+run("import classify treats default replace as a sell", () => {
+  const actions = classifyImportWrite({
+    cash: false,
+    replace: true,
+    rows: [{ ticker: "AAPL", shares: 5 }],
+    existing: [
+      { ticker: "AAPL", shares: 10 },
+      { ticker: "MSFT", shares: 2 },
+    ],
+  });
+  assert.ok(actions.includes("sell"));
+  assert.ok(!actions.includes("buy"));
 });
 
 if (failed > 0) {

@@ -371,11 +371,11 @@ export function CommunitiesList() {
                   />
                 </label>
                 <label className="block text-xs font-medium text-zinc-400">
-                  This week
+                  What we&apos;re learning
                   <textarea
                     value={assignment}
                     onChange={(e) => setAssignment(e.target.value)}
-                    maxLength={400}
+                    maxLength={800}
                     rows={2}
                     placeholder={DEFAULT_CLASS_ASSIGNMENT}
                     className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"

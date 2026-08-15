@@ -18,9 +18,11 @@ function untilLabel(iso: string | null): string | null {
 export function ClassTradeBanner({
   trade,
   compact,
+  teacherNote,
 }: {
   trade: ClassroomTrade;
   compact?: boolean;
+  teacherNote?: string;
 }) {
   const until = untilLabel(trade.until);
   return (
@@ -30,6 +32,9 @@ export function ClassTradeBanner({
         {trade.message}
         {until ? ` Until ${until}.` : ""}
       </p>
+      {teacherNote ? (
+        <p className="mt-1 text-xs text-zinc-500">{teacherNote}</p>
+      ) : null}
       {!compact && trade.purpose ? (
         <p className="mt-2 text-sm leading-relaxed text-zinc-200">
           {trade.purpose}

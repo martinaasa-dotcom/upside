@@ -48,14 +48,19 @@ export async function loadClassroomTrade(
 /** Null if the write is allowed. 403 response if the class is closed for it. */
 export async function denyClassroomWrite(
   supabase: SupabaseClient,
-  opts: { portfolioId: string; userId: string; action: ClassAction }
+  opts: { portfolioId: string; userId: string; action: ClassAction | ClassAction[] }
 ): Promise<NextResponse | null> {
   const loaded = await loadClassroomTrade(supabase, opts.portfolioId);
   if (!loaded) return null;
   if (await userIsCommunityAdmin(opts.userId, loaded.communityId)) return null;
-  if (allowClassAction(loaded.trade, opts.action)) return null;
-  return NextResponse.json(
-    { error: classActionError(loaded.trade) },
-    { status: 403 }
-  );
+  const actions = Array.isArray(opts.action) ? opts.action : [opts.action];
+  for (const action of actions) {
+    if (!allowClassAction(loaded.trade, action)) {
+      return NextResponse.json(
+        { error: classActionError(loaded.trade) },
+        { status: 403 }
+      );
+    }
+  }
+  return null;
 }

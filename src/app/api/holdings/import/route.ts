@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import { classifyImportWrite } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
@@ -48,24 +49,40 @@ export async function POST(req: NextRequest) {
   if (notOwner) return notOwner;
 
   const rows = Array.isArray(body.holdings) ? body.holdings : [];
-  const importNeeds = new Set<"buy" | "sell" | "cash">();
-  if (body.cash != null) importNeeds.add("cash");
-  if (rows.length) importNeeds.add("buy");
-  if (body.replace) importNeeds.add("sell");
-  for (const action of importNeeds) {
-    const blocked = await denyClassroomWrite(supabase, {
-      portfolioId,
-      userId: auth.user.id,
-      action,
-    });
-    if (blocked) return blocked;
-  }
   if (rows.length === 0 && body.cash == null) {
     return NextResponse.json(
       { error: "cash or holdings required" },
       { status: 400 }
     );
   }
+
+  const { data: existing, error: exErr } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("id, ticker, shares, sort_order")
+    .eq("portfolio_id", portfolioId);
+  if (exErr) {
+    return NextResponse.json({ error: exErr.message }, { status: 500 });
+  }
+
+  const replacing = body.replace !== false && rows.length > 0;
+  const blocked = await denyClassroomWrite(supabase, {
+    portfolioId,
+    userId: auth.user.id,
+    action: classifyImportWrite({
+      cash: body.cash != null,
+      replace: replacing,
+      rows: rows.map((row) => ({
+        ticker:
+          resolveImportTicker(String(row.ticker ?? ""), row.isin) ||
+          normalizeYahooTicker(String(row.ticker ?? "")),
+        shares: Number(row.shares),
+      })),
+      existing: ((existing ?? []) as { ticker: string; shares: number }[]).map(
+        (h) => ({ ticker: String(h.ticker), shares: Number(h.shares) })
+      ),
+    }),
+  });
+  if (blocked) return blocked;
 
   let cashUpdated = false;
   if (body.cash != null && Number.isFinite(Number(body.cash))) {
@@ -80,14 +97,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     cashUpdated = true;
-  }
-
-  const { data: existing, error: exErr } = await supabase
-    .from(PORTFELL_TABLES.holdings)
-    .select("id, ticker, sort_order")
-    .eq("portfolio_id", portfolioId);
-  if (exErr) {
-    return NextResponse.json({ error: exErr.message }, { status: 500 });
   }
 
   const byTicker = new Map(

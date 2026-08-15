@@ -44,11 +44,17 @@ export function ClassroomPlanEditor({
   const [draftKind, setDraftKind] = useState<ClassPeriodKind>("buy");
   const [draftStart, setDraftStart] = useState("");
   const [draftEnd, setDraftEnd] = useState("");
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   function addStretch() {
     const startsAt = fromLocalInput(draftStart);
     if (!startsAt) return;
     const endsAt = fromLocalInput(draftEnd);
+    if (endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) {
+      setDraftError("The end has to be after the start.");
+      return;
+    }
+    setDraftError(null);
     const next: ClassPeriod = {
       id: crypto.randomUUID(),
       kind: draftKind,
@@ -73,7 +79,7 @@ export function ClassroomPlanEditor({
     <div className="mt-5 border-t border-zinc-800 pt-4">
       <p className="text-xs font-medium text-zinc-400">What students can do</p>
       <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-        Change this whenever the lesson changes. Buy week, sit still, sell
+        Change this whenever the lesson changes. Buy week, closed, sell
         and move money, or leave it open.
       </p>
       {trade ? (
@@ -95,7 +101,7 @@ export function ClassroomPlanEditor({
           <button
             key={k.id}
             type="button"
-            disabled={busy}
+            disabled={busy || trade?.kind === k.id}
             onClick={() => onStart(k.id)}
             className={cn(
               "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
@@ -185,6 +191,9 @@ export function ClassroomPlanEditor({
             className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
           />
         </label>
+        {draftError ? (
+          <p className="text-xs text-rose-400">{draftError}</p>
+        ) : null}
         <button
           type="button"
           disabled={busy || !draftStart}

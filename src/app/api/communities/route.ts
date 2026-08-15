@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
   }
   const houseNote = classroom
-    ? String((body as { assignment?: string }).assignment ?? "").trim().slice(0, 400) ||
+    ? String((body as { assignment?: string }).assignment ?? "").trim().slice(0, 800) ||
       DEFAULT_CLASS_ASSIGNMENT
     : undefined;
 

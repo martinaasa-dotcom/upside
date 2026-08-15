@@ -170,6 +170,10 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
       .delete()
       .eq("community_id", id)
       .in("portfolio_id", classIds);
+    await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .update({ classroom_community_id: null, updated_at: new Date().toISOString() })
+      .in("id", classIds);
   }
 
   const { error } = await supabase
