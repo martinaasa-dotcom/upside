@@ -1152,6 +1152,24 @@ run("signed-in pages share one column so rooms do not jump", () => {
   );
   assert.match(shell, /max-w-\[1400px\]/);
   assert.match(shell, /w-full/);
+  assert.match(shell, /\[--dock-pad:5.25rem\]/);
+  assert.match(shell, /md:\[--dock-pad:7.75rem\]/);
+  assert.doesNotMatch(shell, /md:\[--dock-pad:5.5rem\]/);
+});
+
+run("Compound controls sit on one panel, not nested cards", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/CompoundInterestSheet.tsx"),
+    "utf8"
+  );
+  const controls = src.slice(
+    src.indexOf("Growth calculator"),
+    src.indexOf("Results & Projections")
+  );
+  assert.match(src, /var\(--dock-pad\)/);
+  assert.match(controls, /divide-y divide-white\/10/);
+  assert.doesNotMatch(controls, /Card tone="raised"/);
+  assert.doesNotMatch(controls, /text-sky-400/);
 });
 
 run("every tier's default surface uses the shared Panel shell", () => {
