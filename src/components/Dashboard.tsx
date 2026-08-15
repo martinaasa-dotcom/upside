@@ -1468,23 +1468,26 @@ export function Dashboard() {
     )
     .join("|");
 
-  // Quotes for every ticker; options when on a sheet OR Lab (CC calendar needs premiums)
+  // Quotes for every ticker; options when on a sheet OR Lab (CC calendar needs premiums).
+  // Silent: this effect re-runs on tab changes, so a visible Refresh spin
+  // here made the header look busy every time you landed on a room.
   useEffect(() => {
     if (holdings.length === 0) return;
     if (isLab) {
       // Full options scan so Lab CC calendar / income isn't stuck at $0
-      void refreshMarkets(allTickers, holdings);
+      void refreshMarkets(allTickers, holdings, undefined, { silent: true });
       return;
     }
     if (isMetaTab) {
       void refreshMarkets(allTickers, holdings, undefined, {
         quotesOnly: true,
+        silent: true,
       });
       return;
     }
     if (!activePortfolio) return;
     const rows = holdings.filter((h) => h.portfolio_id === activePortfolio.id);
-    void refreshMarkets(allTickers, rows);
+    void refreshMarkets(allTickers, rows, undefined, { silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activePortfolio?.id,
