@@ -44,7 +44,7 @@ export function CostBasisModal({
             <h3 className="text-base font-semibold text-foreground">
               What you paid
             </h3>
-            <p className="text-xs text-muted">
+            <p className="text-sm text-muted">
               The import used today&apos;s prices as what you paid. Type your
               real average buy price in dollars, then apply, so the gain and
               loss numbers are right.
@@ -63,7 +63,7 @@ export function CostBasisModal({
           {rows.map((r) => (
             <label
               key={r.ticker}
-              className="grid grid-cols-[1fr_7rem] items-center gap-2 text-xs text-muted"
+              className="grid grid-cols-[1fr_7rem] items-center gap-2 text-sm text-muted"
             >
               <span>
                 <span className="font-semibold text-foreground">{cashtag(r.ticker)}</span>

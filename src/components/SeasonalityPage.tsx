@@ -59,10 +59,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+    <section className="rounded-2xl border border-border bg-card/80 p-6 sm:p-8">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {subtitle ? (
-        <p className="mt-1 text-xs text-muted">{subtitle}</p>
+        <p className="mt-1.5 text-sm text-muted">{subtitle}</p>
       ) : null}
       <div className="mt-4">{children}</div>
     </section>
@@ -382,7 +382,7 @@ function DayOfMonthChart({
           );
         })}
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-sm text-muted">
         Average session return on that calendar day in {monthLabel}. Click a
         day for the years behind it.
       </p>
@@ -401,11 +401,11 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-muted">
+        <p className="text-sm font-medium text-muted">
           {stanceLabel(s.stance)} · this month
         </p>
-        <p className="mt-1 text-base font-semibold text-foreground">{s.headline}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted">{s.detail}</p>
+        <p className="mt-1.5 text-base font-semibold text-foreground">{s.headline}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.detail}</p>
       </div>
       {typeof s.figurePct === "number" ? (
         <div className="shrink-0 text-right">
@@ -418,7 +418,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
             {s.figurePct >= 0 ? "+" : ""}
             {s.figurePct.toFixed(2)}%
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-sm text-muted">
             {s.winRate}% win · n={s.samples}
           </p>
         </div>
@@ -547,20 +547,20 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-8">
       <div className="rounded-xl border border-border bg-card px-4 py-3.5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             {model ? (
               <>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-md border border-border bg-hover px-2 py-0.5 text-xs font-semibold text-foreground">
+                  <span className="rounded-md border border-border bg-hover px-2.5 py-1 text-sm font-semibold text-foreground">
                     {model.asOfYear}
                   </span>
-                  <span className="rounded-md border border-border bg-hover px-2 py-0.5 text-xs font-medium text-foreground">
+                  <span className="rounded-md border border-border bg-hover px-2.5 py-1 text-sm font-medium text-foreground">
                     {model.currentCycleLabel} year
                   </span>
-                  <span className="rounded-md border border-border bg-hover px-2 py-0.5 text-xs font-medium text-foreground">
+                  <span className="rounded-md border border-border bg-hover px-2.5 py-1 text-sm font-medium text-foreground">
                     {cashtag(model.ticker)} since {model.from.slice(0, 4)}
                   </span>
                 </div>
@@ -580,7 +580,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <label className="text-xs text-muted">
+            <label className="text-sm text-muted">
               Benchmark
               <select
                 value={ticker}
@@ -598,7 +598,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               type="button"
               onClick={() => void load(ticker, true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground/80 hover:border-brand disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-brand disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refresh
@@ -673,7 +673,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <button
                 type="button"
                 onClick={() => shiftViewMonth(-1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted hover:border-brand hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 Prev
@@ -684,12 +684,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 </p>
                 {viewMonth === marketToday.month &&
                 selectedDay === marketToday.day ? (
-                  <p className="text-xs text-muted">Today</p>
+                  <p className="text-sm text-muted">Today</p>
                 ) : (
                   <button
                     type="button"
                     onClick={goToToday}
-                    className="text-xs text-muted underline-offset-2 hover:text-foreground hover:underline"
+                    className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
                   >
                     Jump to today
                   </button>
@@ -698,7 +698,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <button
                 type="button"
                 onClick={() => shiftViewMonth(1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted hover:border-brand hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
               >
                 Next
                 <ChevronRight className="h-3.5 w-3.5" />

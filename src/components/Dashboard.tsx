@@ -264,7 +264,7 @@ function PricesAgeStatus({
 
   return (
     <span
-      className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted"
+      className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted"
       title={
         source === "supabase"
           ? "Shared live book"
@@ -2862,7 +2862,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="btn-primary h-8 min-h-8 rounded-md px-2.5 text-xs"
+                className="btn-primary h-9 min-h-9 rounded-md px-3"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Add holding</span>
@@ -2873,7 +2873,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setInviteOpen(true)}
-                className="hidden h-8 items-center gap-1 rounded-md border border-border px-2.5 text-xs font-medium text-foreground/80 hover:border-brand hover:text-foreground md:inline-flex"
+                className="hidden h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground/80 hover:border-brand hover:text-foreground md:inline-flex"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Invite</span>
@@ -2912,7 +2912,7 @@ export function Dashboard() {
                 type="button"
                 onClick={() => setActiveId(p.id)}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-xs",
+                  "shrink-0 rounded-full px-3 py-1.5 text-sm",
                   p.id === activeId
                     ? "bg-select text-select-ink"
                     : "bg-hover text-muted"
@@ -2926,7 +2926,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-select px-3 py-1.5 text-xs font-medium text-select-ink"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-select px-3 py-1.5 text-sm font-medium text-select-ink"
           >
             <Plus className="h-3.5 w-3.5" />
             Add
@@ -2948,7 +2948,7 @@ export function Dashboard() {
             <button
               type="button"
               onClick={() => void loadPortfolios()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-1.5 text-xs font-medium text-loss hover:bg-loss/15"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-1.5 text-sm font-medium text-loss hover:bg-loss/15"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Retry

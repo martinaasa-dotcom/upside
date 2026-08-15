@@ -25,7 +25,7 @@ export function StaleQuotesBanner({
   return (
     <div
       className={cn(
-        "border-b py-2 text-xs",
+        "border-b py-2 text-sm",
         stale
           ? "border-caution/40 bg-caution/10 text-caution"
           : "border-border bg-well/80 text-muted"

@@ -109,12 +109,12 @@ export function ShareSheets({
         <h2 className="text-sm font-medium text-foreground">
           Sheets you share here
         </h2>
-        <p className="mt-1 text-xs leading-relaxed text-muted">
+        <p className="mt-1 text-sm leading-relaxed text-muted">
           Off means this circle cannot see that book. Today&apos;s prices only.
           Cost stays on your sheet.
         </p>
       </div>
-      {error && <p className="text-xs text-loss">{error}</p>}
+      {error && <p className="text-sm text-loss">{error}</p>}
       <ul className="space-y-2">
         {(sheets ?? []).map((s) => (
           <li
@@ -128,7 +128,7 @@ export function ShareSheets({
               type="button"
               disabled={busyId === s.id}
               onClick={() => void toggle(s)}
-              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
+              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
             >
               {busyId === s.id
                 ? "Saving …"

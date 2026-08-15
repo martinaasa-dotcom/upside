@@ -142,7 +142,7 @@ export function SignInGate({ children }: Props) {
 
             <div className="signin-rise-2 mt-10 max-w-md space-y-4">
               {invite && (
-                <p className="text-xs font-medium text-muted">
+                <p className="text-sm font-medium text-muted">
                   Invite
                 </p>
               )}
@@ -177,12 +177,12 @@ export function SignInGate({ children }: Props) {
             </button>
 
             {err && (
-              <p className="mt-4 text-xs text-loss" role="alert">
+              <p className="mt-4 text-sm text-loss" role="alert">
                 {err}
               </p>
             )}
 
-            <p className="signin-rise-4 mt-6 max-w-sm text-xs leading-relaxed text-muted">
+            <p className="signin-rise-4 mt-6 max-w-sm text-sm leading-relaxed text-muted">
               By continuing you agree to the{" "}
               <Link href="/terms" className="underline hover:text-muted">
                 Terms
@@ -216,7 +216,7 @@ function BookStill() {
         <MicroLabel>
           Today&apos;s briefing
         </MicroLabel>
-        <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">
+        <span className="rounded-full border border-border px-2 py-0.5 text-sm text-muted">
           Sample
         </span>
       </div>
@@ -278,7 +278,7 @@ function BookStill() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-base font-semibold text-foreground">$RKLB</span>
-              <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-xs font-medium text-gain">
+              <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-sm font-medium text-gain">
                 Up ≥5%
               </span>
             </div>

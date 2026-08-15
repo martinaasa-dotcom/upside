@@ -325,13 +325,13 @@ function ChatMarkdown({ children }: { children: string }) {
             const block = Boolean(className);
             if (block) {
               return (
-                <code className="block w-full overflow-x-auto rounded-md bg-hover px-2 py-1.5 font-mono text-xs text-foreground">
+                <code className="block w-full overflow-x-auto rounded-md bg-hover px-2 py-1.5 font-mono text-sm text-foreground">
                   {c}
                 </code>
               );
             }
             return (
-              <code className="rounded bg-hover px-1 py-0.5 font-mono text-xs text-foreground/80">
+              <code className="rounded bg-hover px-1 py-0.5 font-mono text-sm text-foreground/80">
                 {c}
               </code>
             );
@@ -343,13 +343,13 @@ function ChatMarkdown({ children }: { children: string }) {
           ),
           table: ({ children: c }) => (
             <div className="mb-3 w-full min-w-0 overflow-x-auto last:mb-0">
-              <table className="w-full border-collapse text-left text-xs">
+              <table className="w-full border-collapse text-left text-sm">
                 {c}
               </table>
             </div>
           ),
           thead: ({ children: c }) => (
-            <thead className="border-b border-border text-xs text-muted">
+            <thead className="border-b border-border text-sm text-muted">
               {c}
             </thead>
           ),
@@ -831,7 +831,7 @@ export function CcAdvisorChat({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {silentPhase === "sending"
                   ? "Margus is reading your screenshot …"
                   : silentSummary?.kind === "error"
@@ -841,7 +841,7 @@ export function CcAdvisorChat({
                       : "Margus"}
               </p>
               {silentPhase === "sending" ? (
-                <p className="mt-0.5 text-xs text-muted">
+                <p className="mt-0.5 text-sm text-muted">
                   Usually takes a few seconds.
                 </p>
               ) : (
@@ -849,7 +849,7 @@ export function CcAdvisorChat({
                   {silentSummary?.lines.map((line, i) => (
                     <p
                       key={i}
-                      className={`text-xs leading-relaxed ${
+                      className={`text-sm leading-relaxed ${
                         silentSummary.kind === "error"
                           ? "text-loss"
                           : silentSummary.kind === "empty"
@@ -867,7 +867,7 @@ export function CcAdvisorChat({
                 (silentSummary?.kind === "error" ||
                   silentSummary?.kind === "empty") && (
                   <>
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
                       If the screenshot didn&apos;t read cleanly, upload a CSV.
                       Most brokers export one.
                     </p>
@@ -879,14 +879,14 @@ export function CcAdvisorChat({
                         setSilentSummary(null);
                         onSuggestCsv();
                       }}
-                      className="mt-2 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:border-brand/50"
+                      className="mt-2 rounded-md border border-border px-2 py-1 text-sm font-medium text-foreground hover:border-brand/50"
                     >
                       Upload a CSV instead
                     </button>
                   </>
                 )}
               {silentPhase === "result" && (
-                <p className="mt-1 text-xs text-muted">
+                <p className="mt-1 text-sm text-muted">
                   Tap to open chat
                 </p>
               )}
@@ -931,7 +931,7 @@ export function CcAdvisorChat({
               <h2 className="text-sm font-semibold text-foreground">
                 Assistant Margus
               </h2>
-              <p className="truncate text-xs text-muted">
+              <p className="truncate text-sm text-muted">
                 {context.adviseOnly
                   ? "Advise-only · open a sheet to apply changes"
                   : `Chat for ${context.portfolioName}`}
@@ -973,7 +973,7 @@ export function CcAdvisorChat({
                   {rulesOpen && (
                     <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-well p-3 shadow-2xl shadow-black/50">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold text-muted">
+                        <p className="text-sm font-semibold text-muted">
                           Strategy rules
                         </p>
                         <button
@@ -991,19 +991,19 @@ export function CcAdvisorChat({
                             key={r.title}
                             className="border-b border-border pb-2.5 last:border-0 last:pb-0"
                           >
-                            <p className="text-xs font-medium text-muted">
+                            <p className="text-sm font-medium text-muted">
                               {r.title}
                             </p>
                             <p className="mt-0.5 text-sm font-semibold text-brand">
                               {r.rule}
                             </p>
-                            <p className="mt-0.5 text-xs leading-relaxed text-muted">
+                            <p className="mt-0.5 text-sm leading-relaxed text-muted">
                               {r.detail}
                             </p>
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-2.5 border-t border-border pt-2.5 text-xs leading-relaxed text-muted">
+                      <p className="mt-2.5 border-t border-border pt-2.5 text-sm leading-relaxed text-muted">
                         {ADVICE_DISCLAIMER_SHORT}
                       </p>
                     </div>
@@ -1021,7 +1021,7 @@ export function CcAdvisorChat({
             </button>
           </header>
 
-          <p className="shrink-0 border-b border-border px-3 py-1.5 text-center text-xs leading-snug text-muted">
+          <p className="shrink-0 border-b border-border px-3 py-1.5 text-center text-sm leading-snug text-muted">
             {ADVICE_DISCLAIMER_SHORT}
           </p>
 
@@ -1031,7 +1031,7 @@ export function CcAdvisorChat({
           >
             {messages.length === 0 && (
               <div className="space-y-3 rounded-lg border border-dashed border-border bg-well/30 p-3">
-                <p className="text-xs leading-relaxed text-muted">
+                <p className="text-sm leading-relaxed text-muted">
                   {context.hideOptions
                     ? "I can read holdings and update shares, buy price, cash, or add/remove tickers."
                     : "I can read holdings and covered calls, and update shares, buy price, cash, Call %, or add/remove tickers. Open the book icon for the strategy rules."}
@@ -1043,7 +1043,7 @@ export function CcAdvisorChat({
                       type="button"
                       disabled={busy}
                       onClick={() => sendMessage({ text: s })}
-                      className="rounded-full border border-border px-2.5 py-1 text-xs text-foreground/80 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
+                      className="rounded-full border border-border px-2.5 py-1 text-sm text-foreground/80 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
                     >
                       {s}
                     </button>
@@ -1099,8 +1099,8 @@ export function CcAdvisorChat({
                   <p
                     className={
                       message.role === "assistant"
-                        ? "mb-1 text-xs font-medium text-muted"
-                        : "mb-1 text-xs font-medium text-muted"
+                        ? "mb-1 text-sm font-medium text-muted"
+                        : "mb-1 text-sm font-medium text-muted"
                     }
                   >
                     {message.role === "user" ? "You" : "Margus"}
@@ -1128,12 +1128,12 @@ export function CcAdvisorChat({
                     </div>
                   ) : null}
                   {toolPending && !text && toolNotes.length === 0 ? (
-                    <p className="text-xs text-muted">Running analysis …</p>
+                    <p className="text-sm text-muted">Running analysis …</p>
                   ) : null}
                   {toolNotes.map((note, i) => (
                     <p
                       key={i}
-                      className="mt-1.5 whitespace-pre-wrap break-words text-xs font-medium text-brand"
+                      className="mt-1.5 whitespace-pre-wrap break-words text-sm font-medium text-brand"
                     >
                       {note}
                     </p>
@@ -1143,13 +1143,13 @@ export function CcAdvisorChat({
             })}
 
             {busy && (
-              <div className="flex items-center gap-2 text-xs text-muted">
+              <div className="flex items-center gap-2 text-sm text-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Thinking …
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-xs text-muted hover:border-loss/40 hover:text-loss"
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-sm text-muted hover:border-loss/40 hover:text-loss"
                 >
                   <Square className="h-2.5 w-2.5 fill-current" />
                   Stop
@@ -1158,15 +1158,15 @@ export function CcAdvisorChat({
             )}
 
             {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
-              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-xs text-muted">
+              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-sm text-muted">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : error && !isQuietChatFailure(error.message) ? (
-              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-xs text-muted">
+              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-sm text-muted">
                 {describeChatUiError(error.message)}
               </div>
             ) : lastIsEmptyAssistant && !error ? (
-              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-xs text-muted">
+              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-sm text-muted">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : null}

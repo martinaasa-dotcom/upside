@@ -34,7 +34,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       aria-label={label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition md:h-auto md:min-h-0 md:min-w-0 md:px-2.5 md:py-1.5 md:justify-start",
+        "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-semibold transition md:h-auto md:min-h-0 md:min-w-0 md:px-3 md:py-1.5 md:justify-start",
         active
           ? "bg-select text-select-ink"
           : "text-muted hover:text-brand-bright"

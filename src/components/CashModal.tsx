@@ -61,7 +61,7 @@ export function CashModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">Edit cash</h3>
-            <p className="text-xs text-muted">{portfolioName}</p>
+            <p className="text-sm text-muted">{portfolioName}</p>
           </div>
           <button
             type="button"
@@ -73,7 +73,7 @@ export function CashModal({
           </button>
         </div>
 
-        <label className="grid gap-1 text-xs text-muted">
+        <label className="grid gap-1 text-sm text-muted">
           Cash balance (can be negative)
           <input
             autoFocus

@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted hover:border-brand hover:text-foreground"
+            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
           >
             Back
           </Link>
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
       <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
           <h1 className="text-lg font-bold text-foreground">Privacy Policy</h1>
-          <p className="mt-1 text-xs text-muted">Last updated {LAST_UPDATED}</p>
+          <p className="mt-1 text-sm text-muted">Last updated {LAST_UPDATED}</p>
         </div>
 
         <p>
@@ -174,7 +174,7 @@ export default function PrivacyPage() {
           .
         </Section>
 
-        <p className="pt-4 text-xs text-muted">
+        <p className="pt-4 text-sm text-muted">
           See also our{" "}
           <Link href="/terms" className="underline hover:text-foreground">
             Terms of service

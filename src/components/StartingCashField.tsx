@@ -22,7 +22,7 @@ export function StartingCashField({
 
   return (
     <div>
-      <p className="text-xs font-medium text-muted">Starting cash</p>
+      <p className="text-sm font-medium text-muted">Starting cash</p>
       <p className="mt-1 text-sm leading-relaxed text-muted">
         Every student gets this on a paper sheet. Same number for the whole
         class.
@@ -46,7 +46,7 @@ export function StartingCashField({
         ))}
       </div>
       <label className="mt-4 block">
-        <span className="text-xs font-medium text-muted">Or type another amount</span>
+        <span className="text-sm font-medium text-muted">Or type another amount</span>
         <input
           inputMode="numeric"
           autoComplete="off"

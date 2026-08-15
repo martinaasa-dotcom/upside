@@ -76,7 +76,7 @@ export function RenameSheetModal({
           </button>
         </div>
 
-        <label className="grid gap-1 text-xs text-muted">
+        <label className="grid gap-1 text-sm text-muted">
           {label}
           <input
             autoFocus

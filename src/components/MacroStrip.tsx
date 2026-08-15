@@ -158,7 +158,7 @@ export function MacroStrip() {
   }>;
 
   return (
-    <div className="flex min-w-0 items-center justify-end gap-2 text-xs text-muted">
+    <div className="flex min-w-0 items-center justify-end gap-3 text-sm text-muted">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

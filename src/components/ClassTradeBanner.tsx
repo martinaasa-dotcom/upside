@@ -28,12 +28,12 @@ export function ClassTradeBanner({
   return (
     <div className="rounded-2xl border border-border bg-card/80 px-4 py-3">
       <p className="text-sm font-semibold text-foreground">{trade.label}</p>
-      <p className="mt-0.5 text-xs leading-relaxed text-muted">
+      <p className="mt-0.5 text-sm leading-relaxed text-muted">
         {trade.message}
         {until ? ` Until ${until}.` : ""}
       </p>
       {teacherNote ? (
-        <p className="mt-1 text-xs text-muted">{teacherNote}</p>
+        <p className="mt-1 text-sm text-muted">{teacherNote}</p>
       ) : null}
       {!compact && trade.purpose ? (
         <p className="mt-2 text-sm leading-relaxed text-foreground">

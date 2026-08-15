@@ -93,14 +93,14 @@ function TickerStoryCard({
             {cashtag(row.ticker)}
           </span>
           {!isHolding && (
-            <span className="rounded-full border border-border px-1.5 py-0.5 text-xs text-muted">
+            <span className="rounded-full border border-border px-2 py-0.5 text-sm text-muted">
               watching
             </span>
           )}
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
+            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold",
             TONE_BADGE[story.tone]
           )}
         >
@@ -122,13 +122,13 @@ function TickerStoryCard({
             sub={s.detail}
             explain={s.help}
             valueClassName={TONE_TEXT[s.tone]}
-            subClassName="text-xs leading-relaxed text-muted"
+            subClassName="text-sm leading-relaxed text-muted"
           />
         ))}
       </div>
 
       {row.divergence && (
-        <p className="mt-3 text-xs leading-relaxed text-muted">
+        <p className="mt-4 text-sm leading-relaxed text-muted">
           Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
           {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
           other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
@@ -321,7 +321,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             {watchlist.map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-well/60 px-2 py-1 text-xs text-foreground"
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-well/60 px-2.5 py-1.5 text-sm text-foreground"
               >
                 {cashtag(t)}
                 <button
@@ -336,7 +336,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             ))}
           </div>
           {addError && (
-            <p className="mt-1.5 text-xs text-loss">{addError}</p>
+            <p className="mt-2 text-sm text-loss">{addError}</p>
           )}
         </div>
       </Panel>
@@ -417,7 +417,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   );
                 })}
               </div>
-              <p className="mt-3 text-right text-xs text-muted">
+              <p className="mt-4 text-right text-sm text-muted">
                 vs S&amp;P, last 13 weeks
               </p>
             </Panel>

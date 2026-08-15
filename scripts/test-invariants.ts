@@ -983,12 +983,13 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /bg-paper/
   );
   assert.match(panel, /default: "border-border bg-card"/);
-  assert.match(panel, /h-full rounded-xl border border-border bg-raised px-4 py-3.5/);
-  assert.match(panel, /text-xs font-medium text-muted/);
+  assert.match(panel, /h-full rounded-xl border border-border bg-raised px-5 py-4/);
+  assert.match(panel, /text-sm font-medium text-muted/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /text-xs font-medium text-muted/
+    /text-sm font-medium text-muted/
   );
+  assert.match(panel, /padded && "p-6 sm:p-10"/);
   assert.match(panel, /bg-select text-select-ink/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
@@ -1203,12 +1204,14 @@ run("signed-in pages share one column so rooms do not jump", () => {
   );
   assert.match(shell, /max-w-\[1400px\]/);
   assert.match(shell, /w-full/);
-  assert.match(shell, /\[--dock-pad:8rem\]/);
-  assert.match(shell, /md:\[--dock-pad:8.5rem\]/);
-  assert.match(shell, /sm:pt-8/);
+  assert.match(shell, /\[--dock-pad:8.75rem\]/);
+  assert.match(shell, /md:\[--dock-pad:9.5rem\]/);
+  assert.match(shell, /sm:pt-10/);
   assert.doesNotMatch(shell, /sm:py-8/);
+  assert.doesNotMatch(shell, /sm:py-10/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:5.5rem\]/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:7.75rem\]/);
+  assert.doesNotMatch(shell, /md:\[--dock-pad:8.5rem\]/);
 });
 
 run("Compound controls sit on one panel, not nested cards", () => {

@@ -121,7 +121,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
             </li>
           ))}
         </ul>
-        <p className="border-t border-border px-3 py-1.5 text-xs text-muted">
+        <p className="border-t border-border px-3 py-2 text-sm text-muted">
           ↑↓ navigate · Enter run · Esc close · ⌘K toggle
         </p>
       </div>

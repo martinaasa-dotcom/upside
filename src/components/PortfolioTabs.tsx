@@ -194,11 +194,11 @@ export function PortfolioTabs({
 
   return (
     <nav className={cn("sticky bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
-      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-1.5 py-1.5 sm:flex-row sm:items-end sm:gap-4 sm:py-2")}>
+      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-6 sm:py-2.5")}>
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="mb-1 hidden text-xs font-medium text-muted sm:block">
+            <p className="mb-1.5 hidden text-sm font-medium text-muted sm:block">
               In your book
             </p>
             <div
@@ -234,7 +234,7 @@ export function PortfolioTabs({
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />
-                    <span className="max-w-full text-xs leading-none sm:hidden">
+                    <span className="max-w-full text-sm leading-none sm:hidden">
                       {shortLabel}
                     </span>
                     <span className="hidden whitespace-nowrap text-sm sm:inline">
@@ -249,7 +249,7 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 hidden text-xs font-medium text-muted sm:block">
+          <p className="mb-1.5 hidden text-sm font-medium text-muted sm:block">
             Sheets
           </p>
           <div
@@ -342,7 +342,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-xs text-muted hover:text-foreground/80"
+                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted hover:text-foreground/80"
                 aria-label="Add sheet"
               >
                 <Plus className="h-3.5 w-3.5" />

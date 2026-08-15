@@ -183,7 +183,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-well/40 px-4 py-3">
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
-        <p className="mt-0.5 text-xs leading-relaxed text-muted">
+        <p className="mt-1 text-sm leading-relaxed text-muted">
           Margus&apos;s year-by-year path for this sheet. Same idea as Pulse,
           sitting under the table.
         </p>
@@ -191,7 +191,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
       <button
         type="button"
         onClick={onShow}
-        className="shrink-0 rounded-lg bg-mustard px-3 py-1.5 text-xs font-semibold text-select-ink hover:bg-brand-bright"
+        className="shrink-0 rounded-lg bg-mustard px-3 py-1.5 text-sm font-semibold text-select-ink hover:bg-brand-bright"
       >
         Show
       </button>
@@ -917,7 +917,7 @@ export function ForecastPanel({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
-      <header className="border-b border-border p-5 sm:p-8">
+      <header className="border-b border-border p-6 sm:p-10">
         <PanelHeader
           title="Forecast"
           subtitle="A yearly price for each holding, to 2030."
@@ -927,7 +927,7 @@ export function ForecastPanel({
                 <button
                   type="button"
                   onClick={onClearOverrides}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted transition hover:border-brand hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition hover:border-brand hover:text-foreground"
                   title="Throw away every price you or Margus changed on this sheet"
                 >
                   <RotateCcw className="h-3 w-3" aria-hidden />
@@ -938,7 +938,7 @@ export function ForecastPanel({
                 type="button"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-hover px-2.5 py-1.5 text-xs font-semibold text-foreground transition hover:border-brand hover:bg-select hover:text-select-ink disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-hover px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-brand hover:bg-select hover:text-select-ink disabled:opacity-40"
                 title="Work the whole forecast out again from scratch"
               >
                 {busy ? (
@@ -951,19 +951,19 @@ export function ForecastPanel({
             </>
           }
         />
-        <p className="mt-3 text-xs leading-relaxed text-muted">
+        <p className="mt-4 text-sm leading-relaxed text-muted">
           {FORECAST_DISCLAIMER}
         </p>
         {statusHint && (
-          <p className="mt-1 text-xs text-muted">{statusHint}</p>
+          <p className="mt-2 text-sm text-muted">{statusHint}</p>
         )}
         {busy && (
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-2 text-sm text-muted">
             Margus is updating the forecast …
           </p>
         )}
         {error && (
-          <p className="mt-1 text-xs text-loss">{error}</p>
+          <p className="mt-2 text-sm text-loss">{error}</p>
         )}
         {model.rows.length > 0 && (
           <SheetPath
@@ -992,12 +992,12 @@ export function ForecastPanel({
                     <p className="text-base font-semibold text-foreground">
                       {cashtag(r.ticker)}
                     </p>
-                    <p className="text-xs text-muted">
+                    <p className="text-sm text-muted">
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · Margus is working on it"}
                     </p>
                     {mustBeTrue(r.ticker) ? (
-                      <p className="mt-1 text-xs leading-snug text-muted">
+                      <p className="mt-1.5 text-sm leading-snug text-muted">
                         {mustBeTrue(r.ticker)}
                       </p>
                     ) : null}
@@ -1169,13 +1169,13 @@ export function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-border p-4 sm:p-6">
+      <div className="border-t border-border p-6 sm:p-10">
         <div>
           <h3 className="text-base font-semibold text-foreground">
             What Margus makes of it
           </h3>
           {plan?.generatedAt && (
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1.5 text-sm text-muted">
               Worked out {formatGeneratedAt(plan.generatedAt)}
               {appliedFlash ? " · prices updated" : ""}
             </p>
@@ -1252,7 +1252,7 @@ export function ForecastPanel({
             )}
 
             {soldTickersInPlan.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-hover px-3 py-2.5 text-xs text-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-hover px-4 py-3 text-sm text-foreground">
                 <span>
                   This still mentions {soldTickersInPlan.join(", ")}, which you
                   no longer hold here.
@@ -1294,7 +1294,7 @@ export function ForecastPanel({
                   <p className="text-sm font-semibold text-foreground">
                     {activePeriod.theme}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted">
+                  <p className="mt-1.5 text-sm text-muted">
                     {activePeriod.label}
                   </p>
                   <div className="mt-4 grid gap-6 sm:grid-cols-2">

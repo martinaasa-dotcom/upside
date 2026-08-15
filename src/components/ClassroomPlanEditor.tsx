@@ -76,9 +76,9 @@ export function ClassroomPlanEditor({
   }
 
   return (
-    <div className="mt-5 border-t border-border pt-4">
-      <p className="text-xs font-medium text-muted">What students can do</p>
-      <p className="mt-1 text-xs leading-relaxed text-muted">
+    <div className="mt-8 border-t border-border pt-6">
+      <p className="text-sm font-medium text-muted">What students can do</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
         Change this whenever the lesson changes. Buy week, closed, sell
         and move money, or leave it open.
       </p>
@@ -96,7 +96,7 @@ export function ClassroomPlanEditor({
             : ""}
         </p>
       ) : null}
-      <div className="mt-2 grid grid-cols-2 gap-1.5">
+      <div className="mt-4 grid grid-cols-2 gap-2.5">
         {KINDS.map((k) => (
           <button
             key={k.id}
@@ -104,7 +104,7 @@ export function ClassroomPlanEditor({
             disabled={busy || trade?.kind === k.id}
             onClick={() => onStart(k.id)}
             className={cn(
-              "rounded-lg border px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
+              "rounded-lg border px-3 py-2.5 text-sm font-medium transition disabled:opacity-50",
               trade?.kind === k.id
                 ? "border-brand/50 bg-brand/20 text-brand-bright"
                 : "border-border text-foreground/80 hover:border-brand-mid hover:text-foreground"
@@ -115,19 +115,19 @@ export function ClassroomPlanEditor({
         ))}
       </div>
 
-      <p className="mt-4 text-xs font-medium text-muted">Schedule</p>
+      <p className="mt-8 text-sm font-medium text-muted">Schedule</p>
       {scheduled.length === 0 ? (
-        <p className="mt-1 text-xs text-muted">
+        <p className="mt-1 text-sm text-muted">
           Nothing dated. Use the buttons above, or add a stretch with dates.
         </p>
       ) : (
-        <ul className="mt-2 space-y-1.5">
+        <ul className="mt-3 space-y-2.5">
           {scheduled.map((p) => (
             <li
               key={p.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
             >
-              <span className="min-w-0 text-xs text-foreground/80">
+              <span className="min-w-0 text-sm text-foreground/80">
                 {classPeriodLabel(p.kind)}
                 <span className="block text-muted">
                   {new Date(p.startsAt).toLocaleString(undefined, {
@@ -160,12 +160,12 @@ export function ClassroomPlanEditor({
         </ul>
       )}
 
-      <div className="mt-3 space-y-2 rounded-lg border border-border p-2.5">
-        <p className="text-xs font-medium text-muted">Add a stretch</p>
+      <div className="mt-6 space-y-3 rounded-lg border border-border p-4">
+        <p className="text-sm font-medium text-muted">Add a stretch</p>
         <select
           value={draftKind}
           onChange={(e) => setDraftKind(e.target.value as ClassPeriodKind)}
-          className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground"
+          className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
         >
           {KINDS.map((k) => (
             <option key={k.id} value={k.id}>
@@ -173,32 +173,32 @@ export function ClassroomPlanEditor({
             </option>
           ))}
         </select>
-        <label className="block text-xs text-muted">
+        <label className="block text-sm text-muted">
           Starts
           <input
             type="datetime-local"
             value={draftStart}
             onChange={(e) => setDraftStart(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground"
+            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
           />
         </label>
-        <label className="block text-xs text-muted">
+        <label className="block text-sm text-muted">
           Ends (optional)
           <input
             type="datetime-local"
             value={draftEnd}
             onChange={(e) => setDraftEnd(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground"
+            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
           />
         </label>
         {draftError ? (
-          <p className="text-xs text-loss">{draftError}</p>
+          <p className="text-sm text-loss">{draftError}</p>
         ) : null}
         <button
           type="button"
           disabled={busy || !draftStart}
           onClick={addStretch}
-          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:text-foreground disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-foreground hover:text-foreground disabled:opacity-40"
         >
           <Plus className="h-3.5 w-3.5" />
           Add stretch

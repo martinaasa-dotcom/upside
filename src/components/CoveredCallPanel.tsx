@@ -63,7 +63,7 @@ function InlineTargetCall({
         }}
         className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
       />
-      <span className="text-xs text-muted">%</span>
+      <span className="text-sm text-muted">%</span>
     </div>
   );
 }
@@ -86,7 +86,7 @@ function InlineStockTarget({
 
   return (
     <div className="inline-flex items-center justify-center gap-0.5">
-      <span className="text-xs text-muted">$</span>
+      <span className="text-sm text-muted">$</span>
       <input
         type="text"
         inputMode="decimal"

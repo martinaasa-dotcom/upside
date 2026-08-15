@@ -148,7 +148,7 @@ export function DailyDuelCard({
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
-            <p className="mt-0.5 text-xs text-muted">
+            <p className="mt-0.5 text-sm text-muted">
               {communityId
                 ? "The circle's pick. Who finishes the US session higher."
                 : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
@@ -243,7 +243,7 @@ export function DailyDuelCard({
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
-            <p className="mt-0.5 text-xs text-muted">
+            <p className="mt-0.5 text-sm text-muted">
               {communityId
                 ? "The circle's pick. Who finishes the US session higher."
                 : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
@@ -251,7 +251,7 @@ export function DailyDuelCard({
           </div>
         </div>
         {communityId && (community?.pickCount ?? 0) > 0 ? (
-          <p className="shrink-0 text-xs text-muted">
+          <p className="shrink-0 text-sm text-muted">
             <span className="font-semibold tabular-nums text-foreground">
               {community?.pickCount ?? 0}
             </span>
@@ -261,7 +261,7 @@ export function DailyDuelCard({
           !communityId &&
           stats.totalPlayed > 0 && (
             <div className="rounded-xl border border-border bg-well/70 px-3 py-2 text-right">
-              <p className="text-xs text-muted">
+              <p className="text-sm text-muted">
                 Record
               </p>
               <p className="text-sm font-semibold tabular-nums text-foreground">
@@ -271,7 +271,7 @@ export function DailyDuelCard({
                 </span>
               </p>
               {stats.currentStreak >= 2 && (
-                <p className="text-xs text-caution">
+                <p className="text-sm text-caution">
                   {stats.currentStreak} in a row
                 </p>
               )}
@@ -328,14 +328,14 @@ export function DailyDuelCard({
                 {cashtag(ticker)}
               </p>
               {isPick && (
-                <p className="mt-1 text-xs font-medium text-brand-bright">
+                <p className="mt-1 text-sm font-medium text-brand-bright">
                   Your pick
                 </p>
               )}
               {communityId &&
                 community?.settled &&
                 (community?.counts[side] ?? 0) > 0 && (
-                <p className="mt-1 text-xs text-muted">
+                <p className="mt-1 text-sm text-muted">
                   {community.counts[side]} vote
                   {community.counts[side] === 1 ? "" : "s"}
                 </p>

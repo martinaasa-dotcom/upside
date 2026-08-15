@@ -232,7 +232,7 @@ export function WatchlistStrip({
                 ? `watchlist-suggest-${suggestions[active]!.symbol}`
                 : undefined
             }
-            className="w-24 rounded-md border border-border bg-well px-2 py-1 text-xs text-foreground outline-none placeholder:text-muted focus:border-brand"
+            className="w-28 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
           />
           <button
             type="submit"
@@ -267,7 +267,7 @@ export function WatchlistStrip({
                       {cashtag(row.symbol)}
                     </span>
                     {row.name && (
-                      <span className="truncate text-xs text-muted">
+                      <span className="truncate text-sm text-muted">
                         {row.name}
                       </span>
                     )}
@@ -279,17 +279,17 @@ export function WatchlistStrip({
         </form>
       </div>
       {names.length === 0 ? (
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-3 text-sm text-muted">
           Names you don&apos;t own. Add one to see the price, the recent
           range, and whether now looks quiet or rushed.
         </p>
       ) : (
         <>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-3 text-sm text-muted">
             Today&apos;s price and a plain read of the last few weeks. Not a
             buy order.
           </p>
-          <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {names.map((ticker) => {
               const q = quotes[ticker];
               const look = q
@@ -327,7 +327,7 @@ export function WatchlistStrip({
                     </p>
                     <p
                       className={cn(
-                        "text-xs tabular-nums",
+                        "text-sm tabular-nums",
                         pct == null ? "text-muted" : signedTone(pct)
                       )}
                     >
@@ -336,7 +336,7 @@ export function WatchlistStrip({
                         : `${signedCurrency(q!.change)} today · ${signedPercent(pct)}`}
                     </p>
                     {look?.low != null && look.high != null && (
-                      <p className="mt-1 text-xs text-muted">
+                      <p className="mt-1.5 text-sm text-muted">
                         Lately {currency(look.low)} to {currency(look.high)}
                       </p>
                     )}
@@ -345,13 +345,13 @@ export function WatchlistStrip({
                         <p className="mt-3 text-sm font-semibold text-foreground">
                           {look.headline}
                         </p>
-                        <p className="mt-1 text-xs leading-relaxed text-muted">
+                        <p className="mt-1.5 text-sm leading-relaxed text-muted">
                           {look.detail}
                         </p>
                       </>
                     )}
                     {onOpenPulse && (
-                      <span className="mt-3 text-xs font-medium text-brand-bright">
+                      <span className="mt-4 text-sm font-medium text-brand-bright">
                         Check in Pulse
                       </span>
                     )}
@@ -360,7 +360,7 @@ export function WatchlistStrip({
               );
             })}
           </ul>
-          <p className="mt-3 text-xs text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
+          <p className="mt-4 text-sm text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
         </>
       )}
     </div>

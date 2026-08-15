@@ -110,7 +110,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 aria-pressed={isSelected}
                 onClick={() => setSelectedShock(s.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition",
+                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition",
                   isSelected
                     ? "bg-select text-select-ink"
                     : "border border-border bg-well/60 text-muted hover:bg-hover hover:text-foreground"

@@ -179,13 +179,13 @@ export function TickerDrawer({
               placeholder="Two sentences. What has to stay true for you to keep holding?"
               className="mt-2 w-full rounded-lg border border-border bg-app p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted focus:border-white/25"
             />
-            <p className="mt-1.5 text-xs text-muted">
+            <p className="mt-1.5 text-sm text-muted">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
             </p>
             {conviction?.stamps && conviction.stamps.length > 0 && (
               <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
                 {conviction.stamps.slice(0, 3).map((s) => (
-                  <li key={s.at} className="text-xs text-muted">
+                  <li key={s.at} className="text-sm text-muted">
                     <span className="text-foreground/80">{s.verdict}</span>
                     {" · "}
                     {s.line}
@@ -247,7 +247,7 @@ export function TickerDrawer({
                     {targetGainPct >= 0 ? "+" : ""}
                     {percent(targetGainPct)}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted">
+                  <p className="mt-0.5 text-sm text-muted">
                     from today&apos;s price
                   </p>
                 </div>
@@ -270,7 +270,7 @@ export function TickerDrawer({
                         key={yr}
                         className="rounded-lg border border-brand bg-well px-1 py-1.5 text-center"
                       >
-                        <p className="text-xs font-medium text-brand-bright">
+                        <p className="text-sm font-medium text-brand-bright">
                           &apos;{String(yr).slice(2)}
                         </p>
                         <input
@@ -285,7 +285,7 @@ export function TickerDrawer({
                             if (e.key === "Escape") setEditingYear(null);
                           }}
                           aria-label={`Price at end of ${yr}`}
-                          className="mt-0.5 w-full bg-transparent text-center text-xs font-semibold tabular-nums text-foreground outline-none"
+                          className="mt-0.5 w-full bg-transparent text-center text-sm font-semibold tabular-nums text-foreground outline-none"
                         />
                       </div>
                     );
@@ -307,15 +307,15 @@ export function TickerDrawer({
                           : "border-border bg-well/40"
                       )}
                     >
-                      <p className="text-xs text-muted">
+                      <p className="text-sm text-muted">
                         &apos;{String(yr).slice(2)}
                       </p>
-                      <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
+                      <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                         ${Math.round(p)}
                       </p>
                       <p
                         className={cn(
-                          "text-xs tabular-nums",
+                          "text-sm tabular-nums",
                           g >= 0 ? "text-gain" : "text-loss"
                         )}
                       >
@@ -349,20 +349,20 @@ export function TickerDrawer({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <MicroLabel>Your call plan</MicroLabel>
                 {coveredCallRow.yield2w != null && (
-                  <span className="text-xs font-medium tabular-nums text-brand-bright">
+                  <span className="text-sm font-medium tabular-nums text-brand-bright">
                     {percent(coveredCallRow.yield2w)} for two weeks
                   </span>
                 )}
               </div>
               <div className="mt-2.5 grid grid-cols-3 gap-2">
                 <div>
-                  <p className="text-xs text-muted">Strike</p>
+                  <p className="text-sm text-muted">Strike</p>
                   <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {currency(coveredCallRow.nextStrike)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted">Room above</p>
+                  <p className="text-sm text-muted">Room above</p>
                   <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {coveredCallRow.targetDistance != null
                       ? percent(coveredCallRow.targetDistance)
@@ -370,7 +370,7 @@ export function TickerDrawer({
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted">Contracts</p>
+                  <p className="text-sm text-muted">Contracts</p>
                   <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {coveredCallRow.contracts}
                   </p>
@@ -382,7 +382,7 @@ export function TickerDrawer({
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <MicroLabel>How sure are you?</MicroLabel>
-              <span className="text-xs font-medium text-caution">
+              <span className="text-sm font-medium text-caution">
                 {level} of 5
               </span>
             </div>

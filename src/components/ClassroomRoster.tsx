@@ -38,7 +38,7 @@ export function ClassroomRoster({
     <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">Roster</h2>
-        <p className="mt-0.5 text-xs text-muted">
+        <p className="mt-1.5 text-sm text-muted">
           Same start. Live prices. Who wrote a why, who is all-in on one name.
         </p>
       </div>

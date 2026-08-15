@@ -15,7 +15,7 @@ export default function TermsPage() {
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted hover:border-brand hover:text-foreground"
+            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
           >
             Back
           </Link>
@@ -25,7 +25,7 @@ export default function TermsPage() {
       <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
           <h1 className="text-lg font-bold text-foreground">Terms of Service</h1>
-          <p className="mt-1 text-xs text-muted">Last updated {LAST_UPDATED}</p>
+          <p className="mt-1 text-sm text-muted">Last updated {LAST_UPDATED}</p>
         </div>
 
         <p>
@@ -122,7 +122,7 @@ export default function TermsPage() {
           .
         </Section>
 
-        <p className="pt-4 text-xs text-muted">
+        <p className="pt-4 text-sm text-muted">
           See also our{" "}
           <Link href="/privacy" className="underline hover:text-foreground">
             Privacy policy

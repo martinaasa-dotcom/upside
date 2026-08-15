@@ -111,7 +111,7 @@ export function YtdAnchorModal({
           </button>
         </div>
 
-        <label className="grid gap-1 text-xs text-muted">
+        <label className="grid gap-1 text-sm text-muted">
           Book on January 1
           <input
             autoFocus
@@ -129,9 +129,9 @@ export function YtdAnchorModal({
           />
         </label>
 
-        <p className="mt-3 text-xs text-muted">or</p>
+        <p className="mt-3 text-sm text-muted">or</p>
 
-        <label className="mt-3 grid gap-1 text-xs text-muted">
+        <label className="mt-3 grid gap-1 text-sm text-muted">
           Year-to-date your broker shows
           <input
             type="text"

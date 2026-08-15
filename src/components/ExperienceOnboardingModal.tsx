@@ -93,7 +93,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
-              <p className="text-xs font-semibold text-muted">
+              <p className="text-sm font-semibold text-muted">
                 Quick question · {step}/3
               </p>
               <h2 className="mt-1 text-lg font-semibold text-foreground">
@@ -103,7 +103,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     ? "Have you used covered calls or other options strategies?"
                     : "Want a report in your inbox?"}
               </h2>
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-sm text-muted">
                 {step === 3
                   ? "Sunday is on. Weekdays only if you want them. These start once there are names in the book. Change this anytime in Account."
                   : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}
@@ -121,7 +121,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   />
                   <span>
                     <span className="font-medium text-foreground">Weekdays</span>
-                    <span className="mt-0.5 block text-xs text-muted">
+                    <span className="mt-0.5 block text-sm text-muted">
                       What to watch before the open, then a recap after the US close.
                     </span>
                   </span>
@@ -135,7 +135,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   />
                   <span>
                     <span className="font-medium text-foreground">Sundays</span>
-                    <span className="mt-0.5 block text-xs text-muted">
+                    <span className="mt-0.5 block text-sm text-muted">
                       The week that just finished, plus a look at the next ones.
                     </span>
                   </span>
@@ -151,7 +151,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="w-full text-xs text-muted hover:text-foreground/80"
+                  className="w-full text-sm text-muted hover:text-foreground/80"
                 >
                   ← Back
                 </button>
@@ -196,7 +196,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="mt-1 text-xs text-muted hover:text-foreground/80"
+                    className="mt-1 text-sm text-muted hover:text-foreground/80"
                   >
                     ← Back
                   </button>
@@ -217,7 +217,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 Next, paste what you own. That is the whole start.
               </p>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-xs text-foreground/80">
+            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground/80">
               <Settings className="h-4 w-4 shrink-0 text-foreground/80" />
               <span>
                 Change the view and the email notes anytime in{" "}

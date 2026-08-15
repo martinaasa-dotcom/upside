@@ -173,7 +173,7 @@ export function SnapshotsModal({
             type="button"
             onClick={() => void createManual()}
             disabled={loading}
-            className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50"
+            className="btn-primary px-3 py-1.5 text-sm disabled:opacity-50"
           >
             Save snapshot now
           </button>
@@ -199,7 +199,7 @@ export function SnapshotsModal({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm text-foreground">{s.label}</p>
-                      <p className="text-xs text-muted">
+                      <p className="text-sm text-muted">
                         {s.kind} · {formatWhen(s.created_at)}
                       </p>
                     </div>
@@ -210,7 +210,7 @@ export function SnapshotsModal({
                         onClick={() =>
                           setPendingRestore({ kind: "book", id: s.id, label: s.label })
                         }
-                        className="rounded border border-border px-2 py-0.5 text-xs text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
+                        className="rounded border border-border px-2 py-0.5 text-sm text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                       >
                         {busyId === s.id ? "…" : "Full book"}
                       </button>
@@ -225,7 +225,7 @@ export function SnapshotsModal({
                               label: s.label,
                             })
                           }
-                          className="rounded border border-border px-2 py-0.5 text-xs text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
+                          className="rounded border border-border px-2 py-0.5 text-sm text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                         >
                           {busyId === `${s.id}:sheet` ? "…" : "This sheet"}
                         </button>

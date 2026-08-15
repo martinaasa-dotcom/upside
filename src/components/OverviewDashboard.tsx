@@ -294,7 +294,7 @@ function EmptyBook({
             names with that paper money. Do not paste a real book in here.
           </p>
           {homeworkCash != null && homeworkCash > 0 ? (
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-2 text-sm text-muted">
               You have {currency(homeworkCash, 0)} sitting ready.
             </p>
           ) : null}
@@ -304,14 +304,14 @@ function EmptyBook({
           <p className="mt-3 text-sm text-muted">
             Paste what you own. One name per line: ticker, shares, cost.
           </p>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-3 text-sm text-muted">
             This sheet is only yours until you invite someone.
           </p>
         </>
       )}
 
       {!homework && onPasteHoldings && (
-        <div className="mt-6 space-y-2">
+        <div className="mt-8 space-y-3">
           <textarea
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
@@ -319,7 +319,7 @@ function EmptyBook({
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
             className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
           />
-          {pasteErr && <p className="text-xs text-loss">{pasteErr}</p>}
+          {pasteErr && <p className="text-sm text-loss">{pasteErr}</p>}
           <button
             type="button"
             onClick={submitPaste}
@@ -373,12 +373,12 @@ function HomeSheetChip({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap gap-1.5", className)}>
+    <div className={cn("flex flex-wrap gap-2", className)}>
       <button
         type="button"
         onClick={() => onChange("all")}
         className={cn(
-          "rounded-full border px-2.5 py-1 text-xs",
+          "rounded-full border px-3 py-1.5 text-sm",
           value === "all"
             ? "border-select bg-select text-select-ink"
             : "border-border text-muted hover:border-brand-mid hover:text-foreground"
@@ -392,7 +392,7 @@ function HomeSheetChip({
           type="button"
           onClick={() => onChange(s.id)}
           className={cn(
-            "rounded-full border px-2.5 py-1 text-xs",
+            "rounded-full border px-3 py-1.5 text-sm",
             value === s.id
               ? "border-select bg-select text-select-ink"
               : "border-border text-muted hover:border-brand-mid hover:text-foreground"
@@ -425,14 +425,14 @@ function MorningStack({
 }) {
   const sunday = morning.sunday;
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-6", className)}>
       {sunday ? (
-        <div className="space-y-2">
+        <div className="space-y-4">
           <MicroLabel>Sunday look</MicroLabel>
           {(sunday.best || sunday.worst) && (
             <div
               className={cn(
-                "grid gap-3",
+                "grid gap-4",
                 sunday.best && sunday.worst
                   ? "grid-cols-1 sm:grid-cols-2"
                   : "grid-cols-1 sm:max-w-xs"
@@ -468,7 +468,7 @@ function MorningStack({
           {!morning.quiet && morning.drivers.length > 0 && (
             <div
               className={cn(
-                "grid gap-3",
+                "grid gap-4",
                 morning.drivers.length === 1
                   ? "grid-cols-1 sm:max-w-xs"
                   : morning.drivers.length === 2
@@ -496,7 +496,7 @@ function MorningStack({
       )}
       {morning.awayLines.length > 0 && (
         <div>
-          <p className="text-xs text-muted">
+          <p className="text-sm text-muted">
             Since you last looked
             {previousAt
               ? ` · ${new Date(previousAt).toLocaleString("en-GB", {
@@ -794,7 +794,7 @@ export function OverviewDashboard({
 
   if (bookIsEmpty) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-10">
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
@@ -809,7 +809,7 @@ export function OverviewDashboard({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <MobileHomeHero
         totals={totals}
         alerts={activeAlerts}
@@ -843,7 +843,7 @@ export function OverviewDashboard({
             actions={
               <>
                 <span
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted"
                   title={sessionLabel(marketState)}
                 >
                   <span
@@ -873,7 +873,7 @@ export function OverviewDashboard({
             }
           />
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat
               label="Book"
               value={currency(totals.totalValue, 0)}
@@ -904,7 +904,7 @@ export function OverviewDashboard({
 
           {onHomeSheet && homeSheets.length > 1 && (
             <HomeSheetChip
-              className="mt-4"
+              className="mt-6"
               value={homeSheetId}
               sheets={homeSheets}
               onChange={onHomeSheet}
@@ -912,7 +912,7 @@ export function OverviewDashboard({
           )}
 
           <MorningStack
-            className="mt-5"
+            className="mt-8"
             morning={morning}
             previousAt={visitDiff?.previousAt ?? null}
             onOpenPulse={onOpenPulse}
@@ -931,7 +931,7 @@ export function OverviewDashboard({
             onRestoreAssumed={nav.restoreAssumed}
             onApplyAnchor={nav.applyAnchor}
             onClearAnchor={nav.clearAnchor}
-            className="mt-6"
+            className="mt-8"
           />
           </WidgetErrorBoundary>
         </div>
@@ -952,7 +952,7 @@ export function OverviewDashboard({
             />
           }
         />
-        <div className="mt-6">
+        <div className="mt-8">
           {movers.length === 0 ? (
             <p className="py-5 text-center text-sm text-muted">
               Waiting on prices.

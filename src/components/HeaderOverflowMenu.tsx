@@ -82,7 +82,7 @@ export function HeaderOverflowMenu({
           setOpen((o) => !o);
         }}
         className={cn(
-          "inline-flex h-8 items-center justify-center gap-1 rounded-md border border-border text-xs font-medium text-muted hover:border-brand hover:text-foreground",
+          "inline-flex h-9 items-center justify-center gap-1 rounded-md border border-border text-sm font-medium text-muted hover:border-brand hover:text-foreground",
           // A fixed height (rather than relying on padding to add up to the
           // same total as the icon+text buttons next to it) guarantees this
           // lines up with View exactly, however the avatar image or
@@ -122,7 +122,7 @@ export function HeaderOverflowMenu({
             style={{ top: pos.top, right: pos.right }}
           >
             {avatar && (
-              <div className="truncate border-b border-border px-3 py-2 text-xs font-medium text-foreground/80">
+              <div className="truncate border-b border-border px-3 py-2.5 text-sm font-medium text-foreground/80">
                 {label}
               </div>
             )}
@@ -138,7 +138,7 @@ export function HeaderOverflowMenu({
                   item.onSelect();
                 }}
                 className={cn(
-                  "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-xs sm:py-2",
+                  "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm sm:py-2.5",
                   item.disabled
                     ? // Dimmed via opacity rather than a darker grey: WCAG
                       // exempts disabled controls from the contrast floor,

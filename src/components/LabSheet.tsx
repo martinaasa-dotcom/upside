@@ -293,7 +293,7 @@ export function LabSheet({
                     aria-selected={tab === t.id}
                     onClick={() => selectTab(t.id)}
                     className={cn(
-                      "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
+                      "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition touch-target",
                       tab === t.id
                         ? "bg-select text-select-ink"
                         : "text-muted hover:text-brand-bright"
@@ -312,7 +312,7 @@ export function LabSheet({
             </div>
           </div>
           <label className="flex shrink-0 items-center gap-2">
-            <span className="shrink-0 text-xs font-medium text-muted">
+            <span className="shrink-0 text-sm font-medium text-muted">
               Looking at
             </span>
             <select
@@ -320,7 +320,7 @@ export function LabSheet({
               onChange={(e) => setScopeId(e.target.value)}
               disabled={!scopeApplies}
               className={cn(
-                "min-w-0 rounded-lg border border-border bg-well/50 px-2.5 py-1.5 text-xs text-foreground",
+                "min-w-0 rounded-lg border border-border bg-well/50 px-2.5 py-1.5 text-sm text-foreground",
                 !scopeApplies && "cursor-not-allowed opacity-40"
               )}
               title={
@@ -355,7 +355,7 @@ export function LabSheet({
                     <h3 className="text-base font-bold text-foreground">
                       How spread out you are
                     </h3>
-                    <p className="mt-0.5 text-xs text-muted">
+                    <p className="mt-1.5 text-sm text-muted">
                       {personality.diversificationBand.description} ·{" "}
                       {scopeLabel}
                     </p>
@@ -365,7 +365,7 @@ export function LabSheet({
                       {personality.diversificationScore}
                       <span className="text-sm text-muted">/100</span>
                     </p>
-                    <p className="text-xs font-medium text-muted">
+                    <p className="text-sm font-medium text-muted">
                       Diversified
                     </p>
                   </div>
@@ -382,7 +382,7 @@ export function LabSheet({
                       }}
                     />
                   </div>
-                  <div className="mt-1 flex justify-between text-xs text-muted">
+                  <div className="mt-2 flex justify-between text-sm text-muted">
                     <span>0 · all in one name</span>
                     <span>100 · index-broad</span>
                   </div>
@@ -443,7 +443,7 @@ export function LabSheet({
                   <h3 className="text-base font-bold text-foreground">
                     What you&apos;re actually betting on
                   </h3>
-                  <p className="mt-0.5 mb-4 text-xs text-muted">
+                  <p className="mt-1.5 mb-5 text-sm text-muted">
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
                   </p>
@@ -465,14 +465,14 @@ export function LabSheet({
                         key={t.theme}
                         className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-well/40 px-3 py-2"
                       >
-                        <span className="flex items-center gap-2 text-xs text-foreground/80">
+                        <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
                             className="h-2 w-2 shrink-0 rounded-full"
                             style={{ backgroundColor: THEME_COLOR[t.theme] }}
                           />
                           {t.label}
                         </span>
-                        <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
+                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted">
                           {Math.round(t.pct * 100)}%
                         </span>
                       </div>
@@ -518,7 +518,7 @@ export function LabSheet({
             <h3 className="text-base font-bold text-foreground">
               Do these move together?
             </h3>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted">
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">
               How closely each pair has tracked each other over the last 90
               days, up to 8 names. Near <span className="tabular-nums">+1</span> means they
               rise and fall as one, so holding both spreads your money without

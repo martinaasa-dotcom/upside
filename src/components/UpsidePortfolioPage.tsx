@@ -266,7 +266,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-semibold",
+        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-sm font-semibold",
         meta.cls
       )}
     >
@@ -280,12 +280,12 @@ function ActionBadge({ action }: { action: FundActionRow }) {
 function ReportMeta({ r }: { r: ReportRow }) {
   return (
     <>
-      <p className="text-xs text-muted">
+      <p className="text-sm text-muted">
         {fmtDate(r.report_date)}
       </p>
       <p
         className={cn(
-          "text-xs font-semibold tabular-nums",
+          "text-sm font-semibold tabular-nums",
           signedTone(r.day_change_dollar ?? 0, "text-muted")
         )}
       >
@@ -381,7 +381,7 @@ function CopyBlock({
         <MicroLabel className={exit ? "text-loss" : undefined}>
           {label}
         </MicroLabel>
-        {extra ? <p className="text-xs text-muted">{extra}</p> : null}
+        {extra ? <p className="text-sm text-muted">{extra}</p> : null}
       </div>
       {items.length > 0 && (
         <ul className="mt-1.5 space-y-1.5 text-sm leading-relaxed text-foreground/80">
@@ -1025,7 +1025,7 @@ export function UpsidePortfolioPage() {
       <MobileChrome title="Upside Fund" active="circle" />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
-          className="inline-flex items-center gap-1.5 text-xs tabular-nums text-muted"
+          className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted"
           title="Prices include pre-market and after hours, not just the regular close"
           aria-label={freshnessLabel(quotesAt, nowMs)}
         >
@@ -1053,7 +1053,7 @@ export function UpsidePortfolioPage() {
               {fund ? ` · started ${fmtDate(fund.inception_date)}` : ""}
             </span>
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-muted">
+          <p className="mt-2 text-sm leading-relaxed text-muted">
             {UPSIDE_PORTFOLIO_DISCLAIMER}
           </p>
         </div>
@@ -1103,7 +1103,7 @@ export function UpsidePortfolioPage() {
                       ? `${benchmark.portfolioName}, Margus, and SPY`
                       : "Margus vs SPY"}
                   </h2>
-                  <p className="mt-0.5 text-xs leading-relaxed text-muted">
+                  <p className="mt-0.5 text-sm leading-relaxed text-muted">
                     {benchmark
                       ? `${benchmark.portfolioName} on nights we recorded. Margus from when the fund started. SPY is the real index.`
                       : "How the fund has moved versus the S&P 500, as a percent."}
@@ -1113,7 +1113,7 @@ export function UpsidePortfolioPage() {
                   <button
                     type="button"
                     onClick={handleClearBenchmark}
-                    className="shrink-0 text-xs text-muted hover:text-foreground"
+                    className="shrink-0 text-sm text-muted hover:text-foreground"
                   >
                     Remove
                   </button>
@@ -1121,7 +1121,7 @@ export function UpsidePortfolioPage() {
                   <button
                     type="button"
                     onClick={() => void handleOpenPicker()}
-                    className="shrink-0 text-xs font-medium text-brand-bright hover:text-brand"
+                    className="shrink-0 text-sm font-medium text-brand-bright hover:text-brand"
                   >
                     Compare my sheet
                   </button>
@@ -1209,14 +1209,14 @@ export function UpsidePortfolioPage() {
                         key={t.key}
                         className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-well/40 px-3 py-2"
                       >
-                        <span className="flex items-center gap-2 text-xs text-foreground/80">
+                        <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
                             className="h-2 w-2 shrink-0 rounded-full"
                             style={{ backgroundColor: t.color }}
                           />
                           {t.label}
                         </span>
-                        <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
+                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted">
                           {Math.round(t.pct * 100)}%
                         </span>
                       </div>
@@ -1380,11 +1380,11 @@ export function UpsidePortfolioPage() {
                       className="space-y-2 rounded-2xl border border-border bg-card/80 p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-xs text-brand-bright">
+                        <p className="text-sm text-brand-bright">
                           Week of {fmtDate(r.week_ending)}
                         </p>
                         {r.week_return_pct != null && (
-                          <p className="text-xs font-semibold tabular-nums">
+                          <p className="text-sm font-semibold tabular-nums">
                             <span className={r.week_return_pct >= 0 ? "text-gain" : "text-loss"}>
                               {percent(r.week_return_pct)}
                             </span>
@@ -1478,7 +1478,7 @@ export function UpsidePortfolioPage() {
                         </span>
                         <span
                           className={cn(
-                            "flex items-center gap-1 text-xs font-semibold tabular-nums",
+                            "flex items-center gap-1 text-sm font-semibold tabular-nums",
                             (h.realized_pnl ?? 0) >= 0 ? "text-gain" : "text-loss"
                           )}
                         >
@@ -1490,7 +1490,7 @@ export function UpsidePortfolioPage() {
                           {currency(Math.abs(h.realized_pnl ?? 0), 0)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-muted">
+                      <p className="mt-0.5 text-sm text-muted">
                         {fmtDate(h.entry_date)} → {h.closed_at ? fmtDate(h.closed_at) : "—"}
                         {h.exit_reasoning ? ` · ${h.exit_reasoning}` : ""}
                       </p>

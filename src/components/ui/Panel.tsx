@@ -21,8 +21,8 @@ import { useState, type ReactNode } from "react";
  *              the main button. Paper is type, never a white pill.
  *   Card       border-border on bg-raised. Nested boxes lift off the panel.
  *   Type scale, the only sizes a person should see:
- *   text-xs    12  labels, meta, table, chips
- *   text-sm    14  chrome, inputs, buttons, nav
+ *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
+ *   text-sm    14  labels, meta, chips, chrome, inputs, buttons, nav
  *   text-base  16  titles, tickers, figures, briefing / thesis prose
  *   text-lg    18  hero panel title (one opener per page)
  *   text-2xl   24  display numbers only (book value, compound result)
@@ -31,7 +31,7 @@ import { useState, type ReactNode } from "react";
  *   Headings   text-base font-bold (hero: text-lg) · sentence case
  *   Type       Montserrat Bold for titles. Inter for body, labels, and
  *              every money figure. No third face. Lockup is Montserrat.
- *   Micro      text-xs font-medium text-muted · sentence case
+ *   Micro      text-sm font-medium text-muted · sentence case
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
@@ -59,7 +59,7 @@ const SHELL_TONES = {
 } as const;
 
 const FIGURE =
-  "mt-1 font-sans text-base font-semibold tabular-nums";
+  "mt-1.5 font-sans text-base font-semibold tabular-nums";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -82,7 +82,7 @@ export function Panel({
       className={cn(
         "h-full rounded-2xl border",
         SHELL_TONES[tone],
-        padded && "p-5 sm:p-8",
+        padded && "p-6 sm:p-10",
         className
       )}
       {...rest}
@@ -200,7 +200,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "h-full rounded-xl border px-4 py-4",
+        "h-full rounded-xl border px-5 py-5",
         CARD_TONES[tone],
         interactive &&
           "transition hover:border-brand/40 hover:bg-hover active:scale-[0.995]",
@@ -213,7 +213,7 @@ export function Card({
   );
 }
 
-/** Quiet label above a value. Sentence case. The floor is text-xs. */
+/** Quiet label above a value. Sentence case. Chrome floor is text-sm. */
 export function MicroLabel({
   children,
   className,
@@ -224,7 +224,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-0.5 text-xs font-medium text-muted",
+        "flex items-center gap-0.5 text-sm font-medium text-muted",
         className
       )}
     >
@@ -250,16 +250,16 @@ export function Reading({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-raised px-4 py-3.5 text-foreground",
+        "rounded-xl border border-border bg-raised px-5 py-5 text-foreground",
         className
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-muted">{label}</div>
+        <div className="text-sm font-medium text-muted">{label}</div>
       ) : null}
       <div
         className={cn(
-          label != null && label !== "" && "mt-1.5",
+          label != null && label !== "" && "mt-2",
           "text-base leading-relaxed"
         )}
       >
@@ -328,8 +328,8 @@ export function ScanList({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="border-b border-border px-4 py-2.5">
-          <p className="text-xs font-medium text-muted">{label}</p>
+        <div className="border-b border-border px-5 py-3">
+          <p className="text-sm font-medium text-muted">{label}</p>
         </div>
       ) : null}
       <ul>
@@ -350,12 +350,12 @@ export function ScanList({
                 <button
                   type="button"
                   onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-hover"
+                  className="flex w-full gap-3 px-5 py-3.5 text-left transition hover:bg-hover"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="flex gap-3 px-4 py-3">{body}</div>
+                <div className="flex gap-3 px-5 py-3.5">{body}</div>
               )}
             </li>
           );
@@ -388,7 +388,7 @@ export function Metric({
         {children}
       </p>
       {hint != null && hint !== "" ? (
-        <p className="mt-0.5 truncate text-xs tabular-nums text-muted">{hint}</p>
+        <p className="mt-1 truncate text-sm tabular-nums text-muted">{hint}</p>
       ) : null}
     </div>
   );
@@ -418,7 +418,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
       {open && (
         <span
           role="tooltip"
-          className="absolute left-1/2 top-full z-30 mt-1 w-48 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-normal normal-case leading-relaxed tracking-normal text-foreground shadow-xl"
+          className="absolute left-1/2 top-full z-30 mt-1 w-52 -translate-x-1/2 rounded-lg border border-border bg-raised px-3 py-2.5 text-sm font-normal normal-case leading-relaxed tracking-normal text-foreground shadow-xl"
         >
           {text}
         </span>
@@ -450,7 +450,7 @@ export function Stat({
   return (
     <div
       className={cn(
-        "h-full rounded-xl border border-border bg-raised px-4 py-3.5",
+        "h-full rounded-xl border border-border bg-raised px-5 py-4",
         className
       )}
     >
@@ -472,7 +472,7 @@ export function Stat({
         {value}
       </p>
       {sub != null && (
-        <p className={cn("mt-0.5 text-xs tabular-nums", subClassName ?? "text-muted")}>
+        <p className={cn("mt-1 text-sm tabular-nums", subClassName ?? "text-muted")}>
           {sub}
         </p>
       )}
@@ -519,7 +519,7 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "touch-target rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
+            "touch-target rounded-md px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
             value === o.id
               ? "bg-select text-select-ink"
               : "text-muted hover:text-foreground"
@@ -543,7 +543,7 @@ const PILL_TONES = {
 
 export type PillTone = keyof typeof PILL_TONES;
 
-/** Status chip. Never smaller than text-xs, never a bare coloured dot alone. */
+/** Status chip. Same size as other chrome. Never a bare coloured dot alone. */
 export function Pill({
   tone = "neutral",
   title,
@@ -559,7 +559,7 @@ export function Pill({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium",
         PILL_TONES[tone],
         className
       )}

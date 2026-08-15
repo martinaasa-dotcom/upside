@@ -48,7 +48,7 @@ export function BookBottomNav({ className }: { className?: string }) {
       )}
     >
       <div className={cn(PAGE_COLUMN_CLASS, "py-2")}>
-        <p className="mb-1 text-xs font-medium text-muted">
+        <p className="mb-1.5 text-sm font-medium text-muted">
           In your book
         </p>
         <div className="grid h-12 w-full max-w-[36rem] grid-cols-4 overflow-hidden rounded-lg bg-well/80 ring-1 ring-inset ring-brand/30">

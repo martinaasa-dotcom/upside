@@ -1339,7 +1339,7 @@ export function CommunityView({ communityId }: Props) {
           {isAdmin && joinRequests.length > 0 && (
             <span
               title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-              className="shrink-0 rounded-full bg-select px-1.5 py-0.5 text-xs font-semibold text-select-ink"
+              className="shrink-0 rounded-full bg-select px-2 py-0.5 text-sm font-semibold text-select-ink"
             >
               {joinRequests.length}
             </span>
@@ -1369,7 +1369,7 @@ export function CommunityView({ communityId }: Props) {
           {!loading && !selectedOwnerId && (
             <>
               <section className="space-y-3">
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   {isClassroom
                     ? "Paper class. Same starting cash. Real prices."
                     : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
@@ -1409,7 +1409,7 @@ export function CommunityView({ communityId }: Props) {
                   </div>
                 ) : null}
                 {isClassroom && myClassSheet ? (
-                  <p className="text-xs text-muted">
+                  <p className="text-sm text-muted">
                     Your paper sheet is on Home. Sunday note is the weekly recap.
                   </p>
                 ) : null}
@@ -1485,7 +1485,7 @@ export function CommunityView({ communityId }: Props) {
                     type="button"
                     onClick={() => setView(id)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition",
+                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition",
                       view === id
                         ? "bg-select text-select-ink"
                         : "text-muted hover:bg-hover hover:text-foreground"

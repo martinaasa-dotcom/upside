@@ -171,7 +171,7 @@ export function CsvImportModal({
               Download template
             </button>
             {fileName && (
-              <span className="text-xs text-muted">{fileName}</span>
+              <span className="text-sm text-muted">{fileName}</span>
             )}
           </div>
 
@@ -184,7 +184,7 @@ export function CsvImportModal({
 
           {rows.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted">
+              <div className="flex items-center justify-between text-sm text-muted">
                 <span>Preview · {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
                 {cash != null && (
                   <span className="text-muted">
@@ -197,7 +197,7 @@ export function CsvImportModal({
                   sideways instead of pushing the modal past the viewport. */}
               <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border">
                 <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-well text-xs text-muted">
+                  <thead className="sticky top-0 bg-well text-sm text-muted">
                     <tr>
                       <th className="px-3 py-1.5 font-medium">Ticker</th>
                       <th className="px-3 py-1.5 font-medium">Shares</th>
@@ -236,10 +236,10 @@ export function CsvImportModal({
 
           {skipped.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs text-caution">
+              <p className="text-sm text-caution">
                 Skipped {skipped.length} row{skipped.length === 1 ? "" : "s"}
               </p>
-              <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-muted">
+              <ul className="max-h-24 space-y-1 overflow-y-auto text-sm text-muted">
                 {skipped.slice(0, 10).map((s) => (
                   <li key={`${s.line}-${s.raw}`}>
                     Line {s.line}: {s.reason}

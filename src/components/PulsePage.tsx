@@ -97,7 +97,7 @@ function PulseHistory({ ticker }: { ticker: string }) {
   const prior = loadPulseHistory(ticker).slice(0, -1).at(-1);
   if (!prior) return null;
   return (
-    <p className="mt-2 text-xs text-muted">
+    <p className="mt-2 text-sm text-muted">
       Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus)}
     </p>
   );
@@ -200,24 +200,24 @@ function PulseCard({
               {cashtag(c.ticker)}
             </span>
             {pinned && (
-              <span className="rounded bg-hover px-1.5 py-0.5 text-xs font-medium text-foreground/80">
+              <span className="rounded-md bg-hover px-2 py-0.5 text-sm font-medium text-foreground/80">
                 Your check
               </span>
             )}
             {!c.inBook && (
-              <span className="rounded bg-hover px-1.5 py-0.5 text-xs text-muted">
+              <span className="rounded-md bg-hover px-2 py-0.5 text-sm text-muted">
                 Lookup
               </span>
             )}
             {leftHold && (
-              <span className="rounded-lg bg-hover px-1.5 py-0.5 text-xs font-medium text-foreground/80">
+              <span className="rounded-md bg-hover px-2 py-0.5 text-sm font-medium text-foreground/80">
                 Was Hold
               </span>
             )}
             {c.isBigMove && (
               <span
                 className={cn(
-                  "rounded px-1.5 py-0.5 text-xs font-medium",
+                  "rounded-md px-2 py-0.5 text-sm font-medium",
                   (c.effectivePct ?? 0) < 0
                     ? "bg-loss/15 text-loss"
                     : "bg-gain/15 text-gain"
@@ -252,7 +252,7 @@ function PulseCard({
               </Pill>
             </>
           ) : loading ? (
-            <span className="text-xs text-muted">Checking …</span>
+            <span className="text-sm text-muted">Checking …</span>
           ) : null}
           {onRefresh && (
             <button
@@ -274,7 +274,7 @@ function PulseCard({
       </div>
 
       {c.inBook ? (
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Stat
             label="Price"
             value={currency(c.price)}
@@ -297,14 +297,14 @@ function PulseCard({
           />
         </div>
       ) : (
-        <p className="mt-2 text-xs tabular-nums text-muted">
+        <p className="mt-3 text-sm tabular-nums text-muted">
           {currency(c.price)} · not in your book
         </p>
       )}
 
       <PulseHistory ticker={c.ticker} />
 
-      <div className="mt-4 space-y-3 border-t border-border pt-3">
+      <div className="mt-6 space-y-4 border-t border-border pt-5">
         {thesisBullets.length > 0 && (
           <Reading
             label={
@@ -314,7 +314,7 @@ function PulseCard({
                   <button
                     type="button"
                     onClick={onWriteThesis}
-                    className="text-xs font-medium text-muted hover:text-foreground"
+                    className="text-sm font-medium text-muted hover:text-foreground"
                   >
                     {writtenThesis.length > 0 ? "Edit" : "Add yours"}
                   </button>
@@ -350,7 +350,7 @@ function PulseCard({
           </p>
         ) : null}
         {shown?.earningsNote ? (
-          <p className="text-xs text-muted">{shown.earningsNote}</p>
+          <p className="text-sm text-muted">{shown.earningsNote}</p>
         ) : null}
         {shown?.thesisBreak ? (
           <Reading label="Breaks if">{shown.thesisBreak}</Reading>
@@ -358,16 +358,16 @@ function PulseCard({
       </div>
 
       {headlines.length > 0 && (
-        <div className="mt-4 border-t border-border pt-3">
+        <div className="mt-5 border-t border-border pt-4">
           <MicroLabel>In the news</MicroLabel>
-          <ul className="mt-1.5 space-y-1">
+          <ul className="mt-2 space-y-2">
             {headlines.slice(0, 2).map((h) => (
               <li key={h.link || h.title}>
                 <a
                   href={h.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs leading-snug text-muted hover:text-foreground"
+                  className="text-sm leading-snug text-muted hover:text-foreground"
                 >
                   {h.title}
                 </a>
@@ -876,7 +876,7 @@ export function PulsePage({
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
         />
-        <p className="mt-2 text-xs text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
+        <p className="mt-3 text-sm text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
 
         <form onSubmit={(e) => void submitSearch(e)} className="mt-5 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
@@ -905,7 +905,7 @@ export function PulsePage({
                       onClick={() => void checkTicker(t)}
                     >
                       {t}
-                      <span className="ml-2 text-xs text-muted">in book</span>
+                      <span className="ml-2 text-sm text-muted">in book</span>
                     </button>
                   </li>
                 ))}
@@ -915,14 +915,14 @@ export function PulsePage({
           <button
             type="submit"
             disabled={!searchInput.trim() || pinnedLoading}
-              className="btn-primary w-full shrink-0 px-3 text-xs disabled:opacity-40 sm:w-auto sm:py-2"
+              className="btn-primary w-full shrink-0 px-4 disabled:opacity-40 sm:w-auto"
           >
             {pinnedLoading ? "Checking …" : "Check"}
           </button>
         </form>
 
         {pinnedTicker && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted">
+          <div className="mt-3 flex items-center gap-2 text-sm text-muted">
             <span>Pinned: {pinnedTicker}</span>
             <button
               type="button"
@@ -936,7 +936,7 @@ export function PulsePage({
 
         {(fearGreed || skippedTickers.length > 0) && (
           <p
-            className="mt-3 text-xs text-muted"
+            className="mt-4 text-sm text-muted"
             title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
           >
             {fearGreed && (
@@ -994,10 +994,10 @@ export function PulsePage({
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-2 text-xs font-medium text-muted">
+          <h3 className="mb-3 text-sm font-medium text-muted">
             The one you asked about
           </h3>
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             <PulseCard
               candidate={pinnedCandidate}
               check={checksByTicker[pinnedCandidate.ticker.toUpperCase()]}
@@ -1030,13 +1030,13 @@ export function PulsePage({
           detail="Add a holding and Pulse starts watching it automatically. You can also type any ticker above for a one-off look."
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {attention.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-medium text-muted">
+              <h3 className="mb-3 text-sm font-medium text-muted">
                 Needs a look
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {attention.map((c) => (
                   <PulseCard
                     key={c.ticker}
@@ -1061,12 +1061,12 @@ export function PulsePage({
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-medium text-muted">
+              <h3 className="mb-3 text-sm font-medium text-muted">
                 {attention.length > 0
                   ? "Everything else"
                   : `Your ${plural(rest.length, "biggest holding")}`}
               </h3>
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {rest.map((c) => (
                   <PulseCard
                     key={c.ticker}
@@ -1092,7 +1092,7 @@ export function PulsePage({
       )}
 
       {lastGeneratedAt && (
-        <p className="text-center text-xs text-muted">
+        <p className="text-center text-sm text-muted">
           Last checked{" "}
           {new Date(lastGeneratedAt).toLocaleString(undefined, {
             dateStyle: "medium",

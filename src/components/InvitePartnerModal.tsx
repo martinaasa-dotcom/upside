@@ -148,7 +148,7 @@ export function InvitePartnerModal({
         </div>
 
         <label className="mt-4 block space-y-1">
-          <span className="text-xs text-muted">
+          <span className="text-sm text-muted">
             Partner email (optional)
           </span>
           <input
@@ -177,7 +177,7 @@ export function InvitePartnerModal({
                 <button
                   type="button"
                   onClick={() => void copy(code, "code")}
-                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-foreground/80"
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-foreground/80"
                 >
                   {copied === "code" ? (
                     <Check className="h-3.5 w-3.5 text-gain" />
@@ -190,13 +190,13 @@ export function InvitePartnerModal({
             )}
             {link && (
               <div className="flex items-center justify-between gap-2">
-                <p className="min-w-0 flex-1 truncate text-xs text-muted">
+                <p className="min-w-0 flex-1 truncate text-sm text-muted">
                   {link}
                 </p>
                 <button
                   type="button"
                   onClick={() => void copy(link, "link")}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-foreground/80"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-foreground/80"
                 >
                   {copied === "link" ? (
                     <Check className="h-3.5 w-3.5 text-gain" />
@@ -220,7 +220,7 @@ export function InvitePartnerModal({
                 <span className="min-w-0 truncate text-foreground">
                   {o.profile?.display_name || o.profile?.email || o.user_id.slice(0, 8)}
                   {o.user_id === user?.id ? (
-                    <span className="ml-2 text-xs text-muted">(you)</span>
+                    <span className="ml-2 text-sm text-muted">(you)</span>
                   ) : null}
                 </span>
                 {owners.length > 1 && (

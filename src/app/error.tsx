@@ -39,7 +39,7 @@ export default function Error({
           reload if it keeps happening.
         </p>
         {error.digest && (
-          <p className="text-xs text-muted">Ref: {error.digest}</p>
+          <p className="text-sm text-muted">Ref: {error.digest}</p>
         )}
       </div>
       <div className="flex items-center gap-2">

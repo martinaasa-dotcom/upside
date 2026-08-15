@@ -136,7 +136,7 @@ function SegButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-md px-2.5 py-1.5 text-xs font-medium transition touch-target",
+        "rounded-md px-3 py-1.5 text-sm font-medium transition touch-target",
         active
           ? "bg-select text-select-ink"
           : "text-muted hover:bg-hover hover:text-foreground",
@@ -164,7 +164,7 @@ function ChipButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-md px-2 py-1 text-xs font-medium transition tabular-nums",
+        "rounded-md px-3 py-1.5 text-sm font-medium transition tabular-nums",
         active
           ? "bg-select text-select-ink font-semibold"
           : "border border-border bg-well/60 text-muted hover:border-border hover:bg-hover hover:text-foreground",
@@ -362,7 +362,7 @@ function ComparePathsChart({
           </g>
         )}
       </svg>
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
+      <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
         {paths.map((p) => (
           <li key={p.id} className="inline-flex items-center gap-1.5">
             <span
@@ -699,7 +699,7 @@ export function CompoundInterestSheet({
           <select
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
-            className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-xs text-foreground outline-none focus:border-brand"
+            className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-brand"
           >
             <option value="custom">Custom amount</option>
             {bookValue > 0 && (
@@ -739,7 +739,7 @@ export function CompoundInterestSheet({
               }}
               className="w-full cursor-pointer accent-brand"
             />
-            <div className="flex justify-between text-xs text-muted">
+            <div className="flex justify-between text-sm text-muted">
               <span>{show(0)}</span>
               <span>{show(principalSliderMax)}</span>
             </div>
@@ -756,7 +756,7 @@ export function CompoundInterestSheet({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted">
+          <div className="flex items-center gap-2 text-sm text-muted">
             <Sparkles className="h-3.5 w-3.5 shrink-0" />
             <span className="min-w-0 flex-1 leading-snug">
               Your book&apos;s own pace:{" "}
@@ -768,7 +768,7 @@ export function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={syncToPortfolioRate}
-                className="shrink-0 text-xs font-semibold text-foreground underline-offset-2 hover:underline"
+                className="shrink-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline"
               >
                 Use it
               </button>
@@ -793,7 +793,7 @@ export function CompoundInterestSheet({
               onChange={(e) =>
                 patchDraft("ratePeriod", e.target.value as RatePeriod)
               }
-              className="rounded-lg border border-border bg-well px-2.5 py-2 text-xs text-foreground outline-none focus:border-brand"
+              className="rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand"
             >
               <option value="annual">annual</option>
               <option value="monthly">monthly</option>
@@ -801,7 +801,7 @@ export function CompoundInterestSheet({
           </div>
 
           <div>
-            <span className="text-xs text-muted">
+            <span className="text-sm text-muted">
               Or borrow one
             </span>
             <div className="mt-1 flex flex-wrap gap-1">
@@ -851,7 +851,7 @@ export function CompoundInterestSheet({
               onChange={(e) => patchDraft("ratePercent", Number(e.target.value))}
               className="w-full cursor-pointer accent-brand"
             />
-            <div className="flex justify-between text-xs text-muted">
+            <div className="flex justify-between text-sm text-muted">
               <span>0%</span>
               <span>25%</span>
               <span>50%</span>
@@ -882,7 +882,7 @@ export function CompoundInterestSheet({
               }}
               className="no-spinner w-full rounded-lg border border-border bg-well px-3 py-2 pr-14 text-sm font-semibold text-foreground outline-none focus:border-brand"
             />
-            <span className="pointer-events-none absolute right-3 top-2.5 text-xs text-muted">
+            <span className="pointer-events-none absolute right-3 top-2.5 text-sm text-muted">
               years
             </span>
           </div>
@@ -908,7 +908,7 @@ export function CompoundInterestSheet({
               onChange={(e) => patchDraft("years", Number(e.target.value))}
               className="w-full cursor-pointer accent-brand"
             />
-            <div className="flex justify-between text-xs text-muted">
+            <div className="flex justify-between text-sm text-muted">
               <span>1 year</span>
               <span>20 years</span>
               <span>40 years</span>
@@ -931,7 +931,7 @@ export function CompoundInterestSheet({
                 draft.contributionMode === "both") && (
                 <span
                   title="From this year on, growth adds more each year than you do"
-                  className="text-xs font-semibold text-gain"
+                  className="text-sm font-semibold text-gain"
                 >
                   Year {tipping} it takes over
                 </span>
@@ -957,10 +957,10 @@ export function CompoundInterestSheet({
             draft.contributionMode === "both") && (
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="compound-deposit-input" className="text-xs font-medium text-foreground/80">
+                <label htmlFor="compound-deposit-input" className="text-sm font-medium text-foreground/80">
                   How much, each time
                 </label>
-                <span className="text-xs font-semibold text-foreground tabular-nums">
+                <span className="text-sm font-semibold text-foreground tabular-nums">
                   {show(draft.depositAmount, 0)} / {draft.depositFrequency === "annually" ? "yr" : "mo"}
                 </span>
               </div>
@@ -988,14 +988,14 @@ export function CompoundInterestSheet({
                   }
                   className="w-full cursor-pointer accent-brand"
                 />
-                <div className="flex justify-between text-xs text-muted">
+                <div className="flex justify-between text-sm text-muted">
                   <span>{show(0)}</span>
                   <span>{show(depositSliderMax)}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <label className="block text-xs text-muted">
+                <label className="block text-sm text-muted">
                   How often
                   <select
                     value={draft.depositFrequency}
@@ -1005,14 +1005,14 @@ export function CompoundInterestSheet({
                         e.target.value as ContributionFrequency
                       )
                     }
-                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-xs text-foreground outline-none focus:border-brand"
+                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
                   >
                     <option value="monthly">Monthly</option>
                     <option value="annually">Annually</option>
                   </select>
                 </label>
                 <label
-                  className="block text-xs text-muted"
+                  className="block text-sm text-muted"
                   title="Bump what you pay in by this much every year, to keep pace with a rising salary"
                 >
                   Raise it yearly by
@@ -1020,7 +1020,7 @@ export function CompoundInterestSheet({
                     kind="percent"
                     value={draft.annualIncrease}
                     onChange={(n) => patchDraft("annualIncrease", n)}
-                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-xs text-foreground outline-none focus:border-brand"
+                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
                   />
                 </label>
               </div>
@@ -1030,7 +1030,7 @@ export function CompoundInterestSheet({
           {(draft.contributionMode === "withdrawals" ||
             draft.contributionMode === "both") && (
             <div className="space-y-2">
-              <label className="block text-xs text-muted">
+              <label className="block text-sm text-muted">
                 Taking out each month
                 <FormattedNumberInput
                   kind="money"
@@ -1063,7 +1063,7 @@ export function CompoundInterestSheet({
             value={shock}
             onChange={setShock}
           />
-          <p className="text-xs leading-relaxed text-muted">
+          <p className="text-sm leading-relaxed text-muted">
             {shock === "none"
               ? "The same return every year. Markets don't do that. Try Crash first or Slow start to see the difference."
               : shock === "drawdown30"
@@ -1086,7 +1086,7 @@ export function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={() => void copyPostcard()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-foreground/80 transition hover:border-brand hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition hover:border-brand hover:text-foreground"
               >
                 {copied ? (
                   <Copy className="h-3.5 w-3.5 text-gain" />
@@ -1398,7 +1398,7 @@ export function CompoundInterestSheet({
               {compareTakeaway}
             </p>
           )}
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {compare.map((s) => (
               <Card
                 key={s.id}
@@ -1409,7 +1409,7 @@ export function CompoundInterestSheet({
                 <p className="text-sm font-semibold leading-5 text-foreground">
                   {s.label}
                 </p>
-                <p className="mt-1 h-[2.5rem] text-xs leading-snug text-muted">
+                <p className="mt-1.5 min-h-[2.75rem] text-sm leading-snug text-muted">
                   {s.tagline}
                 </p>
                 <p
@@ -1418,7 +1418,7 @@ export function CompoundInterestSheet({
                 >
                   {show(s.result.futureValue)}
                 </p>
-                <p className="mt-1 text-xs leading-4 text-muted">
+                <p className="mt-1.5 text-sm leading-5 text-muted">
                   {show(s.result.totalInterest)} of that is growth
                 </p>
               </Card>

@@ -114,7 +114,7 @@ export function HoldingModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">Add holding</h3>
-            <p className="text-xs text-muted">{portfolioName}</p>
+            <p className="text-sm text-muted">{portfolioName}</p>
           </div>
           <button
             type="button"
@@ -127,7 +127,7 @@ export function HoldingModal({
         </div>
 
         <div className="grid gap-3">
-          <label className="grid gap-1 text-xs text-muted">
+          <label className="grid gap-1 text-sm text-muted">
             Ticker
             <input
               autoFocus
@@ -140,7 +140,7 @@ export function HoldingModal({
               placeholder="NBIS or VWCE.DE / VUSA.L"
               required
             />
-            <span className="text-xs leading-relaxed text-muted">
+            <span className="text-sm leading-relaxed text-muted">
               US: bare symbol. London:{" "}
               <span className="text-muted">TICKER.L</span> or{" "}
               <span className="text-muted">LON:TICKER</span>. Xetra:{" "}
@@ -152,7 +152,7 @@ export function HoldingModal({
             </span>
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-xs text-muted">
+            <label className="grid gap-1 text-sm text-muted">
               Shares
               <input
                 type="text"
@@ -169,7 +169,7 @@ export function HoldingModal({
                 required
               />
             </label>
-            <label className="grid gap-1 text-xs text-muted">
+            <label className="grid gap-1 text-sm text-muted">
               Buy price
               <input
                 type="text"
@@ -188,7 +188,7 @@ export function HoldingModal({
             </label>
           </div>
           {!hideCallPct && (
-            <label className="grid gap-1 text-xs text-muted">
+            <label className="grid gap-1 text-sm text-muted">
               How far above your target to sell (%)
               <input
                 type="text"

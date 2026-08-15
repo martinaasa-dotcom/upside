@@ -49,7 +49,7 @@ function VisitStreakCard() {
   return (
     <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
       <h2 className="text-base font-bold text-foreground">Showing up</h2>
-      <p className="text-xs text-muted">{streakFlavor(streak.currentStreak)}</p>
+      <p className="text-sm text-muted">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
         {last7DaysStrip(streak).map((visited, i) => (
           <span
@@ -61,7 +61,7 @@ function VisitStreakCard() {
           />
         ))}
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-sm text-muted">
         {streak.currentStreak} day streak · best {streak.longestStreak} ·{" "}
         {streak.totalVisits} visits on this device
       </p>
@@ -265,7 +265,7 @@ export function AccountPage() {
                 router.push("/");
               })
             }
-            className="touch-target inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs text-muted hover:border-brand hover:text-foreground"
+            className="touch-target inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm text-muted hover:border-brand hover:text-foreground"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Sign out</span>
@@ -285,7 +285,7 @@ export function AccountPage() {
 
           <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
             <h2 className="text-base font-bold text-foreground">Email notes</h2>
-            <p className="text-xs text-muted">
+            <p className="text-sm text-muted">
               {morningCanSend
                 ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
                 : "Notes also land in the app. Email is not set up on this server yet."}
@@ -346,7 +346,7 @@ export function AccountPage() {
               </label>
             ))}
             {morningSaved && (
-              <p className="text-xs text-gain">Saved.</p>
+              <p className="text-sm text-gain">Saved.</p>
             )}
           </section>
 
@@ -360,7 +360,7 @@ export function AccountPage() {
                 <h2 className="text-base font-bold text-foreground">
                   Community profile
                 </h2>
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   Signed in as {user?.email ?? "—"}
                 </p>
               </div>
@@ -384,7 +384,7 @@ export function AccountPage() {
                 <p className="truncate text-sm font-medium text-foreground">
                   {displayName || "Your name"}
                 </p>
-                <p className="truncate text-xs text-muted">
+                <p className="truncate text-sm text-muted">
                   {bio || "Add a short bio for the community scoreboard."}
                 </p>
               </div>
@@ -392,7 +392,7 @@ export function AccountPage() {
 
             <form onSubmit={(e) => void saveProfile(e)} className="space-y-3">
               <label className="block space-y-1">
-                <span className="text-xs text-muted">
+                <span className="text-sm text-muted">
                   Display name
                 </span>
                 <input
@@ -405,10 +405,10 @@ export function AccountPage() {
               </label>
               <label className="block space-y-1">
                 <span className="flex items-baseline justify-between">
-                  <span className="text-xs text-muted">
+                  <span className="text-sm text-muted">
                     Bio · communities
                   </span>
-                  <span className="text-xs tabular-nums text-muted">
+                  <span className="text-sm tabular-nums text-muted">
                     {bio.length}/280
                   </span>
                 </span>
@@ -426,7 +426,7 @@ export function AccountPage() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-xs text-muted">
+                <span className="text-sm text-muted">
                   Avatar URL (optional)
                 </span>
                 <input
@@ -439,7 +439,7 @@ export function AccountPage() {
                   className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                 />
                 {avatarBroken && (
-                  <span className="text-xs text-loss">
+                  <span className="text-sm text-loss">
                     Couldn&apos;t load that image, showing your initial instead.
                   </span>
                 )}
@@ -468,7 +468,7 @@ export function AccountPage() {
               </div>
               <div>
                 <h2 className="text-base font-bold text-foreground">Experience level</h2>
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   Simplifies what&apos;s shown. Nothing is locked, change it anytime.
                 </p>
               </div>
@@ -488,17 +488,17 @@ export function AccountPage() {
                 >
                   <span>
                     <span className="font-medium">{t.label}</span>
-                    <span className="mt-0.5 block text-xs text-muted">{t.blurb}</span>
+                    <span className="mt-0.5 block text-sm text-muted">{t.blurb}</span>
                   </span>
                   {tier === t.id && <Check className="h-4 w-4 shrink-0 text-foreground" />}
                 </button>
               ))}
             </div>
-            {tierSaved && <p className="text-xs text-gain">Saved.</p>}
+            {tierSaved && <p className="text-sm text-gain">Saved.</p>}
 
             <div className="mt-4 border-t border-border pt-4">
               <p className="text-sm font-medium text-foreground">Options experience</p>
-              <p className="mt-0.5 text-xs text-muted">
+              <p className="mt-0.5 text-sm text-muted">
                 Controls covered calls, strike alerts, and Call % everywhere.
                 Separate from the level above.
               </p>
@@ -514,7 +514,7 @@ export function AccountPage() {
                   )}
                 >
                   <span className="font-medium">Yes</span>
-                  <span className="mt-0.5 block text-xs text-muted">
+                  <span className="mt-0.5 block text-sm text-muted">
                     Show covered calls
                   </span>
                 </button>
@@ -529,12 +529,12 @@ export function AccountPage() {
                   )}
                 >
                   <span className="font-medium">No</span>
-                  <span className="mt-0.5 block text-xs text-muted">
+                  <span className="mt-0.5 block text-sm text-muted">
                     Hide options entirely
                   </span>
                 </button>
               </div>
-              {knowsOptionsSaved && <p className="mt-2 text-xs text-gain">Saved.</p>}
+              {knowsOptionsSaved && <p className="mt-2 text-sm text-gain">Saved.</p>}
             </div>
           </section>
 
@@ -548,13 +548,13 @@ export function AccountPage() {
                 <h2 className="text-base font-bold text-foreground">
                   Invite a partner
                 </h2>
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   That lives on the sheet now. Open a book, tap Invite next to
                   Add holding.
                 </p>
               </div>
             </div>
-            <p className="text-xs leading-relaxed text-muted">
+            <p className="text-sm leading-relaxed text-muted">
               Redeem a code at{" "}
               <Link href="/account/join" className="text-foreground underline">
                 /account/join
@@ -573,7 +573,7 @@ export function AccountPage() {
                 <h2 className="text-base font-bold text-foreground">
                   Data &amp; privacy
                 </h2>
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   Your data, your call. Export it or wipe it any time.
                 </p>
               </div>
@@ -584,7 +584,7 @@ export function AccountPage() {
                 <p className="text-sm font-medium text-foreground">
                   Download everything
                 </p>
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   One JSON file: profile, sheets, holdings, Lab state.
                 </p>
               </div>
@@ -592,7 +592,7 @@ export function AccountPage() {
                 type="button"
                 onClick={() => void exportData()}
                 disabled={exporting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:border-brand disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-brand disabled:opacity-60"
               >
                 <Download className="h-3.5 w-3.5" />
                 {exporting ? "Preparing …" : "Export my data"}
@@ -605,7 +605,7 @@ export function AccountPage() {
                 <p className="text-sm font-medium text-loss">
                   Delete my account
                 </p>
-                <p className="text-xs text-muted">
+                <p className="text-sm text-muted">
                   Removes your profile, deletes sheets only you own, and steps
                   you off any shared ones. Cannot be undone.
                 </p>
@@ -617,14 +617,14 @@ export function AccountPage() {
                   setDeleteText("");
                   setDeleteOpen(true);
                 }}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-2 text-xs font-medium text-loss hover:bg-loss/10"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-2 text-sm font-medium text-loss hover:bg-loss/10"
               >
                 <AlertTriangle className="h-3.5 w-3.5" />
                 Delete account
               </button>
             </div>
 
-            <p className="text-center text-xs text-muted">
+            <p className="text-center text-sm text-muted">
               <Link href="/privacy" className="underline hover:text-muted">
                 Privacy policy
               </Link>
@@ -660,7 +660,7 @@ export function AccountPage() {
               Google account separately if you want that severed too.
             </p>
             <label className="mt-4 block space-y-1">
-              <span className="text-xs text-muted">
+              <span className="text-sm text-muted">
                 Type DELETE to confirm
               </span>
               <input

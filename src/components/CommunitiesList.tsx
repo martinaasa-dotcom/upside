@@ -246,13 +246,13 @@ export function CommunitiesList() {
                         {c.name}
                       </span>
                       {c.kind === "classroom" ? (
-                        <span className="shrink-0 text-xs text-muted">
+                        <span className="shrink-0 text-sm text-muted">
                           Class
                         </span>
                       ) : null}
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
-                      <span className="text-xs capitalize text-brand-bright/80">
+                      <span className="text-sm capitalize text-brand-bright/80">
                         {c.role}
                       </span>
                       <ChevronRight className="h-4 w-4 text-muted" />
@@ -270,7 +270,7 @@ export function CommunitiesList() {
                 Discover public circles
               </h2>
             </div>
-            <p className="mb-3 text-xs text-muted">
+            <p className="mb-3 text-sm text-muted">
               Anyone can ask to join. An admin still has to approve before
               you see any books.
             </p>
@@ -292,19 +292,19 @@ export function CommunitiesList() {
                         <span className="min-w-0 truncate text-sm font-medium text-foreground">
                           {c.name}
                         </span>
-                        <span className="shrink-0 text-xs text-muted">
+                        <span className="shrink-0 text-sm text-muted">
                           {c.memberCount}{" "}
                           {c.memberCount === 1 ? "member" : "members"}
                         </span>
                       </span>
                       {c.houseNote?.trim() ? (
-                        <span className="pl-5 text-xs leading-relaxed text-muted">
+                        <span className="pl-5 text-sm leading-relaxed text-muted">
                           {c.houseNote.trim()}
                         </span>
                       ) : null}
                     </span>
                     {c.requestStatus === "pending" ? (
-                      <span className="shrink-0 text-xs font-medium text-caution">
+                      <span className="shrink-0 text-sm font-medium text-caution">
                         Requested · pending
                       </span>
                     ) : (
@@ -312,7 +312,7 @@ export function CommunitiesList() {
                         type="button"
                         onClick={() => void requestToJoin(c.id)}
                         disabled={requestBusyId === c.id}
-                        className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-xs font-semibold text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
+                        className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
                       >
                         {requestBusyId === c.id
                           ? "Requesting …"
@@ -351,7 +351,7 @@ export function CommunitiesList() {
 
               <div className="mt-8 space-y-8">
                 <label className="block">
-                  <span className="text-xs font-medium text-muted">
+                  <span className="text-sm font-medium text-muted">
                     {kind === "classroom" ? "Class name" : "Name"}
                   </span>
                   <input
@@ -369,7 +369,7 @@ export function CommunitiesList() {
                 {kind === "classroom" ? (
                   <>
                     <div>
-                      <p className="text-xs font-medium text-muted">
+                      <p className="text-sm font-medium text-muted">
                         How the class runs
                       </p>
                       <p className="mt-1 text-sm leading-relaxed text-muted">
@@ -418,7 +418,7 @@ export function CommunitiesList() {
                       onChange={setStartingCash}
                     />
                     <label className="block">
-                      <span className="text-xs font-medium text-muted">
+                      <span className="text-sm font-medium text-muted">
                         What we&apos;re learning
                       </span>
                       <textarea
@@ -433,7 +433,7 @@ export function CommunitiesList() {
                   </>
                 ) : (
                   <div>
-                    <p className="text-xs font-medium text-muted">Who can join</p>
+                    <p className="text-sm font-medium text-muted">Who can join</p>
                     <div className="mt-3">
                       <Segmented
                         ariaLabel="Who can join"
