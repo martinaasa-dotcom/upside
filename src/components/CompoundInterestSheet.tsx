@@ -1303,15 +1303,20 @@ export function CompoundInterestSheet({
                 key={y}
                 active={safeStoryIdx === i}
                 onClick={() => setStoryIdx(i)}
+                className={
+                  tipping === y
+                    ? safeStoryIdx === i
+                      ? "bg-gain text-paper"
+                      : "text-gain ring-1 ring-inset ring-gain"
+                    : undefined
+                }
               >
                 Year {y}
-                {tipping === y && (
-                  <span
-                    className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-gain align-middle"
-                    title="Tipping year: interest outpaces deposits"
-                    aria-hidden
-                  />
-                )}
+                {tipping === y ? (
+                  <span className="sr-only">
+                    Tipping year: interest outpaces deposits
+                  </span>
+                ) : null}
               </SegButton>
             ))}
           </div>
