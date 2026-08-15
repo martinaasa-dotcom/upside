@@ -534,73 +534,68 @@ export function LabSheet({
               Need at least two names with price history to compare.
             </p>
           ) : (
-            /* Grid and pair list sit side by side on wide screens. The list
-             * stretches to the table's height so the last pair lands on the
-             * last row, not floating above a hole. Legend stays under the
-             * grid so it doesn't push that alignment. */
+            /* Header row is one shared 2rem band: column labels sit on the
+             * same tracks as the cells, Tightest pairs sits on that same
+             * band. Pair list then fills the body height. */
             <div>
-              <div className="grid gap-5 lg:grid-cols-[auto_1fr] lg:items-stretch">
+              <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-stretch">
                 <div className="min-w-0 overflow-x-auto">
-                  <table className="border-collapse text-xs">
-                    <thead>
-                      <tr>
-                        <th className="p-1" />
-                        {corrHeat.tickers.map((t) => (
-                          <th
-                            key={t}
-                            className="p-1 text-xs font-medium text-zinc-400"
-                          >
-                            {cashtag(t)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {corrHeat.tickers.map((row, i) => (
-                        <tr key={row}>
-                          <td className="whitespace-nowrap p-1 pr-2 text-xs font-medium text-zinc-400">
-                            {cashtag(row)}
-                          </td>
-                          {corrHeat.grid[i]!.map((c, j) => (
-                            <td
-                              key={`${row}-${j}`}
-                              title={
+                  <div
+                    className="grid w-max gap-1"
+                    style={{
+                      gridTemplateColumns: `auto repeat(${corrHeat.tickers.length}, 2.5rem)`,
+                    }}
+                  >
+                    <div className="h-8" />
+                    {corrHeat.tickers.map((t) => (
+                      <div
+                        key={`h-${t}`}
+                        title={cashtag(t)}
+                        className="flex h-8 items-end justify-center pb-0.5 text-xs font-medium leading-none text-zinc-400"
+                      >
+                        <span className="max-w-full truncate">{cashtag(t)}</span>
+                      </div>
+                    ))}
+                    {corrHeat.tickers.map((row, i) => (
+                      <div key={row} className="contents">
+                        <div className="flex h-10 items-center pr-2 text-xs font-medium text-zinc-400">
+                          {cashtag(row)}
+                        </div>
+                        {corrHeat.grid[i]!.map((c, j) => (
+                          <div
+                            key={`${row}-${j}`}
+                            title={
+                              c == null
+                                ? "—"
+                                : `${row} ↔ ${corrHeat.tickers[j]}: ${c.toFixed(2)}`
+                            }
+                            className="flex h-10 w-10 items-center justify-center rounded-md tabular-nums text-xs font-medium text-zinc-100"
+                            style={{
+                              background:
                                 c == null
-                                  ? "—"
-                                  : `${row} ↔ ${corrHeat.tickers[j]}: ${c.toFixed(2)}`
-                              }
-                              className="p-0.5"
-                            >
-                              <div
-                                className="flex h-10 w-10 items-center justify-center rounded-md tabular-nums text-xs font-medium text-zinc-100"
-                                style={{
-                                  background:
-                                    c == null
-                                      ? "#27272a"
-                                      : c >= 0
-                                        ? `rgba(212, 160, 64, ${0.15 + Math.abs(c) * 0.7})`
-                                        : `rgba(56, 189, 248, ${0.15 + Math.abs(c) * 0.7})`,
-                                }}
-                              >
-                                {c == null ? "—" : c.toFixed(1)}
-                              </div>
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                                  ? "#27272a"
+                                  : c >= 0
+                                    ? `rgba(212, 160, 64, ${0.15 + Math.abs(c) * 0.7})`
+                                    : `rgba(56, 189, 248, ${0.15 + Math.abs(c) * 0.7})`,
+                            }}
+                          >
+                            {c == null ? "—" : c.toFixed(1)}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex min-w-0 flex-col">
-                  <p className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
+                  <p className="flex h-8 items-end pb-0.5 text-xs uppercase tracking-wide text-zinc-400">
                     Tightest pairs
                   </p>
-                  <ul className="flex min-h-0 flex-1 flex-col">
+                  <ul className="flex min-h-0 flex-1 flex-col gap-1">
                     {corrPairs.map((c) => (
                       <li
                         key={`${c.a}-${c.b}`}
-                        className="flex flex-1 items-center justify-between gap-3 rounded-md border border-zinc-800/80 px-2.5 py-1.5 text-xs"
+                        className="flex flex-1 items-center justify-between gap-3 rounded-md border border-zinc-800/80 px-2.5 text-xs"
                       >
                         <span className="truncate text-zinc-300">
                           {cashtag(c.a)} ↔ {cashtag(c.b)}
