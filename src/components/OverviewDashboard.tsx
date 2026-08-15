@@ -404,17 +404,32 @@ function MorningStack({
       {sunday ? (
         <div className="space-y-2">
           <MicroLabel>Sunday look</MicroLabel>
-          {sunday.best && (
-            <p className={cn("text-sm tabular-nums", tone(sunday.best.pct))}>
-              {cashtag(sunday.best.ticker)} {signedMovePct(sunday.best.pct)}
-              <span className="text-zinc-400"> · biggest week move</span>
-            </p>
-          )}
-          {sunday.worst && (
-            <p className={cn("text-sm tabular-nums", tone(sunday.worst.pct))}>
-              {cashtag(sunday.worst.ticker)} {signedMovePct(sunday.worst.pct)}
-              <span className="text-zinc-400"> · biggest drop</span>
-            </p>
+          {(sunday.best || sunday.worst) && (
+            <div
+              className={cn(
+                "grid gap-3",
+                sunday.best && sunday.worst
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1 sm:max-w-xs"
+              )}
+            >
+              {sunday.best && (
+                <Stat
+                  label={cashtag(sunday.best.ticker)}
+                  value={signedMovePct(sunday.best.pct)}
+                  sub="Biggest week move"
+                  valueClassName={tone(sunday.best.pct)}
+                />
+              )}
+              {sunday.worst && (
+                <Stat
+                  label={cashtag(sunday.worst.ticker)}
+                  value={signedMovePct(sunday.worst.pct)}
+                  sub="Biggest drop"
+                  valueClassName={tone(sunday.worst.pct)}
+                />
+              )}
+            </div>
           )}
           {sunday.openedDays != null && (
             <p className="text-sm text-zinc-400">
@@ -428,19 +443,31 @@ function MorningStack({
             <p className="text-sm text-zinc-200">{morning.sentence}</p>
           )}
           {!morning.quiet && morning.drivers.length > 0 && (
-            <ul className="space-y-1">
+            <div
+              className={cn(
+                "grid gap-3",
+                morning.drivers.length === 1
+                  ? "grid-cols-1 sm:max-w-xs"
+                  : morning.drivers.length === 2
+                    ? "grid-cols-1 sm:grid-cols-2"
+                    : "grid-cols-1 sm:grid-cols-3"
+              )}
+            >
               {morning.drivers.map((d) => (
-                <li
+                <Stat
                   key={d.ticker}
-                  className={cn("text-sm tabular-nums", tone(d.dollar))}
-                >
-                  {cashtag(d.ticker)} {signedCurrency(d.dollar, 0)}
-                  {d.share != null
-                    ? ` · ${Math.round(d.share * 100)}% of the day's swing`
-                    : ""}
-                </li>
+                  label={cashtag(d.ticker)}
+                  value={signedCurrency(d.dollar, 0)}
+                  sub={
+                    d.share != null
+                      ? `${Math.round(d.share * 100)}% of today's move`
+                      : undefined
+                  }
+                  valueClassName={tone(d.dollar)}
+                  subClassName={tone(d.dollar)}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </>
       )}
