@@ -61,7 +61,7 @@ export function HeaderOverflowMenu({
     // wrapper it sits in an inline formatting context and the div grows to a
     // line box (button height plus the strut's descender space). The header
     // row then centres that taller wrapper, leaving the button visibly high
-    // next to Refresh, which is a direct flex child with no wrapper. Making
+    // next to View, which is a direct flex child with no wrapper. Making
     // the wrapper a flex container collapses it to exactly the button's 32px.
     <div className="relative flex" data-header-more={menuId}>
       <button
@@ -85,7 +85,7 @@ export function HeaderOverflowMenu({
           "inline-flex h-8 items-center justify-center gap-1 rounded-md border border-border text-xs font-medium text-muted hover:border-brand hover:text-foreground",
           // A fixed height (rather than relying on padding to add up to the
           // same total as the icon+text buttons next to it) guarantees this
-          // lines up with Refresh/View exactly, however the avatar image or
+          // lines up with View exactly, however the avatar image or
           // its padding renders — the previous padding-only sizing left the
           // avatar visibly taller and nudged out of alignment.
           avatar ? "w-8 p-0" : "px-2"

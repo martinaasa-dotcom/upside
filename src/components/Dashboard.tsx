@@ -414,7 +414,6 @@ export function Dashboard() {
   );
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
   const [quotesDelayed, setQuotesDelayed] = useState(false);
   const [missingTickers, setMissingTickers] = useState<string[]>([]);
@@ -1099,7 +1098,6 @@ export function Dashboard() {
       quotesAbortRef.current?.abort();
       const ctrl = new AbortController();
       quotesAbortRef.current = ctrl;
-      if (!opts?.silent) setRefreshing(true);
       try {
         let nextQuotes = existingQuotes;
         if (!nextQuotes || Object.keys(nextQuotes).length === 0) {
@@ -1164,10 +1162,6 @@ export function Dashboard() {
         if (isAbortError(err) || quotesAbortRef.current !== ctrl) return;
         console.error(err);
         setQuotesDelayed(true);
-      } finally {
-        if (quotesAbortRef.current === ctrl && !opts?.silent) {
-          setRefreshing(false);
-        }
       }
     },
     [applyFxPayload, refreshFx, hideOptionsUI]
@@ -1448,8 +1442,8 @@ export function Dashboard() {
     .join("|");
 
   // Quotes for every ticker; options when on a sheet OR Lab (CC calendar needs premiums).
-  // Silent: this effect re-runs on tab changes, so a visible Refresh spin
-  // here made the header look busy every time you landed on a room.
+  // Silent: this effect re-runs on tab changes. Prices poll in the
+  // background. There is no header Refresh.
   useEffect(() => {
     if (holdings.length === 0) return;
     if (isLab) {
@@ -2864,29 +2858,6 @@ export function Dashboard() {
         }
         end={accountEnd}
       >
-            <button
-              type="button"
-              onClick={() => {
-                if (isLab) {
-                  void refreshMarkets(allTickers, holdings);
-                } else if (isMetaTab) {
-                  void refreshMarkets(allTickers, holdings, undefined, {
-                    quotesOnly: true,
-                  });
-                } else {
-                  void refreshMarkets(allTickers, portfolioHoldings);
-                }
-              }}
-              disabled={refreshing}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium text-foreground/80 hover:border-brand hover:text-foreground disabled:opacity-50"
-              title={isLab ? "Fetch prices and option quotes now" : "Fetch prices now"}
-              aria-label="Refresh prices"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
-              />
-              <span className="hidden md:inline">Refresh</span>
-            </button>
             {!isMetaTab && canClassBuy && (
               <button
                 type="button"

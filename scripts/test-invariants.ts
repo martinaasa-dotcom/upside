@@ -3003,6 +3003,29 @@ run("dashboard modules sit behind an error boundary", () => {
   assert.ok(account.includes(`<WidgetErrorBoundary name="Account">`));
 });
 
+run("no Refresh button in the top header", () => {
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  const fund = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  const headerSlice = dash.slice(
+    dash.lastIndexOf("<AppHeader"),
+    dash.indexOf("</AppHeader>", dash.lastIndexOf("<AppHeader"))
+  );
+  assert.doesNotMatch(headerSlice, /Refresh prices/);
+  assert.doesNotMatch(headerSlice, /<span className="hidden md:inline">Refresh<\/span>/);
+  assert.doesNotMatch(fund, /Refresh prices/);
+  const fundHeader = fund.slice(
+    fund.indexOf("<AppHeader"),
+    fund.indexOf("</AppHeader>")
+  );
+  assert.doesNotMatch(fundHeader, /RefreshCw/);
+});
+
 run("workspace nav marks the current room and the skip link exists", () => {
   const switcher = readFileSync(
     join(process.cwd(), "src/components/WorkspaceSwitcher.tsx"),

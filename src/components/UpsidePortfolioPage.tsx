@@ -48,7 +48,6 @@ import {
   ChevronRight,
   Minus,
   Plus,
-  RefreshCw,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -419,7 +418,6 @@ export function UpsidePortfolioPage() {
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   /** When the currently displayed quotes landed. Null until the first
    * successful fetch: a cached first paint is real data but not fresh
    * data, and claiming otherwise would be a lie. */
@@ -467,7 +465,6 @@ export function UpsidePortfolioPage() {
     const ctrl = new AbortController();
     loadAbortRef.current = ctrl;
     const callId = ++loadCallIdRef.current;
-    if (mode === "manual") setRefreshing(true);
     // A cached paint means the first fetch is really a background refresh:
     // never swap a populated page back to a loading line.
     else if (mode === "initial" && !cachedRef.current) setLoading(true);
@@ -513,7 +510,6 @@ export function UpsidePortfolioPage() {
       // newer one that's still running.
       if (callId === loadCallIdRef.current) {
         setLoading(false);
-        setRefreshing(false);
       }
     }
   }, []);
@@ -1043,19 +1039,6 @@ export function UpsidePortfolioPage() {
             {freshnessLabel(quotesAt, nowMs)}
           </span>
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            void load("manual");
-            void refreshBenchmarkValue();
-          }}
-          disabled={refreshing}
-          aria-label="Refresh prices"
-          className="touch-target inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
       </AppHeader>
 
       <main id="main" className={PAGE_MAIN_CLASS}>
