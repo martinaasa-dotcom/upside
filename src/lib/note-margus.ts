@@ -85,6 +85,9 @@ function facts(r: NoteReport): string {
       ...r.weekNotes.map((n) => `  ${cashtag(n.ticker)} ${n.actionLine}`)
     );
   }
+  if (r.insights[0]) {
+    lines.push("Worth noticing:", ...r.insights.map((l) => `  ${l}`));
+  }
   return lines.filter((x): x is string => Boolean(x)).join("\n");
 }
 
@@ -113,7 +116,8 @@ Hard rules for this block:
 - Tickers as cashtags: $NBIS, not NBIS.
 - Only use names in the facts. Do not invent holdings.
 - Educational scenario, not advice. Do not say "you should buy" as an order. "I'd look to add if it dips" is fine.
-- If the day or week is quiet, say so and stop. Do not invent drama.`,
+- If the day or week is quiet, say so and stop. Do not invent drama.
+- If "Worth noticing" has a rotation or an adjacent sleeve, use it. Do not invent new tickers.`;
           prompt: facts(report),
           maxOutputTokens: report.kind === "sunday" ? 280 : 180,
           abortSignal: signal,

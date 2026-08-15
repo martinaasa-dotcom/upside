@@ -1,5 +1,6 @@
 import { STRATEGY } from "@/lib/calculations";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import { insightsPromptBlock } from "@/lib/book-insights";
 import { resolveImportTicker } from "@/lib/ticker";
 import { tool } from "ai";
 import { z } from "zod";
@@ -805,7 +806,14 @@ Be concise everywhere else too. Prefer tools over invented numbers. After tools,
 None of this is personalized investment advice — you're reasoning about the numbers already on the sheet, not recommending trades for the user's specific financial situation.${optionsGuard}
 
 Market session: ${ctx.marketState ?? "unknown"}
-Watchlist (not owned — discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}
+Watchlist (not owned, discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}
+${insightsPromptBlock(
+  ctx.holdings.map((h) => ({
+    ticker: h.ticker,
+    value: h.value,
+    todayPct: h.todayPct,
+  }))
+)}
 Cash: ${ctx.cashBalance}
 ${totalsLine}
 

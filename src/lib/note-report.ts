@@ -2,6 +2,7 @@
 
 import { cashtag } from "@/lib/format";
 import { stripAiDashes } from "@/lib/ai/humanize-copy";
+import { buildBookInsights } from "@/lib/book-insights";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { todayDollarFor } from "@/lib/overview";
 import type { ConvictionMap } from "@/lib/conviction";
@@ -87,6 +88,7 @@ export type NoteReport = {
   thesis: NoteThesis | null;
   weekNotes: NoteWeekNote[];
   margus: string | null;
+  insights: string[];
 };
 
 const TITLE: Record<NoteKind, string> = {
@@ -661,6 +663,13 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
         ? weekNotesFor(t.positions, input.conviction)
         : [],
     margus: null,
+    insights: buildBookInsights(
+      t.positions.map((p) => ({
+        ticker: p.ticker,
+        value: p.value,
+        todayPct: p.pct,
+      }))
+    ).lines,
   };
 }
 
@@ -700,6 +709,10 @@ export function noteReportText(r: NoteReport): string {
   if (r.kind === "morning" && r.watches.length > 0) {
     lines.push("", "Look out for");
     for (const w of r.watches) lines.push(w.line);
+  }
+  if (r.insights.length > 0) {
+    lines.push("", "Worth noticing");
+    for (const line of r.insights) lines.push(line);
   }
   if (r.thesis) {
     const heading = r.thesis.ownerThesis
@@ -877,6 +890,19 @@ export function noteReportHtml(r: NoteReport): string {
         )
       : "";
 
+  const insightsInner =
+    r.insights.length > 0
+      ? section(
+          "Worth noticing",
+          r.insights
+            .map(
+              (line, i) =>
+                `<p style="margin:${i === 0 ? "0" : "12px 0 0 0"};font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(line)}</p>`
+            )
+            .join("")
+        )
+      : "";
+
   const margusInner = r.margus
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:28px 0 0 0">
   <tr>
@@ -998,10 +1024,10 @@ ${
 
   const bodyOrder =
     r.kind === "morning"
-      ? `${margusInner}${watchesInner}${moversInner}`
+      ? `${margusInner}${watchesInner}${insightsInner}${moversInner}`
       : r.kind === "sunday"
-        ? `${margusInner}${moversInner}${weightsInner}${perspectiveInner}${weekNotesInner}`
-        : `${margusInner}${moversInner}${thesisInner}`;
+        ? `${margusInner}${moversInner}${weightsInner}${insightsInner}${perspectiveInner}${weekNotesInner}`
+        : `${margusInner}${moversInner}${insightsInner}${thesisInner}`;
 
   return `<!DOCTYPE html>
 <html lang="en">

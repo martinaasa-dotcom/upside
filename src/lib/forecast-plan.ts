@@ -4,6 +4,7 @@
 import type { z } from "zod";
 import type { forecastPlanSchema } from "@/lib/forecast-plan-schema";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import { insightsPromptBlock } from "@/lib/book-insights";
 import { humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import { FORECAST_YEARS } from "@/lib/forecast";
@@ -532,6 +533,13 @@ Current portfolio value (equity+cash): ${input.forecast.currentTotal.toFixed(0)}
 
 Holdings (share counts stay fixed unless you explicitly recommend trimming/adding size):
 ${lines.length ? lines.join("\n") : "(no holdings)"}
+
+${insightsPromptBlock(
+    input.forecast.rows.map((r) => ({
+      ticker: r.ticker,
+      value: r.currentValue,
+    }))
+  )}
 
 Requirements:
 1. periods MUST include:

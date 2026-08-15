@@ -1,3 +1,4 @@
+import { buildBookInsights } from "@/lib/book-insights";
 import { cashtag, signedCurrency } from "@/lib/format";
 import {
   isUsAfterCashClose,
@@ -38,6 +39,7 @@ export type SundayRecap = {
 export type MorningRead = {
   quiet: boolean;
   sentence: string;
+  insight: string | null;
   pulseFlag: MorningPulseFlag | null;
   awayLines: VisitDiff["lines"];
   drivers: MorningDriver[];
@@ -181,6 +183,13 @@ export function buildSundayRecap(model: OverviewModel): SundayRecap | null {
       : bestTicker
         ? pulseLineForTicker(bestTicker)
         : null,
+    buildBookInsights(
+      model.tickers.map((t) => ({
+        ticker: t.ticker,
+        value: t.currentValue,
+        todayPct: t.todayPct,
+      }))
+    ).lines[0] ?? null,
   ].filter((x): x is string => Boolean(x));
   return {
     headline: "Sunday look",
@@ -206,10 +215,18 @@ export function buildMorningRead(
   const awayLines = visitDiff?.lines.slice(0, 3) ?? [];
   const sunday = isSundayTallinn() ? buildSundayRecap(model) : null;
   const afterClose = isUsAfterCashClose(session);
+  const insight =
+    buildBookInsights(
+      model.tickers.map((t) => ({
+        ticker: t.ticker,
+        value: t.currentValue,
+        todayPct: t.todayPct,
+      }))
+    ).lines[0] ?? null;
   return {
     quiet: quiet && awayLines.length === 0,
     sentence,
-    pulseFlag: pulseFlagFor(model),
+    insight,
     awayLines,
     drivers: sunday || afterClose ? [] : driversFor(model),
     closeNote: !sunday && afterClose ? buildCloseNote(model) : null,

@@ -4,6 +4,7 @@ import {
 } from "@/lib/ai/model";
 import { humanizeMargusTree, humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import { insightsPromptBlock } from "@/lib/book-insights";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -101,6 +102,16 @@ Martin uses this when a **big line drops hard**. He asks: *should I sell, or add
 Primary job: **down ≥5% moves** (including pre-market / after-hours). Also covers other big book lines for context.
 
 ${fg}
+
+${insightsPromptBlock(
+    candidates
+      .filter((c) => c.inBook)
+      .map((c) => ({
+        ticker: c.ticker,
+        value: c.currentValue,
+        todayPct: c.effectivePct,
+      }))
+  )}
 
 ### Action rules (do NOT default everything to hold)
 - **action** = \`add\` | \`hold\` | \`trim\` | \`sell\` | \`watch\`

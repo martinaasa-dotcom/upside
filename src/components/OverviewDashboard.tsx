@@ -429,6 +429,9 @@ function MorningStack({
       ) : (
         <p className="text-sm text-zinc-200">{morning.sentence}</p>
       )}
+      {morning.insight && (
+        <p className="text-sm text-zinc-400">{morning.insight}</p>
+      )}
       {!special && !morning.quiet && morning.drivers.length > 0 && (
         <ul className="space-y-1">
           {morning.drivers.map((d) => (
