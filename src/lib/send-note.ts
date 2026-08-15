@@ -3,6 +3,30 @@
 import { Resend } from "resend";
 
 const DEFAULT_FROM = "Upside Lab <notes@upsidelab.app>";
+const MARK_URL = "https://upsidelab.app/upside-icon.svg";
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function noteHtml(text: string): string {
+  const body = text
+    .split("\n")
+    .map((line) =>
+      line.trim()
+        ? `<p style="margin:0 0 10px 0">${escapeHtml(line)}</p>`
+        : "<p style=\"margin:0 0 10px 0\">&nbsp;</p>"
+    )
+    .join("");
+  return `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.45;color:#111">
+<img src="${MARK_URL}" width="32" height="32" alt="Upside Lab" style="display:block;margin:0 0 16px 0;border:0" />
+${body}
+</div>`;
+}
 
 export function noteEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY?.trim());
@@ -23,7 +47,7 @@ export async function sendNoteEmail(input: {
     to: input.to,
     subject: input.subject,
     text: input.text,
-    html: input.html,
+    html: input.html ?? noteHtml(input.text),
     headers: {
       "List-Unsubscribe": "<https://upsidelab.app/account>",
     },
