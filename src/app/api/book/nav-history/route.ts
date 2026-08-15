@@ -19,11 +19,15 @@ const MAX_TICKERS = 24;
 type NavPoint = { date: string; nav: number };
 
 async function snapshotPointsForUser(
-  userId: string
+  userId: string,
+  onlyIds?: string[]
 ): Promise<{ points: NavPoint[]; firstRealDate: string | null }> {
   const owned = await listOwnedPortfolioIds(userId);
-  if (owned.length === 0) return { points: [], firstRealDate: null };
-  const ownedSet = new Set(owned);
+  const allowed = onlyIds?.length
+    ? owned.filter((id) => onlyIds.includes(id))
+    : owned;
+  if (allowed.length === 0) return { points: [], firstRealDate: null };
+  const ownedSet = new Set(allowed);
 
   const supabase = await getSupabaseDataClient();
   if (!supabase) return { points: [], firstRealDate: null };
@@ -84,6 +88,7 @@ export async function POST(req: Request) {
     cash?: number;
     positions?: AssumedPosition[];
     includeSpy?: boolean;
+    portfolioIds?: string[];
   } = {};
   try {
     body = (await req.json()) as typeof body;
@@ -94,15 +99,29 @@ export async function POST(req: Request) {
   const assumed = body.assumed !== false;
   const auth = await requireAuthUser();
   const userId = "error" in auth ? null : auth.user.id;
+  const onlyIds = Array.isArray(body.portfolioIds)
+    ? body.portfolioIds.map((id) => String(id)).filter(Boolean)
+    : undefined;
   const snaps = userId
-    ? await snapshotPointsForUser(userId)
+    ? await snapshotPointsForUser(userId, onlyIds)
     : { points: [] as NavPoint[], firstRealDate: null };
 
   if (!assumed) {
+    let spyPoints: NavPoint[] | undefined;
+    if (body.includeSpy) {
+      const spyCloses = await fetchYtdDailyCloses(["SPY"]);
+      const spyPath = reconstructAssumedNav(
+        0,
+        [{ ticker: "SPY", shares: 1 }],
+        spyCloses
+      );
+      if (spyPath.length >= 2) spyPoints = spyPath;
+    }
     return NextResponse.json({
       points: snaps.points,
       assumed: false,
       firstRealDate: snaps.firstRealDate,
+      spyPoints,
     });
   }
 

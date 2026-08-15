@@ -24,7 +24,7 @@ export async function GET() {
       .eq("user_id", auth.user.id),
     supabase
       .from(PORTFELL_TABLES.communities)
-      .select("id, name, created_at")
+      .select("id, name, house_note, created_at")
       .eq("visibility", "public")
       .order("name"),
   ]);
@@ -34,9 +34,12 @@ export async function GET() {
       (m) => m.community_id
     )
   );
-  const candidates = ((publicCommunities ?? []) as { id: string }[]).filter(
-    (c) => !memberOf.has(c.id)
-  );
+  const candidates = ((publicCommunities ?? []) as {
+    id: string;
+    name: string;
+    house_note: string | null;
+    created_at: string;
+  }[]).filter((c) => !memberOf.has(c.id));
 
   if (candidates.length === 0) {
     return NextResponse.json({ communities: [] });
@@ -69,7 +72,9 @@ export async function GET() {
 
   return NextResponse.json({
     communities: candidates.map((c) => ({
-      ...c,
+      id: c.id,
+      name: c.name,
+      houseNote: c.house_note,
       memberCount: memberCountByCommunity.get(c.id) ?? 0,
       requestStatus: requestStatusByCommunity.get(c.id) ?? null,
     })),

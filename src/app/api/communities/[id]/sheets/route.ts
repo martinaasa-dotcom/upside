@@ -1,0 +1,122 @@
+import {
+  userIsCommunityMember,
+  userOwnsPortfolio,
+} from "@/lib/auth/ownership";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { getSupabaseDataClient } from "@/lib/supabase/server";
+import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+type Ctx = { params: Promise<{ id: string }> };
+
+/** Sheets the caller owns, and which of them are shared into this circle. */
+export async function GET(_req: NextRequest, ctx: Ctx) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
+  const { id } = await ctx.params;
+  if (!(await userIsCommunityMember(auth.user.id, id))) {
+    return NextResponse.json({ error: "Not a member" }, { status: 403 });
+  }
+
+  const supabase = await getSupabaseDataClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
+  }
+
+  const { data: owned } = await supabase
+    .from(PORTFELL_TABLES.portfolioOwners)
+    .select("portfolio_id")
+    .eq("user_id", auth.user.id);
+  const ids = ((owned ?? []) as { portfolio_id: string }[]).map(
+    (r) => r.portfolio_id
+  );
+  if (ids.length === 0) {
+    return NextResponse.json({ sheets: [] });
+  }
+
+  const [{ data: portfolios }, { data: shared }] = await Promise.all([
+    supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("id, name, sort_order")
+      .in("id", ids)
+      .order("sort_order"),
+    supabase
+      .from(PORTFELL_TABLES.communityPortfolios)
+      .select("portfolio_id")
+      .eq("community_id", id)
+      .in("portfolio_id", ids),
+  ]);
+
+  const sharedSet = new Set(
+    ((shared ?? []) as { portfolio_id: string }[]).map((r) => r.portfolio_id)
+  );
+
+  return NextResponse.json({
+    sheets: ((portfolios ?? []) as { id: string; name: string }[]).map((p) => ({
+      id: p.id,
+      name: p.name,
+      shared: sharedSet.has(p.id),
+    })),
+  });
+}
+
+export async function POST(req: NextRequest, ctx: Ctx) {
+  const auth = await requireAuthUser();
+  if ("error" in auth) return auth.error;
+
+  const { id } = await ctx.params;
+  if (!(await userIsCommunityMember(auth.user.id, id))) {
+    return NextResponse.json({ error: "Not a member" }, { status: 403 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as {
+    portfolioId?: string;
+    shared?: boolean;
+  };
+  const portfolioId = String(body.portfolioId ?? "").trim();
+  if (!portfolioId) {
+    return NextResponse.json({ error: "portfolioId required" }, { status: 400 });
+  }
+  if (!(await userOwnsPortfolio(auth.user.id, portfolioId))) {
+    return NextResponse.json(
+      { error: "You can only share a sheet you own" },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await getSupabaseDataClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
+  }
+
+  const share = body.shared !== false;
+  if (share) {
+    const { data: sheet } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("name")
+      .eq("id", portfolioId)
+      .maybeSingle();
+    const { error } = await supabase.from(PORTFELL_TABLES.communityPortfolios).insert({
+      community_id: id,
+      portfolio_id: portfolioId,
+      label: (sheet as { name?: string } | null)?.name ?? null,
+    });
+    if (error && !/duplicate|unique/i.test(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  } else {
+    const { error } = await supabase
+      .from(PORTFELL_TABLES.communityPortfolios)
+      .delete()
+      .eq("community_id", id)
+      .eq("portfolio_id", portfolioId);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json({ ok: true, portfolioId, shared: share });
+}

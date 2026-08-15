@@ -59,15 +59,11 @@ type MyPortfolioBenchmark = {
   baselineDate: string;
   userBaselineValue: number;
   margusBaselineValue: number;
-  /** YTD assumed path. Older pins without this were same-day and look flat. */
-  range?: "ytd";
+  /** Recorded nights. Older pins may still say ytd. */
+  range?: "ytd" | "recorded";
 };
 
 type YtdNavPoint = { date: string; nav: number };
-
-function yearStartKey(): string {
-  return `${new Date().getFullYear()}-01-01`;
-}
 
 function returnPctFromNav(
   points: YtdNavPoint[],
@@ -114,17 +110,15 @@ function margusOnLabels(
   });
 }
 
-async function fetchYtdPaths(
-  cash: number,
-  positions: { ticker: string; shares: number }[]
+async function fetchRecordedPath(
+  portfolioId: string
 ): Promise<{ sheet: YtdNavPoint[]; spy: YtdNavPoint[] }> {
   const res = await fetch("/api/book/nav-history", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      assumed: true,
-      cash,
-      positions,
+      assumed: false,
+      portfolioIds: [portfolioId],
       includeSpy: true,
     }),
   });
@@ -829,28 +823,26 @@ export function UpsidePortfolioPage() {
       setBenchmarkLiveValue(live);
       setBenchmarkQuotes(liveQuotes);
 
-      const positions = holdingsList
-        .filter((h) => h.portfolio_id === benchmark.portfolioId)
-        .map((h) => ({ ticker: h.ticker, shares: h.shares }));
-      const { sheet, spy } = await fetchYtdPaths(meta.cash_balance, positions);
+      const { sheet, spy } = await fetchRecordedPath(benchmark.portfolioId);
       if (sheet.length >= 2) {
         setSheetYtd(sheet);
         setSpyYtd(spy);
-        const janNav = sheet[0]!.nav;
-        const needsYtd =
-          benchmark.range !== "ytd" ||
-          benchmark.baselineDate === todayKeyInTz() ||
-          (janNav > 0 && Math.abs(janNav - benchmark.userBaselineValue) > 1);
-        if (needsYtd) {
+        const first = sheet[0]!;
+        const needsHeal =
+          benchmark.range !== "recorded" ||
+          benchmark.baselineDate !== first.date ||
+          (first.nav > 0 &&
+            Math.abs(first.nav - benchmark.userBaselineValue) > 1);
+        if (needsHeal) {
           const healed: MyPortfolioBenchmark = {
             ...benchmark,
-            baselineDate: yearStartKey(),
+            baselineDate: first.date,
             userBaselineValue:
-              janNav > 0 ? janNav : benchmark.userBaselineValue,
+              first.nav > 0 ? first.nav : benchmark.userBaselineValue,
             margusBaselineValue:
               fundRef.current?.starting_capital ??
               benchmark.margusBaselineValue,
-            range: "ytd",
+            range: "recorded",
           };
           saveStoredBenchmark(healed);
           setBenchmark(healed);
@@ -944,20 +936,23 @@ export function UpsidePortfolioPage() {
         myPortfolios,
         myHoldings
       );
-      const positions = myHoldings
-        .filter((h) => h.portfolio_id === pickerSelection)
-        .map((h) => ({ ticker: h.ticker, shares: h.shares }));
-      const { sheet, spy } = await fetchYtdPaths(meta.cash_balance, positions);
-      setSheetYtd(sheet.length >= 2 ? sheet : null);
+      const { sheet, spy } = await fetchRecordedPath(pickerSelection);
+      if (sheet.length < 2) {
+        setBenchmarkError(
+          "Need a few recorded nights on this sheet first."
+        );
+        return;
+      }
+      setSheetYtd(sheet);
       setSpyYtd(spy.length >= 2 ? spy : null);
-      const janNav = sheet[0]?.nav ?? 0;
+      const first = sheet[0]!;
       const next: MyPortfolioBenchmark = {
         portfolioId: pickerSelection,
         portfolioName: meta.name,
-        baselineDate: yearStartKey(),
-        userBaselineValue: janNav > 0 ? janNav : live,
+        baselineDate: first.date,
+        userBaselineValue: first.nav > 0 ? first.nav : live,
         margusBaselineValue: fund?.starting_capital ?? totalValue,
-        range: "ytd",
+        range: "recorded",
       };
       saveStoredBenchmark(next);
       setBenchmark(next);
@@ -1086,7 +1081,7 @@ export function UpsidePortfolioPage() {
                   </h2>
                   <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
                     {benchmark
-                      ? `${benchmark.portfolioName} this year, as if you held today's names. Margus from when the fund started. SPY from Jan 1.`
+                      ? `${benchmark.portfolioName} on nights we recorded. Margus from when the fund started. SPY is the real index.`
                       : "How the fund has moved versus the S&P 500, as a percent."}
                   </p>
                 </div>

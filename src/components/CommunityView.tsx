@@ -1,6 +1,7 @@
 "use client";
 
 import { DailyDuelCard } from "@/components/DailyDuelCard";
+import { ShareSheets } from "@/components/ShareSheets";
 import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
@@ -91,6 +92,7 @@ type CommunityMeta = {
   id: string;
   name: string;
   visibility?: "public" | "private";
+  house_note?: string | null;
   created_by: string | null;
 };
 
@@ -217,19 +219,16 @@ export function CommunityView({ communityId }: Props) {
       ? null
       : new URLSearchParams(window.location.search).get("portfolio")
   );
-  const [view, setView] = useState<"overview" | "members">(() =>
-    typeof window === "undefined"
-      ? "overview"
-      : new URLSearchParams(window.location.search).get("view") === "members"
-        ? "members"
-        : "overview"
-  );
-  const [leaderboardRange, setLeaderboardRange] = useState<
-    "today" | "spread" | "risk" | "conviction"
-  >("today");
+  const [view, setView] = useState<"overview" | "play" | "members">(() => {
+    if (typeof window === "undefined") return "overview";
+    const raw = new URLSearchParams(window.location.search).get("view");
+    if (raw === "members" || raw === "play") return raw;
+    return "overview";
+  });
   const [bestiaryOpen, setBestiaryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsName, setSettingsName] = useState("");
+  const [settingsNote, setSettingsNote] = useState("");
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -331,7 +330,8 @@ export function CommunityView({ communityId }: Props) {
       const params = new URLSearchParams(window.location.search);
       setSelectedOwnerId(params.get("member"));
       setSelectedPortfolioId(params.get("portfolio"));
-      setView(params.get("view") === "members" ? "members" : "overview");
+      const raw = params.get("view");
+      setView(raw === "members" || raw === "play" ? raw : "overview");
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -344,7 +344,7 @@ export function CommunityView({ communityId }: Props) {
     else url.searchParams.delete("member");
     if (selectedPortfolioId) url.searchParams.set("portfolio", selectedPortfolioId);
     else url.searchParams.delete("portfolio");
-    if (view === "members") url.searchParams.set("view", "members");
+    if (view === "members" || view === "play") url.searchParams.set("view", view);
     else url.searchParams.delete("view");
     const href = `${url.pathname}${url.search}`;
 
@@ -923,8 +923,32 @@ export function CommunityView({ communityId }: Props) {
 
   function openSettings() {
     setSettingsName(community?.name ?? "");
+    setSettingsNote(community?.house_note ?? "");
     setSettingsError(null);
     setSettingsOpen(true);
+  }
+
+  async function handleSaveHouseNote() {
+    const note = settingsNote.trim();
+    if (note === (community?.house_note ?? "").trim()) return;
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ houseNote: note }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error ?? "Save failed");
+      }
+      setCommunity((data as { community: CommunityMeta }).community);
+    } catch (e) {
+      setSettingsError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSettingsBusy(false);
+    }
   }
 
   async function handleRename() {
@@ -1099,9 +1123,14 @@ export function CommunityView({ communityId }: Props) {
             <>
               <section className="space-y-3">
                 <p className="text-xs uppercase tracking-wide text-zinc-400">
-                  Everyone&apos;s books added together. Live marks only. Members
-                  do not see what you paid.
+                  Shared sheets added together. Live marks only. Members do
+                  not see what you paid.
                 </p>
+                {community?.house_note?.trim() ? (
+                  <p className="text-sm leading-relaxed text-zinc-200">
+                    {community.house_note.trim()}
+                  </p>
+                ) : null}
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Stat
                     label="Total value"
@@ -1131,18 +1160,11 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               </section>
 
-              <DailyDuelCard
-                communityId={communityId}
-                tickers={overview.tickers.map((t) => ({
-                  ticker: t.ticker,
-                  todayPct: t.todayPct,
-                }))}
-              />
-
               <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 w-fit">
                 {(
                   [
                     ["overview", "Overview", LayoutGrid],
+                    ["play", "Play", Sparkles],
                     ["members", "Members", Users],
                   ] as const
                 ).map(([id, label, Icon]) => (
@@ -1163,9 +1185,31 @@ export function CommunityView({ communityId }: Props) {
                 ))}
               </div>
 
-              {view === "overview" && (
+              {(view === "overview" || view === "play") && (
                 <div className="flex flex-col gap-8">
-                  {membersWithBooks.length > 0 && (
+                  {view === "overview" && membersWithBooks.length === 0 && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-zinc-400">
+                        Nobody has shared a sheet here yet. Pick which of
+                        yours belong in this circle.
+                      </p>
+                      <ShareSheets
+                        communityId={communityId}
+                        onChanged={() => void load()}
+                      />
+                    </div>
+                  )}
+                  {view === "overview" && membersWithBooks.length > 0 && (
+                    <DailyDuelCard
+                      compact
+                      communityId={communityId}
+                      tickers={overview.tickers.map((t) => ({
+                        ticker: t.ticker,
+                        todayPct: t.todayPct,
+                      }))}
+                    />
+                  )}
+                  {view === "play" && membersWithBooks.length > 0 && (
                     <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
@@ -1211,7 +1255,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {achievements.length > 0 && (
+                  {view === "play" && achievements.length > 0 && (
                     <section className="overview-fade order-2 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
@@ -1255,7 +1299,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {membersWithBooks.length > 0 && (
+                  {view === "overview" && membersWithBooks.length > 0 && (
                     <section className="overview-fade order-1 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
@@ -1264,77 +1308,21 @@ export function CommunityView({ communityId }: Props) {
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-white">
-                              Leaderboard
+                              Today
                             </h3>
                             <p className="mt-0.5 text-sm text-zinc-400">
-                              {leaderboardRange === "today"
-                                ? "Ranked by today's move"
-                                : leaderboardRange === "spread"
-                                  ? "Ranked by how spread out the book is"
-                                  : leaderboardRange === "risk"
-                                    ? "Ranked by theme heat"
-                                    : "Ranked by the largest single name"}
+                              Ranked by today&apos;s move
                             </p>
                           </div>
-                        </div>
-                        <div className="flex max-w-full gap-1 overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                          {(
-                            [
-                              ["today", "Today"],
-                              ["spread", "Spread"],
-                              ["risk", "Risk"],
-                              ["conviction", "Conviction"],
-                            ] as const
-                          ).map(([id, label]) => (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => setLeaderboardRange(id)}
-                              className={cn(
-                                "rounded-md px-2.5 py-1 text-xs font-semibold transition",
-                                leaderboardRange === id
-                                  ? "bg-brand/20 text-brand-bright"
-                                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                              )}
-                            >
-                              {label}
-                            </button>
-                          ))}
                         </div>
                       </div>
                       <ul className="space-y-2">
                         {[...membersWithBooks]
-                          .sort((a, b) => {
-                            if (leaderboardRange === "today")
-                              return (b.todayPct ?? -1) - (a.todayPct ?? -1);
-                            if (leaderboardRange === "spread")
-                              return (
-                                (b.personality?.diversificationScore ?? -1) -
-                                (a.personality?.diversificationScore ?? -1)
-                              );
-                            if (leaderboardRange === "risk")
-                              return (
-                                (b.personality?.riskScore ?? -1) -
-                                (a.personality?.riskScore ?? -1)
-                              );
-                            return (
-                              (b.personality?.convictionScore ?? -1) -
-                              (a.personality?.convictionScore ?? -1)
-                            );
-                          })
+                          .sort(
+                            (a, b) => (b.todayPct ?? -1) - (a.todayPct ?? -1)
+                          )
                           .map((m, i) => {
-                            const built =
-                              leaderboardRange === "spread" ||
-                              leaderboardRange === "risk" ||
-                              leaderboardRange === "conviction";
-                            const pct =
-                              leaderboardRange === "today" ? m.todayPct : null;
-                            const builtScore =
-                              leaderboardRange === "spread"
-                                ? m.personality?.diversificationScore
-                                : leaderboardRange === "risk"
-                                  ? m.personality?.riskScore
-                                  : m.personality?.convictionScore;
+                            const pct = m.todayPct;
                             return (
                               <li key={m.id}>
                                 <button
@@ -1375,34 +1363,19 @@ export function CommunityView({ communityId }: Props) {
                                 <span
                                   className={cn(
                                     "w-16 shrink-0 text-right text-sm font-semibold tabular-nums",
-                                    built
-                                      ? "text-white"
-                                      : signedTone(pct, "text-zinc-400")
+                                    signedTone(pct, "text-zinc-400")
                                   )}
                                 >
-                                  {built
-                                    ? builtScore != null
-                                      ? leaderboardRange === "conviction"
-                                        ? `${builtScore}%`
-                                        : `${builtScore}`
-                                      : "—"
-                                    : pct != null
-                                      ? percent(pct)
-                                      : "—"}
+                                  {pct != null ? percent(pct) : "—"}
                                 </span>
-                                {/* Whole dollars: cents are noise on a
-                                  * leaderboard, and at two decimals a
-                                  * seven-figure book overflows the column. */}
-                                {leaderboardRange === "today" && (
-                                  <span
-                                    className={cn(
-                                      "hidden w-24 shrink-0 text-right text-xs tabular-nums sm:inline-block",
-                                      signedTone(m.todayDollar, "text-zinc-400")
-                                    )}
-                                  >
-                                    {signedCurrency(m.todayDollar, 0)}
-                                  </span>
-                                )}
+                                <span
+                                  className={cn(
+                                    "hidden w-24 shrink-0 text-right text-xs tabular-nums sm:inline-block",
+                                    signedTone(m.todayDollar, "text-zinc-400")
+                                  )}
+                                >
+                                  {signedCurrency(m.todayDollar, 0)}
+                                </span>
                                 </button>
                               </li>
                             );
@@ -1411,7 +1384,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {overview.topHoldings.length > 0 && (
+                  {view === "overview" && overview.topHoldings.length > 0 && (
                     <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
@@ -1463,7 +1436,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
-                  {communityThemeBreakdown.length > 0 && (
+                  {view === "play" && communityThemeBreakdown.length > 0 && (
                     <section className="overview-fade order-5 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
@@ -1513,6 +1486,7 @@ export function CommunityView({ communityId }: Props) {
                     </section>
                   )}
 
+                  {view === "play" && (
                   <section className="overview-fade order-6 rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-6">
                     <div className="mb-5 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
@@ -1557,11 +1531,16 @@ export function CommunityView({ communityId }: Props) {
                       )}
                     </ul>
                   </section>
+                  )}
                 </div>
               )}
 
               {view === "members" && (
                 <>
+                  <ShareSheets
+                    communityId={communityId}
+                    onChanged={() => void load()}
+                  />
                   <section className="space-y-3">
                     <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-200">
                       <Users className="h-4 w-4 text-zinc-400" />
@@ -1848,8 +1827,8 @@ export function CommunityView({ communityId }: Props) {
                         Admin · invite
                       </h2>
                       <p className="text-xs text-zinc-400">
-                        Invites join the community; members share their whole
-                        book read-only.
+                        Invites join the community. Each person picks which
+                        sheets to share. Live marks only.
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input
@@ -2065,6 +2044,36 @@ export function CommunityView({ communityId }: Props) {
                 className="btn-primary disabled:opacity-40"
               >
                 {settingsBusy ? "Saving …" : "Save name"}
+              </button>
+            </div>
+
+            <label className="mt-5 block text-xs font-medium text-zinc-400">
+              House note
+            </label>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+              One paragraph for the room. Public circles show this on
+              Discover too.
+            </p>
+            <textarea
+              value={settingsNote}
+              onChange={(e) => setSettingsNote(e.target.value)}
+              maxLength={400}
+              rows={3}
+              disabled={settingsBusy}
+              placeholder="Family books, live marks, no advice."
+              className="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => void handleSaveHouseNote()}
+                disabled={
+                  settingsBusy ||
+                  settingsNote.trim() === (community?.house_note ?? "").trim()
+                }
+                className="btn-primary disabled:opacity-40"
+              >
+                {settingsBusy ? "Saving …" : "Save note"}
               </button>
             </div>
 

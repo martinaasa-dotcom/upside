@@ -368,6 +368,21 @@ function MorningStack({
   return (
     <div className={cn("space-y-3", className)}>
       <p className="text-sm text-zinc-200">{morning.sentence}</p>
+      {!morning.quiet && morning.drivers.length > 0 && (
+        <ul className="space-y-1">
+          {morning.drivers.map((d) => (
+            <li
+              key={d.ticker}
+              className={cn("text-sm tabular-nums", tone(d.dollar))}
+            >
+              {cashtag(d.ticker)} {signedCurrency(d.dollar, 0)}
+              {d.share != null
+                ? ` · ${Math.round(d.share * 100)}% of the day's swing`
+                : ""}
+            </li>
+          ))}
+        </ul>
+      )}
       {morning.awayLines.length > 0 && (
         <div>
           <p className="text-xs text-zinc-500">

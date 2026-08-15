@@ -21,6 +21,7 @@ type CommunityRow = {
 type DiscoverRow = {
   id: string;
   name: string;
+  houseNote?: string | null;
   memberCount: number;
   requestStatus: "pending" | "approved" | "rejected" | null;
 };
@@ -152,8 +153,9 @@ export function CommunitiesList() {
               Communities
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-              A private league for books you actually want to compare. Members
-              see live marks, not what you paid. Nobody can edit yours.
+              A private league for books you actually want to compare. You
+              pick which sheets to share. Members see live marks, not what
+              you paid.
             </p>
           </div>
           <HomeWorld fundOnly />
@@ -227,14 +229,22 @@ export function CommunitiesList() {
                     key={c.id}
                     className="flex items-center justify-between gap-3 px-4 py-3.5"
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
-                      <span className="min-w-0 truncate text-sm font-medium text-zinc-100">
-                        {c.name}
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Globe className="h-3.5 w-3.5 shrink-0 text-sky-400/80" />
+                        <span className="min-w-0 truncate text-sm font-medium text-zinc-100">
+                          {c.name}
+                        </span>
+                        <span className="shrink-0 text-xs text-zinc-400">
+                          {c.memberCount}{" "}
+                          {c.memberCount === 1 ? "member" : "members"}
+                        </span>
                       </span>
-                      <span className="shrink-0 text-xs text-zinc-400">
-                        {c.memberCount} {c.memberCount === 1 ? "member" : "members"}
-                      </span>
+                      {c.houseNote?.trim() ? (
+                        <span className="pl-5 text-xs leading-relaxed text-zinc-400">
+                          {c.houseNote.trim()}
+                        </span>
+                      ) : null}
                     </span>
                     {c.requestStatus === "pending" ? (
                       <span className="shrink-0 text-xs font-medium text-amber-400">

@@ -13,11 +13,18 @@ export type MorningPulseFlag = {
   line: string;
 };
 
+export type MorningDriver = {
+  ticker: string;
+  dollar: number;
+  share: number | null;
+};
+
 export type MorningRead = {
   quiet: boolean;
   sentence: string;
   pulseFlag: MorningPulseFlag | null;
   awayLines: VisitDiff["lines"];
+  drivers: MorningDriver[];
 };
 
 function loudestName(model: OverviewModel): string | null {
@@ -71,6 +78,22 @@ function pulseFlagFor(model: OverviewModel): MorningPulseFlag | null {
   return null;
 }
 
+function driversFor(model: OverviewModel): MorningDriver[] {
+  const swing = model.tickers.reduce(
+    (s, t) => s + Math.abs(t.todayDollar),
+    0
+  );
+  return [...model.tickers]
+    .sort((a, b) => Math.abs(b.todayDollar) - Math.abs(a.todayDollar))
+    .filter((t) => Math.abs(t.todayDollar) >= 1)
+    .slice(0, 3)
+    .map((t) => ({
+      ticker: t.ticker,
+      dollar: t.todayDollar,
+      share: swing >= 50 ? Math.abs(t.todayDollar) / swing : null,
+    }));
+}
+
 /** One screen of Today, no new model call. Uses live book + cached Pulse. */
 export function buildMorningRead(
   model: OverviewModel,
@@ -83,5 +106,6 @@ export function buildMorningRead(
     sentence,
     pulseFlag: pulseFlagFor(model),
     awayLines,
+    drivers: driversFor(model),
   };
 }

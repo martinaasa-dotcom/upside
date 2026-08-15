@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       userIsCommunityAdmin(auth.user.id, id),
       supabase
         .from(PORTFELL_TABLES.communities)
-        .select("id, name, visibility, created_by, created_at, updated_at")
+        .select("id, name, visibility, house_note, created_by, created_at, updated_at")
         .eq("id", id)
         .single(),
       supabase
@@ -84,25 +84,27 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     aliasMap
   );
 
-  const { data: ownership } = userIds.length
-    ? await supabase
-        .from(PORTFELL_TABLES.portfolioOwners)
-        .select("portfolio_id, user_id")
-        .in("user_id", userIds)
-    : { data: [] };
-
   const pinnedRows = (pinned ?? []) as {
     portfolio_id: string;
     label: string | null;
   }[];
   const pinnedIds = pinnedRows.map((p) => p.portfolio_id);
 
+  const { data: ownership } = pinnedIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id, user_id")
+        .in("portfolio_id", pinnedIds)
+    : { data: [] };
+
   const ownedIds = [
     ...new Set(
-      ((ownership ?? []) as { portfolio_id: string }[]).map((o) => o.portfolio_id)
+      ((ownership ?? []) as { portfolio_id: string; user_id: string }[])
+        .filter((o) => userIds.includes(o.user_id))
+        .map((o) => o.portfolio_id)
     ),
   ];
-  const portfolioIds = [...new Set([...ownedIds, ...pinnedIds])];
+  const portfolioIds = [...new Set(pinnedIds)];
 
   const { data: portfolios } = portfolioIds.length
     ? await supabase
@@ -299,6 +301,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const body = (await req.json().catch(() => ({}))) as {
     name?: string;
     visibility?: string;
+    houseNote?: string;
   };
 
   const patch: Record<string, string> = { updated_at: new Date().toISOString() };
@@ -315,6 +318,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     }
     patch.visibility = body.visibility;
   }
+  if (body.houseNote !== undefined) {
+    patch.house_note = String(body.houseNote).trim().slice(0, 400);
+  }
   if (Object.keys(patch).length <= 1) {
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
   }
@@ -323,7 +329,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     .from(PORTFELL_TABLES.communities)
     .update(patch)
     .eq("id", id)
-    .select("id, name, visibility, created_by, created_at, updated_at")
+    .select("id, name, visibility, house_note, created_by, created_at, updated_at")
     .single();
 
   if (error) {

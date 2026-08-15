@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Full community book: members' sheets + community-pinned sheets (read-only). */
+/** Full community book: only sheets someone opted to share (read-only). */
 export async function GET(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
@@ -99,38 +99,39 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     userIds = expanded;
   }
 
-  const { data: ownership } = userIds.length
-    ? await supabase
-        .from(PORTFELL_TABLES.portfolioOwners)
-        .select("portfolio_id, user_id")
-        .in("user_id", userIds)
-    : { data: [] as { portfolio_id: string; user_id: string }[] };
-
-  const pinnedIdsAll = ((pinned ?? []) as { portfolio_id: string }[]).map(
+  const sharedIds = ((pinned ?? []) as { portfolio_id: string }[]).map(
     (p) => p.portfolio_id
   );
+  const pinnedIdsAll = sharedIds;
 
   let portfolioIds: string[];
   if (pinnedOnlyIds) {
     portfolioIds = pinnedOnlyIds;
   } else if (ownerFilter) {
+    const { data: owned } = userIds.length
+      ? await supabase
+          .from(PORTFELL_TABLES.portfolioOwners)
+          .select("portfolio_id, user_id")
+          .in("user_id", userIds)
+      : { data: [] as { portfolio_id: string; user_id: string }[] };
+    const shared = new Set(sharedIds);
     portfolioIds = [
       ...new Set(
-        ((ownership ?? []) as { portfolio_id: string }[]).map(
-          (o) => o.portfolio_id
-        )
+        ((owned ?? []) as { portfolio_id: string }[])
+          .map((o) => o.portfolio_id)
+          .filter((id) => shared.has(id))
       ),
     ];
   } else {
-    portfolioIds = [
-      ...new Set([
-        ...((ownership ?? []) as { portfolio_id: string }[]).map(
-          (o) => o.portfolio_id
-        ),
-        ...pinnedIdsAll,
-      ]),
-    ];
+    portfolioIds = [...new Set(sharedIds)];
   }
+
+  const { data: ownership } = portfolioIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id, user_id")
+        .in("portfolio_id", portfolioIds)
+    : { data: [] as { portfolio_id: string; user_id: string }[] };
 
   // Sheets and their holdings both key off portfolioIds and don't depend
   // on each other, so they go out together rather than back to back.
@@ -168,12 +169,15 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     }
   }
 
+  const memberSet = new Set(memberIds);
   const ownershipOut = (
     (ownership ?? []) as { portfolio_id: string; user_id: string }[]
-  ).map((o) => ({
-    portfolio_id: o.portfolio_id,
-    user_id: userToPerson.get(o.user_id) ?? o.user_id,
-  }));
+  )
+    .filter((o) => memberSet.has(o.user_id))
+    .map((o) => ({
+      portfolio_id: o.portfolio_id,
+      user_id: userToPerson.get(o.user_id) ?? o.user_id,
+    }));
 
   if (!ownerFilter) {
     for (const pid of pinnedIdsAll) {
