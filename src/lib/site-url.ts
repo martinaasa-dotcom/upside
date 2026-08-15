@@ -112,3 +112,11 @@ export function safeInternalPath(raw: string | null | undefined): string {
   if (trimmed.includes("://")) return "/";
   return trimmed;
 }
+
+/** Path + query to send back to after Google sign-in. Never the callback itself. */
+export function currentInternalNext(): string {
+  if (typeof window === "undefined") return "/";
+  const path = `${window.location.pathname}${window.location.search}`;
+  if (path.startsWith("/auth/")) return "/";
+  return safeInternalPath(path);
+}

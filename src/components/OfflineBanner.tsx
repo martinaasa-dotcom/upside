@@ -16,7 +16,7 @@ export function OfflineBanner() {
       className="border-b border-amber-500/25 bg-amber-950/50 px-4 py-2 text-xs text-amber-100"
     >
       <div className="mx-auto max-w-[1400px]">
-        You&apos;re offline. Showing the last saved book.
+        You&apos;re offline. Showing what we last had.
       </div>
     </div>
   );

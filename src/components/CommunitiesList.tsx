@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isAbortError } from "@/lib/abort";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { useNetworkResume } from "@/lib/use-network-resume";
 import { useEffect, useState } from "react";
 
 type CommunityRow = {
@@ -133,6 +134,12 @@ export function CommunitiesList() {
     return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
   }, []);
+
+  useNetworkResume(() => {
+    const ctrl = new AbortController();
+    void load(ctrl.signal);
+    void loadDiscover(ctrl.signal);
+  });
 
   async function requestToJoin(communityId: string) {
     setRequestBusyId(communityId);

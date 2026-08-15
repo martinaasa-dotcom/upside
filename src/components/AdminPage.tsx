@@ -18,7 +18,9 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isAbortError } from "@/lib/abort";
+import { useNetworkResume } from "@/lib/use-network-resume";
 
 type AdminUser = {
   id: string;
@@ -95,16 +97,22 @@ export function AdminPage() {
   const [expandedError, setExpandedError] = useState<string | null>(null);
   const [confirmClearErrors, setConfirmClearErrors] = useState(false);
 
-  const loadErrorLog = useCallback(async () => {
+  const loadAbortRef = useRef<AbortController | null>(null);
+
+  const loadErrorLog = useCallback(async (signal?: AbortSignal) => {
     setErrorLogLoading(true);
     try {
-      const res = await fetch("/api/admin/errors", { cache: "no-store" });
+      const res = await fetch("/api/admin/errors", {
+        cache: "no-store",
+        signal,
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) setErrorLog(data.errors ?? []);
-    } catch {
+    } catch (e) {
+      if (isAbortError(e)) return;
       /* non-critical secondary panel */
     } finally {
-      setErrorLogLoading(false);
+      if (!signal?.aborted) setErrorLogLoading(false);
     }
   }, []);
 
@@ -116,12 +124,15 @@ export function AdminPage() {
   }
 
   const load = useCallback(
-    async (isRefresh: boolean) => {
+    async (isRefresh: boolean, signal?: AbortSignal) => {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/admin/overview", { cache: "no-store" });
+        const res = await fetch("/api/admin/overview", {
+          cache: "no-store",
+          signal,
+        });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(
@@ -132,10 +143,13 @@ export function AdminPage() {
         setCommunities(data.communities ?? []);
         setFunnel(data.funnel ?? null);
       } catch (e) {
+        if (isAbortError(e) || signal?.aborted) return;
         setError(e instanceof Error ? e.message : "Couldn't load that page.");
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (!signal?.aborted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     },
     []
@@ -147,9 +161,22 @@ export function AdminPage() {
       setErrorLogLoading(false);
       return;
     }
-    void load(false);
-    void loadErrorLog();
+    loadAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    loadAbortRef.current = ctrl;
+    void load(false, ctrl.signal);
+    void loadErrorLog(ctrl.signal);
+    return () => ctrl.abort();
   }, [allowed, load, loadErrorLog]);
+
+  useNetworkResume(() => {
+    if (!allowed) return;
+    const ctrl = new AbortController();
+    loadAbortRef.current?.abort();
+    loadAbortRef.current = ctrl;
+    void load(true, ctrl.signal);
+    void loadErrorLog(ctrl.signal);
+  });
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();

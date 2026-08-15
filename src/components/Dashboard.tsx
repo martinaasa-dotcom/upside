@@ -343,32 +343,14 @@ function normalizeMetaTabId(id: string): string | null {
   return null;
 }
 
-function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
-  if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
-  const tabParam = params.get("tab")?.trim().toLowerCase() || "";
-  const portfolioParam = params.get("portfolio")?.trim().toLowerCase() || "";
-  const sheetParam = params.get("sheet")?.trim().toLowerCase() || "";
-  // `tab=book` is a sheet view; the actual sheet is `portfolio` / `sheet`.
-  // `tab=forecast` is a panel on a sheet, not a meta tab.
-  const metaTab =
-    tabParam && tabParam !== "book" && tabParam !== "forecast"
-      ? tabParam
-      : "";
-  const raw = metaTab || portfolioParam || sheetParam;
-  if (!raw) return null;
-  if (raw === "compound" || raw === COMPOUND_TAB_ID) {
-    return COMPOUND_TAB_ID;
-  }
+function metaTabFromToken(raw: string): string | null {
+  if (raw === "compound" || raw === COMPOUND_TAB_ID) return COMPOUND_TAB_ID;
   if (raw === "lab" || raw === LAB_TAB_ID) return LAB_TAB_ID;
-  if (raw === "pulse" || raw === PULSE_TAB_ID) {
-    return PULSE_TAB_ID;
-  }
-  if (raw === "alerts" || raw === ALERTS_TAB_ID) {
-    return ALERTS_TAB_ID;
-  }
+  if (raw === "pulse" || raw === PULSE_TAB_ID) return PULSE_TAB_ID;
+  if (raw === "alerts" || raw === ALERTS_TAB_ID) return ALERTS_TAB_ID;
+  if (raw === "overview" || raw === OVERVIEW_TAB_ID) return OVERVIEW_TAB_ID;
   // Seasonality is a Lab sub-tab. Old links still resolve, they just land
-  // on Lab with the right sub-tab selected via ?labtab= below.
+  // on Lab with the right sub-tab selected via ?labtab=.
   if (
     raw === "statistics" ||
     raw === "stats" ||
@@ -377,16 +359,43 @@ function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
   ) {
     return LAB_TAB_ID;
   }
-  if (raw === "overview" || raw === OVERVIEW_TAB_ID) {
-    return OVERVIEW_TAB_ID;
+  return null;
+}
+
+function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const tabParam = params.get("tab")?.trim().toLowerCase() || "";
+  const portfolioParam = params.get("portfolio")?.trim().toLowerCase() || "";
+  const sheetParam = params.get("sheet")?.trim().toLowerCase() || "";
+  // `tab=book` is a sheet view; the actual sheet is `portfolio` / `sheet`.
+  // `tab=forecast` is a panel on a sheet, not a meta tab.
+  const tabToken =
+    tabParam && tabParam !== "book" && tabParam !== "forecast"
+      ? tabParam
+      : "";
+  if (tabToken) {
+    const meta = metaTabFromToken(tabToken);
+    if (meta) return meta;
   }
+  // Legacy ?sheet=stats bookmarks, only when they are not a real sheet id.
+  if (!tabToken && !portfolioParam && sheetParam) {
+    const meta = metaTabFromToken(sheetParam);
+    if (meta) return meta;
+  }
+  const raw = portfolioParam || sheetParam;
+  if (!raw) return null;
   const bySlugOrId = list.find(
     (p) =>
       p.id === raw ||
       p.slug?.toLowerCase() === raw ||
       p.name.toLowerCase() === raw
   );
-  return bySlugOrId?.id ?? null;
+  if (bySlugOrId) return bySlugOrId.id;
+  // Hard refresh of ?tab=book&portfolio=… before the book is in memory:
+  // keep the URL token so we don't paint Overview for a frame.
+  if (list.length === 0) return raw;
+  return null;
 }
 
 export function Dashboard() {
@@ -623,7 +632,11 @@ export function Dashboard() {
   const activePortfolio =
     isMetaTab
       ? null
-      : (portfolios.find((p) => p.id === activeId) ?? null);
+      : (portfolios.find(
+          (p) =>
+            p.id === activeId ||
+            p.slug?.toLowerCase() === activeId.toLowerCase()
+        ) ?? null);
   const inviteSheet = activePortfolio ?? portfolios[0] ?? null;
   const classTrade = activePortfolio?.classTrade ?? null;
   const canClassBuy = !classTrade || classTrade.canBuy;
@@ -1189,7 +1202,7 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const onOnline = () => {
+    const resume = () => {
       void loadPortfolios({ silent: true, retry: true });
       if (allTickers.length === 0) return;
       void refreshMarkets(allTickers, holdings, undefined, {
@@ -1197,8 +1210,15 @@ export function Dashboard() {
         silent: true,
       });
     };
-    window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) resume();
+    };
+    window.addEventListener("online", resume);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("online", resume);
+      window.removeEventListener("pageshow", onPageShow);
+    };
   }, [loadPortfolios, refreshMarkets, allTickers, holdings]);
 
   // Keep session cache warm so My book remounts paint instantly.

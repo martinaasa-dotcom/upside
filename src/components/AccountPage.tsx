@@ -104,8 +104,8 @@ export function AccountPage() {
   }, [profile]);
 
   useEffect(() => {
-    let cancelled = false;
-    void fetch("/api/account/experience-tier")
+    const ctrl = new AbortController();
+    void fetch("/api/account/experience-tier", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then(
         (
@@ -114,7 +114,7 @@ export function AccountPage() {
             knowsOptions?: boolean | null;
           } | null
         ) => {
-          if (cancelled) return;
+          if (ctrl.signal.aborted) return;
           if (data?.tier) setTier(data.tier);
           if (typeof data?.knowsOptions === "boolean") {
             setKnowsOptions(data.knowsOptions);
@@ -122,7 +122,7 @@ export function AccountPage() {
         }
       )
       .catch(() => {});
-    void fetch("/api/account/morning-note")
+    void fetch("/api/account/morning-note", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then(
         (
@@ -133,7 +133,7 @@ export function AccountPage() {
             canSend?: boolean;
           } | null
         ) => {
-        if (cancelled) return;
+        if (ctrl.signal.aborted) return;
         if (typeof data?.morning === "boolean") setNoteMorning(data.morning);
         else if (typeof data?.enabled === "boolean") setNoteMorning(data.enabled);
         if (typeof data?.sunday === "boolean") setNoteSunday(data.sunday);
@@ -145,7 +145,7 @@ export function AccountPage() {
       )
       .catch(() => {});
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, []);
 

@@ -6,6 +6,18 @@ export function isAbortError(err: unknown): boolean {
   );
 }
 
+/** Fetch never reached the server (offline, DNS, connection dropped). */
+export function isNetworkError(err: unknown): boolean {
+  if (isAbortError(err)) return false;
+  if (typeof TypeError !== "undefined" && err instanceof TypeError) return true;
+  return (
+    err instanceof Error &&
+    /failed to fetch|networkerror|load failed|network request failed/i.test(
+      err.message
+    )
+  );
+}
+
 /**
  * Retry a network call with exponential backoff (1s, 2s, 4s).
  * Used on reconnect after sleep/offline, not on every ordinary load.

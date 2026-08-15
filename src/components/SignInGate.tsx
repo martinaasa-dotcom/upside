@@ -42,7 +42,13 @@ export function SignInGate({ children }: Props) {
     );
     if (kind === "full" || kind === "data") {
       setDeletedNotice(kind);
-      window.history.replaceState(null, "", window.location.pathname);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("accountDeleted");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${url.pathname}${url.search}`
+      );
     }
   }, []);
 

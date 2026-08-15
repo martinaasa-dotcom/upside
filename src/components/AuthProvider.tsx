@@ -15,6 +15,7 @@ import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { clearBookCache } from "@/lib/book-cache";
 import { loadLastUser, saveLastUser } from "@/lib/last-session";
+import { currentInternalNext } from "@/lib/site-url";
 
 export type AuthProfile = {
   id: string;
@@ -173,10 +174,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createSupabaseBrowser();
     if (!supabase) throw new Error("Supabase is not configured");
     const origin = window.location.origin;
+    const next = encodeURIComponent(currentInternalNext());
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: `${origin}/auth/callback?next=${next}`,
       },
     });
     if (error) throw error;

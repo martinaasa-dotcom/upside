@@ -8,6 +8,8 @@ import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { plainError } from "@/lib/plain-error";
+import { isAbortError, isNetworkError } from "@/lib/abort";
+import { useNetworkResume } from "@/lib/use-network-resume";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
@@ -423,6 +425,7 @@ export function UpsidePortfolioPage() {
   const cachedRef = useRef<FundPayload | null>(null);
   const cacheHydratedRef = useRef(false);
   const loadCallIdRef = useRef(0);
+  const loadAbortRef = useRef<AbortController | null>(null);
 
   const [fund, setFund] = useState<FundRow | null>(null);
   const [holdings, setHoldings] = useState<HoldingRow[]>([]);
@@ -475,6 +478,9 @@ export function UpsidePortfolioPage() {
     // poll, and manual refresh), so a slow one resolving last would
     // otherwise overwrite fresher numbers with stale ones. Only the most
     // recently started call is allowed to commit.
+    loadAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    loadAbortRef.current = ctrl;
     const callId = ++loadCallIdRef.current;
     if (mode === "manual") setRefreshing(true);
     // A cached paint means the first fetch is really a background refresh:
@@ -482,10 +488,13 @@ export function UpsidePortfolioPage() {
     else if (mode === "initial" && !cachedRef.current) setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/upside-portfolio", { cache: "no-store" });
+      const res = await fetch("/api/upside-portfolio", {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(plainError(data.error, "Couldn't load the Fund."));
-      if (callId !== loadCallIdRef.current) return;
+      if (callId !== loadCallIdRef.current || ctrl.signal.aborted) return;
       setFund(data.fund);
       setHoldings(data.holdings ?? []);
       setReports(data.reports ?? []);
@@ -504,9 +513,15 @@ export function UpsidePortfolioPage() {
       // already-loaded page over one flaky tick. A cache-backed first load
       // counts as already-loaded for the same reason: showing an error
       // over a perfectly readable page helps nobody.
-      if (callId !== loadCallIdRef.current) return;
+      if (isAbortError(e) || callId !== loadCallIdRef.current) return;
       if (mode !== "background" && !cachedRef.current) {
-        setError(e instanceof Error ? e.message : "Couldn't load the Fund.");
+        setError(
+          isNetworkError(e)
+            ? "You look offline. The Fund will load when you're back."
+            : e instanceof Error
+              ? e.message
+              : "Couldn't load the Fund."
+        );
       }
     } finally {
       // A superseded call must not clear the spinner belonging to the
@@ -521,9 +536,14 @@ export function UpsidePortfolioPage() {
   useEffect(() => {
     void load("initial");
     return () => {
+      loadAbortRef.current?.abort();
       loadCallIdRef.current += 1;
     };
   }, [load]);
+
+  useNetworkResume(() => {
+    void load("background");
+  });
 
   useLayoutEffect(() => {
     setBenchmark(loadStoredBenchmark());

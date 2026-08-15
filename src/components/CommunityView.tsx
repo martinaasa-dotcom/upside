@@ -89,6 +89,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
+import { isAbortError, isNetworkError } from "@/lib/abort";
+import { useNetworkResume } from "@/lib/use-network-resume";
 
 type Profile = {
   id: string;
@@ -241,6 +243,10 @@ export function CommunityView({ communityId }: Props) {
   );
   const [view, setView] = useState<"overview" | "play" | "members">("overview");
   const hasDataRef = useRef(false);
+  const loadAbortRef = useRef<AbortController | null>(null);
+  const fromPopRef = useRef(false);
+  const bootstrappedRef = useRef(false);
+  const correctingRef = useRef(false);
 
   useLayoutEffect(() => {
     const cache = readCommunityCache(communityId);
@@ -263,6 +269,8 @@ export function CommunityView({ communityId }: Props) {
     setQuotes(loadCachedQuotes().quotes);
     hasDataRef.current = Boolean(cache.meta);
     setLoading(!cache.meta);
+    bootstrappedRef.current = false;
+    fromPopRef.current = false;
 
     const params = new URLSearchParams(window.location.search);
     setSelectedOwnerId(params.get("member"));
@@ -303,14 +311,23 @@ export function CommunityView({ communityId }: Props) {
   const loadCallIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    loadAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    loadAbortRef.current = ctrl;
     const callId = ++loadCallIdRef.current;
     const isBackgroundRefresh = hasDataRef.current;
     if (!isBackgroundRefresh) setLoading(true);
     if (!isBackgroundRefresh) setError(null);
     try {
       const [metaRes, bookRes] = await Promise.all([
-        fetch(`/api/communities/${communityId}`, { cache: "no-store" }),
-        fetch(`/api/communities/${communityId}/book`, { cache: "no-store" }),
+        fetch(`/api/communities/${communityId}`, {
+          cache: "no-store",
+          signal: ctrl.signal,
+        }),
+        fetch(`/api/communities/${communityId}/book`, {
+          cache: "no-store",
+          signal: ctrl.signal,
+        }),
       ]);
       if (!metaRes.ok) {
         const err = await metaRes.json().catch(() => ({}));
@@ -340,12 +357,18 @@ export function CommunityView({ communityId }: Props) {
       hasDataRef.current = true;
       saveCommunityCache(communityId, { meta, book });
     } catch (e) {
-      if (callId !== loadCallIdRef.current) return;
+      if (isAbortError(e) || callId !== loadCallIdRef.current) return;
       // A background refresh failing behind already-visible cached
       // content shouldn't slap an error over it — only surface the error
       // when there was nothing on screen to begin with.
       if (!isBackgroundRefresh) {
-        setError(e instanceof Error ? e.message : "Couldn't load this circle.");
+        setError(
+          isNetworkError(e)
+            ? "You look offline. Showing this circle when the connection is back."
+            : e instanceof Error
+              ? e.message
+              : "Couldn't load this circle."
+        );
       }
     } finally {
       if (callId === loadCallIdRef.current) setLoading(false);
@@ -354,7 +377,15 @@ export function CommunityView({ communityId }: Props) {
 
   useEffect(() => {
     void load();
+    return () => {
+      loadAbortRef.current?.abort();
+      loadCallIdRef.current += 1;
+    };
   }, [load]);
+
+  useNetworkResume(() => {
+    void load();
+  });
 
   // Ownership/membership can change server-side (e.g. someone else's first
   // sign-in claims a pending sheet) while this tab sits in the background —
@@ -371,9 +402,6 @@ export function CommunityView({ communityId }: Props) {
   // so a hard refresh lands back on the exact view, and Back/Forward step
   // through the hierarchy naturally (member list -> member -> portfolio)
   // instead of leaving the page entirely on the first Back press.
-  const fromPopRef = useRef(false);
-  const bootstrappedRef = useRef(false);
-
   useEffect(() => {
     function onPopState() {
       fromPopRef.current = true;
@@ -407,15 +435,20 @@ export function CommunityView({ communityId }: Props) {
 
     if (!bootstrappedRef.current) {
       bootstrappedRef.current = true;
-      window.history.replaceState(null, "", href);
+      window.history.replaceState(window.history.state, "", href);
       return;
     }
     if (fromPopRef.current) {
       fromPopRef.current = false;
-      window.history.replaceState(null, "", href);
+      window.history.replaceState(window.history.state, "", href);
       return;
     }
-    window.history.pushState(null, "", href);
+    if (correctingRef.current) {
+      correctingRef.current = false;
+      window.history.replaceState(window.history.state, "", href);
+      return;
+    }
+    window.history.pushState(window.history.state, "", href);
   }, [selectedOwnerId, selectedPortfolioId, view]);
 
   // A ?member=/?portfolio= link can go stale (member left, sheet deleted) or
@@ -430,6 +463,7 @@ export function CommunityView({ communityId }: Props) {
           m.user_ids?.includes(selectedOwnerId)
       ) || pendingMembers.some((p) => `pending:${p.key}` === selectedOwnerId);
     if (!valid) {
+      correctingRef.current = true;
       setSelectedOwnerId(null);
       setSelectedPortfolioId(null);
     }
@@ -438,6 +472,7 @@ export function CommunityView({ communityId }: Props) {
   useEffect(() => {
     if (loading || !selectedPortfolioId) return;
     if (!portfolios.some((p) => p.id === selectedPortfolioId)) {
+      correctingRef.current = true;
       setSelectedPortfolioId(null);
     }
   }, [loading, selectedPortfolioId, portfolios]);

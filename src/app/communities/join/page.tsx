@@ -19,28 +19,28 @@ function JoinInner() {
       setError("That invite link is missing a code.");
       return;
     }
-    let cancelled = false;
+    const ctrl = new AbortController();
     void (async () => {
       try {
         const res = await fetch("/api/communities/join", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
+          signal: ctrl.signal,
         });
         const data = await res.json();
         if (!res.ok) throw new Error(plainError(data.error, "Couldn't join. Try the link again."));
-        if (cancelled) return;
+        if (ctrl.signal.aborted) return;
         track("community_invite_redeemed");
         setDone(true);
         router.replace(`/communities/${data.communityId}`);
       } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Couldn't join. Try the link again.");
-        }
+        if (ctrl.signal.aborted) return;
+        setError(e instanceof Error ? e.message : "Couldn't join. Try the link again.");
       }
     })();
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, [token, router]);
 

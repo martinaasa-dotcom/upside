@@ -2059,6 +2059,35 @@ run("offline status is not read during render", () => {
   assert.ok(/navigator\.onLine/.test(src));
 });
 
+run("sign-in returns to the page you were on", () => {
+  const auth = readFileSync(
+    join(process.cwd(), "src/components/AuthProvider.tsx"),
+    "utf8"
+  );
+  const site = readFileSync(join(process.cwd(), "src/lib/site-url.ts"), "utf8");
+  assert.ok(
+    /auth\/callback\?next=/.test(auth),
+    "Google sign-in must pass the current path as next"
+  );
+  assert.ok(/function currentInternalNext/.test(site));
+  assert.ok(/path\.startsWith\("\/auth\/"\)/.test(site));
+});
+
+run("pages reconnect after offline and back-forward cache", () => {
+  const resume = readFileSync(
+    join(process.cwd(), "src/lib/use-network-resume.ts"),
+    "utf8"
+  );
+  assert.ok(/pageshow/.test(resume));
+  assert.ok(/e\.persisted/.test(resume));
+  const community = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  assert.ok(/signal: ctrl\.signal/.test(community));
+  assert.ok(/useNetworkResume/.test(community));
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);
