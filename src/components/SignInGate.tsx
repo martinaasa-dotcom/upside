@@ -3,7 +3,8 @@
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
-import { Card, Metric, MicroLabel, Panel, Stat } from "@/components/ui/Panel";
+import { Card, Metric, MicroLabel, Panel } from "@/components/ui/Panel";
+import { cn } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
 import {
   inviteFromLocation,
@@ -194,6 +195,12 @@ export function SignInGate({ children }: Props) {
   );
 }
 
+const SAMPLE_MOVERS = [
+  { ticker: "RKLB", pct: "+6.8%", dollar: "+$3,640", up: true },
+  { ticker: "AMZN", pct: "+1.4%", dollar: "+$720", up: true },
+  { ticker: "MSFT", pct: "-0.6%", dollar: "-$180", up: false },
+] as const;
+
 /** Static chrome of a day that moved. Sample figures, written like Home + Pulse. */
 function BookStill() {
   return (
@@ -217,24 +224,48 @@ function BookStill() {
         </Metric>
       </div>
 
-      <p className="mt-5 text-sm text-zinc-200">
-        $RKLB did most of today&apos;s move.
-      </p>
-
-      <div className="mt-3 max-w-[13rem]">
-        <Stat
-          label="$RKLB"
-          value="+$3,640"
-          sub="87% of today's move"
-          valueClassName="text-gain"
-          subClassName="text-gain"
-        />
+      <div className="mt-6 space-y-2">
+        {SAMPLE_MOVERS.map((row) => (
+          <div
+            key={row.ticker}
+            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-app/40 py-3 pl-5 pr-4"
+          >
+            <span
+              className={cn(
+                "absolute inset-y-0 left-0 w-0.5",
+                row.up ? "bg-gain" : "bg-loss"
+              )}
+              aria-hidden
+            />
+            <span className="font-heading text-base font-bold text-white">
+              ${row.ticker}
+            </span>
+            <span className="text-right">
+              <span
+                className={cn(
+                  "block font-heading text-base font-bold tabular-nums",
+                  row.up ? "text-gain" : "text-loss"
+                )}
+              >
+                {row.pct}
+              </span>
+              <span
+                className={cn(
+                  "mt-0.5 block text-sm tabular-nums",
+                  row.up ? "text-gain" : "text-loss"
+                )}
+              >
+                {row.dollar}
+              </span>
+            </span>
+          </div>
+        ))}
       </div>
 
-      <Card tone="raised" className="mt-4 h-auto px-3.5 py-3">
+      <Card tone="raised" className="mt-5 h-auto px-3.5 py-3">
         <MicroLabel>Worth noticing</MicroLabel>
         <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
-          Price jumped. The thesis didn&apos;t move with it.
+          The price ran. Why you own it didn&apos;t change.
         </p>
       </Card>
 
@@ -265,10 +296,7 @@ function BookStill() {
         <div className="mt-3 border-t border-amber-500/15 pt-3">
           <MicroLabel>Thesis</MicroLabel>
           <p className="mt-1.5 text-sm leading-snug text-zinc-100">
-            Cheaper launches. That&apos;s the whole reason it&apos;s here.
-          </p>
-          <p className="mt-2 text-sm text-zinc-200">
-            Hold. The jump is the story working, not breaking.
+            Cheaper launches. That&apos;s why it&apos;s in the book.
           </p>
         </div>
       </div>
