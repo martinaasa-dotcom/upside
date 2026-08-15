@@ -46,7 +46,7 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#1a2820",
+          background: "#0d110f",
           color: "#ede8dc",
         }}
       >
@@ -63,7 +63,7 @@ export default function GlobalError({
               maxWidth: "22rem",
               fontSize: "0.875rem",
               lineHeight: 1.6,
-              color: "#a89878",
+              color: "#9a9488",
             }}
           >
             Your book is safe. This was a rendering error in the app shell,
@@ -78,7 +78,7 @@ export default function GlobalError({
               borderRadius: "0.5rem",
               border: "none",
               background: "#d4a24c",
-              color: "#1a1408",
+              color: "#0c0e0d",
               fontWeight: 600,
               fontSize: "0.875rem",
               padding: "0.5rem 1rem",

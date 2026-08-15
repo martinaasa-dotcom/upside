@@ -112,7 +112,7 @@ export function SignInGate({ children }: Props) {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 55% at 20% 0%, #1c1814 0%, transparent 58%), radial-gradient(ellipse 45% 40% at 92% 88%, rgba(214,173,105,0.07) 0%, transparent 52%)",
+            "radial-gradient(ellipse 70% 50% at 20% 0%, #141614 0%, transparent 58%)",
         }}
       />
       <div

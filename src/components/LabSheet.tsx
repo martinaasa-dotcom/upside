@@ -571,7 +571,7 @@ export function LabSheet({
                             style={{
                               background:
                                 c == null
-                                  ? "#16130f"
+                                  ? "#0a0b0a"
                                   : c >= 0
                                     ? `rgba(212, 160, 64, ${0.15 + Math.abs(c) * 0.7})`
                                     : `rgba(196, 106, 88, ${0.15 + Math.abs(c) * 0.7})`,

@@ -268,7 +268,7 @@ function ComparePathsChart({
                 x2={w - padR}
                 y1={y}
                 y2={y}
-                stroke="#352a20"
+                stroke="#1c1e1c"
                 strokeWidth="1"
               />
               <text
@@ -277,7 +277,7 @@ function ComparePathsChart({
                 textAnchor="end"
                 dominantBaseline="middle"
                 fontSize="9"
-                fill="#a89878"
+                fill="#9a9488"
               >
                 {compact(max * s)}
               </text>
@@ -292,7 +292,7 @@ function ComparePathsChart({
             y={h - 6}
             textAnchor="middle"
             fontSize="9"
-            fill="#a89878"
+            fill="#9a9488"
           >
             Y{i}
           </text>
@@ -343,7 +343,7 @@ function ComparePathsChart({
               x2={xAt(hoverIdx)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#a89878"
+              stroke="#9a9488"
               strokeWidth="1"
               strokeDasharray="2 3"
               opacity="0.7"
@@ -355,7 +355,7 @@ function ComparePathsChart({
                 cy={yAt(p.series[hoverIdx] ?? 0)}
                 r={p.thick ? 4 : 3.25}
                 fill={p.color}
-                stroke="#1a2820"
+                stroke="#0d110f"
                 strokeWidth="1.5"
               />
             ))}

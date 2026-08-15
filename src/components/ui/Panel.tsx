@@ -17,7 +17,7 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-border on bg-card. Selected is brass. Mustard is
+ *   Shell      black field, charcoal card. Selected is brass. Mustard is
  *              the main button. Paper is type, never a white pill.
  *   Card       border-border on bg-card. The box has to lift off the field.
  *   Type scale, the only sizes a person should see:
@@ -35,7 +35,7 @@ import { useState, type ReactNode } from "react";
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    a dark card, brass label, same type as the page. Thesis
+ *   Reading    a dark card, quiet label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
  *              not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted for chrome
@@ -235,7 +235,7 @@ export function MicroLabel({
 
 /**
  * Long sentences a person actually reads. A dark card that lifts off
- * the field, brass label, warm type. Not a cream slab, and not loose
+ * the field, quiet label, warm type. Not a cream slab, and not loose
  * type sitting on the page.
  */
 export function Reading({
@@ -255,7 +255,7 @@ export function Reading({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-brand-bright">{label}</div>
+        <div className="text-xs font-medium text-muted">{label}</div>
       ) : null}
       <div
         className={cn(
@@ -329,7 +329,7 @@ export function ScanList({
     >
       {label != null && label !== "" ? (
         <div className="border-b border-border px-4 py-2.5">
-          <p className="text-xs font-medium text-brand-bright">{label}</p>
+          <p className="text-xs font-medium text-muted">{label}</p>
         </div>
       ) : null}
       <ul>

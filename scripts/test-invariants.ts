@@ -921,7 +921,7 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
-run("chrome is quiet, forest desk, prose sits in a dark box", () => {
+run("chrome is quiet, black field, prose sits in a dark box", () => {
   const panel = readFileSync(
     join(process.cwd(), "src/components/ui/Panel.tsx"),
     "utf8"
@@ -952,21 +952,23 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
     "utf8"
   );
   assert.match(css, /--paper: #ede8dc/);
-  assert.match(css, /--ink: #1a1408/);
-  assert.match(css, /--card: #2a2218/);
-  assert.match(css, /--app: #1a2820/);
-  assert.match(css, /--muted: #a89878/);
+  assert.match(css, /--ink: #0c0e0d/);
+  assert.match(css, /--card: #151716/);
+  assert.match(css, /--app: #0d110f/);
+  assert.match(css, /--muted: #9a9488/);
   assert.match(css, /--brand: #c4a36a/);
   assert.match(css, /--select: #c4a36a/);
   assert.match(css, /--mustard: #d4a24c/);
   assert.match(css, /--gain: #5a9a4a/);
   assert.match(css, /--loss: #c46a58/);
   assert.match(css, /background: var\(--mustard\)/);
-  assert.doesNotMatch(css, /--app: #0d110f/);
+  assert.doesNotMatch(css, /--app: #1a2820/);
+  assert.doesNotMatch(css, /--card: #2a2218/);
   assert.doesNotMatch(css, /--brand: #8a9a86/);
   assert.doesNotMatch(css, /--brand: #c4a574/);
   assert.doesNotMatch(css, /--brand: #b8b3aa/);
   assert.doesNotMatch(css, /--caution: #c4a574/);
+  assert.doesNotMatch(css, /--border: rgb\(196 163 106/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
   assert.match(panel, /export function InsightText/);
@@ -983,7 +985,7 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
   assert.match(panel, /text-xs font-medium text-muted/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /text-xs font-medium text-brand-bright/
+    /text-xs font-medium text-muted/
   );
   assert.match(panel, /bg-select text-select-ink/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
@@ -1004,8 +1006,9 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
   assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
-  assert.match(frame, /#2d3d32_0%,_#1a2820/);
-  assert.doesNotMatch(frame, /#0d110f/);
+  assert.match(frame, /#141614_0%,_#0d110f/);
+  assert.doesNotMatch(frame, /#1a2820/);
+  assert.doesNotMatch(frame, /#2d3d32/);
   assert.match(tabs, /bg-select text-select-ink/);
   assert.doesNotMatch(tabs, /bg-white text-black/);
 
@@ -1027,8 +1030,9 @@ run("chrome is quiet, forest desk, prose sits in a dark box", () => {
     /border-rose-/,
     /bg-amber-/,
     /text-amber-/,
-    /#0d110f/,
-    /#1b221c/,
+    /#1a2820/,
+    /#2a2218/,
+    /#2d3d32/,
   ];
   for (const pattern of bland) {
     const offenders = offendersOf(pattern);

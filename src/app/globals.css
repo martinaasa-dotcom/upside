@@ -1,32 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  /* The office: forest wall, coffee desk, brass hardware, mustard lamp.
-     Selected is brass. The main button is mustard. Paper is type, not chrome.
-     Gain is the plant. Loss is the rust in the rug. No cool gray. No white pills. */
-  --background: #1a2820;
+  /* Black stage. Charcoal cards. Cream type for a little warmth.
+     Brass is selected chrome only. Mustard is the main button only.
+     Do not paint the room brown. */
+  --background: #0d110f;
   --foreground: #ede8dc;
   --paper: #ede8dc;
-  --ink: #1a1408;
-  --muted: #a89878;
-  --app: #1a2820;
-  --card: #2a2218;
-  --hover: #352a20;
-  --well: #16130f;
+  --ink: #0c0e0d;
+  --muted: #9a9488;
+  --app: #0d110f;
+  --card: #151716;
+  --hover: #1c1e1c;
+  --well: #0a0b0a;
   --brand: #c4a36a;
   --brand-bright: #e0c48a;
   --brand-mid: #a68654;
   --brand-deep: #7a6240;
   --brand-dark: #8a7350;
   --select: #c4a36a;
-  --select-ink: #1a1408;
+  --select-ink: #0c0e0d;
   --mustard: #d4a24c;
   --caution: #d4a24c;
   --gain: #5a9a4a;
   --loss: #c46a58;
-  --surface: #2a2218;
-  --panel: #2a2218;
-  --border: rgb(196 163 106 / 0.28);
+  --surface: #151716;
+  --panel: #151716;
+  --border: rgb(237 232 220 / 0.10);
 }
 
 @theme inline {

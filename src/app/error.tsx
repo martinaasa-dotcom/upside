@@ -28,7 +28,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#2d3d32_0%,_#1a2820_52%)] px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#141614_0%,_#0d110f_52%)] px-4 text-center">
       <UpsideLogo variant="icon" />
       <div className="max-w-sm space-y-2">
         <h1 className="text-lg font-semibold text-foreground">
