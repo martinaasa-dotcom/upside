@@ -33,16 +33,36 @@ export async function GET() {
     );
   }
 
+  const owned = new Set(await listOwnedPortfolioIds(auth.user.id));
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.snapshots)
-    .select("id, kind, label, created_at")
+    .select("id, kind, label, created_at, payload")
     .order("created_at", { ascending: false })
-    .limit(40);
+    .limit(80);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ snapshots: data ?? [] });
+  const snapshots = ((data ?? []) as {
+    id: string;
+    kind: string;
+    label: string;
+    created_at: string;
+    payload?: { portfolios?: { id?: string }[] };
+  }[])
+    .filter((row) => {
+      const ports = row.payload?.portfolios;
+      if (!Array.isArray(ports)) return false;
+      return ports.some((p) => p.id && owned.has(p.id));
+    })
+    .slice(0, 40)
+    .map(({ id, kind, label, created_at }) => ({
+      id,
+      kind,
+      label,
+      created_at,
+    }));
+  return NextResponse.json({ snapshots });
 }
 
 /** Create a manual snapshot, or restore one. */

@@ -1278,6 +1278,17 @@ run("holding write classify buy sell adjust", () => {
   );
 });
 
+run("inbox notes do not say thesis to a person", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/lib/note-report.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(src, /`Thesis /);
+  assert.doesNotMatch(src, /Last Pulse:/);
+  assert.match(src, /Why you own it/);
+  assert.match(src, /humanPulseStatus/);
+});
+
 run("full-book restore only touches sheets you own", () => {
   const ids = snapshotSheetsForOwner(
     {

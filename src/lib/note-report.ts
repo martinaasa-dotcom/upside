@@ -2,6 +2,7 @@
 
 import { cashtag } from "@/lib/format";
 import { stripAiDashes } from "@/lib/ai/humanize-copy";
+import { statusLabel } from "@/lib/thesis-pulse";
 import { buildBookInsights } from "@/lib/book-insights";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { todayDollarFor } from "@/lib/overview";
@@ -301,7 +302,10 @@ function thesisFor(
   const ownerThesis = entry?.thesis ? clipThesis(entry.thesis) : null;
   const stamp = entry?.stamps?.[0];
   const verdict = stamp?.verdict ? stripAiDashes(stamp.verdict).trim() : "";
-  const isStatus = /^(thesis intact|watch|thesis at risk)$/i.test(verdict);
+  const isStatus =
+    /^(thesis intact|watch|thesis at risk|intact|broken|reason still holds|reason looks shaky|keep an eye on it)$/i.test(
+      verdict
+    );
   const fromLine = stamp?.line ? clipThesis(stamp.line) : null;
   const pulseLine =
     fromLine && fromLine.toLowerCase() !== verdict.toLowerCase()
@@ -319,8 +323,17 @@ function thesisFor(
     todayPct: pos.pct,
     ownerThesis,
     pulseLine,
-    status: isStatus ? verdict : null,
+    status: isStatus ? humanPulseStatus(verdict) : null,
   };
+}
+
+function humanPulseStatus(raw: string): string {
+  const s = raw.toLowerCase();
+  if (s.includes("risk") || s.includes("broken") || s.includes("shaky")) {
+    return statusLabel("broken");
+  }
+  if (s.includes("watch") || s.includes("eye")) return statusLabel("watch");
+  return statusLabel("intact");
 }
 
 export function parseConviction(raw: unknown): ConvictionMap {
@@ -335,9 +348,12 @@ function weekActionLine(input: {
 }): string | null {
   const status = (input.status ?? "").toLowerCase();
   const action = (input.action ?? "").toLowerCase();
-  const intact = status.includes("intact");
-  const watch = status.includes("watch");
-  const risk = status.includes("risk") || status.includes("broken");
+  const intact = status.includes("intact") || status.includes("still holds");
+  const watch = status.includes("watch") || status.includes("eye");
+  const risk =
+    status.includes("risk") ||
+    status.includes("broken") ||
+    status.includes("shaky");
   const down = input.weekPct != null && input.weekPct <= -0.03;
   const upHot = input.weekPct != null && input.weekPct >= 0.08;
 
@@ -406,9 +422,12 @@ function dayActionLine(input: {
 }): string | null {
   const status = (input.status ?? "").toLowerCase();
   const action = (input.action ?? "").toLowerCase();
-  const intact = status.includes("intact");
-  const watch = status.includes("watch");
-  const risk = status.includes("risk") || status.includes("broken");
+  const intact = status.includes("intact") || status.includes("still holds");
+  const watch = status.includes("watch") || status.includes("eye");
+  const risk =
+    status.includes("risk") ||
+    status.includes("broken") ||
+    status.includes("shaky");
   const down = input.overnightPct != null && input.overnightPct <= -0.02;
 
   if (risk || action === "sell") return "Do not add today.";
@@ -716,7 +735,7 @@ export function noteReportText(r: NoteReport): string {
   }
   if (r.thesis) {
     const heading = r.thesis.ownerThesis
-      ? `Thesis  ${cashtag(r.thesis.ticker)}`
+      ? `Why you own it  ${cashtag(r.thesis.ticker)}`
       : `Focus  ${cashtag(r.thesis.ticker)}`;
     lines.push("", heading);
     const facts = [
@@ -728,7 +747,7 @@ export function noteReportText(r: NoteReport): string {
     ].filter((x): x is string => Boolean(x));
     lines.push(facts.join(". ") + ".");
     if (r.thesis.ownerThesis) lines.push(r.thesis.ownerThesis);
-    if (r.thesis.status) lines.push(`Last Pulse: ${r.thesis.status}.`);
+    if (r.thesis.status) lines.push(`Pulse: ${r.thesis.status}.`);
     if (r.thesis.pulseLine) lines.push(r.thesis.pulseLine);
   }
   if (r.kind === "sunday") {
@@ -956,7 +975,7 @@ export function noteReportHtml(r: NoteReport): string {
     }
     if (r.thesis.status) {
       bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD}">Last Pulse: ${escapeHtml(r.thesis.status)}</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD}">Pulse: ${escapeHtml(r.thesis.status)}</p>`
       );
     }
     if (r.thesis.pulseLine) {

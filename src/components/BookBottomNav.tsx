@@ -20,7 +20,7 @@ const ITEMS = [
   {
     href: "/?tab=pulse",
     label: "Pulse",
-    title: "Thesis Pulse for names you hold",
+    title: "Pulse for names you hold",
     Icon: Activity,
   },
   {

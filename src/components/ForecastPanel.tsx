@@ -704,7 +704,7 @@ export function ForecastPanel({
       return "New holding, Margus is working out a path …";
     }
     if (decision.run && decision.reason === "thesis-changed") {
-      return "Thesis changed, Margus is updating the path …";
+      return "Why you own it changed, Margus is updating the path …";
     }
     return null;
   }, [planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, convictionKey]);
