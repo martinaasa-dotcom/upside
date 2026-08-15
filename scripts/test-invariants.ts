@@ -1886,6 +1886,10 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.match(src, /Discover public circles/);
   assert.match(src, /No public circles right now/);
   assert.doesNotMatch(src, /discover\.length > 0 &&/);
+  assert.match(src, /<PanelHeader/);
+  assert.match(src, /space-y-8/);
+  assert.doesNotMatch(src, /sm:grid-cols-2/);
+  assert.doesNotMatch(src, /Start a class[\s\S]{0,80}How the class runs/);
 });
 
 run("Daily Duel is not on Home", () => {

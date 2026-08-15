@@ -20,15 +20,13 @@ import {
   type CommunityListRow,
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
+import { Panel, PanelHeader, Segmented } from "@/components/ui/Panel";
 import {
   CLASS_TEMPLATES,
   classTemplateById,
   defaultClassSetup,
 } from "@/lib/class-templates";
-import {
-  DEFAULT_CLASS_ASSIGNMENT,
-  classPeriodLabel,
-} from "@/lib/classroom";
+import { DEFAULT_CLASS_ASSIGNMENT } from "@/lib/classroom";
 import { ChevronRight, Compass, Globe, GraduationCap, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -329,143 +327,133 @@ export function CommunitiesList() {
             )}
           </div>
 
-          <form
-            onSubmit={(e) => void createCommunity(e)}
-            className="space-y-2.5 rounded-2xl border border-white/10 bg-card/60 p-4"
-          >
-            <p className="text-sm font-medium text-zinc-200">
-              Create a community
-            </p>
-            <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 sm:w-fit">
-              {(
-                [
-                  ["circle", Users, "Circle"],
-                  ["classroom", GraduationCap, "Class"],
-                ] as const
-              ).map(([id, Icon, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setKind(id)}
-                  aria-pressed={kind === id}
-                  className={cn(
-                    "touch-target inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
-                    kind === id
-                      ? "bg-brand/20 text-brand-bright"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              ))}
-            </div>
-            {kind === "classroom" ? (
-              <p className="text-xs leading-relaxed text-zinc-400">
-                High school or uni. Students join with a link. Everyone
-                starts with the same paper cash and an empty sheet. Real
-                prices. No brokerage.
-              </p>
-            ) : null}
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={
-                  kind === "classroom" ? "Class name, like Econ 201" : "Community name"
+          <form onSubmit={(e) => void createCommunity(e)}>
+            <Panel>
+              <PanelHeader
+                title="Create a community"
+                subtitle={
+                  kind === "classroom"
+                    ? "High school or uni. Students join with a link. Everyone starts with the same paper cash and an empty sheet. Real prices. No brokerage."
+                    : "A private circle for people you invite, or a public one people can ask to join."
                 }
-                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm"
+                actions={
+                  <Segmented
+                    ariaLabel="Community type"
+                    options={[
+                      { id: "circle", label: "Circle" },
+                      { id: "classroom", label: "Class" },
+                    ]}
+                    value={kind}
+                    onChange={setKind}
+                  />
+                }
               />
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                {kind === "classroom" ? "Start a class" : "Create community"}
-              </button>
-            </div>
-            {kind === "classroom" ? (
-              <>
-                <div>
-                  <p className="text-xs font-medium text-zinc-400">
-                    How the class runs
-                  </p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
-                    Pick the closest match. You can change the cash, the
-                    note, and the trading rules after you start.
-                  </p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {CLASS_TEMPLATES.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => {
-                          const next = classTemplateById(t.id);
-                          setTemplateId(next.id);
-                          setStartingCash(next.cash);
-                          setAssignment(next.assignment);
-                          setStartPeriod(next.period);
-                        }}
-                        className={cn(
-                          "rounded-xl border px-3 py-2.5 text-left transition",
-                          templateId === t.id
-                            ? "border-brand/50 bg-brand/10"
-                            : "border-zinc-800 bg-zinc-900/60 hover:border-zinc-600"
-                        )}
-                      >
-                        <p className="text-sm font-semibold text-zinc-100">
-                          {t.title}
-                        </p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
-                          {t.blurb}
-                        </p>
-                        <p className="mt-1.5 text-xs text-zinc-500">
-                          {classPeriodLabel(t.period)}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <StartingCashField
-                  value={startingCash}
-                  onChange={setStartingCash}
-                />
-                <label className="block text-xs font-medium text-zinc-400">
-                  What we&apos;re learning
-                  <textarea
-                    value={assignment}
-                    onChange={(e) => setAssignment(e.target.value)}
-                    maxLength={800}
-                    rows={3}
-                    placeholder={DEFAULT_CLASS_ASSIGNMENT}
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"
+
+              <div className="mt-8 space-y-8">
+                <label className="block">
+                  <span className="text-xs font-medium text-muted">
+                    {kind === "classroom" ? "Class name" : "Name"}
+                  </span>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={
+                      kind === "classroom"
+                        ? "Econ 201"
+                        : "Community name"
+                    }
+                    className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-500 focus:border-zinc-500"
                   />
                 </label>
-              </>
-            ) : (
-              <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900/50 p-1 sm:w-fit">
-                {(
-                  [
-                    ["private", Lock, "Private: invite only"],
-                    ["public", Globe, "Public: anyone can request to join"],
-                  ] as const
-                ).map(([id, Icon, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setVisibility(id)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
-                      visibility === id
-                        ? "bg-brand/20 text-brand-bright"
-                        : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                ))}
+
+                {kind === "classroom" ? (
+                  <>
+                    <div>
+                      <p className="text-xs font-medium text-muted">
+                        How the class runs
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                        Pick the closest match. You can change the cash, the
+                        note, and the trading rules after you start.
+                      </p>
+                      <div className="mt-4 divide-y divide-white/10">
+                        {CLASS_TEMPLATES.map((t) => {
+                          const on = templateId === t.id;
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => {
+                                const next = classTemplateById(t.id);
+                                setTemplateId(next.id);
+                                setStartingCash(next.cash);
+                                setAssignment(next.assignment);
+                                setStartPeriod(next.period);
+                              }}
+                              className={cn(
+                                "flex w-full flex-col gap-1 py-4 text-left transition first:pt-1 last:pb-1",
+                                on
+                                  ? "text-white"
+                                  : "text-zinc-300 hover:text-white"
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold",
+                                  on ? "text-white" : "text-zinc-100"
+                                )}
+                              >
+                                {t.title}
+                              </span>
+                              <span className="text-sm leading-relaxed text-muted">
+                                {t.blurb}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <StartingCashField
+                      value={startingCash}
+                      onChange={setStartingCash}
+                    />
+                    <label className="block">
+                      <span className="text-xs font-medium text-muted">
+                        What we&apos;re learning
+                      </span>
+                      <textarea
+                        value={assignment}
+                        onChange={(e) => setAssignment(e.target.value)}
+                        maxLength={800}
+                        rows={4}
+                        placeholder={DEFAULT_CLASS_ASSIGNMENT}
+                        className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm leading-relaxed text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-500"
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <div>
+                    <p className="text-xs font-medium text-muted">Who can join</p>
+                    <div className="mt-3">
+                      <Segmented
+                        ariaLabel="Who can join"
+                        className="flex-wrap"
+                        options={[
+                          { id: "private", label: "Invite only" },
+                          { id: "public", label: "Anyone can request" },
+                        ]}
+                        value={visibility}
+                        onChange={setVisibility}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <button type="submit" className="btn-primary">
+                  {kind === "classroom" ? "Start a class" : "Create community"}
+                </button>
               </div>
-            )}
+            </Panel>
           </form>
         </main>
         <BookBottomNav />
