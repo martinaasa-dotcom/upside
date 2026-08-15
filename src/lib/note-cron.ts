@@ -8,6 +8,7 @@ import {
   parseConviction,
   type NoteKind,
 } from "@/lib/note-report";
+import { writeMargusNoteTake } from "@/lib/note-margus";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -136,6 +137,7 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
       weekReturns,
       earnings,
     });
+    report.margus = await writeMargusNoteTake(report);
     const ok = await sendNoteEmail({
       to: email,
       subject: noteSubject(report),

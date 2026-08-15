@@ -2,6 +2,7 @@
 
 import { cashtag } from "@/lib/format";
 import { stripAiDashes } from "@/lib/ai/humanize-copy";
+import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { todayDollarFor } from "@/lib/overview";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { EarningsEvent, WeekReturn } from "@/lib/market/yahoo";
@@ -85,6 +86,7 @@ export type NoteReport = {
   perspective: string[];
   thesis: NoteThesis | null;
   weekNotes: NoteWeekNote[];
+  margus: string | null;
 };
 
 const TITLE: Record<NoteKind, string> = {
@@ -658,6 +660,7 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
       input.kind === "sunday"
         ? weekNotesFor(t.positions, input.conviction)
         : [],
+    margus: null,
   };
 }
 
@@ -665,6 +668,9 @@ export function noteReportText(r: NoteReport): string {
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
   const lines = [notePreview(r), "", r.title, r.dateLine, "", r.lead];
+  if (r.margus) {
+    lines.push("", "Margus", r.margus, ADVICE_DISCLAIMER_SHORT);
+  }
   if (r.kind !== "morning") {
     lines.push(
       "",
@@ -847,6 +853,14 @@ export function noteReportHtml(r: NoteReport): string {
         )
       : "";
 
+  const margusInner = r.margus
+    ? section(
+        "Margus",
+        `<p style="margin:0;font-family:${SANS};font-size:16px;line-height:1.55;color:${CREAM}">${escapeHtml(r.margus)}</p>
+<p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>`
+      )
+    : "";
+
   const perspectiveInner =
     r.kind === "sunday" && r.perspective.length > 0
       ? section(
@@ -986,6 +1000,7 @@ export function noteReportHtml(r: NoteReport): string {
               </tr>
             </table>`
             }
+            ${margusInner}
             ${moversInner}
             ${watchesInner}
             ${weightsInner}
