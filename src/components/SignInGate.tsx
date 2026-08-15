@@ -224,11 +224,11 @@ function BookStill() {
         </Metric>
       </div>
 
-      <div className="mt-6 divide-y divide-white/10">
+      <div className="mt-6 space-y-2">
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
-            className="relative grid grid-cols-[1fr_auto] items-center gap-3 py-3 pl-4 pr-1"
+            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card py-3 pl-5 pr-4"
           >
             <span
               className={cn(
@@ -271,7 +271,7 @@ function BookStill() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-base font-semibold text-white">$RKLB</span>
-              <span className="rounded-lg bg-emerald-500/20 px-1.5 py-0.5 text-xs font-medium text-emerald-200">
+              <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-xs font-medium text-gain">
                 Up ≥5%
               </span>
             </div>

@@ -939,11 +939,16 @@ run("chrome is quiet and prose sits on paper", () => {
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #f4f1ea/);
-  assert.match(css, /--ink: #08090c/);
+  assert.match(css, /--paper: #f3ede3/);
+  assert.match(css, /--ink: #14161c/);
+  assert.match(css, /--card: #1a1c22/);
+  assert.match(css, /--muted: #b8b4ab/);
+  assert.match(css, /--gain: #6fcf97/);
+  assert.match(css, /--loss: #e0727a/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /bg-paper/);
-  assert.match(panel, /default: "border-white\/10 bg-card\/80"/);
+  assert.match(panel, /default: "border-border bg-card\/80"/);
+  assert.match(panel, /h-full rounded-xl border border-border bg-card px-4 py-3.5/);
   assert.match(panel, /text-xs font-medium text-muted/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),

@@ -575,7 +575,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden py-3 pl-4 pr-1 text-left transition hover:bg-hover/70"
+      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card py-3.5 pl-5 pr-4 text-left transition hover:border-white/20 hover:bg-hover"
     >
       <span
         className={cn(

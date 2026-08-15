@@ -121,7 +121,7 @@ function ActionBadge({ action }: { action: PulseAction }) {
       : action === "sell"
         ? "bad"
         : action === "trim"
-          ? "info"
+          ? "brand"
           : action === "watch"
             ? "brand"
             : "neutral";
@@ -131,11 +131,11 @@ function ActionBadge({ action }: { action: PulseAction }) {
 function statusBorder(status: ThesisStatus, urgent: boolean, pinned: boolean) {
   if (pinned) return "border-brand/50 bg-brand/10 ring-1 ring-brand/30";
   if (urgent && status !== "intact") {
-    return "border-rose-500/40 bg-rose-950/25";
+    return "border-loss/40 bg-loss/[0.10]";
   }
-  if (status === "intact") return "border-emerald-500/30 bg-emerald-950/20";
+  if (status === "intact") return "border-gain/30 bg-gain/[0.08]";
   if (status === "watch") return "border-brand/30 bg-brand/[0.07]";
-  return "border-rose-500/30 bg-rose-950/20";
+  return "border-loss/30 bg-loss/[0.08]";
 }
 
 function PulseCard({
@@ -212,8 +212,8 @@ function PulseCard({
                 className={cn(
                   "rounded px-1.5 py-0.5 text-xs font-medium",
                   (c.effectivePct ?? 0) < 0
-                    ? "bg-rose-500/20 text-rose-200"
-                    : "bg-emerald-500/20 text-emerald-200"
+                    ? "bg-loss/15 text-loss"
+                    : "bg-gain/15 text-gain"
                 )}
               >
                 {(c.effectivePct ?? 0) < 0 ? "Down ≥5%" : "Up ≥5%"}

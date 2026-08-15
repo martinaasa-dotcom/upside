@@ -33,7 +33,7 @@ import { useState, type ReactNode } from "react";
  *              every money figure. No third face. Lockup is Montserrat.
  *   Micro      text-xs font-medium text-muted · sentence case
  *              Caps stay on the logo only.
- *   Metrics    label over figure, no extra card around the number.
+ *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
  *   Reading    cream paper, dark ink, text-base. Thesis, Worth noticing,
  *              briefing body. Not another dark card.
@@ -50,11 +50,11 @@ import { useState, type ReactNode } from "react";
  */
 
 const SHELL_TONES = {
-  default: "border-white/10 bg-card/80",
-  plain: "border-white/10 bg-card/80",
+  default: "border-border bg-card/80",
+  plain: "border-border bg-card/80",
   brand: "border-brand/35 bg-brand/[0.07]",
-  warn: "border-amber-500/30 bg-amber-500/[0.07]",
-  danger: "border-rose-500/30 bg-rose-950/20",
+  warn: "border-caution/35 bg-caution/[0.08]",
+  danger: "border-loss/30 bg-loss/[0.08]",
 } as const;
 
 const FIGURE =
@@ -172,13 +172,13 @@ export function PanelHeader({
 }
 
 const CARD_TONES = {
-  default: "border-white/10 bg-card",
-  raised: "border-white/10 bg-hover",
+  default: "border-border bg-card",
+  raised: "border-border bg-hover",
   brand: "border-brand/30 bg-brand/10",
-  good: "border-emerald-500/25 bg-emerald-500/[0.07]",
-  warn: "border-amber-500/30 bg-amber-500/[0.07]",
-  bad: "border-rose-500/25 bg-rose-500/[0.07]",
-  info: "border-sky-500/25 bg-sky-500/[0.07]",
+  good: "border-gain/25 bg-gain/[0.08]",
+  warn: "border-caution/35 bg-caution/[0.08]",
+  bad: "border-loss/25 bg-loss/[0.08]",
+  info: "border-border bg-hover",
 } as const;
 
 export type CardTone = keyof typeof CARD_TONES;
@@ -202,7 +202,7 @@ export function Card({
         "h-full rounded-xl border px-4 py-4",
         CARD_TONES[tone],
         interactive &&
-          "transition hover:border-white/20 hover:bg-hover active:scale-[0.995]",
+          "transition hover:border-white/25 hover:bg-hover active:scale-[0.995]",
         className
       )}
       {...rest}
@@ -345,7 +345,12 @@ export function Stat({
   className?: string;
 }) {
   return (
-    <div className={cn("min-w-0", className)}>
+    <div
+      className={cn(
+        "h-full rounded-xl border border-border bg-card px-4 py-3.5",
+        className
+      )}
+    >
       <MicroLabel>
         {label}
         {explain && <InfoTip text={explain} />}
@@ -425,12 +430,12 @@ export function Segmented<T extends string>({
 }
 
 const PILL_TONES = {
-  neutral: "border-zinc-700 bg-zinc-900/80 text-zinc-300",
+  neutral: "border-border bg-card text-zinc-300",
   brand: "border-brand/40 bg-brand/15 text-brand-bright",
-  good: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-  warn: "border-amber-500/30 bg-amber-500/10 text-amber-100",
-  bad: "border-rose-500/40 bg-rose-500/15 text-rose-200",
-  info: "border-violet-400/40 bg-violet-500/15 text-violet-200",
+  good: "border-gain/30 bg-gain/10 text-gain",
+  warn: "border-caution/40 bg-caution/10 text-brand-bright",
+  bad: "border-loss/40 bg-loss/15 text-loss",
+  info: "border-border bg-hover text-zinc-200",
 } as const;
 
 export type PillTone = keyof typeof PILL_TONES;
