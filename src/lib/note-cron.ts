@@ -1,20 +1,17 @@
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import {
-  buildCloseEmailText,
-  buildMorningEmailText,
-  buildSundayEmailText,
-} from "@/lib/morning-email";
+  buildNoteReport,
+  noteReportHtml,
+  noteReportText,
+  noteSubject,
+  parseConviction,
+  type NoteKind,
+} from "@/lib/note-report";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
-export type NoteKind = "morning" | "close" | "sunday";
-
-const SUBJECT: Record<NoteKind, string> = {
-  morning: "Your book this morning",
-  close: "After the close",
-  sunday: "Sunday look",
-};
+export type { NoteKind };
 
 export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
   ok: boolean;
@@ -114,22 +111,24 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
       (s, p) => s + Number(p.cash_balance ?? 0),
       0
     );
-    const payload = {
+    const { data: lab } = await supabase
+      .from(PORTFELL_TABLES.labState)
+      .select("conviction")
+      .eq("owner_id", profile.id)
+      .maybeSingle();
+    const report = buildNoteReport({
+      kind,
       name: profile.display_name as string | null,
       cash,
       holdings,
       quotes,
-    };
-    const text =
-      kind === "close"
-        ? buildCloseEmailText(payload)
-        : kind === "sunday"
-          ? buildSundayEmailText(payload)
-          : buildMorningEmailText(payload);
+      conviction: parseConviction(lab?.conviction),
+    });
     const ok = await sendNoteEmail({
       to: email,
-      subject: SUBJECT[kind],
-      text,
+      subject: noteSubject(kind),
+      text: noteReportText(report),
+      html: noteReportHtml(report),
     });
     if (ok) sent += 1;
     else skipped += 1;
