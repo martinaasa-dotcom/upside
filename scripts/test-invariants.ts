@@ -921,7 +921,7 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
-run("chrome is quiet and prose is type, not a billboard", () => {
+run("chrome is quiet and prose sits in a dark box", () => {
   const panel = readFileSync(
     join(process.cwd(), "src/components/ui/Panel.tsx"),
     "utf8"
@@ -943,20 +943,26 @@ run("chrome is quiet and prose is type, not a billboard", () => {
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #ecece8/);
+  assert.match(css, /--paper: #f3efe6/);
   assert.match(css, /--ink: #14161c/);
-  assert.match(css, /--card: #16181c/);
-  assert.match(css, /--muted: #8b8e93/);
-  assert.match(css, /--brand: #b4b7bc/);
-  assert.match(css, /--gain: #6fbf94/);
-  assert.match(css, /--loss: #d97a80/);
+  assert.match(css, /--card: #1a1c22/);
+  assert.match(css, /--muted: #a39e96/);
+  assert.match(css, /--brand: #c4a574/);
+  assert.match(css, /--gain: #5fcb96/);
+  assert.match(css, /--loss: #e07a7a/);
   assert.doesNotMatch(css, /--brand: #c9a56a/);
+  assert.doesNotMatch(css, /--brand: #b4b7bc/);
   assert.match(panel, /export function Reading/);
+  assert.match(panel, /export function ScanList/);
+  assert.match(panel, /export function InsightText/);
+  assert.match(
+    panel.slice(panel.indexOf("export function Reading")),
+    /rounded-xl border border-border bg-card/
+  );
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Reading")),
     /bg-paper/
   );
-  assert.match(panel, /Same dark field as the rest/);
   assert.match(panel, /default: "border-border bg-card\/80"/);
   assert.match(panel, /h-full rounded-xl border border-border bg-card px-4 py-3.5/);
   assert.match(panel, /text-xs font-medium text-muted/);
@@ -970,7 +976,8 @@ run("chrome is quiet and prose is type, not a billboard", () => {
   assert.match(header, /border-b border-white\/10/);
   assert.doesNotMatch(header, /border-brand\/25/);
   assert.match(home, /<Reading label="Worth noticing">/);
-  assert.match(home, /border-white\/10 bg-card/);
+  assert.match(home, /<InsightText text=\{morning.insight\} \/>/);
+  assert.doesNotMatch(home, /opened the book/);
   assert.doesNotMatch(home, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
   assert.doesNotMatch(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
@@ -1617,7 +1624,7 @@ run("Pulse scan sits in its own card, not under the mood line", () => {
     "utf8"
   );
   assert.match(page, /Today's scan/);
-  assert.match(page, /<Reading label="Today's scan">/);
+  assert.match(page, /<ScanList/);
   assert.match(page, /scanRows\.map/);
   assert.doesNotMatch(
     page,

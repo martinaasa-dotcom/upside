@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/format";
+import { cashtag, cn } from "@/lib/format";
 import { Info } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
@@ -17,9 +17,9 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-white/10 on bg-card. Selected is white. Gold is
- *              the A in the lockup, not chrome, sliders, or chips.
- *   Card       border-white/10 on bg-card
+ *   Shell      border-border on bg-card. Selected is white. Bronze is a
+ *              thread (labels, a hairline). Not a fill on sliders or chips.
+ *   Card       border-border on bg-card. The box has to lift off the field.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips
  *   text-sm    14  chrome, inputs, buttons, nav
@@ -35,8 +35,9 @@ import { useState, type ReactNode } from "react";
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    type on the same dark field. A muted label, then the
- *              sentence. Not a cream slab. Thesis is not a billboard.
+ *   Reading    a dark card, bronze label, same type as the page. Thesis
+ *              and Worth noticing live in a box. Not a cream slab, and
+ *              not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted for chrome
  *   Floor      nothing below text-xs. Ever.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
@@ -233,8 +234,9 @@ export function MicroLabel({
 }
 
 /**
- * Long sentences a person actually reads. Same dark field as the rest
- * of the page. A muted label, then the sentence. Not a cream slab.
+ * Long sentences a person actually reads. A dark card that lifts off
+ * the field, bronze label, warm type. Not a cream slab, and not loose
+ * type sitting on the page.
  */
 export function Reading({
   label,
@@ -246,9 +248,14 @@ export function Reading({
   className?: string;
 }) {
   return (
-    <div className={cn("text-zinc-200", className)}>
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-card px-4 py-3.5 text-zinc-100",
+        className
+      )}
+    >
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-muted">{label}</div>
+        <div className="text-xs font-medium text-brand-bright">{label}</div>
       ) : null}
       <div
         className={cn(
@@ -258,6 +265,102 @@ export function Reading({
       >
         {children}
       </div>
+    </div>
+  );
+}
+
+/** Cashtags stay white. Up and down take gain and loss. */
+export function InsightText({ text }: { text: string }) {
+  const chunks = text.split(/(\$[A-Z][A-Z0-9.]{0,11})/g);
+  return (
+    <>
+      {chunks.map((chunk, i) => {
+        if (/^\$[A-Z][A-Z0-9.]{0,11}$/.test(chunk)) {
+          return (
+            <span key={i} className="font-semibold text-white">
+              {chunk}
+            </span>
+          );
+        }
+        return <MoveTint key={i} text={chunk} />;
+      })}
+    </>
+  );
+}
+
+function MoveTint({ text }: { text: string }) {
+  const re = /(up|down)(\s+about\s+\d+(?:\.\d+)?%)?/gi;
+  const out: ReactNode[] = [];
+  let last = 0;
+  let n = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const up = m[1]!.toLowerCase() === "up";
+    out.push(
+      <span key={n++} className={up ? "text-gain" : "text-loss"}>
+        {m[0]}
+      </span>
+    );
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return <>{out}</>;
+}
+
+/** A boxed list of ticker + line. Used for Today's scan. */
+export function ScanList({
+  label,
+  rows,
+  onOpen,
+  className,
+}: {
+  label?: ReactNode;
+  rows: { ticker: string; text: string }[];
+  onOpen?: (ticker: string) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-border bg-card",
+        className
+      )}
+    >
+      {label != null && label !== "" ? (
+        <div className="border-b border-white/10 px-4 py-2.5">
+          <p className="text-xs font-medium text-brand-bright">{label}</p>
+        </div>
+      ) : null}
+      <ul>
+        {rows.map((row) => {
+          const body = (
+            <>
+              <span className="w-[4.75rem] shrink-0 font-semibold tabular-nums text-white">
+                {cashtag(row.ticker)}
+              </span>
+              <span className="min-w-0 text-sm leading-snug text-zinc-300">
+                {row.text}
+              </span>
+            </>
+          );
+          return (
+            <li key={row.ticker} className="border-t border-white/10 first:border-t-0">
+              {onOpen ? (
+                <button
+                  type="button"
+                  onClick={() => onOpen(row.ticker)}
+                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-hover"
+                >
+                  {body}
+                </button>
+              ) : (
+                <div className="flex gap-3 px-4 py-3">{body}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

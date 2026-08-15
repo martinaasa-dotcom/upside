@@ -3,7 +3,14 @@
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
-import { Metric, MicroLabel, Panel, Pill, Reading } from "@/components/ui/Panel";
+import {
+  InsightText,
+  Metric,
+  MicroLabel,
+  Panel,
+  Pill,
+  Reading,
+} from "@/components/ui/Panel";
 import { cn } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
 import {
@@ -263,7 +270,7 @@ function BookStill() {
       </div>
 
       <Reading className="mt-5" label="Worth noticing">
-        $RKLB jumped 6.8% today. Amazon and Microsoft barely moved.
+        <InsightText text="$RKLB jumped 6.8% today. Amazon and Microsoft barely moved." />
       </Reading>
 
       <div className="mt-3 rounded-xl border border-white/10 bg-card px-3.5 py-3">

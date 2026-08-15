@@ -13,6 +13,7 @@ import {
   MicroLabel,
   Panel,
   PanelHeader,
+  InsightText,
   Reading,
   Segmented,
   Stat,
@@ -455,11 +456,6 @@ function MorningStack({
               )}
             </div>
           )}
-          {sunday.openedDays != null && (
-            <p className="text-sm text-zinc-400">
-              You opened the book {sunday.openedDays} days this week.
-            </p>
-          )}
         </div>
       ) : (
         <>
@@ -530,7 +526,9 @@ function MorningStack({
         </div>
       )}
       {morning.insight && (
-        <Reading label="Worth noticing">{morning.insight}</Reading>
+        <Reading label="Worth noticing">
+          <InsightText text={morning.insight} />
+        </Reading>
       )}
       {morning.pulseFlags.length > 0 && (
         <div className="space-y-2">

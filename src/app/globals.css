@@ -1,26 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Cool field. Gold lives on the A only. Chrome is stone. */
-  --background: #0b0c0e;
-  --foreground: #ecece8;
-  --paper: #ecece8;
+  /* Dark desk. Cards lift. Bronze is a thread, not a fill.
+     Field and card have to be far enough apart that a box reads as a box.
+     Brand sits next to the A: warm, quiet, never a gold wash on chrome.
+     Gain and loss do the loud work. */
+  --background: #08090b;
+  --foreground: #f3efe6;
+  --paper: #f3efe6;
   --ink: #14161c;
-  --muted: #8b8e93;
-  --app: #0b0c0e;
-  --card: #16181c;
-  --hover: #1e2126;
-  --brand: #b4b7bc;
-  --brand-bright: #d8dadc;
-  --brand-mid: #8e9298;
-  --brand-deep: #6a6e74;
-  --brand-dark: #8b8e93;
-  --caution: #b8956a;
-  --gain: #6fbf94;
-  --loss: #d97a80;
-  --surface: #16181c;
-  --panel: #16181c;
-  --border: rgb(255 255 255 / 0.1);
+  --muted: #a39e96;
+  --app: #08090b;
+  --card: #1a1c22;
+  --hover: #24272e;
+  --brand: #c4a574;
+  --brand-bright: #dcc49a;
+  --brand-mid: #a68654;
+  --brand-deep: #7a6240;
+  --brand-dark: #8a7350;
+  --caution: #c4a574;
+  --gain: #5fcb96;
+  --loss: #e07a7a;
+  --surface: #1a1c22;
+  --panel: #1a1c22;
+  --border: rgb(243 239 230 / 0.16);
 }
 
 @theme inline {

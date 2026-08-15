@@ -35,7 +35,6 @@ export type SundayName = {
 export type SundayRecap = {
   best: SundayName | null;
   worst: SundayName | null;
-  openedDays: number | null;
 };
 
 export type MorningRead = {
@@ -158,7 +157,6 @@ export function buildSundayRecap(model: OverviewModel): SundayRecap | null {
   return {
     best,
     worst,
-    openedDays: week.days.length >= 2 ? week.days.length : null,
   };
 }
 

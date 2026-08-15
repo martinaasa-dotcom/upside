@@ -17,6 +17,7 @@ import {
   PanelHeader,
   Pill,
   Reading,
+  ScanList,
   Stat,
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
@@ -100,6 +101,12 @@ function PulseHistory({ ticker }: { ticker: string }) {
       Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus)}
     </p>
   );
+}
+
+function scanLineBody(ticker: string, line: string): string {
+  const tag = cashtag(ticker);
+  const stripped = line.replace(new RegExp(`^\\${tag}\\s+`, "i"), "").trim();
+  return stripped || line;
 }
 
 function thesisDisplayBullets(text: string | undefined): string[] {
@@ -971,13 +978,18 @@ export function PulsePage({
       </Panel>
 
         {scanRows.length > 0 && !pinnedTicker && (
-        <Reading label="Today's scan">
-          <ul className="space-y-2">
-            {scanRows.map((row) => (
-              <li key={row.ticker}>{humanizeMargusText(row.line)}</li>
-            ))}
-          </ul>
-        </Reading>
+        <ScanList
+          label="Today's scan"
+          rows={scanRows.map((row) => ({
+            ticker: row.ticker,
+            text: scanLineBody(row.ticker, humanizeMargusText(row.line)),
+          }))}
+          onOpen={(ticker) => {
+            document
+              .getElementById(`pulse-card-${ticker}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
       )}
 
       {pinnedCandidate && (
