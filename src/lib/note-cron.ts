@@ -11,8 +11,8 @@ import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 export type NoteKind = "morning" | "close" | "sunday";
 
 const SUBJECT: Record<NoteKind, string> = {
-  morning: "Book this morning",
-  close: "Book after the close",
+  morning: "Your book this morning",
+  close: "After the close",
   sunday: "Sunday look",
 };
 

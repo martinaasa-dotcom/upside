@@ -14,16 +14,21 @@ function escapeHtml(s: string): string {
 }
 
 function noteHtml(text: string): string {
-  const body = text
-    .split("\n")
-    .map((line) =>
-      line.trim()
-        ? `<p style="margin:0 0 10px 0">${escapeHtml(line)}</p>`
-        : "<p style=\"margin:0 0 10px 0\">&nbsp;</p>"
-    )
+  const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+  const last = blocks[blocks.length - 1];
+  const body = blocks
+    .map((block, i) => {
+      const muted = block === last && /Account turns this off/i.test(block);
+      const style = muted
+        ? "margin:28px 0 0 0;font-size:13px;line-height:1.4;color:#6b6b6b"
+        : i === 0
+          ? "margin:0 0 18px 0;font-size:18px;line-height:1.4;color:#111"
+          : "margin:0 0 14px 0;font-size:16px;line-height:1.5;color:#1a1a1a";
+      return `<p style="${style}">${escapeHtml(block).replace(/\n/g, "<br>")}</p>`;
+    })
     .join("");
-  return `<div style="font-family:Georgia,serif;font-size:16px;line-height:1.45;color:#111">
-<img src="${MARK_URL}" width="32" height="32" alt="Upside Lab" style="display:block;margin:0 0 16px 0;border:0" />
+  return `<div style="max-width:420px;padding:8px 0;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a">
+<img src="${MARK_URL}" width="28" height="28" alt="" style="display:block;margin:0 0 20px 0;border:0" />
 ${body}
 </div>`;
 }

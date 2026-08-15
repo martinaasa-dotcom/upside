@@ -43,56 +43,78 @@ function bookTape(input: NoteInput) {
   };
 }
 
-function signedUsd(n: number): string {
-  const abs = Math.round(Math.abs(n)).toLocaleString("en-US");
+function money(n: number): string {
+  return `$${Math.round(n).toLocaleString("en-US")}`;
+}
+
+function signedMoney(n: number): string {
+  const abs = money(Math.abs(n));
   if (n > 0) return `+${abs}`;
   if (n < 0) return `-${abs}`;
   return abs;
 }
 
+function signedPct(pct: number): string {
+  const n = `${(Math.abs(pct) * 100).toFixed(1)}%`;
+  if (pct > 0) return `+${n}`;
+  if (pct < 0) return `-${n}`;
+  return n;
+}
+
+function greeting(name: string | null, lead: string): string {
+  return name ? `${lead}, ${name}.` : `${lead}.`;
+}
+
+function joinNote(lines: Array<string | null>): string {
+  return lines.filter((x): x is string => Boolean(x)).join("\n\n");
+}
+
 export function buildMorningEmailText(input: NoteInput): string {
   const tape = bookTape(input);
-  const lines = [
-    input.name ? `Morning, ${input.name}.` : "Morning.",
-    `Book ${Math.round(tape.book).toLocaleString("en-US")}. Today ${signedUsd(tape.today)}.`,
+  return joinNote([
+    greeting(input.name, "Morning"),
     tape.quiet
-      ? "Quiet day. Book barely moved."
+      ? `Your book is ${money(tape.book)}. Barely moved.`
+      : `Your book is ${money(tape.book)}. Today ${signedMoney(tape.today)}.`,
+    tape.quiet
+      ? "That's the whole note."
       : tape.top
-        ? `${cashtag(tape.top.ticker)} is the name making noise, ${tape.top.pct >= 0 ? "+" : ""}${(tape.top.pct * 100).toFixed(1)}%.`
+        ? `${cashtag(tape.top.ticker)} did most of that, ${signedPct(tape.top.pct)}.`
         : "Prices are still coming in.",
-    "Open Upside Lab if you want Pulse or the Fund.",
-    "You're getting this because you turned on the morning note. Account turns it off.",
-  ];
-  return lines.join("\n");
+    tape.quiet ? null : "Nothing you have to do.",
+    "Account turns this off.",
+  ]);
 }
 
 export function buildCloseEmailText(input: NoteInput): string {
   const tape = bookTape(input);
-  const lines = [
-    input.name ? `After the close, ${input.name}.` : "After the close.",
-    `${signedUsd(tape.today)} on the book.`,
-    tape.top
-      ? `${cashtag(tape.top.ticker)} was the name that did it.`
-      : "No single name stood out.",
-    "Open Upside Lab if you want Pulse.",
-    "You're getting this because you turned on the morning note. Account turns it off.",
-  ];
-  return lines.join("\n");
+  return joinNote([
+    greeting(input.name, "After the close"),
+    tape.quiet
+      ? `Your book is ${money(tape.book)}. A quiet session.`
+      : `Today finished ${signedMoney(tape.today)}.`,
+    tape.quiet
+      ? "See you in the morning."
+      : tape.top
+        ? `${cashtag(tape.top.ticker)} did most of that.`
+        : "No single name stood out.",
+    tape.quiet ? null : "See you in the morning.",
+    "Account turns this off.",
+  ]);
 }
 
 export function buildSundayEmailText(input: NoteInput): string {
   const tape = bookTape(input);
-  const lines = [
-    input.name ? `Sunday look, ${input.name}.` : "Sunday look.",
-    `Book ${Math.round(tape.book).toLocaleString("en-US")}.`,
+  return joinNote([
+    greeting(input.name, "Sunday"),
+    `Your book is ${money(tape.book)}.`,
     tape.best
-      ? `Best tape: ${cashtag(tape.best.ticker)} ${tape.best.pct >= 0 ? "+" : ""}${(tape.best.pct * 100).toFixed(1)}%.`
+      ? `Biggest recent move: ${cashtag(tape.best.ticker)}, ${signedPct(tape.best.pct)}.`
       : null,
     tape.worst && tape.worst.ticker !== tape.best?.ticker
-      ? `Worst tape: ${cashtag(tape.worst.ticker)} ${tape.worst.pct >= 0 ? "+" : ""}${(tape.worst.pct * 100).toFixed(1)}%.`
+      ? `Softest name: ${cashtag(tape.worst.ticker)}, ${signedPct(tape.worst.pct)}.`
       : null,
-    "Open Upside Lab if you want Pulse or the Fund.",
-    "You're getting this because you turned on the morning note. Account turns it off.",
-  ];
-  return lines.filter((x): x is string => Boolean(x)).join("\n");
+    "That's enough for a Sunday.",
+    "Account turns this off.",
+  ]);
 }
