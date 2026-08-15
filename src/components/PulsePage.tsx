@@ -849,7 +849,6 @@ export function PulsePage({
     await checkTicker(searchInput);
   }
 
-  const anyChecking = checkingTickers.size > 0;
   const pinnedLoading = Boolean(
     pinnedTicker && checkingTickers.has(pinnedTicker)
   );
@@ -861,20 +860,6 @@ export function PulsePage({
           hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
-          actions={
-            <button
-              type="button"
-              onClick={() => void runPulse(candidates, { force: true })}
-              disabled={anyChecking || candidates.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-zinc-500 disabled:opacity-50"
-            >
-              <RefreshCw
-                className={cn("h-3.5 w-3.5", anyChecking && "animate-spin")}
-                aria-hidden
-              />
-              Check all again
-            </button>
-          }
         />
         <p className="mt-2 text-xs text-zinc-500">{ADVICE_DISCLAIMER_SHORT}</p>
 

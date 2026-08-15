@@ -1649,6 +1649,7 @@ run("Pulse never nags that it is guessing", () => {
     "utf8"
   );
   assert.doesNotMatch(pulse, /Pulse is guessing/);
+  assert.doesNotMatch(pulse, /Check all again/);
   assert.doesNotMatch(pulse, /Write why you own/);
   assert.doesNotMatch(pulse, /Pulling news/);
   assert.doesNotMatch(pulse, /Couldn't get a full model/);
