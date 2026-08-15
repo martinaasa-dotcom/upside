@@ -211,7 +211,7 @@ export function SignInGate({ children }: Props) {
 function BookStill() {
   return (
     <Panel
-      className="signin-rise-3 hidden md:block"
+      className="signin-rise-3 hidden h-auto md:block"
       aria-hidden
     >
       <div className="flex items-center justify-between gap-3">
@@ -237,7 +237,7 @@ function BookStill() {
         $RKLB did most of today&apos;s move.
       </p>
 
-      <Card tone="raised" className="mt-4 px-3.5 py-3">
+      <Card tone="raised" className="mt-4 h-auto px-3.5 py-3">
         <MicroLabel>Worth noticing</MicroLabel>
         <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
           A quiet down day. The thesis didn&apos;t move with the price.

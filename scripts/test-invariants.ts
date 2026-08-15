@@ -1121,6 +1121,7 @@ run("sign-in reads as a product", () => {
   assert.match(gate, /Sample/);
   assert.doesNotMatch(gate, /\$50k|AI manage/);
   assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
+  assert.match(gate, /signin-rise-3 hidden h-auto md:block/);
   assert.doesNotMatch(gate, /Communities stay read-only/);
   assert.match(gate, /inviteLandingCopy/);
 });
