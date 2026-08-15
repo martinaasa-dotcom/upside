@@ -1,10 +1,12 @@
 /**
  * In-process traffic cop for shared free-tier model quota.
  *
- * Chat answers a person who is waiting. Pulse, Forecast auto-runs, and
- * inbox notes can wait. This is per warm instance, not a global lock, so
- * it will not catch every overlap on Vercel. It still stops the common
- * case: one instance chewing a Pulse sweep while someone is mid-reply.
+ * Chat answers a person who is waiting. Pulse and inbox notes can wait.
+ * Forecast first-run is not a background job: the person is staring at
+ * the sheet, so that route never takes this slot. This is per warm
+ * instance, not a global lock, so it will not catch every overlap on
+ * Vercel. It still stops the common case: one instance chewing a Pulse
+ * sweep while someone is mid-reply.
  */
 
 let chatUntil = 0;

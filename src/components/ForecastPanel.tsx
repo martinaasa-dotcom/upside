@@ -23,6 +23,7 @@ import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {
   ensureCompleteEoyTargets,
   DEFAULT_FORECAST_STANCE,
+  buildFallbackForecastPlan,
   loadForecastPlan,
   loadPreviousForecastPlan,
   planEoyPaths,
@@ -599,11 +600,17 @@ export function ForecastPanel({
   const autoKeyRef = useRef<string>("");
   const reappliedRef = useRef<string>("");
   const calibrateKeyRef = useRef<string>("");
+  const seededKeyRef = useRef<string>("");
+  const pendingModelRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const retryAfterRef = useRef(0);
   const askInFlight = useRef(false);
   const askAbortRef = useRef<AbortController | null>(null);
   const askGenRef = useRef(0);
   const planRef = useRef<ForecastPlan | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
   planRef.current = plan;
+  const MAX_AUTO_TRIES = 3;
   useEffect(() => {
     return () => {
       askAbortRef.current?.abort();
@@ -638,19 +645,46 @@ export function ForecastPanel({
     autoKeyRef.current = "";
     reappliedRef.current = "";
     calibrateKeyRef.current = "";
+    seededKeyRef.current = "";
+    pendingModelRef.current = false;
+    retryCountRef.current = 0;
+    retryAfterRef.current = 0;
     setPlanHydrated(true);
   }, [portfolioId]);
 
-  async function askMargus(opts?: { auto?: boolean }) {
+  useEffect(() => {
+    retryCountRef.current = 0;
+    retryAfterRef.current = 0;
+  }, [holdingsKey]);
+
+  function seedFallbackIfNeeded() {
+    const key = `${portfolioId}:${holdingsKey}`;
+    if (seededKeyRef.current === key) return;
+    if (model.rows.length === 0) return;
+    if (model.rows.every((r) => r.hasTargets)) return;
+    seededKeyRef.current = key;
+    const fallback = buildFallbackForecastPlan({
+      forecast: model,
+      portfolioId,
+      portfolioName,
+    });
+    const paths = planEoyPaths(fallback);
+    if (paths.length > 0) onApplyMargusPaths(paths);
+  }
+
+  async function askMargus(opts?: {
+    silent?: boolean;
+  }): Promise<"ok" | "fail" | "abort"> {
     askAbortRef.current?.abort();
     const ctrl = new AbortController();
     askAbortRef.current = ctrl;
     const gen = ++askGenRef.current;
     askInFlight.current = true;
-    if (!opts?.auto) track("forecast_plan_requested");
+    if (!opts?.silent) track("forecast_plan_requested");
     setBusy(true);
     setError(null);
     setAppliedFlash(false);
+    seedFallbackIfNeeded();
     try {
       const res = await fetch("/api/forecast/plan", {
         method: "POST",
@@ -661,17 +695,15 @@ export function ForecastPanel({
           cashBalance,
           forecast: model,
           convictions,
-          auto: Boolean(opts?.auto),
         }),
         signal: ctrl.signal,
       });
       const data = await readJsonOrThrow<{
         plan?: ForecastPlan;
-        skipped?: boolean;
+        fallback?: boolean;
       }>(res, "Couldn't build a forecast. Try again.");
-      if (askGenRef.current !== gen || ctrl.signal.aborted) return;
-      if (data.skipped || !data.plan) {
-        if (opts?.auto) return;
+      if (askGenRef.current !== gen || ctrl.signal.aborted) return "abort";
+      if (!data.plan) {
         throw new Error("Couldn't build a forecast. Try again.");
       }
       const convictionKey = bookConvictionKey(
@@ -690,7 +722,9 @@ export function ForecastPanel({
         eoyTargets,
         stance: DEFAULT_FORECAST_STANCE,
       };
-      saveForecastPlan(calibrated, convictions);
+      saveForecastPlan(calibrated, convictions, {
+        shareTickerPaths: !data.fallback,
+      });
       setPlan(calibrated);
 
       if (paths.length > 0) {
@@ -700,9 +734,18 @@ export function ForecastPanel({
       autoKeyRef.current = `${portfolioId}:${holdingsKey}:${calibrated.generatedAt}`;
       reappliedRef.current = `${portfolioId}:${holdingsKey}:reapply`;
       calibrateKeyRef.current = `${portfolioId}:${holdingsKey}`;
+      pendingModelRef.current = false;
+      retryCountRef.current = 0;
+      return "ok";
     } catch (err) {
-      if (isAbortError(err) || askGenRef.current !== gen) return;
-      // Keep the last plan on screen. Do not paint a "couldn't load" line.
+      if (isAbortError(err) || askGenRef.current !== gen) return "abort";
+      seedFallbackIfNeeded();
+      const message =
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : "Couldn't build a forecast. Try again.";
+      if (!opts?.silent) setError(message);
+      return "fail";
     } finally {
       if (askGenRef.current === gen) {
         askInFlight.current = false;
@@ -763,6 +806,10 @@ export function ForecastPanel({
   // Auto: first run with nothing cached, or a new ticker with no shared path.
   // Cached reasoning is reused across sheets. Convictions loading in later
   // is not a reason to call the model again.
+  //
+  // First-run is a person waiting on this sheet, not a skippable background
+  // job. Seed a shaped path immediately so the grid is never today's price
+  // pasted across 2030, then keep asking until a plan lands or we give up.
   useEffect(() => {
     if (!labReady || !planHydrated || model.rows.length === 0) return;
     if (askInFlight.current || busy) return;
@@ -772,13 +819,37 @@ export function ForecastPanel({
       fullyCovered,
       cachedTickers,
     });
-    if (!decision.run) return;
-    const key = `${portfolioId}:${holdingsKey}:${decision.reason}:${plan?.generatedAt ?? "none"}`;
-    if (autoKeyRef.current === key) return;
-    autoKeyRef.current = key;
-    void askMargus({ auto: true });
+    if (plan && !decision.run) {
+      pendingModelRef.current = false;
+      return;
+    }
+    if (decision.run) pendingModelRef.current = true;
+    if (!pendingModelRef.current) return;
+
+    seedFallbackIfNeeded();
+
+    if (retryCountRef.current >= MAX_AUTO_TRIES) return;
+    const wait = retryAfterRef.current - Date.now();
+    if (wait > 0) {
+      const t = window.setTimeout(() => setRetryTick((n) => n + 1), wait);
+      return () => window.clearTimeout(t);
+    }
+
+    void askMargus({ silent: true }).then((result) => {
+      if (result === "abort" || result === "ok") return;
+      retryCountRef.current += 1;
+      if (retryCountRef.current >= MAX_AUTO_TRIES) {
+        setError(
+          "Couldn't reach Margus. Starting prices are on the sheet. Ask again when you want him to try."
+        );
+        return;
+      }
+      retryAfterRef.current =
+        Date.now() + Math.min(4000 * 2 ** (retryCountRef.current - 1), 20_000);
+      setRetryTick((n) => n + 1);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated auto refresh
-  }, [labReady, planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, cachedTickers.join("|")]);
+  }, [labReady, planHydrated, portfolioId, holdingsKey, plan, fullyCovered, model.rows.length, busy, cachedTickers.join("|"), retryTick]);
 
   // If a sold ticker is still named in the playbook, say so. The model
   // does not auto-rerun for that; use "Work it out again" when you want
@@ -831,14 +902,18 @@ export function ForecastPanel({
       fullyCovered,
       cachedTickers,
     });
+    if (retryCountRef.current >= MAX_AUTO_TRIES) return null;
     if (decision.run && decision.reason === "first-run") {
       return "First time on this sheet, Margus is working out the prices …";
     }
     if (decision.run && decision.reason === "new-holding") {
       return "New holding, Margus is working out a path …";
     }
+    if (pendingModelRef.current && !plan) {
+      return "Starting prices are on the sheet. Margus is still writing the why …";
+    }
     return null;
-  }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers]);
+  }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/80">

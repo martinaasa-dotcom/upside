@@ -297,7 +297,8 @@ export function loadPreviousForecastPlan(portfolioId: string): ForecastPlan | nu
 
 export function saveForecastPlan(
   plan: ForecastPlan,
-  convictions?: ConvictionLike
+  convictions?: ConvictionLike,
+  opts?: { shareTickerPaths?: boolean }
 ) {
   if (typeof window === "undefined") return;
   try {
@@ -316,7 +317,11 @@ export function saveForecastPlan(
     }
     parsed[cleaned.portfolioId] = cleaned;
     localStorage.setItem(FORECAST_PLAN_STORAGE_KEY, JSON.stringify(parsed));
-    upsertTickerPathsFromPlan(cleaned, convictions);
+    // A shaped fallback is a safety net for this sheet, not a reasoned
+    // path to copy onto Anu/MaryAnn and skip their first real run.
+    if (opts?.shareTickerPaths !== false) {
+      upsertTickerPathsFromPlan(cleaned, convictions);
+    }
   } catch {
     /* ignore */
   }
@@ -430,6 +435,53 @@ export function ensureCompleteEoyTargets(
     });
   }
   return out;
+}
+
+/**
+ * Complete plan from the generic theme shapes. Used when the model is
+ * down, skipped, or still thinking, so the sheet is never a flat line
+ * of today's price.
+ */
+export function buildFallbackForecastPlan(input: {
+  forecast: ForecastModel;
+  portfolioId: string;
+  portfolioName: string;
+  now?: Date;
+}): ForecastPlan {
+  const now = input.now ?? new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const quarter = Math.floor(month / 3) + 1;
+  const nextQuarter =
+    quarter === 4
+      ? { q: 1, y: year + 1 }
+      : { q: quarter + 1, y: year };
+  const eoyTargets = ensureCompleteEoyTargets(input.forecast, []);
+  return humanizeMargusTree({
+    generalAdvice:
+      "These prices are a starting shape from how each kind of company has tended to move, not a finished take. Ask Margus again when you want him to reason through the names.",
+    sectorRotation:
+      "Different groups of similar stocks will take turns leading. This first pass does not pick which group wins the next stretch.",
+    periods: [
+      {
+        label: `Next quarter (Q${nextQuarter.q} ${nextQuarter.y})`,
+        theme: "Starting shape",
+        add: "Hold, no add",
+        trim: "Hold, no trim",
+      },
+      {
+        label: `${year + 1}`,
+        theme: "Let the names work",
+        add: "Hold, no add",
+        trim: "Hold, no trim",
+      },
+    ],
+    eoyTargets,
+    generatedAt: now.toISOString(),
+    portfolioId: input.portfolioId,
+    portfolioName: input.portfolioName,
+    stance: DEFAULT_FORECAST_STANCE,
+  });
 }
 
 /** Detect boring equal-step / near-constant YoY ramps the model sometimes emits. */

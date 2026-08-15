@@ -1,15 +1,11 @@
 import {
-  beginBackgroundLlm,
-  endBackgroundLlm,
-} from "@/lib/ai/llm-slots";
-import {
   STRUCTURED_PROVIDER_OPTIONS,
   buildAdvisorProviderChain,
-  describeAdvisorError,
   withAdvisorFallback,
 } from "@/lib/ai/model";
 import { humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import {
+  buildFallbackForecastPlan,
   buildForecastPlanPrompt,
   ensureCompleteEoyTargets,
   DEFAULT_FORECAST_STANCE,
@@ -42,7 +38,6 @@ export async function POST(req: Request) {
     cashBalance?: number;
     forecast?: ForecastModel;
     convictions?: Record<string, { level: number; thesis: string }>;
-    auto?: boolean;
   };
   try {
     body = await req.json();
@@ -50,44 +45,40 @@ export async function POST(req: Request) {
     return Response.json({ error: "Couldn't read that request." }, { status: 400 });
   }
 
-  const auto = Boolean(body.auto);
-  const heldSlot = auto ? beginBackgroundLlm() : false;
-  if (auto && !heldSlot) {
-    return Response.json({ skipped: true });
-  }
-
   const limit = checkRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
-    if (heldSlot) endBackgroundLlm();
     return Response.json(
       { error: "Forecast requests are limited. Try again in a bit." },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
     );
   }
 
+  const portfolioId = String(body.portfolioId ?? "");
+  const portfolioName = String(body.portfolioName ?? "Portfolio");
+  const cashBalance = Number(body.cashBalance ?? 0);
+  const forecast = body.forecast;
+  const convictions = body.convictions;
+
+  if (!portfolioId || !forecast?.rows) {
+    return Response.json(
+      { error: "portfolioId and forecast snapshot required" },
+      { status: 400 }
+    );
+  }
+
+  const fallbackPlan = () =>
+    buildFallbackForecastPlan({
+      forecast,
+      portfolioId,
+      portfolioName,
+    });
+
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {
-    if (heldSlot) endBackgroundLlm();
-    const { message } = describeAdvisorError(
-      new Error("No LLM key configured")
-    );
-    return Response.json({ error: message }, { status: 503 });
+    return Response.json({ plan: fallbackPlan(), fallback: true });
   }
 
   try {
-    const portfolioId = String(body.portfolioId ?? "");
-    const portfolioName = String(body.portfolioName ?? "Portfolio");
-    const cashBalance = Number(body.cashBalance ?? 0);
-    const forecast = body.forecast;
-    const convictions = body.convictions;
-
-    if (!portfolioId || !forecast?.rows) {
-      return Response.json(
-        { error: "portfolioId and forecast snapshot required" },
-        { status: 400 }
-      );
-    }
-
     const prompt = buildForecastPlanPrompt({
       portfolioName,
       cashBalance,
@@ -125,10 +116,12 @@ export async function POST(req: Request) {
 
     return Response.json({ plan });
   } catch (err) {
+    if (req.signal.aborted) {
+      return Response.json({ error: "Stopped." }, { status: 499 });
+    }
     console.error("[forecast/plan]", err);
-    const { message, status } = describeAdvisorError(err);
-    return Response.json({ error: message }, { status });
-  } finally {
-    if (heldSlot) endBackgroundLlm();
+    // A person is staring at a flat grid. Never leave them with an error
+    // and today's price pasted across 2026-2030.
+    return Response.json({ plan: fallbackPlan(), fallback: true });
   }
 }

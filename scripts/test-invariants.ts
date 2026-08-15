@@ -22,7 +22,11 @@ import {
   startNavFromYtdPct,
 } from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
-import { shouldAutoRefreshForecast } from "../src/lib/forecast-plan";
+import {
+  buildFallbackForecastPlan,
+  shouldAutoRefreshForecast,
+} from "../src/lib/forecast-plan";
+import { FORECAST_YEARS, type ForecastModel } from "../src/lib/forecast";
 import {
   cleanThesisBreak,
   isBigPulseMove,
@@ -1478,6 +1482,74 @@ run("Forecast does not call the model when a path is already saved", () => {
     }).reason,
     "new-holding"
   );
+});
+
+run("Forecast first-run always leaves a shaped path, never a skip", () => {
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ForecastPanel.tsx"),
+    "utf8"
+  );
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/forecast/plan/route.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(panel, /auto:\s*true/);
+  assert.doesNotMatch(panel, /auto:\s*Boolean\(opts/);
+  assert.match(panel, /seedFallbackIfNeeded/);
+  assert.match(panel, /buildFallbackForecastPlan/);
+  assert.doesNotMatch(route, /beginBackgroundLlm/);
+  assert.doesNotMatch(route, /skipped:\s*true/);
+  assert.match(route, /buildFallbackForecastPlan/);
+  assert.match(route, /fallback:\s*true/);
+
+  const spot = 277.78;
+  const flat = {
+    2026: spot,
+    2027: spot,
+    2028: spot,
+    2029: spot,
+    2030: spot,
+  } as ForecastModel["rows"][number]["eoyPrices"];
+  const forecast: ForecastModel = {
+    years: FORECAST_YEARS,
+    rows: [
+      {
+        ticker: "NBIS",
+        shares: 500,
+        currentPrice: spot,
+        currentValue: 138890,
+        eoyPrices: flat,
+        eoyValues: flat,
+        targetedYears: {
+          2026: false,
+          2027: false,
+          2028: false,
+          2029: false,
+          2030: false,
+        },
+        gainPct: 0,
+        hasTargets: false,
+      },
+    ],
+    currentTotal: 138890,
+    eoyTotals: flat,
+    gainPct: 0,
+  };
+  const plan = buildFallbackForecastPlan({
+    forecast,
+    portfolioId: "p1",
+    portfolioName: "Aasad",
+    now: new Date("2026-08-16T00:00:00Z"),
+  });
+  const row = plan.eoyTargets.find((t) => t.ticker === "NBIS");
+  assert.ok(row);
+  for (const year of FORECAST_YEARS) {
+    assert.equal(typeof row!.prices[year], "number");
+    assert.ok(row!.prices[year]! > 0);
+  }
+  assert.notEqual(row!.prices[2026], spot);
+  assert.ok(row!.prices[2030]! > spot);
+  assert.ok(plan.periods.length >= 2);
 });
 
 run("chat does not ping the model before the first token", () => {
