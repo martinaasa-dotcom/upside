@@ -9,7 +9,11 @@ import {
 } from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed";
-import { buildAdvisorProviderChain, withAdvisorFallback } from "@/lib/ai/model";
+import {
+  STRUCTURED_PROVIDER_OPTIONS,
+  buildAdvisorProviderChain,
+  withAdvisorFallback,
+} from "@/lib/ai/model";
 import { humanizeMargusText, humanizeMargusTree } from "@/lib/ai/humanize-copy";
 import {
   buildFundSystemPrompt,
@@ -68,6 +72,7 @@ async function maybeFillFundIntent(
     generateObject({
       model,
       schema: fundIntentSchema,
+      providerOptions: STRUCTURED_PROVIDER_OPTIONS,
       system: buildFundSystemPrompt(),
       prompt: `Today's trades already happened. Do not open, add, trim, or exit anything. Fill watchlist (1-4 names you do not hold, each with a concrete wait) and cashPurpose (one sentence on why undeployed cash is sitting).
 
@@ -164,6 +169,7 @@ async function maybeGenerateWeeklyRecap(
       generateObject({
         model,
         schema: weeklyRecapSchema,
+        providerOptions: STRUCTURED_PROVIDER_OPTIONS,
         system: buildWeeklyRecapSystemPrompt(),
         prompt: buildWeeklyRecapUserPrompt({
           weekEnding,
@@ -336,6 +342,7 @@ export async function GET(req: Request) {
       generateObject({
         model,
         schema: fundDecisionSchema,
+        providerOptions: STRUCTURED_PROVIDER_OPTIONS,
         system: buildFundSystemPrompt(),
         prompt: buildFundUserPrompt({
           today,

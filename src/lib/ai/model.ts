@@ -168,13 +168,12 @@ export function buildAdvisorProviderChain(options?: {
       apiKey: process.env.GROQ_API_KEY,
       baseURL: "https://api.groq.com/openai/v1",
     });
-    // Chat uses the 20b: about 1000 tok/s and low thinking. Forecast,
-    // Pulse, and the Fund cron keep 120b so structured writes stay sharp.
-    // llama-3.3-70b-versatile 400s on generateObject, so it is not a
-    // fallback for those jobs.
+    // 20b on Groq finishes a valid JSON object. 120b thinks longer and
+    // more often dies mid-update. llama-3.3-70b-versatile 400s on
+    // generateObject, so it is not a fallback for those jobs.
     const groqModel = speaking
-      ? (process.env.GROQ_CHAT_MODEL ?? "openai/gpt-oss-20b")
-      : (process.env.GROQ_MODEL ?? "openai/gpt-oss-120b");
+      ? (process.env.GROQ_CHAT_MODEL ?? process.env.GROQ_MODEL ?? "openai/gpt-oss-20b")
+      : (process.env.GROQ_MODEL ?? "openai/gpt-oss-20b");
     chain.push({ id: "groq", model: groq.chat(groqModel) });
   }
 
@@ -224,6 +223,13 @@ export function buildAdvisorProviderChain(options?: {
 
   return chain;
 }
+
+/** Low thinking, short budget. Used by Forecast, Pulse, and the Fund cron
+ * so an update lands instead of a smarter answer that never arrives. */
+export const STRUCTURED_PROVIDER_OPTIONS = {
+  openrouter: { reasoning: { effort: "low" as const, max_tokens: 512 } },
+  openai: { reasoningEffort: "low" as const },
+};
 
 /**
  * CC Advisor model via OpenAI-compatible providers — single-model resolve,

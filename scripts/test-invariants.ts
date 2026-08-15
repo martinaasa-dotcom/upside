@@ -1243,9 +1243,14 @@ run("chat does not ping the model before the first token", () => {
   assert.match(chat, /reasoningEffort:\s*"low"/);
   assert.match(model, /GROQ_CHAT_MODEL/);
   assert.match(model, /openai\/gpt-oss-20b/);
+  assert.match(model, /STRUCTURED_PROVIDER_OPTIONS/);
   assert.match(
     readFileSync(join(process.cwd(), "src/app/api/forecast/plan/route.ts"), "utf8"),
-    /reasoning:\s*true/
+    /STRUCTURED_PROVIDER_OPTIONS/
+  );
+  assert.doesNotMatch(
+    readFileSync(join(process.cwd(), "src/app/api/forecast/plan/route.ts"), "utf8"),
+    /effort:\s*"high"/
   );
 });
 

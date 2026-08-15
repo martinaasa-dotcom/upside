@@ -4,6 +4,7 @@ import {
   endBackgroundLlm,
 } from "@/lib/ai/llm-slots";
 import {
+  STRUCTURED_PROVIDER_OPTIONS,
   buildAdvisorProviderChain,
   withAdvisorFallback,
 } from "@/lib/ai/model";
@@ -262,11 +263,7 @@ export async function POST(req: Request) {
           prompt,
           maxRetries: 1,
           abortSignal: signal ?? req.signal,
-          providerOptions: {
-            openrouter: {
-              reasoning: { effort: "medium", max_tokens: 6000 },
-            },
-          },
+          providerOptions: STRUCTURED_PROVIDER_OPTIONS,
         }),
       { deadlineAt: startedAt + LLM_BUDGET_MS, signal: req.signal }
     );
