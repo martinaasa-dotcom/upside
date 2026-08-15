@@ -18,11 +18,11 @@ export function useLabSync() {
   const labDirtyRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const ctrl = new AbortController();
     void (async () => {
       const local: LabBundle = { conviction: loadConvictionMap() };
-      const remote = await fetchLabBundle();
-      if (cancelled) return;
+      const remote = await fetchLabBundle(ctrl.signal);
+      if (ctrl.signal.aborted) return;
       if (remote.source === "supabase") {
         const remoteEmpty =
           Object.keys(remote.bundle.conviction ?? {}).length === 0;
@@ -46,19 +46,26 @@ export function useLabSync() {
       setLabReady(true);
     })();
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, []);
 
+  const pushGenRef = useRef(0);
   useEffect(() => {
     if (!labReady || !labDirtyRef.current) return;
+    let cancelled = false;
     const t = window.setTimeout(() => {
       labDirtyRef.current = false;
+      const gen = ++pushGenRef.current;
       void pushLabBundle(labBundle).then((r) => {
+        if (cancelled || gen !== pushGenRef.current) return;
         if (!r.ok && r.error) toast(r.error, "error");
       });
     }, 900);
-    return () => window.clearTimeout(t);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
   }, [labBundle, labReady, toast]);
 
   function patchLab(patch: Partial<LabBundle>) {

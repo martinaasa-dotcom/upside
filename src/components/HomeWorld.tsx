@@ -90,40 +90,44 @@ export function HomeWorld({
   const [communities, setCommunities] = useState<CommunityRow[] | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const ctrl = new AbortController();
     void (async () => {
       try {
-        const res = await fetch("/api/upside-portfolio/teaser");
+        const res = await fetch("/api/upside-portfolio/teaser", {
+          signal: ctrl.signal,
+        });
         if (!res.ok) return;
         const data = (await res.json()) as FundTeaser;
-        if (!cancelled && Number.isFinite(data.totalValue)) setFund(data);
+        if (!ctrl.signal.aborted && Number.isFinite(data.totalValue)) {
+          setFund(data);
+        }
       } catch {
         /* keep cache / empty card */
       }
     })();
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, [setFund]);
 
   useEffect(() => {
     if (fundOnly) return;
-    let cancelled = false;
+    const ctrl = new AbortController();
     void (async () => {
       try {
-        const res = await fetch("/api/communities");
+        const res = await fetch("/api/communities", { signal: ctrl.signal });
         if (!res.ok) {
-          if (!cancelled) setCommunities([]);
+          if (!ctrl.signal.aborted) setCommunities([]);
           return;
         }
         const data = await res.json();
-        if (!cancelled) setCommunities(data.communities ?? []);
+        if (!ctrl.signal.aborted) setCommunities(data.communities ?? []);
       } catch {
-        if (!cancelled) setCommunities([]);
+        if (!ctrl.signal.aborted) setCommunities([]);
       }
     })();
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, [fundOnly]);
 

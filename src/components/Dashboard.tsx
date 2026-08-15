@@ -126,6 +126,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
+import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
@@ -391,6 +392,7 @@ function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
 export function Dashboard() {
   const { push: toast } = useToast();
   const { profile, signOut, refresh, user } = useAuth();
+  const later = useTimeout();
   const router = useRouter();
   // Picked once per mount, not per render, so it doesn't shuffle mid-load.
   const [loadingMessage] = useState(pickLoadingMessage);
@@ -1219,14 +1221,13 @@ export function Dashboard() {
   // path without making the first click wait on a download.
   useEffect(() => {
     const warm = () => void import("@/components/CcAdvisorChat");
-    const idle = (
-      window as Window & {
-        requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
-      }
-    ).requestIdleCallback;
-    if (idle) {
-      idle(warm, { timeout: 3000 });
-      return;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(warm, { timeout: 3000 });
+      return () => w.cancelIdleCallback?.(id);
     }
     const id = window.setTimeout(warm, 1500);
     return () => window.clearTimeout(id);
@@ -2494,7 +2495,7 @@ export function Dashboard() {
     setHoldings(lockedStore.holdings);
     setLocked(true);
     setSaveFlash(true);
-    window.setTimeout(() => setSaveFlash(false), 1600);
+    later(() => setSaveFlash(false), 1600);
     void fetch("/api/demo/lock", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

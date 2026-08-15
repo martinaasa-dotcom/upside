@@ -15,6 +15,7 @@ import {
 import { ChevronRight, Compass, Globe, GraduationCap, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { isAbortError } from "@/lib/abort";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { useEffect, useState } from "react";
 
@@ -84,12 +85,12 @@ export function CommunitiesList() {
   const [discover, setDiscover] = useState<DiscoverRow[]>([]);
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
 
-  async function load() {
+  async function load(signal?: AbortSignal) {
     const hadCache = communities.length > 0;
     if (!hadCache) setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/communities", { cache: "no-store" });
+      const res = await fetch("/api/communities", { cache: "no-store", signal });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
@@ -104,15 +105,19 @@ export function CommunitiesList() {
       // itself.
       for (const c of rows.slice(0, 2)) void prefetchCommunity(c.id);
     } catch (e) {
+      if (isAbortError(e) || signal?.aborted) return;
       if (!hadCache) setError(e instanceof Error ? e.message : "Couldn't load your circles.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }
 
-  async function loadDiscover() {
+  async function loadDiscover(signal?: AbortSignal) {
     try {
-      const res = await fetch("/api/communities/discover", { cache: "no-store" });
+      const res = await fetch("/api/communities/discover", {
+        cache: "no-store",
+        signal,
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) setDiscover((data.communities ?? []) as DiscoverRow[]);
     } catch {
@@ -121,8 +126,10 @@ export function CommunitiesList() {
   }
 
   useEffect(() => {
-    void load();
-    void loadDiscover();
+    const ctrl = new AbortController();
+    void load(ctrl.signal);
+    void loadDiscover(ctrl.signal);
+    return () => ctrl.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount only
   }, []);
 

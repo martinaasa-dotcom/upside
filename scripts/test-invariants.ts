@@ -1853,6 +1853,41 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   );
 });
 
+run("fund page does not read localStorage during render", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    /useLayoutEffect\(\(\) => \{[\s\S]*loadUpsidePortfolioCache/.test(src),
+    "fund cache must hydrate in a layout effect"
+  );
+  const beforeHook = src.slice(0, src.indexOf("useLayoutEffect(() => {"));
+  assert.ok(
+    !/loadUpsidePortfolioCache\(\)/.test(beforeHook),
+    "loadUpsidePortfolioCache must not run during render"
+  );
+});
+
+run("retry backoff drops the abort listener when the wait ends", () => {
+  const src = readFileSync(join(process.cwd(), "src/lib/abort.ts"), "utf8");
+  assert.ok(/removeEventListener\("abort"/.test(src));
+});
+
+run("saved/copied flashes cannot setState after unmount", () => {
+  const hook = readFileSync(
+    join(process.cwd(), "src/lib/use-timeout.ts"),
+    "utf8"
+  );
+  assert.ok(/ids\.current\.clear\(\)/.test(hook));
+  const account = readFileSync(
+    join(process.cwd(), "src/components/AccountPage.tsx"),
+    "utf8"
+  );
+  assert.ok(/useTimeout\(\)/.test(account));
+  assert.ok(!/setTimeout\(\(\) => setTierSaved/.test(account));
+});
+
 run("offline status is not read during render", () => {
   const src = readFileSync(
     join(process.cwd(), "src/lib/use-online-status.ts"),

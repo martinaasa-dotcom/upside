@@ -35,7 +35,7 @@ import { INDEX_EOY_MULTS } from "@/lib/forecast-conviction";
 import { playbookBullets, type PlaybookBullet } from "@/lib/forecast-playbook";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   model: ForecastModel;
@@ -509,7 +509,7 @@ export function ForecastPanel({
     setHorizon(0);
   }, [planAt]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPlanHydrated(false);
     const loaded = loadForecastPlan(portfolioId);
     setPlan(loaded);

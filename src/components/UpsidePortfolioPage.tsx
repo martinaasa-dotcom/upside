@@ -44,7 +44,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
 const SERIES_COLOR = {
@@ -420,25 +420,15 @@ export function UpsidePortfolioPage() {
   // Paint the last known fund immediately; the fetch below still runs and
   // corrects it. Only a genuinely cold visit shows a loading line.
   const cachedRef = useRef<FundPayload | null>(null);
-  if (cachedRef.current === null) {
-    cachedRef.current =
-      (loadUpsidePortfolioCache()?.payload as FundPayload | undefined) ?? null;
-  }
-  const cached = cachedRef.current;
+  const cacheHydratedRef = useRef(false);
   const loadCallIdRef = useRef(0);
 
-  const [fund, setFund] = useState<FundRow | null>(cached?.fund ?? null);
-  const [holdings, setHoldings] = useState<HoldingRow[]>(
-    cached?.holdings ?? []
-  );
-  const [reports, setReports] = useState<ReportRow[]>(cached?.reports ?? []);
-  const [weeklyRecaps, setWeeklyRecaps] = useState<WeeklyRecapRow[]>(
-    cached?.weeklyRecaps ?? []
-  );
-  const [quotes, setQuotes] = useState<Record<string, Quote>>(
-    cached?.quotes ?? {}
-  );
-  const [loading, setLoading] = useState(!cached);
+  const [fund, setFund] = useState<FundRow | null>(null);
+  const [holdings, setHoldings] = useState<HoldingRow[]>([]);
+  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [weeklyRecaps, setWeeklyRecaps] = useState<WeeklyRecapRow[]>([]);
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   /** When the currently displayed quotes landed. Null until the first
@@ -463,6 +453,21 @@ export function UpsidePortfolioPage() {
   const [sheetYtd, setSheetYtd] = useState<YtdNavPoint[] | null>(null);
   const [spyYtd, setSpyYtd] = useState<YtdNavPoint[] | null>(null);
   const [loadingMessage] = useState(pickLoadingMessage);
+
+  useLayoutEffect(() => {
+    if (cacheHydratedRef.current) return;
+    cacheHydratedRef.current = true;
+    const cached =
+      (loadUpsidePortfolioCache()?.payload as FundPayload | undefined) ?? null;
+    cachedRef.current = cached;
+    if (!cached) return;
+    setFund(cached.fund ?? null);
+    setHoldings(cached.holdings ?? []);
+    setReports(cached.reports ?? []);
+    setWeeklyRecaps(cached.weeklyRecaps ?? []);
+    setQuotes(cached.quotes ?? {});
+    setLoading(false);
+  }, []);
 
   const load = useCallback(async (mode: "initial" | "manual" | "background") => {
     // Three sources can be in flight at once here (first load, the 60s
@@ -514,9 +519,12 @@ export function UpsidePortfolioPage() {
 
   useEffect(() => {
     void load("initial");
+    return () => {
+      loadCallIdRef.current += 1;
+    };
   }, [load]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setBenchmark(loadStoredBenchmark());
   }, []);
 

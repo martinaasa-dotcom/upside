@@ -27,11 +27,14 @@ export async function retryOnNetwork<T>(
       if (isAbortError(e) || i === attempts - 1) throw e;
       const ms = 1000 * 2 ** i;
       await new Promise<void>((resolve, reject) => {
-        const t = window.setTimeout(resolve, ms);
         const onAbort = () => {
           window.clearTimeout(t);
           reject(new DOMException("Aborted", "AbortError"));
         };
+        const t = window.setTimeout(() => {
+          opts?.signal?.removeEventListener("abort", onAbort);
+          resolve();
+        }, ms);
         opts?.signal?.addEventListener("abort", onAbort, { once: true });
       });
     }

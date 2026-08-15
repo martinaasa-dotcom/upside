@@ -73,17 +73,20 @@ export function DailyDuelCard({
 
   useEffect(() => {
     if (!communityId) return;
-    let cancelled = false;
-    void fetch(`/api/communities/${communityId}/duel`, { cache: "no-store" })
+    const ctrl = new AbortController();
+    void fetch(`/api/communities/${communityId}/duel`, {
+      cache: "no-store",
+      signal: ctrl.signal,
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: CommunityDuel | null) => {
-        if (!cancelled && data) setCommunity(data);
+        if (!ctrl.signal.aborted && data) setCommunity(data);
       })
       .catch(() => {
         /* keep whatever we have */
       });
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
   }, [communityId, dayKey]);
 
@@ -151,6 +154,7 @@ export function DailyDuelCard({
   function pick(choice: DuelPick) {
     if (communityId) {
       if (community?.myPick) return;
+      const previous = community;
       setCommunity((prev) =>
         prev
           ? {
@@ -178,7 +182,7 @@ export function DailyDuelCard({
           if (data) setCommunity(data);
         })
         .catch(() => {
-          /* optimistic pick stays */
+          setCommunity(previous);
         });
       return;
     }

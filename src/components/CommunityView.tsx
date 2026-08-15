@@ -448,10 +448,11 @@ export function CommunityView({ communityId }: Props) {
     if (!tickers.length) return;
     let cancelled = false;
     let timer = 0;
+    const ctrl = new AbortController();
     const tick = async () => {
       if (cancelled || document.hidden) return;
       try {
-        const res = await fetch(quotesUrl(tickers));
+        const res = await fetch(quotesUrl(tickers), { signal: ctrl.signal });
         if (!res.ok || cancelled) return;
         const data = await res.json();
         if (cancelled) return;
@@ -481,6 +482,7 @@ export function CommunityView({ communityId }: Props) {
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
+      ctrl.abort();
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };

@@ -50,17 +50,17 @@ export function WatchlistStrip({
 
   useEffect(() => {
     if (names.length === 0) return;
-    let cancelled = false;
-    void fetch(quotesUrl(names), { cache: "no-store" })
+    const ctrl = new AbortController();
+    void fetch(quotesUrl(names), { cache: "no-store", signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { quotes?: Record<string, Quote> } | null) => {
-        if (!cancelled && data?.quotes) setQuotes(data.quotes);
+        if (!ctrl.signal.aborted && data?.quotes) setQuotes(data.quotes);
       })
       .catch(() => {
         /* keep last */
       });
     return () => {
-      cancelled = true;
+      ctrl.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- namesKey stands in for the array's contents
   }, [namesKey]);

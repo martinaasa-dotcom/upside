@@ -27,7 +27,7 @@ import {
   Square,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -491,7 +491,7 @@ export function CcAdvisorChat({
   const silentFileInputRef = useRef<HTMLInputElement>(null);
   const awaitingSilentSettleRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setWide(loadWidePref());
   }, []);
 

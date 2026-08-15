@@ -68,7 +68,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   model: OverviewModel;
@@ -517,7 +517,7 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }
     for (const c of candidates) hydrateTicker(c.ticker);
   }, [candidates, hydrateTicker]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const cached = loadPulseSummary();
     if (cached) setSummary(humanizeMargusText(cached.summary));
   }, []);

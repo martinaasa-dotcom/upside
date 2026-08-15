@@ -1,3 +1,4 @@
+import { isAbortError } from "@/lib/abort";
 import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { saveConvictionMap } from "@/lib/conviction";
 
@@ -13,9 +14,11 @@ export function mirrorLabLocal(bundle: LabBundle) {
   saveConvictionMap(bundle.conviction ?? {});
 }
 
-export async function fetchLabBundle(): Promise<LabFetchResult> {
+export async function fetchLabBundle(
+  signal?: AbortSignal
+): Promise<LabFetchResult> {
   try {
-    const res = await fetch("/api/lab", { cache: "no-store" });
+    const res = await fetch("/api/lab", { cache: "no-store", signal });
     if (!res.ok) {
       return { source: "local", bundle: emptyLabBundle() };
     }
@@ -28,7 +31,10 @@ export async function fetchLabBundle(): Promise<LabFetchResult> {
       mirrorLabLocal(bundle);
       return { source: "supabase", bundle };
     }
-  } catch {
+  } catch (e) {
+    if (isAbortError(e) || signal?.aborted) {
+      return { source: "local", bundle: emptyLabBundle() };
+    }
     /* fall through */
   }
   return { source: "local", bundle: emptyLabBundle() };

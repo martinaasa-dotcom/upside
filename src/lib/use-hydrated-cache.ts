@@ -35,7 +35,9 @@ export function useHydratedCache<T>(
   // user or a fetch has since updated.
   useLayoutEffect(() => {
     const cached = read();
-    if (cached !== undefined) setValue(cached);
+    if (cached !== undefined) {
+      setValue((prev) => (Object.is(prev, cached) ? prev : cached));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once on mount
   }, []);
 

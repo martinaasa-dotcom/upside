@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useState } from "react";
 
 function VisitStreakCard() {
@@ -68,6 +69,7 @@ function VisitStreakCard() {
 export function AccountPage() {
   const router = useRouter();
   const { profile, user, signOut, refresh } = useAuth();
+  const later = useTimeout();
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -158,11 +160,11 @@ export function AccountPage() {
       });
       setTierSaved(true);
       track("experience_tier_set", { tier: next, source: "account" });
-      setTimeout(() => setTierSaved(false), 2000);
+      later(() => setTierSaved(false), 2000);
     } catch {
       /* localStorage already has it */
     }
-  }, []);
+  }, [later]);
 
   const handleKnowsOptionsChange = useCallback(async (next: boolean) => {
     setKnowsOptions(next);
@@ -176,11 +178,11 @@ export function AccountPage() {
       });
       setKnowsOptionsSaved(true);
       track("experience_tier_set", { knowsOptions: next, source: "account" });
-      setTimeout(() => setKnowsOptionsSaved(false), 2000);
+      later(() => setKnowsOptionsSaved(false), 2000);
     } catch {
       /* localStorage already has it */
     }
-  }, []);
+  }, [later]);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -311,6 +313,7 @@ export function AccountPage() {
                   checked={row.checked}
                   onChange={(e) => {
                     const next = e.target.checked;
+                    const prev = row.checked;
                     row.set(next);
                     void fetch("/api/account/morning-note", {
                       method: "POST",
@@ -324,10 +327,14 @@ export function AccountPage() {
                       .then((r) => {
                         if (r.ok) {
                           setMorningSaved(true);
-                          window.setTimeout(() => setMorningSaved(false), 2000);
+                          later(() => setMorningSaved(false), 2000);
+                          return;
                         }
+                        row.set(prev);
                       })
-                      .catch(() => {});
+                      .catch(() => {
+                        row.set(prev);
+                      });
                   }}
                   className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
                 />

@@ -5,6 +5,7 @@ import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { track } from "@vercel/analytics";
 import { Check, Copy, UserMinus, X } from "lucide-react";
+import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useState } from "react";
 
 type OwnerRow = {
@@ -29,6 +30,7 @@ export function InvitePartnerModal({
   onClose,
 }: Props) {
   const { user } = useAuth();
+  const later = useTimeout();
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
@@ -113,7 +115,7 @@ export function InvitePartnerModal({
   async function copy(text: string, kind: "link" | "code") {
     await navigator.clipboard.writeText(text);
     setCopied(kind);
-    window.setTimeout(() => setCopied(null), 1500);
+    later(() => setCopied(null), 1500);
   }
 
   return (

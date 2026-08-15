@@ -58,13 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setReady(true);
   }, []);
 
-  const loadProfile = useCallback(async (u: User | null) => {
+  const loadProfile = useCallback(async (u: User | null, signal?: AbortSignal) => {
     if (!u) {
       setProfile(null);
       return;
     }
     try {
-      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const res = await fetch("/api/auth/me", { cache: "no-store", signal });
+      if (signal?.aborted) return;
       if (!res.ok) {
         setProfile({
           id: u.id,
@@ -75,8 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       const data = await res.json();
+      if (signal?.aborted) return;
       setProfile(data.profile ?? null);
     } catch {
+      if (signal?.aborted) return;
       setProfile({
         id: u.id,
         email: u.email ?? null,
@@ -139,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
+    const profileCtrl = new AbortController();
     void refresh();
     const {
       data: { subscription },
@@ -148,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(next);
         setReady(true);
         saveLastUser({ id: next.id, email: next.email ?? null });
-        void loadProfile(next);
+        void loadProfile(next, profileCtrl.signal);
         return;
       }
       if (event === "SIGNED_OUT") {
@@ -159,7 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearBookCache();
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      profileCtrl.abort();
+      subscription.unsubscribe();
+    };
   }, [loadProfile, refresh]);
 
   const signInWithGoogle = useCallback(async () => {
