@@ -1209,6 +1209,16 @@ run("Forecast does not call the model when a path is already saved", () => {
   );
 });
 
+run("Communities list does not blank a cached circle while it refreshes", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/CommunitiesList.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(src, /hadCache = communities\.length/);
+  assert.match(src, /loadCommunityListCache/);
+  assert.match(src, /communities\.length === 0 && loading/);
+});
+
 run("Daily Duel is not on Home", () => {
   const home = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),

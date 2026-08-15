@@ -8,6 +8,11 @@ import {
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
 import { loadUpsidePortfolioCache } from "@/lib/upside-portfolio-cache";
+import {
+  loadCommunityListCache,
+  prefetchCommunityList,
+  saveCommunityListCache,
+} from "@/lib/community-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { ArrowRight, Bot, Users } from "lucide-react";
 import Link from "next/link";
@@ -87,7 +92,10 @@ export function HomeWorld({
     teaserFromFundCache,
     null
   );
-  const [communities, setCommunities] = useState<CommunityRow[] | null>(null);
+  const [communities, setCommunities] = useHydratedCache<CommunityRow[] | null>(
+    () => loadCommunityListCache(),
+    null
+  );
   const [communitiesError, setCommunitiesError] = useState(false);
 
   useEffect(() => {
@@ -123,8 +131,11 @@ export function HomeWorld({
         }
         const data = await res.json();
         if (!ctrl.signal.aborted) {
+          const rows = (data.communities ?? []) as CommunityRow[];
           setCommunitiesError(false);
-          setCommunities(data.communities ?? []);
+          setCommunities(rows);
+          saveCommunityListCache(rows);
+          prefetchCommunityList(rows);
         }
       } catch {
         if (!ctrl.signal.aborted) setCommunitiesError(true);

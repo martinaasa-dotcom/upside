@@ -9,7 +9,13 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
-import { prefetchCommunity } from "@/lib/community-cache";
+import {
+  loadCommunityListCache,
+  prefetchCommunity,
+  prefetchCommunityList,
+  saveCommunityListCache,
+  type CommunityListRow,
+} from "@/lib/community-cache";
 import {
   DEFAULT_CLASS_ASSIGNMENT,
   DEFAULT_STARTING_CASH,
@@ -22,14 +28,6 @@ import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import { useEffect, useState } from "react";
 
-type CommunityRow = {
-  id: string;
-  name: string;
-  role: string;
-  visibility?: "public" | "private";
-  kind?: "circle" | "classroom";
-};
-
 type DiscoverRow = {
   id: string;
   name: string;
@@ -38,36 +36,13 @@ type DiscoverRow = {
   requestStatus: "pending" | "approved" | "rejected" | null;
 };
 
-const LIST_CACHE_KEY = "upside-communities-list-v1";
-
-function loadListCache(): CommunityRow[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(LIST_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as CommunityRow[]) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveListCache(rows: CommunityRow[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LIST_CACHE_KEY, JSON.stringify(rows));
-  } catch {
-    /* ignore quota / private mode */
-  }
-}
-
 export function CommunitiesList() {
   const router = useRouter();
   // Hydration-safe: /communities has no auth gate in front of it, so this
   // component really is server-rendered, and seeding state straight from
   // localStorage during render made the server and client trees disagree.
-  const [communities, setCommunities] = useHydratedCache<CommunityRow[]>(
-    () => loadListCache() ?? [],
+  const [communities, setCommunities] = useHydratedCache<CommunityListRow[]>(
+    () => loadCommunityListCache() ?? [],
     []
   );
   const [name, setName] = useState("");
@@ -82,14 +57,14 @@ export function CommunitiesList() {
   // runs in a layout effect, so a warm cache still skips the spinner in the
   // first painted frame.
   const [loading, setLoading] = useHydratedCache(
-    () => loadListCache() === null,
+    () => (loadCommunityListCache()?.length ?? 0) === 0,
     true
   );
   const [discover, setDiscover] = useState<DiscoverRow[]>([]);
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
 
   async function load(signal?: AbortSignal) {
-    const hadCache = communities.length > 0;
+    const hadCache = (loadCommunityListCache()?.length ?? 0) > 0;
     if (!hadCache) setLoading(true);
     setError(null);
     try {
@@ -100,13 +75,10 @@ export function CommunitiesList() {
           plainError(data.error, "Couldn't load your circles.")
         );
       }
-      const rows = (data.communities ?? []) as CommunityRow[];
+      const rows = (data.communities ?? []) as CommunityListRow[];
       setCommunities(rows);
-      saveListCache(rows);
-      // Warm each community's own cache in the background so clicking in
-      // right after the list loads is instant too, not just the list
-      // itself.
-      for (const c of rows.slice(0, 2)) void prefetchCommunity(c.id);
+      saveCommunityListCache(rows);
+      prefetchCommunityList(rows);
     } catch (e) {
       if (isAbortError(e) || signal?.aborted) return;
       if (!hadCache) setError(e instanceof Error ? e.message : "Couldn't load your circles.");
@@ -129,6 +101,7 @@ export function CommunitiesList() {
   }
 
   useEffect(() => {
+    prefetchCommunityList(loadCommunityListCache() ?? []);
     const ctrl = new AbortController();
     void load(ctrl.signal);
     void loadDiscover(ctrl.signal);
@@ -214,7 +187,7 @@ export function CommunitiesList() {
             <HomeWorld fundOnly />
           </WidgetErrorBoundary>
           {error && <p className="text-sm text-red-400">{error}</p>}
-          {loading ? (
+          {communities.length === 0 && loading ? (
             <div className="space-y-2" aria-hidden>
               {[0, 1].map((i) => (
                 <div
@@ -241,6 +214,8 @@ export function CommunitiesList() {
                 <li key={c.id}>
                   <Link
                     href={`/communities/${c.id}`}
+                    onPointerEnter={() => void prefetchCommunity(c.id)}
+                    onFocus={() => void prefetchCommunity(c.id)}
                     className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-brand/5"
                   >
                     <span className="flex min-w-0 items-center gap-2">
