@@ -9,7 +9,7 @@
 - Community membership is **always opt-in, never automatic**. Signing in never adds anyone to any community (fixed in `030`, see below). A community is either:
   - **Private** (default): invite-link only, exactly like portfolio co-ownership.
   - **Public**: discoverable to any signed-in user (`GET /api/communities/discover`), who can ask to join (`POST /api/communities/:id/join-request`) — an admin still has to approve (`PATCH` same route) before the requester gets read access to anyone's book.
-  - **Classroom** (`kind = classroom`, always private): teacher-run paper class. Students join with an invite. Redeeming the invite (or an approved join request) provisions one homework sheet with the class `starting_cash` and pins it. Real books cannot be shared into a class. Class sheets cannot be deleted while the class exists. See migration `039`.
+  - **Classroom** (`kind = classroom`, always private): teacher-run paper class. Students join with an invite. Redeeming the invite (or an approved join request) provisions one homework sheet with the class `starting_cash` and pins it. Real books cannot be shared into a class. Class sheets cannot be deleted while the class exists. See migration `039`. Teacher sets `class_plan` (migration `040`): buy week, closed, sell-and-move, or anything goes. Empty plan means open. Purpose is the house note. Teachers can still edit a class sheet; students cannot break the current rule.
 
 ## Identity aliases
 

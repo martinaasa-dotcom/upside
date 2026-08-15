@@ -51,6 +51,13 @@ type Props = {
   /** USD per 1 EUR — required when displayCurrency is EUR. */
   eurUsd?: number | null;
   onDisplayCurrencyChange?: (currency: DisplayCurrency) => void;
+  /** Class sheet: hide add / cash / sell when the teacher closed that. */
+  tradeLock?: {
+    canBuy: boolean;
+    canSell: boolean;
+    canCash: boolean;
+    message: string;
+  } | null;
 };
 
 function InlineNumber({
@@ -255,6 +262,7 @@ export function PortfolioTable({
   displayCurrency = "USD",
   eurUsd = null,
   onDisplayCurrencyChange,
+  tradeLock,
 }: Props) {
   const money = (usd: number, digits = 2) =>
     currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
@@ -317,7 +325,11 @@ export function PortfolioTable({
   const rowToday = (h: (typeof holdings)[number]) =>
     todayDollarFor(h.currentValue, h.quote?.changePercent);
 
-  const emptyCta = (
+  const canAdd = !tradeLock || tradeLock.canBuy;
+  const canSell = !tradeLock || tradeLock.canSell;
+  const canCash = !tradeLock || tradeLock.canCash;
+
+  const emptyCta = canAdd ? (
     <div className="mt-4 flex flex-col items-center gap-2">
       <div className="flex flex-wrap items-center justify-center gap-2">
         {(onImportScreenshot || onAskMargus) && (
@@ -356,6 +368,10 @@ export function PortfolioTable({
         easier to get your hands on.
       </p>
     </div>
+  ) : (
+    <p className="mt-4 text-center text-xs text-zinc-400">
+      {tradeLock?.message}
+    </p>
   );
 
   return (
@@ -392,7 +408,7 @@ export function PortfolioTable({
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1 rounded-lg border border-zinc-800/60 bg-zinc-900/40 py-1 pl-1 pr-1">
-            {onImportCsv && holdings.length > 0 && (
+            {canAdd && onImportCsv && holdings.length > 0 && (
               <button
                 type="button"
                 onClick={onImportCsv}
@@ -405,9 +421,10 @@ export function PortfolioTable({
             )}
             <button
               type="button"
-              onClick={onEditCash}
-              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-zinc-800"
-              title="Edit cash (stored in USD)"
+              onClick={canCash ? onEditCash : undefined}
+              disabled={!canCash}
+              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
               <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Cash
@@ -457,6 +474,7 @@ export function PortfolioTable({
                     {percent(h.pctOfTotal)} of book
                   </p>
                 </div>
+                {canSell ? (
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
@@ -465,6 +483,9 @@ export function PortfolioTable({
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
+                ) : (
+                  <span className="w-10" />
+                )}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 <label className="grid gap-1 text-zinc-400">
@@ -740,6 +761,7 @@ export function PortfolioTable({
                     : "—"}
                 </div>
                 <div className={cellBase}>
+                  {canSell ? (
                   <button
                     type="button"
                     onClick={() => onDelete(h.id)}
@@ -748,6 +770,7 @@ export function PortfolioTable({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
+                  ) : null}
                 </div>
               </FluidRow>
             ))}

@@ -1,3 +1,5 @@
+import type { ClassroomTrade } from "@/lib/classroom";
+
 export type Portfolio = {
   id: string;
   name: string;
@@ -13,6 +15,8 @@ export type Portfolio = {
   coOwnerIds?: string[];
   /** Homework sheet for this class. Isolated from any real book. */
   classroom_community_id?: string | null;
+  /** What the class currently allows on this sheet. */
+  classTrade?: ClassroomTrade | null;
 };
 
 export type Holding = {

@@ -8,6 +8,14 @@ import {
   userIsCommunityAdmin,
   userIsCommunityMember,
 } from "@/lib/auth/ownership";
+import {
+  CLASS_PERIOD_KINDS,
+  isClassroomKind,
+  parseClassPlan,
+  resolveClassroomTrade,
+  startPeriodNow,
+  type ClassPeriodKind,
+} from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -40,7 +48,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       userIsCommunityAdmin(auth.user.id, id),
       supabase
         .from(PORTFELL_TABLES.communities)
-        .select("id, name, visibility, kind, starting_cash, house_note, created_by, created_at, updated_at")
+        .select("id, name, visibility, kind, starting_cash, house_note, class_plan, created_by, created_at, updated_at")
         .eq("id", id)
         .single(),
       supabase
@@ -264,8 +272,21 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     }
   }
 
+  const communityRow = community as {
+    kind?: string;
+    class_plan?: unknown;
+    house_note?: string | null;
+  };
+  const classTrade = isClassroomKind(communityRow.kind)
+    ? resolveClassroomTrade(
+        parseClassPlan(communityRow.class_plan),
+        new Date(),
+        communityRow.house_note
+      )
+    : null;
+
   return NextResponse.json({
-    community,
+    community: { ...(community as object), classTrade },
     isAdmin,
     join_requests,
     members: people.map((p) => ({
@@ -302,9 +323,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     name?: string;
     visibility?: string;
     houseNote?: string;
+    classPlan?: unknown;
+    startPeriod?: string;
   };
 
-  const patch: Record<string, string> = { updated_at: new Date().toISOString() };
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (body.name !== undefined) {
     const name = String(body.name).trim().slice(0, 80);
     if (!name) {
@@ -333,7 +356,53 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     patch.visibility = body.visibility;
   }
   if (body.houseNote !== undefined) {
-    patch.house_note = String(body.houseNote).trim().slice(0, 400);
+    patch.house_note = String(body.houseNote).trim().slice(0, 800);
+  }
+  if (
+    body.classPlan !== undefined ||
+    body.startPeriod !== undefined ||
+    body.houseNote !== undefined
+  ) {
+    const { data: current } = await supabase
+      .from(PORTFELL_TABLES.communities)
+      .select("kind, class_plan, house_note")
+      .eq("id", id)
+      .maybeSingle();
+    const classroom = isClassroomKind((current as { kind?: string } | null)?.kind);
+    if (
+      !classroom &&
+      (body.classPlan !== undefined || body.startPeriod !== undefined)
+    ) {
+      return NextResponse.json({ error: "Not a class" }, { status: 400 });
+    }
+    if (classroom) {
+      let plan = parseClassPlan(
+        body.classPlan !== undefined
+          ? body.classPlan
+          : (current as { class_plan?: unknown } | null)?.class_plan
+      );
+      if (body.startPeriod !== undefined) {
+        if (!CLASS_PERIOD_KINDS.includes(body.startPeriod as ClassPeriodKind)) {
+          return NextResponse.json(
+            { error: "Pick what students can do." },
+            { status: 400 }
+          );
+        }
+        plan = startPeriodNow(plan, body.startPeriod as ClassPeriodKind);
+      }
+      if (body.houseNote !== undefined) {
+        const note = String(body.houseNote).trim().slice(0, 800);
+        plan.purpose = note || undefined;
+      } else if (
+        (current as { house_note?: string | null } | null)?.house_note &&
+        !plan.purpose
+      ) {
+        plan.purpose = String(
+          (current as { house_note?: string | null }).house_note
+        ).trim();
+      }
+      patch.class_plan = plan;
+    }
   }
   if (Object.keys(patch).length <= 1) {
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
@@ -343,13 +412,29 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     .from(PORTFELL_TABLES.communities)
     .update(patch)
     .eq("id", id)
-    .select("id, name, visibility, kind, starting_cash, house_note, created_by, created_at, updated_at")
+    .select("id, name, visibility, kind, starting_cash, house_note, class_plan, created_by, created_at, updated_at")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ community });
+  const saved = community as {
+    kind?: string;
+    class_plan?: unknown;
+    house_note?: string | null;
+  };
+  return NextResponse.json({
+    community: {
+      ...(community as object),
+      classTrade: isClassroomKind(saved.kind)
+        ? resolveClassroomTrade(
+            parseClassPlan(saved.class_plan),
+            new Date(),
+            saved.house_note
+          )
+        : null,
+    },
+  });
 }
 
 /** Admin: delete the community outright. Members lose shared read access;

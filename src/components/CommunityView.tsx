@@ -1,6 +1,11 @@
 "use client";
 
 import { ClassroomRoster } from "@/components/ClassroomRoster";
+import { ClassTradeBanner } from "@/components/ClassTradeBanner";
+import {
+  ClassroomPlanEditor,
+  planFromCommunity,
+} from "@/components/ClassroomPlanEditor";
 import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { ShareSheets } from "@/components/ShareSheets";
 import { SignInGate } from "@/components/SignInGate";
@@ -9,7 +14,13 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { DEFAULT_STARTING_CASH, type ThesisCoverage } from "@/lib/classroom";
+import {
+  DEFAULT_STARTING_CASH,
+  type ClassPeriodKind,
+  type ClassPlan,
+  type ClassroomTrade,
+  type ThesisCoverage,
+} from "@/lib/classroom";
 import { currency, percent, signedCurrency, cn, cashtag, signedTone } from "@/lib/format";
 import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
@@ -101,6 +112,8 @@ type CommunityMeta = {
   kind?: "circle" | "classroom";
   starting_cash?: number;
   house_note?: string | null;
+  class_plan?: unknown;
+  classTrade?: ClassroomTrade | null;
   created_by: string | null;
 };
 
@@ -1038,6 +1051,54 @@ export function CommunityView({ communityId }: Props) {
     }
   }
 
+  async function handleStartPeriod(kind: ClassPeriodKind) {
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startPeriod: kind }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          plainError((data as { error?: string }).error, "Couldn't change that.")
+        );
+      }
+      setCommunity((data as { community: CommunityMeta }).community);
+    } catch (e) {
+      setSettingsError(e instanceof Error ? e.message : "Couldn't change that.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
+  async function handleSaveClassPlan(plan: ClassPlan) {
+    setSettingsBusy(true);
+    setSettingsError(null);
+    try {
+      const res = await fetch(`/api/communities/${communityId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classPlan: plan }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          plainError((data as { error?: string }).error, "Couldn't save the schedule.")
+        );
+      }
+      setCommunity((data as { community: CommunityMeta }).community);
+    } catch (e) {
+      setSettingsError(
+        e instanceof Error ? e.message : "Couldn't save the schedule."
+      );
+    } finally {
+      setSettingsBusy(false);
+    }
+  }
+
   async function handleRename() {
     const name = settingsName.trim();
     if (!name || name === community?.name) return;
@@ -1218,7 +1279,9 @@ export function CommunityView({ communityId }: Props) {
                     ? "Paper class. Same starting cash. Real prices."
                     : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
                 </p>
-                {community?.house_note?.trim() ? (
+                {isClassroom && community?.classTrade ? (
+                  <ClassTradeBanner trade={community.classTrade} />
+                ) : community?.house_note?.trim() ? (
                   <p className="text-sm leading-relaxed text-zinc-200">
                     {community.house_note.trim()}
                   </p>
@@ -2220,20 +2283,24 @@ export function CommunityView({ communityId }: Props) {
             </div>
 
             <label className="mt-5 block text-xs font-medium text-zinc-400">
-              {isClassroom ? "This week" : "House note"}
+              {isClassroom ? "What we're learning" : "House note"}
             </label>
             <p className="mt-1 text-xs leading-relaxed text-zinc-400">
               {isClassroom
-                ? "What the class is working on. Students see it at the top."
+                ? "Change this whenever the lesson changes. Students see it at the top."
                 : "One paragraph for the room. Public circles show this on Discover too."}
             </p>
             <textarea
               value={settingsNote}
               onChange={(e) => setSettingsNote(e.target.value)}
-              maxLength={400}
+              maxLength={isClassroom ? 800 : 400}
               rows={3}
               disabled={settingsBusy}
-              placeholder="Family books, today's prices, no advice."
+              placeholder={
+                isClassroom
+                  ? "Week 2: only sell. Write why you sold."
+                  : "Family books, today's prices, no advice."
+              }
               className="mt-1.5 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50 disabled:opacity-50"
             />
             <div className="mt-2 flex justify-end">
@@ -2251,10 +2318,19 @@ export function CommunityView({ communityId }: Props) {
             </div>
 
             {isClassroom ? (
-              <p className="mt-5 text-xs leading-relaxed text-zinc-400">
-                Classes stay invite-only. Starting cash is{" "}
-                {currency(startingCash)} per student.
-              </p>
+              <>
+                <ClassroomPlanEditor
+                  plan={planFromCommunity(community?.class_plan)}
+                  trade={community?.classTrade ?? null}
+                  busy={settingsBusy}
+                  onStart={(kind) => void handleStartPeriod(kind)}
+                  onSavePlan={(plan) => void handleSaveClassPlan(plan)}
+                />
+                <p className="mt-5 text-xs leading-relaxed text-zinc-400">
+                  Classes stay invite-only. Starting cash is{" "}
+                  {currency(startingCash)} per student.
+                </p>
+              </>
             ) : (
             <div className="mt-5 border-t border-zinc-800 pt-4">
               <label className="block text-xs font-medium text-zinc-400">

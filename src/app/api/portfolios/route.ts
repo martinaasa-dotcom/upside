@@ -4,7 +4,14 @@ import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import {
   listOwnedPortfolioIds,
   requirePortfolioOwner,
+  userIsCommunityAdmin,
 } from "@/lib/auth/ownership";
+import {
+  parseClassPlan,
+  resolveClassroomTrade,
+  type ClassroomTrade,
+} from "@/lib/classroom";
+import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -75,11 +82,56 @@ export async function GET(req: NextRequest) {
     holdings = h ?? [];
   }
 
+  const classIds = [
+    ...new Set(
+      ((portfolios ?? []) as { classroom_community_id?: string | null }[])
+        .map((p) => p.classroom_community_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+  const tradeByClass = new Map<string, ClassroomTrade>();
+  if (classIds.length) {
+    const { data: classes } = await supabase
+      .from(PORTFELL_TABLES.communities)
+      .select("id, class_plan, house_note")
+      .in("id", classIds);
+    for (const row of (classes ?? []) as {
+      id: string;
+      class_plan?: unknown;
+      house_note?: string | null;
+    }[]) {
+      const isTeacher = await userIsCommunityAdmin(auth.user.id, row.id);
+      const trade = resolveClassroomTrade(
+        parseClassPlan(row.class_plan),
+        new Date(),
+        row.house_note
+      );
+      tradeByClass.set(row.id, {
+        ...trade,
+        canBuy: isTeacher ? true : trade.canBuy,
+        canSell: isTeacher ? true : trade.canSell,
+        canAdjust: isTeacher ? true : trade.canAdjust,
+        canCash: isTeacher ? true : trade.canCash,
+        studentLocked: isTeacher ? false : trade.studentLocked,
+        message: isTeacher
+          ? `Students: ${trade.label.toLowerCase()}. ${trade.message}`
+          : trade.message,
+      });
+    }
+  }
+
   return NextResponse.json({
     source: "supabase",
-    portfolios: (portfolios ?? []).map((p) =>
-      mapPortfolio(p as Record<string, unknown>)
-    ),
+    portfolios: (portfolios ?? []).map((p) => {
+      const row = p as { classroom_community_id?: string | null };
+      const classTrade = row.classroom_community_id
+        ? tradeByClass.get(row.classroom_community_id) ?? null
+        : null;
+      return mapPortfolio({
+        ...(p as Record<string, unknown>),
+        classTrade,
+      });
+    }),
     holdings,
   });
 }
@@ -158,6 +210,12 @@ export async function PATCH(req: NextRequest) {
     updated_at: new Date().toISOString(),
   };
   if (body.cash_balance !== undefined) {
+    const blocked = await denyClassroomWrite(supabase, {
+      portfolioId: id,
+      userId: auth.user.id,
+      action: "cash",
+    });
+    if (blocked) return blocked;
     patch.cash_balance = Number(body.cash_balance);
   }
   if (body.name !== undefined) patch.name = body.name;

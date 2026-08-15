@@ -1,4 +1,6 @@
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import { classifyHoldingWrite } from "@/lib/classroom";
+import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -41,6 +43,26 @@ export async function POST(req: NextRequest) {
   if (!Number.isFinite(buyPrice) || buyPrice <= 0) {
     return NextResponse.json({ error: "Buy price must be a positive number" }, { status: 400 });
   }
+
+  const { data: existingRow } = await supabase
+    .from(PORTFELL_TABLES.holdings)
+    .select("shares")
+    .eq("portfolio_id", portfolioId)
+    .eq("ticker", ticker)
+    .maybeSingle();
+  const blocked = await denyClassroomWrite(supabase, {
+    portfolioId,
+    userId: auth.user.id,
+    action: classifyHoldingWrite({
+      isNew: !existingRow,
+      isDelete: false,
+      existingShares: existingRow
+        ? Number((existingRow as { shares: number }).shares)
+        : 0,
+      nextShares: shares,
+    }),
+  });
+  if (blocked) return blocked;
 
   const row = {
     portfolio_id: portfolioId,
@@ -89,7 +111,7 @@ export async function PATCH(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from(PORTFELL_TABLES.holdings)
-    .select("portfolio_id")
+    .select("portfolio_id, shares")
     .eq("id", id)
     .maybeSingle();
 
@@ -133,6 +155,24 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  if (portfolioId) {
+    const nextShares =
+      body.shares !== undefined
+        ? roundShares(Number(body.shares))
+        : Number((existing as { shares?: number } | null)?.shares ?? 0);
+    const blocked = await denyClassroomWrite(supabase, {
+      portfolioId,
+      userId: auth.user.id,
+      action: classifyHoldingWrite({
+        isNew: false,
+        isDelete: false,
+        existingShares: Number((existing as { shares?: number } | null)?.shares ?? 0),
+        nextShares,
+      }),
+    });
+    if (blocked) return blocked;
+  }
+
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.holdings)
     .update(patch)
@@ -174,6 +214,15 @@ export async function DELETE(req: NextRequest) {
 
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
+
+  if (portfolioId) {
+    const blocked = await denyClassroomWrite(supabase, {
+      portfolioId,
+      userId: auth.user.id,
+      action: "sell",
+    });
+    if (blocked) return blocked;
+  }
 
   const { error } = await supabase
     .from(PORTFELL_TABLES.holdings)

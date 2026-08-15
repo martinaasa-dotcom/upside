@@ -12,6 +12,171 @@ export const MAX_STARTING_CASH = 10_000_000;
 export const DEFAULT_CLASS_ASSIGNMENT =
   "Week 1: pick up to 5 names and write why on each. The Sunday note is the recap you turn in.";
 
+export const CLASS_PERIOD_KINDS = ["open", "buy", "closed", "fix"] as const;
+export type ClassPeriodKind = (typeof CLASS_PERIOD_KINDS)[number];
+export type ClassAction = "buy" | "sell" | "adjust" | "cash";
+
+export type ClassPeriod = {
+  id: string;
+  kind: ClassPeriodKind;
+  startsAt: string;
+  endsAt: string | null;
+};
+
+export type ClassPlan = {
+  purpose?: string;
+  periods: ClassPeriod[];
+};
+
+export type ClassroomTrade = {
+  kind: ClassPeriodKind;
+  canBuy: boolean;
+  canSell: boolean;
+  canAdjust: boolean;
+  canCash: boolean;
+  purpose: string | null;
+  until: string | null;
+  label: string;
+  message: string;
+  studentLocked: boolean;
+};
+
+const KIND_LABEL: Record<ClassPeriodKind, string> = {
+  open: "Anything goes",
+  buy: "Buy week",
+  closed: "Closed",
+  fix: "Sell and move",
+};
+
+const KIND_MESSAGE: Record<ClassPeriodKind, string> = {
+  open: "You can buy, sell, and move money.",
+  buy: "You can add names. You cannot sell yet.",
+  closed: "The teacher closed the sheet. You can look, you cannot buy or sell.",
+  fix: "You can sell and move money. You cannot add new names.",
+};
+
+export function classPeriodLabel(kind: ClassPeriodKind): string {
+  return KIND_LABEL[kind];
+}
+
+export function emptyClassPlan(): ClassPlan {
+  return { periods: [] };
+}
+
+function isKind(v: unknown): v is ClassPeriodKind {
+  return CLASS_PERIOD_KINDS.includes(v as ClassPeriodKind);
+}
+
+function isIso(v: unknown): v is string {
+  return typeof v === "string" && Number.isFinite(Date.parse(v));
+}
+
+export function parseClassPlan(raw: unknown): ClassPlan {
+  if (!raw || typeof raw !== "object") return emptyClassPlan();
+  const o = raw as { purpose?: unknown; periods?: unknown };
+  const purpose =
+    typeof o.purpose === "string" ? o.purpose.trim().slice(0, 800) : "";
+  const rows = Array.isArray(o.periods) ? o.periods : [];
+  const periods: ClassPeriod[] = [];
+  for (const row of rows.slice(0, 24)) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as Record<string, unknown>;
+    if (!isKind(r.kind) || !isIso(r.startsAt)) continue;
+    const endsAt = r.endsAt == null || r.endsAt === "" ? null : String(r.endsAt);
+    if (endsAt && !isIso(endsAt)) continue;
+    if (endsAt && Date.parse(endsAt) <= Date.parse(String(r.startsAt))) continue;
+    periods.push({
+      id: typeof r.id === "string" && r.id.trim() ? r.id.trim() : crypto.randomUUID(),
+      kind: r.kind,
+      startsAt: new Date(String(r.startsAt)).toISOString(),
+      endsAt: endsAt ? new Date(endsAt).toISOString() : null,
+    });
+  }
+  periods.sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+  return { purpose: purpose || undefined, periods };
+}
+
+export function resolveClassroomTrade(
+  plan: ClassPlan,
+  now = new Date(),
+  purposeFallback?: string | null
+): ClassroomTrade {
+  const t = now.getTime();
+  const live = plan.periods.filter((p) => {
+    const start = Date.parse(p.startsAt);
+    const end = p.endsAt ? Date.parse(p.endsAt) : null;
+    return start <= t && (end == null || t < end);
+  });
+  live.sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt));
+  const current = live[0];
+  const kind = current?.kind ?? "open";
+  const purpose = (plan.purpose?.trim() || purposeFallback?.trim() || "") || null;
+  return {
+    kind,
+    canBuy: kind === "open" || kind === "buy",
+    canSell: kind === "open" || kind === "fix",
+    canAdjust: kind === "open" || kind === "fix",
+    canCash: kind !== "closed",
+    purpose,
+    until: current?.endsAt ?? null,
+    label: KIND_LABEL[kind],
+    message: KIND_MESSAGE[kind],
+    studentLocked: kind !== "open",
+  };
+}
+
+export function startPeriodNow(
+  plan: ClassPlan,
+  kind: ClassPeriodKind,
+  now = new Date()
+): ClassPlan {
+  const iso = now.toISOString();
+  const t = now.getTime();
+  const periods = plan.periods.map((p) => {
+    const start = Date.parse(p.startsAt);
+    const end = p.endsAt ? Date.parse(p.endsAt) : null;
+    const covers = start <= t && (end == null || t < end);
+    if (!covers) return p;
+    return { ...p, endsAt: iso };
+  });
+  periods.push({
+    id: crypto.randomUUID(),
+    kind,
+    startsAt: iso,
+    endsAt: null,
+  });
+  return parseClassPlan({ ...plan, periods });
+}
+
+export function allowClassAction(
+  trade: ClassroomTrade,
+  action: ClassAction
+): boolean {
+  if (action === "buy") return trade.canBuy;
+  if (action === "sell") return trade.canSell;
+  if (action === "adjust") return trade.canAdjust;
+  return trade.canCash;
+}
+
+export function classActionError(trade: ClassroomTrade): string {
+  return trade.message;
+}
+
+export function classifyHoldingWrite(opts: {
+  isNew: boolean;
+  isDelete: boolean;
+  existingShares?: number;
+  nextShares?: number;
+}): ClassAction {
+  if (opts.isDelete) return "sell";
+  if (opts.isNew) return "buy";
+  const prev = opts.existingShares ?? 0;
+  const next = opts.nextShares ?? prev;
+  if (next > prev) return "buy";
+  if (next < prev) return "sell";
+  return "adjust";
+}
+
 export type ThesisCoverage = {
   names: number;
   withWhy: number;

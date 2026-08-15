@@ -23,6 +23,7 @@ import {
 import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
+import { ClassTradeBanner } from "@/components/ClassTradeBanner";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { useAuth } from "@/components/AuthProvider";
@@ -606,6 +607,9 @@ export function Dashboard() {
       ? null
       : (portfolios.find((p) => p.id === activeId) ?? null);
   const inviteSheet = activePortfolio ?? portfolios[0] ?? null;
+  const classTrade = activePortfolio?.classTrade ?? null;
+  const canClassBuy = !classTrade || classTrade.canBuy;
+  const canClassCash = !classTrade || classTrade.canCash;
 
   const ccVisible =
     hideOptionsUI
@@ -2639,7 +2643,7 @@ export function Dashboard() {
               />
               <span className="hidden md:inline">Refresh</span>
             </button>
-            {!isMetaTab && (
+            {!isMetaTab && canClassBuy && (
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
@@ -2703,6 +2707,7 @@ export function Dashboard() {
               </button>
             ))}
           </div>
+          {canClassBuy ? (
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -2711,10 +2716,15 @@ export function Dashboard() {
             <Plus className="h-3.5 w-3.5" />
             Add
           </button>
+          ) : null}
         </div>
       )}
 
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-8 sm:px-6 sm:py-8">
+        {!isMetaTab && classTrade ? (
+          <ClassTradeBanner trade={classTrade} />
+        ) : null}
+
         {loadError && (
           <div className="flex flex-col gap-2 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-rose-100">{loadError}</p>
@@ -2855,15 +2865,32 @@ export function Dashboard() {
               totals={snapshot!.totals}
               onPatch={handlePatch}
               onDelete={requestDeleteHolding}
-              onEditCash={() => setCashModalOpen(true)}
-              onAddHolding={() => setModalOpen(true)}
+              onEditCash={() => {
+                if (!canClassCash) return;
+                setCashModalOpen(true);
+              }}
+              onAddHolding={canClassBuy ? () => setModalOpen(true) : undefined}
+              tradeLock={
+                classTrade
+                  ? {
+                      canBuy: classTrade.canBuy,
+                      canSell: classTrade.canSell,
+                      canCash: classTrade.canCash,
+                      message: classTrade.message,
+                    }
+                  : null
+              }
               onAskMargus={() =>
                 setMargusExpandSignal((n) => n + 1)
               }
-              onImportScreenshot={() =>
-                setMargusImagePickSignal((n) => n + 1)
+              onImportScreenshot={
+                canClassBuy
+                  ? () => setMargusImagePickSignal((n) => n + 1)
+                  : undefined
               }
-              onImportCsv={() => setCsvImportOpen(true)}
+              onImportCsv={
+                canClassBuy ? () => setCsvImportOpen(true) : undefined
+              }
               onOpenTicker={(t) => setDrawerTicker(t)}
               displayCurrency={getDisplayCurrency(
                 displayCurrencyByPortfolio,
@@ -2890,7 +2917,9 @@ export function Dashboard() {
                 onPatchStockTarget={(id, stockTarget) =>
                   handlePatch({ id, stock_target_override: stockTarget })
                 }
-                onAddHolding={() => setModalOpen(true)}
+                onAddHolding={
+                  canClassBuy ? () => setModalOpen(true) : undefined
+                }
               />
             )}
 

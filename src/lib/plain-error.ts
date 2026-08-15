@@ -47,6 +47,15 @@ const KNOWN: Record<string, string> = {
     "Your class sheet stays in the circle.",
   "invalid starting cash":
     "Starting cash has to be between $1,000 and $10,000,000.",
+  "Pick what students can do.": "Pick what students can do.",
+  "You can buy, sell, and move money.":
+    "You can buy, sell, and move money.",
+  "You can add names. You cannot sell yet.":
+    "You can add names. You cannot sell yet.",
+  "The teacher closed the sheet. You can look, you cannot buy or sell.":
+    "The teacher closed the sheet. You can look, you cannot buy or sell.",
+  "You can sell and move money. You cannot add new names.":
+    "You can sell and move money. You cannot add new names.",
   "Invalid ticker": "That ticker doesn't look right.",
   "Invalid tier": "That experience level isn't valid.",
   "Invalid knowsOptions": "That options answer isn't valid.",

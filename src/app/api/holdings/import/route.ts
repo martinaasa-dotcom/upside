@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
+import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -47,6 +48,18 @@ export async function POST(req: NextRequest) {
   if (notOwner) return notOwner;
 
   const rows = Array.isArray(body.holdings) ? body.holdings : [];
+  const importNeeds = new Set<"buy" | "sell" | "cash">();
+  if (body.cash != null) importNeeds.add("cash");
+  if (rows.length) importNeeds.add("buy");
+  if (body.replace) importNeeds.add("sell");
+  for (const action of importNeeds) {
+    const blocked = await denyClassroomWrite(supabase, {
+      portfolioId,
+      userId: auth.user.id,
+      action,
+    });
+    if (blocked) return blocked;
+  }
   if (rows.length === 0 && body.cash == null) {
     return NextResponse.json(
       { error: "cash or holdings required" },

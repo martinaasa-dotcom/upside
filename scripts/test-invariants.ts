@@ -43,6 +43,13 @@ import {
 import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
+import {
+  allowClassAction,
+  classifyHoldingWrite,
+  parseClassPlan,
+  resolveClassroomTrade,
+  startPeriodNow,
+} from "../src/lib/classroom";
 
 function emptyModel(): OverviewModel {
   return {
@@ -1089,6 +1096,123 @@ run("assumed YTD NAV uses current size and forward-fills gaps", () => {
   const weeks = downsampleToWeeks(points);
   assert.ok(weeks.length >= 1);
   assert.equal(weeks[weeks.length - 1]!.nav, 1220);
+});
+
+run("empty class plan is anything goes", () => {
+  const trade = resolveClassroomTrade(
+    parseClassPlan({}),
+    new Date("2026-08-15T12:00:00Z")
+  );
+  assert.equal(trade.kind, "open");
+  assert.equal(trade.canBuy, true);
+  assert.equal(trade.canSell, true);
+  assert.equal(trade.studentLocked, false);
+});
+
+run("buy week blocks sell", () => {
+  const plan = parseClassPlan({
+    periods: [
+      {
+        id: "a",
+        kind: "buy",
+        startsAt: "2026-08-10T00:00:00Z",
+        endsAt: "2026-08-20T00:00:00Z",
+      },
+    ],
+  });
+  const trade = resolveClassroomTrade(
+    plan,
+    new Date("2026-08-15T12:00:00Z")
+  );
+  assert.equal(trade.kind, "buy");
+  assert.equal(trade.canBuy, true);
+  assert.equal(trade.canSell, false);
+  assert.equal(allowClassAction(trade, "sell"), false);
+});
+
+run("startPeriodNow ends the live stretch", () => {
+  const plan = parseClassPlan({
+    periods: [
+      {
+        id: "a",
+        kind: "buy",
+        startsAt: "2026-08-10T00:00:00Z",
+        endsAt: null,
+      },
+    ],
+  });
+  const next = startPeriodNow(plan, "closed", new Date("2026-08-15T12:00:00Z"));
+  const trade = resolveClassroomTrade(
+    next,
+    new Date("2026-08-15T12:00:01Z")
+  );
+  assert.equal(trade.kind, "closed");
+  assert.equal(trade.canBuy, false);
+  assert.equal(trade.canCash, false);
+});
+
+run("latest overlapping stretch wins", () => {
+  const plan = parseClassPlan({
+    periods: [
+      {
+        id: "a",
+        kind: "buy",
+        startsAt: "2026-08-01T00:00:00Z",
+        endsAt: "2026-08-30T00:00:00Z",
+      },
+      {
+        id: "b",
+        kind: "fix",
+        startsAt: "2026-08-14T00:00:00Z",
+        endsAt: "2026-08-16T00:00:00Z",
+      },
+    ],
+  });
+  const trade = resolveClassroomTrade(
+    plan,
+    new Date("2026-08-15T12:00:00Z")
+  );
+  assert.equal(trade.kind, "fix");
+  assert.equal(trade.canSell, true);
+  assert.equal(trade.canBuy, false);
+});
+
+run("holding write classify buy sell adjust", () => {
+  assert.equal(
+    classifyHoldingWrite({ isNew: true, isDelete: false }),
+    "buy"
+  );
+  assert.equal(
+    classifyHoldingWrite({ isNew: false, isDelete: true }),
+    "sell"
+  );
+  assert.equal(
+    classifyHoldingWrite({
+      isNew: false,
+      isDelete: false,
+      existingShares: 10,
+      nextShares: 12,
+    }),
+    "buy"
+  );
+  assert.equal(
+    classifyHoldingWrite({
+      isNew: false,
+      isDelete: false,
+      existingShares: 10,
+      nextShares: 8,
+    }),
+    "sell"
+  );
+  assert.equal(
+    classifyHoldingWrite({
+      isNew: false,
+      isDelete: false,
+      existingShares: 10,
+      nextShares: 10,
+    }),
+    "adjust"
+  );
 });
 
 if (failed > 0) {
