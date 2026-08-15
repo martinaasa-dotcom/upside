@@ -30,7 +30,6 @@ import type { UpsideAlert } from "@/lib/alerts";
 import { statusLabel } from "@/lib/thesis-pulse";
 import { sessionLabel, sessionKind } from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
-import { loadVisitStreak } from "@/lib/visit-streak";
 import { recordWeekMark } from "@/lib/week-marks";
 import type { CoveredCallRow } from "@/lib/types";
 import {
@@ -98,7 +97,6 @@ function MobileHomeHero({
   morning,
   previousAt,
   onOpenPulse,
-  streak,
   homeSheetId,
   homeSheets,
   onHomeSheet,
@@ -116,7 +114,6 @@ function MobileHomeHero({
   morning: ReturnType<typeof buildMorningRead>;
   previousAt: string | null;
   onOpenPulse?: () => void;
-  streak: number;
   homeSheetId: HomeSheetId;
   homeSheets: Array<{ id: string; name: string }>;
   onHomeSheet?: (id: HomeSheetId) => void;
@@ -124,10 +121,7 @@ function MobileHomeHero({
   const up = totals.roiPct >= 0;
   return (
     <div className="md:hidden">
-      <p className="text-sm text-muted">
-        Book
-        {streak >= 2 ? ` · ${streak}-day streak` : ""}
-      </p>
+      <p className="text-sm text-muted">Book</p>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
         <p className="font-logo text-4xl font-bold tabular-nums leading-none text-white">
           {currency(totals.totalValue, 0)}
@@ -643,14 +637,9 @@ export function OverviewDashboard({
   const [moverHorizon, setMoverHorizon] = useState<"today" | "lifetime">(
     "today"
   );
-  const [streak, setStreak] = useState(0);
   const kind = sessionKind(marketState);
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
-
-  useEffect(() => {
-    setStreak(loadVisitStreak().currentStreak);
-  }, []);
 
   useEffect(() => {
     if (!model.tickers.length || model.totals.todayPct == null) return;
@@ -768,7 +757,6 @@ export function OverviewDashboard({
         morning={morning}
         previousAt={visitDiff?.previousAt ?? null}
         onOpenPulse={onOpenPulse}
-        streak={streak}
         homeSheetId={homeSheetId}
         homeSheets={homeSheets}
         onHomeSheet={onHomeSheet}
@@ -783,7 +771,7 @@ export function OverviewDashboard({
         <div className="relative">
           <PanelHeader
             hero
-            title={streak >= 2 ? `Today · ${streak} days` : "Today"}
+            title="Today"
             actions={
               <>
                 <span
