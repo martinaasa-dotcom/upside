@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  calculateCompound,
   COMPOUND_STORAGE_KEY,
   DEFAULT_COMPOUND_INPUTS,
   type CompoundInputs,
@@ -22,8 +21,8 @@ import {
   formatMilestoneDate,
   loadMilestoneActuals,
   saveMilestoneActuals,
-  stayTheCourseInputs,
   storyYears,
+  type CompareScenario,
   type MilestoneActuals,
   type ShockKind,
 } from "@/lib/compound-play";
@@ -175,15 +174,13 @@ function ChipButton({
   );
 }
 
-function DualPathChart({
-  stay,
-  active,
+function ComparePathsChart({
+  scenarios,
   currency,
   eurUsd,
   tippingYear,
 }: {
-  stay: number[];
-  active: number[];
+  scenarios: CompareScenario[];
   currency: CurrencyCode;
   eurUsd: number | null;
   tippingYear: number | null;
@@ -191,7 +188,16 @@ function DualPathChart({
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const max = Math.max(...stay, ...active, 1);
+  const paths = scenarios.map((s) => ({
+    id: s.id,
+    label: s.label,
+    color: s.color,
+    series: s.result.yearly.map((y) => y.balance),
+    dashed: s.id === "mattress",
+    thick: s.id === "upside",
+  }));
+  const lastIdx = Math.max(1, ...paths.map((p) => p.series.length - 1));
+  const max = Math.max(1, ...paths.flatMap((p) => p.series));
   const w = 640;
   const h = 240;
   const padL = 52;
@@ -200,7 +206,6 @@ function DualPathChart({
   const padB = 24;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
-  const lastIdx = Math.max(active.length - 1, 1);
 
   const xAt = (i: number) => padL + (i / lastIdx) * plotW;
   const yAt = (v: number) => padT + plotH - (v / max) * plotH;
@@ -217,12 +222,6 @@ function DualPathChart({
   const toPoints = (series: number[]) =>
     series.map((v, i) => `${xAt(i)},${yAt(v)}`).join(" ");
 
-  const gapArea = (() => {
-    const top = active.map((v, i) => `${xAt(i)},${yAt(v)}`);
-    const bottomRev = [...stay].map((v, i) => `${xAt(i)},${yAt(v)}`).reverse();
-    return [...top, ...bottomRev].join(" ");
-  })();
-
   const gridSteps = [0, 0.25, 0.5, 0.75, 1];
   const compact = (n: number) => {
     const shown = money(n, currency, eurUsd, 0);
@@ -236,6 +235,8 @@ function DualPathChart({
   );
   if (yearTicks[yearTicks.length - 1] !== lastIdx) yearTicks.push(lastIdx);
 
+  const labels = paths.map((p) => p.label).join(", ");
+
   return (
     <div className="relative">
       <svg
@@ -243,7 +244,7 @@ function DualPathChart({
         viewBox={`0 0 ${w} ${h}`}
         className="h-auto w-full touch-none"
         role="img"
-        aria-label="Stay the course vs active path"
+        aria-label={`Same money four ways: ${labels}`}
         onMouseMove={(e) => updateHoverFromClientX(e.clientX)}
         onMouseLeave={() => setHoverIdx(null)}
         onTouchStart={(e) => {
@@ -256,13 +257,6 @@ function DualPathChart({
         }}
         onTouchEnd={() => setHoverIdx(null)}
       >
-        <defs>
-          <linearGradient id="dualPathGap" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#D6AD69" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#D6AD69" stopOpacity="0.03" />
-          </linearGradient>
-        </defs>
-
         {gridSteps.map((s) => {
           const y = padT + plotH - s * plotH;
           return (
@@ -302,8 +296,6 @@ function DualPathChart({
           </text>
         ))}
 
-        <polygon points={gapArea} fill="url(#dualPathGap)" />
-
         {tippingYear != null && tippingYear <= lastIdx && (
           <g>
             <line
@@ -329,19 +321,18 @@ function DualPathChart({
           </g>
         )}
 
-        <polyline
-          points={toPoints(stay)}
-          fill="none"
-          stroke="#71717a"
-          strokeWidth="2"
-          strokeDasharray="6 4"
-        />
-        <polyline
-          points={toPoints(active)}
-          fill="none"
-          stroke="#D6AD69"
-          strokeWidth="2.5"
-        />
+        {paths.map((p) => (
+          <polyline
+            key={p.id}
+            points={toPoints(p.series)}
+            fill="none"
+            stroke={p.color}
+            strokeWidth={p.thick ? 2.5 : 2}
+            strokeDasharray={p.dashed ? "6 4" : undefined}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
 
         {hoverIdx != null && (
           <g pointerEvents="none">
@@ -355,25 +346,36 @@ function DualPathChart({
               strokeDasharray="2 3"
               opacity="0.7"
             />
-            <circle
-              cx={xAt(hoverIdx)}
-              cy={yAt(active[hoverIdx] ?? 0)}
-              r="4"
-              fill="#D6AD69"
-              stroke="#08090C"
-              strokeWidth="1.5"
-            />
-            <circle
-              cx={xAt(hoverIdx)}
-              cy={yAt(stay[hoverIdx] ?? 0)}
-              r="4"
-              fill="#71717a"
-              stroke="#08090C"
-              strokeWidth="1.5"
-            />
+            {paths.map((p) => (
+              <circle
+                key={p.id}
+                cx={xAt(hoverIdx)}
+                cy={yAt(p.series[hoverIdx] ?? 0)}
+                r={p.thick ? 4 : 3.25}
+                fill={p.color}
+                stroke="#08090C"
+                strokeWidth="1.5"
+              />
+            ))}
           </g>
         )}
       </svg>
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-zinc-400">
+        {paths.map((p) => (
+          <li key={p.id} className="inline-flex items-center gap-1.5">
+            <span
+              className="inline-block w-3.5"
+              style={{
+                borderTop: p.dashed
+                  ? `1.5px dashed ${p.color}`
+                  : `2px solid ${p.color}`,
+              }}
+              aria-hidden
+            />
+            {p.label}
+          </li>
+        ))}
+      </ul>
       {hoverIdx != null && (
         <div
           className="pointer-events-none absolute top-2 rounded-md border border-white/10 bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
@@ -386,12 +388,15 @@ function DualPathChart({
           }}
         >
           <p className="font-semibold text-white">Year {hoverIdx}</p>
-          <p className="tabular-nums text-brand">
-            Plan: {money(active[hoverIdx] ?? 0, currency, eurUsd, 0)}
-          </p>
-          <p className="tabular-nums text-zinc-400">
-            No deposits: {money(stay[hoverIdx] ?? 0, currency, eurUsd, 0)}
-          </p>
+          {paths.map((p) => (
+            <p
+              key={p.id}
+              className="tabular-nums"
+              style={{ color: p.color }}
+            >
+              {p.label}: {money(p.series[hoverIdx] ?? 0, currency, eurUsd, 0)}
+            </p>
+          ))}
           {tippingYear === hoverIdx && (
             <p className="mt-0.5 text-xs font-semibold text-gain">
               Tipping year
@@ -505,11 +510,6 @@ export function CompoundInterestSheet({
   const result = useMemo(
     () => calculateWithShock(liveInputs, shock),
     [liveInputs, shock]
-  );
-
-  const stayResult = useMemo(
-    () => calculateCompound(stayTheCourseInputs(liveInputs)),
-    [liveInputs]
   );
 
   const tipping = useMemo(
@@ -641,9 +641,6 @@ export function CompoundInterestSheet({
     liveInputs.months > 0
       ? `${liveInputs.years}y ${liveInputs.months}m`
       : `${liveInputs.years} year${liveInputs.years === 1 ? "" : "s"}`;
-
-  const staySeries = stayResult.yearly.map((y) => y.balance);
-  const activeSeries = result.yearly.map((y) => y.balance);
 
   // Dynamic max slider ranges based on current values
   const principalSliderMax = Math.max(100000, Math.ceil((draft.principal * 1.5) / 10000) * 10000);
@@ -1176,7 +1173,7 @@ Optimistic (25%)
         {/* Dual Path Chart */}
         <Panel>
           <PanelHeader
-            title="What paying in does to the curve"
+            title="Same money, four paths"
             actions={
               tipping != null ? (
                 <Pill tone="good" title="From here on, growth adds more each year than you do">
@@ -1186,9 +1183,8 @@ Optimistic (25%)
             }
           />
           <div className="mt-4">
-            <DualPathChart
-              stay={staySeries}
-              active={activeSeries}
+            <ComparePathsChart
+              scenarios={compare}
               currency={currency}
               eurUsd={eurUsd}
               tippingYear={tipping}
