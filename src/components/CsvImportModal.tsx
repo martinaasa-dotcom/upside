@@ -184,7 +184,7 @@ export function CsvImportModal({
 
           {rows.length > 0 && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs uppercase tracking-wide text-zinc-400">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
                 <span>Preview · {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
                 {cash != null && (
                   <span className="text-zinc-400">
@@ -236,7 +236,7 @@ export function CsvImportModal({
 
           {skipped.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-wide text-amber-400/80">
+              <p className="text-xs text-amber-400/80">
                 Skipped {skipped.length} row{skipped.length === 1 ? "" : "s"}
               </p>
               <ul className="max-h-24 space-y-1 overflow-y-auto text-xs text-zinc-400">

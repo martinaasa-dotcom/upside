@@ -106,7 +106,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
               >
                 <span>
                   {item.group && (
-                    <span className="mr-2 text-xs uppercase tracking-wide text-zinc-400">
+                    <span className="mr-2 text-xs text-zinc-400">
                       {item.group}
                     </span>
                   )}

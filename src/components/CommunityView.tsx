@@ -1369,7 +1369,7 @@ export function CommunityView({ communityId }: Props) {
           {!loading && !selectedOwnerId && (
             <>
               <section className="space-y-3">
-                <p className="text-xs uppercase tracking-wide text-zinc-400">
+                <p className="text-xs text-zinc-400">
                   {isClassroom
                     ? "Paper class. Same starting cash. Real prices."
                     : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
@@ -1392,7 +1392,7 @@ export function CommunityView({ communityId }: Props) {
                   </p>
                 ) : null}
                 {isClassroom && !myClassSheet ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-card/80 px-4 py-3">
                     <p className="min-w-0 flex-1 text-sm text-zinc-300">
                       {isAdmin
                         ? "You are watching the class. Get a paper sheet if you want to trade alongside them."
@@ -1572,7 +1572,7 @@ export function CommunityView({ communityId }: Props) {
                     </p>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-violet-500/15 p-2 text-violet-300">
@@ -1618,7 +1618,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-2 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
@@ -1662,10 +1662,10 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-1 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
+                          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                             <Trophy className="h-4 w-4" />
                           </div>
                           <div>
@@ -1747,7 +1747,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
-                    <section className="overview-fade order-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
                           <Layers className="h-4 w-4" />
@@ -1799,7 +1799,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-6">
+                    <section className="overview-fade order-5 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-sky-500/15 p-2 text-sky-300">
                           <PieChart className="h-4 w-4" />
@@ -1850,10 +1850,10 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && (
-                  <section className="overview-fade order-6 rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-[#161618]/40 to-[#161618]/40 p-4 sm:p-6">
+                  <section className="overview-fade order-6 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-6">
                     <div className="mb-5 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
+                        <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                           <Lightbulb className="h-4 w-4" />
                         </div>
                         <div>
@@ -2765,7 +2765,7 @@ function PowerAnimalCard({
 
           <div className="mt-auto grid gap-3 sm:grid-cols-2">
             <div className="h-full rounded-xl bg-black/20 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className="text-xs text-zinc-500">
                 Modeled year
               </p>
               <p className="mt-1 text-sm tabular-nums text-zinc-200">
@@ -2781,7 +2781,7 @@ function PowerAnimalCard({
               </p>
             </div>
             <div className="h-full rounded-xl bg-black/20 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">
+              <p className="text-xs text-zinc-500">
                 Stretch (a rough bad year)
               </p>
               <p className="mt-1 text-sm tabular-nums text-loss">
@@ -2836,7 +2836,7 @@ function ScoreRead({
 }) {
   return (
     <div className="h-full rounded-xl bg-black/20 px-3 py-2.5">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="text-xs text-zinc-500">{label}</p>
       <p className="mt-1 text-sm font-semibold tabular-nums text-white">
         {value}
       </p>

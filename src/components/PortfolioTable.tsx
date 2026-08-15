@@ -375,7 +375,7 @@ export function PortfolioTable({
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
+    <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/80">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800/80 px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-white">Holdings</h2>
@@ -426,7 +426,7 @@ export function PortfolioTable({
               className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
-              <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <span className="text-xs font-medium text-zinc-400">
                 Cash
               </span>
               <span
@@ -625,7 +625,7 @@ export function PortfolioTable({
           </div>
         ) : (
           <FluidTable template={TEMPLATE}>
-            <FluidRow className="border-zinc-800 text-xs font-medium uppercase tracking-wide text-zinc-400">
+            <FluidRow className="border-zinc-800 text-xs font-medium text-zinc-400">
               {COLUMNS.map((col) => (
                 <div key={col.label || "actions"} className={cellBase}>
                   {col.key ? (

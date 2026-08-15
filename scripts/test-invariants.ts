@@ -917,6 +917,51 @@ run("one letter-spacing scale on small caps labels", () => {
   );
 });
 
+run("chrome is quiet and prose sits on paper", () => {
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ui/Panel.tsx"),
+    "utf8"
+  );
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  const header = readFileSync(
+    join(process.cwd(), "src/components/AppHeader.tsx"),
+    "utf8"
+  );
+  const pulse = readFileSync(
+    join(process.cwd(), "src/components/PulsePage.tsx"),
+    "utf8"
+  );
+  const home = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  const gate = readFileSync(
+    join(process.cwd(), "src/components/SignInGate.tsx"),
+    "utf8"
+  );
+  assert.match(css, /--paper: #f4f1ea/);
+  assert.match(css, /--ink: #08090c/);
+  assert.match(panel, /export function Reading/);
+  assert.match(panel, /bg-paper/);
+  assert.match(panel, /default: "border-white\/10 bg-card\/80"/);
+  assert.match(panel, /text-xs font-medium text-muted/);
+  assert.doesNotMatch(
+    panel.slice(panel.indexOf("export function MicroLabel")),
+    /uppercase tracking-wide/
+  );
+  assert.match(panel, /const FIGURE/);
+  assert.match(panel, /font-sans text-base font-semibold tabular-nums/);
+  assert.match(header, /border-b border-white\/10/);
+  assert.doesNotMatch(header, /border-brand\/25/);
+  assert.match(home, /<Reading label="Worth noticing">/);
+  assert.match(home, /border-brand\/30 bg-brand\/\[0\.07\]/);
+  assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
+  assert.match(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
+  assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
+  assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
+  assert.match(gate, /<Pill>Hold<\/Pill>/);
+});
+
 run("Montserrat headings and Inter body, no third face", () => {
   const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
@@ -1486,8 +1531,8 @@ run("Pulse scan sits in its own card, not under the mood line", () => {
     join(process.cwd(), "src/lib/thesis-pulse-schema.ts"),
     "utf8"
   );
-  assert.match(page, /Today&apos;s scan/);
-  assert.match(page, /<Card>/);
+  assert.match(page, /Today's scan/);
+  assert.match(page, /<Reading label="Today's scan">/);
   assert.match(page, /scanRows\.map/);
   assert.doesNotMatch(
     page,

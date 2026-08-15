@@ -210,12 +210,12 @@ export function CommunitiesList() {
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="h-[3.75rem] animate-pulse rounded-2xl border border-brand-deep/20 bg-card/80"
+                  className="h-[3.75rem] animate-pulse rounded-2xl border border-white/10 bg-card/80"
                 />
               ))}
             </div>
           ) : (
-            <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
+            <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
               {communities.length === 0 && (
                 <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                   <Users className="h-6 w-6 text-zinc-400" />
@@ -277,12 +277,12 @@ export function CommunitiesList() {
               you see any books.
             </p>
             {discover.length === 0 ? (
-              <p className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-6 text-sm leading-relaxed text-zinc-400">
+              <p className="rounded-2xl border border-white/10 bg-card/80 px-4 py-6 text-sm leading-relaxed text-zinc-400">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
+              <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -331,7 +331,7 @@ export function CommunitiesList() {
 
           <form
             onSubmit={(e) => void createCommunity(e)}
-            className="space-y-2.5 rounded-2xl border border-brand-deep/20 bg-card/60 p-4"
+            className="space-y-2.5 rounded-2xl border border-white/10 bg-card/60 p-4"
           >
             <p className="text-sm font-medium text-zinc-200">
               Create a community

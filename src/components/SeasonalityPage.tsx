@@ -59,7 +59,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+    <section className="rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-white">{title}</h3>
       {subtitle ? (
         <p className="mt-1 text-xs text-zinc-400">{subtitle}</p>
@@ -395,7 +395,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
   const s = signals[0]!;
   return (
     <div className={cn("rounded-xl border px-4 py-3", stanceStyles(s.stance))}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+      <p className="text-xs font-semibold text-zinc-400">
         {stanceLabel(s.stance)} · this month
       </p>
       <p className="mt-1 text-sm font-medium text-white">{s.headline}</p>

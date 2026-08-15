@@ -11,11 +11,12 @@ import {
   cashtag,
 } from "@/lib/format";
 import {
-  Card,
   EmptyState,
   MicroLabel,
   Panel,
   PanelHeader,
+  Pill,
+  Reading,
   Stat,
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
@@ -108,35 +109,23 @@ function thesisDisplayBullets(text: string | undefined): string[] {
 }
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
-  if (status === "watch") return <Eye className="h-4 w-4 text-amber-400" />;
+  if (status === "watch") return <Eye className="h-4 w-4 text-brand-mid" />;
   if (status === "broken") return <XCircle className="h-4 w-4 text-rose-400" />;
   return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
 }
 
 function ActionBadge({ action }: { action: PulseAction }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide",
-        action === "add" &&
-          "border-emerald-500/40 bg-emerald-500/15 text-emerald-200",
-        action === "hold" &&
-          "border-zinc-600/80 bg-zinc-900/60 text-zinc-300",
-        // Trim is disciplined profit-taking on a winner, not a warning, so
-        // it deliberately doesn't share the rose alarm color with Sell —
-        // that overlap is what made "Trim" and "Thesis at risk" look like
-        // the same kind of bad news.
-        action === "trim" &&
-          "border-violet-400/40 bg-violet-500/15 text-violet-200",
-        action === "sell" &&
-          "border-rose-500/40 bg-rose-500/15 text-rose-200",
-        action === "watch" &&
-          "border-amber-500/40 bg-amber-500/15 text-amber-200"
-      )}
-    >
-      {actionLabel(action)}
-    </span>
-  );
+  const tone =
+    action === "add"
+      ? "good"
+      : action === "sell"
+        ? "bad"
+        : action === "trim"
+          ? "info"
+          : action === "watch"
+            ? "brand"
+            : "neutral";
+  return <Pill tone={tone}>{actionLabel(action)}</Pill>;
 }
 
 function statusBorder(status: ThesisStatus, urgent: boolean, pinned: boolean) {
@@ -145,7 +134,7 @@ function statusBorder(status: ThesisStatus, urgent: boolean, pinned: boolean) {
     return "border-rose-500/40 bg-rose-950/25";
   }
   if (status === "intact") return "border-emerald-500/30 bg-emerald-950/20";
-  if (status === "watch") return "border-amber-500/30 bg-amber-950/15";
+  if (status === "watch") return "border-brand/30 bg-brand/[0.07]";
   return "border-rose-500/30 bg-rose-950/20";
 }
 
@@ -214,7 +203,7 @@ function PulseCard({
               </span>
             )}
             {leftHold && (
-              <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-200">
+              <span className="rounded-lg bg-brand/20 px-1.5 py-0.5 text-xs font-medium text-brand-bright">
                 Was Hold
               </span>
             )}
@@ -250,10 +239,10 @@ function PulseCard({
           {shown ? (
             <>
               <ActionBadge action={action} />
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
+              <Pill>
                 <StatusIcon status={status} />
                 {statusLabel(status)}
-              </span>
+              </Pill>
             </>
           ) : loading ? (
             <span className="text-xs text-zinc-400">Checking …</span>
@@ -269,7 +258,7 @@ function PulseCard({
                   : "Re-check just this ticker now"
               }
               aria-label={`Re-check ${c.ticker}`}
-              className="relative rounded-full border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition after:absolute after:-inset-2 after:content-[''] hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+              className="relative rounded-lg border border-zinc-700/80 bg-zinc-950/50 p-1.5 text-zinc-400 transition after:absolute after:-inset-2 after:content-[''] hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-40"
             >
               <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
             </button>
@@ -308,33 +297,36 @@ function PulseCard({
 
       <PulseHistory ticker={c.ticker} />
 
-      <div className="mt-4 space-y-3 border-t border-zinc-800/60 pt-3 text-sm leading-relaxed text-zinc-300">
+      <div className="mt-4 space-y-3 border-t border-white/10 pt-3">
         {thesisBullets.length > 0 && (
-          <div>
-            <div className="flex items-baseline justify-between gap-2">
-              <MicroLabel>Thesis</MicroLabel>
-              {onWriteThesis && (
-                <button
-                  type="button"
-                  onClick={onWriteThesis}
-                  className="text-xs text-zinc-500 hover:text-zinc-300"
-                >
-                  {writtenThesis.length > 0 ? "Edit" : "Add yours"}
-                </button>
-              )}
-            </div>
-            <ul className="mt-1.5 space-y-1.5 text-zinc-100">
+          <Reading
+            label={
+              <span className="flex w-full items-baseline justify-between gap-2">
+                <span>Thesis</span>
+                {onWriteThesis ? (
+                  <button
+                    type="button"
+                    onClick={onWriteThesis}
+                    className="text-xs font-medium text-brand-dark/70 hover:text-ink"
+                  >
+                    {writtenThesis.length > 0 ? "Edit" : "Add yours"}
+                  </button>
+                ) : null}
+              </span>
+            }
+          >
+            <ul className="space-y-1.5">
               {thesisBullets.slice(0, 3).map((point, i) => (
                 <li key={i} className="flex gap-2">
                   <span
                     aria-hidden
-                    className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
+                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-dark"
                   />
                   <span className="leading-snug">{point}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </Reading>
         )}
         {shown?.action === "trim" && shown.trimPct ? (
           <p className="font-medium text-violet-200">
@@ -346,18 +338,15 @@ function PulseCard({
         ) : null}
         {shown?.verdict &&
         !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
-          <p className="text-zinc-100">{shown.verdict}</p>
+          <p className="text-base leading-relaxed text-zinc-100">
+            {shown.verdict}
+          </p>
         ) : null}
         {shown?.earningsNote ? (
           <p className="text-xs text-zinc-400">{shown.earningsNote}</p>
         ) : null}
         {shown?.thesisBreak ? (
-          <div>
-            <MicroLabel>Breaks if</MicroLabel>
-            <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
-              {shown.thesisBreak}
-            </p>
-          </div>
+          <Reading label="Breaks if">{shown.thesisBreak}</Reading>
         ) : null}
       </div>
 
@@ -981,25 +970,19 @@ export function PulsePage({
         )}
       </Panel>
 
-      {scanRows.length > 0 && !pinnedTicker && (
-        <Card>
-          <MicroLabel>Today&apos;s scan</MicroLabel>
-          <ul className="mt-2 space-y-2">
+        {scanRows.length > 0 && !pinnedTicker && (
+        <Reading label="Today's scan">
+          <ul className="space-y-2">
             {scanRows.map((row) => (
-              <li
-                key={row.ticker}
-                className="text-sm leading-relaxed text-zinc-100"
-              >
-                {humanizeMargusText(row.line)}
-              </li>
+              <li key={row.ticker}>{humanizeMargusText(row.line)}</li>
             ))}
           </ul>
-        </Card>
+        </Reading>
       )}
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-brand-bright">
+          <h3 className="mb-2 text-xs font-medium text-brand-bright">
             The one you asked about
           </h3>
           <ul className="space-y-3">
@@ -1038,7 +1021,7 @@ export function PulsePage({
         <div className="space-y-6">
           {attention.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-200">
+              <h3 className="mb-2 text-xs font-medium text-brand-bright">
                 Needs a look
               </h3>
               <ul className="space-y-3">
@@ -1066,7 +1049,7 @@ export function PulsePage({
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <h3 className="mb-2 text-xs font-medium text-zinc-400">
                 {attention.length > 0
                   ? "Everything else"
                   : `Your ${plural(rest.length, "biggest holding")}`}

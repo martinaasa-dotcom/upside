@@ -273,50 +273,50 @@ function ChatMarkdown({ children }: { children: string }) {
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children: c }) => (
-            <h3 className="mb-1.5 mt-3 text-sm font-semibold text-white first:mt-0">
+            <h3 className="mb-1.5 mt-3 text-base font-semibold text-ink first:mt-0">
               {c}
             </h3>
           ),
           h2: ({ children: c }) => (
-            <h3 className="mb-1.5 mt-3 text-sm font-semibold text-white first:mt-0">
+            <h3 className="mb-1.5 mt-3 text-base font-semibold text-ink first:mt-0">
               {c}
             </h3>
           ),
           h3: ({ children: c }) => (
-            <h4 className="mb-1 mt-2.5 text-sm font-semibold text-zinc-100 first:mt-0">
+            <h4 className="mb-1 mt-2.5 text-base font-semibold text-ink first:mt-0">
               {c}
             </h4>
           ),
           p: ({ children: c }) => (
-            <p className="mb-2.5 break-words last:mb-0 text-sm leading-relaxed text-zinc-300">
+            <p className="mb-2.5 break-words text-base leading-relaxed text-ink last:mb-0">
               {c}
             </p>
           ),
           ul: ({ children: c }) => (
-            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 last:mb-0 text-sm text-zinc-300">
+            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 text-base text-ink last:mb-0">
               {c}
             </ul>
           ),
           ol: ({ children: c }) => (
-            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 last:mb-0 text-sm text-zinc-300">
+            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 text-base text-ink last:mb-0">
               {c}
             </ol>
           ),
           li: ({ children: c }) => (
-            <li className="break-words leading-relaxed marker:text-zinc-400">{c}</li>
+            <li className="break-words leading-relaxed marker:text-brand-dark">{c}</li>
           ),
           strong: ({ children: c }) => (
-            <strong className="font-semibold text-white">{c}</strong>
+            <strong className="font-semibold text-ink">{c}</strong>
           ),
           em: ({ children: c }) => (
-            <em className="italic text-zinc-300">{c}</em>
+            <em className="italic text-ink/80">{c}</em>
           ),
           a: ({ href, children: c }) => (
             <a
               href={href}
               target="_blank"
               rel="noreferrer"
-              className="text-brand underline underline-offset-2 hover:text-brand-bright"
+              className="text-brand-deep underline underline-offset-2 hover:text-brand-dark"
             >
               {c}
             </a>
@@ -325,19 +325,19 @@ function ChatMarkdown({ children }: { children: string }) {
             const block = Boolean(className);
             if (block) {
               return (
-                <code className="block w-full overflow-x-auto rounded-md bg-zinc-950/80 px-2 py-1.5 font-mono text-xs text-zinc-300">
+                <code className="block w-full overflow-x-auto rounded-md bg-brand-dark/10 px-2 py-1.5 font-mono text-xs text-ink">
                   {c}
                 </code>
               );
             }
             return (
-              <code className="rounded bg-zinc-800 px-1 py-0.5 font-mono text-xs text-brand-bright">
+              <code className="rounded bg-brand-dark/10 px-1 py-0.5 font-mono text-xs text-brand-dark">
                 {c}
               </code>
             );
           },
           pre: ({ children: c }) => (
-            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950/80 p-2 last:mb-0">
+            <pre className="mb-2.5 w-full overflow-x-auto rounded-md border border-brand-dark/15 bg-brand-dark/10 p-2 last:mb-0">
               {c}
             </pre>
           ),
@@ -349,15 +349,15 @@ function ChatMarkdown({ children }: { children: string }) {
             </div>
           ),
           thead: ({ children: c }) => (
-            <thead className="border-b border-zinc-700 text-xs uppercase tracking-wide text-zinc-400">
+            <thead className="border-b border-brand-dark/20 text-xs text-brand-dark">
               {c}
             </thead>
           ),
           tbody: ({ children: c }) => (
-            <tbody className="text-zinc-300">{c}</tbody>
+            <tbody className="text-ink">{c}</tbody>
           ),
           tr: ({ children: c }) => (
-            <tr className="border-t border-zinc-800/90 first:border-t-0">{c}</tr>
+            <tr className="border-t border-brand-dark/15 first:border-t-0">{c}</tr>
           ),
           th: ({ children: c }) => (
             <th className="whitespace-nowrap py-2 pr-3 text-left font-medium first:pl-0">
@@ -365,13 +365,13 @@ function ChatMarkdown({ children }: { children: string }) {
             </th>
           ),
           td: ({ children: c }) => (
-            <td className="break-words py-2 pr-3 align-top tabular-nums text-zinc-300 first:pl-0">
+            <td className="break-words py-2 pr-3 align-top tabular-nums text-ink first:pl-0">
               {c}
             </td>
           ),
-          hr: () => <hr className="my-3 border-zinc-800" />,
+          hr: () => <hr className="my-3 border-brand-dark/20" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 break-words border-l-2 border-brand/40 pl-3 text-sm text-zinc-400 last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-brand-dark/40 pl-3 text-base text-brand-dark last:mb-0">
               {c}
             </blockquote>
           ),
@@ -817,7 +817,7 @@ export function CcAdvisorChat({
       {showSilentCard && (
         <div
           role="status"
-          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-brand-deep/40 bg-card shadow-2xl shadow-black/60"
+          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-card shadow-2xl shadow-black/60"
           onClick={() => setOpen(true)}
         >
           <div className="flex items-start gap-2.5 px-3.5 py-3">
@@ -910,7 +910,7 @@ export function CcAdvisorChat({
       {open && (
         <section
           ref={panelRef}
-          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-card shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
+          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
             wide
               ? "w-[min(56rem,calc(100vw-1.5rem))]"
               : "w-[min(26rem,calc(100vw-1.5rem))]"
@@ -973,7 +973,7 @@ export function CcAdvisorChat({
                   {rulesOpen && (
                     <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-zinc-700 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                        <p className="text-xs font-semibold text-zinc-400">
                           Strategy rules
                         </p>
                         <button
@@ -991,7 +991,7 @@ export function CcAdvisorChat({
                             key={r.title}
                             className="border-b border-zinc-800/80 pb-2.5 last:border-0 last:pb-0"
                           >
-                            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                            <p className="text-xs font-medium text-zinc-400">
                               {r.title}
                             </p>
                             <p className="mt-0.5 text-sm font-semibold text-brand">
@@ -1093,10 +1093,16 @@ export function CcAdvisorChat({
                   className={
                     message.role === "user"
                       ? "ml-0 max-w-[95%] rounded-lg bg-zinc-800/80 px-3 py-2 text-sm text-zinc-100 sm:ml-6"
-                      : "w-full min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200"
+                      : "w-full min-w-0 rounded-xl bg-paper px-4 py-3 text-base text-ink"
                   }
                 >
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  <p
+                    className={
+                      message.role === "assistant"
+                        ? "mb-1 text-xs font-medium text-brand-dark"
+                        : "mb-1 text-xs font-medium text-zinc-400"
+                    }
+                  >
                     {message.role === "user" ? "You" : "Margus"}
                   </p>
                   {images.length > 0 && (
@@ -1113,7 +1119,7 @@ export function CcAdvisorChat({
                     </div>
                   )}
                   {text ? (
-                    <div className="w-full min-w-0 text-sm leading-relaxed">
+                    <div className="w-full min-w-0 text-base leading-relaxed">
                       {message.role === "assistant" ? (
                         <ChatMarkdown>{text}</ChatMarkdown>
                       ) : (
@@ -1143,7 +1149,7 @@ export function CcAdvisorChat({
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-xs uppercase tracking-wide text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-zinc-700 px-1.5 py-0.5 text-xs text-zinc-400 hover:border-rose-500/40 hover:text-rose-300"
                 >
                   <Square className="h-2.5 w-2.5 fill-current" />
                   Stop

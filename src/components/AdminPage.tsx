@@ -225,7 +225,7 @@ export function AdminPage() {
             <>
               {funnel && (
                 <section className="space-y-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                  <h2 className="text-sm font-semibold text-zinc-400">
                     Activation
                   </h2>
                   <p className="text-xs text-zinc-500">
@@ -244,7 +244,7 @@ export function AdminPage() {
                     ).map(([label, n]) => (
                       <div
                         key={label}
-                        className="rounded-xl border border-brand-deep/30 bg-card/80 px-3 py-3"
+                        className="rounded-xl border border-white/10 bg-card/80 px-3 py-3"
                       >
                         <p className="text-lg font-semibold tabular-nums text-white">
                           {n}
@@ -258,7 +258,7 @@ export function AdminPage() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400">
                     <Bug className="h-3.5 w-3.5" />
                     Errors
                   </h2>
@@ -296,7 +296,7 @@ export function AdminPage() {
                     Nothing logged, all clear.
                   </p>
                 ) : (
-                  <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-brand-deep/30 bg-card/80">
+                  <ul className="max-h-[28rem] divide-y divide-zinc-800 overflow-y-auto rounded-2xl border border-white/10 bg-card/80">
                     {errorLog.map((e) => {
                       const open = expandedError === e.id;
                       return (
@@ -350,7 +350,7 @@ export function AdminPage() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                  <h2 className="text-sm font-semibold text-zinc-400">
                     Users signed in
                   </h2>
                   <div className="flex items-center gap-2">
@@ -383,7 +383,7 @@ export function AdminPage() {
                     />
                   </div>
                 )}
-                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
+                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
                   {filteredUsers.length === 0 ? (
                     <li className="px-4 py-6 text-center text-sm text-zinc-400">
                       {users.length === 0
@@ -450,7 +450,7 @@ export function AdminPage() {
 
               <section className="space-y-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                  <h2 className="text-sm font-semibold text-zinc-400">
                     Communities
                   </h2>
                   <span className="text-xs text-zinc-400">
@@ -460,14 +460,14 @@ export function AdminPage() {
                 </div>
                 <div className="space-y-3">
                   {communities.length === 0 ? (
-                    <p className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
+                    <p className="rounded-2xl border border-white/10 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
                       No communities yet.
                     </p>
                   ) : (
                     communities.map((c) => (
                       <article
                         key={c.id}
-                        className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4"
+                        className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>
@@ -506,8 +506,8 @@ export function AdminPage() {
                               <span
                                 className={
                                   m.role === "admin"
-                                    ? "shrink-0 rounded-md bg-brand/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand-bright"
-                                    : "shrink-0 text-xs uppercase tracking-wide text-zinc-400"
+                                    ? "shrink-0 rounded-md bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright"
+                                    : "shrink-0 text-xs text-zinc-400"
                                 }
                               >
                                 {m.role}

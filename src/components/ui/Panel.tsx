@@ -17,24 +17,27 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      border-brand/20 on bg-card
+ *   Shell      border-white/10 on bg-card. Gold is the mark, the primary
+ *              button, and the one thing that matters today. Not every box.
  *   Card       border-white/10 on bg-card
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  labels, meta, table, chips
- *   text-sm    14  body, inputs, buttons, nav
- *   text-base  16  section titles, tickers, figures
+ *   text-sm    14  chrome, inputs, buttons, nav
+ *   text-base  16  titles, tickers, figures, briefing / thesis prose
  *   text-lg    18  hero panel title (one opener per page)
  *   text-2xl   24  display numbers only (book value, compound result)
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-3xl or text-4xl. The logo lockup is the exception.
  *   Headings   text-base font-bold (hero: text-lg) · sentence case
- *   Type       Montserrat Bold for titles and figures. Inter Regular
- *              for body, labels, and glacier-grey supporting copy.
- *              No third face. The lockup uses the same Montserrat.
- *   Micro      text-xs uppercase tracking-wide text-muted
- *   Metrics    inside a card, a 2/4-col grid of Metric (label over figure).
+ *   Type       Montserrat Bold for titles. Inter for body, labels, and
+ *              every money figure. No third face. Lockup is Montserrat.
+ *   Micro      text-xs font-medium text-muted · sentence case
+ *              Caps stay on the logo only.
+ *   Metrics    label over figure, no extra card around the number.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Body       text-sm leading-relaxed text-muted
+ *   Reading    cream paper, dark ink, text-base. Thesis, Worth noticing,
+ *              briefing body. Not another dark card.
+ *   Body       text-sm leading-relaxed text-muted for chrome
  *   Floor      nothing below text-xs. Ever.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
  *              a blurb, and a hint that all say the same thing.
@@ -47,12 +50,15 @@ import { useState, type ReactNode } from "react";
  */
 
 const SHELL_TONES = {
-  default: "border-brand/20 bg-card/80",
+  default: "border-white/10 bg-card/80",
   plain: "border-white/10 bg-card/80",
   brand: "border-brand/35 bg-brand/[0.07]",
   warn: "border-amber-500/30 bg-amber-500/[0.07]",
   danger: "border-rose-500/30 bg-rose-950/20",
 } as const;
+
+const FIGURE =
+  "mt-1 font-sans text-base font-semibold tabular-nums";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -206,7 +212,7 @@ export function Card({
   );
 }
 
-/** Small all-caps label above a value. The floor is text-xs. */
+/** Quiet label above a value. Sentence case. The floor is text-xs. */
 export function MicroLabel({
   children,
   className,
@@ -217,12 +223,42 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-0.5 text-xs font-medium uppercase tracking-wide text-muted",
+        "flex items-center gap-0.5 text-xs font-medium text-muted",
         className
       )}
     >
       {children}
     </p>
+  );
+}
+
+/**
+ * Long sentences a person actually reads. Cream paper on the dark field.
+ * Use for Worth noticing, thesis, briefing body. Not for numbers.
+ */
+export function Reading({
+  label,
+  children,
+  className,
+}: {
+  label?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-xl bg-paper px-4 py-3.5 text-ink", className)}>
+      {label != null && label !== "" ? (
+        <div className="text-xs font-medium text-brand-dark">{label}</div>
+      ) : null}
+      <div
+        className={cn(
+          label != null && label !== "" && "mt-1.5",
+          "text-base leading-relaxed"
+        )}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -244,10 +280,7 @@ export function Metric({
     <div className={cn("min-w-0", className)}>
       <MicroLabel>{label}</MicroLabel>
       <p
-        className={cn(
-          "mt-1 font-heading text-base font-bold tabular-nums text-zinc-100",
-          valueClassName
-        )}
+        className={cn(FIGURE, "text-zinc-100", valueClassName)}
       >
         {children}
       </p>
@@ -312,19 +345,14 @@ export function Stat({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "h-full rounded-xl border border-white/10 bg-app/40 px-4 py-3.5",
-        className
-      )}
-    >
+    <div className={cn("min-w-0", className)}>
       <MicroLabel>
         {label}
         {explain && <InfoTip text={explain} />}
       </MicroLabel>
       <p
         className={cn(
-          "mt-1 font-heading text-base font-bold tabular-nums",
+          FIGURE,
           valueClassName ??
             (tone === "up"
               ? "text-gain"

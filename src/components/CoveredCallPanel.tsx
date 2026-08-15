@@ -305,7 +305,7 @@ export function CoveredCallPanel({
       {/* Desktop table */}
       <div className="hidden md:block">
         <FluidTable template={TEMPLATE}>
-          <FluidRow className="border-zinc-800 text-xs font-medium uppercase tracking-wide text-zinc-400">
+          <FluidRow className="border-zinc-800 text-xs font-medium text-zinc-400">
             {HEADERS.map((label) => (
               <div
                 key={label}

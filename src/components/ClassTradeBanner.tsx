@@ -26,7 +26,7 @@ export function ClassTradeBanner({
 }) {
   const until = untilLabel(trade.until);
   return (
-    <div className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-3">
+    <div className="rounded-2xl border border-white/10 bg-card/80 px-4 py-3">
       <p className="text-sm font-semibold text-white">{trade.label}</p>
       <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
         {trade.message}

@@ -277,7 +277,7 @@ export function LabSheet({
           title="Lab"
           actions={
             <label className="flex items-center gap-2">
-              <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <span className="shrink-0 text-xs font-medium text-zinc-400">
                 Looking at
               </span>
               <select
@@ -588,7 +588,7 @@ export function LabSheet({
                 </div>
 
                 <div className="flex min-w-0 flex-col">
-                  <p className="flex h-8 items-end pb-0.5 text-xs uppercase tracking-wide text-zinc-400">
+                  <p className="flex h-8 items-end pb-0.5 text-xs text-zinc-400">
                     Tightest pairs
                   </p>
                   <ul className="flex min-h-0 flex-1 flex-col gap-1">

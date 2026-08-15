@@ -41,7 +41,7 @@ export function AppHeader({
   className,
 }: Props) {
   return (
-    <header className={cn("sticky top-0 z-40 border-b border-brand/25 bg-app/95 backdrop-blur", className)}>
+    <header className={cn("sticky top-0 z-40 border-b border-white/10 bg-app/95 backdrop-blur", className)}>
       <div className={cn(PAGE_COLUMN_CLASS, "flex h-14 items-center justify-between gap-2 sm:gap-3")}>
         <div className="flex min-w-0 items-center gap-2 text-sm leading-none sm:gap-3">
           <HeaderBrand

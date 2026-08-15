@@ -47,7 +47,7 @@ function VisitStreakCard() {
   );
   if (!streak || streak.totalVisits <= 0) return null;
   return (
-    <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+    <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
       <h2 className="text-base font-bold text-white">Showing up</h2>
       <p className="text-xs text-zinc-400">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
@@ -283,7 +283,7 @@ export function AccountPage() {
           <WidgetErrorBoundary name="Account">
           <VisitStreakCard />
 
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <h2 className="text-base font-bold text-white">Email notes</h2>
             <p className="text-xs text-zinc-400">
               {morningCanSend
@@ -351,7 +351,7 @@ export function AccountPage() {
           </section>
 
           {/* Profile / community appearance */}
-          <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <UserRound className="h-4 w-4" />
@@ -392,7 +392,7 @@ export function AccountPage() {
 
             <form onSubmit={(e) => void saveProfile(e)} className="space-y-3">
               <label className="block space-y-1">
-                <span className="text-xs uppercase tracking-wide text-zinc-400">
+                <span className="text-xs text-zinc-400">
                   Display name
                 </span>
                 <input
@@ -405,7 +405,7 @@ export function AccountPage() {
               </label>
               <label className="block space-y-1">
                 <span className="flex items-baseline justify-between">
-                  <span className="text-xs uppercase tracking-wide text-zinc-400">
+                  <span className="text-xs text-zinc-400">
                     Bio · communities
                   </span>
                   <span className="text-xs tabular-nums text-zinc-400">
@@ -426,7 +426,7 @@ export function AccountPage() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-xs uppercase tracking-wide text-zinc-400">
+                <span className="text-xs text-zinc-400">
                   Avatar URL (optional)
                 </span>
                 <input
@@ -461,7 +461,7 @@ export function AccountPage() {
           </section>
 
           {/* Experience level */}
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <Gauge className="h-4 w-4" />
@@ -539,7 +539,7 @@ export function AccountPage() {
           </section>
 
           {/* Sheet invites live next to the sheet, not here. */}
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <Link2 className="h-4 w-4" />
@@ -564,7 +564,7 @@ export function AccountPage() {
           </section>
 
           {/* Data & privacy */}
-          <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+          <section className="space-y-4 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
                 <ShieldCheck className="h-4 w-4" />
@@ -660,7 +660,7 @@ export function AccountPage() {
               Google account separately if you want that severed too.
             </p>
             <label className="mt-4 block space-y-1">
-              <span className="text-xs uppercase tracking-wide text-zinc-400">
+              <span className="text-xs text-zinc-400">
                 Type DELETE to confirm
               </span>
               <input

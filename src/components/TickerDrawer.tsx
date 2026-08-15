@@ -177,7 +177,7 @@ export function TickerDrawer({
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 p-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-zinc-500 focus:border-brand focus:ring-1 focus:ring-brand/40"
+              className="mt-2 w-full rounded-lg bg-paper p-2.5 text-base leading-relaxed text-ink outline-none placeholder:text-brand-dark/50 focus:ring-2 focus:ring-brand/40"
             />
             <p className="mt-1.5 text-xs text-zinc-400">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
@@ -203,7 +203,7 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4">
+          <section className="space-y-3 rounded-2xl border border-white/10 bg-card/80 p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-white">

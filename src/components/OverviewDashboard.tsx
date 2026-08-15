@@ -10,10 +10,10 @@ import {
 } from "@/components/mobile/GoldNavChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
-  Card,
   MicroLabel,
   Panel,
   PanelHeader,
+  Reading,
   Segmented,
   Stat,
 } from "@/components/ui/Panel";
@@ -140,7 +140,7 @@ function MobileHomeHero({
     <div className="md:hidden">
       <p className="text-sm text-muted">Book</p>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-        <p className="font-logo text-2xl font-bold tabular-nums leading-none text-white">
+        <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-white">
           {currency(totals.totalValue, 0)}
         </p>
         <p
@@ -465,7 +465,9 @@ function MorningStack({
         <>
           {!morning.afterClose &&
             (morning.quiet || morning.drivers.length === 0) && (
-            <p className="text-sm text-zinc-200">{morning.sentence}</p>
+            <p className="text-base leading-relaxed text-zinc-200">
+              {morning.sentence}
+            </p>
           )}
           {!morning.quiet && morning.drivers.length > 0 && (
             <div
@@ -528,12 +530,7 @@ function MorningStack({
         </div>
       )}
       {morning.insight && (
-        <Card tone="raised" className="px-3.5 py-3">
-          <MicroLabel>Worth noticing</MicroLabel>
-          <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
-            {morning.insight}
-          </p>
-        </Card>
+        <Reading label="Worth noticing">{morning.insight}</Reading>
       )}
       {morning.pulseFlags.length > 0 && (
         <div className="space-y-2">
@@ -542,12 +539,14 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3 text-left"
+              className="w-full rounded-xl border border-brand/30 bg-brand/[0.07] px-3.5 py-3 text-left"
             >
-              <MicroLabel className="text-amber-200/80">
+              <MicroLabel className="text-brand-bright">
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
               </MicroLabel>
-              <p className="mt-1.5 text-sm text-zinc-200">{flag.line}</p>
+              <p className="mt-1.5 text-base leading-relaxed text-zinc-200">
+                {flag.line}
+              </p>
             </button>
           ))}
         </div>
@@ -576,7 +575,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-app/40 py-3.5 pl-5 pr-4 text-left transition hover:border-brand/35 hover:bg-hover"
+      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden py-3 pl-4 pr-1 text-left transition hover:bg-hover/70"
     >
       <span
         className={cn(
@@ -588,13 +587,13 @@ function MoverTile({
       <span className="min-w-0 truncate font-heading text-base font-bold text-white">
         {cashtag(ticker.ticker)}
       </span>
-      <span className="text-right font-heading text-base font-bold tabular-nums text-white">
+      <span className="text-right font-sans text-base font-semibold tabular-nums text-white">
         {currency(ticker.price)}
       </span>
       <span className="text-right">
         <span
           className={cn(
-            "block font-heading text-base font-bold tabular-nums",
+            "block font-sans text-base font-semibold tabular-nums",
             tone(pct)
           )}
         >
@@ -625,7 +624,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-white/10 bg-hover/60 px-4 py-4 text-left transition hover:border-brand/35 hover:bg-hover sm:px-5 sm:py-5"
+      className="group w-full min-h-11 rounded-xl border border-white/10 bg-hover/60 px-4 py-4 text-left transition hover:border-white/20 hover:bg-hover sm:px-5 sm:py-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -639,7 +638,7 @@ function PortfolioLane({
               : ""}
           </p>
         </div>
-        <p className="shrink-0 text-right font-heading text-lg font-bold tabular-nums text-white">
+        <p className="shrink-0 text-right font-sans text-lg font-semibold tabular-nums text-white">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>
@@ -838,12 +837,8 @@ export function OverviewDashboard({
       />
 
       {/* One screen: where you stand, then what to make of it. */}
-      <Panel className="overview-fade relative hidden overflow-hidden md:block">
-        <div
-          className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-brand/12 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative">
+      <Panel className="overview-fade hidden md:block">
+        <div>
           <PanelHeader
             hero
             title="Today"

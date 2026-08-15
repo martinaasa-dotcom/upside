@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
-import { Card, Metric, MicroLabel, Panel } from "@/components/ui/Panel";
+import { Metric, MicroLabel, Panel, Pill, Reading } from "@/components/ui/Panel";
 import { cn } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
 import {
@@ -135,7 +135,7 @@ export function SignInGate({ children }: Props) {
 
             <div className="signin-rise-2 mt-10 max-w-md space-y-4">
               {invite && (
-                <p className="text-xs font-medium uppercase tracking-wide text-brand-bright">
+                <p className="text-xs font-medium text-brand-bright">
                   Invite
                 </p>
               )}
@@ -224,11 +224,11 @@ function BookStill() {
         </Metric>
       </div>
 
-      <div className="mt-6 space-y-2">
+      <div className="mt-6 divide-y divide-white/10">
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
-            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-white/10 bg-app/40 py-3 pl-5 pr-4"
+            className="relative grid grid-cols-[1fr_auto] items-center gap-3 py-3 pl-4 pr-1"
           >
             <span
               className={cn(
@@ -243,7 +243,7 @@ function BookStill() {
             <span className="text-right">
               <span
                 className={cn(
-                  "block font-heading text-base font-bold tabular-nums",
+                  "block font-sans text-base font-semibold tabular-nums",
                   row.up ? "text-gain" : "text-loss"
                 )}
               >
@@ -262,43 +262,35 @@ function BookStill() {
         ))}
       </div>
 
-      <Card tone="raised" className="mt-5 h-auto px-3.5 py-3">
-        <MicroLabel>Worth noticing</MicroLabel>
-        <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
-          $RKLB jumped 6.8% today. Amazon and Microsoft barely moved.
-        </p>
-      </Card>
+      <Reading className="mt-5" label="Worth noticing">
+        $RKLB jumped 6.8% today. Amazon and Microsoft barely moved.
+      </Reading>
 
-      <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-3">
+      <div className="mt-3 rounded-xl border border-brand/30 bg-brand/[0.07] px-3.5 py-3">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-base font-semibold text-white">$RKLB</span>
-              <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs font-medium text-emerald-200">
+              <span className="rounded-lg bg-emerald-500/20 px-1.5 py-0.5 text-xs font-medium text-emerald-200">
                 Up ≥5%
               </span>
             </div>
-            <p className="mt-1 text-sm font-medium tabular-nums text-gain">
+            <p className="mt-1 font-sans text-sm font-semibold tabular-nums text-gain">
               +6.8%{" "}
               <span className="font-normal text-zinc-400">today</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <span className="inline-flex items-center rounded-full border border-zinc-600/80 bg-zinc-900/60 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-300">
-              Hold
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700/80 bg-zinc-950/50 px-2.5 py-1 text-xs font-medium text-zinc-200">
+            <Pill>Hold</Pill>
+            <Pill tone="good">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
               Thesis intact
-            </span>
+            </Pill>
           </div>
         </div>
-        <div className="mt-3 border-t border-amber-500/15 pt-3">
-          <MicroLabel>Thesis</MicroLabel>
-          <p className="mt-1.5 text-sm leading-snug text-zinc-100">
-            Cheaper launches. That&apos;s why it&apos;s in the book.
-          </p>
-        </div>
+        <Reading className="mt-3" label="Thesis">
+          Cheaper launches. That&apos;s why it&apos;s in the book.
+        </Reading>
       </div>
     </Panel>
   );

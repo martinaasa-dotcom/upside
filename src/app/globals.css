@@ -4,6 +4,8 @@
   /* Brand board v1: near-black field, cream/gold mark, glacier body. */
   --background: #08090c;
   --foreground: #f4f1ea;
+  --paper: #f4f1ea;
+  --ink: #08090c;
   --muted: #9aa3ad; /* glacier grey */
   --app: #08090c;
   --card: #111318;
@@ -23,6 +25,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-app: var(--app);
   --color-card: var(--card);

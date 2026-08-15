@@ -380,7 +380,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
+              <tr className="border-b border-zinc-800 text-xs text-zinc-400">
                 <th
                   onClick={() => handleSort("ticker")}
                   className="cursor-pointer py-2 pr-2 font-medium hover:text-white"

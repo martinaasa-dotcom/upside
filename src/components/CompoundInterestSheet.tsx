@@ -810,7 +810,7 @@ export function CompoundInterestSheet({
 
           {/* Benchmark Preset Chips */}
           <div>
-            <span className="text-xs uppercase tracking-wide text-zinc-400">
+            <span className="text-xs text-zinc-400">
               Or borrow one
             </span>
             <div className="mt-1 flex flex-wrap gap-1">
@@ -945,7 +945,7 @@ Optimistic (25%)
                 draft.contributionMode === "both") && (
                 <span
                   title="From this year on, growth adds more each year than you do"
-                  className="rounded bg-gain/15 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-gain"
+                  className="rounded bg-gain/15 px-1.5 py-0.5 text-xs font-semibold text-gain"
                 >
                   Year {tipping} it takes over
                 </span>
@@ -1224,7 +1224,7 @@ Optimistic (25%)
           >
             <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
               <thead className="sticky top-0 z-10 bg-card">
-                <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
+                <tr className="border-b border-zinc-800 text-xs text-zinc-400">
                   <th className="py-2.5 px-3 font-medium">Milestone</th>
                   <th className="py-2.5 px-3 font-medium">On this plan</th>
                   <th className="py-2.5 px-3 font-medium">How far off</th>
@@ -1355,7 +1355,7 @@ Optimistic (25%)
             <div className="overflow-x-auto border-t border-zinc-800/80">
               <table className="w-full min-w-[32rem] text-left text-xs">
                 <thead>
-                  <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-400">
+                  <tr className="border-b border-zinc-800 text-xs text-zinc-400">
                     <th className="px-4 py-2.5 font-medium">Year</th>
                     <th className="px-4 py-2.5 font-medium">Your money in</th>
                     <th className="px-4 py-2.5 font-medium">Growth that year</th>

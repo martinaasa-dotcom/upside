@@ -89,11 +89,11 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[min(85dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-brand-deep/40 bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
+      <div className="flex max-h-[min(85dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-brand-bright">
+              <p className="text-xs font-semibold text-brand-bright">
                 Quick question · {step}/3
               </p>
               <h2 className="mt-1 text-lg font-semibold text-white">

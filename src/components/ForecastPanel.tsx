@@ -841,7 +841,7 @@ export function ForecastPanel({
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
+    <section className="overflow-hidden rounded-2xl border border-white/10 bg-card/80">
       <header className="border-b border-zinc-800/80 p-5 sm:p-8">
         <PanelHeader
           title="Forecast"
@@ -967,7 +967,7 @@ export function ForecastPanel({
             ))}
 
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/60 px-3 py-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <p className="text-xs font-medium text-zinc-400">
                 Whole sheet
               </p>
               <p className="mt-1 text-lg font-semibold tabular-nums text-white">
@@ -1006,7 +1006,7 @@ export function ForecastPanel({
           {/* Desktop */}
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
-              <FluidRow className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+              <FluidRow className="text-xs font-medium text-zinc-400">
                 <div className={cellLabel}>Ticker</div>
                 <div className={cellNum}>Price now</div>
                 {yearCols.map((y) => (
@@ -1122,7 +1122,7 @@ export function ForecastPanel({
         )}
 
         {busy && !plan && (
-          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-brand-deep/30 bg-brand/5 px-4 py-6 text-sm text-brand-bright">
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-brand/5 px-4 py-6 text-sm text-brand-bright">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Working through every holding on this sheet …
           </div>

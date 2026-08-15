@@ -198,7 +198,7 @@ export function PortfolioTabs({
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-zinc-400 sm:block">
+            <p className="mb-1 hidden text-xs font-medium text-zinc-400 sm:block">
               In your book
             </p>
             <div
@@ -249,7 +249,7 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-zinc-400 sm:block">
+          <p className="mb-1 hidden text-xs font-medium text-zinc-400 sm:block">
             Sheets
           </p>
           <div

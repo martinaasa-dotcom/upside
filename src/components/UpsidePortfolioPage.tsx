@@ -267,7 +267,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
+        "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-xs font-semibold",
         meta.cls
       )}
     >
@@ -281,7 +281,7 @@ function ActionBadge({ action }: { action: FundActionRow }) {
 function ReportMeta({ r }: { r: ReportRow }) {
   return (
     <>
-      <p className="text-xs uppercase tracking-wide text-zinc-400">
+      <p className="text-xs text-zinc-400">
         {fmtDate(r.report_date)}
       </p>
       <p
@@ -1081,7 +1081,7 @@ export function UpsidePortfolioPage() {
           <p className="text-sm text-red-400">{error}</p>
         ) : (
           <>
-            <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+            <section className="rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat
                   label="Total value"
@@ -1112,7 +1112,7 @@ export function UpsidePortfolioPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+            <section className="rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="text-base font-semibold text-white">
@@ -1204,10 +1204,10 @@ export function UpsidePortfolioPage() {
 
             {bettingSlices.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                <h2 className="text-sm font-semibold text-zinc-400">
                   What he&apos;s betting on
                 </h2>
-                <div className="rounded-2xl border border-brand-deep/30 bg-card/80 p-4">
+                <div className="rounded-2xl border border-white/10 bg-card/80 p-4">
                   <div className="flex h-3 overflow-hidden rounded-full bg-zinc-900">
                     {bettingSlices.map((t) => (
                       <div
@@ -1305,7 +1305,7 @@ export function UpsidePortfolioPage() {
             {openHoldings.length > 0 && (
               <WidgetErrorBoundary name="Fund positions">
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                <h2 className="text-sm font-semibold text-zinc-400">
                   Open positions · {openHoldings.length}
                 </h2>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -1320,7 +1320,7 @@ export function UpsidePortfolioPage() {
                     return (
                       <div
                         key={h.id}
-                        className="flex h-full flex-col rounded-xl border border-brand-deep/30 bg-card/80 p-3.5"
+                        className="flex h-full flex-col rounded-xl border border-white/10 bg-card/80 p-3.5"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-white">
@@ -1387,17 +1387,17 @@ export function UpsidePortfolioPage() {
 
             {weeklyRecaps.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                <h2 className="text-sm font-semibold text-zinc-400">
                   Weekly recap
                 </h2>
                 <div className="space-y-3">
                   {weeklyRecaps.map((r) => (
                     <article
                       key={r.id}
-                      className="space-y-2 rounded-2xl border border-brand-mid/30 bg-gradient-to-br from-brand/10 via-[#161618]/70 to-[#161618]/70 p-4 sm:p-5"
+                      className="space-y-2 rounded-2xl border border-white/10 bg-card/80 p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-xs uppercase tracking-wide text-brand-bright">
+                        <p className="text-xs text-brand-bright">
                           Week of {fmtDate(r.week_ending)}
                         </p>
                         {r.week_return_pct != null && (
@@ -1424,11 +1424,11 @@ export function UpsidePortfolioPage() {
             )}
 
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+              <h2 className="text-sm font-semibold text-zinc-400">
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-2xl border border-brand-deep/30 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
+                <p className="rounded-2xl border border-white/10 bg-card/80 px-4 py-6 text-center text-sm text-zinc-400">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1444,7 +1444,7 @@ export function UpsidePortfolioPage() {
                     i === 0 ? (
                       <article
                         key={r.id}
-                        className="space-y-2 rounded-2xl border border-brand-deep/30 bg-card/80 p-4"
+                        className="space-y-2 rounded-2xl border border-white/10 bg-card/80 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1483,10 +1483,10 @@ export function UpsidePortfolioPage() {
 
             {closedHoldings.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+                <h2 className="text-sm font-semibold text-zinc-400">
                   Closed positions · {closedHoldings.length}
                 </h2>
-                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-brand-deep/30 bg-card/80">
+                <ul className="divide-y divide-zinc-800 overflow-hidden rounded-2xl border border-white/10 bg-card/80">
                   {closedHoldings.map((h) => (
                     <li key={h.id} className="px-4 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-2">

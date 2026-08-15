@@ -148,7 +148,7 @@ export function InvitePartnerModal({
         </div>
 
         <label className="mt-4 block space-y-1">
-          <span className="text-xs uppercase tracking-wide text-zinc-400">
+          <span className="text-xs text-zinc-400">
             Partner email (optional)
           </span>
           <input

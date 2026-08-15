@@ -2917,7 +2917,7 @@ export function Dashboard() {
 
       {/* Status strip, below the header rather than inside it, so the bar
         * itself stays exactly one fixed height on every page. */}
-      <div className="hidden border-b border-brand-deep/25 bg-app/80 backdrop-blur-sm md:block">
+      <div className="hidden border-b border-white/10 bg-app/80 backdrop-blur-sm md:block">
         <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2")}>
           <PricesAgeStatus
             quotesUpdatedAt={quotesUpdatedAt}
