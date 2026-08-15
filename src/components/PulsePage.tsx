@@ -324,27 +324,33 @@ function PulseCard({
           <p className="text-xs text-zinc-400">{shown.earningsNote}</p>
         ) : null}
         {shown.thesisBreak ? (
-          <p className="text-xs text-zinc-500">
-            Breaks if {shown.thesisBreak.replace(/^this breaks if\s+/i, "")}
-          </p>
+          <div>
+            <MicroLabel>Breaks if</MicroLabel>
+            <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+              {shown.thesisBreak.replace(/^this breaks if\s+/i, "")}
+            </p>
+          </div>
         ) : null}
       </div>
 
       {headlines.length > 0 && (
-        <ul className="mt-3 space-y-1">
-          {headlines.slice(0, 2).map((h) => (
-            <li key={h.link || h.title}>
-              <a
-                href={h.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs leading-snug text-zinc-500 hover:text-brand-bright"
-              >
-                {h.title}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4 border-t border-zinc-800/60 pt-3">
+          <MicroLabel>In the news</MicroLabel>
+          <ul className="mt-1.5 space-y-1">
+            {headlines.slice(0, 2).map((h) => (
+              <li key={h.link || h.title}>
+                <a
+                  href={h.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs leading-snug text-zinc-500 hover:text-brand-bright"
+                >
+                  {h.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </li>
   );
