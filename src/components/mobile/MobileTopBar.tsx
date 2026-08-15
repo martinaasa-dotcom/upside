@@ -52,6 +52,8 @@ export function MobileTopBar({
             <img
               src={avatar.url}
               alt=""
+              width={32}
+              height={32}
               className="h-8 w-8 rounded-full object-cover"
             />
           ) : (

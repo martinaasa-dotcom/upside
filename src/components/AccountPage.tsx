@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { cn } from "@/lib/format";
 import { plainError } from "@/lib/plain-error";
 import {
@@ -262,14 +263,14 @@ export function AccountPage() {
                 router.push("/");
               })
             }
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+            className="touch-target inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Sign out</span>
           </button>
         </AppHeader>
 
-        <main className="mx-auto max-w-3xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className="mx-auto min-w-0 max-w-3xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div>
             <h1 className="text-lg font-bold">My account</h1>
             <p className="mt-1 text-sm text-zinc-400">
@@ -277,6 +278,7 @@ export function AccountPage() {
             </p>
           </div>
 
+          <WidgetErrorBoundary name="Account">
           <VisitStreakCard />
 
           <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
@@ -630,6 +632,7 @@ export function AccountPage() {
               </Link>
             </p>
           </section>
+          </WidgetErrorBoundary>
         </main>
         <BookBottomNav />
       </div>

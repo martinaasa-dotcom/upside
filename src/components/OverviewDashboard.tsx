@@ -942,7 +942,11 @@ export function OverviewDashboard({
         />
       </Panel>
 
-      {showCommunities ? <HomeWorld /> : null}
+      {showCommunities ? (
+        <WidgetErrorBoundary name="Around Upside Lab">
+          <HomeWorld />
+        </WidgetErrorBoundary>
+      ) : null}
     </div>
   );
 }

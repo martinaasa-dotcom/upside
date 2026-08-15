@@ -76,6 +76,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 "border-zinc-600 bg-zinc-950/95 text-zinc-100"
             )}
             role="status"
+            aria-live="polite"
           >
             <p className="min-w-0 flex-1 leading-snug">{t.message}</p>
             <button

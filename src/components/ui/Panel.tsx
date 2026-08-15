@@ -376,7 +376,7 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-40",
+            "touch-target rounded-md px-2.5 py-1 text-xs font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
             value === o.id
               ? "bg-brand/20 text-brand-bright"
               : "text-zinc-400 hover:text-zinc-200"

@@ -32,10 +32,11 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       href={href}
       title={title}
       aria-label={label}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition md:px-2.5 md:py-1.5 md:justify-start",
+        "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold transition md:h-auto md:min-h-0 md:min-w-0 md:px-2.5 md:py-1.5 md:justify-start",
         active
-          ? "bg-white/10 text-white shadow-sm shadow-black/20"
+          ? "bg-brand/20 text-brand-bright shadow-sm shadow-black/20"
           : "text-zinc-400 hover:text-zinc-300"
       )}
     >

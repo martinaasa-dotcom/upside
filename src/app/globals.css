@@ -158,6 +158,13 @@ button:disabled,
   cursor: not-allowed;
 }
 
+/* One focus ring for every control. btn-primary already sets the same
+ * outline, so this only fills the gaps (tabs, icon buttons, raw links). */
+:focus-visible {
+  outline: 2px solid rgb(214 173 105 / 0.5);
+  outline-offset: 2px;
+}
+
 ::selection {
   background: rgba(214, 173, 105, 0.22);
 }

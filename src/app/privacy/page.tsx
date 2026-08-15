@@ -22,7 +22,7 @@ export default function PrivacyPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-zinc-300">
+      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-zinc-300">
         <div>
           <h1 className="text-lg font-bold text-white">Privacy Policy</h1>
           <p className="mt-1 text-xs text-zinc-400">Last updated {LAST_UPDATED}</p>

@@ -50,13 +50,13 @@ export function BookBottomNav({ className }: { className?: string }) {
         <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
           In your book
         </p>
-        <div className="grid h-12 w-[36rem] grid-cols-4 overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35">
+        <div className="grid h-12 w-full max-w-[36rem] grid-cols-4 overflow-hidden rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/35">
           {ITEMS.map(({ href, label, title, Icon }) => (
             <Link
               key={href}
               href={href}
               title={title}
-              className="flex min-w-0 items-center justify-center gap-1.5 px-2 text-sm font-medium text-brand-bright/80 transition hover:bg-brand/15 hover:text-brand-bright"
+              className="touch-target flex min-w-0 items-center justify-center gap-1.5 px-2 text-sm font-medium text-brand-bright/80 transition hover:bg-brand/15 hover:text-brand-bright"
             >
               <Icon className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
               <span className="whitespace-nowrap">{label}</span>

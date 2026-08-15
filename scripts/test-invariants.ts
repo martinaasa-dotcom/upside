@@ -1893,6 +1893,43 @@ run("dashboard modules sit behind an error boundary", () => {
   );
   assert.ok(/getDerivedStateFromError/.test(boundary));
   assert.ok(/Retry/.test(boundary));
+  assert.ok(/resetKey/.test(boundary));
+  const community = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  assert.ok(community.includes(`<WidgetErrorBoundary name="Daily Duel"`));
+  assert.ok(/WidgetErrorBoundary[\s\S]{0,80}name="Member book"/.test(community));
+  const fund = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.ok(fund.includes(`<WidgetErrorBoundary name="Fund chart">`));
+  const account = readFileSync(
+    join(process.cwd(), "src/components/AccountPage.tsx"),
+    "utf8"
+  );
+  assert.ok(account.includes(`<WidgetErrorBoundary name="Account">`));
+});
+
+run("workspace nav marks the current room and the skip link exists", () => {
+  const switcher = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceSwitcher.tsx"),
+    "utf8"
+  );
+  assert.ok(/aria-current=\{active \? "page"/.test(switcher));
+  assert.ok(/bg-brand\/20 text-brand-bright/.test(switcher));
+  const providers = readFileSync(
+    join(process.cwd(), "src/components/Providers.tsx"),
+    "utf8"
+  );
+  assert.ok(/href="#main"/.test(providers));
+  assert.ok(/Skip to content/.test(providers));
+  const dock = readFileSync(
+    join(process.cwd(), "src/components/BookBottomNav.tsx"),
+    "utf8"
+  );
+  assert.ok(/max-w-\[36rem\]/.test(dock));
 });
 
 run("holding and cash saves cannot double-fire", () => {

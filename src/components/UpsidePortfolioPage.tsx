@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { plainError } from "@/lib/plain-error";
@@ -1018,14 +1019,14 @@ export function UpsidePortfolioPage() {
           }}
           disabled={refreshing}
           aria-label="Refresh prices"
-          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+          className="touch-target inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
       </AppHeader>
 
-      <main className="mx-auto max-w-4xl flex-1 space-y-6 px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main id="main" className="mx-auto min-w-0 max-w-4xl flex-1 space-y-6 px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         <div>
           <h1 className="sr-only">Upside Fund</h1>
           <p className="text-sm leading-relaxed text-zinc-400">
@@ -1160,11 +1161,13 @@ export function UpsidePortfolioPage() {
                 </div>
               )}
 
+              <WidgetErrorBoundary name="Fund chart">
               <ComparisonChart
                 className="mt-4"
                 series={comparisonSeries}
                 labels={comparisonLabels}
               />
+              </WidgetErrorBoundary>
             </section>
 
             {bettingSlices.length > 0 && (
@@ -1267,6 +1270,7 @@ export function UpsidePortfolioPage() {
             )}
 
             {openHoldings.length > 0 && (
+              <WidgetErrorBoundary name="Fund positions">
               <section className="space-y-3">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
                   Open positions · {openHoldings.length}
@@ -1342,6 +1346,7 @@ export function UpsidePortfolioPage() {
                   })}
                 </div>
               </section>
+              </WidgetErrorBoundary>
             )}
 
             {weeklyRecaps.length > 0 && (

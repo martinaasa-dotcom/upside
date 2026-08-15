@@ -7,6 +7,9 @@ type Props = {
   /** Short name shown in the fallback, e.g. "Pulse". */
   name: string;
   children: ReactNode;
+  /** Clear a stale fallback when the user moves to another sheet or room. */
+  resetKey?: string | number;
+  className?: string;
 };
 
 type State = { error: Error | null };
@@ -20,6 +23,12 @@ export class WidgetErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { error };
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -42,7 +51,10 @@ export class WidgetErrorBoundary extends Component<Props, State> {
       return (
         <div
           role="alert"
-          className="rounded-2xl border border-brand/20 bg-card/80 px-5 py-6"
+          className={
+            this.props.className ??
+            "min-w-0 overflow-x-clip rounded-2xl border border-brand/20 bg-card/80 px-5 py-6"
+          }
         >
           <p className="text-sm font-semibold text-white">
             {this.props.name} hit a snag

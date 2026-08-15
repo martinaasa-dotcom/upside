@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { SignInGate } from "@/components/SignInGate";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -166,7 +167,7 @@ export function AdminPage() {
         <MobileChrome title="Admin" active="settings" />
         <AppHeader className="hidden md:block" title="Admin" />
 
-        <main className="mx-auto max-w-4xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className="mx-auto min-w-0 max-w-4xl flex-1 space-y-8 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
               <Shield className="h-5 w-5" />
@@ -190,6 +191,7 @@ export function AdminPage() {
           ) : error ? (
             <p className="text-sm text-red-400">{error}</p>
           ) : (
+            <WidgetErrorBoundary name="Admin">
             <>
               {funnel && (
                 <section className="space-y-2">
@@ -489,6 +491,7 @@ export function AdminPage() {
                 </div>
               </section>
             </>
+            </WidgetErrorBoundary>
           )}
         </main>
         <BookBottomNav />

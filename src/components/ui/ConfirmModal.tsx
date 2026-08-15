@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   open: boolean;
@@ -30,18 +30,30 @@ export function ConfirmModal({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
+      busyRef.current = false;
       setBusy(false);
       setError(null);
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && !busyRef.current) onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   async function runConfirm() {
     if (busy) return;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -54,6 +66,7 @@ export function ConfirmModal({
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't work. Try again.");
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -67,9 +80,16 @@ export function ConfirmModal({
         onClick={onClose}
         disabled={busy}
       />
-      <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+        className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-zinc-700 bg-zinc-950 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+      >
         <div className="mb-3 flex items-start justify-between gap-3">
-          <h3 className="text-base font-semibold text-white">{title}</h3>
+          <h3 id="confirm-title" className="text-base font-semibold text-white">
+            {title}
+          </h3>
           <button
             type="button"
             onClick={onClose}
@@ -88,7 +108,7 @@ export function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white disabled:opacity-40"
+            className="touch-target rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white disabled:opacity-40"
           >
             {cancelLabel}
           </button>

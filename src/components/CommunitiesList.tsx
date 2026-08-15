@@ -1,6 +1,7 @@
 "use client";
 
 import { HomeWorld } from "@/components/HomeWorld";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
@@ -190,7 +191,7 @@ export function CommunitiesList() {
       <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
         <MobileChrome title="Communities" active="circle" />
         <AppHeader className="hidden md:block" title="Communities" />
-        <main className="mx-auto max-w-3xl flex-1 space-y-6 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className="mx-auto min-w-0 max-w-3xl flex-1 space-y-6 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div>
             <h1 className="text-lg font-bold text-white">
               Communities
@@ -201,7 +202,9 @@ export function CommunitiesList() {
               you paid.
             </p>
           </div>
-          <HomeWorld fundOnly />
+          <WidgetErrorBoundary name="Upside Fund">
+            <HomeWorld fundOnly />
+          </WidgetErrorBoundary>
           {error && <p className="text-sm text-red-400">{error}</p>}
           {loading ? (
             <div className="space-y-2" aria-hidden>
@@ -338,8 +341,9 @@ export function CommunitiesList() {
                   key={id}
                   type="button"
                   onClick={() => setKind(id)}
+                  aria-pressed={kind === id}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
+                    "touch-target inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition",
                     kind === id
                       ? "bg-brand/20 text-brand-bright"
                       : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"

@@ -2935,7 +2935,7 @@ export function Dashboard() {
         </div>
       )}
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-8 sm:px-6 sm:py-8">
+      <main id="main" className="mx-auto flex w-full min-w-0 max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 pb-[calc(var(--dock-pad)+env(safe-area-inset-bottom))] sm:gap-8 sm:px-6 sm:py-8">
         {!isMetaTab &&
         classTrade &&
         (classTrade.kind !== "open" || classTrade.until) ? (

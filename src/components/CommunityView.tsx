@@ -7,6 +7,7 @@ import {
   planFromCommunity,
 } from "@/components/ClassroomPlanEditor";
 import { DailyDuelCard } from "@/components/DailyDuelCard";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { ShareSheets } from "@/components/ShareSheets";
 import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
@@ -1255,7 +1256,7 @@ export function CommunityView({ communityId }: Props) {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col bg-black text-zinc-100 md:bg-app">
+      <div className="flex min-h-dvh flex-col bg-app text-zinc-100">
         <MobileChrome
           title={community?.name ?? "Community"}
           active="circle"
@@ -1265,7 +1266,7 @@ export function CommunityView({ communityId }: Props) {
                 type="button"
                 onClick={openSettings}
                 title="Community settings"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-300"
+                className="touch-target inline-flex h-10 w-10 items-center justify-center rounded-full text-zinc-300"
               >
                 <Settings className="h-5 w-5" />
               </button>
@@ -1312,14 +1313,14 @@ export function CommunityView({ communityId }: Props) {
               type="button"
               onClick={openSettings}
               title="Community settings"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+              className="touch-target inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
             >
               <Settings className="h-4 w-4" />
             </button>
           )}
         </AppHeader>
 
-        <main className="mx-auto max-w-6xl flex-1 space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+        <main id="main" className="mx-auto min-w-0 max-w-6xl flex-1 space-y-8 px-4 py-6 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           {loading && (
             <p className="text-sm text-zinc-400">Loading community …</p>
           )}
@@ -1463,6 +1464,7 @@ export function CommunityView({ communityId }: Props) {
               {(effectiveView === "overview" || effectiveView === "play") && (
                 <div className="flex flex-col gap-8">
                   {effectiveView === "overview" && isClassroom && (
+                    <WidgetErrorBoundary name="Class roster" resetKey={communityId}>
                     <ClassroomRoster
                       members={memberStats.map((m) => ({
                         id: m.id,
@@ -1484,6 +1486,7 @@ export function CommunityView({ communityId }: Props) {
                         setSelectedPortfolioId(null);
                       }}
                     />
+                    </WidgetErrorBoundary>
                   )}
                   {effectiveView === "overview" &&
                     !isClassroom &&
@@ -1520,6 +1523,7 @@ export function CommunityView({ communityId }: Props) {
                   {effectiveView === "overview" &&
                     !isClassroom &&
                     membersWithBooks.length > 0 && (
+                    <WidgetErrorBoundary name="Daily Duel" resetKey={communityId}>
                     <DailyDuelCard
                       compact
                       communityId={communityId}
@@ -1528,6 +1532,7 @@ export function CommunityView({ communityId }: Props) {
                         todayPct: t.todayPct,
                       }))}
                     />
+                    </WidgetErrorBoundary>
                   )}
                   {effectiveView === "play" && leaguePrize && leaguePrize.wins >= 1 && (
                     <p className="text-sm text-zinc-300">
@@ -2200,7 +2205,7 @@ export function CommunityView({ communityId }: Props) {
                   setSelectedPortfolioId(null);
                   setSelectedOwnerId(null);
                 }}
-                className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
+                className="touch-target inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
@@ -2224,7 +2229,7 @@ export function CommunityView({ communityId }: Props) {
                     type="button"
                     onClick={() => setSelectedPortfolioId(null)}
                     className={cn(
-                      "shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                      "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                       selectedPortfolioId === null
                         ? "border-brand/40 bg-brand/15 text-brand-bright"
                         : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
@@ -2241,7 +2246,7 @@ export function CommunityView({ communityId }: Props) {
                       type="button"
                       onClick={() => setSelectedPortfolioId(p.id)}
                       className={cn(
-                        "shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                        "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                         selectedPortfolioId === p.id
                           ? "border-brand/40 bg-brand/15 text-brand-bright"
                           : "border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
@@ -2253,11 +2258,16 @@ export function CommunityView({ communityId }: Props) {
                 </div>
               )}
 
+              <WidgetErrorBoundary
+                name="Member book"
+                resetKey={selectedOwnerId ?? communityId}
+              >
               <ReadOnlyHoldings
                 holdings={selectedHoldings}
                 quotes={quotes}
                 cash={selectedCash}
               />
+              </WidgetErrorBoundary>
             </section>
           )}
         </main>

@@ -80,7 +80,7 @@ export function SignInGate({ children }: Props) {
         }}
       />
 
-      <main className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 py-[max(2rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] md:px-8">
+      <main id="main" className="relative z-10 mx-auto flex w-full min-w-0 max-w-3xl flex-1 flex-col justify-center px-6 py-[max(2rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] md:px-8">
         <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_16.5rem] md:gap-12">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 mb-8" />
