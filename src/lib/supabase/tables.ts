@@ -19,6 +19,7 @@ export const PORTFELL_TABLES = {
   communityPortfolios: "portfell_community_portfolios",
   communityJoinRequests: "portfell_community_join_requests",
   communityDuels: "portfell_community_duels",
+  popularTickers: "portfell_popular_tickers",
   errorLog: "portfell_error_log",
   margusFund: "portfell_margus_fund",
   margusFundHoldings: "portfell_margus_fund_holdings",

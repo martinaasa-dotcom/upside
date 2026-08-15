@@ -618,6 +618,24 @@ export type Database = {
         }
         Relationships: []
       }
+      portfell_popular_tickers: {
+        Row: {
+          month: string
+          tickers: Json
+          updated_at: string
+        }
+        Insert: {
+          month: string
+          tickers: Json
+          updated_at?: string
+        }
+        Update: {
+          month?: string
+          tickers?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfell_portfolio_invites: {
         Row: {
           accepted_at: string | null

@@ -54,6 +54,12 @@ import {
   sheetReturnPathSince,
 } from "../src/lib/sheet-mark";
 import { sanitizeFundWatchlist } from "../src/lib/fund-watchlist";
+import {
+  FALLBACK_POPULAR_TICKERS,
+  POPULAR_TICKER_COUNT,
+  currentPopularMonth,
+  sanitizePopularTickers,
+} from "../src/lib/popular-tickers";
 import type { OverviewModel } from "../src/lib/overview";
 import type { UpsideAlert } from "../src/lib/alerts";
 import {
@@ -1120,7 +1126,34 @@ run("onboarding asks for weekday and Sunday notes", () => {
   assert.match(onboarding, /Want a report in your inbox/);
   assert.match(onboarding, /noteMorning/);
   assert.match(onboarding, /noteSunday/);
-  assert.match(onboarding, /\{step\}\/3/);
+  assert.match(onboarding, /\{step\}\/4/);
+});
+
+run("popular ticker snapshot is 30 names, one month at a time", () => {
+  assert.equal(FALLBACK_POPULAR_TICKERS.length, POPULAR_TICKER_COUNT);
+  assert.equal(sanitizePopularTickers(["nvda", "NVDA", "bad!", "AAPL"]).length, 30);
+  assert.deepEqual(sanitizePopularTickers(["nvda", "AAPL"]).slice(0, 2), [
+    "NVDA",
+    "AAPL",
+  ]);
+  assert.match(currentPopularMonth(new Date("2026-08-15T12:00:00Z")), /^2026-08$/);
+});
+
+run("onboarding lets you pick this month's popular names", () => {
+  const onboarding = readFileSync(
+    join(process.cwd(), "src/components/ExperienceOnboardingModal.tsx"),
+    "utf8"
+  );
+  const cron = readFileSync(
+    join(process.cwd(), "src/app/api/cron/popular-tickers/route.ts"),
+    "utf8"
+  );
+  const vercel = readFileSync(join(process.cwd(), "vercel.json"), "utf8");
+  assert.match(onboarding, /Any names you want to keep an eye on/);
+  assert.match(onboarding, /saveWatchlist/);
+  assert.match(cron, /refreshPopularTickers/);
+  assert.match(vercel, /\/api\/cron\/popular-tickers/);
+  assert.match(vercel, /0 7 1 \* \*/);
 });
 
 run("nightly snapshots can store mark-to-market", () => {
