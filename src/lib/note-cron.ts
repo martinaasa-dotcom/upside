@@ -66,6 +66,15 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
   }
 
   const emailed = noteEmailConfigured();
+  if (!emailed) {
+    return {
+      ok: true,
+      sent: 0,
+      skipped: (profiles ?? []).length,
+      optedIn: (profiles ?? []).length,
+      emailed: false,
+    };
+  }
   let sent = 0;
   let skipped = 0;
   for (const profile of profiles ?? []) {

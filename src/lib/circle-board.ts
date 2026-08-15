@@ -42,7 +42,7 @@ export function recordCircleSession(
   winnerName: string
 ) {
   if (!isNyWeekday()) return;
-  const dayKey = todayKeyInTz();
+  const dayKey = todayKeyInTz("America/New_York");
   const week = mondayKey(dayKey);
   const store = load();
   const rows = (store[communityId] ?? []).filter(
@@ -59,7 +59,7 @@ export function recordCircleSession(
 export function circleWeekBoard(
   communityId: string
 ): { name: string; wins: number } | null {
-  const dayKey = todayKeyInTz();
+  const dayKey = todayKeyInTz("America/New_York");
   const week = mondayKey(dayKey);
   const rows = (load()[communityId] ?? []).filter(
     (r) => mondayKey(r.dayKey) === week

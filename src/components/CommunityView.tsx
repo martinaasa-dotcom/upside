@@ -635,7 +635,7 @@ export function CommunityView({ communityId }: Props) {
         }
         return [...names];
       }),
-    [overview.topHoldings, ownership, profileName]
+    [overview.tickers, ownership, profileName]
   );
 
   const [leaguePrize, setLeaguePrize] = useState(() =>

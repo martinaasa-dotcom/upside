@@ -65,13 +65,12 @@ export function nyClock(now = new Date()): { weekday: string; hour: number } {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
     weekday: "short",
-    hour: "numeric",
-    hourCycle: "h23",
+    hour: "2-digit",
+    hour12: false,
   }).formatToParts(now);
-  return {
-    weekday: parts.find((p) => p.type === "weekday")?.value ?? "",
-    hour: Number(parts.find((p) => p.type === "hour")?.value ?? 0),
-  };
+  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0) % 24;
+  return { weekday, hour };
 }
 
 export function isNyWeekday(now = new Date()): boolean {
