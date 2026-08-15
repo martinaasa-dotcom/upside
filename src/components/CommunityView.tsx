@@ -15,10 +15,10 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { StartingCashField } from "@/components/StartingCashField";
 import {
   DEFAULT_STARTING_CASH,
-  MAX_STARTING_CASH,
-  MIN_STARTING_CASH,
+  parseStartingCash,
   type ClassPeriodKind,
   type ClassPlan,
   type ClassroomTrade,
@@ -286,7 +286,7 @@ export function CommunityView({ communityId }: Props) {
   const [settingsName, setSettingsName] = useState("");
   const [settingsNote, setSettingsNote] = useState("");
   const [settingsStartingCash, setSettingsStartingCash] = useState(
-    String(DEFAULT_STARTING_CASH)
+    DEFAULT_STARTING_CASH
   );
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
@@ -1085,7 +1085,7 @@ export function CommunityView({ communityId }: Props) {
     setSettingsName(community?.name ?? "");
     setSettingsNote(community?.house_note ?? "");
     setSettingsStartingCash(
-      String(Number(community?.starting_cash) || DEFAULT_STARTING_CASH)
+      Number(community?.starting_cash) || DEFAULT_STARTING_CASH
     );
     setSettingsError(null);
     setSettingsOpen(true);
@@ -1187,9 +1187,9 @@ export function CommunityView({ communityId }: Props) {
   }
 
   async function handleSaveStartingCash() {
-    const next = Number(settingsStartingCash);
+    const next = parseStartingCash(settingsStartingCash);
     const current = Number(community?.starting_cash) || DEFAULT_STARTING_CASH;
-    if (!Number.isFinite(next) || next === current) return;
+    if (next == null || next === current) return;
     setSettingsBusy(true);
     setSettingsError(null);
     try {
@@ -2467,19 +2467,13 @@ export function CommunityView({ communityId }: Props) {
                   onStart={(kind) => void handleStartPeriod(kind)}
                   onSavePlan={(plan) => void handleSaveClassPlan(plan)}
                 />
-                <label className="mt-5 block text-xs font-medium text-zinc-400">
-                  Starting cash
-                  <input
-                    type="number"
-                    min={MIN_STARTING_CASH}
-                    max={MAX_STARTING_CASH}
-                    step={1000}
+                <div className="mt-5">
+                  <StartingCashField
                     value={settingsStartingCash}
-                    onChange={(e) => setSettingsStartingCash(e.target.value)}
+                    onChange={setSettingsStartingCash}
                     disabled={settingsBusy}
-                    className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-brand/50 disabled:opacity-50 sm:max-w-[12rem]"
                   />
-                </label>
+                </div>
                 <p className="mt-1 text-xs leading-relaxed text-zinc-400">
                   Classes stay invite-only. Changing this adds or takes the
                   difference from every paper sheet already handed out.

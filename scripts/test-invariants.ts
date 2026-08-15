@@ -91,10 +91,16 @@ import {
   classifyImportWrite,
   holdingWriteActions,
   parseClassPlan,
+  parseStartingCash,
   realBookPortfolios,
   resolveClassroomTrade,
   startPeriodNow,
 } from "../src/lib/classroom";
+import {
+  CLASS_TEMPLATES,
+  formatCashDigits,
+  parseCashDigits,
+} from "../src/lib/class-templates";
 
 function emptyModel(): OverviewModel {
   return {
@@ -1426,6 +1432,27 @@ run("empty class plan is anything goes", () => {
   assert.equal(trade.canBuy, true);
   assert.equal(trade.canSell, true);
   assert.equal(trade.studentLocked, false);
+});
+
+run("class starting cash shows thousands separators", () => {
+  assert.equal(formatCashDigits(100_000), "100,000");
+  assert.equal(parseCashDigits("$100,000"), 100_000);
+  assert.equal(parseStartingCash("100,000"), 100_000);
+  assert.equal(parseStartingCash("$1,000,000"), 1_000_000);
+});
+
+run("class templates cover the usual teacher setups", () => {
+  assert.ok(CLASS_TEMPLATES.length >= 6);
+  const ids = new Set(CLASS_TEMPLATES.map((t) => t.id));
+  assert.equal(ids.size, CLASS_TEMPLATES.length);
+  for (const t of CLASS_TEMPLATES) {
+    assert.ok(t.title.trim());
+    assert.ok(t.blurb.trim());
+    assert.ok(t.assignment.trim());
+    assert.doesNotMatch(t.assignment, /—/);
+    assert.doesNotMatch(t.blurb, /thesis|NAV|sleeve/i);
+    assert.ok(t.cash >= 10_000 && t.cash <= 1_000_000);
+  }
 });
 
 run("buy week blocks sell", () => {

@@ -253,7 +253,10 @@ export function realBookPortfolios<
 }
 
 export function parseStartingCash(raw: unknown): number | null {
-  const n = typeof raw === "number" ? raw : Number(raw);
+  const n =
+    typeof raw === "number"
+      ? raw
+      : Number(String(raw).replace(/[^\d.-]/g, ""));
   if (!Number.isFinite(n)) return null;
   const rounded = Math.round(n);
   if (rounded < MIN_STARTING_CASH || rounded > MAX_STARTING_CASH) return null;

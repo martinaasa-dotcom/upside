@@ -1,10 +1,14 @@
 import {
   CLASSROOM_KIND,
   CIRCLE_KIND,
+  CLASS_PERIOD_KINDS,
   DEFAULT_CLASS_ASSIGNMENT,
   DEFAULT_STARTING_CASH,
+  emptyClassPlan,
   isClassroomKind,
   parseStartingCash,
+  startPeriodNow,
+  type ClassPeriodKind,
 } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
@@ -101,6 +105,19 @@ export async function POST(req: NextRequest) {
     ? String((body as { assignment?: string }).assignment ?? "").trim().slice(0, 800) ||
       DEFAULT_CLASS_ASSIGNMENT
     : undefined;
+  const startPeriodRaw = String(
+    (body as { startPeriod?: string }).startPeriod ?? ""
+  );
+  const startPeriod = CLASS_PERIOD_KINDS.includes(
+    startPeriodRaw as ClassPeriodKind
+  )
+    ? (startPeriodRaw as ClassPeriodKind)
+    : "open";
+  const classPlan = classroom
+    ? startPeriod === "open"
+      ? { ...emptyClassPlan(), purpose: houseNote }
+      : startPeriodNow({ purpose: houseNote, periods: [] }, startPeriod)
+    : undefined;
 
   const { data: community, error } = await supabase
     .from(PORTFELL_TABLES.communities)
@@ -110,6 +127,7 @@ export async function POST(req: NextRequest) {
       kind,
       starting_cash: startingCash,
       ...(houseNote ? { house_note: houseNote } : {}),
+      ...(classPlan ? { class_plan: classPlan } : {}),
       created_by: auth.user.id,
     })
     .select("id, name, visibility, kind, starting_cash, house_note, created_by, created_at, updated_at")

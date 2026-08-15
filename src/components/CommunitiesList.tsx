@@ -16,9 +16,15 @@ import {
   saveCommunityListCache,
   type CommunityListRow,
 } from "@/lib/community-cache";
+import { StartingCashField } from "@/components/StartingCashField";
+import {
+  CLASS_TEMPLATES,
+  classTemplateById,
+  defaultClassSetup,
+} from "@/lib/class-templates";
 import {
   DEFAULT_CLASS_ASSIGNMENT,
-  DEFAULT_STARTING_CASH,
+  classPeriodLabel,
 } from "@/lib/classroom";
 import { ChevronRight, Compass, Globe, GraduationCap, Lock, Users } from "lucide-react";
 import Link from "next/link";
@@ -47,8 +53,11 @@ export function CommunitiesList() {
   );
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"circle" | "classroom">("circle");
-  const [startingCash, setStartingCash] = useState(String(DEFAULT_STARTING_CASH));
-  const [assignment, setAssignment] = useState("");
+  const initialClass = defaultClassSetup();
+  const [templateId, setTemplateId] = useState(initialClass.templateId);
+  const [startingCash, setStartingCash] = useState(initialClass.cash);
+  const [assignment, setAssignment] = useState(initialClass.assignment);
+  const [startPeriod, setStartPeriod] = useState(initialClass.period);
   const [visibility, setVisibility] = useState<"public" | "private">("private");
   const [error, setError] = useState<string | null>(null);
   // Only blocks on a spinner when there's truly nothing cached to show —
@@ -146,8 +155,9 @@ export function CommunitiesList() {
           ? {
               name: name.trim(),
               kind: "classroom",
-              startingCash: Number(startingCash) || DEFAULT_STARTING_CASH,
+              startingCash,
               assignment: assignment.trim() || DEFAULT_CLASS_ASSIGNMENT,
+              startPeriod,
             }
           : { name: name.trim(), visibility }
       ),
@@ -362,25 +372,57 @@ export function CommunitiesList() {
             </div>
             {kind === "classroom" ? (
               <>
-                <label className="block text-xs font-medium text-zinc-400">
-                  Starting cash
-                  <input
-                    type="number"
-                    min={1000}
-                    max={10000000}
-                    step={1000}
-                    value={startingCash}
-                    onChange={(e) => setStartingCash(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 sm:max-w-[12rem]"
-                  />
-                </label>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400">
+                    How the class runs
+                  </p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
+                    Pick the closest match. You can change the cash, the
+                    note, and the trading rules after you start.
+                  </p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {CLASS_TEMPLATES.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          const next = classTemplateById(t.id);
+                          setTemplateId(next.id);
+                          setStartingCash(next.cash);
+                          setAssignment(next.assignment);
+                          setStartPeriod(next.period);
+                        }}
+                        className={cn(
+                          "rounded-xl border px-3 py-2.5 text-left transition",
+                          templateId === t.id
+                            ? "border-brand/50 bg-brand/10"
+                            : "border-zinc-800 bg-zinc-900/60 hover:border-zinc-600"
+                        )}
+                      >
+                        <p className="text-sm font-semibold text-zinc-100">
+                          {t.title}
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-zinc-400">
+                          {t.blurb}
+                        </p>
+                        <p className="mt-1.5 text-xs text-zinc-500">
+                          {classPeriodLabel(t.period)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <StartingCashField
+                  value={startingCash}
+                  onChange={setStartingCash}
+                />
                 <label className="block text-xs font-medium text-zinc-400">
                   What we&apos;re learning
                   <textarea
                     value={assignment}
                     onChange={(e) => setAssignment(e.target.value)}
                     maxLength={800}
-                    rows={2}
+                    rows={3}
                     placeholder={DEFAULT_CLASS_ASSIGNMENT}
                     className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600"
                   />
