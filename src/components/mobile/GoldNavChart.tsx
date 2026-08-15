@@ -63,11 +63,11 @@ function cacheMatches(
 }
 
 function loadAssumedPref(): boolean {
-  if (typeof window === "undefined") return true;
+  if (typeof window === "undefined") return false;
   try {
-    return localStorage.getItem(ASSUMED_PREF_KEY) !== "0";
+    return localStorage.getItem(ASSUMED_PREF_KEY) === "1";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -93,7 +93,7 @@ export function useBookNavHistory(input: {
 } {
   const posKey = fingerprintPositions(input.positions);
   const [hist, setHist] = useState<NavPoint[]>([]);
-  const [assumed, setAssumed] = useState(true);
+  const [assumed, setAssumed] = useState(false);
   const [serverAssumed, setServerAssumed] = useState(false);
   const [firstRealDate, setFirstRealDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

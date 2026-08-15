@@ -72,6 +72,7 @@ type Props = {
   quotes: Record<string, Quote>;
   convictions: ConvictionMap;
   onWriteThesis?: (ticker: string) => void;
+  onStamp?: (ticker: string, stamp: { at: string; verdict: string; line: string }) => void;
 };
 
 function PulseHistory({ ticker }: { ticker: string }) {
@@ -350,7 +351,7 @@ async function fetchQuote(ticker: string): Promise<Quote | null> {
   }
 }
 
-export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) {
+export function PulsePage({ model, quotes, convictions, onWriteThesis, onStamp }: Props) {
   const [searchInput, setSearchInput] = useState("");
   const [pinnedTicker, setPinnedTicker] = useState<string | null>(null);
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
@@ -608,6 +609,14 @@ export function PulsePage({ model, quotes, convictions, onWriteThesis }: Props) 
             cachedAt: now,
           });
           recordPulseHistory(reconciled, now);
+          onStamp?.(key, {
+            at: now,
+            verdict: statusLabel(reconciled.thesisStatus),
+            line:
+              reconciled.verdict?.trim() ||
+              reconciled.thesisBreak?.trim() ||
+              actionLabel(reconciled.action),
+          });
         }
         if (newReport.summary?.trim()) {
           setSummary(newReport.summary);

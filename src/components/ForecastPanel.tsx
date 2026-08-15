@@ -448,6 +448,14 @@ export function ForecastPanel({
   convictions,
 }: Props) {
   const yearCols = model.years;
+  const mobileYears = yearCols.filter((y) => y !== 2030);
+  function mustBeTrue(ticker: string): string {
+    return (
+      cachedEoyPathsFor([ticker], convictions)[0]?.rationale?.trim() ||
+      convictions?.[ticker]?.thesis?.trim() ||
+      ""
+    );
+  }
   // Ticker | Current SP | EOY×N | Gain — numeric cols share width evenly.
   // Kept as tight as the content allows (not PortfolioTable-style max-content)
   // since 5 EOY-year columns + Current SP + Gain is the widest grid in the
@@ -783,6 +791,11 @@ export function ForecastPanel({
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · Margus is working on it"}
                     </p>
+                    {mustBeTrue(r.ticker) ? (
+                      <p className="mt-1 text-xs leading-snug text-zinc-400">
+                        {mustBeTrue(r.ticker)}
+                      </p>
+                    ) : null}
                   </div>
                   <p
                     className={cn(
@@ -802,7 +815,7 @@ export function ForecastPanel({
                       {currency(r.currentPrice)}
                     </p>
                   </div>
-                  {yearCols.map((y) => (
+                  {mobileYears.map((y) => (
                     <div key={y} className="text-center">
                       <p
                         className={cn(
@@ -831,7 +844,7 @@ export function ForecastPanel({
                 {currency(model.currentTotal)}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                {yearCols.map((y) => (
+                {mobileYears.map((y) => (
                   <div key={y}>
                     <p
                       className={cn(
@@ -850,7 +863,7 @@ export function ForecastPanel({
               {model.gainPct != null && (
                 <p
                   className={cn(
-                    "mt-3 text-sm font-medium tabular-nums",
+                    "mt-3 hidden text-sm font-medium tabular-nums md:block",
                     signedTone(model.gainPct)
                   )}
                 >
@@ -890,6 +903,11 @@ export function ForecastPanel({
                         working on it
                       </span>
                     )}
+                    {mustBeTrue(r.ticker) ? (
+                      <span className="mt-1 max-w-[12rem] text-xs font-normal leading-snug tracking-normal text-zinc-400">
+                        {mustBeTrue(r.ticker)}
+                      </span>
+                    ) : null}
                   </div>
                   <div className={cn(cellNum, "text-zinc-100")}>
                     {currency(r.currentPrice)}

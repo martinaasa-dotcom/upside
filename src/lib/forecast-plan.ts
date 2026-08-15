@@ -199,14 +199,21 @@ export function upsertTickerPathsFromPlan(
 export function cachedEoyPathsFor(
   tickers: string[],
   convictions?: ConvictionLike
-): { ticker: string; prices: Partial<Record<ForecastYear, number>> }[] {
+): {
+  ticker: string;
+  prices: Partial<Record<ForecastYear, number>>;
+  rationale?: string;
+}[] {
   const cache = loadTickerPathCache();
-  const out: { ticker: string; prices: Partial<Record<ForecastYear, number>> }[] =
-    [];
+  const out: {
+    ticker: string;
+    prices: Partial<Record<ForecastYear, number>>;
+    rationale?: string;
+  }[] = [];
   for (const ticker of tickers) {
     const hit = cache[ticker.toUpperCase()];
     if (!tickerCacheIsFresh(hit, ticker, convictions) || !hit) continue;
-    out.push({ ticker, prices: hit.prices });
+    out.push({ ticker, prices: hit.prices, rationale: hit.rationale });
   }
   return out;
 }

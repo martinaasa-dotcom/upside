@@ -1,15 +1,13 @@
 "use client";
 
-import { HomeWorld } from "@/components/HomeWorld";
 import { CashAlertCard } from "@/components/mobile/CashAlertCard";
+import { WatchlistStrip } from "@/components/WatchlistStrip";
 import {
   BookNavChart,
   useBookNavHistory,
   type NavPoint,
 } from "@/components/mobile/GoldNavChart";
 import {
-  Card,
-  MicroLabel,
   Panel,
   PanelHeader,
   Segmented,
@@ -24,11 +22,11 @@ import {
   signedTone,
   cashtag,
 } from "@/lib/format";
-import {
-  buildInvestorBriefing,
-  type BriefingLink,
-} from "@/lib/investor-briefing";
+import { parseHoldingsPaste, type CsvHoldingRow } from "@/lib/csv-import";
+import { buildMorningRead } from "@/lib/morning-read";
+import type { HomeSheetId } from "@/lib/home-sheet";
 import type { UpsideAlert } from "@/lib/alerts";
+import { statusLabel } from "@/lib/thesis-pulse";
 import { sessionLabel, sessionKind } from "@/lib/market-session";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import type { CoveredCallRow } from "@/lib/types";
@@ -70,9 +68,17 @@ type Props = {
   onAddHolding?: () => void;
   onImportScreenshot?: () => void;
   onImportCsv?: () => void;
+  onPasteHoldings?: (input: {
+    rows: CsvHoldingRow[];
+    cash: number | null;
+    replace: boolean;
+  }) => void;
   onAskMargus?: () => void;
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
+  homeSheetId?: HomeSheetId;
+  homeSheets?: Array<{ id: string; name: string }>;
+  onHomeSheet?: (id: HomeSheetId) => void;
 };
 
 function MobileHomeHero({
@@ -86,6 +92,12 @@ function MobileHomeHero({
   onRestoreAssumed,
   onOpenCash,
   onOpenAlerts,
+  morning,
+  previousAt,
+  onOpenPulse,
+  homeSheetId,
+  homeSheets,
+  onHomeSheet,
 }: {
   totals: OverviewModel["totals"];
   alerts: UpsideAlert[];
@@ -97,6 +109,12 @@ function MobileHomeHero({
   onRestoreAssumed: () => void;
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
+  morning: ReturnType<typeof buildMorningRead>;
+  previousAt: string | null;
+  onOpenPulse?: () => void;
+  homeSheetId: HomeSheetId;
+  homeSheets: Array<{ id: string; name: string }>;
+  onHomeSheet?: (id: HomeSheetId) => void;
 }) {
   const up = totals.roiPct >= 0;
   return (
@@ -115,6 +133,29 @@ function MobileHomeHero({
           {up ? "▲" : "▼"} {percent(Math.abs(totals.roiPct))}
         </p>
       </div>
+      <p
+        className={cn(
+          "mt-2 text-sm tabular-nums",
+          tone(totals.todayDollar)
+        )}
+      >
+        {signedCurrency(totals.todayDollar, 0)} today
+        {totals.todayPct != null ? ` · ${percent(totals.todayPct)}` : ""}
+      </p>
+      {onHomeSheet && homeSheets.length > 1 && (
+        <HomeSheetChip
+          className="mt-4"
+          value={homeSheetId}
+          sheets={homeSheets}
+          onChange={onHomeSheet}
+        />
+      )}
+      <MorningStack
+        className="mt-5"
+        morning={morning}
+        previousAt={previousAt}
+        onOpenPulse={onOpenPulse}
+      />
       <div className="mt-8">
         <BookNavChart
           points={points}
@@ -146,25 +187,33 @@ function EmptyBook({
   onAddHolding,
   onImportScreenshot,
   onImportCsv,
+  onPasteHoldings,
   onAskMargus,
 }: {
   onAddHolding?: () => void;
   onImportScreenshot?: () => void;
   onImportCsv?: () => void;
+  onPasteHoldings?: (input: {
+    rows: CsvHoldingRow[];
+    cash: number | null;
+    replace: boolean;
+  }) => void;
   onAskMargus?: () => void;
 }) {
+  const [paste, setPaste] = useState("");
+  const [pasteErr, setPasteErr] = useState<string | null>(null);
   const routes = [
     {
       key: "csv",
       label: "Upload a CSV",
       onClick: onImportCsv,
-      primary: true,
+      primary: false,
     },
     {
       key: "screenshot",
       label: "Import a screenshot",
       onClick: onImportScreenshot,
-      primary: true,
+      primary: false,
     },
     {
       key: "manual",
@@ -174,12 +223,52 @@ function EmptyBook({
     },
   ].filter((r) => r.onClick);
 
+  function submitPaste() {
+    const parsed = parseHoldingsPaste(paste);
+    if (parsed.rows.length === 0) {
+      setPasteErr(
+        parsed.skipped[0]?.reason ??
+          "Need lines like NBIS 500 85.10"
+      );
+      return;
+    }
+    setPasteErr(null);
+    onPasteHoldings?.({
+      rows: parsed.rows,
+      cash: parsed.cash,
+      replace: true,
+    });
+  }
+
   return (
     <Panel tone="brand" className="overview-fade">
       <h2 className="text-lg font-semibold text-white sm:text-2xl">
         Your book is empty.
       </h2>
-      <p className="mt-3 text-sm text-muted">Add what you own.</p>
+      <p className="mt-3 text-sm text-muted">
+        Paste what you own. One name per line: ticker, shares, cost.
+      </p>
+
+      {onPasteHoldings && (
+        <div className="mt-6 space-y-2">
+          <textarea
+            value={paste}
+            onChange={(e) => setPaste(e.target.value)}
+            rows={5}
+            placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 font-mono text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+          />
+          {pasteErr && <p className="text-xs text-rose-300">{pasteErr}</p>}
+          <button
+            type="button"
+            onClick={submitPaste}
+            disabled={!paste.trim()}
+            className="btn-primary disabled:opacity-40"
+          >
+            Add these names
+          </button>
+        </div>
+      )}
 
       {routes.length > 0 && (
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -221,54 +310,110 @@ function EmptyBook({
   );
 }
 
-function BriefingCard({
-  kind,
-  ticker,
-  title,
-  detail,
-  link,
-  navigable,
-  onNavigate,
+function HomeSheetChip({
+  value,
+  sheets,
+  onChange,
+  className,
 }: {
-  kind: "action" | "watch" | "play";
-  ticker?: string;
-  title: string;
-  detail: string;
-  link?: BriefingLink;
-  navigable?: boolean;
-  onNavigate?: (link: BriefingLink) => void;
+  value: HomeSheetId;
+  sheets: Array<{ id: string; name: string }>;
+  onChange: (id: HomeSheetId) => void;
+  className?: string;
 }) {
-  const canNavigate = Boolean(link && navigable && onNavigate);
-
-  const body = (
-    <>
-      <p className="text-sm font-medium text-white sm:text-[15px]">
-        {ticker ? (
-          <span className="mr-1.5 text-muted">{cashtag(ticker)}</span>
-        ) : null}
-        {title}
-      </p>
-      <p className="mt-1 text-sm text-muted">{detail}</p>
-    </>
-  );
-
-  const cardTone = kind === "action" ? "warn" : kind === "play" ? "brand" : "raised";
-
-  if (canNavigate && link) {
-    return (
+  return (
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
       <button
         type="button"
-        className="w-full text-left"
-        onClick={() => onNavigate!(link)}
+        onClick={() => onChange("all")}
+        className={cn(
+          "rounded-full border px-2.5 py-1 text-xs",
+          value === "all"
+            ? "border-brand/50 bg-brand/15 text-brand-bright"
+            : "border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+        )}
       >
-        <Card tone={cardTone} interactive>
-          {body}
-        </Card>
+        All sheets
       </button>
-    );
-  }
+      {sheets.map((s) => (
+        <button
+          key={s.id}
+          type="button"
+          onClick={() => onChange(s.id)}
+          className={cn(
+            "rounded-full border px-2.5 py-1 text-xs",
+            value === s.id
+              ? "border-brand/50 bg-brand/15 text-brand-bright"
+              : "border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+          )}
+        >
+          {s.name}
+        </button>
+      ))}
+    </div>
+  );
+}
 
-  return <Card tone={cardTone}>{body}</Card>;
+function MorningStack({
+  morning,
+  previousAt,
+  onOpenPulse,
+  className,
+}: {
+  morning: ReturnType<typeof buildMorningRead>;
+  previousAt: string | null;
+  onOpenPulse?: () => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-3", className)}>
+      <p className="text-sm text-zinc-200">{morning.sentence}</p>
+      {morning.awayLines.length > 0 && (
+        <div>
+          <p className="text-xs text-zinc-500">
+            Since you last looked
+            {previousAt
+              ? ` · ${new Date(previousAt).toLocaleString("en-GB", {
+                  timeZone: "Europe/Tallinn",
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}`
+              : ""}
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {morning.awayLines.map((line) => (
+              <li
+                key={line.id}
+                className={cn(
+                  "text-sm",
+                  line.tone === "up"
+                    ? "text-gain"
+                    : line.tone === "down"
+                      ? "text-loss"
+                      : "text-zinc-300"
+                )}
+              >
+                {line.text}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {morning.pulseFlag && (
+        <button
+          type="button"
+          onClick={() => onOpenPulse?.()}
+          className="w-full rounded-xl border border-amber-500/25 bg-amber-950/20 px-3 py-2.5 text-left"
+        >
+          <p className="text-xs uppercase tracking-wide text-amber-200/80">
+            Pulse · {cashtag(morning.pulseFlag.ticker)} ·{" "}
+            {statusLabel(morning.pulseFlag.status)}
+          </p>
+          <p className="mt-1 text-sm text-zinc-200">{morning.pulseFlag.line}</p>
+        </button>
+      )}
+    </div>
+  );
 }
 
 function MoverTile({
@@ -389,20 +534,19 @@ function PortfolioLane({
 export function OverviewDashboard({
   model,
   onOpenSheet,
-  coveredCallRows = [],
   activeAlerts = [],
   onOpenPulse,
-  onOpenCompound,
   marketState = null,
-  guest = false,
-  showCommunities = false,
-  hideOptions = true,
   onAddHolding,
   onImportScreenshot,
   onImportCsv,
+  onPasteHoldings,
   onAskMargus,
   onOpenCash,
   onOpenAlerts,
+  homeSheetId = "all",
+  homeSheets = [],
+  onHomeSheet,
 }: Props) {
   const {
     totals,
@@ -447,16 +591,9 @@ export function OverviewDashboard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickerKey, model.totals.totalValue, model.totals.cash]);
 
-  const briefing = useMemo(
-    () =>
-      buildInvestorBriefing({
-        model,
-        activeAlerts,
-        coveredCallRows,
-        hideOptions,
-        canReachPulse: !guest && Boolean(onOpenPulse),
-      }),
-    [model, activeAlerts, coveredCallRows, hideOptions, guest, onOpenPulse]
+  const morning = useMemo(
+    () => buildMorningRead(model, visitDiff),
+    [model, visitDiff]
   );
 
   const nav = useBookNavHistory({
@@ -495,19 +632,6 @@ export function OverviewDashboard({
     if (id) onOpenSheet(id);
   }
 
-  function handleBriefingNavigate(link: BriefingLink) {
-    if (link.type === "pulse") onOpenPulse?.();
-    else if (link.type === "compound") onOpenCompound?.();
-    else if (link.type === "sheet") onOpenSheet(link.portfolioId, link.focus);
-  }
-
-  function canFollowBriefingLink(link?: BriefingLink): boolean {
-    if (!link) return false;
-    if (link.type === "pulse") return Boolean(onOpenPulse);
-    if (link.type === "compound") return Boolean(onOpenCompound);
-    return Boolean(link.portfolioId);
-  }
-
   const bookIsEmpty = model.tickers.length === 0;
 
   if (bookIsEmpty) {
@@ -517,6 +641,7 @@ export function OverviewDashboard({
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
           onImportCsv={onImportCsv}
+          onPasteHoldings={onPasteHoldings}
           onAskMargus={onAskMargus}
         />
       </div>
@@ -536,6 +661,12 @@ export function OverviewDashboard({
         onRestoreAssumed={nav.restoreAssumed}
         onOpenCash={onOpenCash}
         onOpenAlerts={onOpenAlerts}
+        morning={morning}
+        previousAt={visitDiff?.previousAt ?? null}
+        onOpenPulse={onOpenPulse}
+        homeSheetId={homeSheetId}
+        homeSheets={homeSheets}
+        onHomeSheet={onHomeSheet}
       />
 
       {/* One screen: where you stand, then what to make of it. */}
@@ -597,7 +728,7 @@ export function OverviewDashboard({
             <Stat
               label="All time"
               value={signedCurrency(totals.roiDollar)}
-              sub={percent(totals.roiPct)}
+              sub={`${percent(totals.roiPct)} vs cost you typed`}
               valueClassName={tone(totals.roiDollar)}
               subClassName={tone(totals.roiDollar)}
             />
@@ -610,6 +741,22 @@ export function OverviewDashboard({
             />
           </div>
 
+          {onHomeSheet && homeSheets.length > 1 && (
+            <HomeSheetChip
+              className="mt-4"
+              value={homeSheetId}
+              sheets={homeSheets}
+              onChange={onHomeSheet}
+            />
+          )}
+
+          <MorningStack
+            className="mt-5"
+            morning={morning}
+            previousAt={visitDiff?.previousAt ?? null}
+            onOpenPulse={onOpenPulse}
+          />
+
           <BookNavChart
             points={nav.points}
             assumed={nav.assumed}
@@ -621,60 +768,6 @@ export function OverviewDashboard({
           />
         </div>
       </Panel>
-
-      {(briefing.length > 0 ||
-        Boolean(visitDiff && visitDiff.lines.length > 0)) && (
-        <Panel className="overview-fade hidden md:block">
-          {briefing.length > 0 && (
-            <ul className="space-y-3">
-              {briefing.map((b) => (
-                <li key={b.id}>
-                  <BriefingCard
-                    kind={b.kind}
-                    ticker={b.ticker}
-                    title={b.title}
-                    detail={b.detail}
-                    link={b.link}
-                    navigable={canFollowBriefingLink(b.link)}
-                    onNavigate={handleBriefingNavigate}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {visitDiff && visitDiff.lines.length > 0 && (
-            <Card className={briefing.length > 0 ? "mt-6" : undefined}>
-              <MicroLabel>While you were away</MicroLabel>
-              <p className="mt-0.5 text-xs text-zinc-400">
-                Since{" "}
-                {new Date(visitDiff.previousAt).toLocaleString("en-GB", {
-                  timeZone: "Europe/Tallinn",
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </p>
-              <ul className="mt-2 space-y-1.5">
-                {visitDiff.lines.slice(0, 3).map((line) => (
-                  <li
-                    key={line.id}
-                    className={cn(
-                      "text-sm",
-                      line.tone === "up"
-                        ? "text-gain"
-                        : line.tone === "down"
-                          ? "text-loss"
-                          : "text-zinc-300"
-                    )}
-                  >
-                    {line.text}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          )}
-        </Panel>
-      )}
 
       <Panel className="overview-fade">
         <PanelHeader
@@ -727,7 +820,12 @@ export function OverviewDashboard({
         </Panel>
       )}
 
-      {showCommunities && !guest && <HomeWorld />}
+      <Panel className="overview-fade">
+        <WatchlistStrip
+          heldTickers={tickers.map((t) => t.ticker)}
+          onOpenPulse={() => onOpenPulse?.()}
+        />
+      </Panel>
     </div>
   );
 }

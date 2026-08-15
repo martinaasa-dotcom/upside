@@ -87,6 +87,8 @@ export function AccountPage() {
     loadStoredKnowsOptions
   );
   const [knowsOptionsSaved, setKnowsOptionsSaved] = useState(false);
+  const [morningNote, setMorningNote] = useState(false);
+  const [morningSaved, setMorningSaved] = useState(false);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
@@ -113,6 +115,14 @@ export function AccountPage() {
           }
         }
       )
+      .catch(() => {});
+    void fetch("/api/account/morning-note")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { enabled?: boolean } | null) => {
+        if (!cancelled && typeof data?.enabled === "boolean") {
+          setMorningNote(data.enabled);
+        }
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -249,6 +259,42 @@ export function AccountPage() {
           </div>
 
           <VisitStreakCard />
+
+          <section className="space-y-3 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-white">Morning note</h2>
+            <p className="text-xs text-zinc-400">
+              A short weekday email around 7am Tallinn. Book move, the name
+              making noise, and a reminder to open Pulse if you want it. Off
+              until you ask.
+            </p>
+            <label className="flex items-center gap-2 text-sm text-zinc-200">
+              <input
+                type="checkbox"
+                checked={morningNote}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  setMorningNote(next);
+                  void fetch("/api/account/morning-note", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enabled: next }),
+                  })
+                    .then((r) => {
+                      if (r.ok) {
+                        setMorningSaved(true);
+                        window.setTimeout(() => setMorningSaved(false), 2000);
+                      }
+                    })
+                    .catch(() => {});
+                }}
+                className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-brand focus:ring-brand/50"
+              />
+              Email me on weekday mornings
+            </label>
+            {morningSaved && (
+              <p className="text-xs text-emerald-300">Saved.</p>
+            )}
+          </section>
 
           {/* Profile / community appearance */}
           <section className="space-y-4 rounded-2xl border border-brand-deep/30 bg-card/80 p-4 sm:p-5">

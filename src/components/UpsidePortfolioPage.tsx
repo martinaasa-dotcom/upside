@@ -990,7 +990,7 @@ export function UpsidePortfolioPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
-      <MobileChrome title="Upside Fund" active="explore" />
+      <MobileChrome title="Upside Fund" active="circle" />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
           className="inline-flex items-center gap-1.5 text-xs tabular-nums text-zinc-400"

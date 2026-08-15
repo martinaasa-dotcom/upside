@@ -1,5 +1,6 @@
 "use client";
 
+import { HomeWorld } from "@/components/HomeWorld";
 import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
@@ -143,7 +144,7 @@ export function CommunitiesList() {
   return (
     <SignInGate>
       <div className="flex min-h-dvh flex-col bg-app text-zinc-100 md:bg-[radial-gradient(ellipse_at_top,_#100e0a_0%,_#08090C_55%)]">
-        <MobileChrome title="Communities" active="explore" />
+        <MobileChrome title="Communities" active="circle" />
         <AppHeader className="hidden md:block" title="Communities" />
         <main className="mx-auto max-w-3xl flex-1 space-y-6 px-4 py-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
           <div>
@@ -151,11 +152,11 @@ export function CommunitiesList() {
               Communities
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
-              A private league for books you actually want to compare. Numbers
-              are live. Nobody can edit yours. Start one, or ask to join a
-              public circle.
+              A private league for books you actually want to compare. Members
+              see live marks, not what you paid. Nobody can edit yours.
             </p>
           </div>
+          <HomeWorld fundOnly />
           {error && <p className="text-sm text-red-400">{error}</p>}
           {loading ? (
             <div className="space-y-2" aria-hidden>

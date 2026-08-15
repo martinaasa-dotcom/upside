@@ -197,6 +197,64 @@ MSFT,5,310.10,12
 CASH,,2500,
 `;
 
+/**
+ * Paste box: one holding per line.
+ * `NBIS 500 85.10` or `NBIS, 500, 85.10`. Price is optional (uses 0.01
+ * as a placeholder so the row can land; they can fix cost after).
+ */
+export function parseHoldingsPaste(text: string): CsvImportResult {
+  const result: CsvImportResult = { rows: [], cash: null, skipped: [] };
+  const lines = text
+    .split(/\r\n|\n|\r/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const byTicker = new Map<string, CsvHoldingRow>();
+
+  lines.forEach((raw, i) => {
+    const cells = raw.includes(",")
+      ? parseCsvLine(raw)
+      : raw.split(/\s+/);
+    const tickerRaw = (cells[0] ?? "").trim();
+    if (!tickerRaw) return;
+    if (CASH_KEYS.has(tickerRaw.toUpperCase())) {
+      const amount = parseNumber(cells[1]) ?? parseNumber(cells[2]);
+      if (amount != null) result.cash = (result.cash ?? 0) + amount;
+      return;
+    }
+    const ticker = resolveImportTicker(tickerRaw);
+    if (!ticker) {
+      result.skipped.push({ line: i + 1, raw, reason: "Unrecognized ticker" });
+      return;
+    }
+    const shares = parseNumber(cells[1]);
+    if (!(shares != null && shares > 0)) {
+      result.skipped.push({
+        line: i + 1,
+        raw,
+        reason: "Need a share count after the ticker",
+      });
+      return;
+    }
+    const buyPrice = parseNumber(cells[2]);
+    if (!(buyPrice != null && buyPrice > 0)) {
+      result.skipped.push({
+        line: i + 1,
+        raw,
+        reason: "Need a buy price after the share count",
+      });
+      return;
+    }
+    byTicker.set(ticker, {
+      ticker,
+      shares,
+      buyPrice,
+    });
+  });
+
+  result.rows = [...byTicker.values()];
+  return result;
+}
+
 export function downloadHoldingsCsvTemplate() {
   if (typeof window === "undefined") return;
   const blob = new Blob([HOLDINGS_CSV_TEMPLATE], {

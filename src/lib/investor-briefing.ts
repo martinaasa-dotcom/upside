@@ -1,11 +1,8 @@
-import { cashtag } from "@/lib/format";
 import type { CoveredCallRow } from "@/lib/types";
 import type { OverviewModel } from "@/lib/overview";
 import type { UpsideAlert } from "@/lib/alerts";
 import { todayKeyInTz } from "@/lib/timezone";
 import { hashSeed, mulberry32, pick } from "@/lib/seeded-rng";
-import { buildPortfolioPersonality, THEME_LABEL } from "@/lib/portfolio-personality";
-import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 
 export type BriefingLink =
   | { type: "pulse" }
@@ -30,10 +27,6 @@ export const BRIEFING_KIND_LABEL: Record<BriefingItem["kind"], string> = {
 };
 
 export const BRIEFING_PULSE_CTA = "Open Pulse";
-
-function pct1(n: number): string {
-  return `${Math.round(n * 1000) / 10}%`;
-}
 
 function money(n: number): string {
   return Math.round(n).toLocaleString("en-US");
@@ -65,92 +58,6 @@ function sheetMostCcPremium(rows: CoveredCallRow[]): string | undefined {
     }
   }
   return best;
-}
-
-/**
- * One rotating "what's the play today" card. Options pep talks live
- * elsewhere (strike alerts, covered-call panel) so this pool stays
- * about the book, not about writing calls.
- */
-function buildPlays(opts: {
-  model: OverviewModel;
-  dayKey: string;
-}): BriefingItem[] {
-  const { model, dayKey } = opts;
-  const plays: BriefingItem[] = [];
-
-  plays.push({
-    id: `play-wait-${dayKey}`,
-    kind: "play",
-    title: "Nothing to do today",
-    detail: "No trades needed. Checking in is enough.",
-  });
-
-  const equityHoldings = model.tickers
-    .filter((t) => t.currentValue > 0)
-    .map((t) => ({ ticker: t.ticker, value: t.currentValue }));
-  if (equityHoldings.length > 0) {
-    const personality = buildPortfolioPersonality(
-      equityHoldings,
-      model.totals.cash
-    );
-    const rng = mulberry32(
-      hashSeed(`upside-briefing-theme|${dayKey}|${personality.dominantTheme}`)
-    );
-    plays.push({
-      id: `play-theme-${dayKey}`,
-      kind: "play",
-      title: `Mostly ${THEME_LABEL[personality.dominantTheme]}, ${personality.diversificationBand.label.toLowerCase()}`,
-      detail: pick(rng, [
-        `${personality.diversificationBand.description} That's the mix, not a prediction.`,
-        `Mostly ${THEME_LABEL[personality.dominantTheme].toLowerCase()}. Just a read on how the book is built.`,
-      ]),
-    });
-  }
-
-  const total = model.totals.totalValue;
-  const next = COMPOUND_MILESTONE_GOALS.find((g) => total < g) ?? null;
-  if (next != null && total > 0) {
-    const remaining = next - total;
-    const rng = mulberry32(hashSeed(`upside-briefing-milestone|${dayKey}|${next}`));
-    plays.push({
-      id: `play-milestone-${dayKey}`,
-      kind: "play",
-      title: `$${money(remaining)} to your next milestone`,
-      detail: pick(rng, [
-        `$${money(next)} is next. Time gets you there, not a trade.`,
-        `$${money(remaining)} to go. No hurry.`,
-      ]),
-      link: { type: "compound" },
-      cta: "Open Compound",
-    });
-  }
-
-  const topMover = [...model.tickers]
-    .filter((t) => t.todayPct != null)
-    .sort((a, b) => Math.abs(b.todayPct ?? 0) - Math.abs(a.todayPct ?? 0))[0];
-  if (topMover && Math.abs(topMover.todayPct ?? 0) >= 0.02) {
-    const pct = topMover.todayPct!;
-    const rng = mulberry32(
-      hashSeed(`upside-briefing-mover|${dayKey}|${cashtag(topMover.ticker)}`)
-    );
-    plays.push({
-      id: `play-mover-${dayKey}`,
-      kind: "play",
-      title: `${cashtag(topMover.ticker)} is today's biggest mover, ${pct >= 0 ? "+" : ""}${pct1(pct)}`,
-      detail: pick(rng, [
-        "Look at why before you shrug it off.",
-        "That's the name making noise today.",
-      ]),
-      ticker: topMover.ticker,
-      link: topMover.portfolioIds[0]
-        ? { type: "sheet", portfolioId: topMover.portfolioIds[0] }
-        : undefined,
-      cta: topMover.portfolioIds[0] ? "Open this sheet" : undefined,
-    });
-  }
-
-  return plays;
 }
 
 /**
@@ -274,30 +181,17 @@ export function buildInvestorBriefing(input: {
     });
   }
 
-  const plays = buildPlays({ model, dayKey }).filter((p) =>
-    activeAlerts.length > 0 ? p.id !== `play-wait-${dayKey}` : true
-  );
-  if (plays.length > 0) {
-    items.push(plays[Math.abs(hash(dayKey)) % plays.length]!);
-  }
-
-  // Three, not a feed. A briefing you actually read has to sit under the
-  // numbers without turning the page into a wall of cards.
+  // No rotating "play" cards. Those invented work. Alerts and the day
+  // read are enough. Today itself now owns the morning stack.
   const seen = new Set<string>();
   const out: BriefingItem[] = [];
-  for (const kind of ["action", "watch", "play"] as const) {
+  for (const kind of ["action", "watch"] as const) {
     for (const it of items.filter((i) => i.kind === kind)) {
       if (seen.has(it.id)) continue;
       seen.add(it.id);
       out.push(it);
-      if (out.length >= 3) return out;
+      if (out.length >= 2) return out;
     }
   }
   return out;
-}
-
-function hash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return h;
 }

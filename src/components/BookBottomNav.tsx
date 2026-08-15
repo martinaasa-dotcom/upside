@@ -8,7 +8,7 @@ import Link from "next/link";
  * Desktop dock on pages outside the book (Communities, Fund, Account, Admin).
  * Same four destinations as "In your book", as real links, so you can leave
  * a community without hunting for Book in the header. Hidden on phones,
- * where MobileTabBar already covers Home / Explore.
+ * where MobileTabBar already covers Home / Pulse / Circle / Account.
  */
 const ITEMS = [
   {

@@ -74,7 +74,14 @@ function teaserFromFundCache(): FundTeaser | null {
  * Fund + Communities on Overview. Not a second hero, not a one-line
  * afterthought. These are rooms people come back for.
  */
-export function HomeWorld({ className }: { className?: string }) {
+export function HomeWorld({
+  className,
+  fundOnly = false,
+}: {
+  className?: string;
+  /** On Circle, the communities card just links back here. Fund only. */
+  fundOnly?: boolean;
+}) {
   const [fund, setFund] = useState<FundTeaser | null>(() => teaserFromFundCache());
   const [communities, setCommunities] = useState<CommunityRow[] | null>(null);
 
@@ -96,6 +103,7 @@ export function HomeWorld({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
+    if (fundOnly) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -113,7 +121,7 @@ export function HomeWorld({ className }: { className?: string }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fundOnly]);
 
   const primary = communities?.[0];
   const communityHref = primary ? `/communities/${primary.id}` : "/communities";
@@ -129,10 +137,15 @@ export function HomeWorld({ className }: { className?: string }) {
   return (
     <Panel className={cn("overview-fade", className)}>
       <PanelHeader
-        title="Around Upside Lab"
+        title={fundOnly ? "Upside Fund" : "Around Upside Lab"}
         icon={<Users className="h-4 w-4" />}
       />
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div
+        className={cn(
+          "mt-6 grid gap-4",
+          fundOnly ? "grid-cols-1" : "sm:grid-cols-2"
+        )}
+      >
         <Link href="/upside-portfolio" className="group block">
           <Card
             tone="brand"
@@ -181,6 +194,7 @@ export function HomeWorld({ className }: { className?: string }) {
           </Card>
         </Link>
 
+        {!fundOnly && (
         <Link href={communityHref} className="group block">
           <Card
             interactive
@@ -203,6 +217,7 @@ export function HomeWorld({ className }: { className?: string }) {
             </p>
           </Card>
         </Link>
+        )}
       </div>
     </Panel>
   );

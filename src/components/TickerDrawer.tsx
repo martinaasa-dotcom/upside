@@ -196,6 +196,23 @@ export function TickerDrawer({
             <p className="mt-1.5 text-xs text-zinc-400">
               Pulse reads this first. Leave it blank and it still works off headlines and the tape.
             </p>
+            {conviction?.stamps && conviction.stamps.length > 0 && (
+              <ul className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3">
+                {conviction.stamps.slice(0, 3).map((s) => (
+                  <li key={s.at} className="text-xs text-zinc-400">
+                    <span className="text-zinc-300">{s.verdict}</span>
+                    {" · "}
+                    {s.line}
+                    <span className="ml-1 text-zinc-600">
+                      {new Date(s.at).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           {/* Price path — the same numbers as the Forecast table, never a

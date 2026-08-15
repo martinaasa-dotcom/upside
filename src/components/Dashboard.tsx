@@ -155,6 +155,9 @@ import {
 } from "@/lib/invite-nudge";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
+import { loadHomeSheetId, saveHomeSheetId, type HomeSheetId } from "@/lib/home-sheet";
+import { markSheetImported } from "@/lib/sheet-import-stamp";
+import { addPulseStamp } from "@/lib/conviction";
 
 /**
  * Margus is a collapsed floating panel almost nobody opens on first paint,
@@ -197,12 +200,16 @@ function PricesAgeStatus({
   bookSyncedAt,
   source,
   locked,
+  quotedCount,
+  totalCount,
 }: {
   quotesUpdatedAt: number | null;
   quotesDelayed: boolean;
   bookSyncedAt: number | null;
   source: DataSource;
   locked: boolean;
+  quotedCount?: number;
+  totalCount?: number;
 }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -260,7 +267,12 @@ function PricesAgeStatus({
       }
     >
       {pricesSec == null ? "Prices · —" : `Prices · ${formatAge(pricesSec)}`}
-      {quotesDelayed ? " · delayed" : ""}
+      {quotedCount != null && totalCount != null
+        ? ` · ${quotedCount}/${totalCount} names`
+        : ""}
+      {quotesDelayed && pricesSec != null && pricesSec >= 30 * 60
+        ? " · delayed"
+        : ""}
       {bookLagging ? ` · book sync ${formatAge(bookSec)}` : ""}
     </span>
   );
@@ -586,11 +598,7 @@ export function Dashboard() {
   const isPulse = activeId === PULSE_TAB_ID;
   const isAlerts = activeId === ALERTS_TAB_ID;
   const isMetaTab = isOverview || isCompound || isLab || isPulse || isAlerts;
-  const mobileTab: MobileTabId = isAlerts
-    ? "alerts"
-    : isPulse || isLab || isCompound
-      ? "explore"
-      : "home";
+  const mobileTab: MobileTabId = isPulse ? "pulse" : "home";
 
   const activePortfolio =
     isMetaTab
@@ -698,6 +706,22 @@ export function Dashboard() {
     () => buildOverview(portfolios, holdings, quotes),
     [portfolios, holdings, quotes]
   );
+  const [homeSheetId, setHomeSheetId] = useState<HomeSheetId>("all");
+  useEffect(() => {
+    const saved = loadHomeSheetId();
+    setHomeSheetId(saved);
+  }, []);
+  const homeOverview = useMemo(() => {
+    const known = portfolios.some((p) => p.id === homeSheetId);
+    if (homeSheetId === "all" || !known) {
+      return overview;
+    }
+    return buildOverview(
+      portfolios.filter((p) => p.id === homeSheetId),
+      holdings.filter((h) => h.portfolio_id === homeSheetId),
+      quotes
+    );
+  }, [overview, homeSheetId, portfolios, holdings, quotes]);
 
   // Book-wide CC rows, computed once and shared by Lab (Alerts/calendar) and
   // the alert builders below — was previously an inline flatMap recomputed
@@ -2006,8 +2030,10 @@ export function Dashboard() {
           })),
         },
       ]);
+      const sheetId = inviteSheet?.id ?? activePortfolio?.id;
+      if (sheetId) markSheetImported(sheetId);
     },
-    [applyAdvisorActions]
+    [applyAdvisorActions, inviteSheet?.id, activePortfolio?.id]
   );
 
   function undoLastMargusWrite() {
@@ -2657,6 +2683,8 @@ export function Dashboard() {
             bookSyncedAt={bookSyncedAt}
             source={source}
             locked={locked}
+            quotedCount={Math.max(0, allTickers.length - missingTickers.length)}
+            totalCount={allTickers.length}
           />
           <MacroStrip />
         </div>
@@ -2735,6 +2763,11 @@ export function Dashboard() {
             quotes={quotes}
             convictions={convictionMap}
             onWriteThesis={(t) => setDrawerTicker(t)}
+            onStamp={(ticker, stamp) => {
+              patchLab({
+                conviction: addPulseStamp(convictionMap, ticker, stamp),
+              });
+            }}
           />
         ) : isLab ? (
           <LabSheet
@@ -2768,7 +2801,7 @@ export function Dashboard() {
         ) : isOverview ? (
           <>
             <OverviewDashboard
-              model={overview}
+              model={homeOverview}
               onOpenSheet={openSheet}
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}
@@ -2778,6 +2811,24 @@ export function Dashboard() {
               onAddHolding={() => startFirstRunAction("manual")}
               onImportScreenshot={() => startFirstRunAction("screenshot")}
               onImportCsv={() => startFirstRunAction("csv")}
+              onPasteHoldings={(input) => {
+                void (async () => {
+                  const wasEmpty = holdings.length === 0;
+                  const target = await ensureFirstSheet();
+                  if (!target) return;
+                  handleCsvImport(input);
+                  markSheetImported(target.id);
+                  if (wasEmpty && !pulseHiddenForTier) {
+                    setActiveId(PULSE_TAB_ID);
+                  }
+                })();
+              }}
+              homeSheetId={homeSheetId}
+              homeSheets={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+              onHomeSheet={(id) => {
+                setHomeSheetId(id);
+                saveHomeSheetId(id);
+              }}
               onAskMargus={() => setMargusExpandSignal((n) => n + 1)}
               onOpenLab={
                 labHiddenForTier
@@ -2887,17 +2938,13 @@ export function Dashboard() {
       <MobileTabBar
         active={mobileTab}
         alertCount={activeAlerts.length}
-        exploreHref={pulseHiddenForTier ? "/upside-portfolio" : "/?tab=pulse"}
+        pulseHref={pulseHiddenForTier ? "/" : "/?tab=pulse"}
         onSelect={(id) => {
           if (id === "home") {
             setActiveId(OVERVIEW_TAB_ID);
             return true;
           }
-          if (id === "alerts") {
-            setActiveId(ALERTS_TAB_ID);
-            return true;
-          }
-          if (id === "explore") {
+          if (id === "pulse") {
             if (pulseHiddenForTier) return false;
             setActiveId(PULSE_TAB_ID);
             return true;

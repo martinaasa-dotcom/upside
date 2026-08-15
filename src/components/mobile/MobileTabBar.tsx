@@ -1,10 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/format";
-import { Bell, Compass, Home, Settings } from "lucide-react";
+import { Compass, Home, Activity, Settings } from "lucide-react";
 import Link from "next/link";
 
-export type MobileTabId = "home" | "explore" | "alerts" | "settings";
+export type MobileTabId = "home" | "pulse" | "circle" | "settings";
 
 const TABS: {
   id: MobileTabId;
@@ -13,8 +13,8 @@ const TABS: {
   Icon: typeof Home;
 }[] = [
   { id: "home", href: "/", label: "Home", Icon: Home },
-  { id: "explore", href: "/?tab=pulse", label: "Explore", Icon: Compass },
-  { id: "alerts", href: "/?tab=alerts", label: "Alerts", Icon: Bell },
+  { id: "pulse", href: "/?tab=pulse", label: "Pulse", Icon: Activity },
+  { id: "circle", href: "/communities", label: "Circle", Icon: Compass },
   { id: "settings", href: "/account", label: "Account", Icon: Settings },
 ];
 
@@ -29,11 +29,11 @@ export function activeMobileTab(
     pathname.startsWith("/upside-portfolio") ||
     pathname.startsWith("/communities")
   ) {
-    return "explore";
+    return "circle";
   }
   const tab = (tabParam ?? "").toLowerCase();
-  if (tab === "alerts") return "alerts";
-  if (tab === "pulse" || tab === "lab" || tab === "compound") return "explore";
+  if (tab === "pulse") return "pulse";
+  if (tab === "lab" || tab === "compound") return "home";
   return "home";
 }
 
@@ -41,13 +41,13 @@ export function MobileTabBar({
   active,
   alertCount = 0,
   className,
-  exploreHref,
+  pulseHref,
   onSelect,
 }: {
   active: MobileTabId;
   alertCount?: number;
   className?: string;
-  exploreHref?: string;
+  pulseHref?: string;
   /** Return true to stay on this page (Dashboard SPA tabs). */
   onSelect?: (id: MobileTabId) => boolean | void;
 }) {
@@ -59,10 +59,10 @@ export function MobileTabBar({
         className
       )}
     >
-      <div className="grid h-14 grid-cols-4">
+      <div className="grid h-16 grid-cols-4">
         {TABS.map(({ id, href, label, Icon }) => {
           const on = active === id;
-          const to = id === "explore" && exploreHref ? exploreHref : href;
+          const to = id === "pulse" && pulseHref ? pulseHref : href;
           return (
             <Link
               key={id}
@@ -74,7 +74,7 @@ export function MobileTabBar({
                 if (onSelect(id)) e.preventDefault();
               }}
               className={cn(
-                "relative flex flex-col items-center justify-center text-zinc-500",
+                "relative flex flex-col items-center justify-center gap-0.5 text-zinc-500",
                 on && "text-brand"
               )}
             >
@@ -86,10 +86,11 @@ export function MobileTabBar({
               )}
               <span className="relative">
                 <Icon className="h-5 w-5" strokeWidth={on ? 2.2 : 1.75} />
-                {id === "alerts" && alertCount > 0 && (
+                {id === "home" && alertCount > 0 && (
                   <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
                 )}
               </span>
+              <span className="text-[10px] leading-none">{label}</span>
             </Link>
           );
         })}

@@ -69,15 +69,15 @@ const MAKERS: FactMaker[] = [
       `${bottom.name} could use a pep talk today, ${pct1(bottom.todayPct!)}.`,
     ]);
   },
-  // Best lifetime ROI.
+  // Biggest book (live mark, not cost).
   ({ members, rng }) => {
-    const ranked = [...members].sort((a, b) => b.roiPct - a.roiPct);
+    const ranked = [...members].sort((a, b) => b.totalValue - a.totalValue);
     const top = ranked[0];
-    if (!top || top.roiPct <= 0) return null;
+    if (!top || top.totalValue <= 0) return null;
     return pick(rng, [
-      `${top.name} has the best lifetime record, up ${pct1(top.roiPct)} all-time.`,
-      `Hall of fame: ${top.name} at ${pct1(top.roiPct)} lifetime ROI.`,
-      `${top.name} is still ahead on lifetime: ${pct1(top.roiPct)}.`,
+      `${top.name} is carrying the biggest book, $${money(top.totalValue)}.`,
+      `Largest live mark: ${top.name} at $${money(top.totalValue)}.`,
+      `${top.name} has the most on the board right now, $${money(top.totalValue)}.`,
     ]);
   },
   // Riskiest investor.
@@ -183,7 +183,7 @@ const MAKERS: FactMaker[] = [
     if (falcons.length === 0) return null;
     const f = pick(rng, falcons);
     return pick(rng, [
-      `${f.name} is a Falcon: small book, sharp aim, ${pct1(f.roiPct)} lifetime.`,
+      `${f.name} is a Falcon: small book, sharp aim.`,
       `Don't underestimate ${f.name}'s Falcon book, few positions, high conviction.`,
     ]);
   },

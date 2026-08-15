@@ -147,12 +147,18 @@ export async function GET(req: NextRequest, ctx: Ctx) {
         .order("sort_order"),
       supabase
         .from(PORTFELL_TABLES.holdings)
-        .select("*")
+        .select(
+          "id, portfolio_id, ticker, shares, eoy_target, target_call_pct, stock_target_override, sort_order"
+        )
         .in("portfolio_id", portfolioIds)
         .order("sort_order"),
     ]);
     portfolios = p ?? [];
-    holdings = h ?? [];
+    // Live marks only. Cost never leaves the owner's book.
+    holdings = ((h ?? []) as Array<Record<string, unknown>>).map((row) => ({
+      ...row,
+      buy_price: 0,
+    }));
   }
 
   const userToPerson = new Map<string, string>();

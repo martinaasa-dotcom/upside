@@ -2,10 +2,17 @@
 
 export type ConvictionLevel = 1 | 2 | 3 | 4 | 5;
 
+export type PulseStamp = {
+  at: string;
+  verdict: string;
+  line: string;
+};
+
 export type ConvictionEntry = {
   level: ConvictionLevel;
   thesis: string;
   updatedAt: string;
+  stamps?: PulseStamp[];
 };
 
 export type ConvictionMap = Record<string, ConvictionEntry>;
@@ -48,8 +55,30 @@ export function setConviction(
     [key]: {
       level: (patch.level ?? prev.level) as ConvictionLevel,
       thesis: patch.thesis ?? prev.thesis,
+      stamps: patch.stamps ?? prev.stamps,
       updatedAt: new Date().toISOString(),
     },
+  };
+  saveConvictionMap(next);
+  return next;
+}
+
+export function addPulseStamp(
+  map: ConvictionMap,
+  ticker: string,
+  stamp: PulseStamp
+): ConvictionMap {
+  const key = ticker.toUpperCase();
+  const prev = map[key] ?? {
+    level: 3 as ConvictionLevel,
+    thesis: "",
+    updatedAt: stamp.at,
+    stamps: [],
+  };
+  const stamps = [stamp, ...(prev.stamps ?? [])].slice(0, 8);
+  const next: ConvictionMap = {
+    ...map,
+    [key]: { ...prev, stamps, updatedAt: stamp.at },
   };
   saveConvictionMap(next);
   return next;

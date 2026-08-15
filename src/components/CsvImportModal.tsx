@@ -3,6 +3,7 @@
 import {
   downloadHoldingsCsvTemplate,
   parseHoldingsCsv,
+  parseHoldingsPaste,
   type CsvHoldingRow,
   type CsvSkippedRow,
 } from "@/lib/csv-import";
@@ -36,6 +37,7 @@ export function CsvImportModal({
   const [fileName, setFileName] = useState<string | null>(null);
   const [replace, setReplace] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [paste, setPaste] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
@@ -46,6 +48,7 @@ export function CsvImportModal({
     setSkipped([]);
     setFileName(null);
     setError(null);
+    setPaste("");
   }
 
   function handleFile(file: File) {
@@ -112,13 +115,28 @@ export function CsvImportModal({
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
           <p className="text-sm text-zinc-400">
-            Columns: <span className="text-zinc-200">Ticker</span>,{" "}
-            <span className="text-zinc-200">Shares</span>,{" "}
-            <span className="text-zinc-200">Buy Price</span>.{" "}
-            {hideCallPct ? "Cash" : "Call % and Cash"} column
-            {hideCallPct ? " is" : "s are"} optional. A row named CASH is
-            read as your cash balance.
+            Replace this sheet, or paste lines like{" "}
+            <span className="text-zinc-200">NBIS 500 85.10</span>. CSV columns:
+            Ticker, Shares, Buy Price.
           </p>
+
+          <textarea
+            value={paste}
+            onChange={(e) => {
+              setPaste(e.target.value);
+              setError(null);
+              const parsed = parseHoldingsPaste(e.target.value);
+              if (parsed.rows.length > 0 || parsed.cash != null) {
+                setRows(parsed.rows);
+                setCash(parsed.cash);
+                setSkipped(parsed.skipped);
+                setFileName(null);
+              }
+            }}
+            rows={4}
+            placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-sm text-white outline-none placeholder:text-zinc-600 focus:border-brand/50"
+          />
 
           <div className="flex flex-wrap items-center gap-2">
             <input

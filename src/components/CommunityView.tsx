@@ -225,7 +225,7 @@ export function CommunityView({ communityId }: Props) {
         : "overview"
   );
   const [leaderboardRange, setLeaderboardRange] = useState<
-    "today" | "lifetime" | "spread" | "risk" | "conviction"
+    "today" | "spread" | "risk" | "conviction"
   >("today");
   const [bestiaryOpen, setBestiaryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -488,6 +488,7 @@ export function CommunityView({ communityId }: Props) {
     totalValue: number;
     todayDollar: number;
     todayPct: number | null;
+    /** Always 0 in community. Cost is not shared. */
     roiPct: number;
     personality: PortfolioPersonality | null;
     milestone: PersonMilestone;
@@ -531,9 +532,6 @@ export function CommunityView({ communityId }: Props) {
         .filter((s): s is (typeof overview.sheets)[number] => Boolean(s));
       const totalValue = scores.reduce((s, sc) => s + sc.totalValue, 0);
       const todayDollar = scores.reduce((s, sc) => s + sc.todayDollar, 0);
-      const buyValue = scores.reduce((s, sc) => s + sc.buyValue, 0);
-      const roiDollar = scores.reduce((s, sc) => s + sc.roiDollar, 0);
-      const roiPct = buyValue > 0 ? roiDollar / buyValue : 0;
       const previousTotal = totalValue - todayDollar;
       const todayPct = previousTotal > 0 ? todayDollar / previousTotal : null;
       const cash = sheets.reduce((s, p) => s + p.cash_balance, 0);
@@ -541,7 +539,7 @@ export function CommunityView({ communityId }: Props) {
         .filter((h) => sheetIds.has(h.portfolio_id))
         .map((h) => ({
           ticker: h.ticker,
-          value: h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
+          value: h.shares * (quotes[h.ticker]?.price ?? 0),
         }));
       const personality =
         tickerValues.length > 0
@@ -557,7 +555,7 @@ export function CommunityView({ communityId }: Props) {
         totalValue,
         todayDollar,
         todayPct,
-        roiPct,
+        roiPct: 0,
         personality,
         milestone: milestoneFor(totalValue),
       };
@@ -823,9 +821,8 @@ export function CommunityView({ communityId }: Props) {
 
   /**
    * Holdings for the current drill-down. Opening a member shows every book
-   * pooled, so a ticker held in two of them collapses into one row with a
-   * share-weighted average cost, which is what "combined" has to mean for
-   * the ROI column to be right. Picking a single book skips the merge.
+   * pooled, so a ticker held in two of them collapses into one row.
+   * Picking a single book skips the merge. Cost is never shown here.
    */
   const selectedHoldings = useMemo(() => {
     if (selectedPortfolioId) {
@@ -844,10 +841,6 @@ export function CommunityView({ communityId }: Props) {
       byTicker.set(h.ticker, {
         ...prev,
         shares,
-        buy_price:
-          shares > 0
-            ? (prev.buy_price * prev.shares + h.buy_price * h.shares) / shares
-            : prev.buy_price,
       });
     }
     return [...byTicker.values()];
@@ -1035,7 +1028,7 @@ export function CommunityView({ communityId }: Props) {
       <div className="flex min-h-dvh flex-col bg-black text-zinc-100 md:bg-app">
         <MobileChrome
           title={community?.name ?? "Community"}
-          active="explore"
+          active="circle"
           end={
             isAdmin && community ? (
               <button
@@ -1106,7 +1099,8 @@ export function CommunityView({ communityId }: Props) {
             <>
               <section className="space-y-3">
                 <p className="text-xs uppercase tracking-wide text-zinc-400">
-                  Everyone&apos;s books added together. Live, read-only.
+                  Everyone&apos;s books added together. Live marks only. Members
+                  do not see what you paid.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Stat
@@ -1130,16 +1124,9 @@ export function CommunityView({ communityId }: Props) {
                     }
                   />
                   <Stat
-                    label="All-time"
-                    value={signedCurrency(overview.totals.roiDollar)}
-                    sub={percent(overview.totals.roiPct)}
-                    tone={
-                      overview.totals.roiDollar > 0
-                        ? "up"
-                        : overview.totals.roiDollar < 0
-                          ? "down"
-                          : undefined
-                    }
+                    label="Cash"
+                    value={currency(overview.totals.cash)}
+                    tone={overview.totals.cash < 0 ? "down" : undefined}
                   />
                 </div>
               </section>
@@ -1282,13 +1269,11 @@ export function CommunityView({ communityId }: Props) {
                             <p className="mt-0.5 text-sm text-zinc-400">
                               {leaderboardRange === "today"
                                 ? "Ranked by today's move"
-                                : leaderboardRange === "lifetime"
-                                  ? "Ranked by all-time return"
-                                  : leaderboardRange === "spread"
-                                    ? "Ranked by how spread out the book is"
-                                    : leaderboardRange === "risk"
-                                      ? "Ranked by theme heat"
-                                      : "Ranked by the largest single name"}
+                                : leaderboardRange === "spread"
+                                  ? "Ranked by how spread out the book is"
+                                  : leaderboardRange === "risk"
+                                    ? "Ranked by theme heat"
+                                    : "Ranked by the largest single name"}
                             </p>
                           </div>
                         </div>
@@ -1296,7 +1281,6 @@ export function CommunityView({ communityId }: Props) {
                           {(
                             [
                               ["today", "Today"],
-                              ["lifetime", "All-time"],
                               ["spread", "Spread"],
                               ["risk", "Risk"],
                               ["conviction", "Conviction"],
@@ -1323,8 +1307,6 @@ export function CommunityView({ communityId }: Props) {
                           .sort((a, b) => {
                             if (leaderboardRange === "today")
                               return (b.todayPct ?? -1) - (a.todayPct ?? -1);
-                            if (leaderboardRange === "lifetime")
-                              return b.roiPct - a.roiPct;
                             if (leaderboardRange === "spread")
                               return (
                                 (b.personality?.diversificationScore ?? -1) -
@@ -1346,11 +1328,7 @@ export function CommunityView({ communityId }: Props) {
                               leaderboardRange === "risk" ||
                               leaderboardRange === "conviction";
                             const pct =
-                              leaderboardRange === "today"
-                                ? m.todayPct
-                                : leaderboardRange === "lifetime"
-                                  ? m.roiPct
-                                  : null;
+                              leaderboardRange === "today" ? m.todayPct : null;
                             const builtScore =
                               leaderboardRange === "spread"
                                 ? m.personality?.diversificationScore
@@ -1618,7 +1596,7 @@ export function CommunityView({ communityId }: Props) {
                           .map((h) => ({
                             ticker: h.ticker,
                             value:
-                              h.shares * (quotes[h.ticker]?.price ?? h.buy_price),
+                              h.shares * (quotes[h.ticker]?.price ?? 0),
                           }));
                         const personality =
                           memberTickerValues.length > 0
@@ -2444,12 +2422,6 @@ function ReadOnlyHoldings({
   const totalValue =
     holdings.reduce((s, h) => s + (quotes[h.ticker]?.price ?? 0) * h.shares, 0) +
     cash;
-  const totalCost = holdings.reduce((s, h) => s + h.buy_price * h.shares, 0);
-  const totalPnl = holdings.reduce((s, h) => {
-    const price = quotes[h.ticker]?.price ?? 0;
-    return s + (price - h.buy_price) * h.shares;
-  }, 0);
-  const totalRoiPct = totalCost > 0 ? totalPnl / totalCost : 0;
   const previousCloseValue =
     holdings.reduce(
       (s, h) => s + (quotes[h.ticker]?.previousClose ?? quotes[h.ticker]?.price ?? 0) * h.shares,
@@ -2476,20 +2448,12 @@ function ReadOnlyHoldings({
           sub={todayPct != null ? percent(todayPct) : undefined}
           tone={todayDollar > 0 ? "up" : todayDollar < 0 ? "down" : undefined}
         />
-        <Stat
-          label="Gain so far"
-          value={signedCurrency(totalPnl)}
-          sub={percent(totalRoiPct)}
-          tone={totalPnl > 0 ? "up" : totalPnl < 0 ? "down" : undefined}
-        />
+        <Stat label="Cash" value={currency(cash)} />
       </div>
       <div className="space-y-2 md:hidden">
         {sortedHoldings.map((h) => {
           const price = quotes[h.ticker]?.price ?? 0;
           const value = price * h.shares;
-          const cost = h.buy_price * h.shares;
-          const pnl = value - cost;
-          const roiPct = cost > 0 ? pnl / cost : 0;
           const todayPct = quotes[h.ticker]?.changePercent ?? null;
           const pctBook = totalValue > 0 ? value / totalValue : 0;
           return (
@@ -2510,8 +2474,6 @@ function ReadOnlyHoldings({
                 <span className={signedTone(todayPct, "text-zinc-400")}>
                   {todayPct != null ? percent(todayPct) : "—"} today
                 </span>
-                <span className={signedTone(roiPct)}>{percent(roiPct)}</span>
-                <span className={signedTone(pnl)}>{signedCurrency(pnl)}</span>
               </div>
             </div>
           );
@@ -2535,19 +2497,13 @@ function ReadOnlyHoldings({
               <th className="px-3 py-2 font-medium">Shares</th>
               <th className="px-3 py-2 font-medium">Price</th>
               <th className="px-3 py-2 font-medium">Today</th>
-              <th className="px-3 py-2 font-medium">Cost</th>
               <th className="px-3 py-2 font-medium">Value</th>
-              <th className="px-3 py-2 font-medium">ROI %</th>
-              <th className="px-3 py-2 font-medium">P&amp;L</th>
             </tr>
           </thead>
           <tbody>
             {sortedHoldings.map((h) => {
               const price = quotes[h.ticker]?.price ?? 0;
               const value = price * h.shares;
-              const cost = h.buy_price * h.shares;
-              const pnl = value - cost;
-              const roiPct = cost > 0 ? pnl / cost : 0;
               const todayPct = quotes[h.ticker]?.changePercent ?? null;
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
@@ -2570,43 +2526,22 @@ function ReadOnlyHoldings({
                   >
                     {todayPct != null ? percent(todayPct, 2) : "—"}
                   </td>
-                  <td className="px-3 py-2 tabular-nums text-zinc-400">
-                    {currency(cost)}
-                  </td>
                   <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
-                  <td
-                    className={cn(
-                      "px-3 py-2 tabular-nums",
-                      signedTone(roiPct)
-                    )}
-                  >
-                    {percent(roiPct)}
-                  </td>
-                  <td
-                    className={cn(
-                      "px-3 py-2 tabular-nums",
-                      signedTone(pnl)
-                    )}
-                  >
-                    {signedCurrency(pnl)}
-                  </td>
                 </tr>
               );
             })}
             {holdings.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-zinc-400" colSpan={9}>
+                <td className="px-3 py-6 text-center text-zinc-400" colSpan={6}>
                   No holdings on this sheet.
                 </td>
               </tr>
             )}
             <tr>
-              <td className="px-3 py-2 text-zinc-400" colSpan={6}>
+              <td className="px-3 py-2 text-zinc-400" colSpan={5}>
                 Cash
               </td>
-              <td className="px-3 py-2 tabular-nums" colSpan={3}>
-                {currency(cash)}
-              </td>
+              <td className="px-3 py-2 tabular-nums">{currency(cash)}</td>
             </tr>
           </tbody>
         </table>
