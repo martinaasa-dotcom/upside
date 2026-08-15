@@ -102,10 +102,9 @@ function priceMoney(n: number): string {
 }
 
 export function notePreview(r: NoteReport): string {
-  const pnl = signedMoney(r.todayDollar);
+  const when = r.kind === "sunday" ? "This week" : "Today";
   const pct = r.todayPct != null ? ` (${signedPct(r.todayPct)})` : "";
-  const when = r.kind === "sunday" ? "this week" : "today";
-  return `${pnl}${pct} ${when} · ${money(r.book)}`;
+  return `${when} ${signedMoney(r.todayDollar)}${pct}`;
 }
 
 function signedMoney(n: number): string {
@@ -478,8 +477,9 @@ export function noteReportHtml(r: NoteReport): string {
   }`;
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
-  const preview = notePreview(r);
-  const previewPad = Array.from({ length: 12 }, () => "\u00a0\u200c").join("");
+  const preview =
+    r.todayPct != null ? signedPct(r.todayPct) : notePreview(r);
+  const previewPad = Array.from({ length: 20 }, () => "\u00a0\u200c").join("");
 
   const moverRows = r.movers
     .map((m, i) => {
@@ -664,6 +664,6 @@ export function noteReportHtml(r: NoteReport): string {
 </html>`;
 }
 
-export function noteSubject(kind: NoteKind): string {
-  return TITLE[kind];
+export function noteSubject(r: NoteReport): string {
+  return `${TITLE[r.kind]} · ${signedMoney(r.todayDollar)}`;
 }

@@ -132,7 +132,7 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
     });
     const ok = await sendNoteEmail({
       to: email,
-      subject: noteSubject(kind),
+      subject: noteSubject(report),
       text: noteReportText(report),
       html: noteReportHtml(report),
     });
