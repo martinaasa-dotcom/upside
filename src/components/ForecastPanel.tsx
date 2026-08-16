@@ -918,7 +918,7 @@ export function ForecastPanel({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <header className="border-b border-border p-5 sm:p-6">
+      <header className="border-b border-border p-5">
         <PanelHeader
           title="Forecast"
           subtitle="A yearly price for each holding, to 2030."
@@ -1041,7 +1041,7 @@ export function ForecastPanel({
               <p className="text-sm font-medium text-muted">
                 Whole portfolio
               </p>
-              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+              <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
                 {currency(model.currentTotal)}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
@@ -1160,7 +1160,7 @@ export function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-border p-5 sm:p-6">
+      <div className="border-t border-border p-5">
         <div>
           <h3 className="text-base font-semibold text-foreground">
             What Margus makes of it

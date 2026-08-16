@@ -30,8 +30,8 @@ import { useState, type ReactNode } from "react";
  *              which scales with the viewBox and blows up on a wide screen.
  *   text-sm    14  labels, meta, chips, chrome, inputs, buttons, nav
  *   text-base  16  titles, tickers, Metric figures, briefing / thesis prose
- *   text-lg    18  hero panel title (one opener per page)
- *   text-2xl   24  Stat / scoreboard numbers (book value, compound result)
+ *   text-lg    18  hero panel title, and every scoreboard figure
+ *   text-2xl   24  one hero number per page (compound result). Not a row of tiles.
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-3xl or text-4xl. The logo lockup is the exception.
  *   Headings   text-base font-bold (hero: text-lg) · sentence case
@@ -39,10 +39,10 @@ import { useState, type ReactNode } from "react";
  *              every money figure. No third face. Lockup is Montserrat.
  *   Micro      text-sm font-medium text-muted · sentence case
  *              Caps stay on the logo only.
- *   Metrics    label over figure, inside a card. The box is the grouping.
- *              Stat is a boxed scoreboard number (text-2xl). It hugs its
- *              type. Do not stretch it to match a taller sibling, and do
- *              not park a paragraph in the sub line.
+ *   Metrics    A row of numbers is ONE box (Scoreboard) with hairline
+ *              columns (Score). Do not nest four Stat tiles in a panel.
+ *              Stat is the same cell, used alone. Figures are text-lg.
+ *              Do not park a paragraph in the sub line.
  *              Do not park unlabeled numbers on the far right of a row.
  *   Reading    a dark card, quiet label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
@@ -76,9 +76,9 @@ const SHELL_TONES = {
 } as const;
 
 const FIGURE =
-  "mt-1.5 font-sans text-base font-semibold tabular-nums";
+  "mt-1 font-sans text-base font-semibold tabular-nums";
 const DISPLAY =
-  "mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums";
+  "mt-1 font-sans text-lg font-semibold leading-none tabular-nums";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -101,7 +101,7 @@ export function Panel({
       className={cn(
         "h-full rounded-2xl border",
         SHELL_TONES[tone],
-        padded && "p-5 sm:p-6",
+        padded && "p-5",
         className
       )}
       {...rest}
@@ -446,17 +446,38 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
   );
 }
 
-/** Label, big number, one line of context. Optionally an explainer bubble. */
-export function Stat({
-  label,
-  value,
-  sub,
-  explain,
-  tone,
-  valueClassName,
-  subClassName,
+const SCOREBOARD_COLS = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-1 sm:grid-cols-3",
+  4: "grid-cols-2 sm:grid-cols-4",
+  5: "grid-cols-2 sm:grid-cols-5",
+} as const;
+
+/** One box. Hairline columns. Use this for any 2–5 number row. */
+export function Scoreboard({
+  cols = 4,
   className,
+  children,
 }: {
+  cols?: 1 | 2 | 3 | 4 | 5;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "grid gap-px overflow-hidden rounded-xl border border-border bg-border",
+        SCOREBOARD_COLS[cols],
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+type ScoreProps = {
   label: ReactNode;
   value: ReactNode;
   sub?: ReactNode;
@@ -465,37 +486,49 @@ export function Stat({
   valueClassName?: string;
   subClassName?: string;
   className?: string;
-}) {
+};
+
+function scoreTone(tone?: "up" | "down") {
+  if (tone === "up") return "text-gain";
+  if (tone === "down") return "text-loss";
+  return "text-foreground";
+}
+
+/** A cell inside Scoreboard. Same type as Stat. No extra box. */
+export function Score({
+  label,
+  value,
+  sub,
+  explain,
+  tone,
+  valueClassName,
+  subClassName,
+  className,
+}: ScoreProps) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-border bg-raised px-4 py-3.5",
-        className
-      )}
-    >
+    <div className={cn("bg-raised px-4 py-3.5", className)}>
       <MicroLabel>
         {label}
         {explain && <InfoTip text={explain} />}
       </MicroLabel>
-      <p
-        className={cn(
-          DISPLAY,
-          valueClassName ??
-            (tone === "up"
-              ? "text-gain"
-              : tone === "down"
-                ? "text-loss"
-                : "text-foreground")
-        )}
-      >
+      <p className={cn(DISPLAY, valueClassName ?? scoreTone(tone))}>
         {value}
       </p>
       {sub != null && (
-        <p className={cn("mt-1.5 text-sm leading-relaxed", subClassName ?? "text-muted")}>
+        <p className={cn("mt-1 text-sm leading-snug", subClassName ?? "text-muted")}>
           {sub}
         </p>
       )}
     </div>
+  );
+}
+
+/** One boxed number, when it is not part of a row. */
+export function Stat(props: ScoreProps) {
+  return (
+    <Scoreboard cols={1} className={props.className}>
+      <Score {...props} className={undefined} />
+    </Scoreboard>
   );
 }
 

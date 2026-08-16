@@ -59,7 +59,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section className="rounded-2xl border border-border bg-card p-5">
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
       {subtitle ? (
         <p className="mt-1.5 text-sm text-muted">{subtitle}</p>
@@ -411,7 +411,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
         <div className="shrink-0 text-right">
           <p
             className={cn(
-              "text-2xl font-semibold tabular-nums",
+              "text-lg font-semibold tabular-nums",
               retText(s.figurePct)
             )}
           >
@@ -547,7 +547,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5">
       <div className="rounded-xl border border-border bg-card px-4 py-3.5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">

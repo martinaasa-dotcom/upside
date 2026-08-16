@@ -187,8 +187,7 @@ export function DailyDuelCard({
     return (
       <section
         className={cn(
-          "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
-          !compact && "sm:p-6"
+          "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-5"
         )}
       >
         <div className="mb-3 flex items-center gap-2.5">
@@ -282,8 +281,7 @@ export function DailyDuelCard({
   return (
     <section
       className={cn(
-        "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
-        !compact && "sm:p-6"
+        "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-5"
       )}
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -370,7 +368,7 @@ export function DailyDuelCard({
                 isPick && "ring-2 ring-brand/60"
               )}
             >
-              <p className="text-2xl font-semibold text-foreground">
+              <p className="text-lg font-semibold text-foreground">
                 {cashtag(ticker)}
               </p>
               {isPick && (

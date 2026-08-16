@@ -183,7 +183,7 @@ export function CoveredCallPanel({
       id={COVERED_CALLS_ANCHOR}
       className="scroll-mt-28 overflow-hidden"
     >
-      <div className="border-b border-border p-5 sm:p-6">
+      <div className="border-b border-border p-5">
         <PanelHeader title="Covered calls" />
       </div>
 
@@ -318,7 +318,7 @@ export function CoveredCallPanel({
           </FluidRow>
 
           {rows.length === 0 && (
-            <div className="col-span-full p-4 sm:p-6">
+            <div className="col-span-full p-5">
               <EmptyState
                 title="Nothing to write calls on yet"
                 detail="You need shares before you can write calls on them. Add a holding and this fills in."

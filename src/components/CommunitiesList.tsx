@@ -403,7 +403,7 @@ export function CommunitiesList() {
                 }
               />
 
-              <div className="mt-8 space-y-8">
+              <div className="mt-5 space-y-5">
                 <label className="block">
                   <span className="text-sm font-medium text-muted">
                     {kind === "classroom" ? "Class name" : "Name"}

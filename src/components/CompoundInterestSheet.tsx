@@ -58,6 +58,8 @@ import {
   Panel,
   PanelHeader,
   Pill,
+  Score,
+  Scoreboard,
   Segmented,
 } from "@/components/ui/Panel";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
@@ -669,7 +671,7 @@ export function CompoundInterestSheet({
     draft.ratePeriod === "annual" ? draft.ratePercent : draft.ratePercent * 12;
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[minmax(320px,380px)_1fr]">
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
       {/* min-h-0: grid items won't shrink below content, so overflow never starts. */}
       <div className="min-h-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
         <Panel>
@@ -935,7 +937,7 @@ export function CompoundInterestSheet({
       </div>
 
       {/* Results & Projections Section */}
-      <section className="space-y-8">
+      <section className="space-y-5">
         {/* Hero KPI Summary */}
         <Panel>
           <PanelHeader
@@ -959,31 +961,25 @@ export function CompoundInterestSheet({
 
           {/* Three numbers, and the sentence that ties them together. Anything
             * more here and the first thing a person sees is a wall. */}
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <Card tone="good">
-              <MicroLabel>Ends up at</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-gain">
-                {show(result.futureValue)}
-              </p>
-            </Card>
-
-            <Card tone="warn">
-              <MicroLabel>
-                Of that, growth
-                <InfoTip text="Money the market made for you, on top of everything you put in yourself." />
-              </MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-caution">
-                {show(result.totalInterest)}
-              </p>
-            </Card>
-
-            <Card tone="info">
-              <MicroLabel className="text-brand-bright">You put in</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-brand-bright">
-                {show(result.principal + result.totalDeposited)}
-              </p>
-            </Card>
+          <div className="mt-5">
+            <MicroLabel>Ends up at</MicroLabel>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-gain">
+              {show(result.futureValue)}
+            </p>
           </div>
+          <Scoreboard className="mt-5" cols={2}>
+            <Score
+              label="Of that, growth"
+              value={show(result.totalInterest)}
+              explain="Money the market made for you, on top of everything you put in yourself."
+              valueClassName="text-caution"
+            />
+            <Score
+              label="You put in"
+              value={show(result.principal + result.totalDeposited)}
+              valueClassName="text-brand-bright"
+            />
+          </Scoreboard>
 
           <p className="mt-3 text-sm leading-relaxed text-foreground/80">
             You put in {show(result.principal + result.totalDeposited)} and end
@@ -1182,7 +1178,7 @@ export function CompoundInterestSheet({
           {storyRow && (
             <Card tone="raised" className="mt-4 p-4">
               <MicroLabel>After year {storyRow.index}</MicroLabel>
-              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
                 {show(storyRow.balance)}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">
@@ -1257,16 +1253,15 @@ export function CompoundInterestSheet({
               {compareTakeaway}
             </p>
           )}
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {compare.map((s) => {
               const featured = s.id === "upside";
               const dashed = s.id === "mattress";
               return (
-                <Card
+                <div
                   key={s.id}
-                  className="border"
+                  className="px-4 py-3.5"
                   style={{
-                    borderColor: tint(s.color, featured ? 0.5 : 0.28),
                     background: `linear-gradient(180deg, ${tint(s.color, featured ? 0.16 : 0.08)} 0%, ${tint(s.color, featured ? 0.05 : 0.02)} 100%)`,
                     boxShadow: `inset 3px 0 0 ${s.color}`,
                   }}
@@ -1284,7 +1279,7 @@ export function CompoundInterestSheet({
                     {s.label}
                   </p>
                   <p
-                    className="mt-3 text-2xl font-bold leading-none tabular-nums whitespace-nowrap"
+                    className="mt-2 text-lg font-semibold leading-none tabular-nums whitespace-nowrap"
                     style={{ color: s.color }}
                   >
                     {show(s.result.futureValue)}
@@ -1292,10 +1287,10 @@ export function CompoundInterestSheet({
                   <p className="mt-2 text-sm tabular-nums text-muted">
                     {show(s.result.totalInterest)} growth
                   </p>
-                  <p className="mt-3 text-sm leading-snug text-muted">
+                  <p className="mt-2 text-sm leading-snug text-muted">
                     {s.tagline}
                   </p>
-                </Card>
+                </div>
               );
             })}
           </div>

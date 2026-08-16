@@ -15,8 +15,9 @@ import {
   PanelHeader,
   InsightText,
   Reading,
+  Score,
+  Scoreboard,
   Segmented,
-  Stat,
 } from "@/components/ui/Panel";
 import {
   currency,
@@ -190,7 +191,7 @@ function MobileHomeHero({
         previousAt={previousAt}
         onOpenPulse={onOpenPulse}
       />
-      <div className="mt-8">
+      <div className="mt-5">
         <WidgetErrorBoundary name="Year chart">
         <BookNavChart
           points={points}
@@ -208,7 +209,7 @@ function MobileHomeHero({
         </WidgetErrorBoundary>
       </div>
       <CashAlertCard
-        className="mt-8"
+        className="mt-5"
         cash={totals.cash}
         alerts={alerts}
         onOpenCash={onOpenCash}
@@ -439,7 +440,7 @@ function MorningStack({
 }) {
   const sunday = morning.sunday;
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-5", className)}>
       {sunday ? (
         <div className="space-y-4">
           <Reading label="Sunday">
@@ -447,16 +448,9 @@ function MorningStack({
           </Reading>
           <MicroLabel>Sunday look</MicroLabel>
           {(sunday.best || sunday.worst) && (
-            <div
-              className={cn(
-                "grid gap-4",
-                sunday.best && sunday.worst
-                  ? "grid-cols-1 sm:grid-cols-2"
-                  : "grid-cols-1 sm:max-w-xs"
-              )}
-            >
+            <Scoreboard cols={sunday.best && sunday.worst ? 2 : 1}>
               {sunday.best && (
-                <Stat
+                <Score
                   label={cashtag(sunday.best.ticker)}
                   value={signedMovePct(sunday.best.pct)}
                   sub="Biggest week move"
@@ -464,14 +458,14 @@ function MorningStack({
                 />
               )}
               {sunday.worst && (
-                <Stat
+                <Score
                   label={cashtag(sunday.worst.ticker)}
                   value={signedMovePct(sunday.worst.pct)}
                   sub="Biggest drop"
                   valueClassName={tone(sunday.worst.pct)}
                 />
               )}
-            </div>
+            </Scoreboard>
           )}
         </div>
       ) : (
@@ -483,18 +477,17 @@ function MorningStack({
             </p>
           )}
           {!morning.quiet && morning.drivers.length > 0 && (
-            <div
-              className={cn(
-                "grid gap-4",
+            <Scoreboard
+              cols={
                 morning.drivers.length === 1
-                  ? "grid-cols-1 sm:max-w-xs"
+                  ? 1
                   : morning.drivers.length === 2
-                    ? "grid-cols-1 sm:grid-cols-2"
-                    : "grid-cols-1 sm:grid-cols-3"
-              )}
+                    ? 2
+                    : 3
+              }
             >
               {morning.drivers.map((d) => (
-                <Stat
+                <Score
                   key={d.ticker}
                   label={cashtag(d.ticker)}
                   value={signedCurrency(d.dollar, 0)}
@@ -507,7 +500,7 @@ function MorningStack({
                   subClassName={tone(d.dollar)}
                 />
               ))}
-            </div>
+            </Scoreboard>
           )}
         </>
       )}
@@ -652,11 +645,11 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 px-4 py-4 text-left transition hover:border-brand/40 hover:bg-hover sm:px-5 sm:py-5"
+      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 p-5 text-left transition hover:border-brand/40 hover:bg-hover"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-heading text-lg font-bold text-foreground">
+          <p className="truncate font-heading text-base font-bold text-foreground">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1.5 text-sm text-muted">
@@ -914,38 +907,38 @@ export function OverviewDashboard({
             }
           />
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat
+          <Scoreboard className="mt-5">
+            <Score
               label="Portfolio"
               value={currency(totals.totalValue, 0)}
               sub={plural(totals.sheetCount, "portfolio")}
             />
-            <Stat
+            <Score
               label={morning.moveLabel}
               value={signedCurrency(totals.todayDollar)}
               sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
               valueClassName={tone(totals.todayDollar)}
               subClassName={tone(totals.todayDollar)}
             />
-            <Stat
+            <Score
               label="All time"
               value={signedCurrency(totals.roiDollar)}
               sub={`${percent(totals.roiPct)} vs cost you typed`}
               valueClassName={tone(totals.roiDollar)}
               subClassName={tone(totals.roiDollar)}
             />
-            <Stat
+            <Score
               label="Cash"
               value={currency(totals.cash, 0)}
               sub={totals.cash < 0 ? "Borrowed" : undefined}
               valueClassName={totals.cash < 0 ? "text-loss" : undefined}
               subClassName={totals.cash < 0 ? "text-loss" : undefined}
             />
-          </div>
+          </Scoreboard>
 
           {onHomeSheet && homeSheets.length > 1 && (
             <HomeSheetChip
-              className="mt-6"
+              className="mt-5"
               value={homeSheetId}
               sheets={homeSheets}
               onChange={onHomeSheet}
@@ -953,7 +946,7 @@ export function OverviewDashboard({
           )}
 
           <MorningStack
-            className="mt-8"
+            className="mt-5"
             morning={morning}
             previousAt={visitDiff?.previousAt ?? null}
             onOpenPulse={onOpenPulse}
@@ -972,7 +965,7 @@ export function OverviewDashboard({
             onRestoreAssumed={nav.restoreAssumed}
             onApplyAnchor={nav.applyAnchor}
             onClearAnchor={nav.clearAnchor}
-            className="mt-8"
+            className="mt-5"
           />
           </WidgetErrorBoundary>
         </div>
@@ -993,7 +986,7 @@ export function OverviewDashboard({
             />
           }
         />
-        <div className="mt-8">
+        <div className="mt-5">
           {movers.length === 0 ? (
             <p className="py-5 text-center text-sm text-muted">
               Waiting on prices.

@@ -18,7 +18,8 @@ import {
   Pill,
   Reading,
   ScanList,
-  Stat,
+  Score,
+  Scoreboard,
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
@@ -283,28 +284,28 @@ function PulseCard({
       </div>
 
       {c.inBook ? (
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat
+        <Scoreboard className="mt-5">
+          <Score
             label="Price"
             value={currency(c.price)}
             sub={currency(c.currentValue)}
           />
-          <Stat
+          <Score
             label="Today"
             value={signedCurrency(c.todayDollar)}
             valueClassName={signedTone(c.todayDollar, "text-foreground")}
           />
-          <Stat
+          <Score
             label="Lifetime"
             value={percent(c.roiPct)}
             valueClassName={signedTone(c.roiPct, "text-foreground")}
           />
-          <Stat
+          <Score
             label="Portfolio"
             value={percent(c.bookPct)}
             sub={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
           />
-        </div>
+        </Scoreboard>
       ) : (
         <p className="mt-3 text-sm tabular-nums text-muted">
           {currency(c.price)} · not in your portfolio
@@ -940,7 +941,7 @@ export function PulsePage({
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <Panel>
         <PanelHeader
           hero
@@ -1103,7 +1104,7 @@ export function PulsePage({
           detail="Add a holding and Pulse starts watching it automatically. You can also type any ticker above for a one-off look."
         />
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-5">
           {attention.length > 0 && (
             <section>
               <h3 className="mb-3 text-sm font-medium text-muted">

@@ -26,7 +26,7 @@ import {
   type ThesisCoverage,
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
-import { Stat } from "@/components/ui/Panel";
+import { Score, Scoreboard } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -1456,12 +1456,12 @@ export function CommunityView({ communityId }: Props) {
                     Your paper portfolio is on Home. Sunday note is the weekly recap.
                   </p>
                 ) : null}
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Stat
+                <Scoreboard cols={3}>
+                  <Score
                     label="Total value"
                     value={currency(overview.totals.totalValue)}
                   />
-                  <Stat
+                  <Score
                     label="Today"
                     value={signedCurrency(overview.totals.todayDollar)}
                     sub={
@@ -1478,7 +1478,7 @@ export function CommunityView({ communityId }: Props) {
                     }
                   />
                   {isClassroom ? (
-                    <Stat
+                    <Score
                       label="vs start"
                       value={signedCurrency(
                         overview.totals.totalValue -
@@ -1499,13 +1499,13 @@ export function CommunityView({ communityId }: Props) {
                       }
                     />
                   ) : (
-                    <Stat
+                    <Score
                       label="Cash"
                       value={currency(overview.totals.cash)}
                       tone={overview.totals.cash < 0 ? "down" : undefined}
                     />
                   )}
-                </div>
+                </Scoreboard>
               </section>
 
               <div className="flex gap-1 rounded-lg border border-border bg-well/50 p-1 w-fit">
@@ -1541,7 +1541,7 @@ export function CommunityView({ communityId }: Props) {
               </div>
 
               {(effectiveView === "overview" || effectiveView === "play") && (
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-5">
                   {effectiveView === "overview" && isClassroom && (
                     <WidgetErrorBoundary name="Class roster" resetKey={communityId}>
                     <ClassroomRoster
@@ -1616,7 +1616,7 @@ export function CommunityView({ communityId }: Props) {
                     </p>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-2xl border border-border bg-card p-4 sm:p-6">
+                    <section className="overview-fade order-3 rounded-2xl border border-border bg-card p-5">
                       <div className="mb-5 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
@@ -1662,7 +1662,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-2xl border border-border bg-card p-4 sm:p-6">
+                    <section className="overview-fade order-2 rounded-2xl border border-border bg-card p-5">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
@@ -1706,7 +1706,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-2xl border border-border bg-card p-4 sm:p-6">
+                    <section className="overview-fade order-1 rounded-2xl border border-border bg-card p-5">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
@@ -1791,7 +1791,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
-                    <section className="overview-fade order-4 rounded-2xl border border-border bg-card p-4 sm:p-6">
+                    <section className="overview-fade order-4 rounded-2xl border border-border bg-card p-5">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-gain/15 p-2 text-gain">
                           <Layers className="h-4 w-4" />
@@ -1843,7 +1843,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-2xl border border-border bg-card p-4 sm:p-6">
+                    <section className="overview-fade order-5 rounded-2xl border border-border bg-card p-5">
                       <div className="mb-5 flex items-center gap-2.5">
                         <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
                           <PieChart className="h-4 w-4" />
@@ -1894,7 +1894,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && (
-                  <section className="overview-fade order-6 rounded-2xl border border-border bg-card p-4 sm:p-6">
+                  <section className="overview-fade order-6 rounded-2xl border border-border bg-card p-5">
                     <div className="mb-5 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
@@ -2821,7 +2821,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 sm:p-6 sm:pl-7",
+          "relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110",
         tone.border,
         tone.wash
       )}
@@ -2883,7 +2883,7 @@ function PowerAnimalCard({
             </p>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3">
+          <Scoreboard cols={3}>
             <ScoreRead
               label="How spread out"
               value={`${Math.round(personality.diversificationScore)}/100`}
@@ -2906,22 +2906,22 @@ function PowerAnimalCard({
               band={personality.convictionBand.label}
               detail={personality.convictionBand.description}
             />
-          </div>
+          </Scoreboard>
 
-          <div className="mt-auto grid items-start gap-3 sm:grid-cols-2">
-            <Stat
+          <Scoreboard className="mt-auto" cols={2}>
+            <Score
               label="Modeled year"
               value={`${personality.expectedAnnualReturnPct.toFixed(1)}% a year`}
               sub={`${signedPctPoints(personality.modeledAlphaPct)} vs index`}
               subClassName={signedTone(personality.modeledAlphaPct, "text-muted")}
             />
-            <Stat
+            <Score
               label="Stretch (a rough bad year)"
               value={`${personality.maxDrawdownPct}%`}
               sub="How far these kinds of stocks have fallen in ugly years. Illustrative, not a forecast."
               valueClassName="text-loss"
             />
-          </div>
+          </Scoreboard>
 
           {milestone.next != null && (
             <div>
@@ -2964,9 +2964,9 @@ function ScoreRead({
   detail: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-raised px-4 py-3.5">
+    <div className="bg-raised px-4 py-3.5">
       <p className="text-sm font-medium text-muted">{label}</p>
-      <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+      <p className="mt-1 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
         {value}
       </p>
       <p className="mt-1.5 text-sm font-medium text-foreground">{band}</p>
@@ -3005,16 +3005,16 @@ function ReadOnlyHoldings({
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Total value" value={currency(totalValue)} />
-        <Stat
+      <Scoreboard cols={3}>
+        <Score label="Total value" value={currency(totalValue)} />
+        <Score
           label="Today"
           value={signedCurrency(todayDollar)}
           sub={todayPct != null ? percent(todayPct) : undefined}
           tone={todayDollar > 0 ? "up" : todayDollar < 0 ? "down" : undefined}
         />
-        <Stat label="Cash" value={currency(cash)} />
-      </div>
+        <Score label="Cash" value={currency(cash)} />
+      </Scoreboard>
       <div className="space-y-2 md:hidden">
         {sortedHoldings.map((h) => {
           const price = quotes[h.ticker]?.price ?? 0;

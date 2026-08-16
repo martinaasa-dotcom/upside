@@ -5,11 +5,12 @@ import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import {
   InsightText,
-  Metric,
   MicroLabel,
   Panel,
   Pill,
   Reading,
+  Score,
+  Scoreboard,
 } from "@/components/ui/Panel";
 import { cn } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
@@ -221,21 +222,17 @@ function BookStill() {
         </span>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <Metric label="Portfolio">$91,400</Metric>
-        <Metric label="Today" valueClassName="text-gain">
-          +$4,180
-        </Metric>
-        <Metric label="All time" valueClassName="text-gain">
-          +18%
-        </Metric>
-      </div>
+      <Scoreboard className="mt-5" cols={3}>
+        <Score label="Portfolio" value="$91,400" />
+        <Score label="Today" value="+$4,180" valueClassName="text-gain" />
+        <Score label="All time" value="+18%" valueClassName="text-gain" />
+      </Scoreboard>
 
       <div className="mt-6 space-y-2">
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
-            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-card py-3 pl-5 pr-4"
+            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3 pl-5 pr-4"
           >
             <span
               className={cn(

@@ -6,7 +6,7 @@ import {
   type ShockId,
 } from "@/lib/book-shock";
 import { cashtag, cn, currency, percent } from "@/lib/format";
-import { Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill } from "@/components/ui/Panel";
+import { Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Scoreboard } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -157,10 +157,10 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         )}
       </Panel>
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+      <Scoreboard cols={4}>
+        <div className="bg-raised px-4 py-3.5">
           <MicroLabel>Portfolio after this</MicroLabel>
-          <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+          <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
             {currency(analysis.shockedTotalVal, 0)}
           </p>
           <p
@@ -183,9 +183,9 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {currency(analysis.deltaVal, 0)}
             </span>
           </p>
-        </Card>
+        </div>
 
-        <Card>
+        <div className="bg-raised px-4 py-3.5">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <MicroLabel>
               {analysis.margin.isUsingMargin
@@ -207,7 +207,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
 
           {analysis.margin.isUsingMargin ? (
             <>
-              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+              <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
                 {analysis.margin.shockedLeverage.toFixed(2)}x
               </p>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">
@@ -227,7 +227,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             </>
           ) : (
             <>
-              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+              <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
                 {currency(analysis.cash, 0)}
               </p>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">
@@ -239,13 +239,13 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               </p>
             </>
           )}
-        </Card>
+        </div>
 
-        <Card>
+        <div className="bg-raised px-4 py-3.5">
           <MicroLabel>Hurts most</MicroLabel>
           {analysis.topVulnerability ? (
             <>
-              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none text-foreground">
+              <p className="mt-1.5 font-sans text-lg font-semibold leading-none text-foreground">
                 {cashtag(analysis.topVulnerability.ticker)}
               </p>
               <p className="mt-1.5 text-sm font-semibold tabular-nums text-loss">
@@ -259,13 +259,13 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           ) : (
             <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
           )}
-        </Card>
+        </div>
 
-        <Card>
+        <div className="bg-raised px-4 py-3.5">
           <MicroLabel>Holds up best</MicroLabel>
           {analysis.topShockAbsorber ? (
             <>
-              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none text-foreground">
+              <p className="mt-1.5 font-sans text-lg font-semibold leading-none text-foreground">
                 {cashtag(analysis.topShockAbsorber.ticker)}
               </p>
               <p
@@ -287,8 +287,8 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           ) : (
             <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
           )}
-        </Card>
-      </div>
+        </div>
+      </Scoreboard>
 
       {analysis.themeBreakdown.length > 1 && selectedShock !== "none" && (
         <Panel tone="plain">

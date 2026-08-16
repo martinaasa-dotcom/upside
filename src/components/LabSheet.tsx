@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, Panel, Stat } from "@/components/ui/Panel";
+import { EmptyState, Panel, Score, Scoreboard } from "@/components/ui/Panel";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -361,7 +361,7 @@ export function LabSheet({
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    <p className="text-lg font-semibold tabular-nums text-foreground">
                       {personality.diversificationScore}
                       <span className="text-sm text-muted">/100</span>
                     </p>
@@ -388,8 +388,11 @@ export function LabSheet({
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <Stat
+                <Scoreboard
+                  className="mt-4"
+                  cols={concentration.positionCount > 3 ? 3 : 2}
+                >
+                  <Score
                     label="Behaves like"
                     value={`${concentration.effectivePositions.toFixed(1)} names`}
                     sub={
@@ -398,7 +401,7 @@ export function LabSheet({
                         : `You hold ${concentration.positionCount}. Uneven weights make it act like fewer.`
                     }
                   />
-                  <Stat
+                  <Score
                     label="Largest position"
                     value={`${(concentration.topWeightPct * 100).toFixed(1)}%`}
                     sub={concentration.topWeightTicker ?? undefined}
@@ -412,7 +415,7 @@ export function LabSheet({
                    * fewer, which reads as broken. Fall back to top 3, and
                    * drop the cell entirely when even that says nothing. */}
                   {concentration.positionCount > 3 && (
-                    <Stat
+                    <Score
                       label={
                         concentration.positionCount > 5
                           ? "Top 5 combined"
@@ -435,7 +438,7 @@ export function LabSheet({
                       }
                     />
                   )}
-                </div>
+                </Scoreboard>
               </Panel>
 
               {themes.length > 0 && (

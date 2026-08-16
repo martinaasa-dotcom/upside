@@ -165,7 +165,7 @@ export function HomeWorld({
       />
       <div
         className={cn(
-          "mt-6 grid gap-4",
+          "mt-5 grid gap-3",
           fundOnly ? "grid-cols-1" : "sm:grid-cols-2"
         )}
       >
@@ -184,7 +184,7 @@ export function HomeWorld({
             </div>
             {fund ? (
               <>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
+                <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
                   {currency(fund.totalValue, 0)}
                 </p>
                 <p

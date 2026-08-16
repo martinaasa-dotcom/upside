@@ -1,6 +1,6 @@
 "use client";
 
-import { Panel, PanelHeader, Stat } from "@/components/ui/Panel";
+import { Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -86,7 +86,7 @@ function TickerStoryCard({
   const story = useMemo(() => buildTrendStory(row), [row]);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-foreground">
@@ -113,9 +113,9 @@ function TickerStoryCard({
         {story.sentence}
       </p>
 
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+      <Scoreboard className="mt-3" cols={5}>
         {story.signals.map((s) => (
-          <Stat
+          <Score
             key={s.key}
             label={s.label}
             value={s.value}
@@ -125,7 +125,7 @@ function TickerStoryCard({
             subClassName="text-sm leading-relaxed text-muted"
           />
         ))}
-      </div>
+      </Scoreboard>
 
       {row.divergence && (
         <p className="mt-4 text-sm leading-relaxed text-muted">

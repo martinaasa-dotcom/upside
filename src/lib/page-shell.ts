@@ -3,7 +3,7 @@
  * book dock all use this, so Book → Fund → Communities does not move
  * the side gutters or the page pad.
  */
-export const PAGE_MAX_CLASS = "max-w-[1400px]";
+export const PAGE_MAX_CLASS = "max-w-[1080px]";
 export const PAGE_GUTTER_CLASS = "px-5 sm:px-8";
 export const PAGE_COLUMN_CLASS = `mx-auto w-full min-w-0 ${PAGE_MAX_CLASS} ${PAGE_GUTTER_CLASS}`;
 
@@ -16,4 +16,4 @@ export const PAGE_CHROME_STICKY_CLASS = "lg:top-24";
 
 /** Top pad only. Bottom pad is the live dock height. A shorthand
  * vertical pad would wipe that clearance and hide the last section. */
-export const PAGE_MAIN_CLASS = `${PAGE_COLUMN_CLASS} flex flex-1 flex-col gap-8 pt-8 pb-[var(--dock-pad)] sm:gap-10 sm:pt-10`;
+export const PAGE_MAIN_CLASS = `${PAGE_COLUMN_CLASS} flex flex-1 flex-col gap-5 pt-6 pb-[var(--dock-pad)] sm:gap-6 sm:pt-8`;

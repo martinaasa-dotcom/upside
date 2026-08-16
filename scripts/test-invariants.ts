@@ -1345,7 +1345,8 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /bg-paper/
   );
   assert.match(panel, /default: "border-border bg-card"/);
-  assert.match(panel, /rounded-xl border border-border bg-raised px-4 py-3.5/);
+  assert.match(panel, /rounded-xl border border-border bg-border/);
+  assert.match(panel, /bg-raised px-4 py-3.5/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -1355,8 +1356,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Reading")),
     /text-sm font-medium text-muted/
   );
-  assert.match(panel, /padded && "p-5 sm:p-6"/);
-  assert.match(panel, /font-sans text-2xl font-semibold leading-none tabular-nums/);
+  assert.match(panel, /padded && "p-5"/);
+  assert.match(panel, /export function Scoreboard/);
+  assert.match(panel, /font-sans text-lg font-semibold leading-none tabular-nums/);
   assert.match(panel, /bg-select text-select-ink/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
@@ -1496,7 +1498,7 @@ run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {
   assert.doesNotMatch(season, /<h2 className="text-base font-bold text-white">Seasonality<\/h2>/);
   assert.match(season, /border-gain\/30 bg-gain\/\[0\.08\]/);
   assert.match(season, /border-loss\/30 bg-loss\/\[0\.08\]/);
-  assert.match(season, /text-2xl font-semibold tabular-nums/);
+  assert.match(season, /text-lg font-semibold tabular-nums/);
 });
 
 run("Montserrat headings and Inter body, no third face", () => {
@@ -1634,12 +1636,12 @@ run("signed-in pages share one column so rooms do not jump", () => {
     join(process.cwd(), "src/lib/page-shell.ts"),
     "utf8"
   );
-  assert.match(shell, /max-w-\[1400px\]/);
+  assert.match(shell, /max-w-\[1080px\]/);
   assert.match(shell, /w-full/);
   assert.match(shell, /page-frame/);
   assert.match(shell, /\[--dock-pad:10.5rem\]/);
   assert.match(shell, /md:\[--dock-pad:11.5rem\]/);
-  assert.match(shell, /sm:pt-10/);
+  assert.match(shell, /sm:pt-8/);
   assert.match(shell, /pb-\[var\(--dock-pad\)\]/);
   assert.doesNotMatch(shell, /sm:py-8/);
   assert.doesNotMatch(shell, /sm:py-10/);

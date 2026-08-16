@@ -5,7 +5,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
-import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
+import { MicroLabel, Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
@@ -397,8 +397,8 @@ function FundPosition({
   const thesis = joinNotes(fundCopyBullets(holding.thesis).slice(0, 2));
   const exit = joinNotes(fundCopyBullets(holding.exit_plan).slice(0, 2));
   return (
-    <article className="rounded-2xl border border-border bg-card px-5 py-5 sm:px-6 sm:py-6">
-      <div className="grid items-start gap-8 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-12 lg:gap-16">
+    <article className="rounded-2xl border border-border bg-card p-5">
+      <div className="grid items-start gap-5 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-6">
         <div>
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="text-base font-semibold text-foreground">
@@ -416,25 +416,23 @@ function FundPosition({
           {holding.target_timeframe ? (
             <p className="mt-1 text-sm text-muted">{holding.target_timeframe}</p>
           ) : null}
-          <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5">
-            <Metric label="Entered">{fmtDate(holding.entry_date)}</Metric>
-            <Metric label="Cost">{currency(holding.cost_basis)}</Metric>
-            <Metric
+          <Scoreboard className="mt-5" cols={2}>
+            <Score label="Entered" value={fmtDate(holding.entry_date)} />
+            <Score label="Cost" value={currency(holding.cost_basis)} />
+            <Score
               label="Now"
+              value={currency(price)}
               valueClassName={signedTone(pnlPct, "text-foreground")}
-            >
-              {currency(price)}
-            </Metric>
-            <Metric
+            />
+            <Score
               label="Portfolio"
-              hint={`${holding.shares.toLocaleString("en-US")} sh`}
-            >
-              {currency(marketValue, 0)}
-            </Metric>
-          </div>
+              value={currency(marketValue, 0)}
+              sub={`${holding.shares.toLocaleString("en-US")} sh`}
+            />
+          </Scoreboard>
         </div>
         {(thesis || exit) && (
-          <div className="flex flex-col justify-center gap-6 border-t border-border pt-6 md:border-l md:border-t-0 md:pl-12 md:pt-0 lg:pl-16">
+          <div className="flex flex-col justify-center gap-5 border-t border-border pt-5 md:border-l md:border-t-0 md:pl-6 md:pt-0">
             <PositionNote label="Thesis" text={thesis} />
             <PositionNote label="Exit" text={exit} quiet />
           </div>
@@ -1083,21 +1081,7 @@ export function UpsidePortfolioPage() {
       </AppHeader>
 
       <main id="main" className={PAGE_MAIN_CLASS}>
-        <div>
-          <h1 className="sr-only">Upside Fund</h1>
-          <p className="text-base leading-relaxed text-foreground/80">
-            One decision a day in public. Every trade has a why, a timeline,
-            and an exit plan.
-            <span className="text-muted">
-              {" "}
-              Day {dayNumber}
-              {fund ? ` · started ${fmtDate(fund.inception_date)}` : ""}
-            </span>
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            {UPSIDE_PORTFOLIO_DISCLAIMER}
-          </p>
-        </div>
+        <h1 className="sr-only">Upside Fund</h1>
 
         {loading ? (
           <p className="text-sm text-muted">{loadingMessage}</p>
@@ -1105,27 +1089,58 @@ export function UpsidePortfolioPage() {
           <p className="text-sm text-loss">{error}</p>
         ) : (
           <>
-            <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Stat
+            <Panel>
+              <PanelHeader
+                title={
+                  benchmark
+                    ? `${benchmark.portfolioName}, Margus, and SPY`
+                    : "Margus vs SPY"
+                }
+                subtitle={
+                  fund
+                    ? `Day ${dayNumber} · started ${fmtDate(fund.inception_date)}. One decision a day in public.`
+                    : "One decision a day in public."
+                }
+                actions={
+                  benchmark ? (
+                    <button
+                      type="button"
+                      onClick={handleClearBenchmark}
+                      className="shrink-0 text-sm text-muted hover:text-foreground"
+                    >
+                      Remove
+                    </button>
+                  ) : !pickerOpen ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleOpenPicker()}
+                      className="shrink-0 text-sm font-medium text-brand-bright hover:text-brand"
+                    >
+                      Compare my portfolio
+                    </button>
+                  ) : null
+                }
+              />
+              <Scoreboard className="mt-5">
+                <Score
                   label="Total value"
                   value={currency(totalValue, 0)}
                 />
-                <Stat
+                <Score
                   label="Today"
                   value={signedCurrency(todayDollar, 0)}
                   sub={todayPct != null ? percent(todayPct) : undefined}
                   valueClassName={signedTone(todayDollar, "text-foreground")}
                   subClassName={signedTone(todayDollar, "text-muted")}
                 />
-                <Stat
+                <Score
                   label="Total return"
                   value={percent(totalReturnPct)}
                   sub={signedCurrency(totalReturnDollar, 0)}
                   valueClassName={signedTone(totalReturnDollar, "text-foreground")}
                   subClassName={signedTone(totalReturnDollar, "text-muted")}
                 />
-                <Stat
+                <Score
                   label="Cash"
                   value={currency(cash, 0)}
                   sub={
@@ -1134,41 +1149,7 @@ export function UpsidePortfolioPage() {
                       : undefined
                   }
                 />
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="text-base font-semibold text-foreground">
-                    {benchmark
-                      ? `${benchmark.portfolioName}, Margus, and SPY`
-                      : "Margus vs SPY"}
-                  </h2>
-                  <p className="mt-0.5 text-sm leading-relaxed text-muted">
-                    {benchmark
-                      ? `${benchmark.portfolioName} on nights we recorded. Margus from when the fund started. SPY is the real index.`
-                      : "How the fund has moved versus the S&P 500, as a percent."}
-                  </p>
-                </div>
-                {benchmark ? (
-                  <button
-                    type="button"
-                    onClick={handleClearBenchmark}
-                    className="shrink-0 text-sm text-muted hover:text-foreground"
-                  >
-                    Remove
-                  </button>
-                ) : !pickerOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleOpenPicker()}
-                    className="shrink-0 text-sm font-medium text-brand-bright hover:text-brand"
-                  >
-                    Compare my portfolio
-                  </button>
-                ) : null}
-              </div>
+              </Scoreboard>
 
               {!benchmark && pickerOpen && (
                 <div className="mt-3 space-y-2">
@@ -1220,19 +1201,20 @@ export function UpsidePortfolioPage() {
 
               <WidgetErrorBoundary name="Fund chart">
               <ComparisonChart
-                className="mt-4"
+                className="mt-5"
                 series={comparisonSeries}
                 labels={comparisonLabels}
               />
               </WidgetErrorBoundary>
-            </section>
+              <p className="mt-4 text-sm leading-relaxed text-muted">
+                {UPSIDE_PORTFOLIO_DISCLAIMER}
+              </p>
+            </Panel>
 
             {bettingSlices.length > 0 && (
-              <section className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted">
-                  What he&apos;s betting on
-                </h2>
-                <div className="rounded-2xl border border-border bg-card p-4">
+              <Panel>
+                <PanelHeader title="What he's betting on" />
+                <div className="mt-5">
                   <div className="flex h-3 overflow-hidden rounded-full bg-well">
                     {bettingSlices.map((t) => (
                       <div
@@ -1264,23 +1246,23 @@ export function UpsidePortfolioPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Stat
+                  <Scoreboard className="mt-4" cols={4}>
+                    <Score
                       label="Spread"
                       value={fundPersonality.diversificationBand.label}
                       sub={`Behaves like ${fundConcentration.effectivePositions.toFixed(1)} names`}
                     />
-                    <Stat
+                    <Score
                       label="Biggest bet"
                       value={`${(fundConcentration.topWeightPct * 100).toFixed(0)}%`}
                       sub={fundConcentration.topWeightTicker ?? undefined}
                     />
-                    <Stat
+                    <Score
                       label="Risk"
                       value={fundPersonality.riskBand.label}
                       sub={`Could fall ${fundPersonality.maxDrawdownPct}% in a bad stretch`}
                     />
-                    <Stat
+                    <Score
                       label="Cash"
                       value={`${totalValue > 0 ? Math.round((cash / totalValue) * 100) : 0}%`}
                       sub={
@@ -1289,7 +1271,7 @@ export function UpsidePortfolioPage() {
                           : undefined
                       }
                     />
-                  </div>
+                  </Scoreboard>
                   {fund?.cash_purpose?.trim() ? (
                     <div className="mt-4 border-t border-border pt-4">
                       <MicroLabel>Cash is sitting for</MicroLabel>
@@ -1324,16 +1306,16 @@ export function UpsidePortfolioPage() {
                     )}
                   </div>
                 </div>
-              </section>
+              </Panel>
             )}
 
             {openHoldings.length > 0 && (
               <WidgetErrorBoundary name="Fund positions">
-              <section className="space-y-6">
+              <section className="space-y-3">
                 <h2 className="text-sm font-medium text-muted">
                   Open positions · {openHoldings.length}
                 </h2>
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {openHoldings.map((h) => (
                     <FundPosition
                       key={h.id}
@@ -1355,7 +1337,7 @@ export function UpsidePortfolioPage() {
                   {weeklyRecaps.map((r) => (
                     <article
                       key={r.id}
-                      className="space-y-2 rounded-2xl border border-border bg-card p-4 sm:p-5"
+                      className="space-y-2 rounded-2xl border border-border bg-card p-5"
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <p className="text-sm text-brand-bright">
