@@ -1,11 +1,18 @@
 "use client";
 
-import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
+import { cn, signedTone, currency, percent } from "@/lib/format";
 import {
   usdToDisplay,
   formatEurUsdHint,
   type DisplayCurrency,
 } from "@/lib/display-currency";
+import {
+  listingAmountToUsd,
+  listingCurrency,
+  listingPriceDigits,
+  usdToListingAmount,
+} from "@/lib/listing-currency";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import {
   blockWheelChange,
   formatDecimal,
@@ -47,10 +54,12 @@ type Props = {
   /** Opens the CSV import modal. */
   onImportCsv?: () => void;
   onOpenTicker?: (ticker: string) => void;
-  /** Sheet display currency for totals/values (spot & buy stay USD). */
+  /** Sheet display currency for cost, value, and gain or loss. */
   displayCurrency?: DisplayCurrency;
   /** USD per 1 EUR — required when displayCurrency is EUR. */
   eurUsd?: number | null;
+  /** USD per 1 unit of listing currency (SEK, NOK, …). */
+  usdPer?: Record<string, number>;
   onDisplayCurrencyChange?: (currency: DisplayCurrency) => void;
   /** Class sheet: hide add / cash / sell when the teacher closed that. */
   tradeLock?: {
@@ -175,9 +184,9 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   {
     label: "Buy",
     key: "buy",
-    explain: "Average price you paid per share",
+    explain: "Average price you paid per share, in this listing's money",
   },
-  { label: "Price", key: "price", explain: "Current market price per share" },
+  { label: "Price", key: "price", explain: "Current share price, in this listing's money" },
   {
     label: "ROI %",
     key: "roiPct",
@@ -262,12 +271,36 @@ export function PortfolioTable({
   onOpenTicker,
   displayCurrency = "USD",
   eurUsd = null,
+  usdPer = { USD: 1 },
   onDisplayCurrencyChange,
   tradeLock,
 }: Props) {
   const money = (usd: number, digits = 2) =>
     currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
-  const usd = (value: number, digits = 2) => currency(value, digits, "USD");
+
+  function rowMoney(h: EnrichedHolding) {
+    const code = listingCurrency(h.ticker, h.quote?.currency);
+    const rate = usdPer[code];
+    const canFx = code === "USD" || (typeof rate === "number" && rate > 0);
+    const digits = listingPriceDigits(code);
+    const spotUsd = h.quote?.price ?? h.buy_price;
+    const nativeSpot =
+      h.quote?.nativePrice != null && h.quote.nativePrice > 0
+        ? h.quote.nativePrice
+        : canFx
+          ? usdToListingAmount(spotUsd, code, usdPer)
+          : spotUsd;
+    const nativeBuy = canFx
+      ? usdToListingAmount(h.buy_price, code, usdPer)
+      : h.buy_price;
+    return { code, canFx, digits, nativeSpot, nativeBuy };
+  }
+
+  function commitBuy(h: EnrichedHolding, native: number) {
+    const { code, canFx } = rowMoney(h);
+    const buyUsd = canFx ? listingAmountToUsd(native, code, usdPer) : native;
+    return onPatch({ id: h.id, buy_price: buyUsd });
+  }
 
   // Default to biggest-position-first (% of book, descending) instead of
   // raw creation order — the most useful at-a-glance sort, and matches the
@@ -385,7 +418,7 @@ export function PortfolioTable({
               className="flex rounded-lg border border-border bg-well/50 p-0.5"
               title={
                 eurUsd && eurUsd > 0
-                  ? `Converted at ${formatEurUsdHint(eurUsd)}. Share prices stay in dollars.`
+                  ? `Converted at ${formatEurUsdHint(eurUsd)}. Cost, value, and gain or loss follow this switch. Share prices stay in each listing's own money.`
                   : "Waiting on the euro rate"
               }
             >
@@ -451,25 +484,21 @@ export function PortfolioTable({
             {emptyCta}
           </div>
         ) : (
-          holdings.map((h) => (
+          holdings.map((h) => {
+            const listed = rowMoney(h);
+            return (
             <div
               key={h.id}
               className="rounded-xl border border-border bg-raised px-3 py-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                    {onOpenTicker ? (
-                      <button
-                        type="button"
-                        onClick={() => onOpenTicker(h.ticker)}
-                        className="hover:text-brand-bright"
-                      >
-                        {cashtag(h.ticker)}
-                      </button>
-                    ) : (
-                      h.ticker
-                    )}
+                  <div className="font-semibold text-foreground">
+                    <TickerSymbol
+                      ticker={h.ticker}
+                      currency={listed.code}
+                      onOpen={onOpenTicker}
+                    />
                   </div>
                   <p className="text-sm text-muted">
                     {percent(h.pctOfTotal)} of book
@@ -502,16 +531,16 @@ export function PortfolioTable({
                 <label className="grid gap-1 text-muted">
                   Buy
                   <InlineNumber
-                    value={h.buy_price}
-                    digits={2}
-                    onCommit={(buy_price) => onPatch({ id: h.id, buy_price })}
+                    value={listed.nativeBuy}
+                    digits={listed.digits}
+                    onCommit={(buy_price) => commitBuy(h, buy_price)}
                     className="w-full"
                   />
                 </label>
                 <div>
                   <p className="text-muted">Price</p>
                   <p className="tabular-nums font-semibold text-foreground">
-                    {usd(h.quote?.price ?? h.buy_price)}
+                    {currency(listed.nativeSpot, listed.digits, listed.code)}
                   </p>
                 </div>
                 <div>
@@ -582,7 +611,8 @@ export function PortfolioTable({
                 />
               </div>
             </div>
-          ))
+            );
+          })
         )}
 
         {holdings.length > 0 && (
@@ -663,25 +693,21 @@ export function PortfolioTable({
               ))}
             </FluidRow>
 
-            {sortedHoldings.map((h) => (
+            {sortedHoldings.map((h) => {
+              const listed = rowMoney(h);
+              return (
               <FluidRow key={h.id} className="group hover:bg-well/50">
                 <div
                   className={cn(
                     cellBase,
-                    "font-semibold tracking-wide text-foreground flex items-center gap-1.5"
+                    "font-semibold tracking-wide text-foreground"
                   )}
                 >
-                  {onOpenTicker ? (
-                    <button
-                      type="button"
-                      onClick={() => onOpenTicker(h.ticker)}
-                      className="hover:text-brand-bright"
-                    >
-                      {cashtag(h.ticker)}
-                    </button>
-                  ) : (
-                    h.ticker
-                  )}
+                  <TickerSymbol
+                    ticker={h.ticker}
+                    currency={listed.code}
+                    onOpen={onOpenTicker}
+                  />
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-muted")}>
                   {percent(h.pctOfTotal)}
@@ -696,13 +722,13 @@ export function PortfolioTable({
                 </div>
                 <div className={cn(cellBase, "py-1")}>
                   <InlineNumber
-                    value={h.buy_price}
-                    digits={2}
-                    onCommit={(buy_price) => onPatch({ id: h.id, buy_price })}
+                    value={listed.nativeBuy}
+                    digits={listed.digits}
+                    onCommit={(buy_price) => commitBuy(h, buy_price)}
                   />
                 </div>
                 <div className={cn(cellBase, "tabular-nums font-semibold text-foreground")}>
-                  {usd(h.quote?.price ?? h.buy_price)}
+                  {currency(listed.nativeSpot, listed.digits, listed.code)}
                 </div>
                 <div
                   className={cn(
@@ -774,7 +800,8 @@ export function PortfolioTable({
                   ) : null}
                 </div>
               </FluidRow>
-            ))}
+              );
+            })}
 
             <FluidRow className="border-t border-border bg-well/60 font-semibold">
               <div className={cn(cellBase, "py-2.5 text-foreground")}>PORTFOLIO</div>

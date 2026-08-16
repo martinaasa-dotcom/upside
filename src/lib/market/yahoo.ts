@@ -5,6 +5,13 @@ import { yahooQuoteCandidates } from "@/lib/ticker";
 import { resolveYahooEarnings } from "@/lib/market/earnings-dates";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import type { EarningsPrint } from "@/lib/earnings-brief";
+import {
+  extraFxCodes,
+  listingAmountToUsd,
+  listingCurrency,
+  normalizeListedPrice,
+  usdPerMapFromFx,
+} from "@/lib/listing-currency";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -36,6 +43,8 @@ export type FxRates = {
   eurUsdLast: number | null;
   /** USD per 1 GBP */
   gbpUsd: number | null;
+  /** USD per 1 unit, keyed by ISO code (SEK, NOK, DKK, …) */
+  usdPer: Record<string, number>;
 };
 
 export type QuotesResult = {
@@ -61,32 +70,62 @@ const EMPTY_FX: FxRates = {
   eurUsdPreviousClose: null,
   eurUsdLast: null,
   gbpUsd: null,
+  usdPer: {},
 };
 
 function numOrNull(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
 }
 
+async function usdPerUnit(
+  yf: YahooFinanceInstance,
+  code: string
+): Promise<number | null> {
+  try {
+    const direct = await yf.quote(`${code}USD=X`);
+    const n = numOrNull(direct.regularMarketPrice);
+    if (n) return n;
+  } catch {
+    /* try the inverted pair */
+  }
+  try {
+    const inverted = await yf.quote(`USD${code}=X`);
+    const n = numOrNull(inverted.regularMarketPrice);
+    if (n && n > 0) return 1 / n;
+  } catch {
+    /* no rate */
+  }
+  return null;
+}
+
 async function fetchFxRates(yf: YahooFinanceInstance): Promise<FxRates> {
   try {
-    const [eur, gbp] = await Promise.all([
+    const extras = extraFxCodes();
+    const [eur, gbp, extraRates] = await Promise.all([
       yf.quote("EURUSD=X"),
       yf.quote("GBPUSD=X"),
+      Promise.all(extras.map((code) => usdPerUnit(yf, code))),
     ]);
     const last = numOrNull(eur.regularMarketPrice);
     const open = numOrNull(eur.regularMarketOpen);
     const previousClose = numOrNull(eur.regularMarketPreviousClose);
     const eurUsd = last ?? previousClose ?? open;
+    const usdPer: Record<string, number> = {};
+    extras.forEach((code, i) => {
+      const rate = extraRates[i];
+      if (typeof rate === "number" && rate > 0) usdPer[code] = rate;
+    });
     return {
       eurUsd,
       eurUsdOpen: open,
       eurUsdPreviousClose: previousClose,
       eurUsdLast: last,
       gbpUsd: numOrNull(gbp.regularMarketPrice),
+      usdPer,
     };
   } catch (err) {
     console.error("FX quote failed", err);
-    return { ...EMPTY_FX };
+    return { ...EMPTY_FX, usdPer: {} };
   }
 }
 
@@ -101,24 +140,14 @@ export async function fetchFxOnly(): Promise<FxRates> {
   }
 }
 
-/** Convert a Yahoo native price into USD (SP column is always USD). */
+/** Convert a Yahoo native price into USD (book of record is always USD). */
 function priceToUsd(
   price: number,
   currency: string | undefined,
   fx: FxRates
 ): number {
-  let px = price;
-  let cur = (currency ?? "USD").trim();
-  // London often quotes in pence
-  if (cur === "GBp" || cur === "GBX") {
-    px /= 100;
-    cur = "GBP";
-  }
-  const upper = cur.toUpperCase();
-  if (upper === "USD") return px;
-  if (upper === "EUR" && fx.eurUsd && fx.eurUsd > 0) return px * fx.eurUsd;
-  if (upper === "GBP" && fx.gbpUsd && fx.gbpUsd > 0) return px * fx.gbpUsd;
-  return px;
+  const { amount, code } = normalizeListedPrice(price, currency);
+  return listingAmountToUsd(amount, code, usdPerMapFromFx(fx));
 }
 
 function scaleMoney(
@@ -189,11 +218,14 @@ async function quoteOneSymbol(
     prePrice: rawPre,
     previousClose: rawPreviousClose,
   });
-  const nativePrice = mark.price;
-  const currency =
+  const yahooNative = mark.price;
+  const yahooCurrency =
     typeof quote.currency === "string" ? quote.currency : undefined;
-  const price = priceToUsd(nativePrice, currency, fx);
-  const previousClose = priceToUsd(mark.previousClose, currency, fx);
+  const listed = normalizeListedPrice(yahooNative, yahooCurrency);
+  const currency = listingCurrency(symbol, listed.code);
+  const nativePrice = listed.amount;
+  const price = priceToUsd(yahooNative, yahooCurrency, fx);
+  const previousClose = priceToUsd(mark.previousClose, yahooCurrency, fx);
   // Derived directly from (current price vs yesterday's close)
   // instead of reusing Yahoo's own change fields — regularMarket*
   // and postMarket* changes are relative to two DIFFERENT baselines
@@ -206,7 +238,7 @@ async function quoteOneSymbol(
       ? chart.quotes
           .map((row) => row.close)
           .filter((c): c is number => typeof c === "number")
-          .map((c) => priceToUsd(c, currency, fx))
+          .map((c) => priceToUsd(c, yahooCurrency, fx))
       : synthesizeSparkline(price, changePercent * 100);
   const dailyCloses = (chart.quotes ?? [])
     .map((row) => {
@@ -224,7 +256,7 @@ async function quoteOneSymbol(
       if (Number.isNaN(when.getTime())) return null;
       return {
         date: dateKeyInTz(when, "America/New_York"),
-        close: priceToUsd(close, currency, fx),
+        close: priceToUsd(close, yahooCurrency, fx),
       };
     })
     .filter((b): b is { date: string; close: number } => b != null)
@@ -232,12 +264,12 @@ async function quoteOneSymbol(
 
   const preMarketPrice = scaleMoney(
     typeof quote.preMarketPrice === "number" ? quote.preMarketPrice : null,
-    nativePrice,
+    yahooNative,
     price
   );
   const preMarketChange = scaleMoney(
     typeof quote.preMarketChange === "number" ? quote.preMarketChange : null,
-    nativePrice,
+    yahooNative,
     price
   );
   const preMarketChangePercent =
@@ -246,12 +278,12 @@ async function quoteOneSymbol(
       : null;
   const postMarketPrice = scaleMoney(
     typeof quote.postMarketPrice === "number" ? quote.postMarketPrice : null,
-    nativePrice,
+    yahooNative,
     price
   );
   const postMarketChange = scaleMoney(
     typeof quote.postMarketChange === "number" ? quote.postMarketChange : null,
-    nativePrice,
+    yahooNative,
     price
   );
   const postMarketChangePercent =
@@ -276,6 +308,8 @@ async function quoteOneSymbol(
     postMarketChange,
     postMarketChangePercent,
     dailyCloses,
+    currency,
+    nativePrice,
   } satisfies Quote;
 }
 
@@ -527,6 +561,8 @@ export function fallbackQuotes(tickers: string[]): Record<string, Quote> {
       postMarketPrice: null,
       postMarketChange: null,
       postMarketChangePercent: null,
+      currency: listingCurrency(ticker),
+      nativePrice: price,
     };
   }
   return map;

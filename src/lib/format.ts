@@ -16,7 +16,7 @@ function isRenderable(value: number | null | undefined): value is number {
 export function currency(
   value: number | null | undefined,
   digits = 2,
-  code: "USD" | "EUR" = "USD"
+  code: string = "USD"
 ): string {
   if (!isRenderable(value)) return "—";
   return new Intl.NumberFormat("en-US", {

@@ -53,6 +53,10 @@ export type Quote = {
   postMarketChangePercent: number | null;
   /** Dated regular-session closes, newest last. Used to value a book as-of a day. */
   dailyCloses?: { date: string; close: number }[];
+  /** Listing currency after GBp→GBP. Book `price` is still USD. */
+  currency?: string | null;
+  /** Last price in listing currency (pounds, not pence). */
+  nativePrice?: number | null;
 };
 
 export type OptionCandidate = {

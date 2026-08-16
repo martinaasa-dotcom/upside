@@ -62,7 +62,14 @@ export async function fetchQuotesWithFallback(
   if (unique.length === 0) {
     return {
       quotes: {},
-      fx: { eurUsd: null, eurUsdOpen: null, eurUsdPreviousClose: null, eurUsdLast: null, gbpUsd: null },
+      fx: {
+        eurUsd: null,
+        eurUsdOpen: null,
+        eurUsdPreviousClose: null,
+        eurUsdLast: null,
+        gbpUsd: null,
+        usdPer: {},
+      },
       delayed: false,
       sources,
       missing: [],

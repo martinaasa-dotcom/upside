@@ -26,6 +26,8 @@ import {
   type ThesisCoverage,
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
+import { listingCurrency } from "@/lib/listing-currency";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { Score, Scoreboard } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
@@ -3060,7 +3062,15 @@ function ReadOnlyHoldings({
               className="rounded-xl border border-border bg-raised px-3 py-3"
             >
               <div className="flex items-baseline justify-between gap-2">
-                <p className="font-semibold text-foreground">{cashtag(h.ticker)}</p>
+                <p className="font-semibold text-foreground">
+                  <TickerSymbol
+                    ticker={h.ticker}
+                    currency={listingCurrency(
+                      h.ticker,
+                      quotes[h.ticker]?.currency
+                    )}
+                  />
+                </p>
                 <p
                   className={cn(
                     "text-sm font-semibold tabular-nums",
@@ -3106,7 +3116,15 @@ function ReadOnlyHoldings({
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-border">
-                  <td className="px-3 py-2 font-medium">{cashtag(h.ticker)}</td>
+                  <td className="px-3 py-2 font-medium">
+                    <TickerSymbol
+                      ticker={h.ticker}
+                      currency={listingCurrency(
+                        h.ticker,
+                        quotes[h.ticker]?.currency
+                      )}
+                    />
+                  </td>
                   <td
                     className={cn(
                       "px-3 py-2 font-semibold tabular-nums",

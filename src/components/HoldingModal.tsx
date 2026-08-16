@@ -23,6 +23,12 @@ import {
   normalizeYahooTicker,
   tickerExchangeHint,
 } from "@/lib/ticker";
+import {
+  listingAmountToUsd,
+  listingCurrency,
+  usdPerMapFromFx,
+} from "@/lib/listing-currency";
+import { ListingCurrencyChip } from "@/components/TickerSymbol";
 
 export type HoldingFormValues = {
   ticker: string;
@@ -130,10 +136,43 @@ export function HoldingModal({
     }
 
     setBusy(true);
+    let buyUsd = roundMoney(buyN);
+    const buyCode = listingCurrency(normalizedTicker);
+    if (buyCode !== "USD") {
+      try {
+        const fxRes = await fetch(
+          `/api/quotes?tickers=${encodeURIComponent(normalizedTicker)}`,
+          { cache: "no-store" }
+        );
+        if (!fxRes.ok) {
+          setBusy(false);
+          setError("Couldn't convert that buy price. Try again in a second.");
+          return;
+        }
+        const fxJson = (await fxRes.json()) as {
+          fx?: {
+            eurUsd?: number | null;
+            gbpUsd?: number | null;
+            usdPer?: Record<string, number | null | undefined>;
+          };
+        };
+        const rates = usdPerMapFromFx(fxJson.fx);
+        if (!(rates[buyCode] > 0)) {
+          setBusy(false);
+          setError("Couldn't convert that buy price. Try again in a second.");
+          return;
+        }
+        buyUsd = listingAmountToUsd(buyN, buyCode, rates);
+      } catch {
+        setBusy(false);
+        setError("Couldn't convert that buy price. Try again in a second.");
+        return;
+      }
+    }
     onSave({
       ticker: normalizedTicker,
       shares: roundShares(sharesN),
-      buy_price: roundMoney(buyN),
+      buy_price: buyUsd,
       target_call_pct: callN / 100,
     });
   }
@@ -142,6 +181,7 @@ export function HoldingModal({
     ? normalizeYahooTicker(ticker)
     : pickTickerSuggestion(ticker, suggestions)?.symbol ?? "";
   const exchangeHint = normalized ? tickerExchangeHint(normalized) : null;
+  const buyCode = normalized ? listingCurrency(normalized) : "USD";
 
   return (
     <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
@@ -210,8 +250,9 @@ export function HoldingModal({
                           setListOpen(false);
                         }}
                       >
-                        <span className="font-medium text-foreground">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
                           {cashtag(row.symbol)}
+                          <ListingCurrencyChip code={listingCurrency(row.symbol)} />
                         </span>
                         {row.name && (
                           <span className="truncate text-muted">{row.name}</span>
@@ -227,7 +268,9 @@ export function HoldingModal({
               <span className="text-muted">TICKER.L</span>. Xetra:{" "}
               <span className="text-muted">SPY5</span> or{" "}
               <span className="text-muted">TICKER.DE</span>. Tallinn:{" "}
-              <span className="text-muted">LHV1T</span>. Buy price in USD.
+              <span className="text-muted">LHV1T</span>. Average buy in this
+              listing&apos;s money
+              {buyCode !== "USD" ? ` (${buyCode})` : ""}.
               {exchangeHint && normalized !== ticker.trim().toUpperCase() && (
                 <> → {normalized}</>
               )}
@@ -253,7 +296,7 @@ export function HoldingModal({
               />
             </label>
             <label className="grid gap-1 text-sm text-muted">
-              Buy price
+              Average buy{buyCode !== "USD" ? ` (${buyCode})` : ""}
               <input
                 type="text"
                 inputMode="decimal"

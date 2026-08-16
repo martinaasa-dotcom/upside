@@ -429,7 +429,7 @@ export function Dashboard() {
     const gbp = cachedQuotes.quotes["GBPUSD=X"]?.price;
     if (gbp && gbp > 0) setGbpUsd(gbp);
     setUsdPer((prev) => {
-      const next = { ...prev };
+      const next: Record<string, number> = { ...prev, USD: 1 };
       if (eur && eur > 0) next.EUR = eur;
       if (gbp && gbp > 0) next.GBP = gbp;
       return next;
@@ -991,7 +991,7 @@ export function Dashboard() {
     });
     if (typeof fx.gbpUsd === "number" && fx.gbpUsd > 0) setGbpUsd(fx.gbpUsd);
     setUsdPer((prev) => {
-      const next = { ...prev, USD: 1 };
+      const next: Record<string, number> = { ...prev, USD: 1 };
       if (rate && rate > 0) next.EUR = rate;
       if (typeof fx.gbpUsd === "number" && fx.gbpUsd > 0) next.GBP = fx.gbpUsd;
       if (fx.usdPer) {

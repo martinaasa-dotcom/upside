@@ -4,6 +4,7 @@
  * set and only for tickers no earlier provider in the chain could price.
  */
 import { synthesizeSparkline } from "@/lib/market/sparkline";
+import { listingCurrency } from "@/lib/listing-currency";
 import type { Quote } from "@/lib/types";
 
 type FinnhubQuote = {
@@ -54,6 +55,8 @@ export async function fetchQuotesFinnhub(
           postMarketPrice: null,
           postMarketChange: null,
           postMarketChangePercent: null,
+          currency: listingCurrency(ticker),
+          nativePrice: price!,
         };
       } catch (err) {
         console.error(`Finnhub fallback failed for ${ticker}`, err);

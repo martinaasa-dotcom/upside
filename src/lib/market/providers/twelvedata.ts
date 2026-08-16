@@ -6,6 +6,7 @@
  * than a hard dependency.
  */
 import { synthesizeSparkline } from "@/lib/market/sparkline";
+import { listingCurrency } from "@/lib/listing-currency";
 import type { Quote } from "@/lib/types";
 
 type TwelveDataQuote = {
@@ -74,6 +75,8 @@ export async function fetchQuotesTwelveData(
         postMarketPrice: null,
         postMarketChange: null,
         postMarketChangePercent: null,
+        currency: listingCurrency(ticker),
+        nativePrice: price,
       };
     }
     return out;

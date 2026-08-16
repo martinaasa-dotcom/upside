@@ -162,6 +162,14 @@ import {
   pickTickerSuggestion,
 } from "../src/lib/market/ticker-search";
 import {
+  listingAmountToUsd,
+  listingCurrency,
+  listingCurrencyFromTicker,
+  normalizeListedPrice,
+  usdPerMapFromFx,
+  usdToListingAmount,
+} from "../src/lib/listing-currency";
+import {
   balticYahooSymbol,
   normalizeYahooTicker,
   resolveImportTicker,
@@ -3121,6 +3129,8 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   );
   assert.match(yahoo, /yahooQuoteCandidates/);
   assert.match(yahoo, /resolveYahooListedSymbol/);
+  assert.match(yahoo, /usdPer/);
+  assert.match(yahoo, /nativePrice/);
   const search = readFileSync(
     join(process.cwd(), "src/lib/market/ticker-search-yahoo.ts"),
     "utf8"
@@ -3131,6 +3141,39 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     "utf8"
   );
   assert.match(home, /Add a holding/);
+});
+
+run("listing currency chips and FX convert kronor", () => {
+  assert.equal(listingCurrencyFromTicker("NVDA"), "USD");
+  assert.equal(listingCurrencyFromTicker("LHV1T"), "EUR");
+  assert.equal(listingCurrencyFromTicker("VWCE.DE"), "EUR");
+  assert.equal(listingCurrencyFromTicker("VOLV-B.ST"), "SEK");
+  assert.equal(listingCurrencyFromTicker("EQNR.OL"), "NOK");
+  assert.equal(listingCurrencyFromTicker("VOD.L"), "GBP");
+  assert.equal(listingCurrency("VOLV-B.ST", "SEK"), "SEK");
+  assert.equal(listingCurrency("NVDA", "USD"), "USD");
+  assert.equal(normalizeListedPrice(9840, "GBp").code, "GBP");
+  assert.equal(normalizeListedPrice(9840, "GBp").amount, 98.4);
+  const fx = usdPerMapFromFx({
+    eurUsd: 1.1,
+    gbpUsd: 1.3,
+    usdPer: { SEK: 0.1 },
+  });
+  assert.equal(listingAmountToUsd(100, "EUR", fx), 110);
+  assert.equal(usdToListingAmount(110, "EUR", fx), 100);
+  assert.equal(listingAmountToUsd(142.5, "SEK", fx), 14.25);
+  const table = readFileSync(
+    join(process.cwd(), "src/components/PortfolioTable.tsx"),
+    "utf8"
+  );
+  assert.match(table, /TickerSymbol/);
+  const chip = readFileSync(
+    join(process.cwd(), "src/components/TickerSymbol.tsx"),
+    "utf8"
+  );
+  assert.match(chip, /ListingCurrencyChip/);
+  assert.match(chip, /rounded-md/);
+  assert.match(chip, /text-xs font-semibold/);
 });
 
 run("onboarding lets you pick this month's popular names", () => {
