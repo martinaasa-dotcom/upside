@@ -2339,6 +2339,36 @@ run("Account is not a workspace room", () => {
   assert.match(header, /\{end \?\? <DefaultAccountEnd \/>\}/);
 });
 
+run("UPSIDE LAB always goes to Overview at /", () => {
+  const brand = readFileSync(
+    join(process.cwd(), "src/components/HeaderBrand.tsx"),
+    "utf8"
+  );
+  const header = readFileSync(
+    join(process.cwd(), "src/components/AppHeader.tsx"),
+    "utf8"
+  );
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  const rooms = readFileSync(
+    join(process.cwd(), "src/lib/workspace-rooms.ts"),
+    "utf8"
+  );
+  assert.match(brand, /href="\/"/);
+  assert.match(brand, /requestGoHome\(\)/);
+  assert.match(brand, /<Link/);
+  assert.doesNotMatch(brand, /<button[\s>]/);
+  assert.match(header, /<HeaderBrand \/>/);
+  assert.doesNotMatch(header, /onBrandClick|brandTitle/);
+  assert.doesNotMatch(dash, /onBrandClick/);
+  assert.match(dash, /GO_HOME_EVENT/);
+  assert.match(dash, /takeGoHomeRequest\(\)/);
+  assert.match(rooms, /export function requestGoHome/);
+  assert.match(rooms, /export function takeGoHomeRequest/);
+});
+
 run("Forecast is always the base case", () => {
   const panel = readFileSync(
     join(process.cwd(), "src/components/ForecastPanel.tsx"),

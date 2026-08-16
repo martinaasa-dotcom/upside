@@ -61,11 +61,7 @@ import {
   milestoneToast,
   recordVisitToday,
 } from "@/lib/visit-streak";
-import {
-  loadActiveSheetId,
-  saveActiveSheetId,
-  takeOpenTab,
-} from "@/lib/active-sheet";
+import { saveActiveSheetId, takeOpenTab } from "@/lib/active-sheet";
 import { loadLastUser } from "@/lib/last-session";
 import { isAbortError, retryOnNetwork } from "@/lib/abort";
 import { isSafePositiveMoney, isSafeShares, sanitizeSheetName } from "@/lib/input-guard";
@@ -107,8 +103,10 @@ import {
   writeBookCache,
 } from "@/lib/book-cache";
 import {
+  GO_HOME_EVENT,
   WORKSPACE_SHOW_EVENT,
   isWorkspaceRoomActive,
+  takeGoHomeRequest,
 } from "@/lib/workspace-rooms";
 import {
   COMPOUND_TAB_ID,
@@ -335,6 +333,7 @@ export function Dashboard() {
     rate: number | null;
   } | null>(null);
   const [gbpUsd, setGbpUsd] = useState<number | null>(null);
+  const [usdPer, setUsdPer] = useState<Record<string, number>>({ USD: 1 });
   const [displayCurrencyByPortfolio, setDisplayCurrencyByPortfolio] = useState<
     Record<string, DisplayCurrency>
   >({});
@@ -417,26 +416,10 @@ export function Dashboard() {
       setLocked(cached.locked);
       setLoading(false);
       const fromUrl = resolveSheetIdFromUrl(cached.portfolios, takeOpenTab());
-      if (fromUrl) {
-        setActiveId(fromUrl);
-      } else {
-        const saved = loadActiveSheetId();
-        if (saved) {
-          const meta = normalizeMetaTabId(saved);
-          if (meta) setActiveId(meta);
-          else if (cached.portfolios.some((p) => p.id === saved)) {
-            setActiveId(saved);
-          }
-        }
-      }
+      setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
     } else {
       const fromUrl = resolveSheetIdFromUrl([], takeOpenTab());
-      if (fromUrl) setActiveId(fromUrl);
-      else {
-        const saved = loadActiveSheetId();
-        const meta = saved ? normalizeMetaTabId(saved) : null;
-        if (meta) setActiveId(meta);
-      }
+      setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
     }
     const cachedQuotes = loadCachedQuotes();
     setQuotes(cachedQuotes.quotes);
@@ -445,6 +428,12 @@ export function Dashboard() {
     if (eur && eur > 0) setEurUsd(eur);
     const gbp = cachedQuotes.quotes["GBPUSD=X"]?.price;
     if (gbp && gbp > 0) setGbpUsd(gbp);
+    setUsdPer((prev) => {
+      const next = { ...prev };
+      if (eur && eur > 0) next.EUR = eur;
+      if (gbp && gbp > 0) next.GBP = gbp;
+      return next;
+    });
     setDisplayCurrencyByPortfolio(loadDisplayCurrencyMap());
     setAlertToastsSent(loadDismissedAlertIds());
     setCcVisibleByPortfolio(loadVisibilityMap(CC_VISIBLE_KEY));
@@ -830,20 +819,9 @@ export function Dashboard() {
   }, [quotes]);
 
   const pickInitialSheet = useCallback(
-    (list: Portfolio[], prev: string) => {
+    (list: Portfolio[], _prev: string) => {
       const fromUrl = resolveSheetIdFromUrl(list);
       if (fromUrl) return fromUrl;
-      if (prev) {
-        const meta = normalizeMetaTabId(prev);
-        if (meta) return meta;
-        if (list.some((p) => p.id === prev)) return prev;
-      }
-      const saved = loadActiveSheetId();
-      if (saved) {
-        const meta = normalizeMetaTabId(saved);
-        if (meta) return meta;
-        if (list.some((p) => p.id === saved)) return saved;
-      }
       return OVERVIEW_TAB_ID;
     },
     []
@@ -991,6 +969,7 @@ export function Dashboard() {
     eurUsdPreviousClose?: number | null;
     eurUsdLast?: number | null;
     gbpUsd?: number | null;
+    usdPer?: Record<string, number | null | undefined>;
   } | null | undefined) => {
     if (!fx) return;
     const last = typeof fx.eurUsdLast === "number" ? fx.eurUsdLast : null;
@@ -1011,6 +990,19 @@ export function Dashboard() {
       last,
     });
     if (typeof fx.gbpUsd === "number" && fx.gbpUsd > 0) setGbpUsd(fx.gbpUsd);
+    setUsdPer((prev) => {
+      const next = { ...prev, USD: 1 };
+      if (rate && rate > 0) next.EUR = rate;
+      if (typeof fx.gbpUsd === "number" && fx.gbpUsd > 0) next.GBP = fx.gbpUsd;
+      if (fx.usdPer) {
+        for (const [key, value] of Object.entries(fx.usdPer)) {
+          if (typeof value === "number" && value > 0) {
+            next[key.toUpperCase()] = value;
+          }
+        }
+      }
+      return next;
+    });
   }, []);
 
   const refreshFx = useCallback(async (signal?: AbortSignal) => {
@@ -1239,6 +1231,9 @@ export function Dashboard() {
   useEffect(() => {
     saveActiveSheetId(activeId);
     if (typeof window === "undefined") return;
+    // Hidden keep-alive Dashboard still runs this. Do not rewrite Fund or
+    // Circle while UPSIDE LAB is sending us home.
+    if (window.location.pathname !== "/") return;
     const url = new URL(window.location.href);
     url.searchParams.delete("sheet");
     url.searchParams.delete("tab");
@@ -1316,13 +1311,22 @@ export function Dashboard() {
     const onShow = () => {
       if (!isWorkspaceRoomActive("book")) return;
       setActiveId((prev) => {
+        if (takeGoHomeRequest()) return OVERVIEW_TAB_ID;
         const fromUrl = resolveSheetIdFromUrl(portfolios, takeOpenTab());
         return fromUrl ?? prev;
       });
       void loadPortfolios({ silent: true });
     };
+    const onGoHome = () => {
+      setActiveId(OVERVIEW_TAB_ID);
+      if (isWorkspaceRoomActive("book")) takeGoHomeRequest();
+    };
     window.addEventListener(WORKSPACE_SHOW_EVENT, onShow);
-    return () => window.removeEventListener(WORKSPACE_SHOW_EVENT, onShow);
+    window.addEventListener(GO_HOME_EVENT, onGoHome);
+    return () => {
+      window.removeEventListener(WORKSPACE_SHOW_EVENT, onShow);
+      window.removeEventListener(GO_HOME_EVENT, onGoHome);
+    };
   }, [portfolios, loadPortfolios]);
 
   useEffect(() => {
@@ -2763,10 +2767,8 @@ export function Dashboard() {
               .toUpperCase(),
           }}
         />
-        <AppHeader
+          <AppHeader
           className="hidden md:block"
-          onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
-          brandTitle="Upside Lab: go to Overview"
           showWorkspaceNav={source === "supabase"}
           title="Overview"
           end={accountEnd}
@@ -2809,8 +2811,6 @@ export function Dashboard() {
       />
       <AppHeader
         className="hidden md:block"
-        onBrandClick={() => setActiveId(OVERVIEW_TAB_ID)}
-        brandTitle="Upside Lab: go to Overview"
         showWorkspaceNav={source === "supabase"}
         title={
           isOverview
@@ -3084,6 +3084,7 @@ export function Dashboard() {
                 activePortfolio!.id
               )}
               eurUsd={eurUsd}
+              usdPer={usdPer}
               onDisplayCurrencyChange={(code: DisplayCurrency) => {
                 setDisplayCurrencyByPortfolio((prev) => {
                   const next = { ...prev, [activePortfolio!.id]: code };

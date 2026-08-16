@@ -2,6 +2,24 @@ import { loadCommunityListCache } from "@/lib/community-cache";
 
 /** Fired when a kept-alive room is shown again. Pages sync URL / refresh. */
 export const WORKSPACE_SHOW_EVENT = "upside:workspace-show";
+/** UPSIDE LAB was clicked. The book room must show Overview, not the last tab. */
+export const GO_HOME_EVENT = "upside:go-home";
+
+let goHomePending = false;
+
+export function requestGoHome() {
+  if (typeof window === "undefined") return;
+  goHomePending = true;
+  window.dispatchEvent(new Event(GO_HOME_EVENT));
+}
+
+/** True if UPSIDE LAB was clicked before this room became visible again. */
+export function takeGoHomeRequest(): boolean {
+  const hit = goHomePending;
+  goHomePending = false;
+  return hit;
+}
+
 const LAST_CIRCLE_KEY = "upside-last-circle-id";
 const LAST_CIRCLE_EVENT = "upside:last-circle";
 

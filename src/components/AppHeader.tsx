@@ -17,10 +17,6 @@ type Props = {
   children?: ReactNode;
   /** Always last on the right: account avatar, never a workspace room. */
   end?: ReactNode;
-  /** In-app navigation instead of an <a href="/">, for the Dashboard where
-   * going "home" means switching tab rather than a page load. */
-  onBrandClick?: () => void;
-  brandTitle?: string;
   /** Hidden while a page has no workspace context to switch within. */
   showWorkspaceNav?: boolean;
   className?: string;
@@ -77,8 +73,6 @@ export function AppHeader({
   title,
   children,
   end,
-  onBrandClick,
-  brandTitle,
   showWorkspaceNav = true,
   className,
   status,
@@ -99,10 +93,7 @@ export function AppHeader({
             )}
           >
             <div className="flex min-w-0 items-center gap-2 text-sm leading-none sm:gap-3">
-              <HeaderBrand
-                onClick={onBrandClick}
-                {...(brandTitle ? { title: brandTitle } : {})}
-              />
+              <HeaderBrand />
               {title != null && (
                 <>
                   <span
