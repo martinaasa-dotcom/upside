@@ -1,7 +1,10 @@
 import {
   collapseMembersByAlias,
+  expandHouseholdUserIds,
   expandPersonUserIds,
+  householdEmailsFor,
   loadAliasMap,
+  normalizeEmail,
   type RawMember,
 } from "@/lib/auth/identity";
 import { userIsCommunityAdmin } from "@/lib/auth/ownership";
@@ -43,10 +46,31 @@ async function resolveTargetUserIds(
     profile: (profileById.get(m.user_id) as RawMember["profile"]) ?? null,
   }));
   const people = collapseMembersByAlias(raw, null, aliasMap);
-  return expandPersonUserIds(personOrUserId, people);
+  const aliasIds = expandPersonUserIds(personOrUserId, people);
+  const memberProfiles = (profiles ?? []) as {
+    id: string;
+    email: string | null;
+  }[];
+  const householdEmails = new Set<string>();
+  for (const id of aliasIds) {
+    const email = memberProfiles.find((p) => p.id === id)?.email;
+    for (const partner of householdEmailsFor(email)) householdEmails.add(partner);
+  }
+  const missingEmails = [...householdEmails].filter(
+    (email) => !memberProfiles.some((p) => normalizeEmail(p.email) === email)
+  );
+  let extra: { id: string; email: string | null }[] = [];
+  if (missingEmails.length) {
+    const { data: extraProfiles } = await supabase
+      .from(PORTFELL_TABLES.profiles)
+      .select("id, email")
+      .in("email", missingEmails);
+    extra = (extraProfiles ?? []) as { id: string; email: string | null }[];
+  }
+  return expandHouseholdUserIds(aliasIds, [...memberProfiles, ...extra]);
 }
 
-/** Admin: remove member or change role (applies to all linked alias accounts). */
+/** Admin: remove member or change role (applies to alias logins and household partners). */
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;

@@ -1,4 +1,4 @@
-import { SEED_EMAIL_SLUGS } from "@/lib/auth/identity";
+import { householdEmailsFor, SEED_EMAIL_SLUGS } from "@/lib/auth/identity";
 import { createSupabaseServerAuth } from "@/lib/supabase/server-auth";
 import {
   getSupabaseServer,
@@ -50,6 +50,15 @@ async function claimWithRpc(user: User): Promise<{ claimedSlugs: string[] }> {
   if (error) {
     console.error("portfell_claim_seed_for_me failed", error.message);
     return { claimedSlugs: [] };
+  }
+  const { error: syncErr } = await authClient.rpc(
+    "portfell_sync_household_community_memberships"
+  );
+  if (syncErr) {
+    console.error(
+      "portfell_sync_household_community_memberships failed",
+      syncErr.message
+    );
   }
   const claimed = Array.isArray((data as { claimed?: unknown })?.claimed)
     ? ((data as { claimed: string[] }).claimed ?? [])
@@ -159,9 +168,25 @@ async function claimWithServiceRole(user: User): Promise<{
 
   // Deliberately no auto-join to any community (including Upside Circle)
   // here. Community membership is opt-in only, via an invite link (private
-  // communities) or a request an admin approves (public communities) — see
+  // communities) or a request an admin approves (public communities). See
   // /api/communities/[id]/join-request. Signing in must never silently
   // expose a stranger's book to an existing community or vice versa.
+  // Household pairs (Martin/Amanda, Rasmus/Karoliine) are the exception:
+  // if a partner is already in a circle, copy that membership so both
+  // logins see the same groups. Never creates a new stranger join.
+  if (householdEmailsFor(email).length > 1) {
+    const { error: syncErr } = await admin.rpc(
+      "portfell_sync_household_community_memberships",
+      { p_user_id: user.id }
+    );
+    if (syncErr) {
+      console.error(
+        "portfell_sync_household_community_memberships failed",
+        syncErr.message
+      );
+    }
+  }
+
   const isMartin =
     email === "martin.aasa@upthink.ee" || email === "aasamartinaasa@gmail.com";
   if (isMartin) {

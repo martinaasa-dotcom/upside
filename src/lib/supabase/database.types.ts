@@ -466,6 +466,21 @@ export type Database = {
           },
         ]
       }
+      portfell_household_groups: {
+        Row: {
+          email: string
+          group_key: string
+        }
+        Insert: {
+          email: string
+          group_key: string
+        }
+        Update: {
+          email?: string
+          group_key?: string
+        }
+        Relationships: []
+      }
       portfell_lab_state: {
         Row: {
           conviction: Json
@@ -914,6 +929,10 @@ export type Database = {
         Returns: boolean
       }
       portfell_superadmin_overview: { Args: never; Returns: Json }
+      portfell_sync_household_community_memberships: {
+        Args: { p_user_id?: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

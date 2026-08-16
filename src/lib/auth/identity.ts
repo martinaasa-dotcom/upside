@@ -3,6 +3,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const KARUD_PRIMARY_EMAIL = "rasmusmarjapuu@gmail.com";
 export const KARUD_ALIAS_EMAIL = "karukaroliine99@gmail.com";
+export const AASA_PRIMARY_EMAIL = "martin.aasa@upthink.ee";
+export const AASA_ALIAS_EMAIL = "aasamartinaasa@gmail.com";
+export const AASA_PARTNER_EMAIL = "amandalucas400@gmail.com";
+
+/** Emails that share a household book. Circle join/leave/role copies
+ * across the group. They stay separate people on the member list. */
+export const HOUSEHOLD_COMMUNITY_GROUPS = {
+  aasad: [AASA_PRIMARY_EMAIL, AASA_ALIAS_EMAIL, AASA_PARTNER_EMAIL],
+  karud: [KARUD_PRIMARY_EMAIL, KARUD_ALIAS_EMAIL],
+} as const;
 
 /** Seed emails that claim a household sheet on first Google sign-in. */
 export const SEED_EMAIL_SLUGS: Record<string, string[]> = {
@@ -24,7 +34,7 @@ export const HOUSEHOLD_PENDING_EMAILS: Record<string, string[]> = {
  * Prefer DB (`portfell_account_aliases`) when readable.
  */
 export const ACCOUNT_ALIAS_FALLBACK: Record<string, string> = {
-  "aasamartinaasa@gmail.com": "martin.aasa@upthink.ee",
+  [AASA_ALIAS_EMAIL]: AASA_PRIMARY_EMAIL,
 };
 
 /** First word of a display name. "Rasmus-Richard Marjapuu" -> "Rasmus". */
@@ -63,6 +73,45 @@ export function normalizeEmail(email: string | null | undefined): string | null 
   if (!email) return null;
   const e = email.trim().toLowerCase();
   return e || null;
+}
+
+/** Every email in the same household group, including `email` itself. */
+export function householdEmailsFor(
+  email: string | null | undefined
+): string[] {
+  const e = normalizeEmail(email);
+  if (!e) return [];
+  for (const group of Object.values(HOUSEHOLD_COMMUNITY_GROUPS)) {
+    if ((group as readonly string[]).includes(e)) return [...group];
+  }
+  return [e];
+}
+
+/** Add household partners (and their logins) to a user-id list. */
+export function expandHouseholdUserIds(
+  userIds: string[],
+  profiles: { id: string; email: string | null }[]
+): string[] {
+  const emailToIds = new Map<string, string[]>();
+  const idToEmail = new Map<string, string>();
+  for (const p of profiles) {
+    const email = normalizeEmail(p.email);
+    if (!email) continue;
+    idToEmail.set(p.id, email);
+    const ids = emailToIds.get(email) ?? [];
+    ids.push(p.id);
+    emailToIds.set(email, ids);
+  }
+
+  const out = new Set(userIds);
+  for (const id of userIds) {
+    for (const partnerEmail of householdEmailsFor(idToEmail.get(id) ?? null)) {
+      for (const partnerId of emailToIds.get(partnerEmail) ?? []) {
+        out.add(partnerId);
+      }
+    }
+  }
+  return [...out];
 }
 
 export function primaryEmailFromMap(

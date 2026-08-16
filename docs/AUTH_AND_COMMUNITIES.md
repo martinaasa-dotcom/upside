@@ -21,6 +21,8 @@ Multiple Google emails can map to **one person** in communities (`portfell_accou
 
 Martin's two Google logins stay one person. Rasmus and Karoliine are **two** people who share Karud, the same way Martin and Amanda share Aasad / Anu / MaryAnn. Leaderboards combine co-owners of the same sheets (`Rasmus and Karoliine`, `Martin and Amanda Aasa`). Co-ownership of the shared sheet is unchanged.
 
+Circle membership still copies across those households (`portfell_household_groups`, migration `053`). If Karoliine joins Monki, Rasmus is added too, same role. Same for Martin and Amanda, including Martin's second Google login. Leave and role changes copy as well. Classrooms stay per person. This is not a sign-in auto-join for strangers: it only mirrors a circle someone in the household already opted into.
+
 ## Community-pinned sheets
 
 `portfell_community_portfolios` pins sheets into a community even before owners sign in. Upside Circle includes **Karud** and **Lap** (shown as “awaiting sign-in” until their seed emails claim).
@@ -84,6 +86,7 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
 - `049` Karud seed claim so Karoliine co-owns Karud on first sign-in (the alias that folded her into Rasmus was dropped in `052`)
 - `052` drop the Karud account alias. Rasmus and Karoliine stay two Circle members on one book, like Martin and Amanda
+- `053` household circle membership. Martin/Amanda and Rasmus/Karoliine join, leave, and change roles together. Classrooms stay per person.
 - `050` community invite uses log + `token_hint`. Redeem RPC records who used which link. Admin list + retire.
 - `051` circle share is opt-out again. Backfill members' real portfolios into non-class circles. Public join requests can store `share_portfolio_ids`.  
 

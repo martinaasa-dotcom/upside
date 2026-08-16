@@ -96,9 +96,14 @@ import {
   TIER_HIDDEN_META_TABS,
 } from "../src/lib/experience-tier";
 import {
+  AASA_ALIAS_EMAIL,
+  AASA_PARTNER_EMAIL,
+  AASA_PRIMARY_EMAIL,
   ACCOUNT_ALIAS_FALLBACK,
   collapseMembersByAlias,
   combineHouseholdNames,
+  expandHouseholdUserIds,
+  householdEmailsFor,
   KARUD_ALIAS_EMAIL,
   KARUD_PRIMARY_EMAIL,
   SEED_EMAIL_SLUGS,
@@ -405,6 +410,51 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
     "utf8"
   );
   assert.match(ensure, /SEED_EMAIL_SLUGS/);
+  assert.match(ensure, /portfell_sync_household_community_memberships/);
+  assert.deepEqual(householdEmailsFor(KARUD_ALIAS_EMAIL).sort(), [
+    KARUD_ALIAS_EMAIL,
+    KARUD_PRIMARY_EMAIL,
+  ].sort());
+  assert.deepEqual(householdEmailsFor(AASA_PARTNER_EMAIL).sort(), [
+    AASA_ALIAS_EMAIL,
+    AASA_PARTNER_EMAIL,
+    AASA_PRIMARY_EMAIL,
+  ].sort());
+  assert.deepEqual(householdEmailsFor("liinaanette@gmail.com"), [
+    "liinaanette@gmail.com",
+  ]);
+  const paired = expandHouseholdUserIds(
+    ["karoliine-id"],
+    [
+      { id: "karoliine-id", email: KARUD_ALIAS_EMAIL },
+      { id: "rasmus-id", email: KARUD_PRIMARY_EMAIL },
+      { id: "amanda-id", email: AASA_PARTNER_EMAIL },
+    ]
+  );
+  assert.equal(paired.length, 2);
+  assert.ok(paired.includes("karoliine-id"));
+  assert.ok(paired.includes("rasmus-id"));
+  assert.ok(!paired.includes("amanda-id"));
+  const aasaPaired = expandHouseholdUserIds(
+    ["martin-gmail"],
+    [
+      { id: "martin-gmail", email: AASA_ALIAS_EMAIL },
+      { id: "martin-work", email: AASA_PRIMARY_EMAIL },
+      { id: "amanda-id", email: AASA_PARTNER_EMAIL },
+    ]
+  );
+  assert.equal(aasaPaired.length, 3);
+  const pairSql = readdirSync(join(process.cwd(), "supabase/migrations"))
+    .filter((f) => f.includes("household_community_pairs"))
+    .map((f) =>
+      readFileSync(join(process.cwd(), "supabase/migrations", f), "utf8")
+    )
+    .join("\n");
+  assert.match(pairSql, /portfell_household_groups/);
+  assert.match(pairSql, /amandalucas400@gmail.com/);
+  assert.match(pairSql, /rasmusmarjapuu@gmail.com/);
+  assert.match(pairSql, /kind = 'classroom'/);
+  assert.match(pairSql, /portfell_mirror_household_community_member/);
   const dash = readFileSync(
     join(process.cwd(), "src/components/Dashboard.tsx"),
     "utf8"
