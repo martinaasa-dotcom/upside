@@ -3464,6 +3464,13 @@ run("Fund page labels Margus's note Thesis", () => {
     "utf8"
   );
   assert.match(src, /label="Thesis"/);
+  const positions = src.slice(
+    src.indexOf("Open positions"),
+    src.indexOf("Weekly recap")
+  );
+  assert.match(positions, /<Metric/);
+  assert.doesNotMatch(positions, /<Stat/);
+  assert.doesNotMatch(positions, /bg-loss\/10/);
 });
 
 run("prompts do not teach the model trader words as working vocab", () => {

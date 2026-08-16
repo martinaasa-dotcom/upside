@@ -5,7 +5,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
-import { MicroLabel, Stat } from "@/components/ui/Panel";
+import { Metric, MicroLabel, Stat } from "@/components/ui/Panel";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
@@ -49,8 +49,6 @@ import {
   ChevronRight,
   Minus,
   Plus,
-  TrendingDown,
-  TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -354,49 +352,33 @@ function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   return `Prices ${mins}m old`;
 }
 
-function CopyBlock({
+function PositionCopy({
   label,
   items,
-  tone = "thesis",
   extra,
-  className,
+  quiet = false,
 }: {
   label: string;
   items: string[];
-  tone?: "thesis" | "exit";
   extra?: string | null;
-  className?: string;
+  quiet?: boolean;
 }) {
   if (items.length === 0 && !extra) return null;
-  const exit = tone === "exit";
   return (
-    <div
-      className={cn(
-        exit
-          ? "rounded-lg border border-loss/20 bg-loss/10 px-3 py-2.5"
-          : "border-t border-border pt-3",
-        className
-      )}
-    >
+    <div className="border-t border-border pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <MicroLabel className={exit ? "text-loss" : undefined}>
-          {label}
-        </MicroLabel>
+        <MicroLabel>{label}</MicroLabel>
         {extra ? <p className="text-sm text-muted">{extra}</p> : null}
       </div>
       {items.length > 0 && (
-        <ul className="mt-1.5 space-y-1.5 text-sm leading-relaxed text-foreground/80">
+        <ul
+          className={cn(
+            "mt-2 space-y-2 leading-relaxed",
+            quiet ? "text-sm text-muted" : "text-base text-foreground"
+          )}
+        >
           {items.map((b) => (
-            <li key={b} className="flex gap-2">
-              <span
-                aria-hidden
-                className={cn(
-                  "mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full",
-                  exit ? "bg-loss/70" : "bg-brand-bright"
-                )}
-              />
-              <span>{b}</span>
-            </li>
+            <li key={b}>{b}</li>
           ))}
         </ul>
       )}
@@ -1302,9 +1284,9 @@ export function UpsidePortfolioPage() {
                     const thesis = fundCopyBullets(h.thesis);
                     const exits = fundCopyBullets(h.exit_plan);
                     return (
-                      <div
+                      <article
                         key={h.id}
-                        className="flex h-full flex-col rounded-xl border border-border bg-card p-3.5"
+                        className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 sm:p-6"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-foreground">
@@ -1312,56 +1294,44 @@ export function UpsidePortfolioPage() {
                           </span>
                           <span
                             className={cn(
-                              "flex items-center gap-1 text-sm font-semibold tabular-nums",
-                              pnlPct >= 0 ? "text-gain" : "text-loss"
+                              "text-sm font-semibold tabular-nums",
+                              signedTone(pnlPct)
                             )}
                           >
-                            {pnlPct >= 0 ? (
-                              <TrendingUp className="h-3.5 w-3.5" />
-                            ) : (
-                              <TrendingDown className="h-3.5 w-3.5" />
-                            )}
                             {percent(pnlPct)}
                           </span>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                          <Stat
-                            label="Entered"
-                            value={fmtDate(h.entry_date)}
-                          />
-                          <Stat
-                            label="Cost"
-                            value={currency(h.cost_basis)}
-                          />
-                          <Stat
+                        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+                          <Metric label="Entered">{fmtDate(h.entry_date)}</Metric>
+                          <Metric label="Cost">{currency(h.cost_basis)}</Metric>
+                          <Metric
                             label="Now"
-                            value={currency(price)}
                             valueClassName={signedTone(pnlPct, "text-foreground")}
-                          />
-                          <Stat
+                          >
+                            {currency(price)}
+                          </Metric>
+                          <Metric
                             label="Portfolio"
-                            value={currency(marketValue, 0)}
-                            sub={`${h.shares.toLocaleString("en-US")} sh`}
-                          />
+                            hint={`${h.shares.toLocaleString("en-US")} sh`}
+                          >
+                            {currency(marketValue, 0)}
+                          </Metric>
                         </div>
-                        <div className="mt-3 flex min-h-0 flex-1 flex-col">
-                          <CopyBlock
+                        <div className="mt-5 flex min-h-0 flex-1 flex-col">
+                          <PositionCopy
                             label="Thesis"
                             items={thesis}
-                            extra={
-                              h.target_timeframe
-                                ? `Timeline ${h.target_timeframe}`
-                                : null
-                            }
+                            extra={h.target_timeframe || null}
                           />
+                          <div className="mt-auto">
+                            <PositionCopy
+                              label="Exit"
+                              items={exits}
+                              quiet
+                            />
+                          </div>
                         </div>
-                        <CopyBlock
-                          label="Exit"
-                          items={exits}
-                          tone="exit"
-                          className="mt-3"
-                        />
-                      </div>
+                      </article>
                     );
                   })}
                 </div>
