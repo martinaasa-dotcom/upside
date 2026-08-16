@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
 import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
+import { useDockPad } from "@/lib/use-dock-pad";
 import {
   COMPOUND_TAB_ID,
   LAB_TAB_ID,
@@ -79,7 +80,9 @@ export function PortfolioTabs({
   const [name, setName] = useState("");
   const [menu, setMenu] = useState<OpenMenu | null>(null);
   const [mounted, setMounted] = useState(false);
+  const dockRef = useRef<HTMLElement>(null);
   const longPressRef = useRef<number | null>(null);
+  useDockPad(dockRef);
   const sheetRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sheetActive = portfolios.some((p) => p.id === activeId);
   const modes = MODES.filter((m) => {
@@ -193,7 +196,13 @@ export function PortfolioTabs({
   }
 
   return (
-    <nav className={cn("sticky bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur", className)}>
+    <nav
+      ref={dockRef}
+      className={cn(
+        "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur",
+        className
+      )}
+    >
       <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-6 sm:py-2.5")}>
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex w-full shrink-0 items-end sm:w-auto">

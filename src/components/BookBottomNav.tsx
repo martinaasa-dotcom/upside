@@ -2,8 +2,10 @@
 
 import { cn } from "@/lib/format";
 import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
+import { useDockPad } from "@/lib/use-dock-pad";
 import { Activity, Calculator, FlaskConical, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 
 /**
  * Desktop dock on pages outside the book (Communities, Fund, Account, Admin).
@@ -39,11 +41,14 @@ const ITEMS = [
 ] as const;
 
 export function BookBottomNav({ className }: { className?: string }) {
+  const dockRef = useRef<HTMLElement>(null);
+  useDockPad(dockRef);
   return (
     <nav
+      ref={dockRef}
       aria-label="Back to your book"
       className={cn(
-        "sticky bottom-0 z-30 hidden border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
+        "fixed inset-x-0 bottom-0 z-30 hidden border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
         className
       )}
     >

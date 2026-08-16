@@ -1,8 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { useDockPad } from "@/lib/use-dock-pad";
 import { Compass, Home, Activity, Settings } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 
 export type MobileTabId = "home" | "pulse" | "circle" | "settings";
 
@@ -51,8 +53,11 @@ export function MobileTabBar({
   /** Return true to stay on this page (Dashboard SPA tabs). */
   onSelect?: (id: MobileTabId) => boolean | void;
 }) {
+  const dockRef = useRef<HTMLElement>(null);
+  useDockPad(dockRef);
   return (
     <nav
+      ref={dockRef}
       aria-label="App"
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 border-t border-border bg-app/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden",

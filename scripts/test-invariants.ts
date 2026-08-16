@@ -1249,14 +1249,37 @@ run("signed-in pages share one column so rooms do not jump", () => {
   );
   assert.match(shell, /max-w-\[1400px\]/);
   assert.match(shell, /w-full/);
-  assert.match(shell, /\[--dock-pad:8.75rem\]/);
-  assert.match(shell, /md:\[--dock-pad:9.5rem\]/);
+  assert.match(shell, /page-frame/);
+  assert.match(shell, /\[--dock-pad:10.5rem\]/);
+  assert.match(shell, /md:\[--dock-pad:11.5rem\]/);
   assert.match(shell, /sm:pt-10/);
+  assert.match(shell, /pb-\[var\(--dock-pad\)\]/);
   assert.doesNotMatch(shell, /sm:py-8/);
   assert.doesNotMatch(shell, /sm:py-10/);
+  assert.doesNotMatch(shell, /\bpy-8\b/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:5.5rem\]/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:7.75rem\]/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:8.5rem\]/);
+  const tabs = readFileSync(
+    join(process.cwd(), "src/components/PortfolioTabs.tsx"),
+    "utf8"
+  );
+  const mobileDock = readFileSync(
+    join(process.cwd(), "src/components/mobile/MobileTabBar.tsx"),
+    "utf8"
+  );
+  const bookDock = readFileSync(
+    join(process.cwd(), "src/components/BookBottomNav.tsx"),
+    "utf8"
+  );
+  assert.match(tabs, /useDockPad/);
+  assert.match(tabs, /fixed inset-x-0 bottom-0/);
+  assert.match(mobileDock, /useDockPad/);
+  assert.match(bookDock, /useDockPad/);
+  assert.match(bookDock, /fixed inset-x-0 bottom-0/);
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  assert.match(css, /input\[type="range"\]/);
+  assert.match(css, /touch-action:\s*pan-y/);
 });
 
 run("Compound controls sit on one panel, not nested cards", () => {
@@ -1269,6 +1292,8 @@ run("Compound controls sit on one panel, not nested cards", () => {
     src.indexOf("Results & Projections")
   );
   assert.match(src, /var\(--dock-pad\)/);
+  assert.match(src, /touch-pan-y/);
+  assert.doesNotMatch(src, /touch-none/);
   assert.match(controls, /divide-y divide-white\/10/);
   assert.doesNotMatch(controls, /Card tone="raised"/);
   assert.doesNotMatch(controls, /text-sky-400/);
