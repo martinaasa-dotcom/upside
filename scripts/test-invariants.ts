@@ -1419,6 +1419,7 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
     "utf8"
   );
   assert.match(home, /BookNavChart/);
+  assert.match(home, /This year/);
   assert.doesNotMatch(home, /function MobileHomeHero/);
   assert.doesNotMatch(home, /overview-fade hidden md:block/);
 });

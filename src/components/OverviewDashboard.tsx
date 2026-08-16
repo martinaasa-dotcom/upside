@@ -3,7 +3,10 @@
 import { HomeWorld } from "@/components/HomeWorld";
 import { CashAlertCard } from "@/components/mobile/CashAlertCard";
 import { WatchlistStrip } from "@/components/WatchlistStrip";
-import { BookNavChart, useBookNavHistory } from "@/components/mobile/GoldNavChart";
+import {
+  BookNavChart,
+  useBookNavHistory,
+} from "@/components/mobile/GoldNavChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   MicroLabel,
@@ -19,6 +22,7 @@ import {
   currency,
   percent,
   signedCurrency,
+  signedPercent,
   cn,
   plural,
   signedTone,
@@ -560,6 +564,35 @@ function PortfolioLane({
   );
 }
 
+function OverviewYearChart({
+  nav,
+  liveNav,
+  className,
+}: {
+  nav: ReturnType<typeof useBookNavHistory>;
+  liveNav: number;
+  className?: string;
+}) {
+  return (
+    <WidgetErrorBoundary name="Year chart">
+      <BookNavChart
+        points={nav.points}
+        assumed={nav.assumed}
+        anchored={nav.anchored}
+        anchor={nav.anchor}
+        liveNav={liveNav}
+        loading={nav.loading}
+        firstRealDate={nav.firstRealDate}
+        onDiscardAssumed={nav.discardAssumed}
+        onRestoreAssumed={nav.restoreAssumed}
+        onApplyAnchor={nav.applyAnchor}
+        onClearAnchor={nav.clearAnchor}
+        className={className}
+      />
+    </WidgetErrorBoundary>
+  );
+}
+
 export function OverviewDashboard({
   model,
   onOpenSheet,
@@ -683,6 +716,15 @@ export function OverviewDashboard({
   }
 
   const bookIsEmpty = model.tickers.length === 0;
+  const painted = nav.points.filter((p) => Number.isFinite(p.nav));
+  const startNav = painted[0]?.nav;
+  const endNav = painted[painted.length - 1]?.nav;
+  const yearPct =
+    startNav != null && startNav > 0 && endNav != null
+      ? (endNav - startNav) / startNav
+      : null;
+  const yearDollar =
+    startNav != null && endNav != null ? endNav - startNav : null;
 
   if (bookIsEmpty) {
     return (
@@ -702,117 +744,158 @@ export function OverviewDashboard({
 
   return (
     <div className="space-y-5 md:space-y-10">
-      {/* One screen: where you stand, then what to make of it. */}
+      {/* Desktop: one opening screen. Phone: same parts, one idea per card,
+          so the stack matches Movers / portfolios / Watching. */}
       <Panel className="overview-fade">
-        <div>
-          <PanelHeader
-            hero
-            title={morning.moveLabel}
-            actions={
-              <>
+        <PanelHeader
+          hero
+          title={morning.moveLabel}
+          actions={
+            <>
+              <span
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted"
+                title={sessionLabel(marketState)}
+              >
                 <span
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted"
-                  title={sessionLabel(marketState)}
+                  className={cn(
+                    "h-1.5 w-1.5 shrink-0 rounded-full",
+                    kind === "open"
+                      ? "bg-gain"
+                      : kind === "pre" || kind === "ah"
+                        ? "bg-mustard"
+                        : "bg-muted"
+                  )}
+                  aria-hidden
+                />
+                {sessionLabel(marketState)}
+              </span>
+              {onAddHolding && (
+                <button
+                  type="button"
+                  onClick={onAddHolding}
+                  className="btn-primary hidden md:inline-flex"
                 >
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 shrink-0 rounded-full",
-                      kind === "open"
-                        ? "bg-gain"
-                        : kind === "pre" || kind === "ah"
-                          ? "bg-mustard"
-                          : "bg-muted"
-                    )}
-                    aria-hidden
-                  />
-                  {sessionLabel(marketState)}
+                  <Plus className="h-3.5 w-3.5" />
+                  Add a holding
+                </button>
+              )}
+              {onAskMargus && (
+                <button
+                  type="button"
+                  onClick={onAskMargus}
+                  className="btn-secondary hidden md:inline-flex"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Ask Margus
+                </button>
+              )}
+            </>
+          }
+        />
+
+        <Scoreboard className="mt-5">
+          <Score
+            label="Portfolio"
+            value={currency(totals.totalValue, 0)}
+            sub={plural(totals.sheetCount, "portfolio")}
+          />
+          <Score
+            label={morning.moveLabel}
+            value={signedCurrency(totals.todayDollar)}
+            sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
+            valueClassName={tone(totals.todayDollar)}
+            subClassName={tone(totals.todayDollar)}
+          />
+          <Score
+            label="All time"
+            value={signedCurrency(totals.roiDollar)}
+            sub={
+              <>
+                <span className="md:hidden">{percent(totals.roiPct)}</span>
+                <span className="hidden md:inline">
+                  {percent(totals.roiPct)} vs cost you typed
                 </span>
-                {onAddHolding && (
-                  <button
-                    type="button"
-                    onClick={onAddHolding}
-                    className="btn-primary"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add a holding
-                  </button>
-                )}
-                {onAskMargus && (
-                  <button
-                    type="button"
-                    onClick={onAskMargus}
-                    className="btn-secondary hidden md:inline-flex"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Ask Margus
-                  </button>
-                )}
               </>
             }
+            valueClassName={tone(totals.roiDollar)}
+            subClassName={tone(totals.roiDollar)}
           />
+          <Score
+            label="Cash"
+            value={currency(totals.cash, 0)}
+            sub={totals.cash < 0 ? "Borrowed" : undefined}
+            valueClassName={totals.cash < 0 ? "text-loss" : undefined}
+            subClassName={totals.cash < 0 ? "text-loss" : undefined}
+          />
+        </Scoreboard>
 
-          <Scoreboard className="mt-5">
-            <Score
-              label="Portfolio"
-              value={currency(totals.totalValue, 0)}
-              sub={plural(totals.sheetCount, "portfolio")}
-            />
-            <Score
-              label={morning.moveLabel}
-              value={signedCurrency(totals.todayDollar)}
-              sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
-              valueClassName={tone(totals.todayDollar)}
-              subClassName={tone(totals.todayDollar)}
-            />
-            <Score
-              label="All time"
-              value={signedCurrency(totals.roiDollar)}
-              sub={`${percent(totals.roiPct)} vs cost you typed`}
-              valueClassName={tone(totals.roiDollar)}
-              subClassName={tone(totals.roiDollar)}
-            />
-            <Score
-              label="Cash"
-              value={currency(totals.cash, 0)}
-              sub={totals.cash < 0 ? "Borrowed" : undefined}
-              valueClassName={totals.cash < 0 ? "text-loss" : undefined}
-              subClassName={totals.cash < 0 ? "text-loss" : undefined}
-            />
-          </Scoreboard>
-
-          {onHomeSheet && homeSheets.length > 1 && (
-            <HomeSheetChip
-              className="mt-5"
-              value={homeSheetId}
-              sheets={homeSheets}
-              onChange={onHomeSheet}
-            />
-          )}
-
-          <MorningStack
+        {onHomeSheet && homeSheets.length > 1 && (
+          <HomeSheetChip
             className="mt-5"
-            morning={morning}
-            previousAt={visitDiff?.previousAt ?? null}
-            onOpenPulse={onOpenPulse}
+            value={homeSheetId}
+            sheets={homeSheets}
+            onChange={onHomeSheet}
           />
+        )}
 
-          <WidgetErrorBoundary name="Year chart">
-          <BookNavChart
-            points={nav.points}
-            assumed={nav.assumed}
-            anchored={nav.anchored}
-            anchor={nav.anchor}
-            liveNav={totals.totalValue}
-            loading={nav.loading}
-            firstRealDate={nav.firstRealDate}
-            onDiscardAssumed={nav.discardAssumed}
-            onRestoreAssumed={nav.restoreAssumed}
-            onApplyAnchor={nav.applyAnchor}
-            onClearAnchor={nav.clearAnchor}
-            className="mt-5"
-          />
-          </WidgetErrorBoundary>
-        </div>
+        {onAddHolding && (
+          <button
+            type="button"
+            onClick={onAddHolding}
+            className="btn-primary mt-5 w-full md:hidden"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add a holding
+          </button>
+        )}
+
+        <MorningStack
+          className="mt-5 hidden md:block"
+          morning={morning}
+          previousAt={visitDiff?.previousAt ?? null}
+          onOpenPulse={onOpenPulse}
+        />
+
+        <OverviewYearChart
+          nav={nav}
+          liveNav={totals.totalValue}
+          className="mt-5 hidden md:block"
+        />
+      </Panel>
+
+      <Panel className="overview-fade md:hidden">
+        <PanelHeader
+          title="This year"
+          actions={
+            yearPct != null && yearDollar != null ? (
+              <p
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  tone(yearPct)
+                )}
+              >
+                {signedPercent(yearPct)}
+                <span className="font-medium text-muted">
+                  {" "}
+                  · {signedCurrency(yearDollar, 0)}
+                </span>
+              </p>
+            ) : null
+          }
+        />
+        <OverviewYearChart
+          nav={nav}
+          liveNav={totals.totalValue}
+          className="mt-4"
+        />
+      </Panel>
+
+      <Panel className="overview-fade md:hidden">
+        <MorningStack
+          morning={morning}
+          previousAt={visitDiff?.previousAt ?? null}
+          onOpenPulse={onOpenPulse}
+        />
       </Panel>
 
       <CashAlertCard

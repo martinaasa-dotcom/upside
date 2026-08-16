@@ -28,6 +28,7 @@ import {
   removeWatchlistTicker,
 } from "@/lib/watchlist";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { PanelHeader } from "@/components/ui/Panel";
 import { Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -191,16 +192,17 @@ export function WatchlistStrip({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-foreground">Watching</p>
-        <form
-          ref={boxRef}
-          className="relative flex items-center gap-1.5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void add(suggestions[active]?.symbol);
-          }}
-        >
+      <PanelHeader
+        title="Watching"
+        actions={
+          <form
+            ref={boxRef}
+            className="relative flex items-center gap-1.5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void add(suggestions[active]?.symbol);
+            }}
+          >
           <input
             value={draft}
             onChange={(e) => {
@@ -280,15 +282,16 @@ export function WatchlistStrip({
             </ul>
           )}
         </form>
-      </div>
+        }
+      />
       {names.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-5 text-sm text-muted">
           Names you don&apos;t own. Add one to see the price, the recent
           range, and whether now looks quiet or rushed.
         </p>
       ) : (
         <>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-5 text-sm text-muted">
             Today&apos;s price and a plain read of the last few weeks. Not a
             buy order.
           </p>

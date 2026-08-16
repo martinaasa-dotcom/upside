@@ -69,7 +69,7 @@ export function MobileTopBar({
         className
       )}
     >
-      <div className="grid h-12 grid-cols-[5rem_1fr_5rem] items-center px-4">
+      <div className="grid h-12 grid-cols-[5rem_1fr_5rem] items-center px-5">
         <Link
           href="/account"
           aria-label="Account"
