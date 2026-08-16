@@ -204,6 +204,16 @@ function PulseCard({
   const writtenThesis = thesisDisplayBullets(convictionThesis);
   const situation = shown ? normalizePulseSituation(shown.situation) : [];
   const thesisBullets = writtenThesis.length > 0 ? writtenThesis : situation;
+  const trimLine = shown?.action === "trim" && shown.trimPct;
+  const hasBody =
+    thesisBullets.length > 0 ||
+    Boolean(trimLine) ||
+    Boolean(shown?.addLevel) ||
+    Boolean(
+      shown?.verdict && !verdictRepeatsTrim(shown.verdict, shown.trimPct)
+    ) ||
+    Boolean(shown?.earningsNote) ||
+    Boolean(shown?.thesisBreak);
 
   return (
     <li
@@ -329,58 +339,60 @@ function PulseCard({
 
       <PulseHistory ticker={c.ticker} />
 
-      <div className="mt-6 space-y-4 border-t border-border pt-5">
-        {thesisBullets.length > 0 && (
-          <Reading
-            label={
-              <span className="flex w-full items-baseline justify-between gap-2">
-                <span>Thesis</span>
-                {onWriteThesis ? (
-                  <button
-                    type="button"
-                    onClick={onWriteThesis}
-                    className="text-sm font-medium text-muted hover:text-foreground"
-                  >
-                    {writtenThesis.length > 0 ? "Edit" : "Add yours"}
-                  </button>
-                ) : null}
-              </span>
-            }
-          >
-            <ul className="space-y-1.5">
-              {thesisBullets.slice(0, 3).map((point, i) => (
-                <li key={i} className="flex gap-2">
-                  <span
-                    aria-hidden
-                    className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
-                  />
-                  <span className="leading-snug">{point}</span>
-                </li>
-              ))}
-            </ul>
-          </Reading>
-        )}
-        {shown?.action === "trim" && shown.trimPct ? (
-          <p className="font-medium text-brand-bright">
-            Trim about {shown.trimPct}% into this strength.
-          </p>
-        ) : null}
-        {shown?.addLevel ? (
-          <p className="font-medium text-foreground">{shown.addLevel}</p>
-        ) : null}
-        {shown?.verdict &&
-        !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
-          <p className="text-base leading-relaxed text-foreground">
-            {shown.verdict}
-          </p>
-        ) : null}
-        {shown?.earningsNote ? (
-          <p className="text-sm text-muted">{shown.earningsNote}</p>
-        ) : null}
-        {shown?.thesisBreak ? (
-          <Reading label="Breaks if">{shown.thesisBreak}</Reading>
-        ) : null}
-      </div>
+      {hasBody ? (
+        <div className="mt-6 space-y-4 border-t border-border pt-5">
+          {thesisBullets.length > 0 && (
+            <Reading
+              label={
+                <span className="flex w-full items-baseline justify-between gap-2">
+                  <span>Thesis</span>
+                  {onWriteThesis ? (
+                    <button
+                      type="button"
+                      onClick={onWriteThesis}
+                      className="text-sm font-medium text-muted hover:text-foreground"
+                    >
+                      {writtenThesis.length > 0 ? "Edit" : "Add yours"}
+                    </button>
+                  ) : null}
+                </span>
+              }
+            >
+              <ul className="space-y-1.5">
+                {thesisBullets.slice(0, 3).map((point, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
+                    />
+                    <span className="leading-snug">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </Reading>
+          )}
+          {trimLine ? (
+            <p className="font-medium text-brand-bright">
+              Trim about {shown?.trimPct}% into this strength.
+            </p>
+          ) : null}
+          {shown?.addLevel ? (
+            <p className="font-medium text-foreground">{shown.addLevel}</p>
+          ) : null}
+          {shown?.verdict &&
+          !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
+            <p className="text-base leading-relaxed text-foreground">
+              {shown.verdict}
+            </p>
+          ) : null}
+          {shown?.earningsNote ? (
+            <p className="text-sm text-muted">{shown.earningsNote}</p>
+          ) : null}
+          {shown?.thesisBreak ? (
+            <Reading label="Breaks if">{shown.thesisBreak}</Reading>
+          ) : null}
+        </div>
+      ) : null}
 
       {headlines.length > 0 && (
         <div className="mt-5 border-t border-border pt-4">
