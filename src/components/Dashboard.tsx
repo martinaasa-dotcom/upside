@@ -3016,7 +3016,6 @@ export function Dashboard() {
                 setHomeSheetId(id);
                 saveHomeSheetId(id);
               }}
-              onAskMargus={() => setMargusExpandSignal((n) => n + 1)}
               onOpenLab={
                 labHiddenForTier
                   ? undefined

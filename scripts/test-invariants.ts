@@ -3241,6 +3241,7 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     "utf8"
   );
   assert.match(home, /Add a holding/);
+  assert.doesNotMatch(home, /Ask Margus/);
   assert.doesNotMatch(home, /function MobileHomeHero/);
   assert.doesNotMatch(home, /overview-fade hidden md:block/);
   assert.doesNotMatch(

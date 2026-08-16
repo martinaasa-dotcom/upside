@@ -45,7 +45,7 @@ import {
   saveVisitSnapshot,
   type VisitDiff,
 } from "@/lib/visit-diff";
-import { ArrowRight, MessageCircle, Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -81,7 +81,6 @@ type Props = {
     cash: number | null;
     replace: boolean;
   }) => void;
-  onAskMargus?: () => void;
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
   homeSheetId?: HomeSheetId;
@@ -103,7 +102,6 @@ function EmptyBook({
   onImportScreenshot,
   onImportCsv,
   onPasteHoldings,
-  onAskMargus,
   homework = false,
   homeworkCash,
 }: {
@@ -115,7 +113,6 @@ function EmptyBook({
     cash: number | null;
     replace: boolean;
   }) => void;
-  onAskMargus?: () => void;
   homework?: boolean;
   homeworkCash?: number;
 }) {
@@ -603,7 +600,6 @@ export function OverviewDashboard({
   onImportScreenshot,
   onImportCsv,
   onPasteHoldings,
-  onAskMargus,
   onOpenCash,
   onOpenAlerts,
   showCommunities = false,
@@ -734,7 +730,6 @@ export function OverviewDashboard({
           onImportScreenshot={onImportScreenshot}
           onImportCsv={onImportCsv}
           onPasteHoldings={onPasteHoldings}
-          onAskMargus={onAskMargus}
           homework={homework}
           homeworkCash={homeworkCash}
         />
@@ -778,18 +773,6 @@ export function OverviewDashboard({
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add a holding
-                  </button>
-                </span>
-              )}
-              {onAskMargus && (
-                <span className="hidden md:inline-flex">
-                  <button
-                    type="button"
-                    onClick={onAskMargus}
-                    className="btn-secondary"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Ask Margus
                   </button>
                 </span>
               )}
