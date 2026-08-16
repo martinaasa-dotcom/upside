@@ -626,7 +626,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-5 pr-4 text-left transition hover:border-brand/40 hover:bg-hover"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-5 pr-3 text-left transition hover:border-brand/40 hover:bg-hover sm:gap-3 sm:pr-4"
     >
       <span
         className={cn(
@@ -635,7 +635,7 @@ function MoverTile({
         )}
         aria-hidden
       />
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block truncate font-heading text-base font-bold text-foreground">
           {cashtag(ticker.ticker)}
         </span>
@@ -643,7 +643,7 @@ function MoverTile({
           {currency(ticker.price)}
         </span>
       </span>
-      <span className="shrink-0 text-right">
+      <span className="shrink-0 whitespace-nowrap text-right">
         <span
           className={cn(
             "block font-sans text-base font-semibold tabular-nums",

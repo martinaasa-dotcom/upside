@@ -1542,6 +1542,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   const segmented = panel.slice(panel.indexOf("export function Segmented"));
   assert.doesNotMatch(segmented, /font-semibold/);
   assert.doesNotMatch(segmented, /flex-wrap/);
+  assert.doesNotMatch(segmented, /truncate/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),

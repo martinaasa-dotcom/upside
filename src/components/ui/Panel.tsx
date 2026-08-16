@@ -150,7 +150,7 @@ export function PanelHeader({
     >
       <div
         className={cn(
-          "flex min-w-0 flex-1 gap-3",
+          "flex min-w-0 flex-1 gap-3 sm:min-w-[12rem]",
           subtitle ? "items-start" : "items-center"
         )}
       >
@@ -183,7 +183,7 @@ export function PanelHeader({
         </div>
       </div>
       {actions && (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex max-w-full shrink-0 items-center gap-2">
           {actions}
         </div>
       )}
@@ -548,7 +548,8 @@ export function Stat(props: ScoreProps) {
 /**
  * The one segmented toggle. Overview's today/lifetime, the drawer's 3y/5y,
  * and the scenario picker used to be four hand-rolled copies with three
- * different active states.
+ * different active states. Labels always paint in full: compact pills size
+ * to the words, filled grids wrap instead of ellipsizing.
  */
 export function Segmented<T extends string>({
   options,
@@ -579,7 +580,7 @@ export function Segmented<T extends string>({
       className={cn(
         fill
           ? "grid w-full gap-px overflow-hidden rounded-lg border border-border bg-border"
-          : "inline-flex w-full min-w-0 shrink-0 flex-nowrap rounded-lg border border-border bg-well p-0.5 sm:w-auto",
+          : "inline-flex max-w-full shrink-0 flex-nowrap rounded-lg border border-border bg-well p-0.5",
         className
       )}
       style={
@@ -598,8 +599,10 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "touch-target min-w-0 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
-            fill ? "bg-well px-2 py-2.5" : "flex-1 rounded-md px-3 py-1.5 sm:flex-none",
+            "touch-target text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
+            fill
+              ? "flex min-w-0 items-center justify-center bg-well px-2 py-2.5"
+              : "inline-flex shrink-0 items-center justify-center rounded-md px-2.5 py-1.5 sm:px-3",
             value === o.id
               ? "bg-select text-select-ink"
               : fill
@@ -607,7 +610,15 @@ export function Segmented<T extends string>({
                 : "text-muted hover:text-foreground"
           )}
         >
-          <span className="block truncate">{o.label}</span>
+          <span
+            className={
+              fill
+                ? "block text-center leading-snug"
+                : "whitespace-nowrap"
+            }
+          >
+            {o.label}
+          </span>
         </button>
       ))}
     </div>
