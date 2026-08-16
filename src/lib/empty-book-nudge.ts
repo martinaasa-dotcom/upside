@@ -1,6 +1,7 @@
 /** One-time nudge when someone signs up and never imports a name. */
 
 import { isClassroomSheet } from "@/lib/classroom";
+import { emptyBookNudgeHtml } from "@/lib/email-letter";
 import { PRODUCT_NAME, PRODUCT_ORIGIN } from "@/lib/product";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
@@ -181,10 +182,12 @@ export async function dispatchEmptyBookNudges(): Promise<{
       continue;
     }
 
+    const text = emptyBookNudgeText(profile.display_name as string | null);
     const ok = await sendNoteEmail({
       to: email,
       subject: emptyBookNudgeSubject(),
-      text: emptyBookNudgeText(profile.display_name as string | null),
+      text,
+      html: emptyBookNudgeHtml(text),
     });
     if (!ok) {
       skipped += 1;

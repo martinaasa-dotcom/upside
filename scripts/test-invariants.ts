@@ -49,6 +49,7 @@ import {
   markChatActive,
 } from "../src/lib/ai/llm-slots";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
+import { communityInviteCopy, emptyBookNudgeHtml } from "../src/lib/email-letter";
 import {
   fallbackNoteTake,
   looksLikePromptLeak,
@@ -855,12 +856,16 @@ run("Sunday note never ships the writing brief", () => {
     ["NBIS", "RDDT"]
   );
   const email = readFileSync("src/lib/note-report.ts", "utf8");
+  const letter = readFileSync("src/lib/email-letter.ts", "utf8");
   assert.match(email, /font-size:40px;line-height:1\.1;font-weight:700;letter-spacing:-0\.03em;color:\$\{CREAM\}/);
-  assert.match(email, /padding:48px 28px 52px 28px/);
-  assert.match(email, /const APP = "#0b0b0b"/);
-  assert.match(email, /const GAIN = "#5a9a4a"/);
+  assert.match(letter, /padding:48px 28px 52px 28px/);
+  assert.match(letter, /app: "#0b0b0b"/);
+  assert.match(letter, /gain: "#5a9a4a"/);
+  assert.match(letter, /Georgia,'Times New Roman',Times,serif/);
   assert.match(email, /function noteTakeHtml/);
   assert.match(email, /function loudNoteMoves/);
+  assert.match(email, /wrapEmailLetter/);
+  assert.doesNotMatch(email, /border-radius:14px/);
   assert.doesNotMatch(email, /of the book/);
   assert.doesNotMatch(email, /Open the book/);
   assert.match(email, /of your portfolio/);
@@ -1575,6 +1580,26 @@ run("community invite landing names the circle", () => {
     readFileSync(join(process.cwd(), "src/app/api/communities/join/route.ts"), "utf8"),
     /export async function GET/
   );
+});
+
+run("inbox letters share one letterhead", () => {
+  const invite = communityInviteCopy({
+    name: "Upside Circle",
+    url: "https://upsidelab.app/communities/join?token=abc",
+    classroom: false,
+  });
+  assert.equal(invite.subject, "Join Upside Circle");
+  assert.match(invite.html, /Georgia/);
+  assert.match(invite.html, /#0b0b0b/);
+  assert.match(invite.html, /Open the invite/);
+  assert.doesNotMatch(invite.html, /\u2014/);
+  assert.doesNotMatch(invite.text, /the book|the sheet/);
+  const nudge = emptyBookNudgeHtml(emptyBookNudgeText("Martin Aasa"));
+  assert.match(nudge, /Your portfolio is still empty/);
+  assert.match(nudge, /Open Upside Lab/);
+  assert.doesNotMatch(nudge, /\u2014/);
+  const send = readFileSync("src/lib/send-note.ts", "utf8");
+  assert.match(send, /fallbackNoteHtml/);
 });
 
 run("one community invite can name several emails", () => {

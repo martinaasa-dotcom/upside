@@ -4,7 +4,8 @@ import {
   inviteEmailAllowlist,
   storeInviteEmails,
 } from "@/lib/invite-emails";
-import { PRODUCT_NAME, PRODUCT_ORIGIN } from "@/lib/product";
+import { communityInviteCopy } from "@/lib/email-letter";
+import { PRODUCT_ORIGIN } from "@/lib/product";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
@@ -89,15 +90,18 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const meta = community as { name?: string; kind?: string } | null;
     const classroom = meta?.kind === "classroom";
     const name = meta?.name?.trim() || (classroom ? "a class" : "a community");
-    const url = `${PRODUCT_ORIGIN}${path}`;
-    const subject = `You've been invited to join ${name}`;
-    const text = [
-      `You've been invited to join ${name} on ${PRODUCT_NAME}.`,
-      `Open this link and sign in with Google: ${url}`,
-      "If you didn't expect this, ignore it.",
-    ].join("\n\n");
+    const copy = communityInviteCopy({
+      name,
+      url: `${PRODUCT_ORIGIN}${path}`,
+      classroom,
+    });
     for (const to of allow.emails) {
-      const ok = await sendNoteEmail({ to, subject, text });
+      const ok = await sendNoteEmail({
+        to,
+        subject: copy.subject,
+        text: copy.text,
+        html: copy.html,
+      });
       if (ok) emailed += 1;
     }
   }

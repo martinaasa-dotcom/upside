@@ -5,6 +5,15 @@ import { stripAiDashes } from "@/lib/ai/humanize-copy";
 import { statusLabel } from "@/lib/thesis-pulse";
 import { buildBookInsights } from "@/lib/book-insights";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
+import {
+  EMAIL,
+  emailAccountFooter,
+  emailButton,
+  emailKicker,
+  emailSection,
+  escapeEmail,
+  wrapEmailLetter,
+} from "@/lib/email-letter";
 import { todayDollarFor } from "@/lib/overview";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { EarningsEvent, WeekReturn } from "@/lib/market/yahoo";
@@ -170,13 +179,7 @@ export function loudNoteMoves(
   return [...picked].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+const escapeHtml = escapeEmail;
 
 function dateLine(now: Date): string {
   return new Intl.DateTimeFormat("en-GB", {
@@ -789,20 +792,15 @@ export function noteReportText(r: NoteReport): string {
   return lines.join("\n");
 }
 
-const APP = "#0b0b0b";
-const CARD = "#171717";
-const CREAM = "#ede8dc";
-const MUTED = "#9a9488";
-const GOLD = "#c4a36a";
-const GAIN = "#5a9a4a";
-const LOSS = "#c46a58";
-const LINE = "#212121";
-const EDGE = "#2b2b2b";
-const SANS =
-  "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-const BOOK_URL = "https://upsidelab.app";
-const LOCKUP =
-  "https://upsidelab.app/icons/email-lockup.png?v=1";
+const CREAM = EMAIL.cream;
+const MUTED = EMAIL.muted;
+const GOLD = EMAIL.gold;
+const GAIN = EMAIL.gain;
+const LOSS = EMAIL.loss;
+const LINE = EMAIL.line;
+const SANS = EMAIL.sans;
+const SERIF = EMAIL.serif;
+const BOOK_URL = EMAIL.origin;
 
 function toneColor(n: number): string {
   if (n > 0) return GAIN;
@@ -811,24 +809,11 @@ function toneColor(n: number): string {
 }
 
 function kicker(text: string): string {
-  return `<p style="margin:0;font-family:${SANS};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD}">${escapeHtml(text)}</p>`;
-}
-
-function label(text: string): string {
-  return `<p style="margin:0 0 12px 0;font-family:${SANS};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD}">${escapeHtml(text)}</p>`;
-}
-
-function panel(inner: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:${CARD};border:1px solid ${EDGE};border-radius:14px">
-  <tr><td style="padding:20px 20px">${inner}</td></tr>
-</table>`;
+  return emailKicker(text);
 }
 
 function section(title: string, inner: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:28px 0 0 0">
-  <tr><td>${label(title)}</td></tr>
-  <tr><td>${panel(inner)}</td></tr>
-</table>`;
+  return emailSection(title, inner);
 }
 
 function weightBar(weight: number): string {
@@ -851,7 +836,7 @@ function noteTakeHtml(text: string): string {
     if (prose.length === 0) return;
     const first = chunks.length === 0;
     chunks.push(
-      `<p style="margin:${first ? "10px 0 0 0" : "16px 0 0 0"};font-family:${SANS};font-size:18px;line-height:1.55;font-weight:500;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
+      `<p style="margin:${first ? "12px 0 0 0" : "18px 0 0 0"};font-family:${SERIF};font-size:18px;line-height:1.6;font-weight:400;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
     );
     prose = [];
   };
@@ -861,13 +846,13 @@ function noteTakeHtml(text: string): string {
       .map(
         (item) =>
           `<tr>
-  <td style="width:16px;padding:4px 0 4px 0;vertical-align:top;font-family:${SANS};font-size:18px;line-height:1.45;color:${GOLD}">•</td>
-  <td style="padding:4px 0;font-family:${SANS};font-size:17px;line-height:1.45;font-weight:500;color:${CREAM}">${escapeHtml(item)}</td>
+  <td style="width:16px;padding:5px 0 5px 0;vertical-align:top;font-family:${SERIF};font-size:18px;line-height:1.5;color:${GOLD}">•</td>
+  <td style="padding:5px 0;font-family:${SERIF};font-size:17px;line-height:1.5;font-weight:400;color:${CREAM}">${escapeHtml(item)}</td>
 </tr>`
       )
       .join("");
     chunks.push(
-      `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:14px 0 0 0">${rows}</table>`
+      `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0 0 0">${rows}</table>`
     );
     bullets = [];
   };
@@ -893,22 +878,11 @@ function noteTakeHtml(text: string): string {
   return chunks.join("");
 }
 
-function openBookButton(): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:32px 0 0 0">
-  <tr>
-    <td bgcolor="${CREAM}" style="border-radius:10px">
-      <a href="${BOOK_URL}" style="display:inline-block;padding:12px 18px;font-family:${SANS};font-size:14px;font-weight:600;color:${APP};text-decoration:none">Open your portfolio</a>
-    </td>
-  </tr>
-</table>`;
-}
-
 export function noteReportHtml(r: NoteReport): string {
   const todayColor = toneColor(r.todayDollar);
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
   const preview = notePreview(r);
-  const previewPad = Array.from({ length: 40 }, () => "&zwnj;&nbsp;").join("");
 
   const moverRows = r.movers
     .map((m, i) => {
@@ -986,20 +960,20 @@ export function noteReportHtml(r: NoteReport): string {
           r.insights
             .map(
               (line, i) =>
-                `<p style="margin:${i === 0 ? "0" : "12px 0 0 0"};font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(line)}</p>`
+                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
             )
             .join("")
         )
       : "";
 
   const margusInner = r.margus
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:28px 0 0 0">
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:36px 0 0 0">
   <tr>
-    <td style="width:3px;background:${GOLD};font-size:0;line-height:0;border-radius:2px">&nbsp;</td>
-    <td style="padding:2px 0 2px 16px">
+    <td style="width:2px;background:${GOLD};font-size:0;line-height:0">&nbsp;</td>
+    <td style="padding:0 0 0 18px">
       ${kicker("Margus")}
       ${noteTakeHtml(r.margus)}
-      <p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
+      <p style="margin:16px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
     </td>
   </tr>
 </table>`
@@ -1012,7 +986,7 @@ export function noteReportHtml(r: NoteReport): string {
           r.perspective
             .map(
               (p, i) =>
-                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SANS};font-size:16px;line-height:1.55;color:${CREAM}">${escapeHtml(p)}</p>`
+                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(p)}</p>`
             )
             .join("")
         )
@@ -1040,7 +1014,7 @@ export function noteReportHtml(r: NoteReport): string {
     }
     if (r.thesis.ownerThesis) {
       bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(r.thesis.ownerThesis)}</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(r.thesis.ownerThesis)}</p>`
       );
     }
     if (r.thesis.status) {
@@ -1050,7 +1024,7 @@ export function noteReportHtml(r: NoteReport): string {
     }
     if (r.thesis.pulseLine) {
       bits.push(
-        `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
+        `<p style="margin:8px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
       );
     }
     thesisInner = section(
@@ -1072,17 +1046,17 @@ export function noteReportHtml(r: NoteReport): string {
       }
       if (n.ownerThesis) {
         bits.push(
-          `<p style="margin:10px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${CREAM}">${escapeHtml(n.ownerThesis)}</p>`
+          `<p style="margin:10px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(n.ownerThesis)}</p>`
         );
       }
       if (n.pulseLine) {
         bits.push(
-          `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.55;color:${MUTED}">${escapeHtml(n.pulseLine)}</p>`
+          `<p style="margin:8px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(n.pulseLine)}</p>`
         );
       }
       if (n.actionLine) {
         bits.push(
-          `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;line-height:1.45;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
+          `<p style="margin:12px 0 0 0;font-family:${SERIF};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
         );
       }
       const pad = i === r.weekNotes.length - 1 ? "0" : "0 0 22px 0";
@@ -1100,18 +1074,18 @@ export function noteReportHtml(r: NoteReport): string {
 
   const hero =
     r.kind === "morning"
-      ? `<p style="margin:0;font-family:${SANS};font-size:22px;line-height:1.4;font-weight:600;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
-<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
+      ? `<p style="margin:0;font-family:${SERIF};font-size:26px;line-height:1.35;font-weight:400;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
+<p style="margin:18px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
       : `<p style="margin:0;font-family:${SANS};font-size:40px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:${CREAM}">${escapeHtml(signedMoney(r.todayDollar))}</p>
 ${
   r.todayPct != null
     ? `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(signedPct(r.todayPct))}</p>`
     : ""
 }
-<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
 ${
   r.lead
-    ? `<p style="margin:24px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(r.lead)}</p>`
+    ? `<p style="margin:26px 0 0 0;font-family:${SERIF};font-size:18px;line-height:1.55;font-weight:400;color:${CREAM}">${escapeHtml(r.lead)}</p>`
     : ""
 }`;
 
@@ -1122,48 +1096,19 @@ ${
         ? `${margusInner}${moversInner}${weightsInner}${insightsInner}${perspectiveInner}${weekNotesInner}`
         : `${margusInner}${moversInner}${insightsInner}${thesisInner}`;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<meta name="color-scheme" content="dark" />
-<meta name="supported-color-schemes" content="dark" />
-<title>${escapeHtml(r.title)}</title>
-<style>
-  :root { color-scheme: dark; }
-  html, body { margin:0 !important; padding:0 !important; background:${APP} !important; width:100% !important; }
-</style>
-</head>
-<body style="margin:0;padding:0;width:100%;background:${APP};color:${CREAM}" bgcolor="${APP}">
-<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeHtml(preview)}${previewPad}</div>
-<!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${APP}" style="width:100%;background:${APP}">
-  <tr>
-    <td align="center" style="padding:0;background:${APP}" bgcolor="${APP}">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;background:${APP}">
-        <tr>
-          <td style="height:2px;background:${GOLD};font-size:0;line-height:0">&nbsp;</td>
-        </tr>
-        <tr>
-          <td style="padding:48px 28px 52px 28px;background:${APP}">
-            <img src="${LOCKUP}" width="156" height="29" alt="Upside Lab" style="display:block;border:0" />
-            <p style="margin:14px 0 0 0;font-family:${SANS};font-size:14px;line-height:1.4;color:${MUTED}">${escapeHtml(r.dateLine)}</p>
-            <div style="height:40px;font-size:0;line-height:0">&nbsp;</div>
-            ${kicker(r.title)}
-            <div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
-            ${hero}
-            ${bodyOrder}
-            ${openBookButton()}
-            <p style="margin:28px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">Turn these notes off in <a href="https://upsidelab.app/account" style="color:#c4a36a;text-decoration:underline">Account</a>.</p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-</body>
-</html>`;
+  return wrapEmailLetter({
+    title: r.title,
+    preview,
+    dateLine: r.dateLine,
+    body: `<!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
+<div style="height:40px;font-size:0;line-height:0">&nbsp;</div>
+${kicker(r.title)}
+<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
+${hero}
+${bodyOrder}
+${emailButton(BOOK_URL, "Open your portfolio")}`,
+    footer: emailAccountFooter(),
+  });
 }
 
 export function noteSubject(r: NoteReport): string {
