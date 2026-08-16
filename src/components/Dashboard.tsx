@@ -162,12 +162,11 @@ import { InvitePartnerModal } from "@/components/InvitePartnerModal";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { MobileTabBar, type MobileTabId } from "@/components/mobile/MobileTabBar";
 import { MobileTopBar } from "@/components/mobile/MobileTopBar";
-import { cn } from "@/lib/format";
+import { SheetPicker } from "@/components/SheetPicker";
 import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
-import { loadHomeSheetId, saveHomeSheetId, type HomeSheetId } from "@/lib/home-sheet";
 import { markSheetImported } from "@/lib/sheet-import-stamp";
 import { addPulseStamp } from "@/lib/conviction";
 
@@ -343,6 +342,7 @@ export function Dashboard() {
     id: string;
     name: string;
   } | null>(null);
+  const [creatingSheet, setCreatingSheet] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<
     | { kind: "holding"; id: string; label: string }
     | { kind: "sheet"; id: string; label: string }
@@ -674,33 +674,12 @@ export function Dashboard() {
     () => buildOverview(realPortfolios, realHoldings, quotes),
     [realPortfolios, realHoldings, quotes]
   );
-  const [homeSheetId, setHomeSheetId] = useState<HomeSheetId>("all");
-  useEffect(() => {
-    const saved = loadHomeSheetId();
-    setHomeSheetId(saved);
-  }, []);
-  const homeOverview = useMemo(() => {
-    const known = portfolios.some((p) => p.id === homeSheetId);
-    if (homeSheetId === "all" || !known) {
-      return overview;
-    }
-    return buildOverview(
-      portfolios.filter((p) => p.id === homeSheetId),
-      holdings.filter((h) => h.portfolio_id === homeSheetId),
-      quotes
-    );
-  }, [overview, homeSheetId, portfolios, holdings, quotes]);
-  const viewedHomeSheets = useMemo(() => {
-    const known = portfolios.some((p) => p.id === homeSheetId);
-    if (homeSheetId === "all" || !known) return portfolios;
-    return portfolios.filter((p) => p.id === homeSheetId);
-  }, [homeSheetId, portfolios]);
   const homeworkEmpty =
-    viewedHomeSheets.length > 0 &&
-    viewedHomeSheets.every((p) => p.classroom_community_id);
+    portfolios.length > 0 &&
+    portfolios.every((p) => p.classroom_community_id);
   const homeworkCash =
-    homeworkEmpty && viewedHomeSheets.length === 1
-      ? viewedHomeSheets[0]!.cash_balance
+    homeworkEmpty && portfolios.length === 1
+      ? portfolios[0]!.cash_balance
       : undefined;
 
   // Book-wide CC rows, computed once and shared by Lab (Alerts/calendar) and
@@ -2191,11 +2170,7 @@ export function Dashboard() {
   const startFirstRunAction = useCallback(
     (kind: "manual" | "csv" | "screenshot") => {
       void (async () => {
-        const preferred =
-          homeSheetId !== "all"
-            ? portfolios.find((p) => p.id === homeSheetId)
-            : undefined;
-        const target = preferred ?? (await ensureFirstSheet());
+        const target = await ensureFirstSheet();
         if (!target) return;
         if (activeId !== target.id) setActiveId(target.id);
         if (kind === "manual") setModalOpen(true);
@@ -2205,7 +2180,7 @@ export function Dashboard() {
     },
     // ensureFirstSheet is a function declaration in this component.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeId, portfolios, homeSheetId]
+    [activeId, portfolios]
   );
 
   const handleCsvImport = useCallback(
@@ -2786,6 +2761,31 @@ export function Dashboard() {
     );
   }
 
+  const showSheetPicker =
+    portfolios.length > 0 && (isOverview || !isMetaTab);
+  const mobileSheetTitle = isAlerts
+    ? "Alerts"
+    : showSheetPicker
+      ? (
+          <SheetPicker
+            sheets={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+            value={isOverview ? "all" : activeId}
+            onChange={(id) =>
+              setActiveId(id === "all" ? OVERVIEW_TAB_ID : id)
+            }
+            onAdd={() => setCreatingSheet(true)}
+          />
+        )
+      : isOverview
+        ? "Overview"
+        : isCompound
+          ? "Compound"
+          : isLab
+            ? "Lab"
+            : isPulse
+              ? "Pulse"
+              : "";
+
   return (
     <div className={PAGE_FRAME_CLASS}>
       <StaleQuotesBanner
@@ -2794,19 +2794,7 @@ export function Dashboard() {
         missingTickers={missingQuoteTickers}
       />
       <MobileTopBar
-        title={
-          isOverview
-            ? "Overview"
-            : isAlerts
-              ? "Alerts"
-              : isCompound
-                ? "Compound"
-                : isLab
-                  ? "Lab"
-                  : isPulse
-                    ? "Pulse"
-                    : (activePortfolio?.name ?? "Upside Lab")
-        }
+        title={mobileSheetTitle}
         avatar={{
           url: profile?.avatar_url,
           initial: (profile?.display_name || user?.email || "?")
@@ -2887,42 +2875,6 @@ export function Dashboard() {
               icon={SlidersHorizontal}
             />
       </AppHeader>
-
-      {!isMetaTab && portfolios.length > 0 && (
-        <div className="border-b border-border px-5 md:hidden">
-          <div
-            role="tablist"
-            aria-label="Your portfolios"
-            className="scrollbar-none flex h-10 items-stretch gap-0.5 overflow-x-auto"
-          >
-            {portfolios.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="tab"
-                aria-selected={p.id === activeId}
-                onClick={() => setActiveId(p.id)}
-                className={cn(
-                  "relative shrink-0 px-3 text-sm font-medium transition",
-                  p.id === activeId
-                    ? "text-foreground"
-                    : "text-muted hover:text-foreground"
-                )}
-              >
-                <span className="flex h-full items-center whitespace-nowrap">
-                  {p.name}
-                </span>
-                {p.id === activeId && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-select"
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <main id="main" className={PAGE_MAIN_CLASS}>
         {!isMetaTab &&
@@ -3019,7 +2971,7 @@ export function Dashboard() {
         ) : isOverview ? (
           <WidgetErrorBoundary name="Overview">
             <OverviewDashboard
-              model={homeOverview}
+              model={overview}
               onOpenSheet={openSheet}
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}
@@ -3037,14 +2989,8 @@ export function Dashboard() {
                   markSheetImported(target.id);
                 })();
               }}
-              homeSheetId={homeSheetId}
-              homeSheets={portfolios.map((p) => ({ id: p.id, name: p.name }))}
               homework={homeworkEmpty}
               homeworkCash={homeworkCash}
-              onHomeSheet={(id) => {
-                setHomeSheetId(id);
-                saveHomeSheetId(id);
-              }}
               onOpenLab={
                 labHiddenForTier
                   ? undefined
@@ -3249,10 +3195,20 @@ export function Dashboard() {
       />
 
       <RenameSheetModal
-        open={Boolean(renameTarget)}
-        initialName={renameTarget?.name ?? ""}
-        onClose={() => setRenameTarget(null)}
+        open={Boolean(renameTarget) || creatingSheet}
+        initialName={creatingSheet ? "" : renameTarget?.name ?? ""}
+        title={creatingSheet ? "New portfolio" : undefined}
+        confirmLabel={creatingSheet ? "Add" : undefined}
+        onClose={() => {
+          setRenameTarget(null);
+          setCreatingSheet(false);
+        }}
         onSave={(name) => {
+          if (creatingSheet) {
+            setCreatingSheet(false);
+            void handleAddSheet(name);
+            return;
+          }
           if (!renameTarget) return;
           void handleRenameSheet(renameTarget.id, name);
         }}

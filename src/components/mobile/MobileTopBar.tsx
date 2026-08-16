@@ -9,7 +9,7 @@ import { Bell, MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 
 type Props = {
-  title: string;
+  title: ReactNode;
   /** Kept so older call sites still compile. The lockup always shows. */
   brand?: boolean;
   avatar?: { url?: string | null; initial?: string };
@@ -25,6 +25,12 @@ type Props = {
 
 const ICON_BTN =
   "inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-hover hover:text-foreground";
+
+function hasVisibleTitle(title: ReactNode) {
+  if (title == null || title === false) return false;
+  if (typeof title === "string") return title.trim().length > 0;
+  return true;
+}
 
 function FeedbackIconButton() {
   const { user } = useAuth();
@@ -71,10 +77,20 @@ export function MobileTopBar({
       <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-5">
         <div className="flex min-w-0 items-center gap-2.5">
           <HeaderBrand alwaysType />
-          <span className="h-3.5 w-px shrink-0 bg-border" aria-hidden />
-          <h1 className="min-w-0 truncate text-sm font-medium leading-none text-foreground/80">
-            {title}
-          </h1>
+          {hasVisibleTitle(title) ? (
+            <>
+              <span className="h-3.5 w-px shrink-0 bg-border" aria-hidden />
+              {typeof title === "string" ? (
+                <h1 className="min-w-0 truncate text-sm font-medium leading-none text-foreground/80">
+                  {title}
+                </h1>
+              ) : (
+                <div className="min-w-0">{title}</div>
+              )}
+            </>
+          ) : (
+            <h1 className="sr-only">Upside Lab</h1>
+          )}
         </div>
         <div className="flex shrink-0 items-center justify-end gap-1">
           {end}

@@ -2357,7 +2357,7 @@ run("empty book does not lead with Fund", () => {
   // The empty return must not render HomeWorld.
   const emptyFn = overview.slice(
     overview.indexOf("function EmptyBook"),
-    overview.indexOf("function HomeSheetChip")
+    overview.indexOf("function signedMovePct")
   );
   assert.doesNotMatch(emptyFn, /HomeWorld/);
   assert.doesNotMatch(emptyFn, /browse circles/);
@@ -2365,6 +2365,28 @@ run("empty book does not lead with Fund", () => {
   assert.match(emptyFn, /homework portfolio/);
   assert.match(emptyFn, /Do not paste a real portfolio/);
   void emptyBlock;
+});
+
+run("phone sheets switch from the header, not Overview chips", () => {
+  const overview = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  const picker = readFileSync(
+    join(process.cwd(), "src/components/SheetPicker.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(overview, /HomeSheetChip/);
+  assert.doesNotMatch(overview, /All sheets/);
+  assert.doesNotMatch(dash, /homeSheetId/);
+  assert.match(dash, /<SheetPicker/);
+  assert.match(picker, /All sheets/);
+  assert.match(picker, /New sheet/);
+  assert.match(picker, /aria-haspopup="menu"/);
 });
 
 run("lab sync writes conviction only", () => {

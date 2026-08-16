@@ -30,7 +30,6 @@ import {
 } from "@/lib/format";
 import { parseHoldingsPaste, type CsvHoldingRow } from "@/lib/csv-import";
 import { buildMorningRead } from "@/lib/morning-read";
-import type { HomeSheetId } from "@/lib/home-sheet";
 import type { UpsideAlert } from "@/lib/alerts";
 import { statusLabel } from "@/lib/thesis-pulse";
 import { sessionLabel, sessionKind } from "@/lib/market-session";
@@ -83,9 +82,6 @@ type Props = {
   }) => void;
   onOpenCash?: () => void;
   onOpenAlerts?: () => void;
-  homeSheetId?: HomeSheetId;
-  homeSheets?: Array<{ id: string; name: string }>;
-  onHomeSheet?: (id: HomeSheetId) => void;
   /** Empty classroom homework sheet, not a personal book. */
   homework?: boolean;
   homeworkCash?: number;
@@ -243,55 +239,6 @@ function EmptyBook({
       )}
 
     </Panel>
-  );
-}
-
-function HomeSheetChip({
-  value,
-  sheets,
-  onChange,
-  className,
-}: {
-  value: HomeSheetId;
-  sheets: Array<{ id: string; name: string }>;
-  onChange: (id: HomeSheetId) => void;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "scrollbar-none flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-border bg-well p-0.5",
-        className
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => onChange("all")}
-        className={cn(
-          "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition",
-          value === "all"
-            ? "bg-select text-select-ink"
-            : "text-muted hover:text-foreground"
-        )}
-      >
-        All sheets
-      </button>
-      {sheets.map((s) => (
-        <button
-          key={s.id}
-          type="button"
-          onClick={() => onChange(s.id)}
-          className={cn(
-            "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition",
-            value === s.id
-              ? "bg-select text-select-ink"
-              : "text-muted hover:text-foreground"
-          )}
-        >
-          {s.name}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -608,9 +555,6 @@ export function OverviewDashboard({
   onOpenCash,
   onOpenAlerts,
   showCommunities = false,
-  homeSheetId = "all",
-  homeSheets = [],
-  onHomeSheet,
   homework = false,
   homeworkCash,
 }: Props) {
@@ -820,15 +764,6 @@ export function OverviewDashboard({
             subClassName={totals.cash < 0 ? "text-loss" : undefined}
           />
         </Scoreboard>
-
-        {onHomeSheet && homeSheets.length > 1 && (
-          <HomeSheetChip
-            className="mt-5"
-            value={homeSheetId}
-            sheets={homeSheets}
-            onChange={onHomeSheet}
-          />
-        )}
 
         {onAddHolding && (
           <div className="mt-5 md:hidden">
