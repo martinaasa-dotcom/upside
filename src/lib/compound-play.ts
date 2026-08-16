@@ -332,7 +332,7 @@ export function buildCompareScenarios(
     {
       id: "upside",
       label: "Upside path",
-      tagline: `~${upsideRate.toFixed(0)}% · this book's assumed rate`,
+      tagline: `~${upsideRate.toFixed(0)}% · your rate on this plan`,
       result: upside,
       color: "#d6ad69",
     },

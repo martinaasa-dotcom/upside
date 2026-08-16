@@ -3190,6 +3190,14 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
   assert.doesNotMatch(compound, /thesis breaks/);
   assert.doesNotMatch(compound, /index-ish beta/);
   assert.doesNotMatch(compound, /long-only beta/);
+  assert.doesNotMatch(compound, /this book's assumed rate/);
+  assert.match(compound, /your rate on this plan/);
+  const compareUi = readFileSync(
+    join(process.cwd(), "src/components/CompoundInterestSheet.tsx"),
+    "utf8"
+  );
+  assert.match(compareUi, /featured \? "brand"/);
+  assert.match(compareUi, /This plan/);
 });
 
 run("Fund page labels Margus's note Thesis", () => {

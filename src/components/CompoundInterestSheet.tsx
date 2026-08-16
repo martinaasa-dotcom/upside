@@ -1251,30 +1251,41 @@ export function CompoundInterestSheet({
             </p>
           )}
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {compare.map((s) => (
-              <Card
-                key={s.id}
-                tone="raised"
-                className="row-span-4 grid h-full grid-rows-subgrid border-t-2"
-                style={{ borderTopColor: s.color }}
-              >
-                <p className="text-sm font-semibold leading-5 text-foreground">
-                  {s.label}
-                </p>
-                <p className="mt-1.5 min-h-[2.75rem] text-sm leading-snug text-muted">
-                  {s.tagline}
-                </p>
-                <p
-                  className="mt-3 text-lg font-bold leading-7 tabular-nums whitespace-nowrap"
-                  style={{ color: s.color }}
+            {compare.map((s) => {
+              const featured = s.id === "upside";
+              return (
+                <Card
+                  key={s.id}
+                  tone={featured ? "brand" : "raised"}
+                  className={cn(
+                    "row-span-4 grid h-full grid-rows-subgrid border-t-2",
+                    featured &&
+                      "order-first ring-1 ring-brand/50 lg:order-none"
+                  )}
+                  style={{ borderTopColor: s.color }}
                 >
-                  {show(s.result.futureValue)}
-                </p>
-                <p className="mt-1.5 text-sm leading-5 text-muted">
-                  {show(s.result.totalInterest)} of that is growth
-                </p>
-              </Card>
-            ))}
+                  <p className="flex items-center gap-2 text-sm font-semibold leading-5 text-foreground">
+                    {s.label}
+                    {featured && <Pill>This plan</Pill>}
+                  </p>
+                  <p className="mt-1.5 min-h-[2.75rem] text-sm leading-snug text-muted">
+                    {s.tagline}
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-3 font-bold leading-7 tabular-nums whitespace-nowrap",
+                      featured ? "text-2xl" : "text-lg"
+                    )}
+                    style={{ color: s.color }}
+                  >
+                    {show(s.result.futureValue)}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-5 text-muted">
+                    {show(s.result.totalInterest)} of that is growth
+                  </p>
+                </Card>
+              );
+            })}
           </div>
         </Panel>
 
