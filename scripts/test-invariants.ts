@@ -1716,6 +1716,11 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.match(controls, /divide-y divide-white\/10/);
   assert.doesNotMatch(controls, /Card tone="raised"/);
   assert.doesNotMatch(controls, /text-sky-400/);
+  assert.doesNotMatch(controls, /type="range"/);
+  assert.doesNotMatch(controls, /Or borrow one/);
+  assert.doesNotMatch(controls, /Full Book Value/);
+  assert.doesNotMatch(controls, /Your book/);
+  assert.match(controls, /This portfolio/);
 });
 
 run("every tier's default surface uses the shared Panel shell", () => {

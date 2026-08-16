@@ -6,7 +6,6 @@ import {
   type CompoundInputs,
   type ContributionFrequency,
   type ContributionMode,
-  type RatePeriod,
 } from "@/lib/compound-interest";
 import {
   buildCompareScenarios,
@@ -658,11 +657,9 @@ export function CompoundInterestSheet({
       ? `${liveInputs.years}y ${liveInputs.months}m`
       : `${liveInputs.years} year${liveInputs.years === 1 ? "" : "s"}`;
 
-  // Dynamic max slider ranges based on current values
-  const principalSliderMax = Math.max(100000, Math.ceil((draft.principal * 1.5) / 10000) * 10000);
-  const depositSliderMax = Math.max(5000, Math.ceil((draft.depositAmount * 2) / 500) * 500);
-
   const isRateMatchedToPortfolio = Math.abs(draft.ratePercent - portfolioExpectedRatePct) < 0.05;
+  const annualRateInput =
+    draft.ratePeriod === "annual" ? draft.ratePercent : draft.ratePercent * 12;
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(320px,380px)_1fr]">
@@ -687,25 +684,18 @@ export function CompoundInterestSheet({
         />
 
         <div className="mt-6 divide-y divide-white/10">
-        <section className="space-y-3 pb-6">
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
-              Starting from
-            </label>
-            <span className="text-sm font-semibold text-foreground tabular-nums">
-              {show(draft.principal, 0)}
-            </span>
-          </div>
-
+        <section className="space-y-2.5 pb-5">
+          <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
+            Starting from
+          </label>
           <select
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
-            className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+            className="w-full rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand"
           >
-            <option value="custom">Custom amount</option>
             {bookValue > 0 && (
               <option value="book">
-                Full Book Value ({show(bookValue, 0)})
+                This portfolio ({show(bookValue, 0)})
               </option>
             )}
             {sheets.map((s) => (
@@ -713,8 +703,8 @@ export function CompoundInterestSheet({
                 {s.name} ({show(s.value, 0)})
               </option>
             ))}
+            <option value="custom">Type an amount</option>
           </select>
-
           <FormattedNumberInput
             id="compound-principal-input"
             kind="money"
@@ -726,150 +716,79 @@ export function CompoundInterestSheet({
             }}
             className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
           />
-
-          <div>
-            <input
-              type="range"
-              min={0}
-              max={principalSliderMax}
-              step={1000}
-              value={draft.principal}
-              onChange={(e) => {
-                setPrincipalSource("custom");
-                patchDraft("principal", Number(e.target.value));
-              }}
-              className="w-full cursor-pointer accent-brand"
-            />
-            <div className="flex justify-between text-sm text-muted">
-              <span>{show(0)}</span>
-              <span>{show(principalSliderMax)}</span>
-            </div>
-          </div>
         </section>
 
-        <section className="space-y-3 py-6">
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
-              Growing at
-            </label>
-            <span className="text-sm font-semibold text-gain tabular-nums">
-              {draft.ratePercent.toFixed(1)}% a year
-            </span>
+        <section className="space-y-2.5 py-5">
+          <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
+            Growing at
+          </label>
+          <div className="flex flex-wrap gap-1">
+            <ChipButton
+              active={isRateMatchedToPortfolio}
+              onClick={syncToPortfolioRate}
+            >
+              This portfolio ({portfolioExpectedRatePct.toFixed(1)}%)
+            </ChipButton>
+            <ChipButton
+              active={!isRateMatchedToPortfolio && annualRateInput === 10}
+              onClick={() => {
+                patchDraft("ratePercent", 10);
+                patchDraft("ratePeriod", "annual");
+              }}
+            >
+              S&P 500
+            </ChipButton>
+            <ChipButton
+              active={!isRateMatchedToPortfolio && annualRateInput === 15}
+              onClick={() => {
+                patchDraft("ratePercent", 15);
+                patchDraft("ratePeriod", "annual");
+              }}
+            >
+              15%
+            </ChipButton>
+            <ChipButton
+              active={!isRateMatchedToPortfolio && annualRateInput === 25}
+              onClick={() => {
+                patchDraft("ratePercent", 25);
+                patchDraft("ratePeriod", "annual");
+              }}
+            >
+              25%
+            </ChipButton>
           </div>
-
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <Sparkles className="h-3.5 w-3.5 shrink-0" />
-            <span className="min-w-0 flex-1 leading-snug">
-              Your book&apos;s own pace:{" "}
-              <strong className="whitespace-nowrap font-semibold text-foreground tabular-nums">
-                {portfolioExpectedRatePct.toFixed(1)}% a year
-              </strong>
-            </span>
-            {!isRateMatchedToPortfolio ? (
-              <button
-                type="button"
-                onClick={syncToPortfolioRate}
-                className="shrink-0 text-sm font-semibold text-foreground underline-offset-2 hover:underline"
-              >
-                Use it
-              </button>
-            ) : (
-              <span className="inline-flex shrink-0 items-center gap-1 font-medium text-gain">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                In use
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-[1fr_auto] gap-2">
+          <div className="relative">
             <FormattedNumberInput
               id="compound-rate-input"
               kind="percent"
-              value={draft.ratePercent}
-              onChange={(n) => patchDraft("ratePercent", Math.max(0, n))}
-              className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
+              value={annualRateInput}
+              onChange={(n) => {
+                patchDraft("ratePercent", Math.max(0, n));
+                patchDraft("ratePeriod", "annual");
+              }}
+              className="w-full rounded-lg border border-border bg-well px-3 py-2 pr-16 text-sm font-semibold text-foreground outline-none focus:border-brand"
             />
-            <select
-              value={draft.ratePeriod}
-              onChange={(e) =>
-                patchDraft("ratePeriod", e.target.value as RatePeriod)
-              }
-              className="rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand"
-            >
-              <option value="annual">annual</option>
-              <option value="monthly">monthly</option>
-            </select>
-          </div>
-
-          <div>
-            <span className="text-sm text-muted">
-              Or borrow one
+            <span className="pointer-events-none absolute right-3 top-2.5 text-sm text-muted">
+              a year
             </span>
-            <div className="mt-1 flex flex-wrap gap-1">
-              <ChipButton
-                active={isRateMatchedToPortfolio}
-                onClick={syncToPortfolioRate}
-              >
-                Your book ({portfolioExpectedRatePct.toFixed(1)}%)
-              </ChipButton>
-              <ChipButton
-                active={draft.ratePercent === 10}
-                onClick={() => {
-                  patchDraft("ratePercent", 10);
-                  patchDraft("ratePeriod", "annual");
-                }}
-              >
-                S&P 500 (10%)
-              </ChipButton>
-              <ChipButton
-                active={draft.ratePercent === 15}
-                onClick={() => {
-                  patchDraft("ratePercent", 15);
-                  patchDraft("ratePeriod", "annual");
-                }}
-              >
-                Faster (15%)
-              </ChipButton>
-              <ChipButton
-                active={draft.ratePercent === 25}
-                onClick={() => {
-                  patchDraft("ratePercent", 25);
-                  patchDraft("ratePeriod", "annual");
-                }}
-              >
-                Optimistic (25%)
-              </ChipButton>
-            </div>
-          </div>
-
-          <div>
-            <input
-              type="range"
-              min={0}
-              max={50}
-              step={0.5}
-              value={Math.min(50, draft.ratePercent)}
-              onChange={(e) => patchDraft("ratePercent", Number(e.target.value))}
-              className="w-full cursor-pointer accent-brand"
-            />
-            <div className="flex justify-between text-sm text-muted">
-              <span>0%</span>
-              <span>25%</span>
-              <span>50%</span>
-            </div>
           </div>
         </section>
 
-        <section className="space-y-3 py-6">
-          <div className="flex items-center justify-between gap-2">
-            <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
-              For how long
-            </label>
-            <span className="text-sm font-semibold text-foreground tabular-nums">
-              {durationLabel}
-            </span>
+        <section className="space-y-2.5 py-5">
+          <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
+            For how long
+          </label>
+          <div className="flex flex-wrap gap-1">
+            {[5, 10, 20, 30].map((yr) => (
+              <ChipButton
+                key={yr}
+                active={draft.years === yr}
+                onClick={() => patchDraft("years", yr)}
+              >
+                {yr} years
+              </ChipButton>
+            ))}
           </div>
-
           <div className="relative">
             <input
               id="compound-duration-input"
@@ -887,64 +806,23 @@ export function CompoundInterestSheet({
               years
             </span>
           </div>
-
-          <div className="flex flex-wrap gap-1">
-            {[5, 10, 20, 30].map((yr) => (
-              <ChipButton
-                key={yr}
-                active={draft.years === yr}
-                onClick={() => patchDraft("years", yr)}
-              >
-                {yr}y
-              </ChipButton>
-            ))}
-          </div>
-
-          <div>
-            <input
-              type="range"
-              min={1}
-              max={40}
-              value={draft.years}
-              onChange={(e) => patchDraft("years", Number(e.target.value))}
-              className="w-full cursor-pointer accent-brand"
-            />
-            <div className="flex justify-between text-sm text-muted">
-              <span>1 year</span>
-              <span>20 years</span>
-              <span>40 years</span>
-            </div>
-          </div>
         </section>
 
         <section
           className={cn(
-            "space-y-3 py-6 transition",
+            "space-y-2.5 py-5 transition",
             tipFlash && "rounded-lg bg-gain/[0.06]"
           )}
         >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-foreground">
-              Adding along the way
-            </span>
-            {tipping != null &&
-              (draft.contributionMode === "deposits" ||
-                draft.contributionMode === "both") && (
-                <span
-                  title="From this year on, growth adds more each year than you do"
-                  className="text-sm font-semibold text-gain"
-                >
-                  Year {tipping} it takes over
-                </span>
-              )}
-          </div>
-
+          <span className="text-sm font-semibold text-foreground">
+            Adding along the way
+          </span>
           <Segmented
             ariaLabel="Deposits or withdrawals"
             className="flex-wrap"
             options={[
               { id: "deposits", label: "Paying in" },
-              { id: "none", label: "Neither" },
+              { id: "none", label: "None" },
               { id: "withdrawals", label: "Taking out" },
               { id: "both", label: "Both" },
             ]}
@@ -957,99 +835,69 @@ export function CompoundInterestSheet({
           {(draft.contributionMode === "deposits" ||
             draft.contributionMode === "both") && (
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="compound-deposit-input" className="text-sm font-medium text-foreground/80">
-                  How much, each time
-                </label>
-                <span className="text-sm font-semibold text-foreground tabular-nums">
-                  {show(draft.depositAmount, 0)} / {draft.depositFrequency === "annually" ? "yr" : "mo"}
-                </span>
-              </div>
-
-              <FormattedNumberInput
-                id="compound-deposit-input"
-                kind="money"
-                currency={currency}
-                value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
-                onChange={(n) =>
-                  onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
-                }
-                className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
-              />
-
-              <div>
-                <input
-                  type="range"
-                  min={0}
-                  max={depositSliderMax}
-                  step={50}
-                  value={draft.depositAmount}
-                  onChange={(e) =>
-                    patchDraft("depositAmount", Number(e.target.value))
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <FormattedNumberInput
+                  id="compound-deposit-input"
+                  kind="money"
+                  currency={currency}
+                  value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
+                  onChange={(n) =>
+                    onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
                   }
-                  className="w-full cursor-pointer accent-brand"
+                  className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
                 />
-                <div className="flex justify-between text-sm text-muted">
-                  <span>{show(0)}</span>
-                  <span>{show(depositSliderMax)}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block text-sm text-muted">
-                  How often
-                  <select
-                    value={draft.depositFrequency}
-                    onChange={(e) =>
-                      patchDraft(
-                        "depositFrequency",
-                        e.target.value as ContributionFrequency
-                      )
-                    }
-                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
-                  >
-                    <option value="monthly">Monthly</option>
-                    <option value="annually">Annually</option>
-                  </select>
-                </label>
-                <label
-                  className="block text-sm text-muted"
-                  title="Bump what you pay in by this much every year, to keep pace with a rising salary"
+                <select
+                  value={draft.depositFrequency}
+                  onChange={(e) =>
+                    patchDraft(
+                      "depositFrequency",
+                      e.target.value as ContributionFrequency
+                    )
+                  }
+                  className="rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand"
+                  aria-label="How often you pay in"
                 >
-                  Raise it yearly by
-                  <FormattedNumberInput
-                    kind="percent"
-                    value={draft.annualIncrease}
-                    onChange={(n) => patchDraft("annualIncrease", n)}
-                    className="mt-1 w-full rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
-                  />
-                </label>
+                  <option value="monthly">a month</option>
+                  <option value="annually">a year</option>
+                </select>
               </div>
+              <label className="flex items-center justify-between gap-3 text-sm text-muted">
+                Raise it each year
+                <FormattedNumberInput
+                  kind="percent"
+                  value={draft.annualIncrease}
+                  onChange={(n) => patchDraft("annualIncrease", n)}
+                  className="w-20 rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                />
+              </label>
+              {tipping != null && (
+                <p className="text-sm text-muted">
+                  From year {tipping}, growth adds more than you do.
+                </p>
+              )}
             </div>
           )}
 
           {(draft.contributionMode === "withdrawals" ||
             draft.contributionMode === "both") && (
-            <div className="space-y-2">
-              <label className="block text-sm text-muted">
-                Taking out each month
-                <FormattedNumberInput
-                  kind="money"
-                  currency={currency}
-                  value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
-                  onChange={(n) =>
-                    onMoneyUsdChange(n, (usd) =>
-                      patchDraft("withdrawalAmount", usd)
-                    )
-                  }
-                  className="mt-1 w-full rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground outline-none focus:border-brand"
-                />
-              </label>
-            </div>
+            <label className="block text-sm text-muted">
+              Taking out each month
+              <FormattedNumberInput
+                kind="money"
+                currency={currency}
+                value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
+                onChange={(n) =>
+                  onMoneyUsdChange(n, (usd) =>
+                    patchDraft("withdrawalAmount", usd)
+                  )
+                }
+                className="mt-1 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
+              />
+            </label>
           )}
         </section>
 
-        <section className="space-y-3 pt-6">
+        <section className="space-y-2.5 pt-5">
           <span className="text-sm font-semibold text-foreground">
             If it starts badly
           </span>
@@ -1057,20 +905,23 @@ export function CompoundInterestSheet({
             ariaLabel="Rough start"
             className="flex-wrap"
             options={[
-              { id: "none", label: "Straight line" },
+              { id: "none", label: "Even years" },
               { id: "drawdown30", label: "Crash first" },
               { id: "flat2y", label: "Slow start" },
             ]}
             value={shock}
             onChange={setShock}
           />
-          <p className="text-sm leading-relaxed text-muted">
-            {shock === "none"
-              ? "The same return every year. Markets don't do that. Try Crash first or Slow start to see the difference."
-              : shock === "drawdown30"
-                ? "Loses 30% in year one, then grows at your rate. Same average, worse ending, because the crash hits the biggest balance you had."
-                : "Two flat years before anything happens. Those two years cost you more than they look like."}
-          </p>
+          {shock === "drawdown30" && (
+            <p className="text-sm leading-relaxed text-muted">
+              Down 30% in year one, then your rate. The ending is worse because the drop hits when the pile is biggest.
+            </p>
+          )}
+          {shock === "flat2y" && (
+            <p className="text-sm leading-relaxed text-muted">
+              Two quiet years first. Those two years cost more than they look like.
+            </p>
+          )}
         </section>
         </div>
         </Panel>
