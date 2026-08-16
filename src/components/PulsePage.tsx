@@ -652,10 +652,13 @@ export function PulsePage({
             effectivePct: c.effectivePct,
             moveLabel: c.moveLabel,
             check: checksByTicker[key],
+            headline: headlinesByTicker[key]?.[0]?.title ?? null,
+            bookPct: c.bookPct,
+            price: c.price,
           };
         })
       ),
-    [ranked, leftHoldTickers, checksByTicker]
+    [ranked, leftHoldTickers, checksByTicker, headlinesByTicker]
   );
 
   useEffect(() => {

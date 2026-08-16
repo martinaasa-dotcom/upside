@@ -164,16 +164,23 @@ ${insightsPromptBlock(
 - **broken**: the actual reason you bought this is gone. Guidance genuinely cut, the staying power is disproven, fraud or a restatement, the multi-year story is over. This is rare. **broken must pair with action=sell, nothing else.** If you'd still hold it, the reason isn't broken, it's at most "watch".
 - Do not mark watch or broken just because you mentioned a risk. The risk has to be happening now.
 
+### Today's scan (verdict is the line they read first)
+The app lists one line per name that moved. **Never reuse a sentence across tickers.** Verdict, moveReason, and situation bullets must each be unique in this report. A reader should know which company you mean without seeing the ticker.
+
+If two names both ran, say why THIS one ran: the actual headline, the business (ads vs GPU cloud vs chips), the size of the move. Do not stamp "looks like a chase, not a new story" or "this is a dip to add, not a sell" on a second name. Those lines are only allowed if they are true AND you have not already used them.
+
+Name something specific: a headline, a customer, a product, a percent, a price.
+
 For **each** ticker:
-1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs.
-2. **moveReason**: one sentence (cite headline when possible).
+1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs. Unique to this name.
+2. **moveReason**: one sentence (cite headline when possible). Unique to this name.
 3. **thesisBreak**: one or two short sentences naming the actual thing that would kill why they own THIS name (a customer, a product, a filing, a launch). Use their "why they own it" note when they wrote one. Empty string if you cannot name something specific. Never a generic lost-customer / restatement / "quiet day is not that" line that could sit on every card.
 4. **thesisStatus**: intact / watch / broken, scored against thesisBreak and today's facts. Default intact.
 5. **action**: add / hold / trim / sell / watch per rules above.
 6. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.
 7. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim/sell).
 8. **earningsNote**: if relevant; else empty string.
-9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own it.
+9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own THIS name. Unique in this report. Name the company, the headline, or a concrete number.
 
 **summary**: one short sentence on the portfolio as a whole. Name the 5% movers (up or down) and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with "the sharp drop".
 

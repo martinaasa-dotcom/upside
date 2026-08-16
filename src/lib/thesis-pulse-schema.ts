@@ -23,12 +23,12 @@ export const pulseReportSchema = z.object({
         .min(2)
         .max(4)
         .describe(
-          "2-4 bullets explaining the current situation, grounded in the supplied headlines. One short line each, under about 18 words, no bullet longer than a single clause plus its consequence. Plain English, no preamble, no trailing summary bullet."
+          "2-4 bullets explaining THIS ticker's situation, grounded in its headlines. One short line each, under about 18 words, no bullet longer than a single clause plus its consequence. Unique to this name: do not reuse a bullet from another ticker in this report. Plain English, no preamble, no trailing summary bullet."
         ),
       moveReason: z
         .string()
         .describe(
-          "One sentence on what drove the move (cite news when possible)."
+          "One sentence on what drove THIS name's move. Cite a headline when you have one. Must not match any other ticker's moveReason in this report."
         ),
       thesisStatus: z
         .enum(["intact", "watch", "broken"])
@@ -62,7 +62,7 @@ export const pulseReportSchema = z.object({
       verdict: z
         .string()
         .describe(
-          "One sentence tying action + addLevel to why they own it, not generic hold language."
+          "One sentence tying action + addLevel/trimPct to why they own THIS name. Must not match any other ticker's verdict in this report. Name the company, the headline, or a concrete number. Never reuse a stock phrase like 'looks like a chase, not a new story' or 'this is a dip to add, not a sell' on a second name."
         ),
       thesisBreak: z
         .string()

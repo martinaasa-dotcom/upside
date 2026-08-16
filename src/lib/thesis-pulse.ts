@@ -562,48 +562,243 @@ export type PulseScanRow = {
   line: string;
 };
 
+export type PulseScanInput = {
+  ticker: string;
+  isBigMove: boolean;
+  leftHold: boolean;
+  effectivePct: number | null;
+  moveLabel: string;
+  check?: PulseCheck | null;
+  headline?: string | null;
+  bookPct?: number | null;
+  price?: number | null;
+};
+
+/** Compare scan bodies so "$RDDT  Looks like a chase." matches the same line on $NBIS. */
+export function scanLineFingerprint(
+  line: string,
+  ticker?: string
+): string {
+  let s = line.trim().toLowerCase();
+  if (ticker) {
+    const tag = cashtag(ticker).toLowerCase();
+    if (s.startsWith(tag)) s = s.slice(tag.length);
+  }
+  s = s.replace(/\$[a-z]{1,6}\b/g, " ");
+  return s.replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+const STOCK_SCAN_PHRASES = new Set([
+  "looks like a chase not a new story",
+  "if you still believe the story this is a dip to add not a sell",
+  "a strong day not a new worry",
+  "take a little off the reason you own it is the same",
+  "hold come back if the story actually changes",
+]);
+
+function isStockScanPhrase(text: string, ticker?: string): boolean {
+  const fp = scanLineFingerprint(text, ticker);
+  return !fp || STOCK_SCAN_PHRASES.has(fp);
+}
+
+function clipScanHeadline(raw: string | null | undefined): string {
+  const s = (raw ?? "").trim().replace(/\s+/g, " ");
+  if (!s) return "";
+  const max = 72;
+  if (s.length <= max) return s.replace(/[.…]+$/g, "").trim();
+  const cut = s.slice(0, max);
+  const sp = cut.lastIndexOf(" ");
+  return (sp > 40 ? cut.slice(0, sp) : cut).replace(/[.,;:]+$/g, "").trim();
+}
+
+function taggedScanLine(ticker: string, body: string): string {
+  const text = body.trim();
+  if (!text) return "";
+  return `${cashtag(ticker)}  ${text}`;
+}
+
+function composeDistinctScanLine(row: {
+  ticker: string;
+  effectivePct: number | null;
+  moveLabel: string;
+  check?: PulseCheck | null;
+  headline?: string | null;
+  bookPct?: number | null;
+  price?: number | null;
+}): string[] {
+  const ticker = row.ticker.trim().toUpperCase();
+  const move = formatMovePct(row.effectivePct);
+  const when = row.moveLabel.trim().toLowerCase() || "today";
+  const check = row.check;
+  const action = check?.action;
+  const headline = clipScanHeadline(row.headline);
+  const price =
+    row.price != null && Number.isFinite(row.price) && row.price > 0
+      ? `$${row.price.toFixed(2)}`
+      : "";
+  const lines: string[] = [];
+
+  if (headline) {
+    lines.push(taggedScanLine(ticker, `${move} ${when} after ${headline}.`));
+  }
+
+  if (action === "trim") {
+    const size =
+      check?.trimPct != null && Number.isFinite(check.trimPct)
+        ? `Trim about ${check.trimPct}%.`
+        : "Take a little off.";
+    lines.push(
+      taggedScanLine(
+        ticker,
+        `${move} ${when}. ${size} The price ran, the reason didn't.`
+      )
+    );
+  } else if (action === "add") {
+    const add = check?.addLevel?.trim();
+    if (add) {
+      lines.push(
+        taggedScanLine(ticker, `${move} ${when}. ${add.replace(/[.]+$/, "")}.`)
+      );
+    }
+    lines.push(
+      taggedScanLine(
+        ticker,
+        `${move} ${when}. A dip to add if the reason you own it still holds.`
+      )
+    );
+  } else if (action === "sell") {
+    const brk = check?.thesisBreak?.trim();
+    if (brk) {
+      lines.push(
+        taggedScanLine(
+          ticker,
+          `${move} ${when}. ${brk.replace(/[.]+$/, "")}.`
+        )
+      );
+    }
+    lines.push(
+      taggedScanLine(
+        ticker,
+        `${move} ${when}. The reason you own it looks broken.`
+      )
+    );
+  } else if (action === "watch") {
+    lines.push(
+      taggedScanLine(
+        ticker,
+        `${move} ${when}. Wait. Something in the story is worth tracking.`
+      )
+    );
+  }
+
+  if (price) {
+    lines.push(taggedScanLine(ticker, `${move} ${when} at ${price}.`));
+  }
+  if (row.bookPct != null && Number.isFinite(row.bookPct) && row.bookPct >= 0.02) {
+    const share = Math.round(row.bookPct * 100);
+    lines.push(
+      taggedScanLine(
+        ticker,
+        `${move} ${when}. ${share}% of the portfolio.`
+      )
+    );
+  }
+  lines.push(taggedScanLine(ticker, `${move} ${when}.`));
+  // Last ditch: keep the body unique even if two names printed the same %.
+  // Bare symbol so the fingerprint does not strip it as a cashtag.
+  lines.push(taggedScanLine(ticker, `${move} ${when} (${ticker}).`));
+  return lines.filter(Boolean);
+}
+
+function pulseScanLineOptions(input: {
+  ticker: string;
+  check?: PulseCheck | null;
+  effectivePct: number | null;
+  moveLabel: string;
+  headline?: string | null;
+  bookPct?: number | null;
+  price?: number | null;
+}): string[] {
+  const ticker = input.ticker.trim().toUpperCase();
+  const check = input.check;
+  const specific: string[] = [];
+  const stock: string[] = [];
+  const situation: string[] = [];
+
+  const consider = (
+    body: string | undefined,
+    bucket: string[],
+    trimRepeat = false
+  ) => {
+    const text = body?.trim();
+    if (!text || trimRepeat) return;
+    const line = taggedScanLine(ticker, text);
+    if (isStockScanPhrase(text, ticker)) stock.push(line);
+    else bucket.push(line);
+  };
+
+  consider(
+    check?.verdict,
+    specific,
+    verdictRepeatsTrim(check?.verdict, check?.trimPct)
+  );
+  consider(check?.moveReason, specific);
+  for (const sit of normalizePulseSituation(check?.situation)) {
+    consider(sit, situation);
+  }
+
+  // Unique verdict/reason first. Then a headline-backed line, so two
+  // names that both "ran hot" do not share a leftover situation bullet.
+  return [
+    ...specific,
+    ...composeDistinctScanLine({ ...input, ticker }),
+    ...situation,
+    ...stock,
+  ];
+}
+
+function firstUnusedScanLine(
+  ticker: string,
+  options: string[],
+  used: Set<string>
+): string {
+  for (const line of options) {
+    const fp = scanLineFingerprint(line, ticker);
+    if (fp && !used.has(fp)) return line;
+  }
+  return options[0] ?? taggedScanLine(ticker, "Moved enough to check.");
+}
+
 export function pulseScanLine(input: {
   ticker: string;
   check?: PulseCheck | null;
   effectivePct: number | null;
   moveLabel: string;
+  headline?: string | null;
+  bookPct?: number | null;
+  price?: number | null;
 }): string {
-  const tag = cashtag(input.ticker);
-  const check = input.check;
-  const verdict = check?.verdict?.trim();
-  if (verdict && !verdictRepeatsTrim(verdict, check?.trimPct)) {
-    return `${tag}  ${verdict}`;
-  }
-  const reason = check?.moveReason?.trim();
-  if (reason) return `${tag}  ${reason}`;
-  const sit = normalizePulseSituation(check?.situation)[0]?.trim();
-  if (sit) return `${tag}  ${sit}`;
-  const move = formatMovePct(input.effectivePct);
-  const when = input.moveLabel.trim().toLowerCase() || "today";
-  return `${tag}  ${move} ${when}.`;
+  const ticker = input.ticker.trim().toUpperCase();
+  return firstUnusedScanLine(ticker, pulseScanLineOptions({ ...input, ticker }), new Set());
 }
 
-export function buildPulseScan(
-  rows: Array<{
-    ticker: string;
-    isBigMove: boolean;
-    leftHold: boolean;
-    effectivePct: number | null;
-    moveLabel: string;
-    check?: PulseCheck | null;
-  }>
-): PulseScanRow[] {
+export function buildPulseScan(rows: PulseScanInput[]): PulseScanRow[] {
   const out: PulseScanRow[] = [];
   const seen = new Set<string>();
+  const usedBodies = new Set<string>();
   for (const row of rows) {
     const ticker = row.ticker.trim().toUpperCase();
     if (!ticker || seen.has(ticker)) continue;
     if (!pulseNeedsExplainer(row)) continue;
     seen.add(ticker);
-    out.push({
+    const line = firstUnusedScanLine(
       ticker,
-      line: pulseScanLine({ ...row, ticker }),
-    });
+      pulseScanLineOptions({ ...row, ticker }),
+      usedBodies
+    );
+    const fp = scanLineFingerprint(line, ticker);
+    if (fp) usedBodies.add(fp);
+    out.push({ ticker, line });
   }
   return out;
 }
@@ -645,13 +840,13 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
         "The story is working.",
         "Price ran ahead of a normal day.",
       ],
-      moveReason: "A strong day, not a new worry.",
+      moveReason: `${cashtag(candidate.ticker)} ran ${movePct} ${candidate.moveLabel.toLowerCase()}. A strong day, not a new worry.`,
       thesisStatus: "intact",
       earningsNote: "",
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: "Take a little off. The reason you own it is the same.",
+      verdict: `Take a little off ${cashtag(candidate.ticker)}. It ran ${movePct}. The reason you own it is the same.`,
       thesisBreak: "",
     };
   }
@@ -672,8 +867,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       addLevel: `Add now ~$${price} · then more if it drops to ~${(
         candidate.price * 0.92
       ).toFixed(2)}`,
-      verdict:
-        "If you still believe the story, this is a dip to add, not a sell.",
+      verdict: `If you still believe the story, ${cashtag(candidate.ticker)} at $${price} is a dip to add, not a sell.`,
       thesisBreak: "",
     };
   }
