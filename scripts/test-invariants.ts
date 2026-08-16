@@ -276,7 +276,7 @@ run("Pulse CTA is offered when Pulse is reachable, even if Lab is hidden", () =>
 run("briefing kinds use plain-English labels", () => {
   assert.equal(BRIEFING_KIND_LABEL.action, "Look at this");
   assert.equal(BRIEFING_KIND_LABEL.watch, "Note");
-  assert.equal(BRIEFING_KIND_LABEL.play, "A thought");
+  assert.equal(BRIEFING_KIND_LABEL.play, "What's missing");
 });
 
 run("power animals each keep their own color", () => {
@@ -2002,6 +2002,26 @@ run("the recent Pulse and briefing bugs stay gone", () => {
   const trimAt = notes.indexOf('if (action === "trim")');
   const watchAt = notes.indexOf("if (watch || action === \"watch\")");
   assert.ok(trimAt > 0 && watchAt > trimAt, "trim must beat watch in email copy");
+});
+
+run("gap thoughts name the weight and a next step", () => {
+  const out = buildBookInsights([
+    { ticker: "CRWV", value: 80_000 },
+    { ticker: "NBIS", value: 20_000 },
+  ]);
+  const idea = out.idea ?? "";
+  assert.match(idea, /\d+%/);
+  assert.match(idea, /power|electric/i);
+  assert.match(idea, /Check |Add up |See /);
+  assert.doesNotMatch(idea, /computer side/);
+  assert.doesNotMatch(idea, /usual neighbor/);
+  assert.doesNotMatch(idea, /sits next to that/);
+  const morning = readFileSync(
+    join(process.cwd(), "src/lib/morning-read.ts"),
+    "utf8"
+  );
+  assert.match(morning, /What's missing/);
+  assert.doesNotMatch(morning, /A thought/);
 });
 
 run("Worth noticing names the two groups in plain English", () => {

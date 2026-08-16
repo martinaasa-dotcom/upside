@@ -213,7 +213,7 @@ export function buildMorningRead(
     });
   }
   if (insights.idea) {
-    notices.push({ label: "A thought", text: insights.idea });
+    notices.push({ label: "What's missing", text: insights.idea });
   }
   return {
     quiet: quiet && awayLines.length === 0,

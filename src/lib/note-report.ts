@@ -979,7 +979,7 @@ export function noteReportHtml(r: NoteReport): string {
       ? r.insights
           .map((line, i) =>
             emailCard(
-              `${kicker(i === 0 ? "Worth noticing" : "A thought")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div><p style="margin:0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
+              `${kicker(i === 0 ? "Worth noticing" : "What's missing")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div><p style="margin:0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
             )
           )
           .join("")

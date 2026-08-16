@@ -23,7 +23,7 @@ export type BriefingItem = {
 export const BRIEFING_KIND_LABEL: Record<BriefingItem["kind"], string> = {
   action: "Look at this",
   watch: "Note",
-  play: "A thought",
+  play: "What's missing",
 };
 
 export const BRIEFING_PULSE_CTA = "Open Pulse";
