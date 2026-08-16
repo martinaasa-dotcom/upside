@@ -2846,7 +2846,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "relative flex h-full flex-col gap-5 overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
+        "relative flex flex-col gap-5 overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
         tone.border,
         tone.wash
       )}
@@ -2918,7 +2918,7 @@ function PowerAnimalCard({
             </p>
           </div>
 
-          <Scoreboard className="h-full" cols={3}>
+          <Scoreboard className="min-h-min shrink-0 lg:h-full" cols={3}>
             <ScoreRead
               label="How spread out"
               value={`${Math.round(personality.diversificationScore)}/100`}
@@ -2943,7 +2943,7 @@ function PowerAnimalCard({
             />
           </Scoreboard>
 
-          <Scoreboard className="h-full" cols={2}>
+          <Scoreboard className="min-h-min shrink-0 lg:h-full" cols={2}>
             <Score
               label="Modeled year"
               value={`${personality.expectedAnnualReturnPct.toFixed(1)}% a year`}
