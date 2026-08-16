@@ -817,7 +817,7 @@ export function OverviewDashboard({
         <OverviewYearChart
           nav={nav}
           liveNav={totals.totalValue}
-          className="mt-4"
+          className="mt-5"
         />
       </Panel>
 

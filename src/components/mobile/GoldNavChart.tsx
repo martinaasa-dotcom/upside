@@ -404,11 +404,11 @@ export function GoldNavChart({
   const [active, setActive] = useState<number | null>(null);
   const [pinned, setPinned] = useState(false);
   const width = 640;
-  const height = 176;
+  const height = 224;
   const padL = 8;
   const padR = 12;
-  const padT = 12;
-  const padB = 8;
+  const padT = 16;
+  const padB = 14;
   const usable = useMemo(() => usableNavPoints(points), [points]);
 
   useEffect(() => {
@@ -447,8 +447,8 @@ export function GoldNavChart({
       <p
         className={
           className
-            ? `py-8 text-center text-sm text-muted ${className}`
-            : "py-8 text-center text-sm text-muted"
+            ? `py-12 text-center text-sm text-muted ${className}`
+            : "py-12 text-center text-sm text-muted"
         }
       >
         History builds up night by night.
@@ -565,7 +565,7 @@ export function GoldNavChart({
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="none"
-            className="h-44 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50 sm:h-48"
+            className="h-56 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50 sm:h-64"
             role="slider"
             tabIndex={0}
             aria-label="Portfolio value over the year. Drag across to read a day."
@@ -635,7 +635,7 @@ export function GoldNavChart({
           </svg>
         </div>
       </div>
-      <ChartXRail inset>
+      <ChartXRail inset className="mt-3">
           {xMarks.map((tick, i) => {
             const isFirst = i === 0;
             const isLast = i === xMarks.length - 1;
@@ -758,14 +758,14 @@ export function BookNavChart({
   return (
     <div className={className}>
       {loading && !hasChart ? (
-        <p className="py-8 text-center text-sm text-muted">
+        <p className="py-12 text-center text-sm text-muted">
           Working out this year’s path …
         </p>
       ) : (
         <GoldNavChart points={points} />
       )}
       {assumed && hasChart && (
-        <div className="mt-3 space-y-2">
+        <div className="mt-5 space-y-3">
           <p className="text-sm text-muted">
             {anchored
               ? "Using the year you gave us."
@@ -848,7 +848,7 @@ export function BookNavChart({
         </div>
       )}
       {!assumed && onRestoreAssumed && (
-        <div className="mt-3 flex justify-end">
+        <div className="mt-5 flex justify-end">
           <button
             type="button"
             onClick={onRestoreAssumed}

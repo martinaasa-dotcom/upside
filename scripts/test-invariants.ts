@@ -1458,6 +1458,7 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
   );
   assert.match(nav, /preserveAspectRatio="none"/);
   assert.doesNotMatch(nav, /min-h-\[4\.75rem\]/);
+  assert.match(nav, /h-56 w-full/);
   assert.match(nav, /Held these names all year/);
   assert.match(nav, /Fill in an assumed year/);
   assert.doesNotMatch(nav, /!assumed && !loading && onRestoreAssumed/);
