@@ -9,7 +9,6 @@ import {
   touchFeedbackSchedule,
   type FeedbackSchedule,
 } from "@/lib/feedback";
-import { MessageSquare } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -85,19 +84,6 @@ export function FeedbackHost({ children }: { children: ReactNode }) {
   return (
     <FeedbackContext.Provider value={api}>
       {children}
-      {user && !mode && (
-        <button
-          type="button"
-          onClick={openManual}
-          className="fixed right-4 z-30 inline-flex items-center gap-1.5 rounded-lg border border-border bg-well/95 px-3 py-2 text-sm font-medium text-foreground shadow-lg backdrop-blur md:hidden"
-          style={{
-            bottom: "calc(4.75rem + env(safe-area-inset-bottom))",
-          }}
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Feedback
-        </button>
-      )}
       {mode && (
         <FeedbackModal mode={mode} onClose={close} onSent={onSent} />
       )}

@@ -1,8 +1,10 @@
 "use client";
 
+import { useAuth } from "@/components/AuthProvider";
+import { useFeedback } from "@/components/FeedbackHost";
 import { cn } from "@/lib/format";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -15,6 +17,22 @@ type Props = {
   end?: ReactNode;
   className?: string;
 };
+
+function FeedbackIconButton() {
+  const { user } = useAuth();
+  const { openManual } = useFeedback();
+  if (!user) return null;
+  return (
+    <button
+      type="button"
+      onClick={openManual}
+      aria-label="Feedback"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80"
+    >
+      <MessageSquare className="h-5 w-5" />
+    </button>
+  );
+}
 
 export function MobileTopBar({
   title,
@@ -41,7 +59,7 @@ export function MobileTopBar({
         className
       )}
     >
-      <div className="grid h-12 grid-cols-[2.5rem_1fr_2.5rem] items-center px-4">
+      <div className="grid h-12 grid-cols-[5rem_1fr_5rem] items-center px-4">
         <Link
           href="/account"
           aria-label="Account"
@@ -65,30 +83,31 @@ export function MobileTopBar({
         <h1 className="truncate text-center font-heading text-base font-bold text-foreground">
           {title}
         </h1>
-        {end ? (
-          <div className="justify-self-end">{end}</div>
-        ) : onAlerts ? (
-          <button
-            type="button"
-            onClick={onAlerts}
-            aria-label={
-              alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
-            }
-            className="justify-self-end"
-          >
-            {bell}
-          </button>
-        ) : (
-          <Link
-            href={alertsHref}
-            aria-label={
-              alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
-            }
-            className="justify-self-end"
-          >
-            {bell}
-          </Link>
-        )}
+        <div className="flex items-center justify-end">
+          <FeedbackIconButton />
+          {end ? (
+            end
+          ) : onAlerts ? (
+            <button
+              type="button"
+              onClick={onAlerts}
+              aria-label={
+                alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
+              }
+            >
+              {bell}
+            </button>
+          ) : (
+            <Link
+              href={alertsHref}
+              aria-label={
+                alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
+              }
+            >
+              {bell}
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -4496,6 +4496,22 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
   );
   assert.match(host, /isWeeklyFeedbackDue/);
   assert.match(host, /setMode\("manual"\)/);
+  assert.doesNotMatch(
+    host,
+    /fixed right-4/,
+    "mobile feedback is a header icon, not a floating chip over Margus"
+  );
+  const topBar = readFileSync(
+    join(process.cwd(), "src/components/mobile/MobileTopBar.tsx"),
+    "utf8"
+  );
+  assert.match(topBar, /FeedbackIconButton/);
+  assert.match(topBar, /aria-label="Feedback"/);
+  const account = readFileSync(
+    join(process.cwd(), "src/components/AccountPage.tsx"),
+    "utf8"
+  );
+  assert.match(account, /Tell Martin/);
 });
 
 run("community invite admin list reads like Discord", () => {
