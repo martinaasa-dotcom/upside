@@ -13,6 +13,7 @@ export const PORTFELL_TABLES = {
   communities: "portfell_communities",
   communityMembers: "portfell_community_members",
   communityInvites: "portfell_community_invites",
+  communityInviteUses: "portfell_community_invite_uses",
   portfolioOwners: "portfell_portfolio_owners",
   portfolioInvites: "portfell_portfolio_invites",
   accountAliases: "portfell_account_aliases",

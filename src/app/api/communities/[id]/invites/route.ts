@@ -1,6 +1,12 @@
 import { createHash, randomBytes } from "crypto";
 import { userIsCommunityAdmin } from "@/lib/auth/ownership";
 import {
+  inviteAdminStatus,
+  profileLabel,
+  tokenHintFromToken,
+  type InviteAdminRow,
+} from "@/lib/community-invite-admin";
+import {
   inviteEmailAllowlist,
   storeInviteEmails,
 } from "@/lib/invite-emails";
@@ -68,11 +74,12 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       community_id: id,
       email: storeInviteEmails(allow.emails),
       token_hash: hashToken(token),
+      token_hint: tokenHintFromToken(token),
       role: body.role === "admin" ? "admin" : "member",
       created_by: auth.user.id,
       expires_at: expiresAt,
     })
-    .select("id, email, role, expires_at, created_at")
+    .select("id, email, role, expires_at, created_at, token_hint")
     .single();
 
   if (error) {
@@ -115,7 +122,31 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   });
 }
 
-/** Admin: list invites. */
+type InviteRow = {
+  id: string;
+  email: string | null;
+  role: string;
+  expires_at: string | null;
+  accepted_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+  created_by: string | null;
+  token_hint: string | null;
+};
+
+type UseRow = {
+  invite_id: string;
+  user_id: string;
+  used_at: string;
+};
+
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+};
+
+/** Admin: list invites with who minted them and who used them. */
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
@@ -132,7 +163,9 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.communityInvites)
-    .select("id, email, role, expires_at, accepted_at, revoked_at, created_at")
+    .select(
+      "id, email, role, expires_at, accepted_at, revoked_at, created_at, created_by, token_hint"
+    )
     .eq("community_id", id)
     .order("created_at", { ascending: false });
 
@@ -140,5 +173,66 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ invites: data ?? [] });
+  const rows = (data ?? []) as InviteRow[];
+  const inviteIds = rows.map((r) => r.id);
+  const { data: useRows } = inviteIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.communityInviteUses)
+        .select("invite_id, user_id, used_at")
+        .in("invite_id", inviteIds)
+    : { data: [] as UseRow[] };
+
+  const uses = (useRows ?? []) as UseRow[];
+  const profileIds = [
+    ...new Set([
+      ...rows.map((r) => r.created_by).filter((v): v is string => Boolean(v)),
+      ...uses.map((u) => u.user_id),
+    ]),
+  ];
+  const { data: profiles } = profileIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.profiles)
+        .select("id, display_name, email")
+        .in("id", profileIds)
+    : { data: [] as ProfileRow[] };
+
+  const profileById = new Map(
+    ((profiles ?? []) as ProfileRow[]).map((p) => [p.id, p])
+  );
+  const usesByInvite = new Map<string, UseRow[]>();
+  for (const use of uses) {
+    const list = usesByInvite.get(use.invite_id) ?? [];
+    list.push(use);
+    usesByInvite.set(use.invite_id, list);
+  }
+
+  const invites: InviteAdminRow[] = rows.map((row) => {
+    const used = (usesByInvite.get(row.id) ?? []).sort((a, b) =>
+      a.used_at < b.used_at ? 1 : -1
+    );
+    const creator = row.created_by
+      ? profileById.get(row.created_by) ?? null
+      : null;
+    return {
+      id: row.id,
+      hint: row.token_hint,
+      email: row.email,
+      role: row.role,
+      expires_at: row.expires_at,
+      revoked_at: row.revoked_at,
+      created_at: row.created_at,
+      created_by: row.created_by
+        ? { id: row.created_by, name: profileLabel(creator) }
+        : null,
+      uses: used.length,
+      used_by: used.map((u) => ({
+        id: u.user_id,
+        name: profileLabel(profileById.get(u.user_id)),
+        used_at: u.used_at,
+      })),
+      status: inviteAdminStatus(row),
+    };
+  });
+
+  return NextResponse.json({ invites });
 }

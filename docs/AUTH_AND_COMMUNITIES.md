@@ -48,6 +48,12 @@ Ops SQL: `scripts/seed-ownership.sql`.
 
 Add co-owner after both users exist: `POST /api/portfolios/:id/owners` `{ "email": "…" }` (caller must already co-own), or mint an invite from **My account**.
 
+## Community invite links
+
+Reusable until an admin retires the link or it expires. An optional email field is an allowlist (comma-separated), not a one-person ticket. Redeeming does not burn the link.
+
+Each successful redeem writes `portfell_community_invite_uses` (one row per person per link). Admins see who minted it, how many unique people used it, and who those people are (`GET /api/communities/:id/invites`). **Retire this link** sets `revoked_at` (`PATCH /api/communities/:id/invites/:inviteId`). People already in stay. The raw token is only shown at create time. The list shows a 6-character hint.
+
 ## My Account (`/account`)
 
 - **Community profile**: `display_name`, `bio`, `avatar_url` via `PATCH /api/auth/me` — shown on community member lists.
@@ -77,7 +83,8 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `014` community members RLS recursion fix  
 - `015` superadmin overview RPC  
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
-- `049` Karud household alias (`karukaroliine99@gmail.com` → `rasmusmarjapuu@gmail.com`) so Circle and the community book show one person, and Karoliine claims Karud instead of an empty first-run book  
+- `049` Karud household alias (`karukaroliine99@gmail.com` → `rasmusmarjapuu@gmail.com`) so Circle and the community book show one person, and Karoliine claims Karud instead of an empty first-run book
+- `050` community invite uses log + `token_hint`. Redeem RPC records who used which link. Admin list + retire.  
 
 - `017` RLS hardening — closed a self co-owner-escalation hole on `portfell_portfolio_owners`, a world-readable `portfell_book_snapshots` policy, a stale shared-row leak on `portfell_lab_state`, and a null-email coalesce bug on invite `SELECT` policies
 - `018` fixed `portfell_claim_seed_for_me()` — a PL/pgSQL loop variable named `slug` collided with the `portfell_portfolios.slug` column, so every first-time seed claim raised "column reference is ambiguous" and rolled back (profile included). Silently broken since `010`; only worked for people seeded directly via `scripts/seed-ownership.sql` (Martin/Martina/Amanda). Rasmus was backfilled manually after the fix; Karoliine and Liina will claim normally on their first sign-in now

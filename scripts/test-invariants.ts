@@ -67,6 +67,11 @@ import {
   storeInviteEmails,
 } from "../src/lib/invite-emails";
 import {
+  inviteAdminStatus,
+  inviteLockLabel,
+  inviteUsesLabel,
+} from "../src/lib/community-invite-admin";
+import {
   inviteFromLocation,
   inviteLandingCopy,
 } from "../src/lib/invite-landing";
@@ -3632,6 +3637,25 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   assert.match(mint, /expiresAt: string \| null = null/);
   assert.match(mint, /inviteEmailAllowlist/);
   assert.match(mint, /sendNoteEmail/);
+  assert.match(mint, /token_hint/);
+  assert.match(mint, /communityInviteUses/);
+  assert.match(mint, /created_by/);
+  const usesMig = readFileSync(
+    join(process.cwd(), "supabase/migrations/050_community_invite_uses.sql"),
+    "utf8"
+  );
+  assert.match(usesMig, /portfell_community_invite_uses/);
+  assert.match(usesMig, /on conflict \(invite_id, user_id\) do nothing/);
+  assert.doesNotMatch(usesMig, /set accepted_at = now\(\)/);
+  const retire = readFileSync(
+    join(
+      process.cwd(),
+      "src/app/api/communities/[id]/invites/[inviteId]/route.ts"
+    ),
+    "utf8"
+  );
+  assert.match(retire, /revoked_at/);
+  assert.match(retire, /revoked !== true/);
   const communityView = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
@@ -3639,12 +3663,34 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   assert.doesNotMatch(communityView, /daysValid: community\?\.kind === "classroom" \? 90 : 14/);
   assert.match(communityView, /This link stays live/);
   assert.match(communityView, /Emails \(optional, comma between\)/);
+  assert.match(communityView, /Retire this link/);
+  assert.match(communityView, /inviteUsesLabel/);
   const joinPeek = readFileSync(
     join(process.cwd(), "src/app/api/communities/join/route.ts"),
     "utf8"
   );
   assert.doesNotMatch(joinPeek, /row\.email && row\.accepted_at/);
   assert.doesNotMatch(joinPeek, /row\.accepted_at \|\| row\.revoked_at/);
+});
+
+run("community invite admin list reads like Discord", () => {
+  assert.equal(inviteUsesLabel(0), "Never used");
+  assert.equal(inviteUsesLabel(1), "Used once");
+  assert.equal(inviteUsesLabel(3), "Used 3 times");
+  assert.equal(inviteLockLabel(null), "Anyone with the link");
+  assert.equal(inviteLockLabel("a@b.com,c@d.com"), "Locked to 2 emails");
+  assert.equal(
+    inviteAdminStatus({ revoked_at: "2026-08-16T00:00:00Z", expires_at: null }),
+    "retired"
+  );
+  assert.equal(
+    inviteAdminStatus({ revoked_at: null, expires_at: "2000-01-01T00:00:00Z" }),
+    "expired"
+  );
+  assert.equal(
+    inviteAdminStatus({ revoked_at: null, expires_at: null }),
+    "live"
+  );
 });
 
 run("fund page does not read localStorage during render", () => {

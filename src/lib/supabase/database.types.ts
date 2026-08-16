@@ -163,6 +163,7 @@ export type Database = {
           revoked_at: string | null
           role: string
           token_hash: string
+          token_hint: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -175,6 +176,7 @@ export type Database = {
           revoked_at?: string | null
           role?: string
           token_hash: string
+          token_hint?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           revoked_at?: string | null
           role?: string
           token_hash?: string
+          token_hint?: string | null
         }
         Relationships: [
           {
@@ -199,6 +202,39 @@ export type Database = {
           {
             foreignKeyName: "portfell_community_invites_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "portfell_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfell_community_invite_uses: {
+        Row: {
+          invite_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          invite_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          invite_id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfell_community_invite_uses_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "portfell_community_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfell_community_invite_uses_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "portfell_profiles"
             referencedColumns: ["id"]

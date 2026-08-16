@@ -93,6 +93,12 @@ import { useRouter } from "next/navigation";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
+import {
+  inviteDayLabel,
+  inviteLockLabel,
+  inviteUsesLabel,
+  type InviteAdminRow,
+} from "@/lib/community-invite-admin";
 
 type Profile = {
   id: string;
@@ -299,6 +305,8 @@ export function CommunityView({ communityId }: Props) {
   const [inviteDays, setInviteDays] = useState("");
   const [busy, setBusy] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [invites, setInvites] = useState<InviteAdminRow[]>([]);
+  const [retireTarget, setRetireTarget] = useState<InviteAdminRow | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{
     userId: string;
     name: string;
@@ -1013,6 +1021,22 @@ export function CommunityView({ communityId }: Props) {
     ? selectedPortfolio.cash_balance
     : ownerPortfolios.reduce((s, p) => s + p.cash_balance, 0);
 
+  const loadInvites = useCallback(async () => {
+    const res = await fetch(`/api/communities/${communityId}/invites`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return;
+    const data = (await res.json().catch(() => ({}))) as {
+      invites?: InviteAdminRow[];
+    };
+    setInvites(Array.isArray(data.invites) ? data.invites : []);
+  }, [communityId]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void loadInvites();
+  }, [isAdmin, loadInvites]);
+
   async function createInvite() {
     setBusy(true);
     setInviteUrl(null);
@@ -1036,11 +1060,29 @@ export function CommunityView({ communityId }: Props) {
         typeof data.emailed === "number" && data.emailed > 0 ? data.emailed : 0
       );
       await navigator.clipboard.writeText(url).catch(() => undefined);
+      await loadInvites();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send that invite.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function retireInvite(inviteId: string) {
+    const res = await fetch(
+      `/api/communities/${communityId}/invites/${inviteId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ revoked: true }),
+      }
+    );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(plainError(data.error, "Couldn't retire that link."));
+    }
+    await loadInvites();
+    return true;
   }
 
   async function removeMember(userId: string) {
@@ -2282,6 +2324,73 @@ export function CommunityView({ communityId }: Props) {
                           </div>
                         </div>
                       )}
+                      {invites.length > 0 && (
+                        <ul className="space-y-2">
+                          {invites.map((inv) => {
+                            const you = members.find((m) => m.is_you);
+                            const youIds = you?.user_ids ?? (you ? [you.user_id] : []);
+                            const creatorName =
+                              inv.created_by && youIds.includes(inv.created_by.id)
+                                ? "You"
+                                : inv.created_by?.name ?? "Someone";
+                            const usedNames = inv.used_by.map((u) => u.name);
+                            const usedLine =
+                              usedNames.length === 0
+                                ? null
+                                : usedNames.length <= 4
+                                  ? usedNames.join(", ")
+                                  : `${usedNames.slice(0, 4).join(", ")} and ${usedNames.length - 4} more`;
+                            const statusLabel =
+                              inv.status === "retired"
+                                ? "Retired"
+                                : inv.status === "expired"
+                                  ? "Expired"
+                                  : "Live";
+                            return (
+                              <li
+                                key={inv.id}
+                                className="rounded-lg border border-border bg-raised px-3 py-2.5"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <div className="min-w-0 space-y-0.5">
+                                    <p className="text-sm text-foreground">
+                                      {inv.hint ? `Link ···${inv.hint}` : "Invite"}
+                                      <span className="text-muted">
+                                        {" "}
+                                        · {creatorName}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-muted">
+                                      {inviteLockLabel(inv.email)}
+                                      {" · "}
+                                      {inviteDayLabel(inv.created_at)}
+                                      {" · "}
+                                      {inviteUsesLabel(inv.uses)}
+                                      {" · "}
+                                      {statusLabel}
+                                    </p>
+                                    {usedLine && (
+                                      <p className="text-xs text-foreground/80">
+                                        {usedLine}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {inv.status === "live" && (
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => setRetireTarget(inv)}
+                                      className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:bg-hover disabled:opacity-50"
+                                    >
+                                      Retire this link
+                                    </button>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </section>
                   )}
                 </>
@@ -2371,6 +2480,19 @@ export function CommunityView({ communityId }: Props) {
         </main>
         <BookBottomNav />
       </div>
+
+      <ConfirmModal
+        open={Boolean(retireTarget)}
+        title="Retire this link?"
+        body="New people will not be able to join with it. People already in stay."
+        confirmLabel="Retire this link"
+        destructive
+        onClose={() => setRetireTarget(null)}
+        onConfirm={async () => {
+          if (!retireTarget) return false;
+          return retireInvite(retireTarget.id);
+        }}
+      />
 
       <ConfirmModal
         open={Boolean(removeTarget)}
