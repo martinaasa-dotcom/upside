@@ -60,9 +60,6 @@ export async function GET(req: NextRequest) {
   if (!row?.community_id || row.revoked_at) {
     return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
   }
-  if (row.email && row.accepted_at) {
-    return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
-  }
   if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
     return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
   }
@@ -87,7 +84,8 @@ export async function GET(req: NextRequest) {
  * Redemption goes through a security-definer RPC: the redeemer is by
  * definition not a member yet, so membership-based RLS can never authorize
  * this lookup directly. Possessing the valid token is the grant. Open
- * community links stay reusable. Email-locked invites are still one use.
+ * community links stay reusable. An email list locks the link to those
+ * people, and they can all use it.
  */
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();

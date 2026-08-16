@@ -55,6 +55,11 @@ import {
 } from "../src/lib/note-margus";
 import { buildNoteReport } from "../src/lib/note-report";
 import {
+  inviteEmailAllowlist,
+  parseInviteEmails,
+  storeInviteEmails,
+} from "../src/lib/invite-emails";
+import {
   inviteFromLocation,
   inviteLandingCopy,
 } from "../src/lib/invite-landing";
@@ -1518,6 +1523,18 @@ run("community invite landing names the circle", () => {
     readFileSync(join(process.cwd(), "src/app/api/communities/join/route.ts"), "utf8"),
     /export async function GET/
   );
+});
+
+run("one community invite can name several emails", () => {
+  assert.deepEqual(
+    parseInviteEmails("Ada@X.com, bob@y.com; cara@z.com"),
+    { emails: ["ada@x.com", "bob@y.com", "cara@z.com"], invalid: [] }
+  );
+  assert.deepEqual(storeInviteEmails(["ada@x.com", "bob@y.com"]), "ada@x.com,bob@y.com");
+  assert.equal(inviteEmailAllowlist("not-an-email").ok, false);
+  const ok = inviteEmailAllowlist("ada@x.com, bob@y.com");
+  assert.equal(ok.ok, true);
+  if (ok.ok) assert.deepEqual(ok.emails, ["ada@x.com", "bob@y.com"]);
 });
 
 run("the recent Pulse and briefing bugs stay gone", () => {
@@ -3238,32 +3255,31 @@ run("email and admin RPCs are not callable with a user JWT", () => {
     )
   );
   const reuse = readFileSync(
-    join(process.cwd(), "supabase/migrations/047_reusable_community_invites.sql"),
+    join(process.cwd(), "supabase/migrations/048_multi_email_community_invites.sql"),
     "utf8"
   );
-  assert.match(reuse, /and email is null/);
-  assert.match(reuse, /and email is not null/);
-  assert.doesNotMatch(
-    reuse,
-    /and accepted_at is null\s+and \(expires_at is null or expires_at > now\(\)\)\s+and \(email is null/
-  );
+  assert.match(reuse, /em = any\(string_to_array\(email, ','\)\)/);
+  assert.doesNotMatch(reuse, /set accepted_at = now\(\)/);
   const mint = readFileSync(
     join(process.cwd(), "src/app/api/communities/[id]/invites/route.ts"),
     "utf8"
   );
   assert.doesNotMatch(mint, /daysValid \?\? 14/);
   assert.match(mint, /expiresAt: string \| null = null/);
+  assert.match(mint, /inviteEmailAllowlist/);
+  assert.match(mint, /sendNoteEmail/);
   const communityView = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
   );
   assert.doesNotMatch(communityView, /daysValid: community\?\.kind === "classroom" \? 90 : 14/);
   assert.match(communityView, /This link stays live/);
+  assert.match(communityView, /Emails \(optional, comma between\)/);
   const joinPeek = readFileSync(
     join(process.cwd(), "src/app/api/communities/join/route.ts"),
     "utf8"
   );
-  assert.match(joinPeek, /if \(row\.email && row\.accepted_at\)/);
+  assert.doesNotMatch(joinPeek, /row\.email && row\.accepted_at/);
   assert.doesNotMatch(joinPeek, /row\.accepted_at \|\| row\.revoked_at/);
 });
 

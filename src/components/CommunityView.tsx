@@ -293,6 +293,7 @@ export function CommunityView({ communityId }: Props) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [inviteEmailed, setInviteEmailed] = useState(0);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteDays, setInviteDays] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1014,6 +1015,7 @@ export function CommunityView({ communityId }: Props) {
   async function createInvite() {
     setBusy(true);
     setInviteUrl(null);
+    setInviteEmailed(0);
     try {
       const days = Math.floor(Number(inviteDays.trim()));
       const res = await fetch(`/api/communities/${communityId}/invites`, {
@@ -1029,6 +1031,9 @@ export function CommunityView({ communityId }: Props) {
       track("community_invite_created");
       const url = `${window.location.origin}${data.path}`;
       setInviteUrl(url);
+      setInviteEmailed(
+        typeof data.emailed === "number" && data.emailed > 0 ? data.emailed : 0
+      );
       await navigator.clipboard.writeText(url).catch(() => undefined);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send that invite.");
@@ -2206,15 +2211,17 @@ export function CommunityView({ communityId }: Props) {
                       </h2>
                       <p className="text-xs text-muted">
                         {isClassroom
-                          ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty portfolio. Put a number of days only if you want it to die on its own."
-                          : "This link stays live. Anyone with it can join. Each person picks which portfolios to share. Today's prices only. Put an email to lock it to one person. Put a number of days only if you want it to die on its own."}
+                          ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty portfolio. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."
+                          : "This link stays live. Anyone with it can join. Each person picks which portfolios to share. Today's prices only. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input
-                          type="email"
+                          type="text"
+                          inputMode="email"
+                          autoComplete="off"
                           value={inviteEmail}
                           onChange={(e) => setInviteEmail(e.target.value)}
-                          placeholder="Email (optional)"
+                          placeholder="Emails (optional, comma between)"
                           className="min-w-[12rem] flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm"
                         />
                         <input
@@ -2238,7 +2245,15 @@ export function CommunityView({ communityId }: Props) {
                         </button>
                       </div>
                       {inviteUrl && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gain/40 bg-gain/10 px-3 py-2">
+                        <div className="space-y-2 rounded-lg border border-gain/40 bg-gain/10 px-3 py-2">
+                          {inviteEmailed > 0 && (
+                            <p className="text-xs text-gain">
+                              {inviteEmailed === 1
+                                ? "Sent the link to 1 person."
+                                : `Sent the link to ${inviteEmailed} people.`}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-2">
                           <p className="min-w-0 flex-1 break-all text-xs text-gain">
                             {inviteUrl}
                           </p>
@@ -2263,6 +2278,7 @@ export function CommunityView({ communityId }: Props) {
                             )}
                             {inviteCopied ? "Copied" : "Copy"}
                           </button>
+                          </div>
                         </div>
                       )}
                     </section>
