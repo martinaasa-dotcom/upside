@@ -770,24 +770,28 @@ export function OverviewDashboard({
                 {sessionLabel(marketState)}
               </span>
               {onAddHolding && (
-                <button
-                  type="button"
-                  onClick={onAddHolding}
-                  className="btn-primary hidden md:inline-flex"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add a holding
-                </button>
+                <span className="hidden md:inline-flex">
+                  <button
+                    type="button"
+                    onClick={onAddHolding}
+                    className="btn-primary"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add a holding
+                  </button>
+                </span>
               )}
               {onAskMargus && (
-                <button
-                  type="button"
-                  onClick={onAskMargus}
-                  className="btn-secondary hidden md:inline-flex"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Ask Margus
-                </button>
+                <span className="hidden md:inline-flex">
+                  <button
+                    type="button"
+                    onClick={onAskMargus}
+                    className="btn-secondary"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Ask Margus
+                  </button>
+                </span>
               )}
             </>
           }
@@ -839,14 +843,16 @@ export function OverviewDashboard({
         )}
 
         {onAddHolding && (
-          <button
-            type="button"
-            onClick={onAddHolding}
-            className="btn-primary mt-5 w-full md:hidden"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add a holding
-          </button>
+          <div className="mt-5 md:hidden">
+            <button
+              type="button"
+              onClick={onAddHolding}
+              className="btn-primary w-full"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add a holding
+            </button>
+          </div>
         )}
 
         <MorningStack

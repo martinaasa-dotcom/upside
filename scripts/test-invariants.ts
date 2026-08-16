@@ -3243,6 +3243,19 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.match(home, /Add a holding/);
   assert.doesNotMatch(home, /function MobileHomeHero/);
   assert.doesNotMatch(home, /overview-fade hidden md:block/);
+  assert.doesNotMatch(
+    home,
+    /btn-(?:primary|secondary)[^"'`]*\b(?:hidden|md:hidden|sm:hidden)/,
+    "btn-primary sets display, so hidden on the same className never wins"
+  );
+  const btnHits = offendersOf(
+    /className=\{?["'`][^"'`]*btn-(?:primary|secondary)[^"'`]*\b(?:hidden|md:hidden|sm:hidden|lg:hidden)/
+  );
+  assert.deepEqual(
+    btnHits,
+    [],
+    `hide the wrapper, not the mustard button. Offenders: ${btnHits.join(", ")}`
+  );
   const topBar = readFileSync(
     join(process.cwd(), "src/components/mobile/MobileTopBar.tsx"),
     "utf8"
