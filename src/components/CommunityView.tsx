@@ -1649,7 +1649,7 @@ export function CommunityView({ communityId }: Props) {
                           <span className="hidden sm:inline">Field guide</span>
                         </button>
                       </div>
-                      <div className="grid gap-6 lg:grid-cols-2">
+                      <div className="grid gap-6 lg:grid-cols-2 lg:gap-y-5">
                         {membersWithBooks.map((m) => (
                           <PowerAnimalCard
                             key={m.id}
@@ -2846,7 +2846,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-          "relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110",
+        "relative flex h-full flex-col gap-5 overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
         tone.border,
         tone.wash
       )}
@@ -2902,8 +2902,8 @@ function PowerAnimalCard({
         </div>
       </div>
 
-      {personality && (
-        <div className="mt-5 flex flex-1 flex-col space-y-5">
+      {personality ? (
+        <>
           <p className="text-sm leading-relaxed text-foreground/80">
             {personality.whyThisAnimal}
           </p>
@@ -2918,7 +2918,7 @@ function PowerAnimalCard({
             </p>
           </div>
 
-          <Scoreboard cols={3}>
+          <Scoreboard className="h-full" cols={3}>
             <ScoreRead
               label="How spread out"
               value={`${Math.round(personality.diversificationScore)}/100`}
@@ -2943,7 +2943,7 @@ function PowerAnimalCard({
             />
           </Scoreboard>
 
-          <Scoreboard className="mt-auto" cols={2}>
+          <Scoreboard className="h-full" cols={2}>
             <Score
               label="Modeled year"
               value={`${personality.expectedAnnualReturnPct.toFixed(1)}% a year`}
@@ -2958,31 +2958,33 @@ function PowerAnimalCard({
             />
           </Scoreboard>
 
-          {milestone.next != null && (
-            <div>
-              <div className="flex items-baseline justify-between gap-2 text-xs text-muted">
-                <span>
-                  Next{" "}
-                  <span className="font-medium text-foreground/80">
-                    {currency(milestone.next, 0)}
+          <div className={milestone.next == null ? "max-lg:hidden" : undefined}>
+            {milestone.next != null && (
+              <>
+                <div className="flex items-baseline justify-between gap-2 text-xs text-muted">
+                  <span>
+                    Next{" "}
+                    <span className="font-medium text-foreground/80">
+                      {currency(milestone.next, 0)}
+                    </span>
                   </span>
-                </span>
-                <span className="tabular-nums">
-                  {Math.round(milestone.progress * 100)}%
-                </span>
-              </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-black/30">
-                <div
-                  className={cn("h-full rounded-full", tone.milestone)}
-                  style={{
-                    width: `${Math.round(milestone.progress * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+                  <span className="tabular-nums">
+                    {Math.round(milestone.progress * 100)}%
+                  </span>
+                </div>
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-black/30">
+                  <div
+                    className={cn("h-full rounded-full", tone.milestone)}
+                    style={{
+                      width: `${Math.round(milestone.progress * 100)}%`,
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      ) : null}
     </button>
   );
 }
@@ -2999,7 +3001,7 @@ function ScoreRead({
   detail: string;
 }) {
   return (
-    <div className="bg-raised px-4 py-3.5">
+    <div className="h-full bg-raised px-4 py-3.5">
       <p className="text-sm font-medium text-muted">{label}</p>
       <p className="mt-1 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
         {value}
