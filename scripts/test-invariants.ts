@@ -50,6 +50,11 @@ import {
 } from "../src/lib/ai/llm-slots";
 import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
 import {
+  fallbackNoteTake,
+  looksLikePromptLeak,
+} from "../src/lib/note-margus";
+import { buildNoteReport } from "../src/lib/note-report";
+import {
   inviteFromLocation,
   inviteLandingCopy,
 } from "../src/lib/invite-landing";
@@ -773,6 +778,46 @@ run("humanize kills leftover market slang", () => {
     humanizeMargusText("Tape read from the move and the book while the model was busy."),
     /Couldn't get a full model|model was busy/i
   );
+});
+
+run("Sunday note never ships the writing brief", () => {
+  const leak =
+    "We need to produce a Sunday note block, 4-6 short sentences, plain English, no greetings/sign-off, no em-dash, no banned words, tickers as cashtags. Use only names from facts: NBIS, CRWV. The instruction says Thesis is fine.";
+  assert.equal(looksLikePromptLeak(leak), true);
+  assert.equal(
+    looksLikePromptLeak(
+      "$NBIS did the week. Chip makers did the work. I'd wait on $AVGO if the thesis still holds."
+    ),
+    false
+  );
+  const report = buildNoteReport({
+    kind: "sunday",
+    name: "Test",
+    cash: 0,
+    holdings: [{ ticker: "NBIS", shares: 100, buy_price: 80 }],
+    quotes: {
+      NBIS: {
+        ticker: "NBIS",
+        price: 110,
+        change: 5,
+        changePercent: 0.05,
+        previousClose: 105,
+        sparkline: [],
+        marketState: null,
+        preMarketPrice: null,
+        preMarketChange: null,
+        preMarketChangePercent: null,
+        postMarketPrice: null,
+        postMarketChange: null,
+        postMarketChangePercent: null,
+      },
+    },
+    weekReturns: { NBIS: { start: 90, end: 110, pct: 0.22 } },
+  });
+  const fallback = fallbackNoteTake(report);
+  assert.equal(looksLikePromptLeak(fallback), false);
+  assert.ok(fallback.length >= 20);
+  assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
 });
 
 run("novice hides Lab, not Pulse", () => {
@@ -2646,6 +2691,8 @@ run("prompts do not teach the model trader words as working vocab", () => {
   assert.doesNotMatch(pulse, /Owner thesis:/);
   assert.doesNotMatch(pulse, /Tape read/);
   assert.doesNotMatch(notes, /Owner thesis:/);
+  assert.match(notes, /looksLikePromptLeak/);
+  assert.match(notes, /fallbackNoteTake/);
   assert.doesNotMatch(fund, /Original thesis:/);
   assert.doesNotMatch(fund, /fundamentals-based thesis/);
   const chat = readFileSync(
