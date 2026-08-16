@@ -216,9 +216,9 @@ export function PortfolioTabs({
                   onTouchMove={cancelSheetLongPress}
                   onTouchCancel={cancelSheetLongPress}
                   className={cn(
-                    "touch-target relative shrink-0 snap-start px-3 text-sm transition",
+                    "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition",
                     active
-                      ? "font-semibold text-foreground"
+                      ? "text-foreground"
                       : "text-muted hover:text-foreground"
                   )}
                 >

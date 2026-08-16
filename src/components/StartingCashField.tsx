@@ -27,7 +27,7 @@ export function StartingCashField({
         Every student gets this on a paper portfolio. Same number for the whole
         class.
       </p>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border bg-border">
         {CLASS_CASH_PRESETS.map((n) => (
           <button
             key={n}
@@ -35,9 +35,9 @@ export function StartingCashField({
             disabled={disabled}
             onClick={() => onChange(n)}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm tabular-nums transition disabled:opacity-50",
+              "bg-well px-2 py-2.5 text-sm tabular-nums transition disabled:opacity-50",
               value === n
-                ? "bg-select font-semibold text-select-ink"
+                ? "bg-select text-select-ink"
                 : "text-muted hover:bg-hover hover:text-foreground"
             )}
           >

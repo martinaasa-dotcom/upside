@@ -1538,6 +1538,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(panel, /export function Scoreboard/);
   assert.match(panel, /font-sans text-lg font-semibold leading-none tabular-nums/);
   assert.match(panel, /bg-select text-select-ink/);
+  const segmented = panel.slice(panel.indexOf("export function Segmented"));
+  assert.doesNotMatch(segmented, /font-semibold/);
+  assert.doesNotMatch(segmented, /flex-wrap/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),
@@ -1965,6 +1968,10 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.doesNotMatch(controls, /ChipButton/);
   assert.match(controls, /columns=\{2\}/);
   assert.match(controls, /This portfolio/);
+  assert.doesNotMatch(src, /tipFlash|setTipFlash/);
+  assert.doesNotMatch(controls, /bg-gain\/\[0\.06\]/);
+  assert.match(controls, /<fieldset/);
+  assert.match(controls, /Taking out each month/);
 });
 
 run("every tier's default surface uses the shared Panel shell", () => {

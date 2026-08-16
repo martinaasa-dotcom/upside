@@ -99,7 +99,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           title="What a bad day costs you"
         />
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
           {SHOCKS.map((s) => {
             const Icon = DRIVER_ICONS[s.driver] ?? Activity;
             const isSelected = selectedShock === s.id;
@@ -110,10 +110,10 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 aria-pressed={isSelected}
                 onClick={() => setSelectedShock(s.id)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition",
+                  "flex min-w-0 items-center justify-center gap-1.5 bg-well px-2 py-2.5 text-sm font-medium transition",
                   isSelected
                     ? "bg-select text-select-ink"
-                    : "border border-border bg-well/60 text-muted hover:bg-hover hover:text-foreground"
+                    : "text-muted hover:bg-hover hover:text-foreground"
                 )}
               >
                 <Icon
@@ -123,14 +123,13 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   )}
                   aria-hidden
                 />
-                {s.shortLabel}
+                <span className="truncate">{s.shortLabel}</span>
               </button>
             );
           })}
         </div>
 
-        {selectedShock !== "none" && (
-          <Card className="mt-4">
+        <Card className="mt-4 min-h-[8.5rem]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
               <div className="flex min-w-0 items-center gap-2">
                 <DriverIcon
@@ -154,7 +153,6 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {activeScenario.mechanism}
             </p>
           </Card>
-        )}
       </Panel>
 
       <Scoreboard cols={4}>

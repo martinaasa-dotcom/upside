@@ -486,7 +486,7 @@ export function CommunitiesList() {
                     <div className="mt-3">
                       <Segmented
                         ariaLabel="Who can join"
-                        className="flex-wrap"
+                        columns={2}
                         options={[
                           { id: "private", label: "Invite only" },
                           { id: "public", label: "Anyone can request" },

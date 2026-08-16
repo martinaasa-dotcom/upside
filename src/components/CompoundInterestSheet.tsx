@@ -392,7 +392,6 @@ export function CompoundInterestSheet({
     {}
   );
   const [storyIdx, setStoryIdx] = useState(0);
-  const [tipFlash, setTipFlash] = useState(false);
   const [copied, setCopied] = useState(false);
   const appliedDefaultRateRef = useRef(false);
   const later = useTimeout();
@@ -483,13 +482,6 @@ export function CompoundInterestSheet({
     () => findTippingYear(result.yearly),
     [result.yearly]
   );
-
-  useEffect(() => {
-    if (tipping == null) return;
-    setTipFlash(true);
-    const id = window.setTimeout(() => setTipFlash(false), 1800);
-    return () => window.clearTimeout(id);
-  }, [tipping, draft.depositAmount]);
 
   const compare = useMemo(
     () => buildCompareScenarios(liveInputs, hideOptions ? 0 : 6),
@@ -638,6 +630,12 @@ export function CompoundInterestSheet({
   )
     ? String(draft.years)
     : null;
+  const payIn =
+    draft.contributionMode === "deposits" ||
+    draft.contributionMode === "both";
+  const takeOut =
+    draft.contributionMode === "withdrawals" ||
+    draft.contributionMode === "both";
 
   function applyRatePreset(id: (typeof RATE_PRESETS)[number]["id"]) {
     if (id === "book") {
@@ -769,12 +767,7 @@ export function CompoundInterestSheet({
           />
         </section>
 
-        <section
-          className={cn(
-            "space-y-3 py-5 transition",
-            tipFlash && "rounded-lg bg-gain/[0.06]"
-          )}
-        >
+        <section className="space-y-3 py-5">
           <span className="text-sm font-semibold text-foreground">
             Adding along the way
           </span>
@@ -793,65 +786,71 @@ export function CompoundInterestSheet({
             }
           />
 
-          {(draft.contributionMode === "deposits" ||
-            draft.contributionMode === "both") && (
-            <div className="space-y-3">
+          <fieldset
+            disabled={!payIn}
+            className={cn("space-y-3", !payIn && "opacity-40")}
+          >
+            <legend className="sr-only">Paying in</legend>
+            <FormattedNumberInput
+              id="compound-deposit-input"
+              kind="money"
+              currency={currency}
+              value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
+              onChange={(n) =>
+                onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
+              }
+              className={FIELD_CLASS}
+            />
+            <Segmented
+              ariaLabel="How often you pay in"
+              columns={2}
+              options={[
+                { id: "monthly", label: "A month" },
+                { id: "annually", label: "A year" },
+              ]}
+              value={draft.depositFrequency}
+              onChange={(id) =>
+                patchDraft("depositFrequency", id as ContributionFrequency)
+              }
+              disabled={!payIn}
+            />
+            <label className="flex items-center justify-between gap-3 text-sm text-muted">
+              Raise it each year
               <FormattedNumberInput
-                id="compound-deposit-input"
-                kind="money"
-                currency={currency}
-                value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
-                onChange={(n) =>
-                  onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
-                }
-                className={FIELD_CLASS}
-              />
-              <Segmented
-                ariaLabel="How often you pay in"
-                columns={2}
-                options={[
-                  { id: "monthly", label: "A month" },
-                  { id: "annually", label: "A year" },
-                ]}
-                value={draft.depositFrequency}
-                onChange={(id) =>
-                  patchDraft("depositFrequency", id as ContributionFrequency)
-                }
-              />
-              <label className="flex items-center justify-between gap-3 text-sm text-muted">
-                Raise it each year
-                <FormattedNumberInput
-                  kind="percent"
-                  value={draft.annualIncrease}
-                  onChange={(n) => patchDraft("annualIncrease", n)}
-                  className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
-                />
-              </label>
-              {tipping != null && (
-                <p className="text-sm text-muted">
-                  From year {tipping}, growth adds more than you do.
-                </p>
-              )}
-            </div>
-          )}
-
-          {(draft.contributionMode === "withdrawals" ||
-            draft.contributionMode === "both") && (
-            <label className="block text-sm text-muted">
-              Taking out each month
-              <FormattedNumberInput
-                kind="money"
-                currency={currency}
-                value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
-                onChange={(n) =>
-                  onMoneyUsdChange(n, (usd) =>
-                    patchDraft("withdrawalAmount", usd)
-                  )
-                }
-                className={cn(FIELD_CLASS, "mt-1.5")}
+                kind="percent"
+                value={draft.annualIncrease}
+                onChange={(n) => patchDraft("annualIncrease", n)}
+                className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
               />
             </label>
-          )}
+            <p className="min-h-5 text-sm text-muted">
+              {tipping != null
+                ? `From year ${tipping}, growth adds more than you do.`
+                : payIn
+                  ? "On this plan, you still add more than growth does."
+                  : "\u00a0"}
+            </p>
+          </fieldset>
+          <fieldset
+            disabled={!takeOut}
+            className={cn(!takeOut && "opacity-40")}
+          >
+            <legend className="mb-1.5 block text-sm text-muted">
+              Taking out each month
+            </legend>
+            <FormattedNumberInput
+              id="compound-withdrawal-input"
+              kind="money"
+              currency={currency}
+              value={usdToDisplay(draft.withdrawalAmount, currency, eurUsd)}
+              onChange={(n) =>
+                onMoneyUsdChange(n, (usd) =>
+                  patchDraft("withdrawalAmount", usd)
+                )
+              }
+              className={FIELD_CLASS}
+            />
+          </fieldset>
         </section>
 
         <section className="space-y-3 pt-5">
@@ -869,16 +868,13 @@ export function CompoundInterestSheet({
             value={shock}
             onChange={setShock}
           />
-          {shock === "drawdown30" && (
-            <p className="text-sm leading-relaxed text-muted">
-              Down 30% in year one, then your rate. The ending is worse because the drop hits when the pile is biggest.
-            </p>
-          )}
-          {shock === "flat2y" && (
-            <p className="text-sm leading-relaxed text-muted">
-              Two quiet years first. Those two years cost more than they look like.
-            </p>
-          )}
+          <p className="min-h-[2.75rem] text-sm leading-relaxed text-muted">
+            {shock === "drawdown30"
+              ? "Down 30% in year one, then your rate. The ending is worse because the drop hits when the pile is biggest."
+              : shock === "flat2y"
+                ? "Two quiet years first. Those two years cost more than they look like."
+                : "Years run at your rate from the start."}
+          </p>
         </section>
         </div>
         </Panel>

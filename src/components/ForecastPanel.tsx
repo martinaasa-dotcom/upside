@@ -1278,7 +1278,7 @@ export function ForecastPanel({
                     )}
                     onChange={(id) => setHorizon(Number(id))}
                     ariaLabel="Forecast horizon"
-                    className="max-w-full flex-wrap"
+                    columns={plan.periods.length}
                   />
                 )}
                 <div className="grid gap-4 sm:grid-cols-2">

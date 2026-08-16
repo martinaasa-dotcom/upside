@@ -579,7 +579,7 @@ export function Segmented<T extends string>({
       className={cn(
         fill
           ? "grid w-full gap-px overflow-hidden rounded-lg border border-border bg-border"
-          : "inline-flex shrink-0 rounded-lg border border-border bg-well p-0.5",
+          : "inline-flex w-full min-w-0 shrink-0 flex-nowrap rounded-lg border border-border bg-well p-0.5 sm:w-auto",
         className
       )}
       style={
@@ -599,9 +599,9 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.id)}
           className={cn(
             "touch-target min-w-0 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
-            fill ? "bg-well px-2 py-2.5" : "rounded-md px-3 py-1.5",
+            fill ? "bg-well px-2 py-2.5" : "flex-1 rounded-md px-3 py-1.5 sm:flex-none",
             value === o.id
-              ? "bg-select text-select-ink font-semibold"
+              ? "bg-select text-select-ink"
               : fill
                 ? "text-muted hover:bg-hover hover:text-foreground"
                 : "text-muted hover:text-foreground"
