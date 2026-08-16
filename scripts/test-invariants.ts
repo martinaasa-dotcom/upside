@@ -93,6 +93,7 @@ import {
 import {
   ACCOUNT_ALIAS_FALLBACK,
   collapseMembersByAlias,
+  combineHouseholdNames,
   KARUD_ALIAS_EMAIL,
   KARUD_PRIMARY_EMAIL,
   SEED_EMAIL_SLUGS,
@@ -289,10 +290,21 @@ run("options UI is hidden unless the viewer explicitly said yes", () => {
   assert.equal(shouldHideOptions(null), true);
 });
 
-run("Karud household is one person and skips first-run onboarding", () => {
-  assert.equal(ACCOUNT_ALIAS_FALLBACK[KARUD_ALIAS_EMAIL], KARUD_PRIMARY_EMAIL);
+run("Karud household is two accounts on one book, like Martin and Amanda", () => {
+  assert.equal(ACCOUNT_ALIAS_FALLBACK[KARUD_ALIAS_EMAIL], undefined);
   assert.deepEqual(SEED_EMAIL_SLUGS[KARUD_ALIAS_EMAIL], ["karud"]);
   assert.deepEqual(SEED_EMAIL_SLUGS[KARUD_PRIMARY_EMAIL], ["karud"]);
+  assert.equal(
+    combineHouseholdNames(["Martin Aasa", "Amanda Aasa"]),
+    "Martin and Amanda Aasa"
+  );
+  assert.equal(
+    combineHouseholdNames([
+      "Rasmus-Richard Marjapuu",
+      "Karoliine Karu",
+    ]),
+    "Rasmus and Karoliine"
+  );
   assert.equal(
     shouldSkipExperienceOnboarding({
       holdingsCount: 0,
@@ -342,23 +354,33 @@ run("Karud household is one person and skips first-run onboarding", () => {
     ],
     "karoliine-id"
   );
-  assert.equal(people.length, 1);
-  assert.equal(people[0]?.person_id, "rasmus-id");
-  assert.equal(people[0]?.is_you, true);
-  assert.deepEqual(people[0]?.emails.sort(), [
-    KARUD_ALIAS_EMAIL,
-    KARUD_PRIMARY_EMAIL,
-  ]);
+  assert.equal(people.length, 2);
+  assert.equal(
+    people.find((p) => p.person_id === "karoliine-id")?.is_you,
+    true
+  );
+  assert.equal(
+    people.find((p) => p.person_id === "rasmus-id")?.is_you,
+    false
+  );
 
   const seedSql = readFileSync(
     join(process.cwd(), "scripts/seed-ownership.sql"),
     "utf8"
   );
   assert.match(seedSql, /karukaroliine99@gmail.com.*karud/s);
-  assert.match(
+  assert.doesNotMatch(
     seedSql,
     /karukaroliine99@gmail.com.*rasmusmarjapuu@gmail.com/s
   );
+  const dropAlias = readdirSync(join(process.cwd(), "supabase/migrations"))
+    .filter((f) => f.includes("052_karud_two_accounts"))
+    .map((f) =>
+      readFileSync(join(process.cwd(), "supabase/migrations", f), "utf8")
+    )
+    .join("\n");
+  assert.match(dropAlias, /delete from public.portfell_account_aliases/i);
+  assert.match(dropAlias, /karukaroliine99@gmail.com/);
   const ensure = readFileSync(
     join(process.cwd(), "src/lib/auth/ensure-profile.ts"),
     "utf8"

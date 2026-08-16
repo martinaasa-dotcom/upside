@@ -26,6 +26,7 @@ import {
   type ThesisCoverage,
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
+import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
@@ -187,24 +188,6 @@ function readCommunityCache(communityId: string): CommunityCache {
     meta: (cached.meta as CommunityMetaResponse) ?? null,
     book: (cached.book as CommunityBookResponse) ?? null,
   };
-}
-
-/** "Martin Aasa" + "Amanda Aasa" -> "Martin & Amanda Aasa". Falls back to
- * joining full names when surnames don't match (or there's no clean last
- * word to share), and to a plain "&" join for 3+ people. */
-function combineHouseholdNames(names: string[]): string {
-  const clean = names.map((n) => n.trim()).filter(Boolean);
-  if (clean.length <= 1) return clean[0] ?? "Household";
-  if (clean.length > 2) return clean.join(", ").replace(/, ([^,]*)$/, " & $1");
-
-  const parts = clean.map((n) => n.split(/\s+/));
-  const lastWords = parts.map((p) => p[p.length - 1] ?? "");
-  const sameSurname = Boolean(lastWords[0]) && lastWords.every((w) => w === lastWords[0]);
-  if (sameSurname && parts.every((p) => p.length > 1)) {
-    const firstNames = parts.map((p) => p.slice(0, -1).join(" "));
-    return `${firstNames.join(" & ")} ${lastWords[0]}`;
-  }
-  return clean.join(" & ");
 }
 
 export function CommunityView({ communityId }: Props) {

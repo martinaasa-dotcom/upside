@@ -18,13 +18,46 @@ export const HOUSEHOLD_PENDING_EMAILS: Record<string, string[]> = {
 };
 
 /**
- * Hard-coded fallback matching migrations 016 and 049.
+ * Hard-coded fallback matching migration 016.
+ * Martin's two Google logins are one person. Rasmus and Karoliine are
+ * two people who share Karud, like Martin and Amanda share Aasad.
  * Prefer DB (`portfell_account_aliases`) when readable.
  */
 export const ACCOUNT_ALIAS_FALLBACK: Record<string, string> = {
   "aasamartinaasa@gmail.com": "martin.aasa@upthink.ee",
-  [KARUD_ALIAS_EMAIL]: KARUD_PRIMARY_EMAIL,
 };
+
+/** First word of a display name. "Rasmus-Richard Marjapuu" -> "Rasmus". */
+export function givenName(full: string): string {
+  const first = full.trim().split(/\s+/).find(Boolean) ?? "";
+  return first.split("-")[0] || first;
+}
+
+/** "Martin Aasa" + "Amanda Aasa" -> "Martin and Amanda Aasa".
+ * Different surnames: "Rasmus and Karoliine". */
+export function combineHouseholdNames(names: string[]): string {
+  const clean = names.map((n) => n.trim()).filter(Boolean);
+  if (clean.length <= 1) return clean[0] ?? "Household";
+
+  const parts = clean.map((n) => n.split(/\s+/).filter(Boolean));
+  const lastWords = parts.map((p) => p[p.length - 1] ?? "");
+  const sameSurname =
+    Boolean(lastWords[0]) && lastWords.every((w) => w === lastWords[0]);
+  const given = clean.map(givenName);
+  const last = given[given.length - 1]!;
+
+  if (given.length === 2) {
+    return sameSurname && parts.every((p) => p.length > 1)
+      ? `${given[0]} and ${given[1]} ${lastWords[0]}`
+      : `${given[0]} and ${given[1]}`;
+  }
+
+  const head = given.slice(0, -1).join(", ");
+  if (sameSurname && parts.every((p) => p.length > 1)) {
+    return `${head}, and ${last} ${lastWords[0]}`;
+  }
+  return `${head}, and ${last}`;
+}
 
 export function normalizeEmail(email: string | null | undefined): string | null {
   if (!email) return null;

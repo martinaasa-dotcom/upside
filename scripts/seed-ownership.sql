@@ -73,11 +73,6 @@ insert into public.portfell_seed_claims (email, portfolio_slug) values
   ('karukaroliine99@gmail.com', 'karud')
 on conflict do nothing;
 
--- One household in communities: Karoliine's Google login = Rasmus
-insert into public.portfell_account_aliases (alias_email, primary_email) values
-  ('karukaroliine99@gmail.com', 'rasmusmarjapuu@gmail.com')
-on conflict (alias_email) do update set primary_email = excluded.primary_email;
-
 -- Aasad / Anu / MaryAnn co-owners (family circle)
 insert into public.portfell_seed_claims (email, portfolio_slug) values
   ('aasamartinaasa@gmail.com', 'aasad'),

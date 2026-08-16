@@ -18,9 +18,8 @@ Multiple Google emails can map to **one person** in communities (`portfell_accou
 | Alias | Primary |
 |-------|---------|
 | `aasamartinaasa@gmail.com` | `martin.aasa@upthink.ee` |
-| `karukaroliine99@gmail.com` | `rasmusmarjapuu@gmail.com` |
 
-Both logins stay separate in Auth (Google), but Upside Circle shows **one** person with both emails listed. Co-ownership of the shared sheet is unchanged (Aasad/Anu/MaryAnn for Martin, Karud for Rasmus and Karoliine).
+Martin's two Google logins stay one person. Rasmus and Karoliine are **two** people who share Karud, the same way Martin and Amanda share Aasad / Anu / MaryAnn. Leaderboards combine co-owners of the same sheets (`Rasmus and Karoliine`, `Martin and Amanda Aasa`). Co-ownership of the shared sheet is unchanged.
 
 ## Community-pinned sheets
 
@@ -83,7 +82,8 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `014` community members RLS recursion fix  
 - `015` superadmin overview RPC  
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
-- `049` Karud household alias (`karukaroliine99@gmail.com` → `rasmusmarjapuu@gmail.com`) so Circle and the community book show one person, and Karoliine claims Karud instead of an empty first-run book
+- `049` Karud seed claim so Karoliine co-owns Karud on first sign-in (the alias that folded her into Rasmus was dropped in `052`)
+- `052` drop the Karud account alias. Rasmus and Karoliine stay two Circle members on one book, like Martin and Amanda
 - `050` community invite uses log + `token_hint`. Redeem RPC records who used which link. Admin list + retire.
 - `051` circle share is opt-out again. Backfill members' real portfolios into non-class circles. Public join requests can store `share_portfolio_ids`.  
 
