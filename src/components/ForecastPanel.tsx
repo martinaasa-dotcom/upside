@@ -471,8 +471,8 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
               cx={xAt(i)}
               cy={yAt(p.value)}
               r={2.5}
-              fill="#0a0b0a"
-              stroke="#ede8dc"
+              fill={PALETTE.app}
+              stroke={PALETTE.cream}
               strokeWidth={1.5}
             />
           ))}
@@ -483,15 +483,15 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                 x2={xAt(hover)}
                 y1={padT}
                 y2={padT + innerH}
-                stroke="#ede8dc"
+                stroke={PALETTE.cream}
                 strokeOpacity={0.45}
               />
               <circle
                 cx={xAt(hover)}
                 cy={yAt(hoverPoint.value)}
                 r={4.5}
-                fill="#ede8dc"
-                stroke="#0b0b0b"
+                fill={PALETTE.cream}
+                stroke={PALETTE.app}
                 strokeWidth={1.5}
               />
             </g>

@@ -1,15 +1,16 @@
 /**
  * Hex used in SVG, email, and canvas. Keep in lockstep with `globals.css`.
- * One gold. Green is an up number, never a wash on the room.
+ * Cool charcoal field. Gold for chrome. Bright green / red for up / down.
  */
 export const PALETTE = {
-  app: "#0b0b0b",
-  cream: "#ede8dc",
-  ink: "#0c0c0c",
-  muted: "#9c9a94",
-  brand: "#d4a24c",
-  brandBright: "#e8be6a",
-  gain: "#3ecf6e",
-  loss: "#c46a58",
-  steel: "#7f93c9",
+  app: "#08090c",
+  cream: "#f4f1ea",
+  ink: "#08090c",
+  muted: "#9aa3ad",
+  brand: "#d6ad69",
+  brandBright: "#eed7b5",
+  mustard: "#dcad55",
+  gain: "#10b981",
+  loss: "#f43f5e",
+  steel: "#60a5fa",
 } as const;

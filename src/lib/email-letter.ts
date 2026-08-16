@@ -4,13 +4,13 @@
  */
 
 export const EMAIL = {
-  app: "#0b0b0b",
-  cream: "#ede8dc",
-  muted: "#9c9a94",
-  gold: "#d4a24c",
-  gain: "#3ecf6e",
-  loss: "#c46a58",
-  line: "#212121",
+  app: "#08090c",
+  cream: "#f4f1ea",
+  muted: "#9aa3ad",
+  gold: "#d6ad69",
+  gain: "#10b981",
+  loss: "#f43f5e",
+  line: "#181b22",
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
   serif: "Georgia,'Times New Roman',Times,serif",
   lockup: "https://upsidelab.app/icons/email-lockup.png?v=2",

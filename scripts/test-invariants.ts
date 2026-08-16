@@ -254,10 +254,14 @@ run("briefing kinds use plain-English labels", () => {
 run("power animals each keep their own color", () => {
   const bars = Object.values(ANIMAL_CARD_TONE).map((t) => t.bar);
   assert.equal(new Set(bars).size, bars.length);
-  assert.ok(bars.every((bar) => bar.startsWith("bg-[#")));
+  assert.ok(ANIMAL_CARD_TONE.dragon?.bar.includes("rose"));
+  assert.ok(ANIMAL_CARD_TONE.panda?.bar.includes("emerald"));
+  assert.ok(ANIMAL_CARD_TONE.octopus?.bar.includes("violet"));
+  assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
   assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
-  assert.equal(PALETTE.brand, "#d4a24c");
-  assert.equal(PALETTE.gain, "#3ecf6e");
+  assert.equal(PALETTE.brand, "#d6ad69");
+  assert.equal(PALETTE.gain, "#10b981");
+  assert.equal(PALETTE.loss, "#f43f5e");
   const community = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
@@ -987,8 +991,8 @@ run("Sunday note never ships the writing brief", () => {
   const letter = readFileSync("src/lib/email-letter.ts", "utf8");
   assert.match(email, /font-size:40px;line-height:1\.1;font-weight:700;letter-spacing:-0\.03em;color:\$\{CREAM\}/);
   assert.match(letter, /padding:48px 28px 52px 28px/);
-  assert.match(letter, /app: "#0b0b0b"/);
-  assert.match(letter, /gain: "#3ecf6e"/);
+  assert.match(letter, /app: "#08090c"/);
+  assert.match(letter, /gain: "#10b981"/);
   assert.match(letter, /Georgia,'Times New Roman',Times,serif/);
   assert.match(letter, /function emailPreheader/);
   assert.match(letter, /&#847;&zwnj;&nbsp;/);
@@ -1212,37 +1216,37 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     join(process.cwd(), "src/components/PortfolioTabs.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #ede8dc/);
-  assert.match(css, /--ink: #0c0c0c/);
-  assert.match(css, /--card: #171717/);
-  assert.match(css, /--raised: #212121/);
-  assert.match(css, /--app: #0b0b0b/);
-  assert.match(css, /--muted: #9c9a94/);
-  assert.match(css, /--brand: #d4a24c/);
-  assert.match(css, /--select: #d4a24c/);
-  assert.match(css, /--mustard: #d4a24c/);
-  assert.match(css, /--gain: #3ecf6e/);
-  assert.match(css, /--loss: #c46a58/);
+  assert.match(css, /--paper: #f4f1ea/);
+  assert.match(css, /--ink: #08090c/);
+  assert.match(css, /--card: #111318/);
+  assert.match(css, /--raised: #181b22/);
+  assert.match(css, /--app: #08090c/);
+  assert.match(css, /--muted: #9aa3ad/);
+  assert.match(css, /--brand: #d6ad69/);
+  assert.match(css, /--select: #dcad55/);
+  assert.match(css, /--mustard: #dcad55/);
+  assert.match(css, /--gain: #10b981/);
+  assert.match(css, /--loss: #f43f5e/);
   assert.match(css, /background: var\(--mustard\)/);
   assert.doesNotMatch(css, /--app: #0d110f/);
   assert.doesNotMatch(css, /--app: #1a2820/);
-  assert.doesNotMatch(css, /--app: #080808/);
+  assert.doesNotMatch(css, /--app: #0b0b0b/);
   assert.doesNotMatch(css, /--card: #1a1f1c/);
   assert.doesNotMatch(css, /--card: #2a2218/);
   assert.doesNotMatch(css, /--card: #151716/);
-  assert.doesNotMatch(css, /--card: #141414/);
+  assert.doesNotMatch(css, /--card: #171717/);
   assert.doesNotMatch(css, /--raised: #242b27/);
   assert.doesNotMatch(css, /--gain: #5a9a4a/);
-  assert.doesNotMatch(css, /--gain: #6db85c/);
+  assert.doesNotMatch(css, /--gain: #3ecf6e/);
   assert.doesNotMatch(css, /--gain: #3f9d58/);
   assert.doesNotMatch(css, /--brand: #c4a36a/);
+  assert.doesNotMatch(css, /--brand: #d4a24c/);
   assert.doesNotMatch(css, /--brand: #8a9a86/);
-  assert.doesNotMatch(css, /--brand: #c4a574/);
-  assert.doesNotMatch(css, /--brand: #b8b3aa/);
+  assert.doesNotMatch(css, /--loss: #c46a58/);
   assert.doesNotMatch(css, /--caution: #c4a574/);
-  assert.doesNotMatch(css, /--border: rgb\(196 163 106/);
-  assert.match(palette, /brand: "#d4a24c"/);
-  assert.match(palette, /gain: "#3ecf6e"/);
+  assert.doesNotMatch(css, /--border: rgb\(237 232 220/);
+  assert.match(palette, /brand: "#d6ad69"/);
+  assert.match(palette, /gain: "#10b981"/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
   assert.match(panel, /export function InsightText/);
@@ -1282,7 +1286,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
   assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
-  assert.match(frame, /#141414_0%,_#0b0b0b/);
+  assert.match(frame, /#111318_0%,_#08090c/);
   assert.doesNotMatch(frame, /#141614/);
   assert.doesNotMatch(frame, /#0d110f/);
   assert.doesNotMatch(frame, /#1a2820/);
@@ -1815,7 +1819,7 @@ run("inbox letters share one letterhead", () => {
   });
   assert.equal(invite.subject, "Join Upside Circle");
   assert.match(invite.html, /Georgia/);
-  assert.match(invite.html, /#0b0b0b/);
+  assert.match(invite.html, /#08090c/);
   assert.match(invite.html, /Open the invite/);
   assert.doesNotMatch(invite.html, /\u2014/);
   assert.doesNotMatch(invite.text, /the book|the sheet/);

@@ -46,8 +46,8 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#0b0b0b",
-          color: "#ede8dc",
+          background: "#08090c",
+          color: "#f4f1ea",
         }}
       >
         <div>
@@ -63,7 +63,7 @@ export default function GlobalError({
               maxWidth: "22rem",
               fontSize: "0.875rem",
               lineHeight: 1.6,
-              color: "#9c9a94",
+              color: "#9aa3ad",
             }}
           >
             Your book is safe. This was a rendering error in the app shell,
@@ -77,7 +77,7 @@ export default function GlobalError({
             style={{
               borderRadius: "0.5rem",
               border: "none",
-              background: "#d4a24c",
+              background: "#dcad55",
               color: "#0c0c0c",
               fontWeight: 600,
               fontSize: "0.875rem",
@@ -92,9 +92,9 @@ export default function GlobalError({
             onClick={() => window.location.reload()}
             style={{
               borderRadius: "0.5rem",
-              border: "1px solid #d4a24c",
+              border: "1px solid #d6ad69",
               background: "transparent",
-              color: "#e8be6a",
+              color: "#eed7b5",
               fontSize: "0.875rem",
               padding: "0.5rem 1rem",
               cursor: "pointer",

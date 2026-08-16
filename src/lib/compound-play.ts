@@ -320,21 +320,21 @@ export function buildCompareScenarios(
       label: "Cash / HYSA",
       tagline: `~${COMPOUND_CASH_YIELD_ANNUAL_PCT}% · savings / money-market yield`,
       result: cashYield,
-      color: "#9c9a94",
+      color: "#9aa3ad",
     },
     {
       id: "spy",
       label: "Index-ish",
       tagline: "~10% · a plain index bet",
       result: spy,
-      color: "#7f93c9",
+      color: "#60a5fa",
     },
     {
       id: "upside",
       label: "Upside path",
       tagline: `~${upsideRate.toFixed(0)}% · this book's assumed rate`,
       result: upside,
-      color: "#d4a24c",
+      color: "#d6ad69",
     },
   ];
 }

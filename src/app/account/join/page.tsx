@@ -57,7 +57,7 @@ function JoinInner() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#141414_0%,_#0b0b0b_55%)] px-4 text-foreground">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#111318_0%,_#08090c_55%)] px-4 text-foreground">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="w-full max-w-sm space-y-4 text-center">
           <h1 className="text-lg font-bold">Join a portfolio</h1>

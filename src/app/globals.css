@@ -1,32 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark field, gray boxes. One gold for selected chrome and CTAs.
-     Green is an up number, never a wash on the room. */
-  --background: #0b0b0b;
-  --foreground: #ede8dc;
-  --paper: #ede8dc;
-  --ink: #0c0c0c;
-  --muted: #9c9a94;
-  --app: #0b0b0b;
-  --well: #0a0a0a;
-  --card: #171717;
-  --raised: #212121;
-  --hover: #2b2b2b;
-  --brand: #d4a24c;
-  --brand-bright: #e8be6a;
-  --brand-mid: #b88838;
-  --brand-deep: #8a6428;
-  --brand-dark: #8a6428;
-  --select: #d4a24c;
-  --select-ink: #0c0c0c;
-  --mustard: #d4a24c;
-  --caution: #d4a24c;
-  --gain: #3ecf6e;
-  --loss: #c46a58;
-  --surface: #171717;
-  --panel: #171717;
-  --border: rgb(237 232 220 / 0.12);
+  /* Brand board from 15 Aug: cool near-black, cream type, gold mark.
+     Green and red stay the bright up/down colors, never a wash on the room. */
+  --background: #08090c;
+  --foreground: #f4f1ea;
+  --paper: #f4f1ea;
+  --ink: #08090c;
+  --muted: #9aa3ad;
+  --app: #08090c;
+  --well: #0c0e12;
+  --card: #111318;
+  --raised: #181b22;
+  --hover: #1e222b;
+  --brand: #d6ad69;
+  --brand-bright: #eed7b5;
+  --brand-mid: #dcad55;
+  --brand-deep: #9c723f;
+  --brand-dark: #7a5a32;
+  --select: #dcad55;
+  --select-ink: #08090c;
+  --mustard: #dcad55;
+  --caution: #dcad55;
+  --gain: #10b981;
+  --loss: #f43f5e;
+  --surface: #111318;
+  --panel: #111318;
+  --border: rgb(214 173 105 / 0.22);
 }
 
 @theme inline {
@@ -181,15 +181,15 @@ input[type="range"] {
  * a full-cell dashed rule (that reads as a weird table separator).
  */
 .inline-edit {
-  border-bottom: 1px dashed rgba(212, 162, 76, 0.4);
+  border-bottom: 1px dashed rgba(214, 173, 105, 0.45);
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 .inline-edit:hover {
-  border-bottom-color: rgba(232, 190, 106, 0.55);
+  border-bottom-color: rgba(238, 215, 181, 0.65);
 }
 .inline-edit:focus {
   border-bottom-style: solid;
-  border-bottom-color: rgb(212 162 76 / 0.7);
+  border-bottom-color: rgb(214 173 105 / 0.8);
 }
 
 * {
@@ -225,7 +225,7 @@ button:disabled,
 }
 
 ::selection {
-  background: rgba(212, 162, 76, 0.35);
+  background: rgba(214, 173, 105, 0.38);
 }
 
 /* Financial figures stay on the body face, with lining tabular digits. */

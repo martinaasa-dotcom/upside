@@ -8,7 +8,7 @@ export const PAGE_GUTTER_CLASS = "px-5 sm:px-8";
 export const PAGE_COLUMN_CLASS = `mx-auto w-full min-w-0 ${PAGE_MAX_CLASS} ${PAGE_GUTTER_CLASS}`;
 
 export const PAGE_FRAME_CLASS =
-  "page-frame flex min-h-dvh flex-col bg-app text-foreground [--dock-pad:10.5rem] md:bg-[radial-gradient(ellipse_at_top,_#141414_0%,_#0b0b0b_55%)] md:[--dock-pad:11.5rem]";
+  "page-frame flex min-h-dvh flex-col bg-app text-foreground [--dock-pad:10.5rem] md:bg-[radial-gradient(ellipse_at_top,_#111318_0%,_#08090c_55%)] md:[--dock-pad:11.5rem]";
 
 /** Desktop chrome is fixed: header 3.5rem + status 2.5rem. */
 export const PAGE_CHROME_SPACER_CLASS = "hidden h-24 shrink-0 md:block";

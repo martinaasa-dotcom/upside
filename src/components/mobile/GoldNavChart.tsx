@@ -626,15 +626,15 @@ export function GoldNavChart({
                   x2={xAt(hover)}
                   y1={padT}
                   y2={padT + innerH}
-                  stroke="#ede8dc"
+                  stroke={PALETTE.cream}
                   strokeOpacity={0.45}
                 />
                 <circle
                   cx={xAt(hover)}
                   cy={yAt(hoverPoint.nav)}
                   r={4.5}
-                  fill="#ede8dc"
-                  stroke="#0b0b0b"
+                  fill={PALETTE.cream}
+                  stroke={PALETTE.app}
                   strokeWidth={1.5}
                 />
               </g>
