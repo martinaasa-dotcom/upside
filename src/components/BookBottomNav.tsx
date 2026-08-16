@@ -17,7 +17,7 @@ const ITEMS = [
   {
     href: "/",
     label: "Overview",
-    title: "Today's briefing and your sheets",
+    title: "Today's briefing and your portfolios",
     Icon: LayoutDashboard,
   },
   {
@@ -35,7 +35,7 @@ const ITEMS = [
   {
     href: "/?tab=compound",
     label: "Compound",
-    title: "What this book could become if you keep going",
+    title: "What your portfolio could become if you keep going",
     Icon: Calculator,
   },
 ] as const;
@@ -46,7 +46,7 @@ export function BookBottomNav({ className }: { className?: string }) {
   return (
     <nav
       ref={dockRef}
-      aria-label="Back to your book"
+      aria-label="Back to your portfolio"
       className={cn(
         "fixed inset-x-0 bottom-0 z-30 hidden border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
         className
@@ -54,7 +54,7 @@ export function BookBottomNav({ className }: { className?: string }) {
     >
       <div className={cn(PAGE_COLUMN_CLASS, "py-2")}>
         <p className="mb-1.5 text-sm font-medium text-muted">
-          In your book
+          In your portfolio
         </p>
         <div className="grid h-12 w-full max-w-[36rem] grid-cols-4 overflow-hidden rounded-lg bg-well/80 ring-1 ring-inset ring-brand/30">
           {ITEMS.map(({ href, label, title, Icon }) => (

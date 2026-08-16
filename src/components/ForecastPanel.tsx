@@ -184,7 +184,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Margus&apos;s year-by-year path for this sheet. Same idea as Pulse,
+          Margus&apos;s year-by-year path for this portfolio. Same idea as Pulse,
           sitting under the table.
         </p>
       </div>
@@ -422,7 +422,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
           className="h-auto min-w-0 flex-1 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50"
           role="slider"
           tabIndex={0}
-          aria-label="Modeled book value through the last forecast year. Drag or use arrow keys to read a year."
+          aria-label="Modeled portfolio value through the last forecast year. Drag or use arrow keys to read a year."
           aria-valuemin={0}
           aria-valuemax={lastIdx}
           aria-valuenow={hover ?? lastIdx}
@@ -840,7 +840,7 @@ export function ForecastPanel({
       retryCountRef.current += 1;
       if (retryCountRef.current >= MAX_AUTO_TRIES) {
         setError(
-          "Couldn't reach Margus. Starting prices are on the sheet. Ask again when you want him to try."
+          "Couldn't reach Margus. Starting prices are on your portfolio. Ask again when you want him to try."
         );
         return;
       }
@@ -904,13 +904,13 @@ export function ForecastPanel({
     });
     if (retryCountRef.current >= MAX_AUTO_TRIES) return null;
     if (decision.run && decision.reason === "first-run") {
-      return "First time on this sheet, Margus is working out the prices …";
+      return "First time on this portfolio, Margus is working out the prices …";
     }
     if (decision.run && decision.reason === "new-holding") {
       return "New holding, Margus is working out a path …";
     }
     if (pendingModelRef.current && !plan) {
-      return "Starting prices are on the sheet. Margus is still writing the why …";
+      return "Starting prices are on your portfolio. Margus is still writing the why …";
     }
     return null;
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
@@ -928,7 +928,7 @@ export function ForecastPanel({
                   type="button"
                   onClick={onClearOverrides}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition hover:border-brand hover:text-foreground"
-                  title="Throw away every price you or Margus changed on this sheet"
+                  title="Throw away every price you or Margus changed on this portfolio"
                 >
                   <RotateCcw className="h-3 w-3" aria-hidden />
                   Undo my changes ({overrideCount})
@@ -1199,7 +1199,7 @@ export function ForecastPanel({
         {busy && !plan && (
           <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-border bg-hover px-4 py-6 text-sm text-foreground/80">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Working through every holding on this sheet …
+            Working through every holding in this portfolio …
           </div>
         )}
         {plan && (

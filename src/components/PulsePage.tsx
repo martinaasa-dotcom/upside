@@ -291,14 +291,14 @@ function PulseCard({
             valueClassName={signedTone(c.roiPct, "text-foreground")}
           />
           <Stat
-            label="Book"
+            label="Portfolio"
             value={percent(c.bookPct)}
             sub={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
           />
         </div>
       ) : (
         <p className="mt-3 text-sm tabular-nums text-muted">
-          {currency(c.price)} · not in your book
+          {currency(c.price)} · not in your portfolio
         </p>
       )}
 
@@ -905,7 +905,7 @@ export function PulsePage({
                       onClick={() => void checkTicker(t)}
                     >
                       {t}
-                      <span className="ml-2 text-sm text-muted">in book</span>
+                      <span className="ml-2 text-sm text-muted">in your portfolio</span>
                     </button>
                   </li>
                 ))}

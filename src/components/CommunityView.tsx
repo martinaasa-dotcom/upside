@@ -340,7 +340,7 @@ export function CommunityView({ communityId }: Props) {
       if (!bookRes.ok) {
         const err = await bookRes.json().catch(() => ({}));
         throw new Error(
-          plainError((err as { error?: string }).error, "Couldn't load this circle's books.")
+          plainError((err as { error?: string }).error, "Couldn't load this circle's portfolios.")
         );
       }
       const meta = await metaRes.json();
@@ -736,12 +736,12 @@ export function CommunityView({ communityId }: Props) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(
-          plainError((data as { error?: string }).error, "Couldn't make the paper sheet.")
+          plainError((data as { error?: string }).error, "Couldn't make the paper portfolio.")
         );
       }
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't make the paper sheet.");
+      setError(e instanceof Error ? e.message : "Couldn't make the paper portfolio.");
     } finally {
       setClaimBusy(false);
     }
@@ -801,7 +801,7 @@ export function CommunityView({ communityId }: Props) {
       title: "Most spread out",
       winner: mostDiversified.name,
       stat: `${mostDiversified.personality!.diversificationScore}/100`,
-      description: "Most spread-out book in the circle.",
+      description: "Most spread-out portfolio in the circle.",
     });
 
     const mostRisk = [...withPersonality].sort(
@@ -810,7 +810,7 @@ export function CommunityView({ communityId }: Props) {
     out.push({
       id: "risk-taker",
       emoji: "🔥",
-      title: "Hottest book",
+      title: "Hottest portfolio",
       winner: mostRisk.name,
       stat: `${mostRisk.personality!.riskScore}/100`,
       description: "The jumpiest mix of names in the circle.",
@@ -825,7 +825,7 @@ export function CommunityView({ communityId }: Props) {
       title: "The Steady Hand",
       winner: steadiest.name,
       stat: `${steadiest.personality!.riskScore}/100`,
-      description: "Calmest book in the circle.",
+      description: "Calmest portfolio in the circle.",
     });
 
     const mostConviction = [...withPersonality].sort(
@@ -842,7 +842,7 @@ export function CommunityView({ communityId }: Props) {
             ? ` ${cashtag(mostConviction.personality!.topTicker)}`
             : ""
         }`,
-        description: "Biggest single name relative to the rest of the sheet.",
+        description: "Biggest single name relative to the rest of the portfolio.",
       });
     }
 
@@ -870,7 +870,7 @@ export function CommunityView({ communityId }: Props) {
         title: "Most cash",
         winner: mostCash.name,
         stat: `${mostCash.personality!.cashPct}% cash`,
-        description: "Largest cash stash relative to the book.",
+        description: "Largest cash stash relative to the portfolio.",
       });
     }
 
@@ -899,10 +899,10 @@ export function CommunityView({ communityId }: Props) {
       out.push({
         id: "big-book",
         emoji: "🏦",
-        title: "The Big Book",
+        title: "Largest portfolio",
         winner: biggestBook.name,
         stat: currency(biggestBook.totalValue, 0),
-        description: "Largest book in the circle.",
+        description: "Largest portfolio in the circle.",
       });
       out.push({
         id: "small-mighty",
@@ -910,7 +910,7 @@ export function CommunityView({ communityId }: Props) {
         title: "Small but Mighty",
         winner: smallestBook.name,
         stat: currency(smallestBook.totalValue, 0),
-        description: "Smallest book. Every circle has a sapling.",
+        description: "Smallest portfolio. Every circle has a sapling.",
       });
     }
 
@@ -1374,7 +1374,7 @@ export function CommunityView({ communityId }: Props) {
                 <p className="text-sm text-muted">
                   {isClassroom
                     ? "Paper class. Same starting cash. Real prices."
-                    : "Shared sheets added together. Today's prices only. Members do not see what you paid."}
+                    : "Shared portfolios added together. Today's prices only. Members do not see what you paid."}
                 </p>
                 {isClassroom &&
                 community?.classTrade &&
@@ -1397,8 +1397,8 @@ export function CommunityView({ communityId }: Props) {
                   <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/80 px-4 py-3">
                     <p className="min-w-0 flex-1 text-sm text-foreground/80">
                       {isAdmin
-                        ? "You are watching the class. Get a paper sheet if you want to trade alongside them."
-                        : "Your paper sheet is not on Home yet. Same starting cash as everyone else."}
+                        ? "You are watching the class. Get a paper portfolio if you want to trade alongside them."
+                        : "Your paper portfolio is not on Home yet. Same starting cash as everyone else."}
                     </p>
                     <button
                       type="button"
@@ -1406,13 +1406,13 @@ export function CommunityView({ communityId }: Props) {
                       onClick={() => void claimClassSheet()}
                       className="btn-primary shrink-0 disabled:opacity-50"
                     >
-                      {claimBusy ? "Making sheet …" : "Get paper sheet"}
+                      {claimBusy ? "Making portfolio …" : "Get paper portfolio"}
                     </button>
                   </div>
                 ) : null}
                 {isClassroom && myClassSheet ? (
                   <p className="text-sm text-muted">
-                    Your paper sheet is on Home. Sunday note is the weekly recap.
+                    Your paper portfolio is on Home. Sunday note is the weekly recap.
                   </p>
                 ) : null}
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -1530,7 +1530,7 @@ export function CommunityView({ communityId }: Props) {
                     !isClassroom &&
                     membersWithBooks.length === 0 && (
                     <p className="text-sm text-muted">
-                      Nobody has shared a sheet here yet. Pick which of
+                      Nobody has shared a portfolio here yet. Pick which of
                       yours belong in this circle.
                     </p>
                   )}
@@ -1541,7 +1541,7 @@ export function CommunityView({ communityId }: Props) {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm text-muted">
                         Send the invite. Each student gets the same starting
-                        cash and an empty book.
+                        cash and an empty portfolio.
                       </p>
                       <button
                         type="button"
@@ -1585,8 +1585,8 @@ export function CommunityView({ communityId }: Props) {
                               Power animals
                             </h3>
                             <p className="mt-0.5 text-sm text-muted">
-                              How each book is built. Tap someone to open their
-                              sheets.
+                              How each portfolio is built. Tap someone to open their
+                              portfolios.
                             </p>
                           </div>
                         </div>
@@ -1882,7 +1882,7 @@ export function CommunityView({ communityId }: Props) {
                     <ul className="space-y-3">
                       {communityFunFacts.length === 0 ? (
                         <li className="text-sm text-muted">
-                          Not enough data yet. Check back once books load.
+                          Not enough data yet. Check back once portfolios load.
                         </li>
                       ) : (
                         communityFunFacts.map((fact, i) => (
@@ -2206,8 +2206,8 @@ export function CommunityView({ communityId }: Props) {
                       </h2>
                       <p className="text-xs text-muted">
                         {isClassroom
-                          ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty sheet. Put a number of days only if you want it to die on its own."
-                          : "This link stays live. Anyone with it can join. Each person picks which sheets to share. Today's prices only. Put an email to lock it to one person. Put a number of days only if you want it to die on its own."}
+                          ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty portfolio. Put a number of days only if you want it to die on its own."
+                          : "This link stays live. Anyone with it can join. Each person picks which portfolios to share. Today's prices only. Put an email to lock it to one person. Put a number of days only if you want it to die on its own."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input
@@ -2298,7 +2298,7 @@ export function CommunityView({ communityId }: Props) {
                     profileName(selectedOwnerId)}
                 </p>
                 <p className="text-xs leading-relaxed text-muted">
-                  This is their book. You can look, you cannot edit. Nothing
+                  This is their portfolio. You can look, you cannot edit. Nothing
                   you tap here changes their holdings.
                   {selectedPortfolio ? ` Viewing ${selectedPortfolio.name}.` : ""}
                 </p>
@@ -2316,7 +2316,7 @@ export function CommunityView({ communityId }: Props) {
                         : "border-border text-muted hover:border-border hover:text-foreground"
                     )}
                   >
-                    All books
+                    All portfolios
                     <span className="ml-1.5 text-muted">
                       {ownerPortfolios.length}
                     </span>
@@ -2340,7 +2340,7 @@ export function CommunityView({ communityId }: Props) {
               )}
 
               <WidgetErrorBoundary
-                name="Member book"
+                name="Member portfolio"
                 resetKey={selectedOwnerId ?? communityId}
               >
               <ReadOnlyHoldings
@@ -2358,7 +2358,7 @@ export function CommunityView({ communityId }: Props) {
       <ConfirmModal
         open={Boolean(removeTarget)}
         title="Remove member?"
-        body={`Remove ${removeTarget?.name ?? "this member"} from the community? They'll lose read access to everyone else's book and can be re-invited later.`}
+        body={`Remove ${removeTarget?.name ?? "this member"} from the community? They'll lose read access to everyone else's portfolio and can be re-invited later.`}
         confirmLabel="Remove"
         destructive
         onClose={() => setRemoveTarget(null)}
@@ -2371,7 +2371,7 @@ export function CommunityView({ communityId }: Props) {
       <ConfirmModal
         open={leaveOpen}
         title="Leave this community?"
-        body={`You'll stop seeing everyone else's book in ${community?.name ?? "this community"}, and they'll stop seeing yours. Your own portfolios and holdings stay exactly as they are. You can rejoin later with an invite, or by requesting again if it's public.`}
+        body={`You'll stop seeing everyone else's portfolio in ${community?.name ?? "this community"}, and they'll stop seeing yours. Your own portfolios and holdings stay exactly as they are. You can rejoin later with an invite, or by requesting again if it's public.`}
         confirmLabel="Leave"
         destructive
         onClose={() => setLeaveOpen(false)}
@@ -2458,7 +2458,7 @@ export function CommunityView({ communityId }: Props) {
               placeholder={
                 isClassroom
                   ? "Week 2: only sell. Write why you sold."
-                  : "Family books, today's prices, no advice."
+                  : "Family portfolios, today's prices, no advice."
               }
               className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand disabled:opacity-50"
             />
@@ -2494,7 +2494,7 @@ export function CommunityView({ communityId }: Props) {
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-muted">
                   Classes stay invite-only. Changing this adds or takes the
-                  difference from every paper sheet already handed out.
+                  difference from every paper portfolio already handed out.
                 </p>
                 <div className="mt-2 flex justify-end">
                   <button
@@ -2588,7 +2588,7 @@ export function CommunityView({ communityId }: Props) {
                   The power animal field guide
                 </h3>
                 <p className="mt-1 text-xs text-muted">
-                  Every book gets scored on how spread out it is, how jumpy
+                  Every portfolio gets scored on how spread out it is, how jumpy
                   the names are, and how big the largest name is. Then it
                   gets the animal that fits. A fun lens, not a grade.
                 </p>
@@ -2724,7 +2724,7 @@ function PowerAnimalCard({
                 )}
               </p>
               <p className={cn("mt-1 text-base font-semibold", tone.name)}>
-                {personality?.animal ?? "No book yet"}
+                {personality?.animal ?? "No portfolio yet"}
               </p>
             </div>
             <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
@@ -2945,7 +2945,7 @@ function ReadOnlyHoldings({
                 </p>
               </div>
               <p className="mt-0.5 text-xs text-muted">
-                {percent(pctBook)} of book · {h.shares} sh · {currency(price)}
+                {percent(pctBook)} of portfolio · {h.shares} sh · {currency(price)}
               </p>
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
                 <span className={signedTone(todayPct, "text-muted")}>
@@ -2957,7 +2957,7 @@ function ReadOnlyHoldings({
         })}
         {holdings.length === 0 && (
           <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-sm text-muted">
-            No holdings on this sheet.
+            No holdings in this portfolio.
           </p>
         )}
         <div className="flex items-center justify-between rounded-xl border border-border px-3 py-3 text-sm">
@@ -2970,7 +2970,7 @@ function ReadOnlyHoldings({
           <thead className="border-b border-border text-xs text-muted">
             <tr>
               <th className="px-3 py-2 font-medium">Ticker</th>
-              <th className="px-3 py-2 font-medium">% Book</th>
+              <th className="px-3 py-2 font-medium">%</th>
               <th className="px-3 py-2 font-medium">Shares</th>
               <th className="px-3 py-2 font-medium">Price</th>
               <th className="px-3 py-2 font-medium">Today</th>
@@ -3010,7 +3010,7 @@ function ReadOnlyHoldings({
             {holdings.length === 0 && (
               <tr>
                 <td className="px-3 py-6 text-center text-muted" colSpan={6}>
-                  No holdings on this sheet.
+                  No holdings in this portfolio.
                 </td>
               </tr>
             )}

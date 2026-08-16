@@ -105,7 +105,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
               </h2>
               <p className="mt-1 text-sm text-muted">
                 {step === 3
-                  ? "Sunday is on. Weekdays only if you want them. These start once there are names in the book. Change this anytime in Account."
+                  ? "Sunday is on. Weekdays only if you want them. These start once there are names in your portfolio. Change this anytime in Account."
                   : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}
               </p>
             </div>

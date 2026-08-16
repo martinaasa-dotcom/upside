@@ -157,7 +157,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     animal: "Hatchling",
     emoji: "🥚",
     criteria: "No names yet",
-    tagline: "No names yet. Every book starts here.",
+    tagline: "No names yet. Every portfolio starts here.",
     vibe: "Nothing picked. Every other animal on this list started right here, deciding what to hatch into.",
     strength: "Nothing to lose, and no bad habits yet.",
     watchFor: "Cash sitting forever is just a savings account. Hatch when you're ready.",
@@ -166,8 +166,8 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     id: "squirrel",
     animal: "Squirrel",
     emoji: "🐿️",
-    criteria: "Cash is at least about 28% of the book",
-    tagline: "Keeps a fat cash stash so a quiet stretch doesn't starve the book.",
+    criteria: "Cash is at least about 28% of your portfolio",
+    tagline: "Keeps a fat cash stash so a quiet stretch doesn't starve your portfolio.",
     vibe: "There are names, but the cash pile is the real personality. Ready to pounce, or just nervously hoarding.",
     strength: "Can buy when prices drop without selling something else first.",
     watchFor: "Cash that never gets used is just a savings account with extra steps.",
@@ -176,7 +176,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     id: "dragon",
     animal: "Dragon",
     emoji: "🐉",
-    criteria: "Crypto is the heaviest group, and a real slice of the book",
+    criteria: "Crypto is the heaviest group, and a real slice of your portfolio",
     tagline: "Sits on jumpy treasure. Up fast, down fast.",
     vibe: "Lives and dies by crypto, and likes it that way. When the pile is up, nothing moves faster.",
     strength: "First in line when those names run.",
@@ -187,7 +187,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     animal: "Panda",
     emoji: "🐼",
     criteria: "Two thirds or more in one kind of stock, not crypto, not an index",
-    tagline: "Eats one thing. When that group moves, the whole book moves.",
+    tagline: "Eats one thing. When that group moves, the whole portfolio moves.",
     vibe: "Not random. A chosen diet. Space pandas, AI pandas, chip pandas. Same animal, different bamboo.",
     strength: "Gets the full ride when that one group is right.",
     watchFor: "A panda with no bamboo left has nothing else to eat.",
@@ -198,7 +198,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     emoji: "🐙",
     criteria: "Three or more kinds of stocks",
     tagline: "A tentacle in every pond. Many kinds of stocks, no single bet on the weather.",
-    vibe: "Curious, or just collected. The book is not one story. It is several, running side by side.",
+    vibe: "Curious, or just collected. Your portfolio is not one story. It is several, running side by side.",
     strength: "A bad year in one pond does not empty the tank.",
     watchFor: "Eight tentacles can become eight half-finished reasons.",
   },
@@ -249,7 +249,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     criteria: "Calm names, and actually spread out",
     tagline: "Watchful and calm, and actually spread out.",
     vibe: "Sees what's coming, and is not all-in on one perch. Calm plus breadth, not calm plus a single name.",
-    strength: "Rarely surprised, rarely rattled. A genuinely calm book.",
+    strength: "Rarely surprised, rarely rattled. A genuinely calm portfolio.",
     watchFor: "All that watching can turn into missed chances. Calm is not the same as asleep.",
   },
   {
@@ -259,7 +259,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     criteria: "Index-broad, or an index fund doing the spreading",
     tagline: "Broad, steady, and hard to spook. Never one bad day away from trouble.",
     vibe: "Built to survive any single name's worst day. Slow to startle, and remembers every cycle it's lived through.",
-    strength: "No single ticker can sink this book on its own.",
+    strength: "No single ticker can sink this portfolio on its own.",
     watchFor: "Broad can drift into bland. Check the spread is on purpose, not just default.",
   },
   {
@@ -270,7 +270,7 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     tagline: "Clever and adaptable. Some offense, some defense. No dogma.",
     vibe: "Some offense, some defense. Doesn't need a label.",
     strength: "Can lean either way when prices shift.",
-    watchFor: "Flexible can turn into unfocused. Know what this book is actually for.",
+    watchFor: "Flexible can turn into unfocused. Know what this portfolio is actually for.",
   },
 ];
 
@@ -429,7 +429,7 @@ function diversificationBandFor(score: number): ScoreBand {
   if (score < 25)
     return {
       label: "Concentrated",
-      description: "A handful of names carry most of the book.",
+      description: "A handful of names carry most of your portfolio.",
     };
   if (score < 50)
     return {
@@ -454,7 +454,7 @@ function riskBandFor(score: number): ScoreBand {
     return { label: "Balanced", description: "A mix of steady and speculative." };
   if (score < 75)
     return { label: "Aggressive", description: "Leans hard into the jumpy, fast-moving names." };
-  return { label: "High-octane", description: "Most of the book is in the hottest, jumpiest names." };
+  return { label: "High-octane", description: "Most of your portfolio is in the hottest, jumpiest names." };
 }
 
 function convictionBandFor(score: number): ScoreBand {
@@ -475,7 +475,7 @@ function convictionBandFor(score: number): ScoreBand {
     };
   return {
     label: "No single name",
-    description: "Nothing dominates. The book moves as a group.",
+    description: "Nothing dominates. The portfolio moves as a group.",
   };
 }
 
@@ -547,7 +547,7 @@ function pickAnimal(opts: {
   if (cashPct >= 28) {
     return {
       archetype: archetype("squirrel"),
-      why: `Cash is ${cashPct}% of the book. That stash is doing more work than any single ticker right now.`,
+      why: `Cash is ${cashPct}% of your portfolio. That stash is doing more work than any single ticker right now.`,
     };
   }
   if (theme === "crypto" && specialistScore >= 35) {
@@ -563,7 +563,7 @@ function pickAnimal(opts: {
   ) {
     return {
       archetype: archetype("panda"),
-      why: `${specialistScore}% of the book sits in ${THEME_LABEL[theme]}. One diet, on purpose.`,
+      why: `${specialistScore}% of your portfolio sits in ${THEME_LABEL[theme]}. One diet, on purpose.`,
     };
   }
   if (themeCount >= 3) {

@@ -119,7 +119,7 @@ export function CsvImportModal({
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
           <p className="text-sm text-muted">
-            Replace this sheet, or paste lines like{" "}
+            Replace this portfolio, or paste lines like{" "}
             <span className="text-foreground">NBIS 500 85.10</span>. CSV columns:
             Ticker, Shares, Buy Price.
           </p>
@@ -257,7 +257,7 @@ export function CsvImportModal({
                 onChange={(e) => setReplace(e.target.checked)}
                 className="h-4 w-4 rounded border-brand-mid bg-well text-brand focus:ring-brand/50"
               />
-              Replace this sheet&apos;s holdings (uncheck to only add/update
+              Replace this portfolio&apos;s holdings (uncheck to only add/update)
               the tickers above, keeping everything else)
             </label>
           )}

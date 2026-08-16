@@ -333,7 +333,7 @@ export function CommunitiesList() {
                 title="Create a community"
                 subtitle={
                   kind === "classroom"
-                    ? "High school or uni. Students join with a link. Everyone starts with the same paper cash and an empty sheet. Real prices. No brokerage."
+                    ? "High school or uni. Students join with a link. Everyone starts with the same paper cash and an empty portfolio. Real prices. No brokerage."
                     : "A private circle for people you invite, or a public one people can ask to join."
                 }
                 actions={

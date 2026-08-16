@@ -57,7 +57,7 @@ const fundDecisionSchema = z.object({
   marketNote: z
     .string()
     .describe(
-      "One short sentence on how today's prices hit this book. Not a generic wrap. Never say tape."
+      "One short sentence on how today's prices hit this portfolio. Not a generic wrap. Never say tape."
     ),
   holdingDecisions: z
     .array(
@@ -222,7 +222,7 @@ export function buildWeeklyRecapUserPrompt(input: {
     ? weekActions
         .map((a) => `- ${a.date}: ${a.type.toUpperCase()} ${a.ticker}: ${a.reasoning}`)
         .join("\n")
-    : "No trades this week, held the book as-is.";
+    : "No trades this week, held the portfolio as-is.";
 
   const holdingsBlock = currentHoldings
     .map(

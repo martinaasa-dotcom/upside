@@ -677,7 +677,7 @@ export function CompoundInterestSheet({
               options={CURRENCIES.map((c) => ({
                 id: c.code,
                 label: c.label,
-                title: c.code === "EUR" ? fxHint : "Your book is kept in USD",
+                title: c.code === "EUR" ? fxHint : "Your portfolio is kept in USD",
               }))}
               value={currency}
               onChange={setCurrencySafe}

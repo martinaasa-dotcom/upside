@@ -19,11 +19,11 @@ const JOB: Record<NoteReport["kind"], string> = {
   morning: `This is the morning note. Look ahead, not back.
 What should this person watch today, what can they ignore, and is there one thing worth doing or is the move "do nothing".
 Do not recap yesterday's regular session. Overnight and today's calendar only.`,
-  close: `This is the after-close note. Recap the day for THIS book.
+  close: `This is the after-close note. Recap the day for THIS portfolio.
 What actually happened, who did it, and whether the reason they own the loud name still holds.
 No new trade plan unless the day's facts changed the story.`,
   sunday: `This is the Sunday note. Cover the week, then look a couple of weeks out.
-How the week treated this book, what that means, and one or two concrete ideas for the next stretch (add on a dip, wait, don't chase, watch a report).
+How the week treated this portfolio, what that means, and one or two concrete ideas for the next stretch (add on a dip, wait, don't chase, watch a report).
 Longer view than the weekday notes. Still plain speech.`,
 };
 
@@ -108,7 +108,7 @@ function facts(r: NoteReport): string {
   const lines = [
     `Kind: ${r.kind}`,
     `Lead: ${r.lead}`,
-    `Book: $${Math.round(r.book).toLocaleString("en-US")} across ${r.nameCount} names`,
+    `Portfolio: $${Math.round(r.book).toLocaleString("en-US")} across ${r.nameCount} names`,
     `${r.todayLabel}: ${money(r.todayDollar)}${r.todayPct != null ? ` (${pct(r.todayPct)})` : ""}`,
   ];
   if (r.movers[0]) {

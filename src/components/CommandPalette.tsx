@@ -82,7 +82,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
               run(active);
             }
           }}
-          placeholder="Jump to sheet, ticker, unlock, Lab …"
+          placeholder="Jump to portfolio, ticker, unlock, Lab …"
           className="w-full border-b border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted"
         />
         <ul className="max-h-80 overflow-y-auto p-1.5">

@@ -54,7 +54,7 @@ export const SHOCKS: ShockDefinition[] = [
     driver: "Baseline",
     headlinePct: 0,
     mechanism: "Today's prices, with no made-up shock applied.",
-    tacticalAction: "What the sheet is worth right now.",
+    tacticalAction: "What your portfolio is worth right now.",
   },
   {
     id: "rates_up",
@@ -94,7 +94,7 @@ export const SHOCKS: ShockDefinition[] = [
     driver: "AI computer builders",
     headlinePct: -0.20,
     mechanism: "Companies pause spending on AI computers. Cloud, chip makers, AI software, and data-center power all feel it.",
-    tacticalAction: "Check how much of the sheet is chip makers and AI computer builders. Don't let one group become the whole sheet.",
+    tacticalAction: "Check how much of your portfolio is chip makers and AI computer builders. Don't let one group become the whole portfolio.",
   },
   {
     id: "btc_winter35",
@@ -607,7 +607,7 @@ export function analyzePortfolioShock(
   const shockedCushionPct = shockedEquity > 0 ? (shockedEquityCushion / shockedEquity) * 100 : -100;
 
   let marginCallRisk: "safe" | "caution" | "critical" = "safe";
-  let statusBlurb = "Cash covers the sheet. Nothing borrowed.";
+  let statusBlurb = "Cash covers your portfolio. Nothing borrowed.";
 
   if (isUsingMargin) {
     if (shockedEquityCushion <= 0) {
@@ -621,7 +621,7 @@ export function analyzePortfolioShock(
       statusBlurb = "Still enough room above the broker's floor.";
     }
   } else if (cash > 0) {
-    statusBlurb = `Cash does not fall with the stocks. The cash share goes from ${(liveTotalVal > 0 ? (cash / liveTotalVal) * 100 : 0).toFixed(1)}% to ${(shockedTotalVal > 0 ? (cash / shockedTotalVal) * 100 : 0).toFixed(1)}% of the book.`;
+    statusBlurb = `Cash does not fall with the stocks. The cash share goes from ${(liveTotalVal > 0 ? (cash / liveTotalVal) * 100 : 0).toFixed(1)}% to ${(shockedTotalVal > 0 ? (cash / shockedTotalVal) * 100 : 0).toFixed(1)}% of your portfolio.`;
   }
 
   const liveCashPct = liveTotalVal > 0 ? (cash / liveTotalVal) * 100 : 0;
@@ -687,7 +687,7 @@ export function analyzePortfolioShock(
         tacticalNotes.push(`Still comfortable, with $${Math.max(0, Math.round(shockedEquityCushion)).toLocaleString()} of room before a forced sale.`);
       }
     } else if (cash > 0) {
-      tacticalNotes.push(`Cash cushions the drop. Cash sitting ready grows to ${shockedCashPct.toFixed(1)}% of the book.`);
+      tacticalNotes.push(`Cash cushions the drop. Cash sitting ready grows to ${shockedCashPct.toFixed(1)}% of your portfolio.`);
     }
 
     if (topVulnerability && Math.abs(topVulnerability.lossSharePct) >= 0.35) {

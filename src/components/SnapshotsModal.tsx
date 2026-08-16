@@ -112,12 +112,12 @@ export function SnapshotsModal({
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(plainError(data.error, "Couldn't put that sheet back."));
+      if (!res.ok) throw new Error(plainError(data.error, "Couldn't put that portfolio back."));
       onRestored("sheet");
       onClose();
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't put that sheet back.");
+      setError(err instanceof Error ? err.message : "Couldn't put that portfolio back.");
       return false;
     } finally {
       setBusyId(null);
@@ -212,7 +212,7 @@ export function SnapshotsModal({
                         }
                         className="rounded border border-border px-2 py-0.5 text-sm text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                       >
-                        {busyId === s.id ? "…" : "Full book"}
+                        {busyId === s.id ? "…" : "All portfolios"}
                       </button>
                       {activePortfolioId && (
                         <button
@@ -227,7 +227,7 @@ export function SnapshotsModal({
                           }
                           className="rounded border border-border px-2 py-0.5 text-sm text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
                         >
-                          {busyId === `${s.id}:sheet` ? "…" : "This sheet"}
+                          {busyId === `${s.id}:sheet` ? "…" : "This portfolio"}
                         </button>
                       )}
                     </div>
@@ -243,15 +243,15 @@ export function SnapshotsModal({
         open={Boolean(pendingRestore)}
         title={
           pendingRestore?.kind === "book"
-            ? "Restore your sheets?"
-            : "Restore this sheet?"
+            ? "Restore your portfolios?"
+            : "Restore this portfolio?"
         }
         body={
           pendingRestore?.kind === "book"
-            ? `Put "${pendingRestore.label}" back on the sheets you own? Other people's books stay as they are. A safety save of your book is taken first.`
+            ? `Put "${pendingRestore.label}" back on the portfolios you own? Other people's portfolios stay as they are. A safety save of yours is taken first.`
             : `Restore "${pendingRestore?.label}" into ${
-                activePortfolioName ?? "this sheet"
-              } only? Other sheets are untouched.`
+                activePortfolioName ?? "this portfolio"
+              } only? Other portfolios are untouched.`
         }
         confirmLabel="Restore"
         destructive

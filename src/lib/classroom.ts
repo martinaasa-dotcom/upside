@@ -51,7 +51,7 @@ const KIND_LABEL: Record<ClassPeriodKind, string> = {
 const KIND_MESSAGE: Record<ClassPeriodKind, string> = {
   open: "You can buy, sell, and move money.",
   buy: "You can add names. You cannot sell yet.",
-  closed: "The teacher closed the sheet. You can look, you cannot buy or sell.",
+  closed: "The teacher closed the portfolio. You can look, you cannot buy or sell.",
   fix: "You can sell and move money. You cannot add new names.",
 };
 
@@ -394,7 +394,7 @@ export async function provisionClassroomSheet(
           return { ok: false, error: pErr.message };
         }
       } else {
-        return { ok: false, error: pErr?.message ?? "Couldn't make the paper sheet." };
+        return { ok: false, error: pErr?.message ?? "Couldn't make the paper portfolio." };
       }
     } else {
       portfolioId = (created as { id: string }).id;

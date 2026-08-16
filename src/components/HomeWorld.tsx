@@ -154,7 +154,7 @@ export function HomeWorld({
       : primary.name
     : "Start a circle";
   const communityDetail = primary
-    ? "Live books, read-only."
+    ? "Live portfolios, read-only."
     : "Invite people you trust.";
 
   return (
@@ -210,7 +210,7 @@ export function HomeWorld({
                   Watch Margus trade
                 </p>
                 <p className="mt-3 text-sm text-muted">
-                  A paper book run in public.
+                  A paper portfolio run in public.
                 </p>
               </>
             )}
@@ -241,7 +241,7 @@ export function HomeWorld({
               {communitiesError
                 ? "Open the page to try again."
                 : communities === null
-                  ? "Compare books with people you actually know."
+                  ? "Compare portfolios with people you actually know."
                   : communityDetail}
             </p>
           </Card>

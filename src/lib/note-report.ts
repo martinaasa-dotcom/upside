@@ -125,7 +125,7 @@ export function notePreview(r: NoteReport): string {
   const top = r.movers[0];
   const pctBit =
     r.todayPct != null
-      ? `${signedPct(r.todayPct)} on the book`
+      ? `${signedPct(r.todayPct)} on your portfolio`
       : "Prices are still coming in";
   if (r.kind === "sunday") {
     const next = r.watches[0]?.line ?? r.perspective[0];
@@ -496,7 +496,7 @@ function perspectiveFor(input: {
   const top = input.weights[0];
   if (top && top.weight >= 0.35) {
     lines.push(
-      `${cashtag(top.ticker)} is ${weightPct(top.weight)} of the book. The next couple of weeks mostly ride on it.`
+      `${cashtag(top.ticker)} is ${weightPct(top.weight)} of your portfolio. The next couple of weeks mostly ride on it.`
     );
   }
   const upcoming = input.earnings.filter((e) => e.days >= 0 && e.days <= 14);
@@ -574,15 +574,15 @@ function closeLead(input: {
   const hook = signedMoney(input.today);
   if (input.quiet) {
     return {
-      lead: "Quiet day. Book barely moved.",
+      lead: "Quiet day. Your portfolio barely moved.",
       subjectHook: hook,
     };
   }
   const top = input.movers[0];
   return {
     lead: top
-      ? `${signedMoney(input.today)} on the book. ${cashtag(top.ticker)} moved the most.`
-      : `${signedMoney(input.today)} on the book.`,
+      ? `${signedMoney(input.today)} on your portfolio. ${cashtag(top.ticker)} moved the most.`
+      : `${signedMoney(input.today)} on your portfolio.`,
     subjectHook: hook,
   };
 }
@@ -705,14 +705,14 @@ export function noteReportText(r: NoteReport): string {
   if (r.kind !== "morning") {
     lines.push(
       "",
-      `Your book  ${money(r.book)}`,
+      `Your portfolio  ${money(r.book)}`,
       names,
       `${r.todayLabel}  ${signedMoney(r.todayDollar)}${
         r.todayPct != null ? `  ${signedPct(r.todayPct)}` : ""
       }`
     );
   } else {
-    lines.push("", `Book ${money(r.book)}. ${names}.`);
+    lines.push("", `Your portfolio ${money(r.book)}. ${names}.`);
   }
   if (r.movers.length > 0) {
     lines.push("", r.moversHeading);
@@ -725,7 +725,7 @@ export function noteReportText(r: NoteReport): string {
   if (r.kind === "sunday" && r.weights.length > 0) {
     lines.push("", "Where it sits");
     for (const w of r.weights) {
-      lines.push(`${cashtag(w.ticker)}  ${weightPct(w.weight)} of the book`);
+      lines.push(`${cashtag(w.ticker)}  ${weightPct(w.weight)} of your portfolio`);
     }
   }
   if (r.kind === "morning" && r.watches.length > 0) {
@@ -743,7 +743,7 @@ export function noteReportText(r: NoteReport): string {
     lines.push("", heading);
     const facts = [
       `${Math.round(r.thesis.shares).toLocaleString("en-US")} shares at ${priceMoney(r.thesis.price)}`,
-      r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of the book` : null,
+      r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of your portfolio` : null,
       r.thesis.todayPct != null
         ? `${r.todayLabel} ${signedPct(r.thesis.todayPct)}  ${signedMoney(r.thesis.todayDollar)}`
         : null,
@@ -829,7 +829,7 @@ function openBookButton(): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:32px 0 0 0">
   <tr>
     <td bgcolor="${CREAM}" style="border-radius:10px">
-      <a href="${BOOK_URL}" style="display:inline-block;padding:12px 18px;font-family:${SANS};font-size:14px;font-weight:600;color:${APP};text-decoration:none">Open the book</a>
+      <a href="${BOOK_URL}" style="display:inline-block;padding:12px 18px;font-family:${SANS};font-size:14px;font-weight:600;color:${APP};text-decoration:none">Open your portfolio</a>
     </td>
   </tr>
 </table>`;
@@ -958,7 +958,7 @@ export function noteReportHtml(r: NoteReport): string {
     );
     const factBits = [
       `${Math.round(r.thesis.shares).toLocaleString("en-US")} shares at ${priceMoney(r.thesis.price)}`,
-      r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of the book` : null,
+      r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of your portfolio` : null,
     ]
       .filter((x): x is string => Boolean(x))
       .join(", ");
@@ -1033,14 +1033,14 @@ export function noteReportHtml(r: NoteReport): string {
   const hero =
     r.kind === "morning"
       ? `<p style="margin:0;font-family:${SANS};font-size:22px;line-height:1.4;font-weight:600;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
-<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
       : `<p style="margin:0;font-family:${SANS};font-size:40px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:${CREAM}">${escapeHtml(signedMoney(r.todayDollar))}</p>
 ${
   r.todayPct != null
     ? `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(signedPct(r.todayPct))}</p>`
     : ""
 }
-<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
 ${
   r.lead
     ? `<p style="margin:24px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(r.lead)}</p>`

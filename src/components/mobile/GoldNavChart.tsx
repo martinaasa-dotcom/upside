@@ -574,7 +574,7 @@ export function GoldNavChart({
             className="h-auto min-w-0 flex-1 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50"
             role="slider"
             tabIndex={0}
-            aria-label="Book value over the year. Drag or use arrow keys to read a day."
+            aria-label="Portfolio value over the year. Drag or use arrow keys to read a day."
             aria-valuemin={0}
             aria-valuemax={lastIdx}
             aria-valuenow={hover ?? lastIdx}

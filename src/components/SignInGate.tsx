@@ -222,7 +222,7 @@ function BookStill() {
       </div>
 
       <div className="mt-5 grid grid-cols-3 gap-3">
-        <Metric label="Book">$91,400</Metric>
+        <Metric label="Portfolio">$91,400</Metric>
         <Metric label="Today" valueClassName="text-gain">
           +$4,180
         </Metric>
@@ -296,7 +296,7 @@ function BookStill() {
           </div>
         </div>
         <Reading className="mt-3" label="Thesis">
-          Cheaper launches. That&apos;s why it&apos;s in the book.
+          Cheaper launches. That&apos;s why it&apos;s in your portfolio.
         </Reading>
       </div>
     </Panel>

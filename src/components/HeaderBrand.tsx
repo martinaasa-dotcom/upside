@@ -42,7 +42,7 @@ export function HeaderBrand({
   className,
   href = "/",
   onClick,
-  title = "Back to your book",
+  title = "Back to your portfolio",
 }: Props) {
   const logo = (
     <UpsideLogo

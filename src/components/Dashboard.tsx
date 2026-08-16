@@ -267,7 +267,7 @@ function PricesAgeStatus({
       className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted"
       title={
         source === "supabase"
-          ? "Shared live book"
+          ? "Shared live portfolio"
           : locked
             ? "Local demo (saved)"
             : "Local demo"
@@ -280,7 +280,7 @@ function PricesAgeStatus({
       {quotesDelayed && pricesSec != null && pricesSec >= 30 * 60
         ? " · delayed"
         : ""}
-      {bookLagging ? ` · book sync ${formatAge(bookSec)}` : ""}
+      {bookLagging ? ` · portfolio sync ${formatAge(bookSec)}` : ""}
     </span>
   );
 }
@@ -933,7 +933,7 @@ export function Dashboard() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error("Sign in required to load your book");
+          throw new Error("Sign in required to load your portfolio");
         }
         throw new Error(`Portfolios request failed (${res.status})`);
       }
@@ -1018,10 +1018,10 @@ export function Dashboard() {
       if (showSplash) {
         setLoadError(
           timedOut
-            ? "Timed out loading your book. Check the connection and retry."
+            ? "Timed out loading your portfolio. Check the connection and retry."
             : err instanceof Error
               ? err.message
-              : "Couldn’t load the shared book. Showing local demo, retry when ready."
+              : "Couldn’t load the shared portfolio. Showing local demo, retry when ready."
         );
         if (!timedOut && !(err instanceof Error && /Sign in/i.test(err.message))) {
           const demo = loadDemoStore();
@@ -1419,7 +1419,7 @@ export function Dashboard() {
             fetchedAt: Date.now(),
           });
         }
-        toast("This sheet changed on another device. We pulled in the latest.", "info");
+        toast("This portfolio changed on another device. We pulled in the latest.", "info");
       } catch (err) {
         if (isAbortError(err)) return;
         /* ignore */
@@ -2364,7 +2364,7 @@ export function Dashboard() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast(
-          plainError(data.error, "Couldn't add that sheet. Try again."),
+          plainError(data.error, "Couldn't add that portfolio. Try again."),
           "error"
         );
         return undefined;
@@ -2374,7 +2374,7 @@ export function Dashboard() {
       seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
       track("sheet_created", { first_sheet: isFirstSheet });
-      if (!opts?.silent) toast("Sheet added", "success");
+      if (!opts?.silent) toast("Portfolio added", "success");
       return created;
     }
     const next = addPortfolio(loadDemoStore(), trimmed);
@@ -2383,7 +2383,7 @@ export function Dashboard() {
     seedNewSheetPanelDefaults(created);
     setActiveId(created.id);
     track("sheet_created", { first_sheet: isFirstSheet });
-    if (!opts?.silent) toast("Sheet added", "success");
+    if (!opts?.silent) toast("Portfolio added", "success");
     return created;
   }
 
@@ -2405,7 +2405,7 @@ export function Dashboard() {
       prev.map((p) => (p.id === id ? { ...p, name } : p))
     );
     setRenameTarget(null);
-    toast("Sheet renamed", "success");
+    toast("Portfolio renamed", "success");
 
     if (source === "supabase") {
       void (async () => {
@@ -2421,7 +2421,7 @@ export function Dashboard() {
             );
           }
           toast(
-            plainError(data.error, "Couldn't rename that sheet. We put the old name back."),
+            plainError(data.error, "Couldn't rename that portfolio. We put the old name back."),
             "error"
           );
         }
@@ -2439,7 +2439,7 @@ export function Dashboard() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         toast(
-          plainError(data.error, "Couldn't delete that sheet. Try again."),
+          plainError(data.error, "Couldn't delete that portfolio. Try again."),
           "error"
         );
         return false;
@@ -2457,7 +2457,7 @@ export function Dashboard() {
       setHoldings(next.holdings);
       if (activeId === id) setActiveId(OVERVIEW_TAB_ID);
     }
-    toast("Sheet deleted", "success");
+    toast("Portfolio deleted", "success");
     return true;
   }
 
@@ -3258,13 +3258,13 @@ export function Dashboard() {
         open={Boolean(confirmDelete)}
         title={
           confirmDelete?.kind === "sheet"
-            ? "Delete portfolio sheet?"
+            ? "Delete this portfolio?"
             : "Delete holding?"
         }
         body={
           confirmDelete?.kind === "sheet"
             ? `Delete “${confirmDelete.label}” and all of its holdings? We take a backup save first.`
-            : `Remove ${confirmDelete?.label ?? "this holding"} from the sheet?`
+            : `Remove ${confirmDelete?.label ?? "this holding"} from this portfolio?`
         }
         confirmLabel="Delete"
         destructive
@@ -3282,7 +3282,7 @@ export function Dashboard() {
         open={confirmResetForecast}
         title="Reset forecast overrides?"
         body={`Clears every manual and Margus-generated EOY price target on ${
-          activePortfolio?.name ?? "this sheet"
+          activePortfolio?.name ?? "this portfolio"
         }. Margus will need to re-reason the whole forecast from scratch on next visit. This can't be undone.`}
         confirmLabel="Reset"
         destructive
@@ -3304,8 +3304,8 @@ export function Dashboard() {
         onRestored={(mode) => {
           toast(
             mode === "sheet"
-              ? "Sheet put back to how it looked in that save"
-              : "All sheets put back to how they looked in that save",
+              ? "Portfolio put back to how it looked in that save"
+              : "All portfolios put back to how they looked in that save",
             "success"
           );
           void loadPortfolios({ silent: true });

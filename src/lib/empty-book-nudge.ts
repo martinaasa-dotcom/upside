@@ -48,7 +48,7 @@ function firstName(displayName: string | null | undefined): string | null {
 }
 
 export function emptyBookNudgeSubject(): string {
-  return "Your book is still empty";
+  return "Your portfolio is still empty";
 }
 
 export function emptyBookNudgeText(
@@ -57,13 +57,13 @@ export function emptyBookNudgeText(
   const hi = firstName(displayName);
   const greeting = hi ? `Hi ${hi}.` : "Hi.";
   return [
-    "Your book is still empty.",
+    "Your portfolio is still empty.",
     greeting,
-    "You signed up about a week ago, and there are still no names in the book.",
+    "You signed up about a week ago, and there are still no names in your portfolio.",
     `${PRODUCT_NAME} is a morning read of the names you own. Paste what you hold. The app watches the prices, flags a name when it jumps, and lets you ask Margus if the reason you own it still holds.`,
     "Getting started is one step. Import the names you already own. A CSV, a screenshot, or type them in. That is the whole start.",
     PRODUCT_ORIGIN,
-    "This is a one-time note. Weekday and Sunday emails start once there are names in the book. You can turn notes off in Account: https://upsidelab.app/account",
+    "This is a one-time note. Weekday and Sunday emails start once there are names in your portfolio. You can turn notes off in Account: https://upsidelab.app/account",
   ].join("\n\n");
 }
 

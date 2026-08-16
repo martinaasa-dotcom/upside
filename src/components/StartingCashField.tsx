@@ -24,7 +24,7 @@ export function StartingCashField({
     <div>
       <p className="text-sm font-medium text-muted">Starting cash</p>
       <p className="mt-1 text-sm leading-relaxed text-muted">
-        Every student gets this on a paper sheet. Same number for the whole
+        Every student gets this on a paper portfolio. Same number for the whole
         class.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">

@@ -84,7 +84,7 @@ export function buildDecisionAlerts(input: {
       id: "decision-margin",
       kind: "info",
       title: "You're using borrowed money",
-      detail: `Cash is ${currency(input.cash, 0)}, so part of this book is on margin. Losses get amplified the same way gains do.`,
+      detail: `Cash is ${currency(input.cash, 0)}, so part of your portfolio is on margin. Losses get amplified the same way gains do.`,
       at: Date.now(),
     });
   }

@@ -778,6 +778,18 @@ run("humanize kills leftover market slang", () => {
     humanizeMargusText("Tape read from the move and the book while the model was busy."),
     /Couldn't get a full model|model was busy/i
   );
+  assert.equal(
+    humanizeMargusText("$NBIS is 35% of the book."),
+    "$NBIS is 35% of your portfolio."
+  );
+  assert.equal(
+    humanizeMargusText("Most of this sheet is chip makers."),
+    "Most of your portfolio is chip makers."
+  );
+  assert.equal(
+    humanizeMargusText("Paste from a spreadsheet."),
+    "Paste from a spreadsheet."
+  );
 });
 
 run("Sunday note never ships the writing brief", () => {
@@ -825,6 +837,10 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /padding:48px 28px 52px 28px/);
   assert.match(email, /const APP = "#0b0b0b"/);
   assert.match(email, /const GAIN = "#5a9a4a"/);
+  assert.doesNotMatch(email, /of the book/);
+  assert.doesNotMatch(email, /Open the book/);
+  assert.match(email, /of your portfolio/);
+  assert.match(email, /Open your portfolio/);
 });
 
 run("novice hides Lab, not Pulse", () => {
@@ -1456,7 +1472,7 @@ run("sign-in reads as a product", () => {
   );
   assert.match(product, /SIGNIN_WHO/);
   assert.match(product, /SIGNIN_POINTS/);
-  assert.match(product, /See what your book did/);
+  assert.match(product, /See what your portfolio did/);
   const gate = readFileSync(
     join(process.cwd(), "src/components/SignInGate.tsx"),
     "utf8"
@@ -1575,8 +1591,8 @@ run("empty book does not lead with Fund", () => {
   assert.doesNotMatch(emptyFn, /HomeWorld/);
   assert.doesNotMatch(emptyFn, /browse circles/);
   assert.doesNotMatch(emptyFn, /Ask Margus first/);
-  assert.match(emptyFn, /homework sheet/);
-  assert.match(emptyFn, /Do not paste a real book/);
+  assert.match(emptyFn, /homework portfolio/);
+  assert.match(emptyFn, /Do not paste a real portfolio/);
   void emptyBlock;
 });
 
@@ -2061,7 +2077,7 @@ run("onboarding asks for weekday and Sunday notes", () => {
   assert.match(onboarding, /noteMorning/);
   assert.match(onboarding, /noteSunday, setNoteSunday\] = useState\(true\)/);
   assert.match(onboarding, /Sunday is on/);
-  assert.match(onboarding, /once there are names in the book/);
+  assert.match(onboarding, /once there are names in your portfolio/);
   assert.match(onboarding, /\{step\}\/3/);
   assert.match(onboarding, /Add what you own/);
   assert.doesNotMatch(onboarding, /saveWatchlist/);
@@ -3083,7 +3099,7 @@ run("dashboard modules sit behind an error boundary", () => {
     "utf8"
   );
   assert.ok(community.includes(`<WidgetErrorBoundary name="Daily Duel"`));
-  assert.ok(/WidgetErrorBoundary[\s\S]{0,80}name="Member book"/.test(community));
+  assert.ok(/WidgetErrorBoundary[\s\S]{0,80}name="Member portfolio"/.test(community));
   const fund = readFileSync(
     join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
     "utf8"
@@ -3403,7 +3419,7 @@ run("empty books skip holdings emails and get one week-later nudge", () => {
   );
 
   const text = emptyBookNudgeText("Martin Aasa");
-  assert.equal(emptyBookNudgeSubject(), "Your book is still empty");
+  assert.equal(emptyBookNudgeSubject(), "Your portfolio is still empty");
   assert.match(text, /Hi Martin\./);
   assert.match(text, /Import the names you already own/);
   assert.match(text, /upsidelab\.app/);

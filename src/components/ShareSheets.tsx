@@ -43,7 +43,7 @@ export function ShareSheets({
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(
-            plainError(data.error, "Couldn't load your sheets.")
+            plainError(data.error, "Couldn't load your portfolios.")
           );
         }
         commit((data.sheets ?? []) as SheetRow[]);
@@ -54,7 +54,7 @@ export function ShareSheets({
         // there was nothing to paint.
         if (loadCommunitySheetsCache(communityId) != null) return;
         setError(
-          e instanceof Error ? e.message : "Couldn't load your sheets."
+          e instanceof Error ? e.message : "Couldn't load your portfolios."
         );
       }
     },

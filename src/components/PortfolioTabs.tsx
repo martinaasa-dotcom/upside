@@ -208,11 +208,11 @@ export function PortfolioTabs({
         <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">
             <p className="mb-1.5 hidden text-sm font-medium text-muted sm:block">
-              In your book
+              In your portfolio
             </p>
             <div
               role="tablist"
-              aria-label="In your book"
+              aria-label="In your portfolio"
               className={cn(
                 "grid h-12 w-full overflow-hidden rounded-lg bg-well/80 ring-1 ring-inset ring-brand/30 sm:h-12",
                 modeCols === 2 && "grid-cols-2 sm:w-[18rem]",
@@ -263,7 +263,7 @@ export function PortfolioTabs({
           </p>
           <div
             role="tablist"
-            aria-label="Portfolio sheets"
+            aria-label="Your portfolios"
             className={cn(
               "scrollbar-none flex h-10 items-stretch gap-0.5 overflow-x-auto border-b border-border/90 snap-x snap-mandatory sm:h-11",
               sheetActive ? "border-border" : "border-border"
@@ -352,7 +352,7 @@ export function PortfolioTabs({
                 type="button"
                 onClick={() => setAdding(true)}
                 className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted hover:text-foreground/80"
-                aria-label="Add sheet"
+                aria-label="Add portfolio"
               >
                 <Plus className="h-3.5 w-3.5" />
                 New

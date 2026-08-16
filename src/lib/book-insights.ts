@@ -24,7 +24,7 @@ const THEME_PLAIN: Record<ForecastTheme, string> = {
   healthcare: "healthcare names",
   drones: "defense and drone names",
   index: "broad market funds",
-  other: "the rest of the book",
+  other: "the rest of your portfolio",
 };
 
 const AI_NEIGHBORS = new Set<ForecastTheme>([
@@ -56,7 +56,7 @@ const NEXT_GROUP: Partial<
   ai_infra: [
     {
       need: "ai_power",
-      line: "This sheet is mostly the computer side. Electricity and power-grid names usually sit next to that if the story is data centers.",
+      line: "Your portfolio is mostly the computer side. Electricity and power-grid names usually sit next to that if the story is data centers.",
     },
     {
       need: "semi",
@@ -90,7 +90,7 @@ const NEXT_GROUP: Partial<
   software: [
     {
       need: "semi",
-      line: "This sheet is software. The hardware underneath it is the usual missing piece when that group runs hot.",
+      line: "Your portfolio is software. The hardware underneath it is the usual missing piece when that group runs hot.",
     },
   ],
   drones: [
@@ -102,7 +102,7 @@ const NEXT_GROUP: Partial<
   fintech: [
     {
       need: "index",
-      line: "Money-app names move when interest rates move. A broader mix next to them keeps one rate cycle from being the whole sheet.",
+      line: "Money-app names move when interest rates move. A broader mix next to them keeps one rate cycle from being the whole portfolio.",
     },
   ],
 };
@@ -132,7 +132,7 @@ function structuralRotation(
   const top = slices[0];
   if (!top || top.pct < 0.55) return null;
   const label = THEME_LABEL[top.theme];
-  return `Most of this sheet is ${label}. If that group has a bad year, the whole sheet feels it, not just one name.`;
+  return `Most of your portfolio is ${label}. If that group has a bad year, the whole portfolio feels it, not just one name.`;
 }
 
 function loudestInTheme(
@@ -205,7 +205,7 @@ function dayRotation(holdings: InsightHolding[]): string | null {
   const closer =
     AI_NEIGHBORS.has(best.theme) && AI_NEIGHBORS.has(worst.theme)
       ? "Both sit in the AI story, but they are not the same bet."
-      : "Those are two different parts of the book. Today's prices treated them that way.";
+      : "Those are two different parts of your portfolio. Today's prices treated them that way.";
   return `${down} are ${aboutPct(worst.pct)} today. ${up} are ${aboutPct(best.pct)}. ${closer}`;
 }
 
@@ -219,7 +219,7 @@ export function buildBookInsights(holdings: InsightHolding[]): BookInsights {
   const promptBlock =
     lines.length === 0
       ? ""
-      : `Book insights (use when relevant, do not force into every reply):
+      : `Portfolio insights (use when relevant, do not force into every reply):
 ${lines.map((l) => `- ${l}`).join("\n")}
 Talk about groups of similar businesses, not a shopping list of new tickers, unless the user asks for names. Educational scenario, not an order to buy. Use plain words a grandma would get. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.`;
 

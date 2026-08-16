@@ -164,7 +164,7 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
   {
     label: "% Total",
     key: "pct",
-    explain: "Share of your whole book's value this position takes up",
+    explain: "Share of your whole portfolio's value this position takes up",
   },
   {
     label: "Shares",
@@ -446,7 +446,7 @@ export function PortfolioTable({
       <div className="space-y-2 p-3 md:hidden">
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
-            <p className="text-sm text-muted">No holdings on this sheet yet.</p>
+            <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
         ) : (
@@ -620,7 +620,7 @@ export function PortfolioTable({
       <div className="hidden md:block">
         {holdings.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <p className="text-sm text-muted">No holdings on this sheet yet.</p>
+            <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
         ) : (

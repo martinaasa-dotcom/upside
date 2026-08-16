@@ -4,8 +4,8 @@
  */
 
 const KNOWN: Record<string, string> = {
-  "portfolio_id required": "Pick a sheet first.",
-  "portfolioId required": "Pick a sheet first.",
+  "portfolio_id required": "Pick a portfolio first.",
+  "portfolioId required": "Pick a portfolio first.",
   "id required": "Something went missing. Try again.",
   "name required": "Give it a name first.",
   "cash or holdings required": "Add cash or at least one holding.",
@@ -13,16 +13,18 @@ const KNOWN: Record<string, string> = {
   "Days must be at least 1.": "Put a number of days, or leave it empty to keep the link live.",
   "Invite code required": "Paste an invite code first.",
   "snapshotId required": "Pick a save first.",
-  "snapshotId and portfolioId required": "Pick a save and a sheet first.",
+  "snapshotId and portfolioId required": "Pick a save and a portfolio first.",
   "This save has none of your sheets.":
-    "This save has none of your sheets.",
+    "This save has none of your portfolios.",
+  "This save has none of your portfolios.":
+    "This save has none of your portfolios.",
   "Unknown action": "That action isn't recognized.",
   "No pulse candidates supplied": "Nothing to check yet.",
   "morning or sunday required": "Pick weekdays, Sundays, or both.",
   "userId required": "Pick a person first.",
   "userId and decision required": "Pick approve or decline.",
   "role required": "Pick a role first.",
-  "portfolioId and forecast snapshot required": "Need a sheet and a forecast first.",
+  "portfolioId and forecast snapshot required": "Need a portfolio and a forecast first.",
   "Not a member": "You're not in this circle.",
   "Admin only": "Only an admin can do that.",
   "Already a member": "You're already in this circle.",
@@ -43,11 +45,11 @@ const KNOWN: Record<string, string> = {
   "Classes stay invite-only": "Classes stay invite-only.",
   "Not a class": "That isn't a class.",
   "Class sheets stay until the class ends.":
-    "Class sheets stay until the class ends.",
+    "Class portfolios stay until the class ends.",
   "This class only shows the paper sheet you were given.":
-    "This class only shows the paper sheet you were given.",
+    "This class only shows the paper portfolio you were given.",
   "Your class sheet stays in the circle.":
-    "Your class sheet stays in the circle.",
+    "Your class portfolio stays in the circle.",
   "invalid starting cash":
     "Starting cash has to be between $1,000 and $10,000,000.",
   "Pick what students can do.": "Pick what students can do.",
@@ -56,7 +58,13 @@ const KNOWN: Record<string, string> = {
   "You can add names. You cannot sell yet.":
     "You can add names. You cannot sell yet.",
   "The teacher closed the sheet. You can look, you cannot buy or sell.":
-    "The teacher closed the sheet. You can look, you cannot buy or sell.",
+    "The teacher closed the portfolio. You can look, you cannot buy or sell.",
+  "The teacher closed the portfolio. You can look, you cannot buy or sell.":
+    "The teacher closed the portfolio. You can look, you cannot buy or sell.",
+  "Couldn't make the paper sheet.":
+    "Couldn't make the paper portfolio.",
+  "Couldn't make the paper portfolio.":
+    "Couldn't make the paper portfolio.",
   "You can sell and move money. You cannot add new names.":
     "You can sell and move money. You cannot add new names.",
   "Invalid ticker": "That ticker doesn't look right.",
@@ -64,7 +72,7 @@ const KNOWN: Record<string, string> = {
   "Invalid knowsOptions": "That options answer isn't valid.",
   "Unrecognized ticker": "Don't recognize that ticker.",
   "Use community book endpoint for peer portfolios":
-    "Open that sheet from the circle, not here.",
+    "Open that portfolio from the circle, not here.",
   "Supabase not configured": "Cloud save isn't available right now.",
   "Supabase not configured, use local demo store":
     "Cloud save isn't available. This copy of the app is local only.",

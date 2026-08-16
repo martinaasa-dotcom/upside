@@ -106,6 +106,38 @@ function scrubMarketJargon(text: string): string {
   s = s.replace(/\bhighest conviction\b/gi, "biggest bet");
   s = s.replace(/\bhigh conviction\b/gi, "a big bet");
   s = s.replace(/\bsector rotation\b/gi, "money moving between groups");
+  s = s.replace(/\bbalance sheets\b/gi, "%%BALANCE_SHEETS%%");
+  s = s.replace(/\bbalance sheet\b/gi, "%%BALANCE_SHEET%%");
+  s = s.replace(/\bspreadsheets\b/gi, "%%SPREADSHEETS%%");
+  s = s.replace(/\bspreadsheet\b/gi, "%%SPREADSHEET%%");
+  s = s.replace(/\bthis book's\b/gi, "your portfolio's");
+  s = s.replace(/\bthe book's\b/gi, "your portfolio's");
+  s = s.replace(/\byour book\b/gi, "your portfolio");
+  s = s.replace(/\bof the book\b/gi, "of your portfolio");
+  s = s.replace(/\bon the book\b/gi, "on your portfolio");
+  s = s.replace(/\bin the book\b/gi, "in your portfolio");
+  s = s.replace(/\bacross the book\b/gi, "across your portfolio");
+  s = s.replace(/\bthe whole book\b/gi, "your whole portfolio");
+  s = s.replace(/\bthis book\b/gi, "your portfolio");
+  s = s.replace(/\bthe book\b/gi, "your portfolio");
+  s = s.replace(/\ba book\b/gi, "a portfolio");
+  s = s.replace(/\bbooks\b/gi, "portfolios");
+  s = s.replace(/\bbook\b/gi, "portfolio");
+  s = s.replace(/\bthis sheet's\b/gi, "your portfolio's");
+  s = s.replace(/\bthe sheet's\b/gi, "your portfolio's");
+  s = s.replace(/\bof the sheet\b/gi, "of your portfolio");
+  s = s.replace(/\bon the sheet\b/gi, "on your portfolio");
+  s = s.replace(/\bin the sheet\b/gi, "in your portfolio");
+  s = s.replace(/\bthe whole sheet\b/gi, "your whole portfolio");
+  s = s.replace(/\bthis sheet\b/gi, "your portfolio");
+  s = s.replace(/\bthe sheet\b/gi, "your portfolio");
+  s = s.replace(/\ba sheet\b/gi, "a portfolio");
+  s = s.replace(/\bsheets\b/gi, "portfolios");
+  s = s.replace(/\bsheet\b/gi, "portfolio");
+  s = s.replace(/%%BALANCE_SHEETS%%/g, "balance sheets");
+  s = s.replace(/%%BALANCE_SHEET%%/g, "balance sheet");
+  s = s.replace(/%%SPREADSHEETS%%/g, "spreadsheets");
+  s = s.replace(/%%SPREADSHEET%%/g, "spreadsheet");
   return s;
 }
 

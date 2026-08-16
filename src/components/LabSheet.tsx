@@ -218,8 +218,8 @@ export function LabSheet({
 
   const scopeLabel =
     scopeId === "book"
-      ? "Entire book"
-      : (portfolios.find((p) => p.id === scopeId)?.name ?? "Sheet");
+      ? "Entire portfolio"
+      : (portfolios.find((p) => p.id === scopeId)?.name ?? "Portfolio");
 
   const scopeApplies = tab === "alloc" || tab === "risk";
 
@@ -325,8 +325,8 @@ export function LabSheet({
               )}
               title={
                 scopeApplies
-                  ? "Narrow these tools down to one sheet"
-                  : "This tool always uses your whole book"
+                  ? "Narrow these tools down to one portfolio"
+                  : "This tool always uses your whole portfolio"
               }
             >
               <option value="book">Everything</option>
@@ -424,7 +424,7 @@ export function LabSheet({
                           ? concentration.topFivePct
                           : concentration.topThreePct) >= 0.8
                           ? "The rest barely moves the needle."
-                          : "The rest of the book carries real weight."
+                          : "The rest of your portfolio carries real weight."
                       }
                       valueClassName={
                         (concentration.positionCount > 5

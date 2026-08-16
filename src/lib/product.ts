@@ -12,20 +12,20 @@ export const PRODUCT_DOMAIN = "upsidelab.app";
 export const PRODUCT_ORIGIN = `https://${PRODUCT_DOMAIN}`;
 
 export const PRODUCT_SENTENCE =
-  "See what your book did. Ask Margus if the thesis still holds.";
+  "See what your portfolio did. Ask Margus if the thesis still holds.";
 
 export const PRODUCT_BLURB =
   "A morning read of the names you own. Not another brokerage.";
 
 /** Name used when a first-run import creates the sheet for you. */
-export const FIRST_SHEET_NAME = "My book";
+export const FIRST_SHEET_NAME = "My portfolio";
 
 /** Sign-in page: the one line under the headline. */
 export const SIGNIN_WHO = "Paste what you own. That's the whole start.";
 
 export const SIGNIN_POINTS = [
   "Pulse watches a name when the price jumps, and whether the thesis moved with it.",
-  "Margus can read the sheet and talk it through with you.",
+  "Margus can read your portfolio and talk it through with you.",
 ] as const;
 
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";

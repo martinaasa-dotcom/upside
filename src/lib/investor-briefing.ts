@@ -177,7 +177,7 @@ export function buildInvestorBriefing(input: {
       link: sheetMostCash(model)
         ? { type: "sheet", portfolioId: sheetMostCash(model)! }
         : { type: "compound" },
-      cta: sheetMostCash(model) ? "Open this sheet" : "Open Compound",
+      cta: sheetMostCash(model) ? "Open this portfolio" : "Open Compound",
     });
   }
 

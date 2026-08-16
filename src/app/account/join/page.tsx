@@ -36,8 +36,8 @@ function JoinInner() {
       track("portfolio_invite_redeemed");
       setStatus(
         data.portfolio?.name
-          ? `Joined ${data.portfolio.name}, opening My book …`
-          : "Joined, opening My book …"
+          ? `Joined ${data.portfolio.name}, opening your portfolio …`
+          : "Joined, opening your portfolio …"
       );
       router.replace("/");
     } catch (e) {
@@ -60,9 +60,9 @@ function JoinInner() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#141414_0%,_#0b0b0b_55%)] px-4 text-foreground">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="w-full max-w-sm space-y-4 text-center">
-          <h1 className="text-lg font-bold">Join a sheet</h1>
+          <h1 className="text-lg font-bold">Join a portfolio</h1>
           <p className="text-sm text-muted">
-            Your partner invited you to edit this book together. Paste the
+            Your partner invited you to edit this portfolio together. Paste the
             code if the link did not fill it in.
           </p>
           {!code && (
@@ -83,7 +83,7 @@ function JoinInner() {
                 type="submit"
                 className="btn-primary py-2.5"
               >
-                Join sheet
+                Join portfolio
               </button>
             </form>
           )}

@@ -139,7 +139,7 @@ function MobileHomeHero({
   const up = totals.roiPct >= 0;
   return (
     <div className="md:hidden">
-      <p className="text-sm text-muted">Book</p>
+      <p className="text-sm text-muted">Portfolio</p>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
         <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-foreground">
           {currency(totals.totalValue, 0)}
@@ -285,13 +285,13 @@ function EmptyBook({
   return (
     <Panel tone="brand" className="overview-fade">
       <h2 className="text-lg font-bold text-foreground">
-        {homework ? "Your homework sheet is empty." : "Your book is empty."}
+        {homework ? "Your homework portfolio is empty." : "Your portfolio is empty."}
       </h2>
       {homework ? (
         <>
           <p className="mt-3 text-sm text-muted">
             This is paper class. Everyone started with the same cash. Buy
-            names with that paper money. Do not paste a real book in here.
+            names with that paper money. Do not paste a real portfolio in here.
           </p>
           {homeworkCash != null && homeworkCash > 0 ? (
             <p className="mt-2 text-sm text-muted">
@@ -305,7 +305,7 @@ function EmptyBook({
             Paste what you own. One name per line: ticker, shares, cost.
           </p>
           <p className="mt-3 text-sm text-muted">
-            This sheet is only yours until you invite someone.
+            This portfolio is only yours until you invite someone.
           </p>
         </>
       )}
@@ -875,9 +875,9 @@ export function OverviewDashboard({
 
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat
-              label="Book"
+              label="Portfolio"
               value={currency(totals.totalValue, 0)}
-              sub={plural(totals.sheetCount, "sheet")}
+              sub={plural(totals.sheetCount, "portfolio")}
             />
             <Stat
               label="Today"
@@ -974,7 +974,7 @@ export function OverviewDashboard({
 
       {multiSheet && (
         <Panel className="overview-fade">
-          <PanelHeader title="Your sheets" />
+          <PanelHeader title="Your portfolios" />
           <div className="mt-6 space-y-4">
             {sheets.map((sheet) => (
               <PortfolioLane

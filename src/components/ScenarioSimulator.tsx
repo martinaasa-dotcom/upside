@@ -86,7 +86,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
     return (
       <EmptyState
         title="Nothing to stress yet"
-        detail="Add a holding and this shows what a rough day would do to the book."
+        detail="Add a holding and this shows what a rough day would do to your portfolio."
       />
     );
   }
@@ -239,7 +239,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   {currency(analysis.cash, 0)}
                 </span>
                 <span className="text-xs tabular-nums text-muted">
-                  {analysis.margin.shockedCashPct.toFixed(1)}% of the book
+                  {analysis.margin.shockedCashPct.toFixed(1)}% of your portfolio
                   after this
                 </span>
               </div>

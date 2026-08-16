@@ -195,7 +195,7 @@ export async function restoreBookFromSnapshot(
   const payload = snap.payload as BookSnapshotPayload;
   const ids = snapshotSheetsForOwner(payload, ownedPortfolioIds);
   if (ids.length === 0) {
-    throw new Error("This save has none of your sheets.");
+    throw new Error("This save has none of your portfolios.");
   }
 
   let holdings = 0;

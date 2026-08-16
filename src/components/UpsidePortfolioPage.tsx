@@ -769,7 +769,7 @@ export function UpsidePortfolioPage() {
   }> => {
     const res = await fetch("/api/portfolios", { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(plainError(data.error, "Couldn't load your sheets."));
+    if (!res.ok) throw new Error(plainError(data.error, "Couldn't load your portfolios."));
     const portfolios: MyPortfolioMeta[] = (data.portfolios ?? []).map(
       (p: { id: string; name: string; cash_balance?: number }) => ({
         id: p.id,
@@ -807,7 +807,7 @@ export function UpsidePortfolioPage() {
       quotes: Record<string, Quote>;
     }> => {
       const meta = portfolios.find((p) => p.id === portfolioId);
-      if (!meta) throw new Error("Sheet not found");
+      if (!meta) throw new Error("Portfolio not found");
       const tickers = [
         ...new Set(
           holdingsList
@@ -954,7 +954,7 @@ export function UpsidePortfolioPage() {
       try {
         await fetchMyPortfolios();
       } catch (e) {
-        setBenchmarkError(e instanceof Error ? e.message : "Couldn't load your sheets.");
+        setBenchmarkError(e instanceof Error ? e.message : "Couldn't load your portfolios.");
       }
     }
   }, [myPortfolios, fetchMyPortfolios]);
@@ -972,7 +972,7 @@ export function UpsidePortfolioPage() {
       const { sheet, spy } = await fetchRecordedPath(pickerSelection);
       if (sheet.length < 2) {
         setBenchmarkError(
-          "Need a few recorded nights on this sheet first."
+          "Need a few recorded nights on this portfolio first."
         );
         return;
       }
@@ -1131,7 +1131,7 @@ export function UpsidePortfolioPage() {
               {!benchmark && pickerOpen && (
                 <div className="mt-3 space-y-2">
                   {myPortfolios === null ? (
-                    <p className="text-sm text-muted">Loading your sheets …</p>
+                    <p className="text-sm text-muted">Loading your portfolios …</p>
                   ) : myPortfolios.length === 0 ? (
                     <p className="text-sm text-muted">
                       You don&apos;t have any sheets to compare yet.
@@ -1144,7 +1144,7 @@ export function UpsidePortfolioPage() {
                           onChange={(e) => setPickerSelection(e.target.value)}
                           className="touch-target appearance-none rounded-md border border-border bg-well px-3 py-1.5 pr-8 text-sm text-foreground focus:border-brand-mid focus:outline-none"
                         >
-                          <option value="">Choose a sheet …</option>
+                          <option value="">Choose a portfolio …</option>
                           {myPortfolios.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name}
@@ -1338,7 +1338,7 @@ export function UpsidePortfolioPage() {
                             valueClassName={signedTone(pnlPct, "text-foreground")}
                           />
                           <Stat
-                            label="Book"
+                            label="Portfolio"
                             value={currency(marketValue, 0)}
                             sub={`${h.shares.toLocaleString("en-US")} sh`}
                           />

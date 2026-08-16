@@ -146,7 +146,7 @@ const MAKERS: FactMaker[] = [
     const croissants = Math.max(1, Math.round(totals.cash / 3.2));
     const coffees = Math.max(1, Math.round(totals.cash / 4.5));
     return pick(rng, [
-      `There's $${money(totals.cash)} sitting ready across the sheets.`,
+      `There's $${money(totals.cash)} sitting ready across your portfolios.`,
       `Cash pile: $${money(totals.cash)}, enough for ~${croissants.toLocaleString("en-US")} Tallinn croissants (theoretically).`,
       `$${money(totals.cash)} idle cash ≈ ${coffees.toLocaleString("en-US")} fancy coffees. Deploy wisely.`,
       `Cash report: $${money(totals.cash)} waiting for a spicy dip.`,
@@ -246,7 +246,7 @@ const MAKERS: FactMaker[] = [
     const fat = [...tickers].sort((a, b) => b.shares - a.shares)[0];
     if (!fat || fat.shares < 1) return null;
     return pick(rng, [
-      `Share hoarder: ${fat.shares.toLocaleString("en-US")} shares of ${cashtag(fat.ticker)} across the books.`,
+      `Share hoarder: ${fat.shares.toLocaleString("en-US")} shares of ${cashtag(fat.ticker)} across your portfolios.`,
       `If shares were stickers, ${cashtag(fat.ticker)} would cover the fridge (${fat.shares.toLocaleString("en-US")} of them).`,
       `${cashtag(fat.ticker)} share count: ${fat.shares.toLocaleString("en-US")}. That's a lot of opinions.`,
     ]);
@@ -271,7 +271,7 @@ const MAKERS: FactMaker[] = [
     return pick(rng, [
       `ROI gap between best and worst ticker: ${pct1(spread)}. Whiplash included.`,
       `Best-vs-worst ROI spread is ${pct1(spread)}. One book, many vibes.`,
-      `The emotional range of this book is ${pct1(spread)} of ROI. Method acting.`,
+      `The emotional range of your portfolio is ${pct1(spread)} of ROI. Method acting.`,
     ]);
   },
 
@@ -327,15 +327,15 @@ const MAKERS: FactMaker[] = [
     const pizzas = Math.max(1, Math.round(totals.totalValue / 25));
     return pick(rng, [
       `The combined book could fund ~${pizzas.toLocaleString("en-US")} very serious pizzas (do not).`,
-      `In pizza units, the books are worth ~${pizzas.toLocaleString("en-US")} larges. Hungry yet?`,
-      `Fun conversion: the book ÷ €25 ≈ ${pizzas.toLocaleString("en-US")} imaginary pizzas.`,
+      `In pizza units, your portfolios are worth ~${pizzas.toLocaleString("en-US")} larges. Hungry yet?`,
+      `Fun conversion: your portfolio ÷ €25 ≈ ${pizzas.toLocaleString("en-US")} imaginary pizzas.`,
     ]);
   },
 
   ({ totals, rng }) => {
     const hours = Math.max(1, Math.round(totals.totalValue / 40));
     return pick(rng, [
-      `At a fake €40/hr, the books equal ~${hours.toLocaleString("en-US")} hours of labor. Touch grass accordingly.`,
+      `At a fake €40/hr, your portfolios equal ~${hours.toLocaleString("en-US")} hours of labor. Touch grass accordingly.`,
       `Roughly ${hours.toLocaleString("en-US")} “hourly wage units” of book value. Capitalism speedrun.`,
     ]);
   },
@@ -383,7 +383,7 @@ const MAKERS: FactMaker[] = [
     );
     return pick(rng, [
       `It's ${weekday} in Tallinn. Perfect day to not check prices every 4 minutes (you will anyway).`,
-      `${weekday} market folklore: the books refuse to be boring today.`,
+      `${weekday} market folklore: your portfolios refuse to be boring today.`,
       `Tallinn says it's ${weekday}. The tickers have been notified.`,
     ]);
   },
@@ -430,7 +430,7 @@ const FILLERS: FactMaker[] = [
     ]),
   ({ sheets, rng }) => {
     const names = sheets.map((s) => s.portfolio.name);
-    if (names.length < 2) return `Shout-out to ${names[0] ?? "the book"}.`;
+    if (names.length < 2) return `Shout-out to ${names[0] ?? "your portfolio"}.`;
     return pick(rng, [
       `Roll call: ${names.join(" · ")}.`,
       `The Avengers assemble: ${names.join(", ")}.`,
