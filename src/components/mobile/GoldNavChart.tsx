@@ -55,10 +55,10 @@ function readNavCacheList(): NavCacheV1[] {
     const parsed = JSON.parse(raw) as NavCacheV1 | NavCacheV2;
     if (parsed?.v === 2 && Array.isArray(parsed.entries)) {
       return parsed.entries.filter(
-        (e) => e?.v === 1 && Array.isArray(e.points) && e.points.length >= 2
+        (e) => e?.v === 1 && Array.isArray(e.points) && e.points.length >= 1
       );
     }
-    if (parsed?.v === 1 && Array.isArray(parsed.points) && parsed.points.length >= 2) {
+    if (parsed?.v === 1 && Array.isArray(parsed.points) && parsed.points.length >= 1) {
       return [parsed];
     }
     return [];
@@ -120,7 +120,7 @@ function cacheMatches(
     c.posKey === posKey &&
     c.assumed === assumed &&
     Math.abs(c.cash - cash) < 0.5 &&
-    c.points.length >= 2
+    c.points.length >= 1
   );
 }
 
@@ -223,35 +223,35 @@ export function useBookNavHistory(input: {
         ) => {
           if (ctrl.signal.aborted) return;
           const raw = data?.points;
-          if (!Array.isArray(raw)) {
-            setLoading(false);
-            return;
-          }
-          const next = usableNavPoints(raw);
-          if (next.length < 2) {
-            setLoading(false);
-            return;
-          }
+          const next = Array.isArray(raw) ? usableNavPoints(raw) : [];
           const nextAssumed = Boolean(data?.assumed);
           const nextFirst = data?.firstRealDate ?? null;
+          // Always pin histKey so loading can't sit on "Working out…" after
+          // "Start from 15 Aug" when recorded nights are one point, empty,
+          // or the request failed. An empty series is a finished empty chart.
           setHist(next);
           setHistKey(paintKey);
           setServerAssumed(nextAssumed);
           setFirstRealDate(nextFirst);
           setLoading(false);
-          rememberNav({
-            v: 1,
-            posKey,
-            assumed,
-            cash: input.cash,
-            points: next,
-            serverAssumed: nextAssumed,
-            firstRealDate: nextFirst,
-          });
+          if (next.length >= 1) {
+            rememberNav({
+              v: 1,
+              posKey,
+              assumed,
+              cash: input.cash,
+              points: next,
+              serverAssumed: nextAssumed,
+              firstRealDate: nextFirst,
+            });
+          }
         }
       )
       .catch((err) => {
         if (isAbortError(err) || ctrl.signal.aborted) return;
+        setHist([]);
+        setHistKey(paintKey);
+        setServerAssumed(false);
         setLoading(false);
       });
     return () => {
@@ -847,7 +847,7 @@ export function BookNavChart({
           />
         </div>
       )}
-      {!assumed && !loading && onRestoreAssumed && (
+      {!assumed && onRestoreAssumed && (
         <div className="mt-3 flex justify-end">
           <button
             type="button"

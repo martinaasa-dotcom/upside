@@ -1414,6 +1414,8 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
   assert.match(nav, /preserveAspectRatio="none"/);
   assert.doesNotMatch(nav, /min-h-\[4\.75rem\]/);
   assert.match(nav, /Held these names all year/);
+  assert.match(nav, /Fill in an assumed year/);
+  assert.doesNotMatch(nav, /!assumed && !loading && onRestoreAssumed/);
   const home = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"
@@ -3513,6 +3515,27 @@ run("year chart never paints a zero or empty live tip", () => {
   });
   assert.equal(withLive[withLive.length - 1]!.nav, 790_000);
   assert.ok(withLive.every((p) => p.nav > 0));
+});
+
+run("year chart can start from a single recorded night", () => {
+  const painted = paintBookNavSeries({
+    hist: [{ date: "2026-08-15", nav: 600_000 }],
+    histBelongsToBook: true,
+    liveNav: 751_030,
+  });
+  assert.equal(painted.length, 2);
+  assert.equal(painted[0]!.date, "2026-08-15");
+  assert.equal(painted[0]!.nav, 600_000);
+  assert.equal(painted[1]!.date, "Live");
+  assert.equal(painted[1]!.nav, 751_030);
+
+  const flat = paintBookNavSeries({
+    hist: [{ date: "2026-08-15", nav: 600_000 }],
+    histBelongsToBook: true,
+    liveNav: 600_000,
+  });
+  assert.equal(flat.length, 2);
+  assert.equal(flat[1]!.date, "Live");
 });
 
 run("YTD anchor keeps the assumed shape and pins the year size", () => {

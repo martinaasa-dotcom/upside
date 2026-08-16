@@ -127,16 +127,19 @@ export function paintBookNavSeries(input: {
 }): NavPoint[] {
   if (!input.histBelongsToBook) return [];
   const hist = usableNavPoints(input.hist);
-  if (hist.length < 2) return [];
+  if (hist.length === 0) return [];
   let next = [...hist];
   if (isUsableNav(input.liveNav)) {
     const last = next[next.length - 1]!;
-    if (Math.abs(last.nav - input.liveNav) > 0.5) {
+    // One recorded night still needs a second point so "Start from 15 Aug"
+    // can draw tonight, even when the book hasn't moved.
+    if (Math.abs(last.nav - input.liveNav) > 0.5 || next.length < 2) {
       next.push({ date: "Live", nav: input.liveNav });
     } else {
       next[next.length - 1] = { ...last, nav: input.liveNav };
     }
   }
+  if (next.length < 2) return [];
   if (
     input.assumed &&
     input.startNav != null &&
