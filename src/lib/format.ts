@@ -66,22 +66,27 @@ export function signedCurrency(
   return formatted;
 }
 
+/** Strip broker currency marks people type in front of a symbol. */
+export function stripTickerDecor(raw: string): string {
+  return raw.trim().replace(/^[€$£]+/g, "").trim();
+}
+
 /**
- * Ticker as a cashtag for display: NBIS -> $NBIS.
+ * Ticker for display: NBIS -> $NBIS. London / Xetra names stay bare
+ * (VUAA.DE, not $VUAA.DE) so a euro listing does not look like a dollar
+ * ticker. Leading $ / € / £ are stripped first, so €VUAA never becomes
+ * $€VUAA.
  *
  * Display only. Never use this for a value that has to round-trip as data:
  * the ticker input in HoldingModal, CSV cells, quote-provider URLs, URL
  * params, React keys, or anything looked up in the `quotes` map. Those all
  * need the bare symbol.
- *
- * Exchange suffixes are kept ($CSPX.L, not $CSPX) since the listing is
- * meaningful, and an already-prefixed string is returned untouched so
- * double application is harmless.
  */
 export function cashtag(ticker: string | null | undefined): string {
-  const t = (ticker ?? "").trim();
+  const t = stripTickerDecor(ticker ?? "").toUpperCase();
   if (!t) return "—";
-  return t.startsWith("$") ? t : `$${t}`;
+  if (/\.[A-Z]{1,3}$/.test(t)) return t;
+  return `$${t}`;
 }
 
 /**

@@ -30,6 +30,7 @@ import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
 import type { TickerSuggestion } from "@/lib/market/ticker-search";
+import { sanitizeTickerDraft } from "@/lib/input-guard";
 import { normalizeYahooTicker, tickerStem } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
 import {
@@ -868,7 +869,7 @@ export function PulsePage({
   }, [candidateSetKey]);
 
   async function checkTicker(tickerRaw: string) {
-    const typed = tickerRaw.trim().toUpperCase();
+    const typed = sanitizeTickerDraft(tickerRaw);
     if (!typed) return;
     setSearchInput("");
     setError(null);
@@ -938,14 +939,14 @@ export function PulsePage({
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
+              onChange={(e) => setSearchInput(sanitizeTickerDraft(e.target.value))}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && suggestions[0]) {
                   e.preventDefault();
                   void checkTicker(suggestions[0]!);
                 }
               }}
-              placeholder="Check any ticker: NVDA, RKLB, BMNR …"
+              placeholder="Check any ticker: NVDA, VUAA, VWCE.DE"
               aria-label="Ticker to check"
               className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
               autoComplete="off"

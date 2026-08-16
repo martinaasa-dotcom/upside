@@ -44,7 +44,7 @@ import {
   saveVisitSnapshot,
   type VisitDiff,
 } from "@/lib/visit-diff";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle, Plus } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
@@ -71,7 +71,7 @@ type Props = {
   showCommunities?: boolean;
   /** Viewer has not opted into options. Hide every covered-call mention. */
   hideOptions?: boolean;
-  /** First-run actions, shown only while the book is completely empty. */
+  /** Add a holding. Shown on the empty first-run card and on Home. */
   onAddHolding?: () => void;
   onImportScreenshot?: () => void;
   onImportCsv?: () => void;
@@ -113,6 +113,7 @@ function MobileHomeHero({
   homeSheetId,
   homeSheets,
   onHomeSheet,
+  onAddHolding,
 }: {
   totals: OverviewModel["totals"];
   alerts: UpsideAlert[];
@@ -135,6 +136,7 @@ function MobileHomeHero({
   homeSheetId: HomeSheetId;
   homeSheets: Array<{ id: string; name: string }>;
   onHomeSheet?: (id: HomeSheetId) => void;
+  onAddHolding?: () => void;
 }) {
   const up = totals.roiPct >= 0;
   return (
@@ -162,6 +164,16 @@ function MobileHomeHero({
         {signedCurrency(totals.todayDollar, 0)} today
         {totals.todayPct != null ? ` · ${percent(totals.todayPct)}` : ""}
       </p>
+      {onAddHolding && (
+        <button
+          type="button"
+          onClick={onAddHolding}
+          className="btn-primary mt-4"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add a holding
+        </button>
+      )}
       {onHomeSheet && homeSheets.length > 1 && (
         <HomeSheetChip
           className="mt-4"
@@ -832,6 +844,7 @@ export function OverviewDashboard({
         homeSheetId={homeSheetId}
         homeSheets={homeSheets}
         onHomeSheet={onHomeSheet}
+        onAddHolding={onAddHolding}
       />
 
       {/* One screen: where you stand, then what to make of it. */}
@@ -859,6 +872,16 @@ export function OverviewDashboard({
                   />
                   {sessionLabel(marketState)}
                 </span>
+                {onAddHolding && (
+                  <button
+                    type="button"
+                    onClick={onAddHolding}
+                    className="btn-primary"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Add a holding
+                  </button>
+                )}
                 {onAskMargus && (
                   <button
                     type="button"

@@ -65,8 +65,9 @@ const BROKER_BARE_TO_YAHOO: Record<string, string> = {
 export function normalizeYahooTicker(raw: string): string {
   let t = raw.trim().toUpperCase().replace(/\s+/g, "");
   if (!t) return t;
-  // Broker UI often prefixes €RHM / $GOOGL
-  t = t.replace(/^[€$£]/, "");
+  // Broker UI often prefixes €RHM / $GOOGL. Strip every leading mark so
+  // $€VUAA does not stay as €VUAA and miss the quote.
+  t = t.replace(/^[€$£]+/, "");
 
   // LON:VOD / XETRA:SAP
   const prefixed = t.match(/^([A-Z]{2,5})[:\-/]([A-Z0-9.\-]+)$/);

@@ -2115,7 +2115,11 @@ export function Dashboard() {
   const startFirstRunAction = useCallback(
     (kind: "manual" | "csv" | "screenshot") => {
       void (async () => {
-        const target = await ensureFirstSheet();
+        const preferred =
+          homeSheetId !== "all"
+            ? portfolios.find((p) => p.id === homeSheetId)
+            : undefined;
+        const target = preferred ?? (await ensureFirstSheet());
         if (!target) return;
         if (activeId !== target.id) setActiveId(target.id);
         if (kind === "manual") setModalOpen(true);
@@ -2125,7 +2129,7 @@ export function Dashboard() {
     },
     // ensureFirstSheet is a function declaration in this component.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeId, portfolios]
+    [activeId, portfolios, homeSheetId]
   );
 
   const handleCsvImport = useCallback(

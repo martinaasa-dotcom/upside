@@ -140,7 +140,8 @@ import {
   sumMoney,
   weightedMean,
 } from "../src/lib/money";
-import { percent, signedPercent } from "../src/lib/format";
+import { cashtag, percent, signedPercent } from "../src/lib/format";
+import { sanitizeTickerDraft } from "../src/lib/input-guard";
 import { priorPriceFromChange, synthesizeSparkline } from "../src/lib/market/sparkline";
 import { concentrationRead, themeBreakdown } from "../src/lib/allocation";
 import { analyzePortfolioShock } from "../src/lib/book-shock";
@@ -2422,7 +2423,15 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.equal(normalizeYahooTicker("VUAA.L"), "VUAA.L");
   assert.equal(normalizeYahooTicker("VWCE"), "VWCE.DE");
   assert.equal(normalizeYahooTicker("NVDA"), "NVDA");
+  assert.equal(normalizeYahooTicker("€VUAA"), "VUAA.DE");
+  assert.equal(normalizeYahooTicker("$€VUAA"), "VUAA.DE");
   assert.equal(tickerStem("VUAA.DE"), "VUAA");
+  assert.equal(sanitizeTickerDraft("€vuaa"), "VUAA");
+  assert.equal(sanitizeTickerDraft("$€VUAA"), "VUAA");
+  assert.equal(cashtag("€VUAA"), "$VUAA");
+  assert.equal(cashtag("$€VUAA"), "$VUAA");
+  assert.equal(cashtag("VUAA.DE"), "VUAA.DE");
+  assert.equal(cashtag("NBIS"), "$NBIS");
   const pulse = readFileSync(
     join(process.cwd(), "src/components/PulsePage.tsx"),
     "utf8"
@@ -2430,11 +2439,17 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.match(pulse, /normalizeYahooTicker/);
   assert.match(pulse, /resolveListedTicker/);
   assert.match(pulse, /\/api\/market\/search/);
+  assert.match(pulse, /sanitizeTickerDraft/);
   const quotes = readFileSync(
     join(process.cwd(), "src/lib/market/quotes.ts"),
     "utf8"
   );
   assert.match(quotes, /aliasResolvedQuotes/);
+  const home = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  assert.match(home, /Add a holding/);
 });
 
 run("onboarding lets you pick this month's popular names", () => {

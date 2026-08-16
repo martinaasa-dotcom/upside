@@ -15,7 +15,8 @@ export function sanitizeTickerDraft(raw: string): string {
   return raw
     .toUpperCase()
     .replace(/<[^>]*>/g, "")
-    .replace(/[^A-Z0-9.:=\-^$€£]/g, "")
+    .replace(/^[€$£]+/, "")
+    .replace(/[^A-Z0-9.:=\-^]/g, "")
     .slice(0, 24);
 }
 
