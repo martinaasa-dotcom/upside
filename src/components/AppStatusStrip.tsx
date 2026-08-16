@@ -55,17 +55,14 @@ export function AppStatusStrip({
 
   return (
     <div className="border-b border-border">
-      <div
-        className={cn(
-          PAGE_COLUMN_CLASS,
-          "flex h-10 items-center justify-between gap-3 overflow-x-auto"
-        )}
-      >
-        <span className="min-w-0 truncate text-sm tabular-nums text-muted">
+      <div className={cn(PAGE_COLUMN_CLASS, "flex h-10 items-center gap-3")}>
+        <span className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted">
           {sec == null ? "Prices · —" : `Prices · ${formatAge(sec)}`}
-          {quotedCount != null && totalCount != null
-            ? ` · ${quotedCount}/${totalCount} names`
-            : ""}
+          {quotedCount != null && totalCount != null ? (
+            <span className="hidden sm:inline">
+              {` · ${quotedCount}/${totalCount} names`}
+            </span>
+          ) : null}
           {quotesDelayed && sec != null && sec >= 30 * 60 ? " · delayed" : ""}
         </span>
         <MacroStrip />
