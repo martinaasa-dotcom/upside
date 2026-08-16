@@ -53,7 +53,7 @@ import {
   fallbackNoteTake,
   looksLikePromptLeak,
 } from "../src/lib/note-margus";
-import { buildNoteReport } from "../src/lib/note-report";
+import { buildNoteReport, loudNoteMoves } from "../src/lib/note-report";
 import {
   inviteEmailAllowlist,
   parseInviteEmails,
@@ -835,17 +835,44 @@ run("Sunday note never ships the writing brief", () => {
   assert.equal(looksLikePromptLeak(fallback), false);
   assert.ok(fallback.length >= 20);
   assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
+  assert.match(fallback, /your portfolio/i);
+  assert.match(fallback, /\n- \$NBIS /);
+  assert.doesNotMatch(fallback, /not the same bet|Thesis intact|of the book/i);
   assert.doesNotMatch(report.lead, /this week/);
   assert.match(report.lead, /\$NBIS was the gainer/);
+  assert.ok(report.loudMovers.some((m) => m.ticker === "NBIS"));
+  const quiet = loudNoteMoves(
+    [
+      { ticker: "DRAM", price: 10, pct: 0.01, dollar: 40 },
+      { ticker: "NBIS", price: 110, pct: 0.34, dollar: 8000 },
+      { ticker: "RDDT", price: 80, pct: -0.06, dollar: -900 },
+    ],
+    50_000
+  );
+  assert.deepEqual(
+    quiet.map((m) => m.ticker),
+    ["NBIS", "RDDT"]
+  );
   const email = readFileSync("src/lib/note-report.ts", "utf8");
   assert.match(email, /font-size:40px;line-height:1\.1;font-weight:700;letter-spacing:-0\.03em;color:\$\{CREAM\}/);
   assert.match(email, /padding:48px 28px 52px 28px/);
   assert.match(email, /const APP = "#0b0b0b"/);
   assert.match(email, /const GAIN = "#5a9a4a"/);
+  assert.match(email, /function noteTakeHtml/);
+  assert.match(email, /function loudNoteMoves/);
   assert.doesNotMatch(email, /of the book/);
   assert.doesNotMatch(email, /Open the book/);
   assert.match(email, /of your portfolio/);
   assert.match(email, /Open your portfolio/);
+  const notes = readFileSync("src/lib/note-margus.ts", "utf8");
+  assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
+  assert.match(notes, /maxOutputTokens: report\.kind === "sunday" \? 480/);
+  assert.equal(
+    looksLikePromptLeak(
+      "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
+    ),
+    true
+  );
 });
 
 run("novice hides Lab, not Pulse", () => {

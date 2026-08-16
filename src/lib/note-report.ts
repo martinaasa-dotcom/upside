@@ -83,6 +83,7 @@ export type NoteReport = {
   subjectHook: string;
   moversHeading: string;
   movers: NoteMover[];
+  loudMovers: NoteMover[];
   weights: NoteWeight[];
   watches: NoteWatch[];
   perspective: string[];
@@ -153,6 +154,20 @@ function signedPct(pct: number): string {
 
 function weightPct(weight: number): string {
   return `${Math.round(Math.abs(weight) * 100)}%`;
+}
+
+/** Names that moved enough to earn a mention. Quiet weeks still get the
+ * three loudest so the note has something specific to say. */
+export function loudNoteMoves(
+  movers: NoteMover[],
+  book: number
+): NoteMover[] {
+  const dollarFloor = Math.max(1000, Math.abs(book) * 0.004);
+  const hits = movers.filter(
+    (m) => Math.abs(m.pct) >= 0.04 || Math.abs(m.dollar) >= dollarFloor
+  );
+  const picked = (hits.length > 0 ? hits : movers.slice(0, 3)).slice(0, 12);
+  return [...picked].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
 }
 
 function escapeHtml(s: string): string {
@@ -666,6 +681,7 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
           ? "What moved this week"
           : "What moved",
     movers,
+    loudMovers: loudNoteMoves(t.movers, t.book),
     weights: t.weights,
     watches,
     perspective:
@@ -825,6 +841,58 @@ function weightBar(weight: number): string {
 </table>`;
 }
 
+function noteTakeHtml(text: string): string {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const chunks: string[] = [];
+  let prose: string[] = [];
+  let bullets: string[] = [];
+
+  const flushProse = () => {
+    if (prose.length === 0) return;
+    const first = chunks.length === 0;
+    chunks.push(
+      `<p style="margin:${first ? "10px 0 0 0" : "16px 0 0 0"};font-family:${SANS};font-size:18px;line-height:1.55;font-weight:500;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
+    );
+    prose = [];
+  };
+  const flushBullets = () => {
+    if (bullets.length === 0) return;
+    const rows = bullets
+      .map(
+        (item) =>
+          `<tr>
+  <td style="width:16px;padding:4px 0 4px 0;vertical-align:top;font-family:${SANS};font-size:18px;line-height:1.45;color:${GOLD}">•</td>
+  <td style="padding:4px 0;font-family:${SANS};font-size:17px;line-height:1.45;font-weight:500;color:${CREAM}">${escapeHtml(item)}</td>
+</tr>`
+      )
+      .join("");
+    chunks.push(
+      `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:14px 0 0 0">${rows}</table>`
+    );
+    bullets = [];
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) {
+      flushProse();
+      flushBullets();
+      continue;
+    }
+    const bullet = line.match(/^[-*•]\s+(.*)$/);
+    if (bullet) {
+      flushProse();
+      bullets.push(bullet[1] ?? "");
+      continue;
+    }
+    flushBullets();
+    prose.push(line);
+  }
+  flushProse();
+  flushBullets();
+  return chunks.join("");
+}
+
 function openBookButton(): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:32px 0 0 0">
   <tr>
@@ -930,7 +998,7 @@ export function noteReportHtml(r: NoteReport): string {
     <td style="width:3px;background:${GOLD};font-size:0;line-height:0;border-radius:2px">&nbsp;</td>
     <td style="padding:2px 0 2px 16px">
       ${kicker("Margus")}
-      <p style="margin:10px 0 0 0;font-family:${SANS};font-size:18px;line-height:1.5;font-weight:500;color:${CREAM}">${escapeHtml(r.margus)}</p>
+      ${noteTakeHtml(r.margus)}
       <p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
     </td>
   </tr>
