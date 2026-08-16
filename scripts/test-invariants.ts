@@ -1961,6 +1961,9 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.doesNotMatch(controls, /Or borrow one/);
   assert.doesNotMatch(controls, /Full Book Value/);
   assert.doesNotMatch(controls, /Your book/);
+  assert.doesNotMatch(controls, /flex-wrap/);
+  assert.doesNotMatch(controls, /ChipButton/);
+  assert.match(controls, /columns=\{2\}/);
   assert.match(controls, /This portfolio/);
 });
 

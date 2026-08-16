@@ -80,6 +80,17 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
   { code: "EUR", label: "EUR" },
 ];
 
+const FIELD_CLASS =
+  "w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-brand";
+
+const YEAR_PRESETS = [5, 10, 20, 30] as const;
+const RATE_PRESETS = [
+  { id: "book", label: "This portfolio" },
+  { id: "spy", label: "S&P 500" },
+  { id: "15", label: "15%" },
+  { id: "25", label: "25%" },
+] as const;
+
 export type CompoundSheetOption = {
   id: string;
   name: string;
@@ -130,62 +141,6 @@ function money(
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(shown);
-}
-
-function SegButton({
-  active,
-  onClick,
-  children,
-  className,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-md px-3 py-1.5 text-sm font-medium transition touch-target",
-        active
-          ? "bg-select text-select-ink"
-          : "text-muted hover:bg-hover hover:text-foreground",
-        className
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function ChipButton({
-  active,
-  onClick,
-  children,
-  className,
-}: {
-  active?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-md px-3 py-1.5 text-sm font-medium transition tabular-nums",
-        active
-          ? "bg-select text-select-ink font-semibold"
-          : "border border-border bg-well/60 text-muted hover:border-border hover:bg-hover hover:text-foreground",
-        className
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function ComparePathsChart({
@@ -371,7 +326,7 @@ function ComparePathsChart({
           );
         })}
       </ChartXRail>
-      <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+      <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted sm:grid-cols-4">
         {paths.map((p) => (
           <li key={p.id} className="inline-flex items-center gap-1.5">
             <span
@@ -669,6 +624,31 @@ export function CompoundInterestSheet({
   const isRateMatchedToPortfolio = Math.abs(draft.ratePercent - portfolioExpectedRatePct) < 0.05;
   const annualRateInput =
     draft.ratePeriod === "annual" ? draft.ratePercent : draft.ratePercent * 12;
+  const ratePreset = isRateMatchedToPortfolio
+    ? "book"
+    : annualRateInput === 10
+      ? "spy"
+      : annualRateInput === 15
+        ? "15"
+        : annualRateInput === 25
+          ? "25"
+          : null;
+  const yearPreset = YEAR_PRESETS.includes(
+    draft.years as (typeof YEAR_PRESETS)[number]
+  )
+    ? String(draft.years)
+    : null;
+
+  function applyRatePreset(id: (typeof RATE_PRESETS)[number]["id"]) {
+    if (id === "book") {
+      syncToPortfolioRate();
+      return;
+    }
+    patchDraft("ratePeriod", "annual");
+    if (id === "spy") patchDraft("ratePercent", 10);
+    else if (id === "15") patchDraft("ratePercent", 15);
+    else patchDraft("ratePercent", 25);
+  }
 
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
@@ -693,14 +673,26 @@ export function CompoundInterestSheet({
         />
 
         <div className="mt-6 divide-y divide-white/10">
-        <section className="space-y-2.5 pb-5">
+        <section className="space-y-3 pb-5">
           <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
             Starting from
           </label>
+          <FormattedNumberInput
+            id="compound-principal-input"
+            kind="money"
+            currency={currency}
+            value={usdToDisplay(draft.principal, currency, eurUsd)}
+            onChange={(n) => {
+              setPrincipalSource("custom");
+              onMoneyUsdChange(n, (usd) => patchDraft("principal", usd));
+            }}
+            className={FIELD_CLASS}
+          />
           <select
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
-            className="w-full rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand"
+            aria-label="Where the starting amount comes from"
+            className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-brand"
           >
             {bookValue > 0 && (
               <option value="book">
@@ -714,58 +706,12 @@ export function CompoundInterestSheet({
             ))}
             <option value="custom">Type an amount</option>
           </select>
-          <FormattedNumberInput
-            id="compound-principal-input"
-            kind="money"
-            currency={currency}
-            value={usdToDisplay(draft.principal, currency, eurUsd)}
-            onChange={(n) => {
-              setPrincipalSource("custom");
-              onMoneyUsdChange(n, (usd) => patchDraft("principal", usd));
-            }}
-            className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
-          />
         </section>
 
-        <section className="space-y-2.5 py-5">
+        <section className="space-y-3 py-5">
           <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
             Growing at
           </label>
-          <div className="flex flex-wrap gap-1">
-            <ChipButton
-              active={isRateMatchedToPortfolio}
-              onClick={syncToPortfolioRate}
-            >
-              This portfolio ({portfolioExpectedRatePct.toFixed(1)}%)
-            </ChipButton>
-            <ChipButton
-              active={!isRateMatchedToPortfolio && annualRateInput === 10}
-              onClick={() => {
-                patchDraft("ratePercent", 10);
-                patchDraft("ratePeriod", "annual");
-              }}
-            >
-              S&P 500
-            </ChipButton>
-            <ChipButton
-              active={!isRateMatchedToPortfolio && annualRateInput === 15}
-              onClick={() => {
-                patchDraft("ratePercent", 15);
-                patchDraft("ratePeriod", "annual");
-              }}
-            >
-              15%
-            </ChipButton>
-            <ChipButton
-              active={!isRateMatchedToPortfolio && annualRateInput === 25}
-              onClick={() => {
-                patchDraft("ratePercent", 25);
-                patchDraft("ratePeriod", "annual");
-              }}
-            >
-              25%
-            </ChipButton>
-          </div>
           <div className="relative">
             <FormattedNumberInput
               id="compound-rate-input"
@@ -775,29 +721,25 @@ export function CompoundInterestSheet({
                 patchDraft("ratePercent", Math.max(0, n));
                 patchDraft("ratePeriod", "annual");
               }}
-              className="w-full rounded-lg border border-border bg-well px-3 py-2 pr-16 text-sm font-semibold text-foreground outline-none focus:border-brand"
+              className={cn(FIELD_CLASS, "pr-16")}
             />
-            <span className="pointer-events-none absolute right-3 top-2.5 text-sm text-muted">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">
               a year
             </span>
           </div>
+          <Segmented
+            ariaLabel="Growth rate preset"
+            columns={2}
+            options={RATE_PRESETS}
+            value={ratePreset}
+            onChange={applyRatePreset}
+          />
         </section>
 
-        <section className="space-y-2.5 py-5">
+        <section className="space-y-3 py-5">
           <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
             For how long
           </label>
-          <div className="flex flex-wrap gap-1">
-            {[5, 10, 20, 30].map((yr) => (
-              <ChipButton
-                key={yr}
-                active={draft.years === yr}
-                onClick={() => patchDraft("years", yr)}
-              >
-                {yr} years
-              </ChipButton>
-            ))}
-          </div>
           <div className="relative">
             <input
               id="compound-duration-input"
@@ -809,17 +751,27 @@ export function CompoundInterestSheet({
                 const val = parseInt(e.target.value, 10);
                 patchDraft("years", Number.isNaN(val) ? 1 : Math.min(50, Math.max(1, val)));
               }}
-              className="no-spinner w-full rounded-lg border border-border bg-well px-3 py-2 pr-14 text-sm font-semibold text-foreground outline-none focus:border-brand"
+              className={cn(FIELD_CLASS, "no-spinner pr-16")}
             />
-            <span className="pointer-events-none absolute right-3 top-2.5 text-sm text-muted">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">
               years
             </span>
           </div>
+          <Segmented
+            ariaLabel="How many years"
+            columns={2}
+            options={YEAR_PRESETS.map((yr) => ({
+              id: String(yr),
+              label: `${yr} years`,
+            }))}
+            value={yearPreset}
+            onChange={(id) => patchDraft("years", Number(id))}
+          />
         </section>
 
         <section
           className={cn(
-            "space-y-2.5 py-5 transition",
+            "space-y-3 py-5 transition",
             tipFlash && "rounded-lg bg-gain/[0.06]"
           )}
         >
@@ -828,7 +780,7 @@ export function CompoundInterestSheet({
           </span>
           <Segmented
             ariaLabel="Deposits or withdrawals"
-            className="flex-wrap"
+            columns={2}
             options={[
               { id: "deposits", label: "Paying in" },
               { id: "none", label: "None" },
@@ -843,40 +795,36 @@ export function CompoundInterestSheet({
 
           {(draft.contributionMode === "deposits" ||
             draft.contributionMode === "both") && (
-            <div className="space-y-2.5">
-              <div className="grid grid-cols-[1fr_auto] gap-2">
-                <FormattedNumberInput
-                  id="compound-deposit-input"
-                  kind="money"
-                  currency={currency}
-                  value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
-                  onChange={(n) =>
-                    onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
-                  }
-                  className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
-                />
-                <select
-                  value={draft.depositFrequency}
-                  onChange={(e) =>
-                    patchDraft(
-                      "depositFrequency",
-                      e.target.value as ContributionFrequency
-                    )
-                  }
-                  className="rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand"
-                  aria-label="How often you pay in"
-                >
-                  <option value="monthly">a month</option>
-                  <option value="annually">a year</option>
-                </select>
-              </div>
+            <div className="space-y-3">
+              <FormattedNumberInput
+                id="compound-deposit-input"
+                kind="money"
+                currency={currency}
+                value={usdToDisplay(draft.depositAmount, currency, eurUsd)}
+                onChange={(n) =>
+                  onMoneyUsdChange(n, (usd) => patchDraft("depositAmount", usd))
+                }
+                className={FIELD_CLASS}
+              />
+              <Segmented
+                ariaLabel="How often you pay in"
+                columns={2}
+                options={[
+                  { id: "monthly", label: "A month" },
+                  { id: "annually", label: "A year" },
+                ]}
+                value={draft.depositFrequency}
+                onChange={(id) =>
+                  patchDraft("depositFrequency", id as ContributionFrequency)
+                }
+              />
               <label className="flex items-center justify-between gap-3 text-sm text-muted">
                 Raise it each year
                 <FormattedNumberInput
                   kind="percent"
                   value={draft.annualIncrease}
                   onChange={(n) => patchDraft("annualIncrease", n)}
-                  className="w-20 rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                  className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
                 />
               </label>
               {tipping != null && (
@@ -900,19 +848,19 @@ export function CompoundInterestSheet({
                     patchDraft("withdrawalAmount", usd)
                   )
                 }
-                className="mt-1 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
+                className={cn(FIELD_CLASS, "mt-1.5")}
               />
             </label>
           )}
         </section>
 
-        <section className="space-y-2.5 pt-5">
+        <section className="space-y-3 pt-5">
           <span className="text-sm font-semibold text-foreground">
             If it starts badly
           </span>
           <Segmented
             ariaLabel="Rough start"
-            className="flex-wrap"
+            columns={3}
             options={[
               { id: "none", label: "Even years" },
               { id: "drawdown30", label: "Crash first" },
@@ -1152,29 +1100,32 @@ export function CompoundInterestSheet({
           <PanelHeader
             title="Any single year, in words"
           />
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {storyOpts.map((y, i) => (
-              <SegButton
-                key={y}
-                active={safeStoryIdx === i}
-                onClick={() => setStoryIdx(i)}
-                className={
-                  tipping === y
-                    ? safeStoryIdx === i
-                      ? "bg-gain text-paper"
-                      : "text-gain ring-1 ring-inset ring-gain"
-                    : undefined
-                }
-              >
-                Year {y}
-                {tipping === y ? (
-                  <span className="sr-only">
-                    Tipping year: interest outpaces deposits
-                  </span>
-                ) : null}
-              </SegButton>
-            ))}
-          </div>
+          <Segmented
+            ariaLabel="Year to read"
+            className="mt-3"
+            columns={
+              storyOpts.length <= 3
+                ? Math.max(storyOpts.length, 1)
+                : storyOpts.length === 4
+                  ? 2
+                  : storyOpts.length === 5
+                    ? 5
+                    : 3
+            }
+            options={storyOpts.map((y) => ({
+              id: String(y),
+              label: `Year ${y}`,
+              title:
+                tipping === y
+                  ? `Year ${y}, growth takes over`
+                  : `Year ${y}`,
+            }))}
+            value={String(storyYear)}
+            onChange={(id) => {
+              const i = storyOpts.indexOf(Number(id));
+              if (i >= 0) setStoryIdx(i);
+            }}
+          />
           {storyRow && (
             <Card tone="raised" className="mt-4 p-4">
               <MicroLabel>After year {storyRow.index}</MicroLabel>

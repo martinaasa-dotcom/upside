@@ -557,22 +557,36 @@ export function Segmented<T extends string>({
   disabled = false,
   ariaLabel,
   className,
+  columns,
 }: {
   options: readonly { id: T; label: string; title?: string }[];
-  value: T;
+  value: T | null;
   onChange: (id: T) => void;
   disabled?: boolean;
   ariaLabel?: string;
   className?: string;
+  /**
+   * Equal cells that fill the width. Pick a count that divides the
+   * options so the last row is full. Omit for a compact inline toggle.
+   */
+  columns?: number;
 }) {
+  const fill = columns != null && columns > 0;
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 rounded-lg border border-border bg-well p-0.5",
+        fill
+          ? "grid w-full gap-px overflow-hidden rounded-lg border border-border bg-border"
+          : "inline-flex shrink-0 rounded-lg border border-border bg-well p-0.5",
         className
       )}
+      style={
+        fill
+          ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
+          : undefined
+      }
     >
       {options.map((o) => (
         <button
@@ -584,13 +598,16 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "touch-target rounded-md px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
+            "touch-target min-w-0 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
+            fill ? "bg-well px-2 py-2.5" : "rounded-md px-3 py-1.5",
             value === o.id
-              ? "bg-select text-select-ink"
-              : "text-muted hover:text-foreground"
+              ? "bg-select text-select-ink font-semibold"
+              : fill
+                ? "text-muted hover:bg-hover hover:text-foreground"
+                : "text-muted hover:text-foreground"
           )}
         >
-          {o.label}
+          <span className="block truncate">{o.label}</span>
         </button>
       ))}
     </div>
