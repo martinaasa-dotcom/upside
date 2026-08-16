@@ -145,14 +145,25 @@ function ActionBadge({ action }: { action: PulseAction }) {
   return <Pill tone={tone}>{actionLabel(action)}</Pill>;
 }
 
-function statusBorder(status: ThesisStatus, urgent: boolean, pinned: boolean) {
+function pulseCardChrome({
+  pinned,
+  needsLook,
+  downDay,
+  status,
+}: {
+  pinned: boolean;
+  needsLook: boolean;
+  downDay: boolean;
+  status: ThesisStatus | null;
+}): string {
   if (pinned) return "border-white/20 bg-hover ring-1 ring-brand/30";
-  if (urgent && status !== "intact") {
-    return "border-loss/40 bg-loss/[0.10]";
+  if (needsLook) {
+    if (downDay || status === "broken") {
+      return "border-l-[3px] border-loss/50 border-l-loss bg-loss/[0.12]";
+    }
+    return "border-l-[3px] border-caution/50 border-l-caution bg-caution/[0.12]";
   }
-  if (status === "intact") return "border-gain/30 bg-gain/[0.08]";
-  if (status === "watch") return "border-white/12 bg-hover";
-  return "border-loss/30 bg-loss/[0.08]";
+  return "border-border bg-raised";
 }
 
 function PulseCard({
@@ -166,6 +177,7 @@ function PulseCard({
   onWriteThesis,
   pinned = false,
   leftHold = false,
+  needsLook = false,
 }: {
   candidate: PulseCandidate;
   check?: PulseCheck;
@@ -177,6 +189,7 @@ function PulseCard({
   onWriteThesis?: () => void;
   pinned?: boolean;
   leftHold?: boolean;
+  needsLook?: boolean;
 }) {
   const pct = c.effectivePct ?? 0;
   const up = pct >= 0;
@@ -196,11 +209,12 @@ function PulseCard({
       id={`pulse-card-${c.ticker}`}
       className={cn(
         "rounded-xl border px-4 py-4 scroll-mt-28",
-        shown
-          ? statusBorder(status, c.isBigMove || leftHold, pinned)
-          : pinned
-            ? "border-white/20 bg-hover ring-1 ring-brand/30"
-            : "border-border bg-raised"
+        pulseCardChrome({
+          pinned,
+          needsLook,
+          downDay: pct < 0,
+          status: shown ? status : null,
+        })
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1107,7 +1121,11 @@ export function PulsePage({
         <div className="space-y-5">
           {attention.length > 0 && (
             <section>
-              <h3 className="mb-3 text-sm font-medium text-muted">
+              <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-caution"
+                  aria-hidden
+                />
                 Needs a look
               </h3>
               <ul className="space-y-4">
@@ -1127,6 +1145,7 @@ export function PulsePage({
                       onWriteThesis ? () => onWriteThesis(c.ticker) : undefined
                     }
                     leftHold={leftHoldTickers.has(c.ticker.toUpperCase())}
+                    needsLook
                   />
                 ))}
               </ul>
