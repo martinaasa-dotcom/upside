@@ -511,13 +511,6 @@ export function PulsePage({
     [model, mergedQuotes]
   );
 
-  const skippedTickers = useMemo(() => {
-    const checked = new Set(candidates.map((c) => c.ticker.toUpperCase()));
-    return model.tickers
-      .filter((t) => !checked.has(t.ticker.toUpperCase()))
-      .map((t) => t.ticker);
-  }, [candidates, model.tickers]);
-
   // Every check + its headlines, retained per ticker for good — never
   // cleared just because a background refresh is running or a new
   // calendar day started. Hydrated SYNCHRONOUSLY from localStorage in the
@@ -1026,38 +1019,24 @@ export function PulsePage({
           </div>
         )}
 
-        {(fearGreed || skippedTickers.length > 0) && (
+        {fearGreed && (
           <p
             className="mt-4 text-sm text-muted"
             title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
           >
-            {fearGreed && (
-              <>
-                Market mood:{" "}
-                <span
-                  className={cn(
-                    "font-semibold tabular-nums",
-                    fearGreedTone(fearGreed.score) === "fear" && "text-loss",
-                    fearGreedTone(fearGreed.score) === "neutral" && "text-foreground/80",
-                    fearGreedTone(fearGreed.score) === "greed" && "text-gain"
-                  )}
-                >
-                  {fearGreed.rating.toLowerCase()}
-                </span>
-                {", "}
-                <span className="tabular-nums">{fearGreed.score} of 100</span>
-              </>
-            )}
-            {fearGreed && skippedTickers.length > 0 ? ". " : ""}
-            {skippedTickers.length > 0 && (
-              <>
-                Skipping{" "}
-                {skippedTickers.map((t) => cashtag(t)).join(", ")}
-                {" "}
-                (quiet, under 5%)
-              </>
-            )}
-            .
+            Market mood:{" "}
+            <span
+              className={cn(
+                "font-semibold tabular-nums",
+                fearGreedTone(fearGreed.score) === "fear" && "text-loss",
+                fearGreedTone(fearGreed.score) === "neutral" && "text-foreground/80",
+                fearGreedTone(fearGreed.score) === "greed" && "text-gain"
+              )}
+            >
+              {fearGreed.rating.toLowerCase()}
+            </span>
+            {", "}
+            <span className="tabular-nums">{fearGreed.score} of 100</span>.
           </p>
         )}
 
