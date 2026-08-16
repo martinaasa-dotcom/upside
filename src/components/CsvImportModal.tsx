@@ -7,6 +7,7 @@ import {
   type CsvHoldingRow,
   type CsvSkippedRow,
 } from "@/lib/csv-import";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn, cashtag } from "@/lib/format";
 import { AlertTriangle, Download, FileUp, X } from "lucide-react";
 import { useRef, useState } from "react";
@@ -92,14 +93,14 @@ export function CsvImportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <ViewportOverlay className="z-[70] flex items-center justify-center p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Close"
         onClick={handleClose}
       />
-      <div className="relative z-10 flex max-h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
+      <div className="relative z-10 flex max-h-[min(100%,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <FileUp className="h-4 w-4 text-brand-bright" />
@@ -285,6 +286,6 @@ export function CsvImportModal({
           </button>
         </div>
       </div>
-    </div>
+    </ViewportOverlay>
   );
 }

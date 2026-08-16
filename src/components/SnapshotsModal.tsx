@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { plainError } from "@/lib/plain-error";
 import { History, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -146,14 +147,14 @@ export function SnapshotsModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <ViewportOverlay className="z-[60] flex items-center justify-center p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative z-10 flex max-h-[min(90dvh,560px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-xl">
+      <div className="relative z-10 flex max-h-[min(100%,560px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-brand-bright" />
@@ -263,6 +264,6 @@ export function SnapshotsModal({
             : restoreSheet(pendingRestore.id);
         }}
       />
-    </div>
+    </ViewportOverlay>
   );
 }

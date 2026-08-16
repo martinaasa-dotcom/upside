@@ -6,6 +6,7 @@ import {
   saveStoredTier,
   type ExperienceTier,
 } from "@/lib/experience-tier";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { Check, GraduationCap, Settings, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
@@ -88,8 +89,8 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
   const resultLabel = result ? EXPERIENCE_TIERS.find((t) => t.id === result)?.label : null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[min(85dvh,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
+    <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/70 p-4">
+      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
@@ -234,6 +235,6 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </ViewportOverlay>
   );
 }

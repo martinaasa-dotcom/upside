@@ -1414,6 +1414,49 @@ run("signed-in pages share one column so rooms do not jump", () => {
   assert.match(css, /touch-action:\s*pan-y/);
 });
 
+run("sheets sit in the visible viewport so the keyboard cannot cover them", () => {
+  const overlay = readFileSync(
+    join(process.cwd(), "src/components/ui/ViewportOverlay.tsx"),
+    "utf8"
+  );
+  const vars = readFileSync(
+    join(process.cwd(), "src/lib/use-visual-viewport.ts"),
+    "utf8"
+  );
+  const providers = readFileSync(
+    join(process.cwd(), "src/components/Providers.tsx"),
+    "utf8"
+  );
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  assert.match(overlay, /--vv-height/);
+  assert.match(overlay, /scrollIntoView/);
+  assert.match(vars, /visualViewport/);
+  assert.match(vars, /--vv-height/);
+  assert.match(providers, /VisualViewportVars/);
+  assert.match(css, /\.viewport-overlay input/);
+  const sheets = [
+    "HoldingModal.tsx",
+    "CashModal.tsx",
+    "YtdAnchorModal.tsx",
+    "InvitePartnerModal.tsx",
+    "CsvImportModal.tsx",
+    "RenameSheetModal.tsx",
+    "CostBasisModal.tsx",
+    "SnapshotsModal.tsx",
+    "ExperienceOnboardingModal.tsx",
+    "CommandPalette.tsx",
+    "TickerDrawer.tsx",
+    "AccountPage.tsx",
+    "CommunityView.tsx",
+    "ui/ConfirmModal.tsx",
+  ];
+  for (const name of sheets) {
+    const src = readFileSync(join(process.cwd(), "src/components", name), "utf8");
+    assert.match(src, /ViewportOverlay/, name);
+    assert.doesNotMatch(src, /fixed inset-0/, name);
+  }
+});
+
 run("Compound controls sit on one panel, not nested cards", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/CompoundInterestSheet.tsx"),

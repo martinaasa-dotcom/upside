@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -72,7 +73,7 @@ export function ConfirmModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -84,7 +85,7 @@ export function ConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
-        className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+        className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3 id="confirm-title" className="text-base font-semibold text-foreground">
@@ -126,6 +127,6 @@ export function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </ViewportOverlay>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cashtag } from "@/lib/format";
 import { X } from "lucide-react";
 
@@ -31,14 +32,14 @@ export function CostBasisModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
+    <ViewportOverlay className="z-[85] flex items-center justify-center p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
+      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">
@@ -100,6 +101,6 @@ export function CostBasisModal({
           </button>
         </div>
       </div>
-    </div>
+    </ViewportOverlay>
   );
 }

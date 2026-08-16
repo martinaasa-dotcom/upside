@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { currency, percent, signedPercent, cn, cashtag } from "@/lib/format";
 import { Card, MicroLabel, Pill, Segmented } from "@/components/ui/Panel";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
@@ -126,7 +127,7 @@ export function TickerDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex justify-end">
+    <ViewportOverlay className="z-[80] flex justify-end">
       <button
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
@@ -430,6 +431,6 @@ export function TickerDrawer({
           )}
         </div>
       </div>
-    </div>
+    </ViewportOverlay>
   );
 }

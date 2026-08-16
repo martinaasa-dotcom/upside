@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { track } from "@vercel/analytics";
 import { Check, Copy, UserMinus, X } from "lucide-react";
 import { useTimeout } from "@/lib/use-timeout";
@@ -119,14 +120,14 @@ export function InvitePartnerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center">
+    <ViewportOverlay className="z-[80] flex items-end justify-center sm:items-center">
       <button
         type="button"
         className="absolute inset-0 bg-black/60"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5">
+      <div className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
@@ -261,6 +262,6 @@ export function InvitePartnerModal({
           return true;
         }}
       />
-    </div>
+    </ViewportOverlay>
   );
 }

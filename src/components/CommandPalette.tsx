@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -55,14 +56,14 @@ export function CommandPalette({ open, onClose, items }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-3 sm:pt-[12vh]">
+    <ViewportOverlay className="z-[90] flex items-start justify-center px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-3 sm:pt-[12vh]">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         aria-label="Close command palette"
         onClick={onClose}
       />
-      <div className="relative max-h-[min(85dvh,32rem)] w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-well shadow-2xl sm:max-h-[min(70dvh,32rem)]">
+      <div className="relative max-h-[min(100%,32rem)] w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-well shadow-2xl sm:max-h-[min(70dvh,32rem)]">
         <input
           ref={inputRef}
           value={q}
@@ -125,6 +126,6 @@ export function CommandPalette({ open, onClose, items }: Props) {
           ↑↓ navigate · Enter run · Esc close · ⌘K toggle
         </p>
       </div>
-    </div>
+    </ViewportOverlay>
   );
 }

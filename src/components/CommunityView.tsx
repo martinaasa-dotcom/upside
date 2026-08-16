@@ -15,6 +15,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { StartingCashField } from "@/components/StartingCashField";
 import {
   DEFAULT_STARTING_CASH,
@@ -2405,14 +2406,14 @@ export function CommunityView({ communityId }: Props) {
       />
 
       {settingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
           />
-          <div className="relative w-full max-w-sm rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5">
+          <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5">
             <div className="mb-4 flex items-start justify-between gap-3">
               <h3 className="text-base font-semibold text-foreground">
                 Community settings
@@ -2586,18 +2587,18 @@ export function CommunityView({ communityId }: Props) {
               </div>
             )}
           </div>
-        </div>
+        </ViewportOverlay>
       )}
 
       {bestiaryOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             aria-label="Close"
             onClick={() => setBestiaryOpen(false)}
           />
-          <div className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5">
             <div className="mb-1 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
@@ -2668,7 +2669,7 @@ export function CommunityView({ communityId }: Props) {
               })}
             </div>
           </div>
-        </div>
+        </ViewportOverlay>
       )}
     </SignInGate>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { sanitizeSheetName } from "@/lib/input-guard";
@@ -53,7 +54,7 @@ export function RenameSheetModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <ViewportOverlay className="z-50 flex items-center justify-center p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -62,7 +63,7 @@ export function RenameSheetModal({
       />
       <form
         onSubmit={submit}
-        className="relative w-full max-w-md rounded-2xl border border-border bg-well p-5 shadow-2xl"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-well p-5 shadow-2xl"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
@@ -106,6 +107,6 @@ export function RenameSheetModal({
           </button>
         </div>
       </form>
-    </div>
+    </ViewportOverlay>
   );
 }

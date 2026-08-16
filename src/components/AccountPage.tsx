@@ -6,6 +6,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -640,14 +641,14 @@ export function AccountPage() {
       </div>
 
       {deleteOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             aria-label="Close"
             onClick={() => !deleting && setDeleteOpen(false)}
           />
-          <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-loss/50 bg-well p-5 shadow-2xl sm:max-w-md sm:rounded-2xl">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-loss/50 bg-well p-5 shadow-2xl sm:max-w-md sm:rounded-2xl">
             <h3 className="text-base font-semibold text-loss">
               Delete your account?
             </h3>
@@ -693,7 +694,7 @@ export function AccountPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ViewportOverlay>
       )}
     </SignInGate>
   );

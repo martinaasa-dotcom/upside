@@ -102,6 +102,13 @@ h4 {
   display: none;
 }
 
+/* Keep the focused field visible inside a keyboard-shrunk overlay. */
+.viewport-overlay input,
+.viewport-overlay textarea,
+.viewport-overlay select {
+  scroll-margin-block: 1.5rem;
+}
+
 /* Comfortable touch targets on phones/tablets. */
 @media (max-width: 1023px) {
   .touch-target,

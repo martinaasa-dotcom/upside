@@ -1,5 +1,6 @@
 "use client";
 
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { isSafeSignedMoney } from "@/lib/input-guard";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
 import { roundMoney } from "@/lib/money";
@@ -47,7 +48,7 @@ export function CashModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -56,7 +57,7 @@ export function CashModal({
       />
       <form
         onSubmit={submit}
-        className="relative w-full max-w-md rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -111,6 +112,6 @@ export function CashModal({
           </button>
         </div>
       </form>
-    </div>
+    </ViewportOverlay>
   );
 }
