@@ -3471,6 +3471,8 @@ run("Fund page labels Margus's note Thesis", () => {
   assert.match(positions, /<Metric/);
   assert.doesNotMatch(positions, /<Stat/);
   assert.doesNotMatch(positions, /bg-loss\/10/);
+  assert.doesNotMatch(positions, /sm:grid-cols-2/);
+  assert.doesNotMatch(positions, /h-full/);
 });
 
 run("prompts do not teach the model trader words as working vocab", () => {

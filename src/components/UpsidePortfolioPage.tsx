@@ -365,16 +365,16 @@ function PositionCopy({
 }) {
   if (items.length === 0 && !extra) return null;
   return (
-    <div className="border-t border-border pt-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+    <div className="border-t border-border pt-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <MicroLabel>{label}</MicroLabel>
         {extra ? <p className="text-sm text-muted">{extra}</p> : null}
       </div>
       {items.length > 0 && (
         <ul
           className={cn(
-            "mt-2 space-y-2 leading-relaxed",
-            quiet ? "text-sm text-muted" : "text-base text-foreground"
+            "mt-3 space-y-2.5 text-sm leading-relaxed",
+            quiet ? "text-muted" : "text-foreground/85"
           )}
         >
           {items.map((b) => (
@@ -1270,25 +1270,25 @@ export function UpsidePortfolioPage() {
 
             {openHoldings.length > 0 && (
               <WidgetErrorBoundary name="Fund positions">
-              <section className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted">
+              <section className="space-y-6">
+                <h2 className="text-sm font-medium text-muted">
                   Open positions · {openHoldings.length}
                 </h2>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-6">
                   {openHoldings.map((h) => {
                     const q = quotes[h.ticker];
                     const price = q?.price ?? h.cost_basis;
                     const pnlPct =
                       h.cost_basis > 0 ? (price - h.cost_basis) / h.cost_basis : 0;
                     const marketValue = price * h.shares;
-                    const thesis = fundCopyBullets(h.thesis);
-                    const exits = fundCopyBullets(h.exit_plan);
+                    const thesis = fundCopyBullets(h.thesis).slice(0, 2);
+                    const exits = fundCopyBullets(h.exit_plan).slice(0, 2);
                     return (
                       <article
                         key={h.id}
-                        className="flex h-full flex-col rounded-2xl border border-border bg-card p-5 sm:p-6"
+                        className="rounded-2xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-8"
                       >
-                        <div className="flex items-baseline justify-between gap-2">
+                        <div className="flex items-baseline justify-between gap-4">
                           <span className="text-base font-semibold text-foreground">
                             {cashtag(h.ticker)}
                           </span>
@@ -1301,7 +1301,7 @@ export function UpsidePortfolioPage() {
                             {percent(pnlPct)}
                           </span>
                         </div>
-                        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+                        <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
                           <Metric label="Entered">{fmtDate(h.entry_date)}</Metric>
                           <Metric label="Cost">{currency(h.cost_basis)}</Metric>
                           <Metric
@@ -1317,19 +1317,17 @@ export function UpsidePortfolioPage() {
                             {currency(marketValue, 0)}
                           </Metric>
                         </div>
-                        <div className="mt-5 flex min-h-0 flex-1 flex-col">
+                        <div className="mt-6 space-y-0">
                           <PositionCopy
                             label="Thesis"
                             items={thesis}
                             extra={h.target_timeframe || null}
                           />
-                          <div className="mt-auto">
-                            <PositionCopy
-                              label="Exit"
-                              items={exits}
-                              quiet
-                            />
-                          </div>
+                          <PositionCopy
+                            label="Exit"
+                            items={exits}
+                            quiet
+                          />
                         </div>
                       </article>
                     );
