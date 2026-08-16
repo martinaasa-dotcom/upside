@@ -1,6 +1,6 @@
 "use client";
 
-import { currency, percent, signedCurrency, signedTone } from "@/lib/format";
+import { currency, signedPercent, signedTone } from "@/lib/format";
 import type { ThesisCoverage } from "@/lib/classroom";
 import type { Holding, Quote } from "@/lib/types";
 
@@ -11,6 +11,7 @@ type RosterMember = {
   sheetCount: number;
   totalValue: number;
   todayDollar: number;
+  todayPct: number | null;
   topTicker: string | null;
   topWeight: number | null;
 };
@@ -32,14 +33,24 @@ export function ClassroomRoster({
   thesisCoverage: Record<string, ThesisCoverage>;
   onOpen: (memberId: string) => void;
 }) {
-  const rows = [...members].sort((a, b) => b.totalValue - a.totalValue);
+  const rows = [...members].sort((a, b) => {
+    const pctA =
+      a.sheetCount && startingCash > 0
+        ? (a.totalValue - startingCash) / startingCash
+        : Number.NEGATIVE_INFINITY;
+    const pctB =
+      b.sheetCount && startingCash > 0
+        ? (b.totalValue - startingCash) / startingCash
+        : Number.NEGATIVE_INFINITY;
+    return pctB - pctA;
+  });
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">Roster</h2>
         <p className="mt-1.5 text-sm text-muted">
-          Same start. Live prices. Who wrote a why, who is all-in on one name.
+          Same start. Ranked by percent vs start. Who wrote a why, who is all-in on one name.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -114,26 +125,22 @@ export function ClassroomRoster({
                       {m.sheetCount ? currency(m.totalValue) : "—"}
                     </td>
                     <td
-                      className={`px-3 py-2.5 tabular-nums ${
+                      className={`px-3 py-2.5 font-semibold tabular-nums ${
                         vsStart == null
                           ? "text-muted"
                           : signedTone(vsStart)
                       }`}
                     >
-                      {vsStart == null
-                        ? "—"
-                        : `${signedCurrency(vsStart)}${
-                            vsStartPct != null
-                              ? ` · ${percent(vsStartPct)}`
-                              : ""
-                          }`}
+                      {vsStartPct == null ? "—" : signedPercent(vsStartPct)}
                     </td>
                     <td
-                      className={`px-3 py-2.5 tabular-nums ${
-                        m.sheetCount ? signedTone(m.todayDollar) : "text-muted"
+                      className={`px-3 py-2.5 font-semibold tabular-nums ${
+                        m.sheetCount ? signedTone(m.todayPct) : "text-muted"
                       }`}
                     >
-                      {m.sheetCount ? signedCurrency(m.todayDollar) : "—"}
+                      {m.sheetCount && m.todayPct != null
+                        ? signedPercent(m.todayPct)
+                        : "—"}
                     </td>
                     <td className="px-3 py-2.5 text-foreground/80">
                       {!m.sheetCount

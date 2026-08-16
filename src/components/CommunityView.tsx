@@ -719,6 +719,11 @@ export function CommunityView({ communityId }: Props) {
 
   const isClassroom = community?.kind === "classroom";
   const startingCash = Number(community?.starting_cash) || DEFAULT_STARTING_CASH;
+  const classStartTotal =
+    startingCash * Math.max(1, membersWithBooks.length);
+  const classVsStartDollar = overview.totals.totalValue - classStartTotal;
+  const classVsStartPct =
+    classStartTotal > 0 ? classVsStartDollar / classStartTotal : null;
   const myMember = members.find((m) => m.is_you);
   const myClassSheet = Boolean(
     isClassroom &&
@@ -1418,8 +1423,8 @@ export function CommunityView({ communityId }: Props) {
               <section className="space-y-3">
                 <p className="text-sm text-muted">
                   {isClassroom
-                    ? "Paper class. Same starting cash. Real prices."
-                    : "Shared portfolios added together. Today's prices only. Members do not see what you paid."}
+                    ? "Paper class. Same starting cash. Ranked by percent vs start."
+                    : "Shared portfolios added together. Today's percent is the fair compare, because books are different sizes. Members do not see what you paid."}
                 </p>
                 {isClassroom &&
                 community?.classTrade &&
@@ -1462,42 +1467,38 @@ export function CommunityView({ communityId }: Props) {
                 ) : null}
                 <Scoreboard cols={3}>
                   <Score
-                    label="Total value"
-                    value={currency(overview.totals.totalValue)}
-                  />
-                  <Score
                     label="Today"
-                    value={signedCurrency(overview.totals.todayDollar)}
-                    sub={
+                    value={
                       overview.totals.todayPct != null
-                        ? percent(overview.totals.todayPct)
-                        : undefined
+                        ? signedPercent(overview.totals.todayPct)
+                        : "—"
                     }
+                    sub={signedCurrency(overview.totals.todayDollar)}
                     tone={
-                      overview.totals.todayDollar > 0
+                      (overview.totals.todayPct ?? 0) > 0
                         ? "up"
-                        : overview.totals.todayDollar < 0
+                        : (overview.totals.todayPct ?? 0) < 0
                           ? "down"
                           : undefined
                     }
                   />
+                  <Score
+                    label="Total value"
+                    value={currency(overview.totals.totalValue)}
+                  />
                   {isClassroom ? (
                     <Score
                       label="vs start"
-                      value={signedCurrency(
-                        overview.totals.totalValue -
-                          startingCash * Math.max(1, membersWithBooks.length)
-                      )}
-                      sub={`${currency(startingCash)} each`}
+                      value={
+                        classVsStartPct != null
+                          ? signedPercent(classVsStartPct)
+                          : "—"
+                      }
+                      sub={`${signedCurrency(classVsStartDollar)} · ${currency(startingCash)} each`}
                       tone={
-                        overview.totals.totalValue -
-                          startingCash * Math.max(1, membersWithBooks.length) >
-                        0
+                        (classVsStartPct ?? 0) > 0
                           ? "up"
-                          : overview.totals.totalValue -
-                                startingCash *
-                                  Math.max(1, membersWithBooks.length) <
-                              0
+                          : (classVsStartPct ?? 0) < 0
                             ? "down"
                             : undefined
                       }
@@ -1556,6 +1557,7 @@ export function CommunityView({ communityId }: Props) {
                         sheetCount: m.sheetCount,
                         totalValue: m.totalValue,
                         todayDollar: m.todayDollar,
+                        todayPct: m.todayPct,
                         topTicker: m.personality?.topTicker ?? null,
                         topWeight: m.personality?.convictionScore ?? null,
                       }))}
@@ -1653,6 +1655,7 @@ export function CommunityView({ communityId }: Props) {
                             isYou={m.isYou}
                             isPending={m.isPending}
                             totalValue={m.totalValue}
+                            todayPct={m.todayPct}
                             personality={m.personality}
                             milestone={m.milestone}
                             onOpen={() => {
@@ -1721,7 +1724,7 @@ export function CommunityView({ communityId }: Props) {
                               Today
                             </h3>
                             <p className="mt-0.5 text-sm text-muted">
-                              Ranked by today&apos;s move
+                              Ranked by today&apos;s percent, not dollar size
                             </p>
                           </div>
                         </div>
@@ -1990,6 +1993,7 @@ export function CommunityView({ communityId }: Props) {
                           );
                           return sum + (score?.todayDollar ?? 0);
                         }, 0);
+                        const sheetTodayPct = bookTodayPct(sheetValue, sheetToday);
                         const memberCash = sheets.reduce(
                           (sum, p) => sum + sheetCashBalance(p),
                           0
@@ -2064,21 +2068,23 @@ export function CommunityView({ communityId }: Props) {
                                 {" · "}
                                 {sheets.length} portfolio
                                 {sheets.length === 1 ? "" : "s"}
-                                {" · "}
-                                {currency(sheetValue)}
                                 {sheets.length > 0 && (
                                   <>
                                     {" · today "}
                                     <span
                                       className={signedTone(
-                                        sheetToday,
+                                        sheetTodayPct,
                                         "text-muted"
                                       )}
                                     >
-                                      {signedCurrency(sheetToday)}
+                                      {sheetTodayPct != null
+                                        ? signedPercent(sheetTodayPct)
+                                        : "—"}
                                     </span>
                                   </>
                                 )}
+                                {" · "}
+                                {currency(sheetValue)}
                               </div>
                             </button>
                             {isAdmin && !m.is_you && (
@@ -2143,6 +2149,7 @@ export function CommunityView({ communityId }: Props) {
                           );
                           return sum + (score?.todayDollar ?? 0);
                         }, 0);
+                        const sheetTodayPct = bookTodayPct(sheetValue, sheetToday);
                         const ownerKey = `pending:${p.key}`;
                         return (
                           <li
@@ -2171,21 +2178,23 @@ export function CommunityView({ communityId }: Props) {
                               <div className="text-xs text-muted">
                                 {sheets.length} portfolio
                                 {sheets.length === 1 ? "" : "s"}
-                                {" · "}
-                                {currency(sheetValue)}
                                 {sheets.length > 0 && (
                                   <>
                                     {" · today "}
                                     <span
                                       className={signedTone(
-                                        sheetToday,
+                                        sheetTodayPct,
                                         "text-muted"
                                       )}
                                     >
-                                      {signedCurrency(sheetToday)}
+                                      {sheetTodayPct != null
+                                        ? signedPercent(sheetTodayPct)
+                                        : "—"}
                                     </span>
                                   </>
                                 )}
+                                {" · "}
+                                {currency(sheetValue)}
                               </div>
                             </button>
                           </li>
@@ -2795,6 +2804,14 @@ export function CommunityView({ communityId }: Props) {
   );
 }
 
+function bookTodayPct(
+  totalValue: number,
+  todayDollar: number
+): number | null {
+  const previous = totalValue - todayDollar;
+  return previous > 0 ? todayDollar / previous : null;
+}
+
 function signedPctPoints(n: number): string {
   const abs = Math.abs(n).toFixed(1);
   if (n > 0) return `+${abs}%`;
@@ -2807,6 +2824,7 @@ function PowerAnimalCard({
   isYou,
   isPending,
   totalValue,
+  todayPct,
   personality,
   milestone,
   onOpen,
@@ -2815,6 +2833,7 @@ function PowerAnimalCard({
   isYou: boolean;
   isPending: boolean;
   totalValue: number;
+  todayPct: number | null;
   personality: PortfolioPersonality | null;
   milestone: { next: number | null; progress: number };
   onOpen: () => void;
@@ -2864,8 +2883,18 @@ function PowerAnimalCard({
                 {personality?.animal ?? "No portfolio yet"}
               </p>
             </div>
-            <p className="shrink-0 text-base font-semibold tabular-nums text-foreground">
-              {currency(totalValue, 0)}
+            <p className="shrink-0 text-right">
+              <span
+                className={cn(
+                  "block text-base font-semibold tabular-nums",
+                  signedTone(todayPct, "text-foreground")
+                )}
+              >
+                {todayPct != null ? signedPercent(todayPct) : "—"}
+              </span>
+              <span className="mt-1 block text-sm tabular-nums text-muted">
+                {currency(totalValue, 0)}
+              </span>
             </p>
           </div>
         </div>
@@ -3010,20 +3039,20 @@ function ReadOnlyHoldings({
   return (
     <div className="space-y-3">
       <Scoreboard cols={3}>
-        <Score label="Total value" value={currency(totalValue)} />
         <Score
           label="Today"
-          value={signedCurrency(todayDollar)}
-          sub={todayPct != null ? percent(todayPct) : undefined}
+          value={todayPct != null ? signedPercent(todayPct) : "—"}
+          sub={signedCurrency(todayDollar)}
           tone={todayDollar > 0 ? "up" : todayDollar < 0 ? "down" : undefined}
         />
+        <Score label="Total value" value={currency(totalValue)} />
         <Score label="Cash" value={currency(cash)} />
       </Scoreboard>
       <div className="space-y-2 md:hidden">
         {sortedHoldings.map((h) => {
           const price = quotes[h.ticker]?.price ?? 0;
           const value = price * h.shares;
-          const todayPct = quotes[h.ticker]?.changePercent ?? null;
+          const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
           const pctBook = totalValue > 0 ? value / totalValue : 0;
           return (
             <div
@@ -3032,18 +3061,18 @@ function ReadOnlyHoldings({
             >
               <div className="flex items-baseline justify-between gap-2">
                 <p className="font-semibold text-foreground">{cashtag(h.ticker)}</p>
-                <p className="text-sm tabular-nums text-foreground">
-                  {currency(value)}
+                <p
+                  className={cn(
+                    "text-sm font-semibold tabular-nums",
+                    signedTone(rowTodayPct, "text-muted")
+                  )}
+                >
+                  {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
                 </p>
               </div>
               <p className="mt-0.5 text-xs text-muted">
-                {percent(pctBook)} of portfolio · {h.shares} sh · {currency(price)}
+                {percent(pctBook)} of portfolio · {h.shares} sh · {currency(price)} · {currency(value)}
               </p>
-              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm tabular-nums">
-                <span className={signedTone(todayPct, "text-muted")}>
-                  {todayPct != null ? percent(todayPct) : "—"} today
-                </span>
-              </div>
             </div>
           );
         })}
@@ -3062,10 +3091,10 @@ function ReadOnlyHoldings({
           <thead className="border-b border-border text-xs text-muted">
             <tr>
               <th className="px-3 py-2 font-medium">Ticker</th>
+              <th className="px-3 py-2 font-medium">Today</th>
               <th className="px-3 py-2 font-medium">%</th>
               <th className="px-3 py-2 font-medium">Shares</th>
               <th className="px-3 py-2 font-medium">Price</th>
-              <th className="px-3 py-2 font-medium">Today</th>
               <th className="px-3 py-2 font-medium">Value</th>
             </tr>
           </thead>
@@ -3073,29 +3102,31 @@ function ReadOnlyHoldings({
             {sortedHoldings.map((h) => {
               const price = quotes[h.ticker]?.price ?? 0;
               const value = price * h.shares;
-              const todayPct = quotes[h.ticker]?.changePercent ?? null;
+              const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-border">
                   <td className="px-3 py-2 font-medium">{cashtag(h.ticker)}</td>
+                  <td
+                    className={cn(
+                      "px-3 py-2 font-semibold tabular-nums",
+                      signedTone(rowTodayPct, "text-muted")
+                    )}
+                  >
+                    {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
+                  </td>
                   <td className="px-3 py-2 tabular-nums text-muted">
                     {percent(pctBook)}
                   </td>
                   <td className="px-3 py-2 tabular-nums text-muted">
                     {h.shares}
                   </td>
-                  <td className="px-3 py-2 font-semibold tabular-nums text-foreground">
+                  <td className="px-3 py-2 tabular-nums text-muted">
                     {currency(price)}
                   </td>
-                  <td
-                    className={cn(
-                      "px-3 py-2 tabular-nums",
-                      signedTone(todayPct, "text-muted")
-                    )}
-                  >
-                    {todayPct != null ? percent(todayPct, 2) : "—"}
+                  <td className="px-3 py-2 tabular-nums text-muted">
+                    {currency(value)}
                   </td>
-                  <td className="px-3 py-2 tabular-nums">{currency(value)}</td>
                 </tr>
               );
             })}

@@ -1206,6 +1206,25 @@ run("home keeps Fund and Communities in view", () => {
   assert.ok(world.includes("Communities"));
 });
 
+run("community books lead with today's percent, not dollar size", () => {
+  const community = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  const roster = readFileSync(
+    join(process.cwd(), "src/components/ClassroomRoster.tsx"),
+    "utf8"
+  );
+  const readOnly = community.slice(community.indexOf("function ReadOnlyHoldings"));
+  assert.match(readOnly, /label="Today"/);
+  assert.match(readOnly, /signedPercent\(todayPct\)/);
+  assert.match(readOnly, /sub=\{signedCurrency\(todayDollar\)\}/);
+  assert.match(community, /Today's percent is the fair compare/);
+  assert.match(community, /Ranked by today&apos;s percent, not dollar size/);
+  assert.match(roster, /signedPercent\(vsStartPct\)/);
+  assert.match(roster, /signedPercent\(m\.todayPct\)/);
+});
+
 run("product is Upside Lab on upsidelab.app", () => {
   const product = readFileSync("src/lib/product.ts", "utf8");
   assert.match(product, /PRODUCT_NAME = "Upside Lab"/);
