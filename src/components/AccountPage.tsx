@@ -293,7 +293,7 @@ export function AccountPage() {
               <div>
                 <h2 className="text-base font-bold text-foreground">Feedback</h2>
                 <p className="text-sm text-muted">
-                  A bug, a missing thing, or a rant. Martin reads these.
+                  A bug, a missing thing, or a rant. Upside reads these.
                 </p>
               </div>
             </div>
@@ -302,7 +302,7 @@ export function AccountPage() {
               onClick={openManual}
               className="btn-primary"
             >
-              Tell Martin
+              Tell Upside
             </button>
           </section>
 

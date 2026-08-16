@@ -113,7 +113,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             id="feedback-title"
             className="text-base font-semibold text-foreground"
           >
-            {mode === "weekly" ? "How was this week?" : "Tell Martin"}
+            {mode === "weekly" ? "How was this week?" : "Tell Upside"}
           </h3>
           <button
             type="button"
@@ -129,7 +129,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
 
         {sent ? (
           <p className="text-sm leading-relaxed text-foreground">
-            Got it. Martin reads these.
+            Got it. Upside reads these.
           </p>
         ) : mode === "weekly" ? (
           <div className="space-y-5">
@@ -249,7 +249,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
           <div className="space-y-4">
             <p className="text-sm leading-relaxed text-muted">
               What is this about, then dump the rest. A bug, a missing thing, or
-              a rant. Martin reads these.
+              a rant. Upside reads these.
             </p>
             <label className="block space-y-1">
               <span className="text-sm text-muted">What is this about?</span>

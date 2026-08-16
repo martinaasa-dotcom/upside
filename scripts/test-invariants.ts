@@ -4645,7 +4645,7 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
     "utf8"
   );
   assert.match(modal, /How was this week\?/);
-  assert.match(modal, /Tell Martin/);
+  assert.match(modal, /Tell Upside/);
   assert.match(modal, /What actually helped\?/);
   assert.match(modal, /What is this about\?/);
   assert.match(modal, /mode === "weekly"/);
@@ -4680,7 +4680,7 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
     join(process.cwd(), "src/components/AccountPage.tsx"),
     "utf8"
   );
-  assert.match(account, /Tell Martin/);
+  assert.match(account, /Tell Upside/);
 });
 
 run("community invite admin list reads like Discord", () => {
