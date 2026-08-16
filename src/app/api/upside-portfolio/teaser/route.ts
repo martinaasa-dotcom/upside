@@ -7,6 +7,7 @@ import {
   liveFundTodayMove,
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
+import { stripReportSerialPrefix } from "@/lib/fund-copy";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -85,8 +86,9 @@ export async function GET() {
       todayDollar,
       todayPct,
       headline:
-        ((latestReport as { headline?: string } | null)?.headline ?? "").trim() ||
-        null,
+        stripReportSerialPrefix(
+          ((latestReport as { headline?: string } | null)?.headline ?? "").trim()
+        ) || null,
       dayNumber: fundDayNumber(
         (fund as { inception_date?: string } | null)?.inception_date
       ),

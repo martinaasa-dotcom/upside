@@ -27,6 +27,7 @@ import {
   type PricedHolding,
 } from "@/lib/margus-fund";
 import { sanitizeFundWatchlist } from "@/lib/fund-watchlist";
+import { stripReportSerialPrefix } from "@/lib/fund-copy";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/error-log";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -303,7 +304,7 @@ export async function GET(req: Request) {
       .limit(5);
     const recentHeadlines = (
       (recentReportRows ?? []) as { headline: string; report_date: string }[]
-    ).map((r) => `${r.report_date}: ${r.headline}`);
+    ).map((r) => `${r.report_date}: ${stripReportSerialPrefix(r.headline)}`);
     const previousValue =
       (recentReportRows?.[0] as { portfolio_value?: number } | undefined)
         ?.portfolio_value ?? null;

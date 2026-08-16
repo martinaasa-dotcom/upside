@@ -30,6 +30,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
   ) => (
     <Link
       href={href}
+      prefetch
       title={title}
       aria-label={label}
       aria-current={active ? "page" : undefined}

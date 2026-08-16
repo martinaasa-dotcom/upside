@@ -6,13 +6,13 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { MicroLabel, Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
-import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
 import { PALETTE } from "@/lib/palette";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
+import { isWorkspaceRoomActive } from "@/lib/workspace-rooms";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { quotePollMs, quotesUrl } from "@/lib/market/session";
@@ -26,7 +26,12 @@ import {
   liveFundTodayMove,
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
-import { fundCopyBullets, recapBullets } from "@/lib/fund-copy";
+import {
+  fundCopyBullets,
+  numberedReportHeadline,
+  recapBullets,
+  serialFromNewest,
+} from "@/lib/fund-copy";
 import {
   sanitizeFundWatchlist,
   type FundWatchItem,
@@ -53,6 +58,7 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
+const FEED_CHUNK = 7;
 const SERIES_COLOR = {
   margus: PALETTE.brand,
   spy: PALETTE.steel,
@@ -314,6 +320,26 @@ function ReportDetail({ r }: { r: ReportRow }) {
   );
 }
 
+function RecapMeta({ r }: { r: WeeklyRecapRow }) {
+  return (
+    <>
+      <p className="text-sm text-muted">{fmtDate(r.week_ending)}</p>
+      {r.week_return_pct != null && (
+        <p className="text-sm font-semibold tabular-nums">
+          <span className={r.week_return_pct >= 0 ? "text-gain" : "text-loss"}>
+            {percent(r.week_return_pct)}
+          </span>
+          {r.spy_week_return_pct != null && (
+            <span className="ml-2 text-muted">
+              SPY {percent(r.spy_week_return_pct)}
+            </span>
+          )}
+        </p>
+      )}
+    </>
+  );
+}
+
 function RecapBody({
   text,
   muted = false,
@@ -343,6 +369,26 @@ function RecapBody({
   );
 }
 
+function ViewMoreButton({
+  remaining,
+  onClick,
+}: {
+  remaining: number;
+  onClick: () => void;
+}) {
+  if (remaining <= 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-xl border border-border bg-raised px-4 py-2.5 text-sm font-medium text-muted hover:text-foreground"
+    >
+      View more
+      {remaining > 7 ? ` · ${remaining}` : ""}
+    </button>
+  );
+}
+
 function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   if (quotesAt == null) return "Loading prices …";
   const secs = Math.max(0, Math.round((nowMs - quotesAt) / 1000));
@@ -352,34 +398,43 @@ function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   return `Prices ${mins}m old`;
 }
 
-function joinNotes(items: string[]): string {
-  return items
-    .map((s) => s.replace(/[.]+$/, "").trim())
-    .filter(Boolean)
-    .join(". ");
-}
-
-function PositionNote({
+function FundNote({
   label,
-  text,
-  quiet = false,
+  items,
+  accent,
 }: {
   label: string;
-  text: string;
-  quiet?: boolean;
+  items: string[];
+  accent: "brand" | "loss";
 }) {
-  if (!text) return null;
+  const bar = accent === "brand" ? PALETTE.brand : PALETTE.loss;
+  const dot = accent === "brand" ? "bg-brand" : "bg-loss";
   return (
-    <div>
+    <div
+      className="flex min-h-min flex-1 flex-col bg-raised px-4 py-3.5"
+      style={{ boxShadow: `inset 3px 0 0 ${bar}` }}
+    >
       <MicroLabel>{label}</MicroLabel>
-      <p
-        className={cn(
-          "mt-2 leading-relaxed",
-          quiet ? "text-sm text-muted" : "text-base text-foreground"
-        )}
-      >
-        {text}
-      </p>
+      {items.length > 0 ? (
+        <ul className="mt-2 space-y-1.5">
+          {items.map((item) => (
+            <li key={item} className="flex gap-2">
+              <span
+                aria-hidden
+                className={cn(
+                  "mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full",
+                  dot
+                )}
+              />
+              <span className="text-base leading-snug text-foreground">
+                {item}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-muted">Not written yet.</p>
+      )}
     </div>
   );
 }
@@ -394,29 +449,20 @@ function FundPosition({
   const pnlPct =
     holding.cost_basis > 0 ? (price - holding.cost_basis) / holding.cost_basis : 0;
   const marketValue = price * holding.shares;
-  const thesis = joinNotes(fundCopyBullets(holding.thesis).slice(0, 2));
-  const exit = joinNotes(fundCopyBullets(holding.exit_plan).slice(0, 2));
+  const pnlDollar = (price - holding.cost_basis) * holding.shares;
+  const thesis = fundCopyBullets(holding.thesis).slice(0, 2);
+  const exit = fundCopyBullets(holding.exit_plan).slice(0, 2);
   return (
     <article className="rounded-2xl border border-border bg-card p-5">
-      <div className="grid items-start gap-5 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-6">
-        <div>
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-base font-semibold text-foreground">
-              {cashtag(holding.ticker)}
-            </h3>
-            <p
-              className={cn(
-                "text-sm font-semibold tabular-nums",
-                signedTone(pnlPct)
-              )}
-            >
-              {percent(pnlPct)}
-            </p>
-          </div>
-          {holding.target_timeframe ? (
-            <p className="mt-1 text-sm text-muted">{holding.target_timeframe}</p>
-          ) : null}
-          <Scoreboard className="mt-5" cols={2}>
+      <h3 className="text-base font-semibold text-foreground">
+        {cashtag(holding.ticker)}
+      </h3>
+      <div className="mt-5 grid items-stretch gap-5 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-0">
+        <div className="h-full md:pr-6">
+          <Scoreboard
+            className="h-full auto-rows-[minmax(min-content,1fr)]"
+            cols={2}
+          >
             <Score label="Entered" value={fmtDate(holding.entry_date)} />
             <Score label="Cost" value={currency(holding.cost_basis)} />
             <Score
@@ -429,14 +475,26 @@ function FundPosition({
               value={currency(marketValue, 0)}
               sub={`${holding.shares.toLocaleString("en-US")} sh`}
             />
+            <Score
+              label="Hold for"
+              value={holding.target_timeframe?.trim() || "—"}
+              valueClassName="leading-snug"
+            />
+            <Score
+              label="Since buy"
+              value={percent(pnlPct)}
+              sub={signedCurrency(pnlDollar, 0)}
+              valueClassName={signedTone(pnlPct)}
+              subClassName={signedTone(pnlDollar, "text-muted")}
+            />
           </Scoreboard>
         </div>
-        {(thesis || exit) && (
-          <div className="flex flex-col justify-center gap-5 border-t border-border pt-5 md:border-l md:border-t-0 md:pl-6 md:pt-0">
-            <PositionNote label="Thesis" text={thesis} />
-            <PositionNote label="Exit" text={exit} quiet />
+        <div className="h-full border-t border-border pt-5 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+          <div className="flex h-full flex-col gap-px overflow-hidden rounded-xl border border-border bg-border">
+            <FundNote label="Thesis" items={thesis} accent="brand" />
+            <FundNote label="Sell if" items={exit} accent="loss" />
           </div>
-        )}
+        </div>
       </div>
     </article>
   );
@@ -479,6 +537,8 @@ export function UpsidePortfolioPage() {
   const [sheetYtd, setSheetYtd] = useState<YtdNavPoint[] | null>(null);
   const [spyYtd, setSpyYtd] = useState<YtdNavPoint[] | null>(null);
   const [loadingMessage] = useState(pickLoadingMessage);
+  const [dailyVisible, setDailyVisible] = useState(1);
+  const [weeklyVisible, setWeeklyVisible] = useState(1);
 
   useLayoutEffect(() => {
     if (cacheHydratedRef.current) return;
@@ -946,7 +1006,7 @@ export function UpsidePortfolioPage() {
 
   useEffect(() => {
     function tick() {
-      if (document.hidden) return;
+      if (document.hidden || !isWorkspaceRoomActive("fund")) return;
       void pollRef.current.load("background");
       void pollRef.current.refreshBenchmarkValue();
     }
@@ -1334,34 +1394,52 @@ export function UpsidePortfolioPage() {
                   Weekly recap
                 </h2>
                 <div className="space-y-3">
-                  {weeklyRecaps.map((r) => (
-                    <article
-                      key={r.id}
-                      className="space-y-2 rounded-2xl border border-border bg-card p-5"
-                    >
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-sm text-brand-bright">
-                          Week of {fmtDate(r.week_ending)}
-                        </p>
-                        {r.week_return_pct != null && (
-                          <p className="text-sm font-semibold tabular-nums">
-                            <span className={r.week_return_pct >= 0 ? "text-gain" : "text-loss"}>
-                              {percent(r.week_return_pct)}
-                            </span>
-                            {r.spy_week_return_pct != null && (
-                              <span className="ml-2 text-muted">
-                                SPY {percent(r.spy_week_return_pct)}
-                              </span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                      <h3 className="text-base font-semibold text-foreground">
-                        {humanizeMargusText(r.headline)}
-                      </h3>
-                      <RecapBody text={r.body} />
-                    </article>
-                  ))}
+                  {weeklyRecaps.slice(0, weeklyVisible).map((r, i) => {
+                    const title = numberedReportHeadline(
+                      r.headline,
+                      "Week",
+                      serialFromNewest(weeklyRecaps.length, i)
+                    );
+                    return i === 0 ? (
+                      <article
+                        key={r.id}
+                        className="space-y-2 rounded-2xl border border-border bg-card p-5"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <RecapMeta r={r} />
+                        </div>
+                        <h3 className="text-base font-semibold text-foreground">
+                          {title}
+                        </h3>
+                        <RecapBody text={r.body} />
+                      </article>
+                    ) : (
+                      <details
+                        key={r.id}
+                        className="group overflow-hidden rounded-2xl border border-border bg-card"
+                      >
+                        <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
+                          <ChevronRight
+                            aria-hidden
+                            className="h-3.5 w-3.5 shrink-0 text-muted transition-transform group-open:rotate-90"
+                          />
+                          <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
+                            {title}
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <RecapMeta r={r} />
+                          </span>
+                        </summary>
+                        <div className="space-y-2 border-t border-border px-4 py-3">
+                          <RecapBody text={r.body} />
+                        </div>
+                      </details>
+                    );
+                  })}
+                  <ViewMoreButton
+                    remaining={weeklyRecaps.length - weeklyVisible}
+                    onClick={() => setWeeklyVisible((n) => n + FEED_CHUNK)}
+                  />
                 </div>
               </section>
             )}
@@ -1376,15 +1454,17 @@ export function UpsidePortfolioPage() {
                   after today&apos;s market close.
                 </p>
               ) : (
-                /* Today's report reads in full; every earlier one collapses
-                 * to its date, close and headline. Otherwise the page grows
-                 * an unreadable wall of prose one day at a time, and the
-                 * decision you actually came to read sits on top of weeks of
-                 * history. <details> keeps it keyboard and screen-reader
-                 * friendly without any open/closed state to manage. */
+                /* Latest report in full. Older ones stay collapsed, and
+                 * View more only reveals the next seven so the page does
+                 * not grow a wall of history. */
                 <div className="space-y-3">
-                  {reports.map((r, i) =>
-                    i === 0 ? (
+                  {reports.slice(0, dailyVisible).map((r, i) => {
+                    const title = numberedReportHeadline(
+                      r.headline,
+                      "Day",
+                      serialFromNewest(reports.length, i)
+                    );
+                    return i === 0 ? (
                       <article
                         key={r.id}
                         className="space-y-2 rounded-2xl border border-border bg-card p-4"
@@ -1393,7 +1473,7 @@ export function UpsidePortfolioPage() {
                           <ReportMeta r={r} />
                         </div>
                         <h3 className="text-sm font-semibold text-foreground">
-                          {humanizeMargusText(r.headline)}
+                          {title}
                         </h3>
                         <ReportDetail r={r} />
                       </article>
@@ -1408,7 +1488,7 @@ export function UpsidePortfolioPage() {
                             className="h-3.5 w-3.5 shrink-0 text-muted transition-transform group-open:rotate-90"
                           />
                           <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
-                            {humanizeMargusText(r.headline)}
+                            {title}
                           </span>
                           <span className="flex shrink-0 items-center gap-2">
                             <ReportMeta r={r} />
@@ -1418,8 +1498,12 @@ export function UpsidePortfolioPage() {
                           <ReportDetail r={r} />
                         </div>
                       </details>
-                    )
-                  )}
+                    );
+                  })}
+                  <ViewMoreButton
+                    remaining={reports.length - dailyVisible}
+                    onClick={() => setDailyVisible((n) => n + FEED_CHUNK)}
+                  />
                 </div>
               )}
             </section>

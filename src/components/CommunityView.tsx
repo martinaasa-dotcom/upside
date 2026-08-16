@@ -41,6 +41,7 @@ import {
   clearCommunityCache,
   type CommunityDuelCache,
 } from "@/lib/community-cache";
+import { isWorkspaceRoomActive, saveLastCircleId } from "@/lib/workspace-rooms";
 import { currentDuelSessionKey } from "@/lib/daily-duel";
 import {
   buildPortfolioPersonality,
@@ -254,6 +255,7 @@ export function CommunityView({ communityId }: Props) {
     // leaving the previous one's rows on screen while the new one loads would
     // show a person someone else's book under the wrong name.
     setCommunity(cache.meta?.community ?? null);
+    if (cache.meta?.community) saveLastCircleId(communityId);
     setMembers(cache.meta?.members ?? []);
     setPendingMembers(cache.meta?.pending_members ?? []);
     setIsAdmin(cache.meta?.isAdmin ?? false);
@@ -347,6 +349,7 @@ export function CommunityView({ communityId }: Props) {
       const book = await bookRes.json();
       if (callId !== loadCallIdRef.current) return;
       setCommunity(meta.community);
+      saveLastCircleId(communityId);
       setMembers(meta.members ?? []);
       setPendingMembers(meta.pending_members ?? []);
       setIsAdmin(Boolean(meta.isAdmin));
@@ -492,6 +495,7 @@ export function CommunityView({ communityId }: Props) {
     const ctrl = new AbortController();
     const tick = async () => {
       if (cancelled || document.hidden) return;
+      if (!isWorkspaceRoomActive(`community:${communityId}`)) return;
       try {
         const res = await fetch(quotesUrl(tickers), { signal: ctrl.signal });
         if (!res.ok || cancelled) return;

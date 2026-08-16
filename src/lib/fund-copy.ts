@@ -73,6 +73,44 @@ export function fundCopyBullets(text: string | null | undefined): string[] {
 const RECAP_MAX = 6;
 const RECAP_WORDS = 18;
 
+const SPELLED_NUMBERS =
+  "one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty";
+const SERIAL_PREFIX_RE = new RegExp(
+  `^(day|week)\\s+(\\d+|${SPELLED_NUMBERS})\\s*[:.\\u2013\\u2014-]?\\s*`,
+  "i"
+);
+
+/**
+ * Models sometimes stamp "Day one:" on the first headline and then drop
+ * the prefix. The page always numbers from the list, so strip whatever
+ * landed in storage before we add "Day 3:" ourselves.
+ */
+export function stripReportSerialPrefix(text: string): string {
+  const trimmed = text.trim();
+  const match = trimmed.match(SERIAL_PREFIX_RE);
+  if (!match) return trimmed;
+  const rest = trimmed.slice(match[0].length).trim();
+  if (!rest) return trimmed;
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
+/** Newest-first list: index 0 is the latest entry, which is Day N / Week N. */
+export function serialFromNewest(
+  total: number,
+  indexFromNewest: number
+): number {
+  return Math.max(1, total - indexFromNewest);
+}
+
+export function numberedReportHeadline(
+  text: string,
+  unit: "Day" | "Week",
+  n: number
+): string {
+  const body = stripReportSerialPrefix(humanizeMargusText(text));
+  return `${unit} ${n}: ${body}`;
+}
+
 function clipRecap(s: string): string {
   const words = s.split(/\s+/);
   if (words.length <= RECAP_WORDS) return s;

@@ -1,9 +1,25 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import {
+  circleHref,
+  lastCircleEventName,
+} from "@/lib/workspace-rooms";
 import { Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+
+export function useCircleHref(): string {
+  const [href, setHref] = useHydratedCache(circleHref, "/communities");
+  useEffect(() => {
+    const sync = () => setHref(circleHref());
+    window.addEventListener(lastCircleEventName(), sync);
+    return () => window.removeEventListener(lastCircleEventName(), sync);
+  }, [setHref]);
+  return href;
+}
 
 /** Circle cell inside the shared book dock well. Same size as the other tabs. */
 export function CircleDockLink({
@@ -14,12 +30,12 @@ export function CircleDockLink({
   hideOnPhone?: boolean;
 }) {
   const pathname = usePathname();
-  const on =
-    pathname.startsWith("/communities") ||
-    pathname.startsWith("/upside-portfolio");
+  const href = useCircleHref();
+  const on = pathname.startsWith("/communities");
   return (
     <Link
-      href="/communities"
+      href={href}
+      prefetch
       title="Upside Circle"
       aria-current={on ? "page" : undefined}
       className={cn(

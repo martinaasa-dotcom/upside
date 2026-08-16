@@ -13,7 +13,12 @@ import {
 } from "../src/lib/investor-briefing";
 import { usdToDisplay, displayToUsd } from "../src/lib/display-currency";
 import { liveFundTodayMove, liveFundTotalValue } from "../src/lib/margus-fund-mark";
-import { fundCopyBullets } from "../src/lib/fund-copy";
+import {
+  fundCopyBullets,
+  numberedReportHeadline,
+  serialFromNewest,
+  stripReportSerialPrefix,
+} from "../src/lib/fund-copy";
 import {
   applyYtdAnchor,
   downsampleToWeeks,
@@ -723,6 +728,43 @@ run("fund thesis and exit plans split into short bullets", () => {
     "Product revenue growth below 25% YoY for two quarters",
     "Adjusted FCF margin below 20% by FY28",
   ]);
+});
+
+run("fund report headlines number with digits, not spelled-out days", () => {
+  assert.equal(
+    stripReportSerialPrefix("Day one: built an 8-position paper portfolio"),
+    "Built an 8-position paper portfolio"
+  );
+  assert.equal(
+    stripReportSerialPrefix("Day 1: Built an 8-position paper portfolio"),
+    "Built an 8-position paper portfolio"
+  );
+  assert.equal(
+    stripReportSerialPrefix("AI infrastructure steadies while risk appetite nudges higher"),
+    "AI infrastructure steadies while risk appetite nudges higher"
+  );
+  assert.equal(serialFromNewest(3, 0), 3);
+  assert.equal(serialFromNewest(3, 2), 1);
+  assert.equal(
+    numberedReportHeadline(
+      "Day one: built an 8-position paper portfolio",
+      "Day",
+      1
+    ),
+    "Day 1: Built an 8-position paper portfolio"
+  );
+  assert.equal(
+    numberedReportHeadline(
+      "AI infrastructure steadies while risk appetite nudges higher",
+      "Day",
+      2
+    ),
+    "Day 2: AI infrastructure steadies while risk appetite nudges higher"
+  );
+  assert.equal(
+    numberedReportHeadline("Quiet week, held the book", "Week", 1),
+    "Week 1: Quiet week, held your portfolio"
+  );
 });
 
 run("forecast add/trim lines split into bullets", () => {
@@ -2647,7 +2689,7 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.match(src, /No public circles right now/);
   assert.doesNotMatch(src, /discover\.length > 0 &&/);
   assert.match(src, /<PanelHeader/);
-  assert.match(src, /space-y-8/);
+  assert.match(src, /space-y-5/);
   assert.doesNotMatch(src, /sm:grid-cols-2/);
   assert.doesNotMatch(src, /Start a class[\s\S]{0,80}How the class runs/);
 });
@@ -3555,14 +3597,35 @@ run("Fund page labels Margus's note Thesis", () => {
   assert.match(src, /label="Thesis"/);
   assert.match(src, /function FundPosition/);
   assert.match(src, /md:grid-cols-\[minmax/);
+  const card = src.slice(
+    src.indexOf("function FundPosition"),
+    src.indexOf("export function UpsidePortfolioPage")
+  );
+  assert.match(card, /label="Hold for"/);
+  assert.match(card, /label="Since buy"/);
+  assert.match(card, /label="Sell if"/);
+  assert.match(card, /items-stretch/);
   const positions = src.slice(
     src.indexOf("Open positions"),
     src.indexOf("Weekly recap")
   );
   assert.match(positions, /<FundPosition/);
   assert.doesNotMatch(positions, /<Stat/);
-  assert.doesNotMatch(src.slice(src.indexOf("function FundPosition"), src.indexOf("export function UpsidePortfolioPage")), /<Stat/);
+  assert.doesNotMatch(card, /<Stat/);
   assert.doesNotMatch(src, /grid gap-3 sm:grid-cols-2/);
+});
+
+run("Fund page shows one latest report then View more in sevens", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.match(src, /const FEED_CHUNK = 7/);
+  assert.match(src, /View more/);
+  assert.match(src, /numberedReportHeadline/);
+  assert.match(src, /weeklyRecaps\.slice\(0, weeklyVisible\)/);
+  assert.match(src, /reports\.slice\(0, dailyVisible\)/);
+  assert.doesNotMatch(src, /weeklyRecaps\.map\(/);
 });
 
 run("prompts do not teach the model trader words as working vocab", () => {
@@ -3995,6 +4058,16 @@ run("workspace nav marks the current room and the skip link exists", () => {
   );
   assert.ok(/href="#main"/.test(providers));
   assert.ok(/Skip to content/.test(providers));
+  assert.match(providers, /WorkspaceShell/);
+  const shell = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceShell.tsx"),
+    "utf8"
+  );
+  assert.match(shell, /Keep visited rooms mounted/);
+  assert.match(shell, /hidden=\{!on\}/);
+  const homePage = readFileSync(join(process.cwd(), "src/app/page.tsx"), "utf8");
+  assert.match(homePage, /return null/);
+  assert.doesNotMatch(homePage, /Dashboard/);
   const dock = readFileSync(
     join(process.cwd(), "src/components/BookModeDock.tsx"),
     "utf8"

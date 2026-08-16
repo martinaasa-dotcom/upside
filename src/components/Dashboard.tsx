@@ -107,6 +107,10 @@ import {
   writeBookCache,
 } from "@/lib/book-cache";
 import {
+  WORKSPACE_SHOW_EVENT,
+  isWorkspaceRoomActive,
+} from "@/lib/workspace-rooms";
+import {
   COMPOUND_TAB_ID,
   LAB_TAB_ID,
   OVERVIEW_TAB_ID,
@@ -1111,6 +1115,7 @@ export function Dashboard() {
     void refreshFx(ctrl.signal);
     const id = window.setInterval(() => {
       if (document.hidden) return;
+      if (!isWorkspaceRoomActive("book")) return;
       void refreshFx(ctrl.signal);
     }, 120_000);
     return () => {
@@ -1308,6 +1313,19 @@ export function Dashboard() {
   }, [portfolios, pickInitialSheet]);
 
   useEffect(() => {
+    const onShow = () => {
+      if (!isWorkspaceRoomActive("book")) return;
+      setActiveId((prev) => {
+        const fromUrl = resolveSheetIdFromUrl(portfolios, takeOpenTab());
+        return fromUrl ?? prev;
+      });
+      void loadPortfolios({ silent: true });
+    };
+    window.addEventListener(WORKSPACE_SHOW_EVENT, onShow);
+    return () => window.removeEventListener(WORKSPACE_SHOW_EVENT, onShow);
+  }, [portfolios, loadPortfolios]);
+
+  useEffect(() => {
     if (source !== "supabase") return;
     const fingerprint = (ps: Portfolio[], hs: Holding[]) =>
       JSON.stringify([
@@ -1325,6 +1343,7 @@ export function Dashboard() {
     let pollAbort: AbortController | null = null;
     const tick = async () => {
       if (document.hidden) return;
+      if (!isWorkspaceRoomActive("book")) return;
       pollAbort?.abort();
       const ctrl = new AbortController();
       pollAbort = ctrl;
@@ -1429,6 +1448,7 @@ export function Dashboard() {
 
     const tick = () => {
       if (cancelled || document.hidden) return;
+      if (!isWorkspaceRoomActive("book")) return;
       const { holdings: rowsAll, isMetaTab: meta, portfolioId } =
         pollRowsRef.current;
       const rows = meta
@@ -1452,7 +1472,7 @@ export function Dashboard() {
     schedule();
 
     const onVisibility = () => {
-      if (!document.hidden) tick();
+      if (!document.hidden && isWorkspaceRoomActive("book")) tick();
     };
     document.addEventListener("visibilitychange", onVisibility);
 
@@ -2500,7 +2520,7 @@ export function Dashboard() {
     // after-hours refresh the same as regular trading hours. Skipped while
     // the tab is hidden; resumes on the next tick once visible again.
     const id = window.setInterval(() => {
-      if (!document.hidden) load();
+      if (!document.hidden && isWorkspaceRoomActive("book")) load();
     }, PULSE_REFRESH_MS);
     return () => {
       ctrl.abort();

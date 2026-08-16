@@ -141,6 +141,7 @@ export function BookModeDock({
           <Link
             key={id}
             href={href}
+            prefetch
             title={title}
             onClick={() => stashOpenTab(tab)}
             className={look}

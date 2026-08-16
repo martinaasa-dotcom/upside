@@ -112,7 +112,9 @@ const fundDecisionSchema = z.object({
     ),
   headline: z
     .string()
-    .describe("One short, punchy sentence for today's report title."),
+    .describe(
+      "One short, punchy sentence for today's report title. Never start with Day, Day N, or a spelled-out day. The page already numbers days."
+    ),
   closingNote: z
     .string()
     .describe(
@@ -178,7 +180,9 @@ You run a single, fully simulated (paper money) portfolio that started at ${mone
 const weeklyRecapSchema = z.object({
   headline: z
     .string()
-    .describe("One punchy sentence capturing the week: the story, not the stat line."),
+    .describe(
+      "One punchy sentence capturing the week: the story, not the stat line. Never start with Week, Week N, or a spelled-out week. The page already numbers weeks."
+    ),
   body: z
     .string()
     .describe(
@@ -296,7 +300,7 @@ export function buildFundUserPrompt(input: {
 
   const recapBlock = recentHeadlines.length
     ? `Recent days, for continuity (don't repeat, don't contradict without explaining why):\n${recentHeadlines.map((h) => `- ${h}`).join("\n")}`
-    : "No prior reports yet, this may be day one.";
+    : "No prior reports yet.";
 
   const watchBlock =
     currentWatchlist && currentWatchlist.length > 0

@@ -7,6 +7,7 @@ import {
   liveFundTodayMove,
   liveFundTotalValue,
 } from "@/lib/margus-fund-mark";
+import { stripReportSerialPrefix } from "@/lib/fund-copy";
 import { loadUpsidePortfolioCache } from "@/lib/upside-portfolio-cache";
 import {
   loadCommunityListCache,
@@ -70,7 +71,7 @@ function teaserFromFundCache(): FundTeaser | null {
     totalValue,
     todayDollar,
     todayPct,
-    headline: latest?.headline?.trim() || null,
+    headline: stripReportSerialPrefix(latest?.headline?.trim() || "") || null,
     dayNumber: fundDayNumber(cached.fund.inception_date),
     openCount: open.length,
   };
@@ -169,7 +170,7 @@ export function HomeWorld({
           fundOnly ? "grid-cols-1" : "sm:grid-cols-2"
         )}
       >
-        <Link href="/upside-portfolio" className="group block h-full">
+        <Link href="/upside-portfolio" prefetch className="group block h-full">
           <Card
             tone="brand"
             interactive
@@ -218,7 +219,7 @@ export function HomeWorld({
         </Link>
 
         {!fundOnly && (
-        <Link href={communityHref} className="group block h-full">
+        <Link href={communityHref} prefetch className="group block h-full">
           <Card
             interactive
             className="h-full px-4 py-4 transition group-hover:border-brand/40"

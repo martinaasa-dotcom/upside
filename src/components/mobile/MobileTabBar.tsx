@@ -1,5 +1,6 @@
 "use client";
 
+import { useCircleHref } from "@/components/CircleDockLink";
 import { stashOpenTab } from "@/lib/active-sheet";
 import { cn } from "@/lib/format";
 import { useDockPad } from "@/lib/use-dock-pad";
@@ -55,6 +56,7 @@ export function MobileTabBar({
   onSelect?: (id: MobileTabId) => boolean | void;
 }) {
   const dockRef = useRef<HTMLElement>(null);
+  const circleHref = useCircleHref();
   useDockPad(dockRef);
   return (
     <nav
@@ -68,11 +70,17 @@ export function MobileTabBar({
       <div className="grid h-16 grid-cols-4">
         {TABS.map(({ id, href, label, Icon }) => {
           const on = active === id;
-          const to = id === "pulse" && pulseHref ? pulseHref : href;
+          const to =
+            id === "circle"
+              ? circleHref
+              : id === "pulse" && pulseHref
+                ? pulseHref
+                : href;
           return (
             <Link
               key={id}
               href={to}
+              prefetch
               aria-label={label}
               aria-current={on ? "page" : undefined}
               onClick={(e) => {
