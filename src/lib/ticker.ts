@@ -3,6 +3,7 @@
  * Keep US tickers bare; attach exchange suffixes for EU listings.
  *
  * Examples: LON:VOD → VOD.L · XETRA:VWCE → VWCE.DE · SAP.DE unchanged
+ * LHV1T → LHV1T.TL (Nasdaq Tallinn share class)
  */
 const PREFIX_TO_SUFFIX: Record<string, string> = {
   LON: ".L",
@@ -26,9 +27,19 @@ const PREFIX_TO_SUFFIX: Record<string, string> = {
   CPH: ".CO",
   HEL: ".HE",
   OSL: ".OL",
+  TAL: ".TL",
+  TLN: ".TL",
+  XTAL: ".TL",
+  RIG: ".RG",
+  XRIG: ".RG",
+  VLN: ".VS",
+  XLIT: ".VS",
   TYO: ".T",
   TSE: ".T",
   HKG: ".HK",
+  TSX: ".TO",
+  TOR: ".TO",
+  ASX: ".AX",
 };
 
 const KNOWN_SUFFIXES = new Set([
@@ -45,12 +56,17 @@ const KNOWN_SUFFIXES = new Set([
   ".CO",
   ".HE",
   ".OL",
+  ".TL",
+  ".RG",
+  ".VS",
   ".T",
   ".HK",
+  ".TO",
+  ".AX",
 ]);
 
 /** Common Lightyear / Trade Republic / Xetra codes → Yahoo.
- * Bare names not listed here still get .DE / .L / .AS at quote time. */
+ * Bare names not listed here still get EU suffixes at quote time. */
 const BROKER_BARE_TO_YAHOO: Record<string, string> = {
   RHM: "RHM.DE",
   HAG: "HAG.DE",
@@ -83,12 +99,98 @@ const BROKER_BARE_TO_YAHOO: Record<string, string> = {
   EUN2: "EUN2.DE",
   CSPX: "CSPX.L",
   VUSA: "VUSA.L",
+  LHV: "LHV1T.TL",
+  TVEAT: "TVEAT.TL",
 };
 
-/** Listings to try when a bare ticker is not a US name. Xetra first. */
-export const EU_QUOTE_SUFFIXES = [".DE", ".L", ".AS"] as const;
+/** Nasdaq Baltic share classes: 1T Tallinn, 1R Riga, 1L Vilnius. */
+const BALTIC_CLASS_SUFFIX: Record<string, string> = {
+  T: ".TL",
+  R: ".RG",
+  L: ".VS",
+};
 
-/** Yahoo symbols to try for one typed ticker, Xetra before London. */
+const ISIN_PREFIX_TO_SUFFIX: Record<string, string> = {
+  DE: ".DE",
+  IE: ".DE",
+  NL: ".DE",
+  GB: ".L",
+  JE: ".L",
+  FR: ".PA",
+  FI: ".HE",
+  SE: ".ST",
+  DK: ".CO",
+  NO: ".OL",
+  CH: ".SW",
+  IT: ".MI",
+  ES: ".MC",
+  BE: ".BR",
+  AT: ".VI",
+  EE: ".TL",
+  LV: ".RG",
+  LT: ".VS",
+  JP: ".T",
+  HK: ".HK",
+  CA: ".TO",
+  AU: ".AX",
+};
+
+const EXCHANGE_HINTS: Record<string, string> = {
+  ".L": "London. Price is often in pence.",
+  ".DE": "Xetra / Frankfurt",
+  ".AS": "Amsterdam",
+  ".PA": "Paris",
+  ".BR": "Brussels",
+  ".SW": "Zurich",
+  ".VI": "Vienna",
+  ".MI": "Milan",
+  ".MC": "Madrid",
+  ".ST": "Stockholm",
+  ".CO": "Copenhagen",
+  ".HE": "Helsinki",
+  ".OL": "Oslo",
+  ".TL": "Tallinn",
+  ".RG": "Riga",
+  ".VS": "Vilnius",
+  ".T": "Tokyo",
+  ".HK": "Hong Kong",
+  ".TO": "Toronto",
+  ".AX": "Australia",
+};
+
+/**
+ * Listings to try when a bare ticker is not a US name. US is tried first
+ * in yahooQuoteCandidates, so NVDA never spends a call on .DE unless the
+ * US quote is empty. Xetra first among the extras (Lightyear / TR ETFs).
+ */
+export const EU_QUOTE_SUFFIXES = [
+  ".DE",
+  ".L",
+  ".AS",
+  ".PA",
+  ".HE",
+  ".ST",
+  ".CO",
+  ".OL",
+  ".SW",
+  ".MI",
+  ".MC",
+  ".BR",
+  ".VI",
+  ".TL",
+  ".RG",
+  ".VS",
+] as const;
+
+/** Nasdaq Baltic: LHV1T, TKM1T, GRD1R, TEL1L, … */
+export function balticYahooSymbol(stem: string): string | null {
+  const m = stem.trim().toUpperCase().match(/^[A-Z]{2,6}1([TRL])$/);
+  if (!m) return null;
+  const suffix = BALTIC_CLASS_SUFFIX[m[1]];
+  return suffix ? `${stem.toUpperCase()}${suffix}` : null;
+}
+
+/** Yahoo symbols to try for one typed ticker. US listing first when bare. */
 export function yahooQuoteCandidates(raw: string): string[] {
   const normalized = normalizeYahooTicker(raw);
   if (!normalized) return [];
@@ -108,7 +210,7 @@ export function normalizeYahooTicker(raw: string): string {
   // $€VUAA does not stay as €VUAA and miss the quote.
   t = t.replace(/^[€$£]+/, "");
 
-  // LON:VOD / XETRA:SAP
+  // LON:VOD / XETRA:SAP / TAL:LHV1T
   const prefixed = t.match(/^([A-Z]{2,5})[:\-/]([A-Z0-9.\-]+)$/);
   if (prefixed) {
     const [, exch, sym] = prefixed;
@@ -126,9 +228,12 @@ export function normalizeYahooTicker(raw: string): string {
     if (KNOWN_SUFFIXES.has(suffix)) return t;
   }
 
-  // Lightyear and other EU brokers show VUAA / VWCE bare. Yahoo needs the
-  // exchange suffix or the quote call comes back empty.
+  // Lightyear and other EU brokers show VUAA / VWCE / LHV1T bare. Yahoo
+  // needs the exchange suffix or the quote call comes back empty.
   if (BROKER_BARE_TO_YAHOO[t]) return BROKER_BARE_TO_YAHOO[t];
+
+  const baltic = balticYahooSymbol(t);
+  if (baltic) return baltic;
 
   return t;
 }
@@ -158,19 +263,15 @@ export function resolveImportTicker(raw: string, isin?: string | null): string {
 
   const code = (isin ?? "").trim().toUpperCase();
   if (code.startsWith("US") || code.startsWith("KY")) return base;
-  if (code.startsWith("DE") || code.startsWith("IE") || code.startsWith("NL")) {
-    return `${base}.DE`;
-  }
-  if (code.startsWith("GB") || code.startsWith("JE")) return `${base}.L`;
-  if (code.startsWith("FR")) return `${base}.PA`;
+  const country = code.slice(0, 2);
+  const suffix = ISIN_PREFIX_TO_SUFFIX[country];
+  if (suffix) return `${base}${suffix}`;
   return base;
 }
 
 export function tickerExchangeHint(ticker: string): string | null {
   const t = ticker.toUpperCase();
-  if (t.endsWith(".L")) return "London (Yahoo · often GBX/GBP)";
-  if (t.endsWith(".DE")) return "Xetra / Frankfurt";
-  if (t.endsWith(".AS")) return "Amsterdam";
-  if (t.endsWith(".PA")) return "Paris";
-  return null;
+  const dot = t.lastIndexOf(".");
+  if (dot <= 0) return null;
+  return EXCHANGE_HINTS[t.slice(dot)] ?? null;
 }

@@ -162,7 +162,9 @@ import {
   pickTickerSuggestion,
 } from "../src/lib/market/ticker-search";
 import {
+  balticYahooSymbol,
   normalizeYahooTicker,
+  resolveImportTicker,
   tickerStem,
   yahooQuoteCandidates,
 } from "../src/lib/ticker";
@@ -2972,27 +2974,46 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.equal(normalizeYahooTicker("NVDA"), "NVDA");
   assert.equal(normalizeYahooTicker("€VUAA"), "VUAA.DE");
   assert.equal(normalizeYahooTicker("$€VUAA"), "VUAA.DE");
+  assert.equal(normalizeYahooTicker("EXXT"), "EXXT.DE");
+  assert.equal(normalizeYahooTicker("LHV1T"), "LHV1T.TL");
+  assert.equal(normalizeYahooTicker("LHV"), "LHV1T.TL");
+  assert.equal(normalizeYahooTicker("TAL:LHV1T"), "LHV1T.TL");
+  assert.equal(normalizeYahooTicker("LHV1T.TL"), "LHV1T.TL");
+  assert.equal(normalizeYahooTicker("GRD1R"), "GRD1R.RG");
+  assert.equal(normalizeYahooTicker("TEL1L"), "TEL1L.VS");
+  assert.equal(balticYahooSymbol("LHV1T"), "LHV1T.TL");
+  assert.equal(balticYahooSymbol("NVDA"), null);
+  assert.equal(resolveImportTicker("LHV1T"), "LHV1T.TL");
+  assert.equal(resolveImportTicker("FOO", "EE0000000000"), "FOO.TL");
+  assert.equal(resolveImportTicker("BAR", "LV0000000000"), "BAR.RG");
+  assert.equal(resolveImportTicker("BAZ", "LT0000000000"), "BAZ.VS");
   assert.deepEqual(yahooQuoteCandidates("SPY5"), ["SPY5.DE"]);
   assert.deepEqual(yahooQuoteCandidates("XETRA:SPY5"), ["SPY5.DE"]);
-  assert.deepEqual(yahooQuoteCandidates("NVDA"), [
-    "NVDA",
-    "NVDA.DE",
-    "NVDA.L",
-    "NVDA.AS",
-  ]);
-  assert.deepEqual(yahooQuoteCandidates("ZZZX"), [
-    "ZZZX",
-    "ZZZX.DE",
-    "ZZZX.L",
-    "ZZZX.AS",
-  ]);
+  assert.deepEqual(yahooQuoteCandidates("LHV1T"), ["LHV1T.TL"]);
+  assert.deepEqual(yahooQuoteCandidates("EXXT"), ["EXXT.DE"]);
+  const nvda = yahooQuoteCandidates("NVDA");
+  assert.equal(nvda[0], "NVDA");
+  assert.ok(nvda.includes("NVDA.DE"));
+  assert.ok(nvda.includes("NVDA.L"));
+  assert.ok(nvda.includes("NVDA.AS"));
+  assert.ok(nvda.includes("NVDA.HE"));
+  assert.ok(nvda.includes("NVDA.TL"));
+  const unknown = yahooQuoteCandidates("ZZZX");
+  assert.equal(unknown[0], "ZZZX");
+  assert.ok(unknown.includes("ZZZX.DE"));
+  assert.ok(unknown.includes("ZZZX.HE"));
+  assert.ok(unknown.includes("ZZZX.TL"));
   assert.equal(tickerStem("VUAA.DE"), "VUAA");
+  assert.equal(tickerStem("LHV1T.TL"), "LHV1T");
   assert.equal(sanitizeTickerDraft("€vuaa"), "VUAA");
   assert.equal(sanitizeTickerDraft("$€VUAA"), "VUAA");
-  assert.equal(cashtag("€VUAA"), "$VUAA");
-  assert.equal(cashtag("$€VUAA"), "$VUAA");
+  assert.equal(cashtag("€VUAA"), "VUAA.DE");
+  assert.equal(cashtag("$€VUAA"), "VUAA.DE");
   assert.equal(cashtag("VUAA.DE"), "VUAA.DE");
+  assert.equal(cashtag("EXXT"), "EXXT.DE");
+  assert.equal(cashtag("LHV1T"), "LHV1T.TL");
   assert.equal(cashtag("NBIS"), "$NBIS");
+  assert.equal(cashtag("NVDA"), "$NVDA");
   const pulse = readFileSync(
     join(process.cwd(), "src/components/PulsePage.tsx"),
     "utf8"

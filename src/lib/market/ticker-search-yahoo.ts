@@ -105,6 +105,9 @@ export async function searchYahooTickers(
     if (tickerQuery && !hasStem && normalized && !normalized.includes(".")) {
       collectSearchHits(await searchOnce(yf, `${normalized}.DE`), seen, out, 8);
     }
+    if (tickerQuery && !hasStem && normalized?.includes(".")) {
+      collectSearchHits(await searchOnce(yf, normalized), seen, out, 8);
+    }
     if (
       tickerQuery &&
       normalized &&

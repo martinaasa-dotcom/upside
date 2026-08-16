@@ -1,5 +1,6 @@
 import { twMerge } from "tailwind-merge";
 import { roundMoney } from "@/lib/money";
+import { normalizeYahooTicker } from "@/lib/ticker";
 
 /**
  * Every formatter rejects non-finite input, not just NaN. Division by a
@@ -72,21 +73,21 @@ export function stripTickerDecor(raw: string): string {
 }
 
 /**
- * Ticker for display: NBIS -> $NBIS. London / Xetra names stay bare
- * (VUAA.DE, not $VUAA.DE) so a euro listing does not look like a dollar
- * ticker. Leading $ / € / £ are stripped first, so €VUAA never becomes
- * $€VUAA.
+ * Ticker for display: NBIS -> $NBIS. Foreign listings show the Yahoo
+ * exchange (VUAA.DE, LHV1T.TL, EXXT.DE), never a fake $US cashtag.
+ * Leading $ / € / £ are stripped first, so €VUAA never becomes $€VUAA.
  *
  * Display only. Never use this for a value that has to round-trip as data:
  * the ticker input in HoldingModal, CSV cells, quote-provider URLs, URL
  * params, React keys, or anything looked up in the `quotes` map. Those all
- * need the bare symbol.
+ * need the stored symbol.
  */
 export function cashtag(ticker: string | null | undefined): string {
   const t = stripTickerDecor(ticker ?? "").toUpperCase();
   if (!t) return "—";
-  if (/\.[A-Z]{1,3}$/.test(t)) return t;
-  return `$${t}`;
+  const yahoo = normalizeYahooTicker(t) || t;
+  if (/\.[A-Z]{1,3}$/.test(yahoo)) return yahoo;
+  return `$${yahoo}`;
 }
 
 /**

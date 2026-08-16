@@ -300,7 +300,9 @@ export async function fetchQuotesYahoo(
         for (const symbol of yahooQuoteCandidates(requested)) {
           try {
             const quote = await quoteOneSymbol(yf, symbol, fx, period1);
-            if (quote) return { requested, symbol, quote };
+            // A stub with price 0 is not a hit. Keep walking suffixes
+            // (LHV1T is empty; LHV1T.TL is the Tallinn listing).
+            if (quote && quote.price > 0) return { requested, symbol, quote };
           } catch {
             /* try the next exchange */
           }

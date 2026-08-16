@@ -226,7 +226,8 @@ export function HoldingModal({
               Type the ticker or the company. London:{" "}
               <span className="text-muted">TICKER.L</span>. Xetra:{" "}
               <span className="text-muted">SPY5</span> or{" "}
-              <span className="text-muted">TICKER.DE</span>. Buy price in USD.
+              <span className="text-muted">TICKER.DE</span>. Tallinn:{" "}
+              <span className="text-muted">LHV1T</span>. Buy price in USD.
               {exchangeHint && normalized !== ticker.trim().toUpperCase() && (
                 <> → {normalized}</>
               )}
