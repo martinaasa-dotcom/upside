@@ -3,9 +3,13 @@
 import { track } from "@vercel/analytics";
 import { FluidRow, FluidTable } from "@/components/FluidTable";
 import {
+  Card,
   EmptyState,
+  InsightText,
   MicroLabel,
   PanelHeader,
+  Reading,
+  ScanList,
   Segmented,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
@@ -562,19 +566,9 @@ export function ForecastPanel({
 }: Props) {
   const yearCols = model.years;
   const mobileYears = yearCols.filter((y) => y !== 2030);
-  function mustBeTrue(ticker: string): string {
-    return (
-      cachedEoyPathsFor([ticker], convictions)[0]?.rationale?.trim() ||
-      convictions?.[ticker]?.thesis?.trim() ||
-      ""
-    );
-  }
-  // Ticker | Current SP | EOY×N | Gain — numeric cols share width evenly.
-  // Kept as tight as the content allows (not PortfolioTable-style max-content)
-  // since 5 EOY-year columns + Current SP + Gain is the widest grid in the
-  // app; a looser floor here overflows well before the shared `md:` table
-  // breakpoint, forcing an early horizontal scrollbar on tablets/laptops.
-  const template = `minmax(4rem, 0.7fr) repeat(${yearCols.length + 1}, minmax(5rem, 1fr)) minmax(4rem, 0.6fr)`;
+  // Ticker | Price now | End-year cols | Change. Numbers only in the grid.
+  // Rationale lives under the table so a sentence cannot blow a row open.
+  const template = `minmax(5.5rem, 0.8fr) repeat(${yearCols.length + 1}, minmax(5rem, 1fr)) minmax(4.5rem, 0.6fr)`;
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -895,6 +889,19 @@ export function ForecastPanel({
       ? plan.periods[Math.min(horizon, plan.periods.length - 1)]
       : null;
 
+  const whyRows = useMemo(() => {
+    if (!plan?.eoyTargets) return [];
+    return plan.eoyTargets
+      .map((t) => ({
+        ticker: t.ticker,
+        text:
+          t.rationale?.trim() ||
+          convictions?.[t.ticker]?.thesis?.trim() ||
+          "",
+      }))
+      .filter((row) => row.text);
+  }, [plan, convictions]);
+
   const statusHint = useMemo(() => {
     if (!labReady || !planHydrated || model.rows.length === 0 || busy) return null;
     const decision = shouldAutoRefreshForecast({
@@ -997,11 +1004,6 @@ export function ForecastPanel({
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · Margus is working on it"}
                     </p>
-                    {mustBeTrue(r.ticker) ? (
-                      <p className="mt-1.5 text-sm leading-snug text-muted">
-                        {mustBeTrue(r.ticker)}
-                      </p>
-                    ) : null}
                   </div>
                   <p
                     className={cn(
@@ -1109,11 +1111,6 @@ export function ForecastPanel({
                         working on it
                       </span>
                     )}
-                    {mustBeTrue(r.ticker) ? (
-                      <span className="mt-1 max-w-[12rem] text-xs font-normal leading-snug tracking-normal text-muted">
-                        {mustBeTrue(r.ticker)}
-                      </span>
-                    ) : null}
                   </div>
                   <div className={cn(cellNum, "text-foreground")}>
                     {currency(r.currentPrice)}
@@ -1204,48 +1201,43 @@ export function ForecastPanel({
           </div>
         )}
         {plan && (
-          <div className="mt-5 space-y-8">
+          <div className="mt-5 space-y-5">
             {(plan.generalAdvice || plan.sectorRotation) && (
-              <div className="space-y-2 text-sm leading-relaxed">
+              <Reading>
                 {plan.generalAdvice && (
-                  <p className="text-foreground">{plan.generalAdvice}</p>
+                  <p>
+                    <InsightText text={plan.generalAdvice} />
+                  </p>
                 )}
                 {plan.sectorRotation && (
-                  <p className="text-muted">{plan.sectorRotation}</p>
+                  <p className={plan.generalAdvice ? "mt-3 text-muted" : undefined}>
+                    <InsightText text={plan.sectorRotation} />
+                  </p>
                 )}
-              </div>
+              </Reading>
             )}
 
-            {(plan.eoyTargets?.length ?? 0) > 0 && (
-              <div>
-                <MicroLabel>Why each number</MicroLabel>
-                <ul className="mt-3 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                  {plan.eoyTargets.map((t) => (
-                    <li key={t.ticker} className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">
-                        {cashtag(t.ticker)}
-                      </p>
-                      {t.rationale ? (
-                        <p className="mt-0.5 text-sm leading-snug text-muted">
-                          {t.rationale}
-                        </p>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {whyRows.length > 0 && (
+              <ScanList label="Why each number" rows={whyRows} />
             )}
 
             {lastPlanDiffs.length > 0 && (
-              <div>
-                <MicroLabel>Vs last plan</MicroLabel>
-                <ul className="mt-2 space-y-1 text-sm text-muted">
+              <div className="overflow-hidden rounded-xl border border-border bg-raised">
+                <div className="border-b border-border px-5 py-3">
+                  <p className="text-sm font-medium text-muted">Vs last plan</p>
+                </div>
+                <ul>
                   {lastPlanDiffs.map((d) => (
-                    <li key={d.ticker}>
-                      <span className="font-semibold text-foreground">
+                    <li
+                      key={d.ticker}
+                      className="flex gap-3 border-t border-border px-5 py-3.5 first:border-t-0"
+                    >
+                      <span className="w-[4.75rem] shrink-0 font-semibold text-foreground">
                         {cashtag(d.ticker)}
                       </span>
-                      {` end ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}
+                      <span className="min-w-0 text-sm text-muted">
+                        {`End ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -1253,7 +1245,7 @@ export function ForecastPanel({
             )}
 
             {soldTickersInPlan.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-hover px-4 py-3 text-sm text-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-raised px-5 py-4 text-sm text-foreground">
                 <span>
                   This still mentions {soldTickersInPlan.join(", ")}, which you
                   no longer hold here.
@@ -1272,60 +1264,56 @@ export function ForecastPanel({
             )}
 
             {activePeriod && (
-              <div>
-                <MicroLabel>Where he&apos;d add or trim</MicroLabel>
-                {plan.periods.length > 1 && (
-                  <div className="mt-3">
-                    <Segmented
-                      options={plan.periods.map((p, i) => ({
-                        id: String(i),
-                        label: horizonTabLabel(p.label),
-                        title: p.label,
-                      }))}
-                      value={String(
-                        Math.min(horizon, plan.periods.length - 1)
-                      )}
-                      onChange={(id) => setHorizon(Number(id))}
-                      ariaLabel="Forecast horizon"
-                      className="max-w-full flex-wrap"
-                    />
-                  </div>
-                )}
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-foreground">
+              <div className="space-y-4">
+                <div>
+                  <MicroLabel>Where he&apos;d add or trim</MicroLabel>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
                     {activePeriod.theme}
                   </p>
-                  <p className="mt-1.5 text-sm text-muted">
+                  <p className="mt-1 text-sm text-muted">
                     {activePeriod.label}
                   </p>
-                  <div className="mt-4 grid gap-6 sm:grid-cols-2">
-                    <div className="flex h-full flex-col">
-                      <MicroLabel>
-                        Worth adding
-                      </MicroLabel>
-                      <PlaybookList
-                        text={activePeriod.add}
-                        empty="Nothing to add"
-                        tone="add"
-                      />
-                    </div>
-                    <div className="flex h-full flex-col">
-                      <MicroLabel className="text-loss">
-                        Worth selling some
-                      </MicroLabel>
-                      <PlaybookList
-                        text={activePeriod.trim}
-                        empty="Nothing to sell"
-                        tone="trim"
-                      />
-                    </div>
-                  </div>
-                  {activePeriod.notes?.trim() && (
-                    <p className="mt-4 text-sm leading-relaxed text-muted">
-                      {activePeriod.notes}
-                    </p>
-                  )}
                 </div>
+                {plan.periods.length > 1 && (
+                  <Segmented
+                    options={plan.periods.map((p, i) => ({
+                      id: String(i),
+                      label: horizonTabLabel(p.label),
+                      title: p.label,
+                    }))}
+                    value={String(
+                      Math.min(horizon, plan.periods.length - 1)
+                    )}
+                    onChange={(id) => setHorizon(Number(id))}
+                    ariaLabel="Forecast horizon"
+                    className="max-w-full flex-wrap"
+                  />
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card>
+                    <MicroLabel>Worth adding</MicroLabel>
+                    <PlaybookList
+                      text={activePeriod.add}
+                      empty="Nothing to add"
+                      tone="add"
+                    />
+                  </Card>
+                  <Card>
+                    <MicroLabel className="text-loss">
+                      Worth selling some
+                    </MicroLabel>
+                    <PlaybookList
+                      text={activePeriod.trim}
+                      empty="Nothing to sell"
+                      tone="trim"
+                    />
+                  </Card>
+                </div>
+                {activePeriod.notes?.trim() && (
+                  <Reading>
+                    <InsightText text={activePeriod.notes} />
+                  </Reading>
+                )}
               </div>
             )}
           </div>

@@ -2115,6 +2115,9 @@ run("Forecast is always the base case", () => {
   assert.doesNotMatch(panel, /Optimistic/);
   assert.doesNotMatch(panel, /SPY/);
   assert.match(panel, /Drag across to read a year/);
+  assert.doesNotMatch(panel, /mustBeTrue/);
+  assert.match(panel, /<ScanList/);
+  assert.match(panel, /<Reading/);
   assert.doesNotMatch(route, /requestedStance/);
   assert.doesNotMatch(route, /body\.stance/);
   assert.doesNotMatch(plan, /STANCE = BEARISH/);
