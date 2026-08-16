@@ -463,7 +463,7 @@ export function LabSheet({
                     {themes.map((t) => (
                       <div
                         key={t.theme}
-                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2"
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2.5"
                       >
                         <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
@@ -655,7 +655,7 @@ function AllocCard({
       <div className="space-y-2">
         {slices.map((s) => (
           <div key={s.label}>
-            <div className="mb-0.5 flex justify-between text-xs text-muted">
+            <div className="mb-0.5 flex justify-between text-sm text-muted">
               <span>{s.label}</span>
               <span className="tabular-nums">
                 {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}

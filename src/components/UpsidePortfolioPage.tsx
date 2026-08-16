@@ -397,7 +397,7 @@ function FundPosition({
   const thesis = joinNotes(fundCopyBullets(holding.thesis).slice(0, 2));
   const exit = joinNotes(fundCopyBullets(holding.exit_plan).slice(0, 2));
   return (
-    <article className="rounded-2xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-8">
+    <article className="rounded-2xl border border-border bg-card px-5 py-5 sm:px-6 sm:py-6">
       <div className="grid items-start gap-8 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-12 lg:gap-16">
         <div>
           <div className="flex items-baseline justify-between gap-3">
@@ -1085,7 +1085,7 @@ export function UpsidePortfolioPage() {
       <main id="main" className={PAGE_MAIN_CLASS}>
         <div>
           <h1 className="sr-only">Upside Fund</h1>
-          <p className="text-sm leading-relaxed text-muted">
+          <p className="text-base leading-relaxed text-foreground/80">
             One decision a day in public. Every trade has a why, a timeline,
             and an exit plan.
             <span className="text-muted">
@@ -1129,8 +1129,9 @@ export function UpsidePortfolioPage() {
                   label="Cash"
                   value={currency(cash, 0)}
                   sub={
-                    fund?.cash_purpose?.trim() ||
-                    `of ${currency(fund?.starting_capital ?? 0, 0)} start`
+                    fund?.starting_capital
+                      ? `of ${currency(fund.starting_capital, 0)} start`
+                      : undefined
                   }
                 />
               </div>
@@ -1248,7 +1249,7 @@ export function UpsidePortfolioPage() {
                     {bettingSlices.map((t) => (
                       <div
                         key={t.key}
-                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2"
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2.5"
                       >
                         <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
@@ -1292,7 +1293,7 @@ export function UpsidePortfolioPage() {
                   {fund?.cash_purpose?.trim() ? (
                     <div className="mt-4 border-t border-border pt-4">
                       <MicroLabel>Cash is sitting for</MicroLabel>
-                      <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">
+                      <p className="mt-1.5 text-base leading-relaxed text-foreground/80">
                         {fund.cash_purpose.trim()}
                       </p>
                     </div>

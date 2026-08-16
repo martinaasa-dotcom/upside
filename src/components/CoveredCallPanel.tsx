@@ -183,7 +183,7 @@ export function CoveredCallPanel({
       id={COVERED_CALLS_ANCHOR}
       className="scroll-mt-28 overflow-hidden"
     >
-      <div className="border-b border-border p-5 sm:p-8">
+      <div className="border-b border-border p-5 sm:p-6">
         <PanelHeader title="Covered calls" />
       </div>
 

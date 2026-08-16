@@ -1315,13 +1315,18 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /bg-paper/
   );
   assert.match(panel, /default: "border-border bg-card"/);
-  assert.match(panel, /h-full rounded-xl border border-border bg-raised px-5 py-4/);
+  assert.match(panel, /rounded-xl border border-border bg-raised px-4 py-3.5/);
+  assert.doesNotMatch(
+    panel.slice(panel.indexOf("export function Stat")),
+    /h-full rounded-xl/
+  );
   assert.match(panel, /text-sm font-medium text-muted/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
     /text-sm font-medium text-muted/
   );
-  assert.match(panel, /padded && "p-6 sm:p-10"/);
+  assert.match(panel, /padded && "p-5 sm:p-6"/);
+  assert.match(panel, /font-sans text-2xl font-semibold leading-none tabular-nums/);
   assert.match(panel, /bg-select text-select-ink/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
@@ -1842,6 +1847,11 @@ run("fund page names cash purpose and the watchlist", () => {
   assert.match(src, /Watching/);
   assert.match(src, /Cash is sitting for/);
   assert.doesNotMatch(code(src), /Dry powder/);
+  const scoreboard = src.slice(
+    src.indexOf('label="Total value"'),
+    src.indexOf("What he")
+  );
+  assert.doesNotMatch(scoreboard, /cash_purpose/);
 });
 
 run("first-run is import, not an empty named sheet", () => {

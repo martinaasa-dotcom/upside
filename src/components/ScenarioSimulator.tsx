@@ -157,24 +157,22 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         )}
       </Panel>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Panel tone="plain" padded={false} className="flex flex-col p-4">
-          <MicroLabel>Book after this</MicroLabel>
-          <div className="mt-1 flex items-baseline justify-between gap-2">
-            <span className="text-lg font-semibold tabular-nums text-foreground">
-              {currency(analysis.shockedTotalVal, 0)}
-            </span>
-            <span
-              className={cn(
-                "text-xs font-semibold tabular-nums",
-                analysis.deltaVal >= 0 ? "text-gain" : "text-loss"
-              )}
-            >
-              {percent(analysis.deltaPct)}
-            </span>
-          </div>
-          <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
-            <span>Today {currency(analysis.liveTotalVal, 0)}</span>
+      <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <MicroLabel>Portfolio after this</MicroLabel>
+          <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+            {currency(analysis.shockedTotalVal, 0)}
+          </p>
+          <p
+            className={cn(
+              "mt-1.5 text-sm font-semibold tabular-nums",
+              analysis.deltaVal >= 0 ? "text-gain" : "text-loss"
+            )}
+          >
+            {percent(analysis.deltaPct)}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Today {currency(analysis.liveTotalVal, 0)}.{" "}
             <span
               className={cn(
                 "font-medium tabular-nums",
@@ -184,10 +182,10 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {analysis.deltaVal >= 0 ? "+" : ""}
               {currency(analysis.deltaVal, 0)}
             </span>
-          </div>
-        </Panel>
+          </p>
+        </Card>
 
-        <Panel tone="plain" padded={false} className="flex flex-col p-4">
+        <Card>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <MicroLabel>
               {analysis.margin.isUsingMargin
@@ -209,17 +207,12 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
 
           {analysis.margin.isUsingMargin ? (
             <>
-              <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold tabular-nums text-foreground">
-                  {analysis.margin.shockedLeverage.toFixed(2)}x
-                </span>
-                <span className="text-xs tabular-nums text-muted">
-                  You owe {analysis.margin.shockedDebtToEquityPct.toFixed(0)}%
-                  of what you own
-                </span>
-              </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
-                <span>Room before a margin call</span>
+              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+                {analysis.margin.shockedLeverage.toFixed(2)}x
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                You owe {analysis.margin.shockedDebtToEquityPct.toFixed(0)}%
+                of what you own. Room before a forced sale:{" "}
                 <span
                   className={cn(
                     "font-semibold tabular-nums",
@@ -230,105 +223,71 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 >
                   {currency(analysis.margin.shockedEquityCushion, 0)}
                 </span>
-              </div>
+              </p>
             </>
           ) : (
             <>
-              <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold tabular-nums text-foreground">
-                  {currency(analysis.cash, 0)}
-                </span>
-                <span className="text-xs tabular-nums text-muted">
-                  {analysis.margin.shockedCashPct.toFixed(1)}% of your portfolio
-                  after this
-                </span>
-              </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
-                {analysis.cash > 0 ? (
-                  <>
-                    <span>Doesn&apos;t fall with the stocks</span>
-                    {analysis.margin.shockedCashPct -
-                      analysis.margin.liveCashPct >
-                    0.05 ? (
-                      <span className="tabular-nums text-foreground/80">
-                        Was {analysis.margin.liveCashPct.toFixed(1)}%
-                      </span>
-                    ) : null}
-                  </>
-                ) : (
-                  <span>No cash sitting out as a buffer</span>
-                )}
-              </div>
+              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
+                {currency(analysis.cash, 0)}
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                {analysis.margin.shockedCashPct.toFixed(1)}% of your portfolio
+                after this
+                {analysis.cash > 0
+                  ? ". Does not fall with the stocks."
+                  : ". No cash sitting out as a buffer."}
+              </p>
             </>
           )}
-        </Panel>
+        </Card>
 
-        <Panel tone="plain" padded={false} className="flex flex-col p-4">
+        <Card>
           <MicroLabel>Hurts most</MicroLabel>
           {analysis.topVulnerability ? (
             <>
-              <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold text-foreground">
-                  {cashtag(analysis.topVulnerability.ticker)}
-                </span>
-                <span className="text-xs font-semibold tabular-nums text-loss">
-                  {currency(analysis.topVulnerability.deltaVal, 0)}
-                </span>
-              </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
-                <span className="truncate pr-1">
-                  {analysis.topVulnerability.label}
-                </span>
-                <span className="shrink-0 font-medium tabular-nums text-foreground/80">
-                  {percent(analysis.topVulnerability.movePct)}
-                </span>
-              </div>
+              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none text-foreground">
+                {cashtag(analysis.topVulnerability.ticker)}
+              </p>
+              <p className="mt-1.5 text-sm font-semibold tabular-nums text-loss">
+                {currency(analysis.topVulnerability.deltaVal, 0)}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {analysis.topVulnerability.label} ·{" "}
+                {percent(analysis.topVulnerability.movePct)}
+              </p>
             </>
           ) : (
             <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
           )}
-        </Panel>
+        </Card>
 
-        <Panel tone="plain" padded={false} className="flex flex-col p-4">
+        <Card>
           <MicroLabel>Holds up best</MicroLabel>
           {analysis.topShockAbsorber ? (
             <>
-              <div className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-lg font-semibold text-foreground">
-                  {cashtag(analysis.topShockAbsorber.ticker)}
-                </span>
-                <span
-                  className={cn(
-                    "text-xs font-semibold tabular-nums",
-                    analysis.topShockAbsorber.deltaVal >= 0
-                      ? "text-gain"
-                      : "text-foreground/80"
-                  )}
-                >
-                  {analysis.topShockAbsorber.deltaVal >= 0 ? "+" : ""}
-                  {currency(analysis.topShockAbsorber.deltaVal, 0)}
-                </span>
-              </div>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-2 text-xs text-muted">
-                <span className="truncate pr-1">
-                  {analysis.topShockAbsorber.label}
-                </span>
-                <span
-                  className={cn(
-                    "shrink-0 font-medium tabular-nums",
-                    analysis.topShockAbsorber.movePct >= 0
-                      ? "text-gain"
-                      : "text-foreground/80"
-                  )}
-                >
-                  {percent(analysis.topShockAbsorber.movePct)}
-                </span>
-              </div>
+              <p className="mt-1.5 font-sans text-2xl font-semibold leading-none text-foreground">
+                {cashtag(analysis.topShockAbsorber.ticker)}
+              </p>
+              <p
+                className={cn(
+                  "mt-1.5 text-sm font-semibold tabular-nums",
+                  analysis.topShockAbsorber.deltaVal >= 0
+                    ? "text-gain"
+                    : "text-foreground/80"
+                )}
+              >
+                {analysis.topShockAbsorber.deltaVal >= 0 ? "+" : ""}
+                {currency(analysis.topShockAbsorber.deltaVal, 0)}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {analysis.topShockAbsorber.label} ·{" "}
+                {percent(analysis.topShockAbsorber.movePct)}
+              </p>
             </>
           ) : (
             <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
           )}
-        </Panel>
+        </Card>
       </div>
 
       {analysis.themeBreakdown.length > 1 && selectedShock !== "none" && (

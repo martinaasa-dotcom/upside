@@ -353,7 +353,7 @@ function EmptyBook({
               type="button"
               onClick={r.onClick}
               className={cn(
-                "group h-full rounded-xl border p-5 text-left transition active:scale-[0.99]",
+                "group rounded-xl border px-4 py-3.5 text-left transition active:scale-[0.99]",
                 r.primary
                   ? "border-brand/40 bg-hover hover:border-brand hover:bg-hover"
                   : "border-border bg-raised hover:border-border hover:bg-well/70"
@@ -914,7 +914,7 @@ export function OverviewDashboard({
             }
           />
 
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat
               label="Portfolio"
               value={currency(totals.totalValue, 0)}

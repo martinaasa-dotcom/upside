@@ -26,6 +26,7 @@ import {
   type ThesisCoverage,
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
+import { Stat } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -1874,16 +1875,16 @@ export function CommunityView({ communityId }: Props) {
                         {communityThemeBreakdown.map((t) => (
                           <div
                             key={t.theme}
-                            className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2"
+                            className="flex items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2.5"
                           >
-                            <span className="flex items-center gap-2 text-xs text-foreground/80">
+                            <span className="flex items-center gap-2 text-sm text-foreground/80">
                               <span
                                 className="h-2 w-2 shrink-0 rounded-full"
                                 style={{ backgroundColor: THEME_COLOR[t.theme] }}
                               />
                               {t.label}
                             </span>
-                            <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
+                            <span className="shrink-0 text-sm font-semibold tabular-nums text-muted">
                               {Math.round(t.pct * 100)}%
                             </span>
                           </div>
@@ -2871,7 +2872,7 @@ function PowerAnimalCard({
           <p className="text-sm leading-relaxed text-foreground/80">
             {personality.whyThisAnimal}
           </p>
-          <div className="space-y-2 text-xs leading-relaxed">
+          <div className="space-y-2 text-sm leading-relaxed">
             <p className="flex gap-2 text-gain">
               <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{personality.archetype.strength}</span>
@@ -2907,35 +2908,19 @@ function PowerAnimalCard({
             />
           </div>
 
-          <div className="mt-auto grid gap-3 sm:grid-cols-2">
-            <div className="h-full rounded-xl bg-black/20 px-3 py-3">
-              <p className="text-xs text-muted">
-                Modeled year
-              </p>
-              <p className="mt-1 text-sm tabular-nums text-foreground">
-                {personality.expectedAnnualReturnPct.toFixed(1)}% a year
-              </p>
-              <p
-                className={cn(
-                  "mt-1 text-xs tabular-nums",
-                  signedTone(personality.modeledAlphaPct, "text-muted")
-                )}
-              >
-                {signedPctPoints(personality.modeledAlphaPct)} vs index
-              </p>
-            </div>
-            <div className="h-full rounded-xl bg-black/20 px-3 py-3">
-              <p className="text-xs text-muted">
-                Stretch (a rough bad year)
-              </p>
-              <p className="mt-1 text-sm tabular-nums text-loss">
-                {personality.maxDrawdownPct}%
-              </p>
-              <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                How far these kinds of stocks have fallen in ugly years.
-                Illustrative, not a forecast.
-              </p>
-            </div>
+          <div className="mt-auto grid items-start gap-3 sm:grid-cols-2">
+            <Stat
+              label="Modeled year"
+              value={`${personality.expectedAnnualReturnPct.toFixed(1)}% a year`}
+              sub={`${signedPctPoints(personality.modeledAlphaPct)} vs index`}
+              subClassName={signedTone(personality.modeledAlphaPct, "text-muted")}
+            />
+            <Stat
+              label="Stretch (a rough bad year)"
+              value={`${personality.maxDrawdownPct}%`}
+              sub="How far these kinds of stocks have fallen in ugly years. Illustrative, not a forecast."
+              valueClassName="text-loss"
+            />
           </div>
 
           {milestone.next != null && (
@@ -2979,42 +2964,13 @@ function ScoreRead({
   detail: string;
 }) {
   return (
-    <div className="h-full rounded-xl bg-black/20 px-3 py-2.5">
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+    <div className="rounded-xl border border-border bg-raised px-4 py-3.5">
+      <p className="text-sm font-medium text-muted">{label}</p>
+      <p className="mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums text-foreground">
         {value}
       </p>
-      <p className="mt-0.5 text-xs font-medium text-foreground">{band}</p>
-      <p className="mt-1 text-xs leading-relaxed text-muted">{detail}</p>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  sub,
-  tone,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "up" | "down";
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-raised px-4 py-3">
-      <div className="text-xs text-muted">{label}</div>
-      <div
-        className={cn(
-          "mt-1 text-2xl font-bold tabular-nums",
-          tone === "up" && "text-gain",
-          tone === "down" && "text-loss",
-          !tone && "text-foreground"
-        )}
-      >
-        {value}
-      </div>
-      {sub && <div className="text-xs tabular-nums text-muted">{sub}</div>}
+      <p className="mt-1.5 text-sm font-medium text-foreground">{band}</p>
+      <p className="mt-1 text-sm leading-relaxed text-muted">{detail}</p>
     </div>
   );
 }

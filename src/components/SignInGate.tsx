@@ -273,7 +273,7 @@ function BookStill() {
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
-      <div className="mt-3 rounded-xl border border-border bg-card px-3.5 py-3">
+      <div className="mt-3 rounded-xl border border-border bg-raised px-4 py-3.5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">

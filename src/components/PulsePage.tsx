@@ -283,7 +283,7 @@ function PulseCard({
       </div>
 
       {c.inBook ? (
-        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat
             label="Price"
             value={currency(c.price)}

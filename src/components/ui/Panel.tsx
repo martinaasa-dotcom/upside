@@ -27,9 +27,9 @@ import { useState, type ReactNode } from "react";
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
  *   text-sm    14  labels, meta, chips, chrome, inputs, buttons, nav
- *   text-base  16  titles, tickers, figures, briefing / thesis prose
+ *   text-base  16  titles, tickers, Metric figures, briefing / thesis prose
  *   text-lg    18  hero panel title (one opener per page)
- *   text-2xl   24  display numbers only (book value, compound result)
+ *   text-2xl   24  Stat / scoreboard numbers (book value, compound result)
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-3xl or text-4xl. The logo lockup is the exception.
  *   Headings   text-base font-bold (hero: text-lg) · sentence case
@@ -38,6 +38,9 @@ import { useState, type ReactNode } from "react";
  *   Micro      text-sm font-medium text-muted · sentence case
  *              Caps stay on the logo only.
  *   Metrics    label over figure, inside a card. The box is the grouping.
+ *              Stat is a boxed scoreboard number (text-2xl). It hugs its
+ *              type. Do not stretch it to match a taller sibling, and do
+ *              not park a paragraph in the sub line.
  *              Do not park unlabeled numbers on the far right of a row.
  *   Reading    a dark card, quiet label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
@@ -72,6 +75,8 @@ const SHELL_TONES = {
 
 const FIGURE =
   "mt-1.5 font-sans text-base font-semibold tabular-nums";
+const DISPLAY =
+  "mt-1.5 font-sans text-2xl font-semibold leading-none tabular-nums";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -94,7 +99,7 @@ export function Panel({
       className={cn(
         "h-full rounded-2xl border",
         SHELL_TONES[tone],
-        padded && "p-6 sm:p-10",
+        padded && "p-5 sm:p-6",
         className
       )}
       {...rest}
@@ -212,7 +217,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "h-full rounded-xl border px-5 py-5",
+        "rounded-xl border px-4 py-4",
         CARD_TONES[tone],
         interactive &&
           "transition hover:border-brand/40 hover:bg-hover active:scale-[0.995]",
@@ -262,7 +267,7 @@ export function Reading({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-raised px-5 py-5 text-foreground",
+        "rounded-xl border border-border bg-raised px-4 py-4 text-foreground",
         className
       )}
     >
@@ -340,7 +345,7 @@ export function ScanList({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="border-b border-border px-5 py-3">
+        <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-medium text-muted">{label}</p>
         </div>
       ) : null}
@@ -362,12 +367,12 @@ export function ScanList({
                 <button
                   type="button"
                   onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-5 py-3.5 text-left transition hover:bg-hover"
+                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-hover"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="flex gap-3 px-5 py-3.5">{body}</div>
+                <div className="flex gap-3 px-4 py-3">{body}</div>
               )}
             </li>
           );
@@ -462,7 +467,7 @@ export function Stat({
   return (
     <div
       className={cn(
-        "h-full rounded-xl border border-border bg-raised px-5 py-4",
+        "rounded-xl border border-border bg-raised px-4 py-3.5",
         className
       )}
     >
@@ -472,7 +477,7 @@ export function Stat({
       </MicroLabel>
       <p
         className={cn(
-          FIGURE,
+          DISPLAY,
           valueClassName ??
             (tone === "up"
               ? "text-gain"
@@ -484,7 +489,7 @@ export function Stat({
         {value}
       </p>
       {sub != null && (
-        <p className={cn("mt-1 text-sm tabular-nums", subClassName ?? "text-muted")}>
+        <p className={cn("mt-1.5 text-sm leading-relaxed", subClassName ?? "text-muted")}>
           {sub}
         </p>
       )}
