@@ -55,7 +55,12 @@ import {
   looksLikePromptLeak,
 } from "../src/lib/note-margus";
 import { noteTestAudience } from "../src/lib/note-cron";
-import { buildNoteReport, loudNoteMoves } from "../src/lib/note-report";
+import {
+  buildNoteReport,
+  loudNoteMoves,
+  notePreview,
+  noteReportHtml,
+} from "../src/lib/note-report";
 import {
   inviteEmailAllowlist,
   parseInviteEmails,
@@ -842,6 +847,16 @@ run("Sunday note never ships the writing brief", () => {
   assert.doesNotMatch(fallback, /not the same bet|Thesis intact|of the book/i);
   assert.doesNotMatch(report.lead, /this week/);
   assert.match(report.lead, /\$NBIS was the gainer/);
+  const preview = notePreview(report);
+  assert.match(preview, /\$NBIS was the gainer/);
+  assert.doesNotMatch(preview, /on the book|on your portfolio|this week|\+\$/);
+  assert.ok(preview.length <= 88);
+  const html = noteReportHtml(report);
+  assert.match(html, /\$NBIS was the gainer/);
+  assert.match(html, /&#847;&zwnj;&nbsp;/);
+  assert.ok(
+    html.indexOf("$NBIS was the gainer") < html.indexOf(report.dateLine)
+  );
   assert.ok(report.loudMovers.some((m) => m.ticker === "NBIS"));
   const quiet = loudNoteMoves(
     [
@@ -862,6 +877,8 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(letter, /app: "#0b0b0b"/);
   assert.match(letter, /gain: "#5a9a4a"/);
   assert.match(letter, /Georgia,'Times New Roman',Times,serif/);
+  assert.match(letter, /function emailPreheader/);
+  assert.match(letter, /&#847;&zwnj;&nbsp;/);
   assert.match(email, /function noteTakeHtml/);
   assert.match(email, /function loudNoteMoves/);
   assert.match(email, /wrapEmailLetter/);

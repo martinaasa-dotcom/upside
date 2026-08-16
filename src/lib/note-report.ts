@@ -128,23 +128,42 @@ function priceMoney(n: number): string {
   return `${neg ? "-" : ""}$${grouped}.${frac}`;
 }
 
+function clipPreview(text: string, max = 88): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const at = cut.lastIndexOf(" ");
+  return `${(at > 40 ? cut.slice(0, at) : cut).replace(/[.,;:]+$/, "")}.`;
+}
+
+/** First line on a lock screen or watch. Complements the subject. Never
+ * repeats the dollar, the percent, or the date. */
 export function notePreview(r: NoteReport): string {
   if (r.kind === "morning") {
-    return r.lead;
+    const extra = r.watches.find((w) => w.line !== r.lead);
+    if (extra?.line) return clipPreview(extra.line);
+    if (r.lead && !r.subjectHook.startsWith(r.lead.slice(0, 18))) {
+      return clipPreview(r.lead);
+    }
+    return "Nothing else you have to do before the open.";
   }
-  const top = r.movers[0];
-  const pctBit =
-    r.todayPct != null
-      ? `${signedPct(r.todayPct)} on your portfolio`
-      : "Prices are still coming in";
-  if (r.kind === "sunday") {
-    const next = r.watches[0]?.line ?? r.perspective[0];
-    if (next) return `${pctBit}. ${next}`;
+
+  const earn = r.watches.find((w) => /reports/i.test(w.line));
+  const best = [...r.movers].sort((a, b) => b.pct - a.pct)[0];
+  const worst = [...r.movers].sort((a, b) => a.pct - b.pct)[0];
+  const bits: string[] = [];
+  if (best && best.pct > 0) {
+    bits.push(`${cashtag(best.ticker)} was the gainer.`);
+  } else if (worst && worst.pct < 0) {
+    bits.push(`${cashtag(worst.ticker)} was the drop.`);
+  } else if (r.movers[0]) {
+    bits.push(`${cashtag(r.movers[0].ticker)} moved the most.`);
   }
-  if (top) {
-    return `${pctBit}. ${cashtag(top.ticker)} was the biggest name.`;
+  if (r.kind === "sunday" && earn?.line) bits.push(earn.line);
+  if (bits.length === 0) {
+    return r.kind === "sunday" ? "A quiet week." : "A quiet day.";
   }
-  return `${pctBit}. Open the note for the full look.`;
+  return clipPreview(bits.join(" "));
 }
 
 function signedMoney(n: number): string {
@@ -1082,12 +1101,7 @@ ${
     ? `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(signedPct(r.todayPct))}</p>`
     : ""
 }
-<p style="margin:16px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
-${
-  r.lead
-    ? `<p style="margin:26px 0 0 0;font-family:${SERIF};font-size:18px;line-height:1.55;font-weight:400;color:${CREAM}">${escapeHtml(r.lead)}</p>`
-    : ""
-}`;
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`;
 
   const bodyOrder =
     r.kind === "morning"

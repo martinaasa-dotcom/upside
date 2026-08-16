@@ -57,16 +57,25 @@ export function emailAccountFooter(): string {
   return `<p style="margin:36px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}">Turn these notes off in <a href="${EMAIL.origin}/account" style="color:${EMAIL.gold};text-decoration:underline">Account</a>.</p>`;
 }
 
+export function emailPreheader(preview: string): string {
+  const pad = "&#847;&zwnj;&nbsp;".repeat(80);
+  return `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all">${escapeEmail(preview)}${pad}</div>`;
+}
+
 export function wrapEmailLetter(input: {
   title: string;
   preview: string;
   dateLine?: string;
   body: string;
   footer?: string;
+  hideOpener?: boolean;
 }): string {
-  const previewPad = Array.from({ length: 40 }, () => "&zwnj;&nbsp;").join("");
+  const opener =
+    input.hideOpener || !input.preview
+      ? ""
+      : `<p style="margin:20px 0 0 0;font-family:${EMAIL.serif};font-size:17px;line-height:1.45;color:${EMAIL.cream}">${escapeEmail(input.preview)}</p>`;
   const date = input.dateLine
-    ? `<p style="margin:14px 0 0 0;font-family:${EMAIL.sans};font-size:13px;line-height:1.4;letter-spacing:0.02em;color:${EMAIL.muted}">${escapeEmail(input.dateLine)}</p>`
+    ? `<p style="margin:${opener ? "10px" : "14px"} 0 0 0;font-family:${EMAIL.sans};font-size:13px;line-height:1.4;letter-spacing:0.02em;color:${EMAIL.muted}">${escapeEmail(input.dateLine)}</p>`
     : "";
   const footer = input.footer ?? "";
   return `<!DOCTYPE html>
@@ -83,7 +92,7 @@ export function wrapEmailLetter(input: {
 </style>
 </head>
 <body style="margin:0;padding:0;width:100%;background:${EMAIL.app};color:${EMAIL.cream}" bgcolor="${EMAIL.app}">
-<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${escapeEmail(input.preview)}${previewPad}</div>
+${emailPreheader(input.preview)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${EMAIL.app}" style="width:100%;background:${EMAIL.app}">
   <tr>
     <td align="center" style="padding:0;background:${EMAIL.app}" bgcolor="${EMAIL.app}">
@@ -94,6 +103,7 @@ export function wrapEmailLetter(input: {
         <tr>
           <td style="padding:48px 28px 52px 28px;background:${EMAIL.app}">
             <img src="${EMAIL.lockup}" width="156" height="29" alt="Upside Lab" style="display:block;border:0" />
+            ${opener}
             ${date}
             ${input.body}
             ${footer}
@@ -128,6 +138,7 @@ export function fallbackNoteHtml(text: string): string {
     title: "Upside Lab",
     preview,
     body,
+    hideOpener: true,
   });
 }
 
@@ -149,6 +160,7 @@ export function communityInviteCopy(input: {
   const html = wrapEmailLetter({
     title: subject,
     preview: lead,
+    hideOpener: true,
     body: `${emailKicker("Invite")}
 <div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
 <p style="margin:0;font-family:${EMAIL.serif};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">Join ${escapeEmail(name)}</p>
@@ -177,6 +189,7 @@ export function emptyBookNudgeHtml(text: string): string {
   return wrapEmailLetter({
     title: preview,
     preview,
+    hideOpener: true,
     body: `${emailKicker("A note")}
 <div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
 <p style="margin:0;font-family:${EMAIL.serif};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">${escapeEmail(preview)}</p>
