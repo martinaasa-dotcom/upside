@@ -2,19 +2,27 @@ import { cn } from "@/lib/format";
 import type { ReactNode } from "react";
 
 /**
- * Full-width grid: each column ≥ content, leftover width shared evenly.
- * Cell content is centered so surplus space looks balanced (not piled
- * between left-aligned and right-aligned neighbors).
+ * Full-width CSS grid. Pass a template: `minmax(max-content, 1fr)` keeps
+ * each column at least as wide as its content (scrolls if needed);
+ * `minmax(0, 1fr)` shrinks to the container. Cell content is centered
+ * so leftover space looks balanced.
  */
 export function FluidTable({
   template,
   children,
+  className,
 }: {
   template: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+    <div
+      className={cn(
+        "overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
+        className
+      )}
+    >
       <div
         className="grid w-full min-w-0 text-sm"
         style={{ gridTemplateColumns: template }}
@@ -45,4 +53,4 @@ export function FluidRow({
 }
 
 export const cellBase =
-  "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-2 py-2 text-center";
+  "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-1 py-2 text-center";

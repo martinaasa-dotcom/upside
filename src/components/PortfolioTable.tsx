@@ -21,7 +21,7 @@ import {
 import { sheetCashBalance } from "@/lib/cash-balance";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
-import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
@@ -150,7 +150,7 @@ function InlineNumber({
       }}
       className={cn(
         "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50",
-        className ?? "mx-auto w-[5.25rem]"
+        className ?? "mx-auto w-full max-w-[4.5rem]"
       )}
     />
   );
@@ -254,8 +254,22 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   }
 }
 
-const TEMPLATE =
-  "repeat(12, minmax(max-content, 1fr)) minmax(2.25rem, 2.25rem)";
+/** Shrink-to-fit inside the 1080px page column. Money cols get the extra width. */
+const TEMPLATE = [
+  "minmax(6.5rem, 1.2fr)",
+  "minmax(0, 0.6fr)",
+  "minmax(0, 0.75fr)",
+  "minmax(0, 0.75fr)",
+  "minmax(0, 0.8fr)",
+  "minmax(0, 0.6fr)",
+  "minmax(0, 1.25fr)",
+  "minmax(0, 1.25fr)",
+  "minmax(0, 1.25fr)",
+  "minmax(0, 0.65fr)",
+  "minmax(0, 0.7fr)",
+  "minmax(0, 0.7fr)",
+  "2.25rem",
+].join(" ");
 
 export function PortfolioTable({
   portfolio,
@@ -476,8 +490,8 @@ export function PortfolioTable({
         </div>
       </header>
 
-      {/* Mobile cards */}
-      <div className="space-y-2 p-3 md:hidden">
+      {/* Mobile / tablet cards. The 13-col table needs the 1080px column. */}
+      <div className="space-y-2 p-3 lg:hidden">
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-raised px-4 py-8 text-center">
             <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
@@ -552,13 +566,13 @@ export function PortfolioTable({
                 <div>
                   <p className="text-muted">Cost</p>
                   <p className="tabular-nums text-muted">
-                    {money(h.buyValue)}
+                    {money(h.buyValue, 0)}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted">Value</p>
                   <p className="tabular-nums text-foreground">
-                    {money(h.currentValue)}
+                    {money(h.currentValue, 0)}
                   </p>
                 </div>
                 <div>
@@ -569,7 +583,7 @@ export function PortfolioTable({
                       signedTone(h.roiDollar)
                     )}
                   >
-                    {money(h.roiDollar)}
+                    {money(h.roiDollar, 0)}
                   </p>
                 </div>
                 <div>
@@ -624,12 +638,12 @@ export function PortfolioTable({
               </span>
             </div>
             <div className="mt-1 flex justify-between text-muted">
-              <span>Cost {money(totals.buyValue)}</span>
-              <span>Value {money(totals.currentValue)}</span>
+              <span>Cost {money(totals.buyValue, 0)}</span>
+              <span>Value {money(totals.currentValue, 0)}</span>
             </div>
             <div className="mt-1 flex justify-between text-sm">
               <span className={cn("tabular-nums", signedTone(totals.roiDollar))}>
-                {money(totals.roiDollar)}
+                {money(totals.roiDollar, 0)}
               </span>
               {today.pct !== null && (
                 <span className="tabular-nums">
@@ -648,14 +662,14 @@ export function PortfolioTable({
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         {holdings.length === 0 ? (
           <div className="px-4 py-12 text-center">
             <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
         ) : (
-          <FluidTable template={TEMPLATE}>
+          <FluidTable template={TEMPLATE} className="overflow-x-clip">
             <FluidRow className="border-border text-xs font-medium text-muted">
               {COLUMNS.map((col) => (
                 <div key={col.label || "actions"} className={cellBase}>
@@ -664,7 +678,7 @@ export function PortfolioTable({
                       type="button"
                       onClick={() => toggleSort(col.key!)}
                       className={cn(
-                        "group inline-flex items-center gap-1 transition hover:text-foreground/80",
+                        "inline-flex items-center gap-1 transition hover:text-foreground/80",
                         sortKey === col.key && "text-brand-bright"
                       )}
                       title={
@@ -680,9 +694,7 @@ export function PortfolioTable({
                         ) : (
                           <ArrowDown className="h-3 w-3" />
                         )
-                      ) : (
-                        <ArrowUpDown className="h-3 w-3 opacity-30 transition group-hover:opacity-70" />
-                      )}
+                      ) : null}
                     </button>
                   ) : col.explain ? (
                     <span title={col.explain}>{col.label}</span>
@@ -740,10 +752,10 @@ export function PortfolioTable({
                   {percent(h.roiPct)}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-muted")}>
-                  {money(h.buyValue)}
+                  {money(h.buyValue, 0)}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-foreground")}>
-                  {money(h.currentValue)}
+                  {money(h.currentValue, 0)}
                 </div>
                 <div
                   className={cn(
@@ -752,13 +764,14 @@ export function PortfolioTable({
                     signedTone(h.roiDollar)
                   )}
                 >
-                  {money(h.roiDollar)}
+                  {money(h.roiDollar, 0)}
                 </div>
-                <div className={cellBase}>
+                <div className={cn(cellBase, "px-0.5")}>
                   <Sparkline
                     points={h.quote?.sparkline ?? []}
-                    width={72}
+                    width={56}
                     height={24}
+                    fill
                   />
                 </div>
                 <div
@@ -821,10 +834,10 @@ export function PortfolioTable({
                 {percent(totals.roiPct)}
               </div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground/80")}>
-                {money(totals.buyValue)}
+                {money(totals.buyValue, 0)}
               </div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
-                {money(totals.currentValue)}
+                {money(totals.currentValue, 0)}
               </div>
               <div
                 className={cn(
@@ -833,7 +846,7 @@ export function PortfolioTable({
                   signedTone(totals.roiDollar)
                 )}
               >
-                {money(totals.roiDollar)}
+                {money(totals.roiDollar, 0)}
               </div>
               <div className={cn(cellBase, "py-2.5")} />
               <div
