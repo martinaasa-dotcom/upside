@@ -4,7 +4,7 @@
  * the side gutters or the page pad.
  */
 export const PAGE_MAX_CLASS = "max-w-[1080px]";
-export const PAGE_GUTTER_CLASS = "px-5 sm:px-8";
+export const PAGE_GUTTER_CLASS = "px-panel sm:px-8";
 export const PAGE_COLUMN_CLASS = `mx-auto w-full min-w-0 ${PAGE_MAX_CLASS} ${PAGE_GUTTER_CLASS}`;
 
 export const PAGE_FRAME_CLASS =

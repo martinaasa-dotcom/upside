@@ -55,7 +55,12 @@ export function AppStatusStrip({
 
   return (
     <div className="border-b border-border">
-      <div className={cn(PAGE_COLUMN_CLASS, "flex h-10 items-center gap-3")}>
+      <div
+        className={cn(
+          PAGE_COLUMN_CLASS,
+          "flex min-h-10 flex-col gap-1 py-1.5 sm:h-10 sm:flex-row sm:items-center sm:gap-3 sm:py-0"
+        )}
+      >
         <span className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted">
           {sec == null ? "Prices · —" : `Prices · ${formatAge(sec)}`}
           {quotedCount != null && totalCount != null ? (

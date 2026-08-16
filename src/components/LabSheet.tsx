@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { EmptyState, HairlineGrid, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -270,11 +270,35 @@ export function LabSheet({
 
   return (
     <div className="space-y-6">
-      <Panel padded={false} className="px-4 py-3 sm:px-5">
+      <Panel padded={false} className="px-panel py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
             <h2 className="shrink-0 text-base font-bold text-foreground">Lab</h2>
-            <div className="relative min-w-0 flex-1">
+            <HairlineGrid
+              role="tablist"
+              ariaLabel="Lab sections"
+              preferred={visibleTabs.length <= 3 ? visibleTabs.length : 2}
+              className="w-full min-w-0 sm:hidden"
+            >
+              {visibleTabs.map((t) => (
+                <button
+                  key={`m-${t.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  onClick={() => selectTab(t.id)}
+                  className={cn(
+                    "min-w-0 px-2 py-2.5 text-center text-sm font-medium transition",
+                    tab === t.id
+                      ? "bg-select text-select-ink"
+                      : "bg-well text-muted hover:bg-hover hover:text-foreground"
+                  )}
+                >
+                  <span className="block truncate">{t.label}</span>
+                </button>
+              ))}
+            </HairlineGrid>
+            <div className="relative hidden min-w-0 flex-1 sm:block">
               <div
                 ref={tabScrollRef}
                 onScroll={syncTabOverflow}
@@ -540,7 +564,7 @@ export function LabSheet({
              * band. Pair list then fills the body height. */
             <div>
               <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-stretch">
-                <div className="min-w-0 overflow-x-auto">
+                <div className="hidden min-w-0 overflow-x-auto lg:block">
                   <div
                     className="grid w-max gap-1"
                     style={{

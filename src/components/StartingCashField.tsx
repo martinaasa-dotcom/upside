@@ -1,5 +1,6 @@
 "use client";
 
+import { HairlineGrid } from "@/components/ui/Panel";
 import { CLASS_CASH_PRESETS, formatCashDigits, parseCashDigits } from "@/lib/class-templates";
 import { MAX_STARTING_CASH, MIN_STARTING_CASH } from "@/lib/classroom";
 import { cn } from "@/lib/format";
@@ -27,7 +28,7 @@ export function StartingCashField({
         Every student gets this on a paper portfolio. Same number for the whole
         class.
       </p>
-      <div className="mt-4 grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border bg-border">
+      <HairlineGrid className="mt-4" preferred={3}>
         {CLASS_CASH_PRESETS.map((n) => (
           <button
             key={n}
@@ -44,7 +45,7 @@ export function StartingCashField({
             ${formatCashDigits(n)}
           </button>
         ))}
-      </div>
+      </HairlineGrid>
       <label className="mt-4 block">
         <span className="text-sm font-medium text-muted">Or type another amount</span>
         <input

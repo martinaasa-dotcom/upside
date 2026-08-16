@@ -10,6 +10,7 @@ import {
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   MicroLabel,
+  NESTED_PAD,
   Panel,
   PanelHeader,
   InsightText,
@@ -220,7 +221,8 @@ function EmptyBook({
               type="button"
               onClick={r.onClick}
               className={cn(
-                "group rounded-xl border px-4 py-3.5 text-left transition active:scale-[0.99]",
+                "group rounded-xl border text-left transition active:scale-[0.99]",
+                NESTED_PAD,
                 r.primary
                   ? "border-brand/40 bg-hover hover:border-brand hover:bg-hover"
                   : "border-border bg-raised hover:border-border hover:bg-well/70"

@@ -147,7 +147,11 @@ export function UpsideLogo({
       aria-label={title}
     >
       <UpsideMark className={cn("h-[1.4em] w-[1.4em]", LOCKUP_MARK_NUDGE)} />
-      <LogoType className={alwaysType ? undefined : "hidden xs:inline"} />
+      <LogoType
+        className={
+          alwaysType ? "max-[22.5rem]:hidden" : "hidden xs:inline"
+        }
+      />
     </span>
   );
 }

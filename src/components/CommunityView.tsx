@@ -28,7 +28,7 @@ import {
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
 import { listingCurrency } from "@/lib/listing-currency";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { Card, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -1939,7 +1939,7 @@ export function CommunityView({ communityId }: Props) {
                         communityFunFacts.map((fact, i) => (
                           <li
                             key={`${i}-${fact.slice(0, 24)}`}
-                            className="rounded-2xl border border-border/70 bg-raised px-4 py-3.5 text-sm leading-relaxed text-foreground"
+                            className="rounded-2xl border border-border/70 bg-raised p-nested text-sm leading-relaxed text-foreground"
                           >
                             {fact}
                           </li>
@@ -3001,7 +3001,7 @@ function ScoreRead({
   detail: string;
 }) {
   return (
-    <div className="h-full bg-raised px-4 py-3.5">
+    <div className={cn("h-full", SCORE_CELL)}>
       <p className="text-sm font-medium text-muted">{label}</p>
       <p className="mt-1 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
         {value}

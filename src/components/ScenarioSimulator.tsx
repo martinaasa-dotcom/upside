@@ -5,8 +5,8 @@ import {
   analyzePortfolioShock,
   type ShockId,
 } from "@/lib/book-shock";
-import { cashtag, cn, currency, percent } from "@/lib/format";
-import { Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { cashtag, cn, currency, percent, signedCurrency, signedPercent, signedTone } from "@/lib/format";
+import { Card, EmptyState, HairlineGrid, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -99,7 +99,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           title="What a bad day costs you"
         />
 
-        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+        <HairlineGrid className="mt-4" mobilePreferred={2} preferred={5}>
           {SHOCKS.map((s) => {
             const Icon = DRIVER_ICONS[s.driver] ?? Activity;
             const isSelected = selectedShock === s.id;
@@ -127,7 +127,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               </button>
             );
           })}
-        </div>
+        </HairlineGrid>
 
         <Card className="mt-4 min-h-[8.5rem]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
@@ -153,64 +153,39 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {activeScenario.mechanism}
             </p>
           </Card>
-      </Panel>
 
-      <Scoreboard cols={4}>
-        <div className="bg-raised px-4 py-3.5">
+        <div className="mt-5">
           <MicroLabel>Portfolio after this</MicroLabel>
-          <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
+          <p className="mt-1 break-all text-2xl font-bold tabular-nums text-foreground">
             {currency(analysis.shockedTotalVal, 0)}
           </p>
-          <p
-            className={cn(
-              "mt-1.5 text-sm font-semibold tabular-nums",
-              analysis.deltaVal >= 0 ? "text-gain" : "text-loss"
-            )}
-          >
-            {percent(analysis.deltaPct)}
-          </p>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Today {currency(analysis.liveTotalVal, 0)}.{" "}
+          <p className="mt-2 text-sm leading-relaxed">
             <span
               className={cn(
-                "font-medium tabular-nums",
-                analysis.deltaVal >= 0 ? "text-gain" : "text-loss"
+                "font-semibold tabular-nums",
+                signedTone(analysis.deltaVal)
               )}
             >
-              {analysis.deltaVal >= 0 ? "+" : ""}
-              {currency(analysis.deltaVal, 0)}
+              {signedPercent(analysis.deltaPct)}
+            </span>
+            <span className="text-muted">
+              {" "}
+              · {signedCurrency(analysis.deltaVal, 0)} from today&apos;s{" "}
+              {currency(analysis.liveTotalVal, 0)}
             </span>
           </p>
-        </div>
-
-        <div className="bg-raised px-4 py-3.5">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <MicroLabel>
-              {analysis.margin.isUsingMargin
-                ? "Borrowed money"
-                : "Cash"}
-            </MicroLabel>
-            {analysis.margin.isUsingMargin ? (
-              analysis.margin.marginCallRisk === "critical" ? (
+          {analysis.margin.isUsingMargin ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {analysis.margin.marginCallRisk === "critical" ? (
                 <Pill tone="bad">Broker could force a sale</Pill>
               ) : analysis.margin.marginCallRisk === "caution" ? (
                 <Pill tone="warn">Getting tight</Pill>
               ) : (
                 <Pill tone="good">Comfortable</Pill>
-              )
-            ) : (
-              <Pill tone="neutral">Nothing borrowed</Pill>
-            )}
-          </div>
-
-          {analysis.margin.isUsingMargin ? (
-            <>
-              <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
-                {analysis.margin.shockedLeverage.toFixed(2)}x
-              </p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                You owe {analysis.margin.shockedDebtToEquityPct.toFixed(0)}%
-                of what you own. Room before a forced sale:{" "}
+              )}
+              <p className="text-sm text-muted">
+                {analysis.margin.shockedLeverage.toFixed(2)}x borrowed. Room
+                before a forced sale:{" "}
                 <span
                   className={cn(
                     "font-semibold tabular-nums",
@@ -222,71 +197,56 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   {currency(analysis.margin.shockedEquityCushion, 0)}
                 </span>
               </p>
-            </>
+            </div>
           ) : (
-            <>
-              <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
-                {currency(analysis.cash, 0)}
-              </p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                {analysis.margin.shockedCashPct.toFixed(1)}% of your portfolio
-                after this
-                {analysis.cash > 0
-                  ? ". Does not fall with the stocks."
-                  : ". No cash sitting out as a buffer."}
-              </p>
-            </>
+            <p className="mt-3 text-sm text-muted">
+              {analysis.cash > 0
+                ? `Cash ${currency(analysis.cash, 0)} · ${analysis.margin.shockedCashPct.toFixed(1)}% of the book after this.`
+                : "No cash sitting out as a buffer."}
+            </p>
           )}
         </div>
 
-        <div className="bg-raised px-4 py-3.5">
-          <MicroLabel>Hurts most</MicroLabel>
-          {analysis.topVulnerability ? (
-            <>
-              <p className="mt-1.5 font-sans text-lg font-semibold leading-none text-foreground">
-                {cashtag(analysis.topVulnerability.ticker)}
-              </p>
-              <p className="mt-1.5 text-sm font-semibold tabular-nums text-loss">
-                {currency(analysis.topVulnerability.deltaVal, 0)}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {analysis.topVulnerability.label} ·{" "}
-                {percent(analysis.topVulnerability.movePct)}
-              </p>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
-          )}
-        </div>
-
-        <div className="bg-raised px-4 py-3.5">
-          <MicroLabel>Holds up best</MicroLabel>
-          {analysis.topShockAbsorber ? (
-            <>
-              <p className="mt-1.5 font-sans text-lg font-semibold leading-none text-foreground">
-                {cashtag(analysis.topShockAbsorber.ticker)}
-              </p>
-              <p
-                className={cn(
-                  "mt-1.5 text-sm font-semibold tabular-nums",
-                  analysis.topShockAbsorber.deltaVal >= 0
-                    ? "text-gain"
-                    : "text-foreground/80"
-                )}
-              >
-                {analysis.topShockAbsorber.deltaVal >= 0 ? "+" : ""}
-                {currency(analysis.topShockAbsorber.deltaVal, 0)}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {analysis.topShockAbsorber.label} ·{" "}
-                {percent(analysis.topShockAbsorber.movePct)}
-              </p>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-muted">Nothing held here yet.</p>
-          )}
-        </div>
-      </Scoreboard>
+        <Scoreboard className="mt-5" cols={2}>
+          <Score
+            label="Hurts most"
+            value={
+              analysis.topVulnerability
+                ? cashtag(analysis.topVulnerability.ticker)
+                : "—"
+            }
+            sub={
+              analysis.topVulnerability
+                ? `${signedCurrency(analysis.topVulnerability.deltaVal, 0)} · ${percent(analysis.topVulnerability.movePct)}`
+                : "Nothing held here yet."
+            }
+            subClassName={
+              analysis.topVulnerability
+                ? signedTone(analysis.topVulnerability.deltaVal)
+                : undefined
+            }
+          />
+          <Score
+            label="Holds up best"
+            value={
+              analysis.topShockAbsorber
+                ? cashtag(analysis.topShockAbsorber.ticker)
+                : "—"
+            }
+            sub={
+              analysis.topShockAbsorber
+                ? `${signedCurrency(analysis.topShockAbsorber.deltaVal, 0)} · ${percent(analysis.topShockAbsorber.movePct)}`
+                : "Nothing held here yet."
+            }
+            subClassName={
+              analysis.topShockAbsorber &&
+              analysis.topShockAbsorber.deltaVal >= 0
+                ? "text-gain"
+                : "text-muted"
+            }
+          />
+        </Scoreboard>
+      </Panel>
 
       {analysis.themeBreakdown.length > 1 && selectedShock !== "none" && (
         <Panel tone="plain">
@@ -334,7 +294,81 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           </span>
         </div>
 
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 space-y-3 md:hidden">
+          {sortedRows.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted">
+              Nothing held in this scope yet.
+            </p>
+          ) : (
+            sortedRows.map((r) => (
+              <Card key={r.ticker}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-base font-semibold text-foreground">
+                    {cashtag(r.ticker)}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      r.deltaVal === 0
+                        ? "text-muted"
+                        : r.deltaVal > 0
+                          ? "text-gain"
+                          : "text-loss"
+                    )}
+                  >
+                    {r.deltaVal > 0 ? "+" : ""}
+                    {currency(r.deltaVal, 0)}
+                  </p>
+                </div>
+                <p className="mt-1 truncate text-sm text-muted">{r.label}</p>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted">Move</p>
+                    <p
+                      className={cn(
+                        "font-medium tabular-nums",
+                        r.movePct === 0
+                          ? "text-muted"
+                          : r.movePct > 0
+                            ? "text-gain"
+                            : "text-loss"
+                      )}
+                    >
+                      {r.movePct > 0 ? "+" : ""}
+                      {percent(r.movePct)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Price now</p>
+                    <p className="tabular-nums text-foreground">
+                      {currency(r.livePx, 2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Price after</p>
+                    <p className="tabular-nums text-foreground">
+                      {currency(r.shockPx, 2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Value now</p>
+                    <p className="tabular-nums text-muted">
+                      {currency(r.liveVal, 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Value after</p>
+                    <p className="tabular-nums text-foreground">
+                      {currency(r.shockVal, 0)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <div className="mt-3 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs text-muted">

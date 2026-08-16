@@ -7,6 +7,7 @@ import {
   EmptyState,
   InsightText,
   MicroLabel,
+  NESTED_PAD,
   PanelHeader,
   Reading,
   ScanList,
@@ -188,7 +189,7 @@ function PlaybookItem({
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
   return (
-    <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-border bg-raised px-4 py-3")}>
+    <div className={cn(SPLIT_ROW, NESTED_PAD, "sm:items-center rounded-xl border border-border bg-raised")}>
       <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
         <p className="mt-1 text-sm leading-relaxed text-muted">
@@ -919,7 +920,7 @@ export function ForecastPanel({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <header className="border-b border-border p-5">
+      <header className="border-b border-border p-panel">
         <PanelHeader
           title="Forecast"
           subtitle="A yearly price for each holding, to 2030."
@@ -1032,7 +1033,7 @@ export function ForecastPanel({
               </Card>
             ))}
 
-            <div className="rounded-xl border border-border bg-raised px-4 py-3.5">
+            <div className={cn("rounded-xl border border-border bg-raised", NESTED_PAD)}>
               <p className="text-sm font-medium text-muted">
                 Whole portfolio
               </p>
@@ -1155,7 +1156,7 @@ export function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-border p-5">
+      <div className="border-t border-border p-panel">
         <div>
           <h3 className="text-base font-semibold text-foreground">
             What Margus makes of it
@@ -1211,14 +1212,14 @@ export function ForecastPanel({
 
             {lastPlanDiffs.length > 0 && (
               <div className="overflow-hidden rounded-xl border border-border bg-raised">
-                <div className="border-b border-border px-5 py-3">
+                <div className="border-b border-border px-panel py-3">
                   <p className="text-sm font-medium text-muted">Vs last plan</p>
                 </div>
                 <ul>
                   {lastPlanDiffs.map((d) => (
                     <li
                       key={d.ticker}
-                      className="flex gap-3 border-t border-border px-5 py-3.5 first:border-t-0"
+                      className="flex gap-3 border-t border-border px-panel py-3.5 first:border-t-0"
                     >
                       <span className="w-[4.75rem] shrink-0 font-semibold text-foreground">
                         {cashtag(d.ticker)}
@@ -1236,7 +1237,7 @@ export function ForecastPanel({
               <div
                 className={cn(
                   SPLIT_ROW,
-                  "sm:items-center rounded-xl border border-border bg-raised px-5 py-4 text-sm text-foreground"
+                  "sm:items-center rounded-xl border border-border bg-raised px-panel py-4 text-sm text-foreground"
                 )}
               >
                 <span className={SPLIT_COPY}>

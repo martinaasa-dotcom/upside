@@ -2776,15 +2776,7 @@ export function Dashboard() {
             onAdd={() => setCreatingSheet(true)}
           />
         )
-      : isOverview
-        ? "Overview"
-        : isCompound
-          ? "Compound"
-          : isLab
-            ? "Lab"
-            : isPulse
-              ? "Pulse"
-              : "";
+      : "";
 
   return (
     <div className={PAGE_FRAME_CLASS}>

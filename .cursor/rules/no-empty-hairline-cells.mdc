@@ -1,0 +1,27 @@
+---
+description: Never paint an empty leftover cell in a hairline grid
+alwaysApply: true
+---
+
+# No empty boxes in hairline grids
+
+`gap-px` + `bg-border` CSS grids paint every track, including leftover ones. Five items in three columns leaves a dead grey box. That cannot ship, on any surface, new or old.
+
+## Do this
+
+- Filled toggles: `Segmented` with `columns`. It snaps via `filledGridColumns`.
+- Chip / preset rows: `HairlineGrid`.
+- Number tiles: `Scoreboard` / `Score` (`filledCardColumns`).
+- Column count must divide the child count at every breakpoint.
+
+```
+BAD:  <div className="grid grid-cols-3 gap-px bg-border"> with 5 buttons
+GOOD: <Segmented columns={3} options={fiveItems} />  // snaps to 5
+GOOD: <HairlineGrid preferred={3}>{items}</HairlineGrid>
+```
+
+## Do not
+
+- Hand-roll `grid-cols-N` on a `gap-px` / `bg-border` grid.
+- Pad with a dummy cell, a spacer `div`, or an empty button.
+- Use `auto-fill` on this pattern. Empty tracks still paint.

@@ -411,7 +411,7 @@ function FundNote({
   const dot = accent === "brand" ? "bg-brand" : "bg-loss";
   return (
     <div
-      className="flex min-h-min flex-1 flex-col bg-raised px-4 py-3.5"
+      className="flex min-h-min flex-1 flex-col bg-raised p-nested"
       style={{ boxShadow: `inset 3px 0 0 ${bar}` }}
     >
       <MicroLabel>{label}</MicroLabel>
@@ -1121,7 +1121,7 @@ export function UpsidePortfolioPage() {
 
   return (
     <div className={PAGE_FRAME_CLASS}>
-      <MobileChrome title="Upside Fund" active={null} />
+      <MobileChrome title="Fund" active={null} />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
           className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted"

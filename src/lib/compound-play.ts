@@ -5,6 +5,7 @@ import {
   type PeriodRow,
 } from "@/lib/compound-interest";
 import { cagr, finiteNumber } from "@/lib/money";
+import { PALETTE } from "@/lib/palette";
 import { hashSeed, mulberry32, pick, shuffleInPlace } from "@/lib/seeded-rng";
 
 export type ShockKind = "none" | "drawdown30" | "flat2y";
@@ -313,28 +314,28 @@ export function buildCompareScenarios(
       label: "Mattress",
       tagline: `0% nominal · loses ~${COMPOUND_INFLATION_ANNUAL_PCT}%/yr to inflation`,
       result: mattress,
-      color: "#8a6a4a",
+      color: PALETTE.muted,
     },
     {
       id: "cash",
       label: "Cash / HYSA",
       tagline: `~${COMPOUND_CASH_YIELD_ANNUAL_PCT}% · savings / money-market yield`,
       result: cashYield,
-      color: "#9aa3ad",
+      color: PALETTE.brandBright,
     },
     {
       id: "spy",
       label: "Index-ish",
       tagline: "~10% · a plain index bet",
       result: spy,
-      color: "#60a5fa",
+      color: PALETTE.steel,
     },
     {
       id: "upside",
       label: "Upside path",
       tagline: `~${upsideRate.toFixed(0)}% · your rate on this plan`,
       result: upside,
-      color: "#d6ad69",
+      color: PALETTE.brand,
     },
   ];
 }

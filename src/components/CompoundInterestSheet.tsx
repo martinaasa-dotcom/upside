@@ -54,7 +54,6 @@ import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState
 import { useTimeout } from "@/lib/use-timeout";
 import {
   Card,
-  InfoTip,
   MicroLabel,
   Panel,
   PanelHeader,
@@ -75,8 +74,7 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
 const FIELD_CLASS =
   "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-brand";
 
-/** Tight padding on phones so the card stays inside the gutter. */
-const SHEET_PANEL = "h-auto min-w-0 max-w-full p-4 sm:p-5 lg:h-full";
+const SHEET_PANEL = "h-auto min-w-0 max-w-full lg:h-full";
 
 const YEAR_PRESETS = [5, 10, 20, 30] as const;
 const RATE_PRESETS = [
@@ -986,7 +984,7 @@ export function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={() => void copyPostcard()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition hover:border-brand hover:text-foreground"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition hover:border-brand hover:text-foreground sm:w-auto"
               >
                 {copied ? (
                   <Copy className="h-3.5 w-3.5 text-gain" />
@@ -1002,7 +1000,7 @@ export function CompoundInterestSheet({
             * more here and the first thing a person sees is a wall. */}
           <div className="mt-5">
             <MicroLabel>Ends up at</MicroLabel>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-gain break-all">
+            <p className="mt-1 break-words text-2xl font-bold tabular-nums text-gain">
               {show(result.futureValue)}
             </p>
           </div>
@@ -1020,7 +1018,7 @@ export function CompoundInterestSheet({
             />
           </Scoreboard>
 
-          <p className="mt-3 text-sm leading-relaxed text-foreground/80">
+          <p className="mt-5 text-sm leading-relaxed text-foreground/80">
             You put in {show(result.principal + result.totalDeposited)} and end
             with {show(result.futureValue)}, so growth did{" "}
             {show(result.totalInterest)} of the work
@@ -1030,35 +1028,36 @@ export function CompoundInterestSheet({
             .
           </p>
 
-          <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
-            <div>
-              <MicroLabel>
-                Total return
-                <InfoTip text="How much bigger the pot is than everything you put into it." />
-              </MicroLabel>
-              <p className="mt-0.5 inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-gain">
-                {(result.allTimeRoR * 100).toFixed(1)}%
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </p>
-            </div>
-            <div>
-              <MicroLabel>Doubles in</MicroLabel>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                {Number.isFinite(result.doubleYears)
+          <Scoreboard className="mt-5" cols={3}>
+            <Score
+              label="Total return"
+              value={
+                <span className="inline-flex items-center gap-1">
+                  {(result.allTimeRoR * 100).toFixed(1)}%
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </span>
+              }
+              explain="How much bigger the pot is than everything you put into it."
+              valueClassName="text-gain"
+            />
+            <Score
+              label="Doubles in"
+              value={
+                Number.isFinite(result.doubleYears)
                   ? `${result.doubleYears}y ${result.doubleMonths}m`
-                  : "—"}
-              </p>
-            </div>
-            <div>
-              <MicroLabel>
-                Growth overtakes you
-                <InfoTip text="The year growth starts adding more than you pay in yourself. After this, time matters more than saving harder." />
-              </MicroLabel>
-              <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                {tipping != null ? `Year ${tipping}` : "Not while you keep paying in"}
-              </p>
-            </div>
-          </div>
+                  : "—"
+              }
+            />
+            <Score
+              label="Growth overtakes you"
+              value={
+                tipping != null
+                  ? `Year ${tipping}`
+                  : "Not while you keep paying in"
+              }
+              explain="The year growth starts adding more than you pay in yourself. After this, time matters more than saving harder."
+            />
+          </Scoreboard>
         </Panel>
 
         {/* Dual Path Chart */}
@@ -1248,9 +1247,9 @@ export function CompoundInterestSheet({
             }}
           />
           {storyRow && (
-            <Card tone="raised" className="mt-4 p-4">
+            <Card tone="raised" className="mt-4">
               <MicroLabel>After year {storyRow.index}</MicroLabel>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-foreground break-all">
+              <p className="mt-1 break-words text-lg font-semibold tabular-nums text-foreground">
                 {show(storyRow.balance)}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">

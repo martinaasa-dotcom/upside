@@ -947,9 +947,9 @@ export function CcAdvisorChat({
               <h2 className="text-sm font-semibold text-foreground">
                 Assistant Margus
               </h2>
-              <p className="truncate text-sm text-muted">
+              <p className="text-sm leading-snug text-muted">
                 {context.adviseOnly
-                  ? "Advise-only · open a sheet to apply changes"
+                  ? "Advise-only. Open a sheet to apply changes."
                   : `Chat for ${context.portfolioName}`}
               </p>
             </div>

@@ -29,6 +29,11 @@
   --surface: #161b25;
   --panel: #161b25;
   --border: rgb(214 173 105 / 0.22);
+  /* One inset scale. Phone and desktop use the same numbers.
+     Panel pad matches the page gutter. Nested cards and score
+     cells step in once. Do not invent a tighter mobile pad. */
+  --inset-panel: 1.25rem;
+  --inset-nested: 1rem;
 }
 
 @theme inline {
@@ -61,6 +66,8 @@
   --font-heading: var(--font-montserrat);
   --font-logo: var(--font-montserrat);
   --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  --spacing-panel: var(--inset-panel);
+  --spacing-nested: var(--inset-nested);
   /* Tailwind ships no xs breakpoint, and WorkspaceSwitcher was already
      using xs:inline to show nav labels on larger phones. Without this the
      class silently did nothing, so anything between 480px and sm rendered
@@ -132,7 +139,11 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
   padding-bottom: 0.25rem;
 }
 
-/* Comfortable touch targets on phones/tablets. */
+/* Comfortable touch targets on phones/tablets.
+ * Do not put this on inline chrome next to a label (InfoTip).
+ * min-height here stretches the whole row and the figure below
+ * sits in a hole that no other metric uses. Expand the hit area
+ * with an absolute inset instead. */
 @media (max-width: 1023px) {
   .touch-target,
   .btn-primary,

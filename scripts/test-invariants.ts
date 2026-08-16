@@ -211,6 +211,10 @@ import { analyzePortfolioShock } from "../src/lib/book-shock";
 import { enrichHoldings, buildSnapshot } from "../src/lib/calculations";
 import { effectiveAnnualRate, calculateCompound } from "../src/lib/compound-interest";
 import {
+  filledCardColumns,
+  filledGridColumns,
+} from "../src/lib/filled-grid";
+import {
   allowClassAction,
   classifyHoldingWrite,
   classifyImportWrite,
@@ -1350,6 +1354,47 @@ function offendersOf(pattern: RegExp): string[] {
   ];
 }
 
+run("hairline grids never leave an empty last-row cell", () => {
+  assert.equal(filledGridColumns(5, 3), 5);
+  assert.equal(filledGridColumns(4, 3), 4);
+  assert.equal(filledGridColumns(6, 3), 3);
+  assert.equal(filledGridColumns(3, 3), 3);
+  assert.equal(filledGridColumns(2, 3), 2);
+  assert.equal(filledGridColumns(10, 3), 2);
+  assert.equal(filledGridColumns(10, 5), 5);
+  assert.equal(filledGridColumns(1, 3), 1);
+  assert.equal(filledGridColumns(0, 3), 1);
+  assert.equal(filledCardColumns(5, 2), 1);
+  assert.equal(filledCardColumns(4, 3), 2);
+  assert.equal(filledCardColumns(3, 3), 3);
+  assert.equal(filledCardColumns(4, 2), 2);
+
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ui/Panel.tsx"),
+    "utf8"
+  );
+  assert.match(panel, /filledGridColumns\(options.length/);
+  assert.match(panel, /filledCardColumns\(n, cols\)/);
+  assert.match(panel, /export function HairlineGrid/);
+
+  const offenders = sources
+    .filter(({ src }) => {
+      const blobs = src.match(/["'`][^"'`]{0,500}gap-px[^"'`]{0,500}["'`]/g) ?? [];
+      return blobs.some(
+        (blob) =>
+          /bg-border/.test(blob) &&
+          (/\bgrid\b/.test(blob) || /grid-cols/.test(blob)) &&
+          /grid-cols-(?:\d+|\[(?!repeat\(var\(--sg-))/.test(blob)
+      );
+    })
+    .map(({ file }) => file);
+  assert.deepEqual(
+    offenders,
+    [],
+    `gap-px + bg-border grids cannot use a fixed grid-cols-N (empty last-row box). Use Segmented, HairlineGrid, or Scoreboard. Offenders: ${offenders.join(", ")}`
+  );
+});
+
 run("no type below 12px anywhere a person reads", () => {
   const offenders = offendersOf(/text-\[(?:[0-9]|1[01])(?:\.\d+)?px\]/);
   assert.deepEqual(
@@ -1530,7 +1575,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /default: "border-border bg-card"/);
   assert.match(panel, /rounded-xl border border-border bg-border/);
-  assert.match(panel, /bg-raised px-4 py-3.5/);
+  assert.match(panel, /SCORE_CELL = "min-w-0 bg-raised p-nested"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -1540,9 +1585,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Reading")),
     /text-sm font-medium text-muted/
   );
-  assert.match(panel, /padded && "p-5"/);
+  assert.match(panel, /padded && PANEL_PAD/);
   assert.match(panel, /export function Scoreboard/);
-  assert.match(panel, /font-sans text-lg font-semibold leading-none tabular-nums/);
+  assert.match(panel, /font-sans text-lg font-semibold leading-none/);
   assert.match(panel, /bg-select text-select-ink/);
   const segmented = panel.slice(panel.indexOf("export function Segmented"));
   assert.doesNotMatch(segmented, /font-semibold/);
@@ -1868,7 +1913,8 @@ run("signed-in pages share one column so rooms do not jump", () => {
     join(process.cwd(), "src/components/AppStatusStrip.tsx"),
     "utf8"
   );
-  assert.match(strip, /flex h-10 items-center/);
+  assert.match(strip, /min-h-10/);
+  assert.match(strip, /sm:h-10/);
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
   assert.match(css, /scrollbar-gutter:\s*stable/);
   const dash = readFileSync(
@@ -4022,7 +4068,7 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
   );
   assert.doesNotMatch(compareUi, /This plan/);
   assert.doesNotMatch(compareUi, /featured \? "brand"/);
-  assert.match(compareUi, /inset 3px 0 0/);
+  assert.match(compareUi, /<Scoreboard cols=\{2\}/);
   assert.match(compareUi, /s\.color/);
 });
 

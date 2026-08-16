@@ -6,6 +6,7 @@ import { UpsideLogo } from "@/components/UpsideLogo";
 import {
   InsightText,
   MicroLabel,
+  NESTED_PAD,
   Panel,
   Pill,
   Reading,
@@ -270,7 +271,7 @@ function BookStill() {
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
-      <div className="mt-3 rounded-xl border border-border bg-raised px-4 py-3.5">
+      <div className={cn("mt-3 rounded-xl border border-border bg-raised", NESTED_PAD)}>
         <div className={SPLIT_ROW}>
           <div className={SPLIT_COPY}>
             <div className="flex flex-wrap items-center gap-2">

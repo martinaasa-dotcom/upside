@@ -425,7 +425,7 @@ export function PortfolioTable({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-panel py-4">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (

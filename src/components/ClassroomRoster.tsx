@@ -1,6 +1,7 @@
 "use client";
 
-import { currency, signedPercent, signedTone } from "@/lib/format";
+import { cashtag, currency, signedPercent, signedTone } from "@/lib/format";
+import { Card } from "@/components/ui/Panel";
 import type { ThesisCoverage } from "@/lib/classroom";
 import type { Holding, Quote } from "@/lib/types";
 
@@ -53,7 +54,111 @@ export function ClassroomRoster({
           Same start. Ranked by percent vs start. Who wrote a why, who is all-in on one name.
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="space-y-3 p-4 md:hidden">
+        {rows.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted">
+            Nobody in the class yet.
+          </p>
+        ) : (
+          rows.map((m) => {
+            const vsStart = m.sheetCount
+              ? m.totalValue - startingCash
+              : null;
+            const vsStartPct =
+              vsStart != null && startingCash > 0
+                ? vsStart / startingCash
+                : null;
+            const thesis = thesisCoverage[m.id];
+            const sheetIds = new Set(
+              ownership
+                .filter((o) => o.user_id === m.id)
+                .map((o) => o.portfolio_id)
+            );
+            const top = topHolding(holdings, quotes, sheetIds);
+            const biggest = m.topTicker
+              ? { ticker: m.topTicker, weight: m.topWeight }
+              : top;
+            const why =
+              !m.sheetCount
+                ? "—"
+                : !thesis || thesis.names === 0
+                  ? "No names yet"
+                  : thesis.withWhy === 0
+                    ? "No why yet"
+                    : `${thesis.withWhy} of ${thesis.names}`;
+            const body = (
+              <Card>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-base font-semibold text-foreground">
+                    {m.name}
+                    {m.isYou ? (
+                      <span className="ml-1.5 text-sm font-normal text-muted">
+                        you
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="text-sm tabular-nums text-foreground">
+                    {m.sheetCount ? currency(m.totalValue) : "—"}
+                  </p>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted">vs start</p>
+                    <p
+                      className={`font-semibold tabular-nums ${
+                        vsStart == null ? "text-muted" : signedTone(vsStart)
+                      }`}
+                    >
+                      {vsStartPct == null ? "—" : signedPercent(vsStartPct)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Today</p>
+                    <p
+                      className={`font-semibold tabular-nums ${
+                        m.sheetCount ? signedTone(m.todayPct) : "text-muted"
+                      }`}
+                    >
+                      {m.sheetCount && m.todayPct != null
+                        ? signedPercent(m.todayPct)
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Why</p>
+                    <p className="text-foreground/80">{why}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted">Biggest</p>
+                    <p className="text-foreground/80">
+                      {biggest?.ticker
+                        ? `${cashtag(biggest.ticker)}${
+                            biggest.weight != null
+                              ? ` · ${Math.round(biggest.weight)}%`
+                              : ""
+                          }`
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            );
+            return m.sheetCount > 0 ? (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => onOpen(m.id)}
+                className="block w-full text-left"
+              >
+                {body}
+              </button>
+            ) : (
+              <div key={m.id}>{body}</div>
+            );
+          })
+        )}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[36rem] text-left text-xs">
           <thead>
             <tr className="border-b border-border text-muted">

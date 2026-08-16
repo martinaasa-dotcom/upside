@@ -135,7 +135,7 @@ export function TickerDrawer({
         onClick={onClose}
       />
       <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-app shadow-2xl sm:max-w-md">
-        <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
+        <div className="flex items-start justify-between gap-2 border-b border-border px-panel py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-bold text-foreground">
@@ -169,7 +169,7 @@ export function TickerDrawer({
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 space-y-4 overflow-y-auto px-panel py-nested pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Card>
             <MicroLabel>Thesis</MicroLabel>
             <textarea
@@ -204,7 +204,7 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-panel">
             <div className={SPLIT_ROW}>
               <div className={SPLIT_COPY}>
                 <h3 className="text-base font-semibold text-foreground">
@@ -259,7 +259,7 @@ export function TickerDrawer({
               <MicroLabel className="mb-2">
                 Year by year · tap to change
               </MicroLabel>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
                 {FORECAST_YEARS.map((yr) => {
                   const p = forecastSummary.eoyPrices[yr];
                   const g = forecastSummary.eoyGains[yr];

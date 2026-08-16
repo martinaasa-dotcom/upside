@@ -157,39 +157,43 @@ export function MacroStrip() {
     tone: "fear" | "neutral" | "greed" | null;
   }>;
 
-  return (
-    <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-sm text-muted sm:gap-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="shrink-0 rounded-md px-2 py-1 font-medium text-muted hover:text-foreground"
-        aria-expanded={open}
+  const itemNodes = items.map((i) => (
+    <span key={i.label} className="shrink-0" title={i.title}>
+      <span className="text-muted">{i.label}</span>{" "}
+      <span
+        className={cn(
+          "text-foreground/80",
+          i.tone === "fear" && "text-brand-bright",
+          i.tone === "greed" && "text-caution"
+        )}
       >
-        Markets
-      </button>
-      {open && (
-        <div className="relative min-w-0 overflow-hidden">
-          <div className="scrollbar-none flex items-center gap-2.5 overflow-x-auto overscroll-x-contain touch-pan-x tabular-nums sm:gap-3">
-            {items.map((i) => (
-              <span key={i.label} className="shrink-0" title={i.title}>
-                <span className="text-muted">{i.label}</span>{" "}
-                <span
-                  className={cn(
-                    "text-foreground/80",
-                    i.tone === "fear" && "text-brand-bright",
-                    i.tone === "greed" && "text-caution"
-                  )}
-                >
-                  {i.value}
-                </span>
-              </span>
-            ))}
-            <span className="w-4 shrink-0 sm:hidden" aria-hidden />
+        {i.value}
+      </span>
+    </span>
+  ));
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-sm text-muted sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+      <div className="flex min-w-0 items-center justify-start gap-2 sm:justify-end">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="shrink-0 rounded-md px-2 py-1 font-medium text-muted hover:text-foreground"
+          aria-expanded={open}
+        >
+          Markets
+        </button>
+        {open && (
+          <div className="relative hidden min-w-0 flex-1 overflow-hidden sm:block">
+            <div className="flex items-center justify-end gap-3 tabular-nums">
+              {itemNodes}
+            </div>
           </div>
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-app to-transparent sm:hidden"
-            aria-hidden
-          />
+        )}
+      </div>
+      {open && (
+        <div className="grid grid-cols-3 gap-x-2 gap-y-1 pb-1.5 tabular-nums sm:hidden">
+          {itemNodes}
         </div>
       )}
     </div>

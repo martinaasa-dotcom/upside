@@ -12,6 +12,7 @@ import {
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
 import {
+  NESTED_PAD,
   Panel,
   PanelHeader,
   Score,
@@ -444,7 +445,8 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
     <div
       className={cn(
         SPLIT_ROW,
-        "rounded-xl border px-4 py-3.5",
+        NESTED_PAD,
+        "rounded-xl border",
         stanceStyles(s.stance)
       )}
     >

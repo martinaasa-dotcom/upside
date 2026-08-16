@@ -125,7 +125,7 @@ export function MobileTabBar({
         className
       )}
     >
-      <div className="px-5 py-2">
+      <div className="px-panel py-2">
         <div
           role="tablist"
           className={cn(
@@ -161,7 +161,7 @@ export function MobileTabBar({
                   if (onSelect(id)) e.preventDefault();
                 }}
                 className={cn(
-                  "flex h-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-sm font-medium transition",
+                  "flex h-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium transition",
                   on
                     ? "bg-select text-select-ink"
                     : "text-muted hover:text-brand-bright"
@@ -177,7 +177,7 @@ export function MobileTabBar({
                     <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-mustard" />
                   )}
                 </span>
-                <span className="max-w-full truncate leading-none">
+                <span className="max-w-full leading-none">
                   {shortLabel}
                 </span>
               </Link>

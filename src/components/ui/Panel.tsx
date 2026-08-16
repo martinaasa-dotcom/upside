@@ -1,8 +1,14 @@
 "use client";
 
+import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
 import { cashtag, cn, splitMoveTint } from "@/lib/format";
 import { Info } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import {
+  Children,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
 /**
  * The Upside Lab design system, in one file.
@@ -58,6 +64,17 @@ import { useState, type ReactNode } from "react";
  *              SPLIT_ACTIONS. Never `flex-wrap` + `min-w-0 flex-1` next to
  *              shrink-0 chrome. On a phone that leftover strip is ~80px
  *              and the sentence wraps one word per line.
+ *   Inset      page gutter and panel pad are p-panel (20px). Nested
+ *              cards and score cells are p-nested (16px). Same on a
+ *              phone. Do not override to p-4 on mobile. Label to
+ *              figure is mt-1. InfoTip must not stretch that row.
+ *              A row of numbers is Scoreboard, never a loose
+ *              MicroLabel grid with its own padding.
+ *   Hairline   gap-px + bg-border grids (Scoreboard, Segmented fill,
+ *              HairlineGrid) paint every track. The last row must be
+ *              full. Never an empty leftover box. Snap columns with
+ *              filledGridColumns / filledCardColumns. Do not hand-roll
+ *              grid-cols-N on that pattern.
  *
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
  * consultant's slide; "Price path" reads like a person wrote it.
@@ -67,6 +84,12 @@ import { useState, type ReactNode } from "react";
 export const BOX = "rounded-2xl border border-border bg-card";
 /** Nested card inside a box. */
 export const CARD = "rounded-xl border border-border bg-raised";
+/** Panel padding. Matches the page gutter. */
+export const PANEL_PAD = "p-panel";
+/** Nested card / score-cell padding. One step in from the panel. */
+export const NESTED_PAD = "p-nested";
+/** A Scoreboard cell. Use this instead of hand-rolling px-4 py-3.5. */
+export const SCORE_CELL = "min-w-0 bg-raised p-nested";
 /** Member / row list on the field. */
 export const LIST =
   "divide-y divide-border overflow-hidden rounded-xl border border-border bg-card";
@@ -82,7 +105,7 @@ const SHELL_TONES = {
 const FIGURE =
   "mt-1 font-sans text-base font-semibold tabular-nums";
 const DISPLAY =
-  "mt-1 font-sans text-lg font-semibold leading-none tabular-nums";
+  "mt-1 min-w-0 font-sans text-lg font-semibold leading-none break-words tabular-nums";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -96,7 +119,7 @@ export const SPLIT_ROW =
 export const SPLIT_COPY = "min-w-0 w-full sm:w-auto sm:min-w-[12rem] sm:flex-1";
 /** Buttons, selects, figures. Never shrink the copy to make room. */
 export const SPLIT_ACTIONS =
-  "flex max-w-full shrink-0 flex-wrap items-center gap-2";
+  "flex w-full max-w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto";
 
 /** A top-level section. One per idea, never nested inside another Panel. */
 export function Panel({
@@ -117,7 +140,7 @@ export function Panel({
       className={cn(
         "h-full min-w-0 max-w-full rounded-2xl border",
         SHELL_TONES[tone],
-        padded && "p-5",
+        padded && PANEL_PAD,
         className
       )}
       {...rest}
@@ -232,7 +255,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border px-4 py-4",
+        "rounded-xl border",
+        NESTED_PAD,
         CARD_TONES[tone],
         interactive &&
           "transition hover:border-brand/40 hover:bg-hover active:scale-[0.995]",
@@ -256,7 +280,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-0.5 text-sm font-medium text-muted",
+        "flex items-center gap-1 text-sm font-medium text-muted",
         className
       )}
     >
@@ -282,7 +306,8 @@ export function Reading({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-raised px-4 py-4 text-foreground",
+        "rounded-xl border border-border bg-raised text-foreground",
+        NESTED_PAD,
         className
       )}
     >
@@ -359,7 +384,7 @@ export function ScanList({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="border-b border-border px-4 py-3">
+        <div className="border-b border-border px-nested py-3">
           <p className="text-sm font-medium text-muted">{label}</p>
         </div>
       ) : null}
@@ -381,12 +406,12 @@ export function ScanList({
                 <button
                   type="button"
                   onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-hover"
+                  className="flex w-full gap-3 px-nested py-3 text-left transition hover:bg-hover"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="flex gap-3 px-4 py-3">{body}</div>
+                <div className="flex gap-3 px-nested py-3">{body}</div>
               )}
             </li>
           );
@@ -432,7 +457,7 @@ export function Metric({
 export function InfoTip({ text, label }: { text: string; label?: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <span className="relative inline-flex">
+    <span className="relative inline-flex shrink-0">
       <button
         type="button"
         onClick={(e) => {
@@ -442,9 +467,10 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
         onBlur={() => setOpen(false)}
         aria-label={label ?? "What does this mean?"}
         aria-expanded={open}
-        className="touch-target inline-flex items-center justify-center p-1.5 text-muted transition hover:text-foreground"
+        className="relative inline-flex size-4 items-center justify-center text-muted transition hover:text-foreground"
       >
-        <Info className="h-3 w-3" />
+        <span className="absolute -inset-3 md:-inset-1.5" aria-hidden />
+        <Info className="relative h-3.5 w-3.5" />
       </button>
       {open && (
         <span
@@ -458,13 +484,66 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
   );
 }
 
-const SCOREBOARD_COLS = {
-  1: "grid-cols-1",
-  2: "grid-cols-2",
-  3: "grid-cols-1 sm:grid-cols-3",
-  4: "grid-cols-2 sm:grid-cols-4",
-  5: "grid-cols-2 sm:grid-cols-5",
-} as const;
+const HAIRLINE_TRACKS =
+  "grid-cols-[repeat(var(--sg-m),minmax(0,1fr))] sm:grid-cols-[repeat(var(--sg-d),minmax(0,1fr))]";
+
+function hairlineVars(
+  mobile: number,
+  desk: number,
+  lg?: number
+): CSSProperties {
+  return {
+    "--sg-m": String(mobile),
+    "--sg-d": String(desk),
+    ...(lg != null ? { "--sg-lg": String(lg) } : {}),
+  } as CSSProperties;
+}
+
+/**
+ * Equal cells, hairline gaps. Column count always divides the children,
+ * so the last row never shows an empty box.
+ */
+export function HairlineGrid({
+  children,
+  className,
+  preferred = 3,
+  mobilePreferred,
+  lgPreferred,
+  fit = "fill",
+  role,
+  ariaLabel,
+}: {
+  children: ReactNode;
+  className?: string;
+  preferred?: number;
+  mobilePreferred?: number;
+  lgPreferred?: number;
+  /** fill = chips (prefer a full row). cards = number tiles (prefer stacking). */
+  fit?: "fill" | "cards";
+  role?: string;
+  ariaLabel?: string;
+}) {
+  const n = Children.count(children);
+  const snap = fit === "cards" ? filledCardColumns : filledGridColumns;
+  const mobile = snap(n, mobilePreferred ?? preferred);
+  const desk = snap(n, preferred);
+  const lg = lgPreferred != null ? snap(n, lgPreferred) : undefined;
+  return (
+    <div
+      role={role}
+      aria-label={ariaLabel}
+      className={cn(
+        "grid gap-px overflow-hidden rounded-lg border border-border bg-border",
+        HAIRLINE_TRACKS,
+        lg != null && "lg:grid-cols-[repeat(var(--sg-lg),minmax(0,1fr))]",
+        className
+      )}
+      style={hairlineVars(mobile, desk, lg)}
+    >
+      {children}
+    </div>
+  );
+}
 
 /** One box. Hairline columns. Use this for any 2–5 number row. */
 export function Scoreboard({
@@ -476,13 +555,18 @@ export function Scoreboard({
   className?: string;
   children: ReactNode;
 }) {
+  const n = Children.count(children);
+  const desk = filledCardColumns(n, cols);
+  const mobilePreferred = cols <= 1 ? 1 : cols === 3 ? 1 : Math.min(2, cols);
+  const mobile = filledCardColumns(n, mobilePreferred);
   return (
     <div
       className={cn(
         "grid gap-px overflow-hidden rounded-xl border border-border bg-border",
-        SCOREBOARD_COLS[cols],
+        HAIRLINE_TRACKS,
         className
       )}
+      style={hairlineVars(mobile, desk)}
     >
       {children}
     </div>
@@ -524,7 +608,7 @@ export function Score({
 }: ScoreProps) {
   const noteClass = cn("mt-1.5 text-sm leading-snug", subClassName ?? "text-muted");
   return (
-    <div className={cn("bg-raised px-4 py-3.5", className)}>
+    <div className={cn(SCORE_CELL, className)}>
       <MicroLabel>
         {label}
         {explain && <InfoTip text={explain} />}
@@ -582,12 +666,13 @@ export function Segmented<T extends string>({
   ariaLabel?: string;
   className?: string;
   /**
-   * Equal cells that fill the width. Pick a count that divides the
-   * options so the last row is full. Omit for a compact inline toggle.
+   * Equal cells that fill the width. The count is snapped so the last
+   * row is always full. Omit for a compact inline toggle.
    */
   columns?: number;
 }) {
   const fill = columns != null && columns > 0;
+  const cols = fill ? filledGridColumns(options.length, columns) : 1;
   return (
     <div
       role="tablist"
@@ -600,7 +685,7 @@ export function Segmented<T extends string>({
       )}
       style={
         fill
-          ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
+          ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }
           : undefined
       }
     >
@@ -692,7 +777,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-xl border border-dashed border-border bg-raised px-5 py-10 text-center",
+        "rounded-xl border border-dashed border-border bg-raised px-panel py-10 text-center",
         className
       )}
     >
