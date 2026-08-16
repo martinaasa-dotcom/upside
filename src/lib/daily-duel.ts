@@ -1,14 +1,107 @@
 /**
- * Daily Duel — pick which holding finishes the US cash session higher.
- * One deterministic matchup per Tallinn day. Pick anytime; results only
- * after the US regular close (4pm America/New_York) so live quotes can’t
- * spoil the game. Local to this browser.
+ * Daily Duel — pick which holding finishes the next US cash session higher.
+ * The live card is always the next session that has not closed yet
+ * (weekend looks at Monday, Friday after 4pm ET looks at Monday).
+ * Results stay off the live card so leftover Friday quotes cannot spoil it.
  */
-import { todayKeyInTz } from "@/lib/timezone";
+import { dateKeyInTz } from "@/lib/timezone";
 
 const KEY = "upside-daily-duel-v2";
 const MAX_HISTORY = 60;
 const US_TZ = "America/New_York";
+
+function addDayKey(key: string, days: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const next = new Date(Date.UTC(y, (m ?? 1) - 1, (d ?? 1) + days));
+  return next.toISOString().slice(0, 10);
+}
+
+function civilWeekday(key: string): number {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, 12)).getUTCDay();
+}
+
+function isWeekendKey(key: string): boolean {
+  const dow = civilWeekday(key);
+  return dow === 0 || dow === 6;
+}
+
+/** Offset of `timeZone` at `date`, as (wall-clock-as-UTC − actual UTC). */
+function tzOffsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const n = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value ?? "0");
+  const asUtc = Date.UTC(
+    n("year"),
+    n("month") - 1,
+    n("day"),
+    n("hour"),
+    n("minute"),
+    n("second")
+  );
+  return asUtc - date.getTime();
+}
+
+function zonedLocalToUtc(
+  timeZone: string,
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute = 0
+): Date {
+  const wallAsUtc = Date.UTC(year, month - 1, day, hour, minute);
+  const first = new Date(wallAsUtc - tzOffsetMs(new Date(wallAsUtc), timeZone));
+  return new Date(wallAsUtc - tzOffsetMs(first, timeZone));
+}
+
+export function duelSessionCloseMs(sessionKey: string): number {
+  const [y, m, d] = sessionKey.split("-").map(Number);
+  return zonedLocalToUtc(US_TZ, y ?? 1970, m ?? 1, d ?? 1, 16, 0).getTime();
+}
+
+/** YYYY-MM-DD of the next US regular session that has not closed yet. */
+export function currentDuelSessionKey(now: Date = new Date()): string {
+  let key = dateKeyInTz(now, US_TZ);
+  for (let i = 0; i < 10; i++) {
+    if (!isWeekendKey(key) && now.getTime() < duelSessionCloseMs(key)) {
+      return key;
+    }
+    key = addDayKey(key, 1);
+  }
+  return key;
+}
+
+export function duelSessionLabel(
+  sessionKey: string,
+  now: Date = new Date()
+): string {
+  if (sessionKey === dateKeyInTz(now, US_TZ)) return "today";
+  const [y, m, d] = sessionKey.split("-").map(Number);
+  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, 12)).toLocaleDateString(
+    "en-US",
+    { weekday: "long", timeZone: "UTC" }
+  );
+}
+
+export function duelSessionCopy(
+  sessionKey: string,
+  now: Date = new Date()
+): string {
+  const when = duelSessionLabel(sessionKey, now);
+  return when === "today"
+    ? "Who finishes today's US session higher."
+    : `Who finishes ${when}'s US session higher.`;
+}
 
 export type DuelPick = "a" | "b";
 export type DuelOutcome = "pending" | "win" | "loss" | "push";
@@ -77,29 +170,20 @@ function saveStorage(s: DuelStorage) {
   }
 }
 
-/**
- * True once the US regular equity session is done for “today” in New York
- * (weekday after 16:00 ET, or any weekend — use last available session %).
- */
-export function duelCanSettle(now: Date = new Date()): boolean {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: US_TZ,
-    weekday: "short",
-    hour: "numeric",
-    hourCycle: "h23",
-  }).formatToParts(now);
-  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
-  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-  if (weekday === "Sat" || weekday === "Sun") return true;
-  return hour >= 16;
+/** True once that session's regular US close (4pm ET) has passed. */
+export function duelCanSettle(
+  sessionKey: string,
+  now: Date = new Date()
+): boolean {
+  if (isWeekendKey(sessionKey)) return false;
+  return now.getTime() >= duelSessionCloseMs(sessionKey);
 }
 
-/** Deterministic pair for the day — same matchup all day, changes tomorrow.
- * Pass `salt` (a community id) so each circle gets its own pair without
- * changing the personal Home duel seed. */
+/** Deterministic pair for the session. Pass `salt` (a community id) so
+ * each circle gets its own pair without changing the personal seed. */
 export function pickTodaysDuel(
   tickers: string[],
-  dayKey: string = todayKeyInTz(),
+  dayKey: string = currentDuelSessionKey(),
   salt = ""
 ): { a: string; b: string } | null {
   const pool = [...new Set(tickers.map((t) => t.toUpperCase()).filter(Boolean))];
@@ -118,7 +202,7 @@ export function pickTodaysDuel(
 /** Load (or create) today's matchup. Returns null if the book has <2 tickers. */
 export function getOrCreateTodaysDuel(
   tickers: string[],
-  dayKey: string = todayKeyInTz()
+  dayKey: string = currentDuelSessionKey()
 ): DuelRecord | null {
   const storage = loadStorage();
   const existing = storage.history.find((r) => r.dayKey === dayKey);
@@ -162,7 +246,7 @@ export function makeDuelPick(
     revealedPctB: null,
     outcome: "pending",
   };
-  const updated = duelCanSettle()
+  const updated = duelCanSettle(dayKey)
     ? resolveOutcome(locked, todayPctByTicker)
     : locked;
   const nextHistory = [...storage.history];
@@ -181,7 +265,7 @@ export function resolvePendingOutcome(
   if (idx < 0) return null;
   const rec = storage.history[idx]!;
   if (rec.pick == null || rec.outcome !== "pending") return rec;
-  if (!duelCanSettle()) return rec;
+  if (!duelCanSettle(dayKey)) return rec;
 
   const updated = resolveOutcome(rec, todayPctByTicker);
   if (updated.outcome === "pending") return rec;
@@ -195,7 +279,7 @@ function resolveOutcome(
   rec: DuelRecord,
   todayPctByTicker: Record<string, number | null | undefined>
 ): DuelRecord {
-  if (rec.pick == null || !duelCanSettle()) {
+  if (rec.pick == null || !duelCanSettle(rec.dayKey)) {
     return {
       ...rec,
       revealedPctA: null,

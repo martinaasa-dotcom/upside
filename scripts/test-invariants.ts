@@ -117,6 +117,12 @@ import {
 import { validateServerEnv } from "../src/lib/env-schema";
 import { mergeQuotes } from "../src/lib/quote-cache";
 import {
+  currentDuelSessionKey,
+  duelCanSettle,
+  duelSessionCopy,
+  duelSessionLabel,
+} from "../src/lib/daily-duel";
+import {
   closeOnDate,
   portfolioCostValue,
   portfolioValueOnDate,
@@ -2485,10 +2491,56 @@ run("Daily Duel paints the last pick before the network returns", () => {
     join(process.cwd(), "src/components/DailyDuelCard.tsx"),
     "utf8"
   );
+  const view = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/communities/[id]/duel/route.ts"),
+    "utf8"
+  );
   assert.match(src, /loadCommunityDuelCache/);
   assert.match(src, /saveCommunityDuelCache/);
+  assert.match(src, /loadStickyDuelPick/);
   assert.match(src, /useHydratedCache/);
   assert.match(src, /useLayoutEffect/);
+  assert.match(src, /initialDuel/);
+  assert.match(src, /currentDuelSessionKey/);
+  assert.match(src, /keepPick/);
+  assert.doesNotMatch(src, /todayKeyInTz/);
+  assert.doesNotMatch(src, /overview-fade/);
+  assert.match(view, /initialDuel=\{duelCache\}/);
+  assert.match(route, /currentDuelSessionKey/);
+  assert.doesNotMatch(route, /todayKeyInTz/);
+});
+
+run("Daily Duel is the next open US session, never yesterday", () => {
+  // Friday 3pm ET (EDT = UTC-4) is still Friday's session.
+  const fridayOpen = new Date("2026-08-14T19:00:00.000Z");
+  assert.equal(currentDuelSessionKey(fridayOpen), "2026-08-14");
+  assert.equal(duelCanSettle("2026-08-14", fridayOpen), false);
+  assert.equal(duelSessionLabel("2026-08-14", fridayOpen), "today");
+  // Friday 4pm ET rolls to Monday.
+  const fridayClose = new Date("2026-08-14T20:00:00.000Z");
+  assert.equal(currentDuelSessionKey(fridayClose), "2026-08-17");
+  assert.equal(duelCanSettle("2026-08-14", fridayClose), true);
+  assert.equal(duelCanSettle("2026-08-17", fridayClose), false);
+  // Weekend looks at Monday, and does not settle the live card.
+  const sunday = new Date("2026-08-16T14:00:00.000Z");
+  assert.equal(currentDuelSessionKey(sunday), "2026-08-17");
+  assert.equal(duelCanSettle("2026-08-17", sunday), false);
+  assert.equal(duelSessionLabel("2026-08-17", sunday), "Monday");
+  assert.equal(
+    duelSessionCopy("2026-08-17", sunday),
+    "Who finishes Monday's US session higher."
+  );
+  const saturday = new Date("2026-08-15T16:00:00.000Z");
+  assert.equal(currentDuelSessionKey(saturday), "2026-08-17");
+  // Monday morning is still Monday. After the close it is Tuesday.
+  const mondayOpen = new Date("2026-08-17T14:00:00.000Z");
+  assert.equal(currentDuelSessionKey(mondayOpen), "2026-08-17");
+  const mondayClose = new Date("2026-08-17T20:00:00.000Z");
+  assert.equal(currentDuelSessionKey(mondayClose), "2026-08-18");
 });
 
 run("Communities list does not blank a cached circle while it refreshes", () => {

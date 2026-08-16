@@ -35,9 +35,12 @@ import { sheetCashBalance } from "@/lib/cash-balance";
 import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
+  loadCommunityDuelCache,
   saveCommunityCache,
   clearCommunityCache,
+  type CommunityDuelCache,
 } from "@/lib/community-cache";
+import { currentDuelSessionKey } from "@/lib/daily-duel";
 import {
   buildPortfolioPersonality,
   ANIMAL_BESTIARY,
@@ -228,6 +231,7 @@ export function CommunityView({ communityId }: Props) {
   // it's current in the background, instead of blanking the page on
   // every single visit the way an unconditional loading flag would.
   const [loading, setLoading] = useState(true);
+  const [duelCache, setDuelCache] = useState<CommunityDuelCache | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(
@@ -259,6 +263,7 @@ export function CommunityView({ communityId }: Props) {
     setOwnership(cache.book?.ownership ?? []);
     setThesisCoverage(cache.book?.thesisCoverage ?? {});
     setQuotes(loadCachedQuotes().quotes);
+    setDuelCache(loadCommunityDuelCache(communityId, currentDuelSessionKey()));
     hasDataRef.current = Boolean(cache.meta);
     setLoading(!cache.meta);
     bootstrappedRef.current = false;
@@ -1594,6 +1599,7 @@ export function CommunityView({ communityId }: Props) {
                     <DailyDuelCard
                       compact
                       communityId={communityId}
+                      initialDuel={duelCache}
                       tickers={overview.tickers.map((t) => ({
                         ticker: t.ticker,
                         todayPct: t.todayPct,

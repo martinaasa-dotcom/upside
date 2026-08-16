@@ -4,14 +4,19 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import {
   loadCommunityDuelCache,
+  loadStickyDuelPick,
   saveCommunityDuelCache,
+  saveStickyDuelPick,
   type CommunityDuelCache,
 } from "@/lib/community-cache";
 import { Swords } from "lucide-react";
 import { cn, percent, cashtag } from "@/lib/format";
 import {
+  currentDuelSessionKey,
   duelCanSettle,
   duelResultLine,
+  duelSessionCopy,
+  duelSessionLabel,
   duelStats,
   getOrCreateTodaysDuel,
   loadDuelHistory,
@@ -21,7 +26,6 @@ import {
   type DuelPick,
   type DuelRecord,
 } from "@/lib/daily-duel";
-import { todayKeyInTz } from "@/lib/timezone";
 
 /** What the server sees: no local history, so nothing played yet. */
 const EMPTY_DUEL_STATS = duelStats([]);
@@ -31,20 +35,42 @@ type Props = {
   compact?: boolean;
   /** When set, today's pair and picks are shared with the circle. */
   communityId?: string;
+  /** Cached duel from the parent layout effect, so the first paint has the pick. */
+  initialDuel?: CommunityDuelCache | null;
 };
 
 type CommunityDuel = CommunityDuelCache;
 
-/** Pick who finishes the US cash session higher — reveal only after the close. */
+function readCachedDuel(
+  communityId: string | undefined,
+  sessionKey: string,
+  initialDuel: CommunityDuelCache | null | undefined
+): CommunityDuel | null {
+  if (!communityId) return initialDuel ?? null;
+  if (initialDuel && initialDuel.dayKey === sessionKey) return initialDuel;
+  const cached = loadCommunityDuelCache(communityId, sessionKey);
+  if (cached) return cached;
+  const sticky = loadStickyDuelPick(communityId, sessionKey);
+  if (!sticky) return initialDuel ?? null;
+  return {
+    dayKey: sessionKey,
+    pair: initialDuel?.pair ?? null,
+    myPick: sticky,
+    counts: initialDuel?.counts ?? { a: 0, b: 0 },
+    settled: false,
+    pickCount: initialDuel?.pickCount ?? 0,
+  };
+}
+
+/** Pick who finishes the next US cash session higher. Never the previous day. */
 export function DailyDuelCard({
   tickers,
   compact = false,
   communityId,
+  initialDuel = null,
 }: Props) {
-  const dayKey = todayKeyInTz();
+  const sessionKey = currentDuelSessionKey();
   const tickerList = useMemo(() => tickers.map((t) => t.ticker), [tickers]);
-  // Identity of the ticker set, so effects below can depend on what the list
-  // *is* rather than on a fresh array reference every render.
   const tickerKey = useMemo(() => tickerList.join("|"), [tickerList]);
   const pctByTicker = useMemo(() => {
     const map: Record<string, number | null> = {};
@@ -54,16 +80,28 @@ export function DailyDuelCard({
 
   const [record, setRecord] = useState<DuelRecord | null>(null);
   const [community, setCommunity] = useHydratedCache<CommunityDuel | null>(
-    () => (communityId ? loadCommunityDuelCache(communityId, dayKey) : null),
-    null
+    () => readCachedDuel(communityId, sessionKey, initialDuel),
+    initialDuel && initialDuel.dayKey === sessionKey ? initialDuel : null
   );
 
-  function commitCommunity(next: CommunityDuel | null) {
-    if (communityId && next) saveCommunityDuelCache(communityId, next);
-    setCommunity(next);
+  function commitCommunity(
+    next:
+      | CommunityDuel
+      | null
+      | ((prev: CommunityDuel | null) => CommunityDuel | null)
+  ) {
+    setCommunity((prev) => {
+      const resolved = typeof next === "function" ? next(prev) : next;
+      if (communityId && resolved) {
+        saveCommunityDuelCache(communityId, resolved);
+        if (resolved.myPick) {
+          saveStickyDuelPick(communityId, resolved.dayKey, resolved.myPick);
+        }
+      }
+      return resolved;
+    });
   }
-  // Both read browser-only state, so they start at the server-safe value and
-  // hydrate before paint rather than during render.
+
   const [stats, setStats] = useHydratedCache(
     () => duelStats(loadDuelHistory()),
     EMPTY_DUEL_STATS
@@ -72,15 +110,15 @@ export function DailyDuelCard({
 
   useLayoutEffect(() => {
     if (communityId) return;
-    setRecord(getOrCreateTodaysDuel(tickerList, dayKey));
+    setRecord(getOrCreateTodaysDuel(tickerList, sessionKey));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on tickerKey, not the array identity
-  }, [communityId, dayKey, tickerKey]);
+  }, [communityId, sessionKey, tickerKey]);
 
   useLayoutEffect(() => {
     if (!communityId) return;
-    const cached = loadCommunityDuelCache(communityId, dayKey);
+    const cached = readCachedDuel(communityId, sessionKey, initialDuel);
     if (cached) setCommunity(cached);
-  }, [communityId, dayKey, setCommunity]);
+  }, [communityId, sessionKey, initialDuel, setCommunity]);
 
   useEffect(() => {
     if (!communityId) return;
@@ -91,7 +129,14 @@ export function DailyDuelCard({
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: CommunityDuel | null) => {
-        if (!ctrl.signal.aborted && data) commitCommunity(data);
+        if (ctrl.signal.aborted || !data) return;
+        commitCommunity((prev) => {
+          const keepPick =
+            prev?.myPick &&
+            !data.myPick &&
+            data.dayKey === sessionKey;
+          return keepPick ? { ...data, myPick: prev.myPick } : data;
+        });
       })
       .catch(() => {
         /* keep whatever we have */
@@ -100,45 +145,49 @@ export function DailyDuelCard({
       ctrl.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- commitCommunity is local
-  }, [communityId, dayKey]);
+  }, [communityId, sessionKey]);
 
   useEffect(() => {
-    const tick = () => setCanSettle(duelCanSettle());
+    const tick = () => setCanSettle(duelCanSettle(sessionKey));
     tick();
     const id = window.setInterval(tick, 60_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [sessionKey]);
 
   useEffect(() => {
     if (communityId) return;
     if (!record || record.pick == null || record.outcome !== "pending") return;
     if (!canSettle) return;
-    const updated = resolvePendingOutcome(dayKey, pctByTicker);
+    const updated = resolvePendingOutcome(sessionKey, pctByTicker);
     if (updated && updated.outcome !== "pending") {
       setRecord(updated);
       setStats(duelStats(loadDuelHistory()));
     }
-    // setStats comes from a custom hook, so the linter can't see that it's a
-    // useState setter and therefore stable. Listing it is free.
-  }, [communityId, record, pctByTicker, dayKey, canSettle, setStats]);
+  }, [communityId, record, pctByTicker, sessionKey, canSettle, setStats]);
 
   const instantPair = useMemo(
-    () => pickTodaysDuel(tickerList, dayKey, communityId ?? ""),
+    () => pickTodaysDuel(tickerList, sessionKey, communityId ?? ""),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on tickerKey, not the array identity
-    [dayKey, communityId, tickerKey]
+    [sessionKey, communityId, tickerKey]
   );
   const pair = communityId
     ? community?.pair ?? instantPair
     : record
       ? { a: record.tickerA, b: record.tickerB }
       : instantPair;
-  const myPick = communityId ? (community?.myPick ?? null) : (record?.pick ?? null);
+  const myPick = communityId
+    ? (community?.myPick ?? null)
+    : (record?.pick ?? null);
+  const sessionWhen = duelSessionLabel(sessionKey);
+  const sessionLine = communityId
+    ? `The circle's pick. ${duelSessionCopy(sessionKey)}`
+    : `Tap who you think finishes ${sessionWhen === "today" ? "today's" : `${sessionWhen}'s`} US session higher.`;
 
   if (!pair) {
     return (
       <section
         className={cn(
-          "overview-fade min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
+          "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
           !compact && "sm:p-6"
         )}
       >
@@ -148,11 +197,7 @@ export function DailyDuelCard({
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
-            <p className="mt-0.5 text-sm text-muted">
-              {communityId
-                ? "The circle's pick. Who finishes the US session higher."
-                : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
-            </p>
+            <p className="mt-0.5 text-sm text-muted">{sessionLine}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -178,7 +223,7 @@ export function DailyDuelCard({
             },
           }
         : {
-            dayKey,
+            dayKey: sessionKey,
             pair,
             myPick: choice,
             counts: { a: choice === "a" ? 1 : 0, b: choice === "b" ? 1 : 0 },
@@ -197,7 +242,12 @@ export function DailyDuelCard({
         )
         .then((r) => (r && r.ok ? r.json() : null))
         .then((data: CommunityDuel | null) => {
-          if (data) commitCommunity(data);
+          if (!data) return;
+          commitCommunity((prev) => {
+            const keepPick =
+              prev?.myPick && !data.myPick && data.dayKey === sessionKey;
+            return keepPick ? { ...data, myPick: prev.myPick } : data;
+          });
         })
         .catch(() => {
           if (previous) commitCommunity(previous);
@@ -205,7 +255,7 @@ export function DailyDuelCard({
         });
       return;
     }
-    const updated = makeDuelPick(dayKey, choice, pctByTicker);
+    const updated = makeDuelPick(sessionKey, choice, pctByTicker);
     if (updated) {
       setRecord(updated);
       setStats(duelStats(loadDuelHistory()));
@@ -213,26 +263,26 @@ export function DailyDuelCard({
   }
 
   const decided = communityId
-    ? Boolean(community?.settled && myPick)
+    ? Boolean(community?.settled && myPick && canSettle)
     : Boolean(record && record.pick != null && record.outcome !== "pending");
   const resultLine =
     !communityId && record && decided ? duelResultLine(record) : null;
   const waitingOnClose = myPick != null && !decided;
+  const closeWhen =
+    sessionWhen === "today" ? "today's US close (4pm ET)" : `${sessionWhen}'s US close (4pm ET)`;
 
   const communityLine = communityId
     ? myPick == null
       ? "Same matchup for everyone here. One tap locks it."
       : waitingOnClose
-        ? canSettle
-          ? "Locked in, waiting on session quotes to settle …"
-          : `${community?.pickCount ?? 1} pick${(community?.pickCount ?? 1) === 1 ? "" : "s"} in. Results after the US close (4pm ET).`
+        ? `${community?.pickCount ?? 1} pick${(community?.pickCount ?? 1) === 1 ? "" : "s"} in. Results after ${closeWhen}.`
         : communityVoteLine(community, pair)
     : null;
 
   return (
     <section
       className={cn(
-        "overview-fade min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
+        "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-4",
         !compact && "sm:p-6"
       )}
     >
@@ -243,11 +293,7 @@ export function DailyDuelCard({
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
-            <p className="mt-0.5 text-sm text-muted">
-              {communityId
-                ? "The circle's pick. Who finishes the US session higher."
-                : "Tap who you think finishes the US session higher. Locks until 4pm ET."}
-            </p>
+            <p className="mt-0.5 text-sm text-muted">{sessionLine}</p>
           </div>
         </div>
         {communityId && (community?.pickCount ?? 0) > 0 ? (
@@ -333,18 +379,16 @@ export function DailyDuelCard({
                 </p>
               )}
               {communityId &&
-                community?.settled &&
-                (community?.counts[side] ?? 0) > 0 && (
+                decided &&
+                community &&
+                community.counts[side] > 0 && (
                 <p className="mt-1 text-sm text-muted">
                   {community.counts[side]} vote
                   {community.counts[side] === 1 ? "" : "s"}
                 </p>
               )}
               {waitingOnClose && isPick && !communityId && (
-                <p className="mt-2 text-sm text-muted">Locked · no peek</p>
-              )}
-              {waitingOnClose && !isPick && !communityId && (
-                <p className="mt-2 text-sm text-muted">—</p>
+                <p className="mt-2 text-sm text-muted">Locked. No peek</p>
               )}
               {pct != null && (
                 <p
@@ -371,9 +415,7 @@ export function DailyDuelCard({
           : myPick == null
             ? "One tap locks it. No take-backs, and no live percent until the US close."
             : waitingOnClose
-              ? canSettle
-                ? "Locked in, waiting on session quotes to settle …"
-                : "Locked in. Results unlock after the US close (4pm ET)."
+              ? `Locked in. Results unlock after ${closeWhen}.`
               : resultLine}
       </p>
     </section>

@@ -1,9 +1,13 @@
 import { userIsCommunityMember } from "@/lib/auth/ownership";
-import { duelCanSettle, pickTodaysDuel, type DuelPick } from "@/lib/daily-duel";
+import {
+  currentDuelSessionKey,
+  duelCanSettle,
+  pickTodaysDuel,
+  type DuelPick,
+} from "@/lib/daily-duel";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { todayKeyInTz } from "@/lib/timezone";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +91,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const dayKey = todayKeyInTz();
+  const dayKey = currentDuelSessionKey();
   const { data: rows, error } = await supabase
     .from(PORTFELL_TABLES.communityDuels)
     .select("user_id, ticker_a, ticker_b, pick")
@@ -107,7 +111,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     pair = pickTodaysDuel(tickers, dayKey, id);
   }
 
-  const settled = duelCanSettle();
+  const settled = duelCanSettle(dayKey);
   const userIds = [...new Set(list.map((r) => r.user_id))];
   const namesById = new Map<string, string>();
   if (settled && userIds.length) {
@@ -156,7 +160,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Pick a or b" }, { status: 400 });
   }
 
-  const dayKey = todayKeyInTz();
+  const dayKey = currentDuelSessionKey();
   const { data: existing } = await supabase
     .from(PORTFELL_TABLES.communityDuels)
     .select("user_id, ticker_a, ticker_b, pick")

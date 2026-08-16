@@ -7,13 +7,13 @@
  * background the moment the list loads (before the user even clicks in).
  */
 
-import { todayKeyInTz } from "@/lib/timezone";
-import type { DuelPick } from "@/lib/daily-duel";
+import { currentDuelSessionKey, type DuelPick } from "@/lib/daily-duel";
 
 const CACHE_PREFIX = "upside-community-v1:";
 const LIST_CACHE_KEY = "upside-communities-list-v1";
 const DISCOVER_CACHE_KEY = "upside-communities-discover-v1";
 const DUEL_CACHE_PREFIX = "upside-community-duel-v1:";
+const DUEL_PICK_PREFIX = "upside-community-duel-pick-v1:";
 const SHEETS_CACHE_PREFIX = "upside-community-sheets-v1:";
 const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes — communities update slowly
 
@@ -49,7 +49,7 @@ function isDuelShape(v: unknown): v is CommunityDuelCache {
 
 export function loadCommunityDuelCache(
   communityId: string,
-  dayKey: string = todayKeyInTz()
+  dayKey: string = currentDuelSessionKey()
 ): CommunityDuelCache | null {
   const mem = duelMemory.get(communityId);
   if (mem && mem.dayKey === dayKey) return mem;
@@ -74,6 +74,43 @@ export function saveCommunityDuelCache(
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(duelCacheKey(communityId), JSON.stringify(duel));
+    if (duel.myPick) saveStickyDuelPick(communityId, duel.dayKey, duel.myPick);
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+function duelPickKey(communityId: string): string {
+  return `${DUEL_PICK_PREFIX}${communityId}`;
+}
+
+export function loadStickyDuelPick(
+  communityId: string,
+  sessionKey: string
+): DuelPick | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(duelPickKey(communityId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { sessionKey?: string; pick?: DuelPick };
+    if (parsed.sessionKey !== sessionKey) return null;
+    return parsed.pick === "a" || parsed.pick === "b" ? parsed.pick : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStickyDuelPick(
+  communityId: string,
+  sessionKey: string,
+  pick: DuelPick
+) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      duelPickKey(communityId),
+      JSON.stringify({ sessionKey, pick })
+    );
   } catch {
     /* quota / private mode */
   }
