@@ -86,6 +86,18 @@ export function normalizeYahooTicker(raw: string): string {
     if (KNOWN_SUFFIXES.has(suffix)) return t;
   }
 
+  // Lightyear and other EU brokers show VUAA / VWCE bare. Yahoo needs the
+  // exchange suffix or the quote call comes back empty.
+  if (BROKER_BARE_TO_YAHOO[t]) return BROKER_BARE_TO_YAHOO[t];
+
+  return t;
+}
+
+/** Strip a known exchange suffix so VUAA matches VUAA.DE in search. */
+export function tickerStem(ticker: string): string {
+  const t = ticker.trim().toUpperCase();
+  const dot = t.lastIndexOf(".");
+  if (dot > 0 && KNOWN_SUFFIXES.has(t.slice(dot))) return t.slice(0, dot);
   return t;
 }
 

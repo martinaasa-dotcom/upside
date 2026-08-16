@@ -29,6 +29,8 @@ import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
+import type { TickerSuggestion } from "@/lib/market/ticker-search";
+import { normalizeYahooTicker, tickerStem } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
 import {
   buildPulseCandidate,
@@ -380,21 +382,56 @@ function PulseCard({
   );
 }
 
+function quoteForTicker(
+  quotes: Record<string, Quote>,
+  ticker: string
+): Quote | null {
+  const resolved = normalizeYahooTicker(ticker);
+  return quotes[resolved] ?? quotes[ticker] ?? quotes[ticker.toUpperCase()] ?? null;
+}
+
 async function fetchQuote(
   ticker: string,
   signal?: AbortSignal
 ): Promise<Quote | null> {
+  const resolved = normalizeYahooTicker(ticker);
   try {
     const res = await fetch(
-      `/api/quotes?tickers=${encodeURIComponent(ticker)}`,
+      `/api/quotes?tickers=${encodeURIComponent(resolved)}`,
       { signal }
     );
     if (!res.ok) return null;
     const data = await res.json();
-    return (data.quotes?.[ticker] as Quote | undefined) ?? null;
+    return quoteForTicker((data.quotes ?? {}) as Record<string, Quote>, resolved);
   } catch (err) {
     if (isAbortError(err)) return null;
     return null;
+  }
+}
+
+async function resolveListedTicker(
+  raw: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const resolved = normalizeYahooTicker(raw);
+  if (!resolved) return raw.trim().toUpperCase();
+  if (resolved.includes(".")) return resolved;
+  try {
+    const res = await fetch(
+      `/api/market/search?q=${encodeURIComponent(resolved)}`,
+      { signal, cache: "no-store" }
+    );
+    if (!res.ok) return resolved;
+    const data = (await res.json()) as { results?: TickerSuggestion[] };
+    const hit = (data.results ?? []).find(
+      (row) =>
+        tickerStem(row.symbol) === tickerStem(resolved) ||
+        row.symbol.toUpperCase() === resolved
+    );
+    return hit?.symbol ? normalizeYahooTicker(hit.symbol) : resolved;
+  } catch (err) {
+    if (isAbortError(err)) return resolved;
+    return resolved;
   }
 }
 
@@ -436,7 +473,15 @@ export function PulsePage({
   const suggestions = useMemo(() => {
     const q = searchInput.trim().toUpperCase();
     if (!q) return [];
-    return bookTickers.filter((t) => t.includes(q)).slice(0, 8);
+    const stem = tickerStem(q);
+    return bookTickers
+      .filter(
+        (t) =>
+          t.includes(q) ||
+          tickerStem(t) === stem ||
+          tickerStem(t).startsWith(stem)
+      )
+      .slice(0, 8);
   }, [bookTickers, searchInput]);
 
   const candidates = useMemo(
@@ -823,24 +868,34 @@ export function PulsePage({
   }, [candidateSetKey]);
 
   async function checkTicker(tickerRaw: string) {
-    const ticker = tickerRaw.trim().toUpperCase();
-    if (!ticker) return;
+    const typed = tickerRaw.trim().toUpperCase();
+    if (!typed) return;
     setSearchInput("");
-    setPinnedTicker(ticker);
     setError(null);
+
+    let ticker = normalizeYahooTicker(typed);
+    setPinnedTicker(ticker);
     hydrateTicker(ticker);
 
     let quoteMap = mergedQuotes;
-    if (!quoteMap[ticker]) {
-      const q = await fetchQuote(ticker, pageAbortRef.current.signal);
-      if (q) {
-        setLookupQuotes((prev) => ({ ...prev, [ticker]: q }));
-        quoteMap = { ...quoteMap, [ticker]: q };
-      } else {
-        setError(`Couldn't get a price for ${cashtag(ticker)}. Check the ticker.`);
-        return;
-      }
+    let q = quoteForTicker(quoteMap, ticker);
+    if (!q) {
+      q = await fetchQuote(ticker, pageAbortRef.current.signal);
     }
+    if (!q) {
+      ticker = await resolveListedTicker(typed, pageAbortRef.current.signal);
+      setPinnedTicker(ticker);
+      hydrateTicker(ticker);
+      q = quoteForTicker(quoteMap, ticker) ??
+        (await fetchQuote(ticker, pageAbortRef.current.signal));
+    }
+    if (!q) {
+      setError(`Couldn't get a price for ${cashtag(typed)}. Check the ticker.`);
+      return;
+    }
+
+    setLookupQuotes((prev) => ({ ...prev, [ticker]: q, [typed]: q }));
+    quoteMap = { ...quoteMap, [ticker]: q, [typed]: q };
 
     const candidate = buildPulseCandidate(ticker, model, quoteMap);
     await runPulse([candidate], {

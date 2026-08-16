@@ -116,6 +116,7 @@ import {
   localTickerSuggestions,
   mergeTickerSuggestions,
 } from "../src/lib/market/ticker-search";
+import { normalizeYahooTicker, tickerStem } from "../src/lib/ticker";
 import { watchLook } from "../src/lib/watch-look";
 import {
   formatEarningsCalendarBlock,
@@ -2413,6 +2414,27 @@ run("watchlist typeahead matches names as you type", () => {
     "utf8"
   );
   assert.match(strip, /\/api\/market\/search/);
+});
+
+run("Pulse can price a bare EU ETF like VUAA", () => {
+  assert.equal(normalizeYahooTicker("VUAA"), "VUAA.DE");
+  assert.equal(normalizeYahooTicker("vuaa"), "VUAA.DE");
+  assert.equal(normalizeYahooTicker("VUAA.L"), "VUAA.L");
+  assert.equal(normalizeYahooTicker("VWCE"), "VWCE.DE");
+  assert.equal(normalizeYahooTicker("NVDA"), "NVDA");
+  assert.equal(tickerStem("VUAA.DE"), "VUAA");
+  const pulse = readFileSync(
+    join(process.cwd(), "src/components/PulsePage.tsx"),
+    "utf8"
+  );
+  assert.match(pulse, /normalizeYahooTicker/);
+  assert.match(pulse, /resolveListedTicker/);
+  assert.match(pulse, /\/api\/market\/search/);
+  const quotes = readFileSync(
+    join(process.cwd(), "src/lib/market/quotes.ts"),
+    "utf8"
+  );
+  assert.match(quotes, /aliasResolvedQuotes/);
 });
 
 run("onboarding lets you pick this month's popular names", () => {
