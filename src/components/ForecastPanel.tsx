@@ -313,7 +313,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
   const geometry = useMemo(() => {
     if (usable.length < 2) return null;
     const vals = usable.map((p) => p.value);
-    const scale = niceScale(Math.min(...vals), Math.max(...vals), 5);
+    const scale = niceScale(Math.min(...vals), Math.max(...vals), 4);
     const axisSpan = scale.max - scale.min || 1;
     const innerW = width - padL - padR;
     const innerH = height - padT - padB;
@@ -380,125 +380,124 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
 
   return (
     <div>
-      <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-12">
+      <div className="relative">
         {hoverPoint ? (
-          <div className="rounded-lg border border-border bg-well/90 px-2.5 py-1.5 text-center">
-            <p className="text-xs text-muted">{hoverPoint.label}</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-              {currency(hoverPoint.value, 0)}
-            </p>
-            {vsNowPct != null && vsNowDollar != null && (
-              <p
-                className={cn(
-                  "mt-0.5 text-xs tabular-nums",
-                  signedTone(vsNowPct)
-                )}
-              >
-                vs now {vsNowPct > 0 ? "+" : ""}
-                {percent(vsNowPct)}
-                <span className="text-muted">
-                  {" "}
-                  · {signedCurrency(vsNowDollar, 0)}
+          <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center px-10">
+            <p className="max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
+              <span className="text-muted">{hoverPoint.label}</span>
+              <span className="mx-1.5 font-semibold text-foreground">
+                {currency(hoverPoint.value, 0)}
+              </span>
+              {vsNowPct != null && vsNowDollar != null ? (
+                <span className={signedTone(vsNowPct)}>
+                  {vsNowPct > 0 ? "+" : ""}
+                  {percent(vsNowPct)}
+                  <span className="text-muted">
+                    {" "}
+                    · {signedCurrency(vsNowDollar, 0)}
+                  </span>
                 </span>
-              </p>
-            )}
+              ) : null}
+            </p>
           </div>
-        ) : (
-          <p className="pb-1 text-xs text-muted">
-            Drag across to read a year
-          </p>
-        )}
-      </div>
+        ) : null}
 
-      <div className="flex items-stretch gap-3">
-        <ChartYAxis
-          ticks={ticks}
-          yAt={yAt}
-          height={height}
-          format={compactAxis}
-        />
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-auto min-w-0 flex-1 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50"
-          role="slider"
-          tabIndex={0}
-          aria-label="Modeled portfolio value through the last forecast year. Drag or use arrow keys to read a year."
-          aria-valuemin={0}
-          aria-valuemax={lastIdx}
-          aria-valuenow={hover ?? lastIdx}
-          aria-valuetext={
-            hoverPoint
-              ? `${hoverPoint.label}, ${currency(hoverPoint.value, 0)}${
-                  vsNowPct != null ? `, vs now ${percent(vsNowPct)}` : ""
-                }`
-              : undefined
-          }
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerLeave={onPointerLeave}
-          onKeyDown={onKeyDown}
-        >
-          <defs>
-            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={PALETTE.brand} stopOpacity="0.22" />
-              <stop offset="1" stopColor={PALETTE.brand} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {ticks.map((t) => (
-            <line
-              key={t}
-              x1={padL}
-              x2={width - padR}
-              y1={yAt(t)}
-              y2={yAt(t)}
-              stroke="currentColor"
-              strokeOpacity={0.1}
-            />
-          ))}
-          <polygon points={area} fill={`url(#${gid})`} />
-          <polyline
-            fill="none"
-            stroke={PALETTE.brand}
-            strokeWidth={2}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            points={line}
+        <div className="relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card from-30% to-transparent"
           />
-          {usable.map((p, i) => (
-            <circle
-              key={p.label}
-              cx={xAt(i)}
-              cy={yAt(p.value)}
-              r={2.5}
-              fill={PALETTE.app}
-              stroke={PALETTE.cream}
-              strokeWidth={1.5}
-            />
-          ))}
-          {hover != null && hoverPoint && (
-            <g pointerEvents="none">
+          <ChartYAxis
+            overlay
+            ticks={ticks}
+            yAt={yAt}
+            height={height}
+            format={compactAxis}
+          />
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${width} ${height}`}
+            preserveAspectRatio="none"
+            className="h-44 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50 sm:h-48"
+            role="slider"
+            tabIndex={0}
+            aria-label="Drag across to read a year. Modeled portfolio value through the last forecast year."
+            aria-valuemin={0}
+            aria-valuemax={lastIdx}
+            aria-valuenow={hover ?? lastIdx}
+            aria-valuetext={
+              hoverPoint
+                ? `${hoverPoint.label}, ${currency(hoverPoint.value, 0)}${
+                    vsNowPct != null ? `, vs now ${percent(vsNowPct)}` : ""
+                  }`
+                : undefined
+            }
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerLeave={onPointerLeave}
+            onKeyDown={onKeyDown}
+          >
+            <defs>
+              <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={PALETTE.brand} stopOpacity="0.22" />
+                <stop offset="1" stopColor={PALETTE.brand} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {ticks.map((t) => (
               <line
-                x1={xAt(hover)}
-                x2={xAt(hover)}
-                y1={padT}
-                y2={padT + innerH}
-                stroke={PALETTE.cream}
-                strokeOpacity={0.45}
+                key={t}
+                x1={padL}
+                x2={width - padR}
+                y1={yAt(t)}
+                y2={yAt(t)}
+                stroke="currentColor"
+                strokeOpacity={0.08}
               />
+            ))}
+            <polygon points={area} fill={`url(#${gid})`} />
+            <polyline
+              fill="none"
+              stroke={PALETTE.brand}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              points={line}
+            />
+            {usable.map((p, i) => (
               <circle
-                cx={xAt(hover)}
-                cy={yAt(hoverPoint.value)}
-                r={4.5}
-                fill={PALETTE.cream}
-                stroke={PALETTE.app}
+                key={p.label}
+                cx={xAt(i)}
+                cy={yAt(p.value)}
+                r={2.5}
+                fill={PALETTE.app}
+                stroke={PALETTE.cream}
                 strokeWidth={1.5}
               />
-            </g>
-          )}
-        </svg>
+            ))}
+            {hover != null && hoverPoint && (
+              <g pointerEvents="none">
+                <line
+                  x1={xAt(hover)}
+                  x2={xAt(hover)}
+                  y1={padT}
+                  y2={padT + innerH}
+                  stroke={PALETTE.cream}
+                  strokeOpacity={0.45}
+                />
+                <circle
+                  cx={xAt(hover)}
+                  cy={yAt(hoverPoint.value)}
+                  r={4.5}
+                  fill={PALETTE.cream}
+                  stroke={PALETTE.app}
+                  strokeWidth={1.5}
+                />
+              </g>
+            )}
+          </svg>
+        </div>
       </div>
-      <ChartXRail>
+      <ChartXRail inset>
           {usable.map((p, i) => {
             const isFirst = i === 0;
             const isLast = i === lastIdx;

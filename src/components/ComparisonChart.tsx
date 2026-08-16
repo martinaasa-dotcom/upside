@@ -119,8 +119,13 @@ export function ComparisonChart({
   return (
     <div className={cn("min-w-0 max-w-full", className)}>
       <div className="relative">
-        <div className="flex items-stretch gap-3">
+        <div className="relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card from-30% to-transparent"
+          />
           <ChartYAxis
+            overlay
             ticks={ticks}
             yAt={yAt}
             height={height}
@@ -128,7 +133,8 @@ export function ComparisonChart({
           />
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="h-auto min-w-0 flex-1 touch-pan-y"
+            preserveAspectRatio="none"
+            className="h-36 w-full min-w-0 touch-pan-y sm:h-40"
             role="img"
             aria-label="Return comparison. Hover or drag to read a day."
             onPointerMove={(e) => {
@@ -203,7 +209,7 @@ export function ComparisonChart({
           </div>
         )}
       </div>
-      <ChartXRail>
+      <ChartXRail inset>
         <span className="absolute left-0 top-0">{startLabel}</span>
         <span className="absolute right-0 top-0">{endLabel}</span>
       </ChartXRail>

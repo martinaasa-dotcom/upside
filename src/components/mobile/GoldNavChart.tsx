@@ -2,7 +2,7 @@
 
 import { YtdAnchorModal } from "@/components/YtdAnchorModal";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
-import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
+import { currency, percent, signedCurrency, signedTone } from "@/lib/format";
 import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
 import { paintBookNavSeries, usableNavPoints } from "@/lib/market/assumed-nav";
@@ -338,7 +338,8 @@ export function niceScale(
   let min = Math.floor(lo / step) * step;
   let max = Math.ceil(hi / step) * step;
   let n = Math.round((max - min) / step);
-  if (n > 6) {
+  let guard = 0;
+  while (n > target && guard++ < 8) {
     step *= 2;
     min = Math.floor(lo / step) * step;
     max = Math.ceil(hi / step) * step;
@@ -426,7 +427,7 @@ export function GoldNavChart({
     const vals = usable.map((p) => p.nav);
     const dataMin = Math.min(...vals);
     const dataMax = Math.max(...vals);
-    const scale = niceScale(dataMin, dataMax, 5);
+    const scale = niceScale(dataMin, dataMax, 4);
     const axisSpan = scale.max - scale.min || 1;
     const innerW = width - padL - padR;
     const innerH = height - padT - padB;
@@ -513,7 +514,7 @@ export function GoldNavChart({
     }))
     .reduce<{ i: number; label: string; left: number }[]>((kept, tick) => {
       const prev = kept[kept.length - 1];
-      if (prev && tick.left - prev.left < 8) {
+      if (prev && tick.left - prev.left < 16) {
         if (tick.label === "Now") {
           kept.pop();
           kept.push(tick);
@@ -526,38 +527,35 @@ export function GoldNavChart({
 
   return (
     <div className={className}>
-      <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-12">
+      <div className="relative">
         {hoverPoint ? (
-          <div className="rounded-lg border border-border bg-well/90 px-2.5 py-1.5 text-center">
-            <p className="text-xs text-muted">{formatDay(hoverPoint.date)}</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-              {currency(hoverPoint.nav, 0)}
-            </p>
-            {ytdRoi != null && ytdDollar != null && (
-              <p
-                className={cn(
-                  "mt-0.5 text-xs tabular-nums",
-                  signedTone(ytdRoi)
-                )}
-              >
-                YTD {ytdRoi > 0 ? "+" : ""}
-                {percent(ytdRoi)}
-                <span className="text-muted">
-                  {" "}
-                  · {signedCurrency(ytdDollar, 0)}
+          <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center px-10">
+            <p className="max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
+              <span className="text-muted">{formatDay(hoverPoint.date)}</span>
+              <span className="mx-1.5 font-semibold text-foreground">
+                {currency(hoverPoint.nav, 0)}
+              </span>
+              {ytdRoi != null && ytdDollar != null ? (
+                <span className={signedTone(ytdRoi)}>
+                  {ytdRoi > 0 ? "+" : ""}
+                  {percent(ytdRoi)}
+                  <span className="text-muted">
+                    {" "}
+                    · {signedCurrency(ytdDollar, 0)}
+                  </span>
                 </span>
-              </p>
-            )}
+              ) : null}
+            </p>
           </div>
-        ) : (
-          <p className="pb-1 text-xs text-muted">
-            Drag across to read a day
-          </p>
-        )}
-      </div>
+        ) : null}
 
-      <div className="flex items-stretch gap-3">
+        <div className="relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card from-30% to-transparent"
+          />
           <ChartYAxis
+            overlay
             ticks={ticks}
             yAt={yAt}
             height={height}
@@ -566,10 +564,11 @@ export function GoldNavChart({
           <svg
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
-            className="h-auto min-w-0 flex-1 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50"
+            preserveAspectRatio="none"
+            className="h-44 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50 sm:h-48"
             role="slider"
             tabIndex={0}
-            aria-label="Portfolio value over the year. Drag or use arrow keys to read a day."
+            aria-label="Portfolio value over the year. Drag across to read a day."
             aria-valuemin={0}
             aria-valuemax={lastIdx}
             aria-valuenow={hover ?? lastIdx}
@@ -601,7 +600,7 @@ export function GoldNavChart({
                 y1={yAt(t)}
                 y2={yAt(t)}
                 stroke="currentColor"
-                strokeOpacity={0.1}
+                strokeOpacity={0.08}
               />
             ))}
             <polygon points={area} fill={`url(#${gid})`} />
@@ -634,8 +633,9 @@ export function GoldNavChart({
               </g>
             )}
           </svg>
+        </div>
       </div>
-      <ChartXRail>
+      <ChartXRail inset>
           {xMarks.map((tick, i) => {
             const isFirst = i === 0;
             const isLast = i === xMarks.length - 1;
@@ -693,6 +693,7 @@ export function BookNavChart({
   const [manualOpen, setManualOpen] = useState(false);
   const [reading, setReading] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
+  const [fixOpen, setFixOpen] = useState(false);
 
   useEffect(() => {
     return () => readAbortRef.current?.abort();
@@ -736,6 +737,7 @@ export function BookNavChart({
         setReadError(
           data.error || "Couldn't read a year-to-date from that. Type the number instead."
         );
+        setFixOpen(true);
         return;
       }
       onApplyAnchor({
@@ -764,26 +766,32 @@ export function BookNavChart({
       )}
       {assumed && hasChart && (
         <div className="mt-3 space-y-2">
-          {anchored ? (
-            <p className="text-xs text-muted">
-              Using the year you gave us. The shape still follows these names.
-            </p>
-          ) : (
-            <p className="text-xs text-muted">
-              This line assumes you held these names, this size, all year.
-              Close enough for a look. For the real year, upload a screenshot
-              of your broker&apos;s year-to-date, or type the number.
-            </p>
-          )}
-          {readError && <p className="text-xs text-loss">{readError}</p>}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p className="text-sm text-muted">
+            {anchored
+              ? "Using the year you gave us."
+              : "Held these names all year."}
+          </p>
+          {readError && <p className="text-sm text-loss">{readError}</p>}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {onApplyAnchor && !anchored && (
+              <button
+                type="button"
+                onClick={() => {
+                  setReadError(null);
+                  setFixOpen((open) => !open);
+                }}
+                className="text-sm font-medium text-brand-bright underline-offset-2 hover:underline"
+              >
+                {fixOpen ? "Hide" : "Fix the year"}
+              </button>
+            )}
+            {fixOpen && onApplyAnchor && !anchored && (
               <>
                 <button
                   type="button"
                   disabled={reading}
                   onClick={() => fileRef.current?.click()}
-                  className="text-xs font-medium text-brand-bright underline-offset-2 hover:underline disabled:opacity-50"
+                  className="text-sm font-medium text-brand-bright underline-offset-2 hover:underline disabled:opacity-50"
                 >
                   {reading ? "Reading screenshot…" : "Upload screenshot"}
                 </button>
@@ -793,7 +801,7 @@ export function BookNavChart({
                     setReadError(null);
                     setManualOpen(true);
                   }}
-                  className="text-xs font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
+                  className="text-sm font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
                 >
                   Type the number
                 </button>
@@ -806,7 +814,7 @@ export function BookNavChart({
                   setReadError(null);
                   setManualOpen(true);
                 }}
-                className="text-xs font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
+                className="text-sm font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
               >
                 Change the number
               </button>
@@ -815,7 +823,7 @@ export function BookNavChart({
               <button
                 type="button"
                 onClick={onClearAnchor}
-                className="text-xs font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+                className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
               >
                 Back to assumed names
               </button>
@@ -824,7 +832,7 @@ export function BookNavChart({
               <button
                 type="button"
                 onClick={onDiscardAssumed}
-                className="text-xs font-medium text-muted underline-offset-2 hover:text-foreground/80 hover:underline"
+                className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground/80 hover:underline"
               >
                 {recorded ? `Start from ${recorded}` : "Only recorded nights"}
               </button>
@@ -844,7 +852,7 @@ export function BookNavChart({
           <button
             type="button"
             onClick={onRestoreAssumed}
-            className="text-xs font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+            className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
           >
             Fill in an assumed year
           </button>

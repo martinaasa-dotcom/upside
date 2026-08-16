@@ -27,6 +27,7 @@ import {
   startNavFromYtdPct,
 } from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
+import { niceScale } from "../src/components/mobile/GoldNavChart";
 import {
   buildFallbackForecastPlan,
   shouldAutoRefreshForecast,
@@ -1405,6 +1406,31 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
   );
   assert.match(fund, /Compare my portfolio/);
   assert.doesNotMatch(fund, /Compare my sheet/);
+  const nav = readFileSync(
+    join(process.cwd(), "src/components/mobile/GoldNavChart.tsx"),
+    "utf8"
+  );
+  assert.match(nav, /preserveAspectRatio="none"/);
+  assert.doesNotMatch(nav, /min-h-\[4\.75rem\]/);
+  assert.match(nav, /Held these names all year/);
+  const home = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  assert.match(home, /This year/);
+});
+
+run("niceScale stays at a handful of ticks", () => {
+  const wide = niceScale(600_000, 1_200_000, 4);
+  assert.ok(
+    wide.ticks.length <= 5,
+    `wide scale painted ${wide.ticks.length} ticks`
+  );
+  const dense = niceScale(605_000, 1_180_000, 4);
+  assert.ok(
+    dense.ticks.length <= 5,
+    `dense scale painted ${dense.ticks.length} ticks`
+  );
 });
 
 run("one letter-spacing scale on small caps labels", () => {

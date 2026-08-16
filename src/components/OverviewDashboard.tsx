@@ -23,6 +23,7 @@ import {
   currency,
   percent,
   signedCurrency,
+  signedPercent,
   cn,
   plural,
   signedTone,
@@ -141,75 +142,106 @@ function MobileHomeHero({
   onAddHolding?: () => void;
 }) {
   const up = totals.roiPct >= 0;
+  const painted = points.filter((p) => Number.isFinite(p.nav));
+  const startNav = painted[0]?.nav;
+  const endNav = painted[painted.length - 1]?.nav;
+  const yearPct =
+    startNav != null && startNav > 0 && endNav != null
+      ? (endNav - startNav) / startNav
+      : null;
+  const yearDollar =
+    startNav != null && endNav != null ? endNav - startNav : null;
+
   return (
-    <div className="md:hidden">
-      <p className="text-sm text-muted">Portfolio</p>
-      <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-        <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-foreground">
-          {currency(totals.totalValue, 0)}
-        </p>
+    <div className="space-y-5 md:hidden">
+      <div>
+        <p className="text-sm text-muted">Portfolio</p>
+        <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
+          <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-foreground">
+            {currency(totals.totalValue, 0)}
+          </p>
+          <p
+            className={cn(
+              "mb-0.5 text-sm font-semibold tabular-nums",
+              up ? "text-gain" : "text-loss"
+            )}
+          >
+            {up ? "▲" : "▼"} {percent(Math.abs(totals.roiPct))}
+          </p>
+        </div>
         <p
           className={cn(
-            "mb-0.5 text-sm font-semibold tabular-nums",
-            up ? "text-gain" : "text-loss"
+            "mt-2 text-sm tabular-nums",
+            tone(totals.todayDollar)
           )}
         >
-          {up ? "▲" : "▼"} {percent(Math.abs(totals.roiPct))}
+          {signedCurrency(totals.todayDollar, 0)}{" "}
+          {morning.moveLabel.toLowerCase()}
+          {totals.todayPct != null ? ` · ${percent(totals.todayPct)}` : ""}
         </p>
-      </div>
-      <p
-        className={cn(
-          "mt-2 text-sm tabular-nums",
-          tone(totals.todayDollar)
+        {onAddHolding && (
+          <button
+            type="button"
+            onClick={onAddHolding}
+            className="btn-primary mt-4"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add a holding
+          </button>
         )}
-      >
-        {signedCurrency(totals.todayDollar, 0)}{" "}
-        {morning.moveLabel.toLowerCase()}
-        {totals.todayPct != null ? ` · ${percent(totals.todayPct)}` : ""}
-      </p>
-      {onAddHolding && (
-        <button
-          type="button"
-          onClick={onAddHolding}
-          className="btn-primary mt-4"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add a holding
-        </button>
-      )}
-      {onHomeSheet && homeSheets.length > 1 && (
-        <HomeSheetChip
-          className="mt-4"
-          value={homeSheetId}
-          sheets={homeSheets}
-          onChange={onHomeSheet}
+        {onHomeSheet && homeSheets.length > 1 && (
+          <HomeSheetChip
+            className="mt-4"
+            value={homeSheetId}
+            sheets={homeSheets}
+            onChange={onHomeSheet}
+          />
+        )}
+      </div>
+      <Panel>
+        <PanelHeader
+          title="This year"
+          actions={
+            yearPct != null && yearDollar != null ? (
+              <p
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  tone(yearPct)
+                )}
+              >
+                {signedPercent(yearPct)}
+                <span className="font-medium text-muted">
+                  {" "}
+                  · {signedCurrency(yearDollar, 0)}
+                </span>
+              </p>
+            ) : null
+          }
         />
-      )}
+        <div className="mt-4">
+          <WidgetErrorBoundary name="Year chart">
+            <BookNavChart
+              points={points}
+              assumed={assumed}
+              anchored={anchored}
+              anchor={anchor}
+              liveNav={liveNav}
+              loading={loading}
+              firstRealDate={firstRealDate}
+              onDiscardAssumed={onDiscardAssumed}
+              onRestoreAssumed={onRestoreAssumed}
+              onApplyAnchor={onApplyAnchor}
+              onClearAnchor={onClearAnchor}
+            />
+          </WidgetErrorBoundary>
+        </div>
+      </Panel>
       <MorningStack
-        className="mt-5"
         morning={morning}
         previousAt={previousAt}
         onOpenPulse={onOpenPulse}
       />
-      <div className="mt-5">
-        <WidgetErrorBoundary name="Year chart">
-        <BookNavChart
-          points={points}
-          assumed={assumed}
-          anchored={anchored}
-          anchor={anchor}
-          liveNav={liveNav}
-          loading={loading}
-          firstRealDate={firstRealDate}
-          onDiscardAssumed={onDiscardAssumed}
-          onRestoreAssumed={onRestoreAssumed}
-          onApplyAnchor={onApplyAnchor}
-          onClearAnchor={onClearAnchor}
-        />
-        </WidgetErrorBoundary>
-      </div>
       <CashAlertCard
-        className="mt-5"
         cash={totals.cash}
         alerts={alerts}
         onOpenCash={onOpenCash}
@@ -817,7 +849,7 @@ export function OverviewDashboard({
 
   if (bookIsEmpty) {
     return (
-      <div className="space-y-10">
+      <div className="space-y-5 md:space-y-10">
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
@@ -832,7 +864,7 @@ export function OverviewDashboard({
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-5 md:space-y-10">
       <MobileHomeHero
         totals={totals}
         alerts={activeAlerts}
