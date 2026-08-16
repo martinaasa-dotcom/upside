@@ -1,3 +1,4 @@
+import { SUPERADMIN_EMAILS } from "@/lib/auth/superadmin";
 import { realBookPortfolios } from "@/lib/classroom";
 import { hasLiveHoldings } from "@/lib/empty-book-nudge";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
@@ -17,7 +18,23 @@ import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
 export type { NoteKind };
 
-export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
+export type NoteDispatchOpts = {
+  /** When set, only these addresses get a note. Scheduled cron leaves this off. */
+  onlyEmails?: readonly string[];
+};
+
+/** Vercel Cron still mails everyone opted in. A manual hit stays on Martin. */
+export function noteTestAudience(req: Request): NoteDispatchOpts {
+  const only = new URL(req.url).searchParams.get("only")?.trim().toLowerCase();
+  if (only === "me") return { onlyEmails: SUPERADMIN_EMAILS };
+  if (req.headers.get("x-vercel-cron") === "1") return {};
+  return { onlyEmails: SUPERADMIN_EMAILS };
+}
+
+export async function dispatchOptedInNotes(
+  kind: NoteKind,
+  opts: NoteDispatchOpts = {}
+): Promise<{
   ok: boolean;
   sent: number;
   skipped: number;
@@ -67,19 +84,27 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
     };
   }
 
+  const allow = (opts.onlyEmails ?? []).map((e) => e.trim().toLowerCase());
+  const allowSet = new Set(allow.filter(Boolean));
+  const recipients = (profiles ?? []).filter((profile) => {
+    if (allowSet.size === 0) return true;
+    const email = String(profile.email ?? "").trim().toLowerCase();
+    return allowSet.has(email);
+  });
+
   const emailed = noteEmailConfigured();
   if (!emailed) {
     return {
       ok: true,
       sent: 0,
-      skipped: (profiles ?? []).length,
-      optedIn: (profiles ?? []).length,
+      skipped: recipients.length,
+      optedIn: recipients.length,
       emailed: false,
     };
   }
   let sent = 0;
   let skipped = 0;
-  for (const profile of profiles ?? []) {
+  for (const profile of recipients) {
     const email = String(profile.email ?? "").trim();
     if (!email) {
       skipped += 1;
@@ -172,7 +197,7 @@ export async function dispatchOptedInNotes(kind: NoteKind): Promise<{
     ok: true,
     sent,
     skipped,
-    optedIn: (profiles ?? []).length,
+    optedIn: recipients.length,
     emailed,
   };
 }

@@ -53,6 +53,7 @@ import {
   fallbackNoteTake,
   looksLikePromptLeak,
 } from "../src/lib/note-margus";
+import { noteTestAudience } from "../src/lib/note-cron";
 import { buildNoteReport, loudNoteMoves } from "../src/lib/note-report";
 import {
   inviteEmailAllowlist,
@@ -873,6 +874,30 @@ run("Sunday note never ships the writing brief", () => {
     ),
     true
   );
+});
+
+run("manual note cron stays on Martin", () => {
+  const vercel = noteTestAudience(
+    new Request("https://upsidelab.app/api/cron/sunday-note", {
+      headers: { "x-vercel-cron": "1" },
+    })
+  );
+  assert.equal(vercel.onlyEmails, undefined);
+  const manual = noteTestAudience(
+    new Request("https://upsidelab.app/api/cron/sunday-note")
+  );
+  assert.ok(manual.onlyEmails?.includes("aasamartinaasa@gmail.com"));
+  assert.ok(manual.onlyEmails?.includes("martin.aasa@upthink.ee"));
+  const me = noteTestAudience(
+    new Request("https://upsidelab.app/api/cron/sunday-note?only=me")
+  );
+  assert.ok(me.onlyEmails?.includes("aasamartinaasa@gmail.com"));
+  const sunday = readFileSync("src/app/api/cron/sunday-note/route.ts", "utf8");
+  const morning = readFileSync("src/app/api/cron/morning-note/route.ts", "utf8");
+  const close = readFileSync("src/app/api/cron/close-note/route.ts", "utf8");
+  assert.match(sunday, /noteTestAudience\(req\)/);
+  assert.match(morning, /noteTestAudience\(req\)/);
+  assert.match(close, /noteTestAudience\(req\)/);
 });
 
 run("novice hides Lab, not Pulse", () => {
