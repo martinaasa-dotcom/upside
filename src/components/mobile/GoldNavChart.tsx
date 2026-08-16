@@ -1,6 +1,7 @@
 "use client";
 
 import { YtdAnchorModal } from "@/components/YtdAnchorModal";
+import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
 import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
@@ -525,7 +526,7 @@ export function GoldNavChart({
 
   return (
     <div className={className}>
-      <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-11">
+      <div className="mb-2 flex min-h-[4.75rem] items-center justify-center pl-12">
         {hoverPoint ? (
           <div className="rounded-lg border border-border bg-well/90 px-2.5 py-1.5 text-center">
             <p className="text-xs text-muted">{formatDay(hoverPoint.date)}</p>
@@ -556,19 +557,12 @@ export function GoldNavChart({
       </div>
 
       <div className="flex items-stretch gap-3">
-          <div className="relative w-11 shrink-0">
-            {ticks.map((t) => (
-                <span
-                  key={t}
-                  className="absolute right-0 -translate-y-1/2 text-xs tabular-nums text-muted"
-                  style={{
-                    top: `${(yAt(t) / height) * 100}%`,
-                  }}
-                >
-                  {compactAxis(t)}
-                </span>
-              ))}
-          </div>
+          <ChartYAxis
+            ticks={ticks}
+            yAt={yAt}
+            height={height}
+            format={compactAxis}
+          />
           <svg
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
@@ -641,16 +635,14 @@ export function GoldNavChart({
             )}
           </svg>
       </div>
-      <div className="mt-1.5 flex">
-        <div className="w-11 shrink-0" />
-        <div className="relative h-4 min-w-0 flex-1">
+      <ChartXRail>
           {xMarks.map((tick, i) => {
             const isFirst = i === 0;
             const isLast = i === xMarks.length - 1;
             return (
               <span
                 key={`${tick.i}-${tick.label}`}
-                className="absolute top-0 text-xs text-muted"
+                className="absolute top-0"
                 style={{
                   left: `${tick.left}%`,
                   transform: isFirst
@@ -664,8 +656,7 @@ export function GoldNavChart({
               </span>
             );
           })}
-        </div>
-      </div>
+      </ChartXRail>
     </div>
   );
 }

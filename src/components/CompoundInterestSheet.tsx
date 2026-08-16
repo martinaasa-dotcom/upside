@@ -60,6 +60,7 @@ import {
   Pill,
   Segmented,
 } from "@/components/ui/Panel";
+import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 
 type CurrencyCode = DisplayCurrency;
 
@@ -211,10 +212,10 @@ function ComparePathsChart({
   const max = Math.max(1, ...paths.flatMap((p) => p.series));
   const w = 640;
   const h = 240;
-  const padL = 52;
-  const padR = 16;
+  const padL = 8;
+  const padR = 12;
   const padT = 16;
-  const padB = 24;
+  const padB = 8;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -248,88 +249,62 @@ function ComparePathsChart({
 
   const labels = paths.map((p) => p.label).join(", ");
 
+  const yTicks = gridSteps.map((s) => max * s);
+
   return (
     <div className="relative">
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${w} ${h}`}
-        className="h-auto w-full touch-pan-y"
-        role="img"
-        aria-label={`Same money four ways: ${labels}`}
-        onMouseMove={(e) => updateHoverFromClientX(e.clientX)}
-        onMouseLeave={() => setHoverIdx(null)}
-        onTouchStart={(e) => {
-          const t = e.touches[0];
-          if (t) updateHoverFromClientX(t.clientX);
-        }}
-        onTouchMove={(e) => {
-          const t = e.touches[0];
-          if (t) updateHoverFromClientX(t.clientX);
-        }}
-        onTouchEnd={() => setHoverIdx(null)}
-      >
+      <div className="flex items-stretch gap-3">
+        <ChartYAxis
+          ticks={yTicks}
+          yAt={yAt}
+          height={h}
+          format={compact}
+          className="w-16"
+        />
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${w} ${h}`}
+          className="h-auto min-w-0 flex-1 touch-pan-y"
+          role="img"
+          aria-label={`Same money four ways: ${labels}`}
+          onMouseMove={(e) => updateHoverFromClientX(e.clientX)}
+          onMouseLeave={() => setHoverIdx(null)}
+          onTouchStart={(e) => {
+            const t = e.touches[0];
+            if (t) updateHoverFromClientX(t.clientX);
+          }}
+          onTouchMove={(e) => {
+            const t = e.touches[0];
+            if (t) updateHoverFromClientX(t.clientX);
+          }}
+          onTouchEnd={() => setHoverIdx(null)}
+        >
         {gridSteps.map((s) => {
           const y = padT + plotH - s * plotH;
           return (
-            <g key={s}>
-              <line
-                x1={padL}
-                x2={w - padR}
-                y1={y}
-                y2={y}
-                stroke="#2b2b2b"
-                strokeWidth="1"
-              />
-              <text
-                x={padL - 6}
-                y={y}
-                textAnchor="end"
-                dominantBaseline="middle"
-                fontSize="9"
-                fill={PALETTE.muted}
-              >
-                {compact(max * s)}
-              </text>
-            </g>
+            <line
+              key={s}
+              x1={padL}
+              x2={w - padR}
+              y1={y}
+              y2={y}
+              stroke="#2b2b2b"
+              strokeWidth="1"
+            />
           );
         })}
 
-        {yearTicks.map((i) => (
-          <text
-            key={i}
-            x={xAt(i)}
-            y={h - 6}
-            textAnchor="middle"
-            fontSize="9"
-            fill={PALETTE.muted}
-          >
-            Y{i}
-          </text>
-        ))}
-
         {tippingYear != null && tippingYear <= lastIdx && (
-          <g>
-            <line
-              x1={xAt(tippingYear)}
-              x2={xAt(tippingYear)}
-              y1={padT}
-              y2={padT + plotH}
-              stroke={PALETTE.gain}
-              strokeWidth="1"
-              strokeDasharray="3 3"
-              opacity="0.6"
-            />
-            <text
-              x={xAt(tippingYear)}
-              y={padT - 4}
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="600"
-              fill={PALETTE.gain}
-            >
-              Tip Y{tippingYear}
-            </text>
-          </g>
+          <line
+            x1={xAt(tippingYear)}
+            x2={xAt(tippingYear)}
+            y1={padT}
+            y2={padT + plotH}
+            stroke={PALETTE.gain}
+            strokeWidth="1"
+            strokeDasharray="3 3"
+            opacity="0.6"
+          />
         )}
 
         {paths.map((p) => (
@@ -371,6 +346,29 @@ function ComparePathsChart({
           </g>
         )}
       </svg>
+      </div>
+      <ChartXRail railClassName="w-16">
+        {yearTicks.map((i) => {
+          const isFirst = i === 0;
+          const isLast = i === lastIdx;
+          return (
+            <span
+              key={i}
+              className="absolute top-0"
+              style={{
+                left: `${((xAt(i) - padL) / plotW) * 100}%`,
+                transform: isFirst
+                  ? "translateX(0)"
+                  : isLast
+                    ? "translateX(-100%)"
+                    : "translateX(-50%)",
+              }}
+            >
+              Y{i}
+            </span>
+          );
+        })}
+      </ChartXRail>
       <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
         {paths.map((p) => (
           <li key={p.id} className="inline-flex items-center gap-1.5">

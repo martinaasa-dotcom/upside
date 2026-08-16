@@ -1,6 +1,6 @@
 "use client";
 
-import { Stat } from "@/components/ui/Panel";
+import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 import { cn, percent, signedTone } from "@/lib/format";
 import { useMemo, useState } from "react";
 
@@ -41,8 +41,9 @@ function uniqueTicks(rawMin: number, rawMax: number): number[] {
 }
 
 /**
- * Multi-line % return chart (Margus vs SPY vs, optionally, a user's sheet).
+ * Multi-line % return chart (Margus vs SPY vs, optionally, a user's portfolio).
  * Plots return, not dollars, so different starting capital can share an axis.
+ * Axis copy is HTML text-xs so it does not scale with the SVG.
  */
 export function ComparisonChart({
   series,
@@ -55,14 +56,14 @@ export function ComparisonChart({
   const [hover, setHover] = useState<number | null>(null);
 
   const len = usable[0]?.points.length ?? 0;
-  const padLeft = 42;
-  const padRight = 6;
+  const padL = 8;
+  const padR = 8;
   const padTop = 10;
   const padBottom = 8;
 
   const xAt = (i: number) =>
     len > 1
-      ? padLeft + (i / (len - 1)) * (width - padLeft - padRight)
+      ? padL + (i / (len - 1)) * (width - padL - padR)
       : width / 2;
 
   const geometry = useMemo(() => {
@@ -106,88 +107,83 @@ export function ComparisonChart({
   const startLabel = formatDayLabel(labels?.[0] ?? "");
   const endLabel = formatDayLabel(labels?.[len - 1] ?? "Live");
   const ticks = uniqueTicks(rawMin, rawMax);
-  const cols =
-    usable.length >= 3 ? "grid-cols-3" : usable.length === 1 ? "grid-cols-1" : "grid-cols-2";
 
   function indexFromClientX(clientX: number, target: SVGSVGElement) {
     const rect = target.getBoundingClientRect();
     if (rect.width <= 0 || len <= 1) return 0;
     const x = ((clientX - rect.left) / rect.width) * width;
-    const t = (x - padLeft) / (width - padLeft - padRight);
+    const t = (x - padL) / (width - padL - padR);
     return Math.max(0, Math.min(len - 1, Math.round(t * (len - 1))));
   }
 
   return (
     <div className={cn("min-w-0 max-w-full", className)}>
       <div className="relative">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-auto w-full touch-pan-y"
-          role="img"
-          aria-label="Return comparison. Hover or drag to read a day."
-          onPointerMove={(e) => {
-            setHover(indexFromClientX(e.clientX, e.currentTarget));
-          }}
-          onPointerLeave={() => setHover(null)}
-        >
-          {ticks.map((t) => (
-            <g key={t}>
+        <div className="flex items-stretch gap-3">
+          <ChartYAxis
+            ticks={ticks}
+            yAt={yAt}
+            height={height}
+            format={percent}
+          />
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="h-auto min-w-0 flex-1 touch-pan-y"
+            role="img"
+            aria-label="Return comparison. Hover or drag to read a day."
+            onPointerMove={(e) => {
+              setHover(indexFromClientX(e.clientX, e.currentTarget));
+            }}
+            onPointerLeave={() => setHover(null)}
+          >
+            {ticks.map((t) => (
               <line
-                x1={padLeft}
-                x2={width - padRight}
+                key={t}
+                x1={padL}
+                x2={width - padR}
                 y1={yAt(t)}
                 y2={yAt(t)}
                 stroke="currentColor"
                 strokeOpacity={t === 0 ? 0.22 : 0.08}
                 strokeDasharray={t === 0 ? "4 4" : undefined}
               />
-              <text
-                x={padLeft - 6}
-                y={yAt(t) + 3.5}
-                textAnchor="end"
-                fill="currentColor"
-                opacity={0.45}
-                fontSize="11"
-              >
-                {percent(t)}
-              </text>
-            </g>
-          ))}
-          {usable.map((s) => (
-            <polyline
-              key={s.label}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={2.25}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              points={toXY(s.points)}
-            />
-          ))}
-          {active != null && (
-            <line
-              x1={xAt(active)}
-              x2={xAt(active)}
-              y1={padTop}
-              y2={height - padBottom}
-              stroke="currentColor"
-              strokeOpacity={0.35}
-            />
-          )}
-          {active != null &&
-            usable.map((s) => {
-              const v = s.points[active] ?? 0;
-              return (
-                <circle
-                  key={s.label}
-                  cx={xAt(active)}
-                  cy={yAt(v)}
-                  r={3.5}
-                  fill={s.color}
-                />
-              );
-            })}
-        </svg>
+            ))}
+            {usable.map((s) => (
+              <polyline
+                key={s.label}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={2.25}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                points={toXY(s.points)}
+              />
+            ))}
+            {active != null && (
+              <line
+                x1={xAt(active)}
+                x2={xAt(active)}
+                y1={padTop}
+                y2={height - padBottom}
+                stroke="currentColor"
+                strokeOpacity={0.35}
+              />
+            )}
+            {active != null &&
+              usable.map((s) => {
+                const v = s.points[active] ?? 0;
+                return (
+                  <circle
+                    key={s.label}
+                    cx={xAt(active)}
+                    cy={yAt(v)}
+                    r={3.5}
+                    fill={s.color}
+                  />
+                );
+              })}
+          </svg>
+        </div>
         {active != null && dayLabel && (
           <div className="pointer-events-none absolute left-1/2 top-1 z-10 -translate-x-1/2 rounded-md border border-border bg-well/95 px-2 py-1 text-xs shadow-lg">
             <p className="text-center font-medium text-foreground">{dayLabel}</p>
@@ -207,39 +203,38 @@ export function ComparisonChart({
           </div>
         )}
       </div>
-      <div className="mt-1 flex justify-between text-xs text-muted">
-        <span>{startLabel}</span>
-        <span>{endLabel}</span>
-      </div>
-      <div className={`mt-3 grid gap-2 ${cols}`}>
+      <ChartXRail>
+        <span className="absolute left-0 top-0">{startLabel}</span>
+        <span className="absolute right-0 top-0">{endLabel}</span>
+      </ChartXRail>
+      <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
         {usable.map((s) => {
           const last = s.points[s.points.length - 1] ?? 0;
           return (
-            <Stat
-              key={s.label}
-              label={
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: s.color }}
-                    aria-hidden
-                  />
-                  <span className="truncate">{s.label}</span>
+            <li key={s.label} className="flex min-w-0 items-baseline gap-2">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: s.color }}
+                aria-hidden
+              />
+              <span className="text-sm text-muted">{s.label}</span>
+              <span
+                className={cn(
+                  "text-base font-semibold tabular-nums",
+                  signedTone(last, "text-foreground")
+                )}
+              >
+                {percent(last)}
+              </span>
+              {s.hint ? (
+                <span className={cn("text-sm tabular-nums", signedTone(last, "text-muted"))}>
+                  {s.hint}
                 </span>
-              }
-              value={percent(last)}
-              sub={
-                s.hint ? (
-                  <span className={signedTone(last, "text-muted")}>
-                    {s.hint}
-                  </span>
-                ) : undefined
-              }
-              valueClassName={signedTone(last, "text-foreground")}
-            />
+              ) : null}
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

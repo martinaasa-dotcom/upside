@@ -26,6 +26,8 @@ import { useState, type ReactNode } from "react";
  *   Card       border-border on bg-raised. Nested boxes lift off the panel.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
+ *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
+ *              which scales with the viewBox and blows up on a wide screen.
  *   text-sm    14  labels, meta, chips, chrome, inputs, buttons, nav
  *   text-base  16  titles, tickers, Metric figures, briefing / thesis prose
  *   text-lg    18  hero panel title (one opener per page)

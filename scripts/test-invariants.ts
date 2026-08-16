@@ -1227,6 +1227,36 @@ run("UI type stays on the five-size scale", () => {
   );
 });
 
+run("chart ticks stay HTML text-xs, never SVG text", () => {
+  const files = [
+    "src/components/ComparisonChart.tsx",
+    "src/components/CompoundInterestSheet.tsx",
+    "src/components/mobile/GoldNavChart.tsx",
+    "src/components/ForecastPanel.tsx",
+  ];
+  for (const file of files) {
+    const src = readFileSync(join(process.cwd(), file), "utf8");
+    assert.doesNotMatch(src, /<text[\s>]/, file);
+    assert.doesNotMatch(src, /fontSize=/, file);
+  }
+  const axis = readFileSync(
+    join(process.cwd(), "src/components/ui/ChartAxis.tsx"),
+    "utf8"
+  );
+  assert.match(axis, /text-xs tabular-nums text-muted/);
+  const compare = readFileSync(
+    join(process.cwd(), "src/components/ComparisonChart.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(compare, /<Stat/);
+  const fund = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.match(fund, /Compare my portfolio/);
+  assert.doesNotMatch(fund, /Compare my sheet/);
+});
+
 run("one letter-spacing scale on small caps labels", () => {
   const offenders = offendersOf(/tracking-(?:wider|widest)/);
   assert.deepEqual(

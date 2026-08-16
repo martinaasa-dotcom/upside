@@ -1165,7 +1165,7 @@ export function UpsidePortfolioPage() {
                     onClick={() => void handleOpenPicker()}
                     className="shrink-0 text-sm font-medium text-brand-bright hover:text-brand"
                   >
-                    Compare my sheet
+                    Compare my portfolio
                   </button>
                 ) : null}
               </div>
@@ -1176,7 +1176,7 @@ export function UpsidePortfolioPage() {
                     <p className="text-sm text-muted">Loading your portfolios …</p>
                   ) : myPortfolios.length === 0 ? (
                     <p className="text-sm text-muted">
-                      You don&apos;t have any sheets to compare yet.
+                      You don&apos;t have any portfolios to compare yet.
                     </p>
                   ) : (
                     <div className="flex flex-wrap items-center gap-2">
