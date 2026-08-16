@@ -1973,6 +1973,10 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.doesNotMatch(controls, /bg-gain\/\[0\.06\]/);
   assert.match(controls, /<fieldset/);
   assert.match(controls, /Taking out each month/);
+  assert.match(
+    controls,
+    /id: "none"[\s\S]*?id: "deposits"[\s\S]*?id: "withdrawals"[\s\S]*?id: "both"/
+  );
 });
 
 run("every tier's default surface uses the shared Panel shell", () => {

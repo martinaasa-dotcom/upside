@@ -775,8 +775,8 @@ export function CompoundInterestSheet({
             ariaLabel="Deposits or withdrawals"
             columns={2}
             options={[
-              { id: "deposits", label: "Paying in" },
               { id: "none", label: "None" },
+              { id: "deposits", label: "Paying in" },
               { id: "withdrawals", label: "Taking out" },
               { id: "both", label: "Both" },
             ]}
