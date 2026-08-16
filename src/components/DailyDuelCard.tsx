@@ -11,6 +11,7 @@ import {
 } from "@/lib/community-cache";
 import { Swords } from "lucide-react";
 import { cn, percent, cashtag } from "@/lib/format";
+import { SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   currentDuelSessionKey,
   duelCanSettle,
@@ -284,8 +285,8 @@ export function DailyDuelCard({
         "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-5"
       )}
     >
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
+      <div className={cn("mb-3", SPLIT_ROW, "sm:items-center")}>
+        <div className={cn(SPLIT_COPY, "flex items-center gap-2.5")}>
           <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
             <Swords className="h-4 w-4" />
           </div>

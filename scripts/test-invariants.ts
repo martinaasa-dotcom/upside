@@ -1809,6 +1809,16 @@ run("weakening trend names the 40-week average and the slope", () => {
   assert.ok(!momentum!.detail.some((line) => /Fading:/.test(line)));
 });
 
+run("trend story board is a 2-col grid with Trend spanning, not a 5-wide row", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/components/TrendsPanel.tsx"),
+    "utf8"
+  );
+  assert.match(src, /cols=\{2\}/);
+  assert.match(src, /s\.key === "trend" \? "col-span-2"/);
+  assert.doesNotMatch(src, /cols=\{5\}/);
+});
+
 run("signed-in pages share one column so rooms do not jump", () => {
   const pages = [
     "Dashboard.tsx",
@@ -3400,6 +3410,37 @@ run("panel copy is not pinched to a reading measure", () => {
       `${rel} still caps in-panel copy so it wraps short of the card`
     );
   }
+});
+
+run("split rows stack on a phone so copy fills the card", () => {
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ui/Panel.tsx"),
+    "utf8"
+  );
+  assert.match(panel, /export const SPLIT_ROW/);
+  assert.match(panel, /flex flex-col gap-3 sm:flex-row/);
+  const files = [
+    "src/components/ui/Panel.tsx",
+    "src/components/LabSheet.tsx",
+    "src/components/SeasonalityPage.tsx",
+    "src/components/ForecastPanel.tsx",
+    "src/components/TickerDrawer.tsx",
+    "src/components/AccountPage.tsx",
+  ];
+  for (const rel of files) {
+    const src = readFileSync(join(process.cwd(), rel), "utf8");
+    assert.doesNotMatch(
+      src,
+      /flex flex-wrap items-start justify-between[\s\S]{0,220}min-w-0 flex-1/,
+      `${rel} still pinches copy into the leftover strip next to controls`
+    );
+  }
+  const seasonality = readFileSync(
+    join(process.cwd(), "src/components/SeasonalityPage.tsx"),
+    "utf8"
+  );
+  assert.match(seasonality, /SPLIT_ROW/);
+  assert.match(seasonality, /SPLIT_COPY/);
 });
 
 run("assumed YTD NAV uses current size and forward-fills gaps", () => {

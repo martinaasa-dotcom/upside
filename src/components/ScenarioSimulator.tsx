@@ -6,7 +6,7 @@ import {
   type ShockId,
 } from "@/lib/book-shock";
 import { cashtag, cn, currency, percent } from "@/lib/format";
-import { Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Scoreboard } from "@/components/ui/Panel";
+import { Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -319,8 +319,8 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
       )}
 
       <Panel tone="plain">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
+        <div className={SPLIT_ROW}>
+          <div className={SPLIT_COPY}>
             <h3 className="text-base font-semibold text-foreground">
               Every position
             </h3>

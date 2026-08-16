@@ -10,6 +10,7 @@ import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
+import { SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { plainError } from "@/lib/plain-error";
 import {
   last7DaysStrip,
@@ -604,8 +605,8 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-raised px-3 py-3">
-              <div>
+            <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-border bg-raised px-3 py-3")}>
+              <div className={SPLIT_COPY}>
                 <p className="text-sm font-medium text-foreground">
                   Download everything
                 </p>
@@ -625,8 +626,8 @@ export function AccountPage() {
             </div>
             {exportErr && <p className="text-sm text-loss">{exportErr}</p>}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-loss/40 bg-loss/10 px-3 py-3">
-              <div>
+            <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-loss/40 bg-loss/10 px-3 py-3")}>
+              <div className={SPLIT_COPY}>
                 <p className="text-sm font-medium text-loss">
                   Delete my account
                 </p>

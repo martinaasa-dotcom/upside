@@ -11,6 +11,8 @@ import {
   Reading,
   ScanList,
   Segmented,
+  SPLIT_COPY,
+  SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { PALETTE } from "@/lib/palette";
@@ -186,8 +188,8 @@ function PlaybookItem({
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-raised px-4 py-3">
-      <div className="min-w-0">
+    <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-border bg-raised px-4 py-3")}>
+      <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
         <p className="mt-1 text-sm leading-relaxed text-muted">
           Margus&apos;s year-by-year path for this portfolio. Same idea as Pulse,
@@ -1231,8 +1233,13 @@ export function ForecastPanel({
             )}
 
             {soldTickersInPlan.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-raised px-5 py-4 text-sm text-foreground">
-                <span>
+              <div
+                className={cn(
+                  SPLIT_ROW,
+                  "sm:items-center rounded-xl border border-border bg-raised px-5 py-4 text-sm text-foreground"
+                )}
+              >
+                <span className={SPLIT_COPY}>
                   This still mentions {soldTickersInPlan.join(", ")}, which you
                   no longer hold here.
                   {busy ? " Updating …" : ""}

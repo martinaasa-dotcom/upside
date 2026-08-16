@@ -28,7 +28,7 @@ import {
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
 import { listingCurrency } from "@/lib/listing-currency";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { Card, Score, Scoreboard } from "@/components/ui/Panel";
+import { Card, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -2360,8 +2360,8 @@ export function CommunityView({ communityId }: Props) {
                                 key={inv.id}
                                 className="rounded-lg border border-border bg-raised px-3 py-2.5"
                               >
-                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <div className="min-w-0 space-y-0.5">
+                                <div className={SPLIT_ROW}>
+                                  <div className={cn(SPLIT_COPY, "space-y-0.5")}>
                                     <p className="text-sm text-foreground">
                                       {inv.hint ? `Link ···${inv.hint}` : "Invite"}
                                       <span className="text-muted">

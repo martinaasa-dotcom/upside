@@ -1,6 +1,6 @@
 "use client";
 
-import { Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
+import { Panel, PanelHeader, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -74,8 +74,9 @@ function ToneIcon({ tone, className }: { tone: Tone; className?: string }) {
 }
 
 /** One holding's whole trend story, laid out so a novice can read it top
- * to bottom without cross-referencing a table: what's true, why, and how
- * strongly the underlying signals agree. */
+ * to bottom without cross-referencing a table: the slow 40-week read across
+ * the top, then the four faster signals in a 2×2 so the board never ends
+ * on a blank cell. */
 function TickerStoryCard({
   row,
   isHolding,
@@ -87,8 +88,8 @@ function TickerStoryCard({
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className={cn(SPLIT_ROW, "sm:items-center")}>
+        <div className={cn(SPLIT_COPY, "flex items-center gap-2")}>
           <span className="text-base font-semibold text-foreground">
             {cashtag(row.ticker)}
           </span>
@@ -113,7 +114,7 @@ function TickerStoryCard({
         {story.sentence}
       </p>
 
-      <Scoreboard className="mt-3" cols={5}>
+      <Scoreboard className="mt-3" cols={2}>
         {story.signals.map((s) => (
           <Score
             key={s.key}
@@ -122,6 +123,12 @@ function TickerStoryCard({
             bullets={s.detail}
             explain={s.help}
             valueClassName={TONE_TEXT[s.tone]}
+            className={s.key === "trend" ? "col-span-2" : undefined}
+            bulletsClassName={
+              s.key === "trend"
+                ? "sm:grid sm:grid-cols-3 sm:gap-x-6 sm:space-y-0"
+                : undefined
+            }
           />
         ))}
       </Scoreboard>

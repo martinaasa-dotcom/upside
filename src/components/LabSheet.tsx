@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, Panel, Score, Scoreboard } from "@/components/ui/Panel";
+import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -350,8 +350,8 @@ export function LabSheet({
           ) : (
             <>
               <Panel tone="plain">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
+                <div className={SPLIT_ROW}>
+                  <div className={SPLIT_COPY}>
                     <h3 className="text-base font-bold text-foreground">
                       How spread out you are
                     </h3>

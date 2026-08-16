@@ -11,6 +11,8 @@ import {
   Reading,
   Score,
   Scoreboard,
+  SPLIT_COPY,
+  SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { cn } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
@@ -269,8 +271,8 @@ function BookStill() {
       </Reading>
 
       <div className="mt-3 rounded-xl border border-border bg-raised px-4 py-3.5">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
+        <div className={SPLIT_ROW}>
+          <div className={SPLIT_COPY}>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-base font-semibold text-foreground">$RKLB</span>
               <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-sm font-medium text-gain">

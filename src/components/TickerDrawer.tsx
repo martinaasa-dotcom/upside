@@ -2,7 +2,7 @@
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { currency, percent, signedPercent, cn, cashtag } from "@/lib/format";
-import { Card, MicroLabel, Pill, Segmented } from "@/components/ui/Panel";
+import { Card, MicroLabel, Pill, Segmented, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
 import { forecastThemeForTicker } from "@/lib/forecast-conviction";
@@ -205,8 +205,8 @@ export function TickerDrawer({
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
           <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
+            <div className={SPLIT_ROW}>
+              <div className={SPLIT_COPY}>
                 <h3 className="text-base font-semibold text-foreground">
                   Price path
                 </h3>
@@ -223,8 +223,8 @@ export function TickerDrawer({
             </div>
 
             <Card tone="good">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div className="min-w-0">
+              <div className={cn(SPLIT_ROW, "sm:items-end")}>
+                <div className={SPLIT_COPY}>
                   <MicroLabel>If it plays out by {targetYear}</MicroLabel>
                   <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
                     {currency(targetPrice, 2)}

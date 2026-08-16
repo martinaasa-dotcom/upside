@@ -11,6 +11,7 @@ import {
   type CycleMonthlyRow,
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
+import { Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAbortError } from "@/lib/abort";
@@ -25,6 +26,10 @@ type Props = {
   bookTickers?: string[];
 };
 
+function fmtPct(v: number, digits = 1): string {
+  return `${v >= 0 ? "+" : ""}${v.toFixed(digits)}%`;
+}
+
 function retText(v: number): string {
   if (v > 0.05) return "text-gain";
   if (v < -0.05) return "text-loss";
@@ -37,6 +42,18 @@ function retBarColor(v: number): string {
   return "bg-muted";
 }
 
+function retWash(v: number): string {
+  if (v > 0.05) return "bg-gain/15";
+  if (v < -0.05) return "bg-loss/15";
+  return "bg-hover/60";
+}
+
+function retTone(v: number): "up" | "down" | undefined {
+  if (v > 0.05) return "up";
+  if (v < -0.05) return "down";
+  return undefined;
+}
+
 function stanceStyles(stance: ActionStance): string {
   if (stance === "deploy") return "border-gain/30 bg-gain/[0.08]";
   if (stance === "raise_cash") return "border-loss/30 bg-loss/[0.08]";
@@ -47,26 +64,6 @@ function stanceLabel(stance: ActionStance): string {
   if (stance === "deploy") return "Historically strong months";
   if (stance === "raise_cash") return "Historically soft months";
   return "Mixed / no seasonal edge";
-}
-
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border border-border bg-card p-5">
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      {subtitle ? (
-        <p className="mt-1.5 text-sm text-muted">{subtitle}</p>
-      ) : null}
-      <div className="mt-4">{children}</div>
-    </section>
-  );
 }
 
 function CycleMonthlyChart({
@@ -88,7 +85,7 @@ function CycleMonthlyChart({
   );
 
   return (
-    <div className="flex items-end gap-1">
+    <div className="hidden items-end gap-1 md:flex">
       {rows.map((row) => {
         const v = row.avgMonthReturnPct;
         const h = Math.max(6, (Math.abs(v) / maxAbs) * 100);
@@ -108,7 +105,7 @@ function CycleMonthlyChart({
                   ? "ring-1 ring-brand/40 hover:bg-hover"
                   : "hover:bg-hover"
             )}
-            title={`${row.label}: avg ${v >= 0 ? "+" : ""}${v}% (${row.samples} prior ${row.label}s)`}
+            title={`${row.label}: avg ${fmtPct(v)} (${row.samples} prior ${row.label}s)`}
           >
             <div className="flex h-28 w-full items-end justify-center">
               <div
@@ -132,8 +129,61 @@ function CycleMonthlyChart({
               {row.label}
             </span>
             <span className={cn("text-xs tabular-nums", retText(v))}>
-              {v >= 0 ? "+" : ""}
-              {v.toFixed(1)}%
+              {fmtPct(v)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Phone layout: 3×4 month tiles instead of 12 skinny bars. */
+function CycleMonthlyTiles({
+  rows,
+  selectedMonth,
+  currentMonth,
+  onSelectMonth,
+}: {
+  rows: CycleMonthlyRow[];
+  selectedMonth: number;
+  currentMonth: number;
+  onSelectMonth: (m: number) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2 md:hidden">
+      {rows.map((row) => {
+        const v = row.avgMonthReturnPct;
+        const isSelected = row.month === selectedMonth;
+        const isCurrent = row.month === currentMonth;
+        return (
+          <button
+            key={row.month}
+            type="button"
+            onClick={() => onSelectMonth(row.month)}
+            aria-pressed={isSelected}
+            className={cn(
+              "touch-target flex min-h-14 flex-col items-center justify-center rounded-xl px-1.5 py-2 transition",
+              retWash(v),
+              isSelected
+                ? "ring-2 ring-select"
+                : isCurrent
+                  ? "ring-1 ring-brand/40"
+                  : "hover:brightness-110"
+            )}
+          >
+            <span
+              className={cn(
+                "text-sm",
+                isSelected || isCurrent
+                  ? "font-semibold text-foreground"
+                  : "text-muted"
+              )}
+            >
+              {row.label}
+            </span>
+            <span className={cn("mt-0.5 text-sm font-semibold tabular-nums", retText(v))}>
+              {fmtPct(v)}
             </span>
           </button>
         );
@@ -157,136 +207,125 @@ function CycleHistoryBars({
 }) {
   if (history.length === 0) {
     return (
-      <div className="space-y-2.5">
-        <div className="h-7" />
-        <div className="flex h-44 items-center">
-          <p className="text-sm text-muted">
-            No prior data in this cycle phase.
-          </p>
-        </div>
-      </div>
+      <p className="text-sm text-muted">No prior data in this cycle phase.</p>
     );
   }
 
   const sorted = [...history].sort((a, b) => a.year - b.year);
   const maxAbs = Math.max(...sorted.map((h) => Math.abs(h.returnPct)), 0.5);
-  const best = [...sorted].sort((a, b) => b.returnPct - a.returnPct)[0]!;
-  const worst = [...sorted].sort((a, b) => a.returnPct - b.returnPct)[0]!;
-  const median = historyMedian(sorted.map((h) => h.returnPct));
-  const wins = sorted.filter((h) => h.returnPct > 0).length;
 
   return (
-    <div className="space-y-2.5">
-      <div className="flex h-7 flex-nowrap gap-1.5 overflow-x-auto text-xs">
-        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
-          Best{" "}
-          <span className={cn("font-semibold tabular-nums", retText(best.returnPct))}>
-            {best.year} {best.returnPct >= 0 ? "+" : ""}
-            {best.returnPct.toFixed(1)}%
-          </span>
-        </span>
-        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
-          Worst{" "}
-          <span className={cn("font-semibold tabular-nums", retText(worst.returnPct))}>
-            {worst.year} {worst.returnPct >= 0 ? "+" : ""}
-            {worst.returnPct.toFixed(1)}%
-          </span>
-        </span>
-        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
-          Median{" "}
-          <span className={cn("font-semibold tabular-nums", retText(median))}>
-            {median >= 0 ? "+" : ""}
-            {median.toFixed(1)}%
-          </span>
-        </span>
-        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
-          Range{" "}
-          <span className="font-semibold tabular-nums text-foreground/80">
-            {(best.returnPct - worst.returnPct).toFixed(1)}pp
-          </span>
-        </span>
-        <span className="rounded-md border border-border bg-well/70 px-2 py-0.5 text-muted">
-          {wins}/{sorted.length} green
-        </span>
-      </div>
-
-      <div className="h-44 overflow-y-auto overscroll-contain">
-        <div className="grid gap-0.5">
-        {sorted.map((h) => {
-          const barW = (Math.abs(h.returnPct) / maxAbs) * 50;
-          const isHighlight = highlightYear === h.year;
-          return (
-            <div
-              key={h.year}
+    <div className="grid gap-0.5 md:h-52 md:overflow-y-auto md:overscroll-contain">
+      {sorted.map((h) => {
+        const barW = (Math.abs(h.returnPct) / maxAbs) * 50;
+        const isHighlight = highlightYear === h.year;
+        return (
+          <div
+            key={h.year}
+            className={cn(
+              "grid grid-cols-[3.25rem_minmax(0,1fr)_4.25rem] items-center gap-2 rounded-lg px-1 py-1.5",
+              isHighlight && "bg-hover ring-1 ring-white/15"
+            )}
+            title={`${h.year}: ${fmtPct(h.returnPct, 2)}`}
+          >
+            <span
               className={cn(
-                "grid grid-cols-[2.25rem_minmax(0,1fr)_3.25rem] items-center gap-1.5 rounded px-0.5 py-px",
-                isHighlight && "bg-hover ring-1 ring-white/15"
+                "text-sm tabular-nums",
+                isHighlight ? "font-semibold text-foreground" : "text-muted"
               )}
-              title={`${h.year}: ${h.returnPct >= 0 ? "+" : ""}${h.returnPct.toFixed(2)}%`}
             >
-              <span
+              {h.year}
+            </span>
+            <div className="relative h-3 overflow-hidden rounded-sm bg-hover/70">
+              <div className="absolute inset-y-0 left-1/2 w-px -translate-x-px bg-border" />
+              <div
                 className={cn(
-                  "text-xs tabular-nums",
-                  isHighlight
-                    ? "font-semibold text-foreground"
-                    : "text-muted"
+                  "absolute inset-y-0 rounded-sm opacity-90",
+                  retBarColor(h.returnPct)
                 )}
-              >
-                {h.year}
-              </span>
-              <div className="relative h-2.5 overflow-hidden rounded-sm bg-hover/70">
-                <div className="absolute inset-y-0 left-1/2 w-px -translate-x-px bg-border" />
-                <div
-                  className={cn(
-                    "absolute inset-y-0 rounded-sm opacity-90",
-                    retBarColor(h.returnPct)
-                  )}
-                  style={
-                    h.returnPct >= 0
-                      ? { left: "50%", width: `${barW}%` }
-                      : { right: "50%", width: `${barW}%` }
-                  }
-                />
-              </div>
-              <span
-                className={cn(
-                  "text-right text-xs font-medium tabular-nums",
-                  retText(h.returnPct)
-                )}
-              >
-                {h.returnPct >= 0 ? "+" : ""}
-                {h.returnPct.toFixed(1)}%
-              </span>
+                style={
+                  h.returnPct >= 0
+                    ? { left: "50%", width: `${barW}%` }
+                    : { right: "50%", width: `${barW}%` }
+                }
+              />
             </div>
-          );
-        })}
-        </div>
-      </div>
+            <span
+              className={cn(
+                "text-right text-sm font-medium tabular-nums",
+                retText(h.returnPct)
+              )}
+            >
+              {fmtPct(h.returnPct)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function MonthHistoryTable({
-  row,
+function SelectedHistory({
+  heading,
+  avgPct,
+  winRate,
+  samples,
+  digits = 1,
+  history,
   highlightYear,
 }: {
-  row: CycleMonthlyRow;
+  heading: string;
+  avgPct: number;
+  winRate: number;
+  samples: number;
+  digits?: number;
+  history: Array<{ year: number; returnPct: number }>;
   highlightYear?: number;
 }) {
-  return (
-    <CycleHistoryBars history={row.history} highlightYear={highlightYear} />
-  );
-}
+  const best = [...history].sort((a, b) => b.returnPct - a.returnPct)[0];
+  const worst = [...history].sort((a, b) => a.returnPct - b.returnPct)[0];
+  const median =
+    history.length > 0 ? historyMedian(history.map((h) => h.returnPct)) : 0;
+  const wins = history.filter((h) => h.returnPct > 0).length;
 
-function DayHistoryTable({
-  row,
-  highlightYear,
-}: {
-  row: CycleDayRow;
-  highlightYear?: number;
-}) {
   return (
-    <CycleHistoryBars history={row.history} highlightYear={highlightYear} />
+    <div className="mt-5 space-y-4">
+      <div>
+        <p className="text-sm font-medium text-muted">{heading}</p>
+        <p className={cn("mt-1 text-lg font-semibold tabular-nums", retText(avgPct))}>
+          {fmtPct(avgPct, digits)} average
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {Math.round(winRate)}% of years were up · {samples}{" "}
+          {samples === 1 ? "year" : "years"}
+        </p>
+      </div>
+
+      {history.length > 0 && best && worst ? (
+        <Scoreboard cols={4}>
+          <Score
+            label="Best"
+            value={fmtPct(best.returnPct)}
+            sub={String(best.year)}
+            tone={retTone(best.returnPct)}
+          />
+          <Score
+            label="Worst"
+            value={fmtPct(worst.returnPct)}
+            sub={String(worst.year)}
+            tone={retTone(worst.returnPct)}
+          />
+          <Score
+            label="Median"
+            value={fmtPct(median)}
+            tone={retTone(median)}
+          />
+          <Score label="Up years" value={`${wins} of ${history.length}`} />
+        </Scoreboard>
+      ) : null}
+
+      <CycleHistoryBars history={history} highlightYear={highlightYear} />
+    </div>
   );
 }
 
@@ -326,7 +365,7 @@ function DayOfMonthChart({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-8 gap-1 md:grid-cols-11">
+      <div className="grid grid-cols-7 gap-1.5 md:grid-cols-11 md:gap-1">
         {cells.map((row, i) => {
           const day = i + 1;
           if (!row) {
@@ -334,7 +373,7 @@ function DayOfMonthChart({
               <div
                 key={day}
                 aria-hidden
-                className="min-h-11 rounded-lg bg-hover/30"
+                className="min-h-11 rounded-lg bg-hover/30 md:min-h-11"
               />
             );
           }
@@ -349,9 +388,9 @@ function DayOfMonthChart({
               type="button"
               onClick={() => onSelectDay(day)}
               aria-pressed={isSelected}
-              title={`Day ${day}: ${v >= 0 ? "+" : ""}${v.toFixed(3)}% avg · ${row.winRate}% up · n=${row.samples}`}
+              title={`Day ${day}: ${fmtPct(v, 3)} avg · ${row.winRate}% up · n=${row.samples}`}
               className={cn(
-                "flex min-h-11 flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
+                "flex min-h-11 w-full flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
                 dayCellBg(v, mag, empty),
                 isSelected
                   ? "ring-2 ring-select"
@@ -362,7 +401,7 @@ function DayOfMonthChart({
             >
               <span
                 className={cn(
-                  "text-xs tabular-nums",
+                  "text-sm tabular-nums md:text-xs",
                   isSelected || isToday
                     ? "font-bold text-foreground"
                     : "text-foreground/80"
@@ -372,7 +411,7 @@ function DayOfMonthChart({
               </span>
               <span
                 className={cn(
-                  "mt-0.5 text-xs font-semibold tabular-nums",
+                  "mt-0.5 hidden font-semibold tabular-nums md:block md:text-xs",
                   empty ? "text-muted" : retText(v)
                 )}
               >
@@ -382,8 +421,8 @@ function DayOfMonthChart({
           );
         })}
       </div>
-      <p className="text-sm text-muted">
-        Average session return on that calendar day in {monthLabel}. Click a
+      <p className="hidden text-sm text-muted md:block">
+        Average session return on that calendar day in {monthLabel}. Pick a
         day for the years behind it.
       </p>
     </div>
@@ -396,7 +435,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-start justify-between gap-3 rounded-xl border px-4 py-3.5",
+        "flex flex-col gap-3 rounded-xl border px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between",
         stanceStyles(s.stance)
       )}
     >
@@ -408,18 +447,18 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
         <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.detail}</p>
       </div>
       {typeof s.figurePct === "number" ? (
-        <div className="shrink-0 text-right">
+        <div className="shrink-0 sm:text-right">
           <p
             className={cn(
               "text-lg font-semibold tabular-nums",
               retText(s.figurePct)
             )}
           >
-            {s.figurePct >= 0 ? "+" : ""}
-            {s.figurePct.toFixed(2)}%
+            {fmtPct(s.figurePct, 2)}
           </p>
           <p className="text-sm text-muted">
-            {s.winRate}% win · n={s.samples}
+            {s.winRate}% of years up · {s.samples}{" "}
+            {s.samples === 1 ? "year" : "years"}
           </p>
         </div>
       ) : null}
@@ -548,27 +587,17 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-xl border border-border bg-card px-4 py-3.5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <Panel>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             {model ? (
               <>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-md border border-border bg-hover px-2.5 py-1 text-sm font-semibold text-foreground">
-                    {model.asOfYear}
-                  </span>
-                  <span className="rounded-md border border-border bg-hover px-2.5 py-1 text-sm font-medium text-foreground">
-                    {model.currentCycleLabel} year
-                  </span>
-                  <span className="rounded-md border border-border bg-hover px-2.5 py-1 text-sm font-medium text-foreground">
-                    {cashtag(model.ticker)} since {model.from.slice(0, 4)}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Months and days that have historically been kind, and those
-                  that have not. Only prior{" "}
-                  {model.currentCycleLabel.toLowerCase()} years, same slot in
-                  the 4-year cycle as today. Nothing about your own holdings.
+                <p className="text-sm leading-relaxed text-muted">
+                  {model.asOfYear} · {model.currentCycleLabel} year ·{" "}
+                  {cashtag(model.ticker)} since {model.from.slice(0, 4)}. Months
+                  and days that have historically been kind, and those that
+                  have not. Only prior {model.currentCycleLabel.toLowerCase()}{" "}
+                  years. Nothing about your own holdings.
                 </p>
               </>
             ) : (
@@ -579,13 +608,13 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               </p>
             )}
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <label className="text-sm text-muted">
-              Benchmark
+          <div className="flex shrink-0 items-center gap-2">
+            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted sm:flex-none">
+              <span className="shrink-0">Benchmark</span>
               <select
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
-                className="ml-2 rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand sm:flex-none"
               >
                 {tickers.map((t) => (
                   <option key={t} value={t}>
@@ -598,14 +627,14 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               type="button"
               onClick={() => void load(ticker, true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 hover:border-brand disabled:opacity-50"
+              className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-foreground/80 hover:border-brand disabled:opacity-50 md:min-h-0 md:py-1.5"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
-      </div>
+      </Panel>
 
       {error && (
         <div className="rounded-xl border border-loss/30 bg-loss/10 px-4 py-3 text-sm text-loss">
@@ -623,148 +652,124 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
         <>
           <ActionCards signals={model.signals} />
 
-          <Section
-            title="What this month usually does"
-            subtitle={`Total month return in each calendar month, historical ${model.currentCycleLabel.toLowerCase()} years only. Click a month to inspect its days.`}
-          >
-            <CycleMonthlyChart
-              rows={model.cycleMonthly}
-              selectedMonth={playbookMonth}
-              currentMonth={model.asOfMonth}
-              onSelectMonth={setPlaybookMonth}
-            />
-            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-raised p-2.5">
-              <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <p className="text-xs font-medium text-foreground/80">
-                  {MONTH_NAMES[playbookMonth - 1]} in years like this
-                </p>
-                {playbookMonthRow ? (
-                  <p
-                    className={cn(
-                      "text-xs tabular-nums font-semibold",
-                      retText(playbookMonthRow.avgMonthReturnPct)
-                    )}
-                  >
-                    avg {playbookMonthRow.avgMonthReturnPct >= 0 ? "+" : ""}
-                    {playbookMonthRow.avgMonthReturnPct}% ·{" "}
-                    {playbookMonthRow.winRate}% win · n=
-                    {playbookMonthRow.samples}
-                  </p>
-                ) : null}
-              </div>
+          <Panel>
+            <PanelHeader title="What this month usually does" />
+            <div className="mt-4">
+              <CycleMonthlyTiles
+                rows={model.cycleMonthly}
+                selectedMonth={playbookMonth}
+                currentMonth={model.asOfMonth}
+                onSelectMonth={setPlaybookMonth}
+              />
+              <CycleMonthlyChart
+                rows={model.cycleMonthly}
+                selectedMonth={playbookMonth}
+                currentMonth={model.asOfMonth}
+                onSelectMonth={setPlaybookMonth}
+              />
               {playbookMonthRow ? (
-                <MonthHistoryTable
-                  row={playbookMonthRow}
+                <SelectedHistory
+                  heading={`${MONTH_NAMES[playbookMonth - 1]} in years like this`}
+                  avgPct={playbookMonthRow.avgMonthReturnPct}
+                  winRate={playbookMonthRow.winRate}
+                  samples={playbookMonthRow.samples}
+                  history={playbookMonthRow.history}
                   highlightYear={model.asOfYear}
                 />
               ) : (
-                <p className="text-sm text-muted">
+                <p className="mt-4 text-sm text-muted">
                   No prior sessions for this month.
                 </p>
               )}
             </div>
-          </Section>
+          </Panel>
 
-          <Section
-            title="Daily rhythm within the month"
-            subtitle="Defaults to today. Click a day for prior years, independent from the monthly chart above."
-          >
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => shiftViewMonth(-1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                Prev
-              </button>
-              <div className="h-10 text-center">
-                <p className="text-sm font-semibold text-foreground">
-                  {viewMonthName} {selectedDay}
-                </p>
-                {viewMonth === marketToday.month &&
-                selectedDay === marketToday.day ? (
-                  <p className="text-sm text-muted">Today</p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={goToToday}
-                    className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
-                  >
-                    Jump to today
-                  </button>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => shiftViewMonth(1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
-              >
-                Next
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <div className="mb-3 grid grid-cols-6 gap-1 sm:grid-cols-12">
-              {MONTH_SHORT.map((label, idx) => {
-                const m = idx + 1;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => goToMonth(m)}
-                    className={cn(
-                      "rounded-lg px-1 py-1.5 text-center text-xs font-medium transition",
-                      viewMonth === m
-                        ? "bg-select text-select-ink"
-                        : m === marketToday.month
-                          ? "text-foreground ring-1 ring-brand/40 hover:bg-hover"
-                          : "text-muted hover:bg-hover hover:text-foreground"
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <DayOfMonthChart
-              rows={dayRows}
-              monthLabel={viewMonthName}
-              selectedDay={selectedDay}
-              todayDay={
-                viewMonth === marketToday.month ? marketToday.day : null
-              }
-              onSelectDay={setSelectedDay}
-            />
-            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-raised p-2.5">
-              <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <p className="text-xs font-medium text-foreground/80">
-                  {selectedDayLabel}, prior sessions
-                </p>
-                {selectedDayRow ? (
-                  <p
-                    className={cn(
-                      "text-xs tabular-nums font-semibold",
-                      retText(selectedDayRow.avgReturnPct)
-                    )}
-                  >
-                    avg {selectedDayRow.avgReturnPct >= 0 ? "+" : ""}
-                    {selectedDayRow.avgReturnPct}% · {selectedDayRow.winRate}%
-                    win · n={selectedDayRow.samples}
+          <Panel>
+            <PanelHeader title="Daily rhythm within the month" />
+            <div className="mt-4">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => shiftViewMonth(-1)}
+                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+                <div className="min-h-10 text-center">
+                  <p className="text-sm font-semibold text-foreground">
+                    {viewMonthName} {selectedDay}
                   </p>
-                ) : null}
+                  {viewMonth === marketToday.month &&
+                  selectedDay === marketToday.day ? (
+                    <p className="text-sm text-muted">Today</p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={goToToday}
+                      className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
+                    >
+                      Jump to today
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => shiftViewMonth(1)}
+                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
+              <div className="mb-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-12">
+                {MONTH_SHORT.map((label, idx) => {
+                  const m = idx + 1;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => goToMonth(m)}
+                      className={cn(
+                        "touch-target rounded-lg px-1 text-center text-sm font-medium transition md:min-h-0 md:py-1.5",
+                        viewMonth === m
+                          ? "bg-select text-select-ink"
+                          : m === marketToday.month
+                            ? "text-foreground ring-1 ring-brand/40 hover:bg-hover"
+                            : "text-muted hover:bg-hover hover:text-foreground"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <DayOfMonthChart
+                rows={dayRows}
+                monthLabel={viewMonthName}
+                selectedDay={selectedDay}
+                todayDay={
+                  viewMonth === marketToday.month ? marketToday.day : null
+                }
+                onSelectDay={setSelectedDay}
+              />
               {selectedDayRow ? (
-                <DayHistoryTable
-                  row={selectedDayRow}
+                <SelectedHistory
+                  heading={`${selectedDayLabel}, prior sessions`}
+                  avgPct={selectedDayRow.avgReturnPct}
+                  winRate={selectedDayRow.winRate}
+                  samples={selectedDayRow.samples}
+                  digits={2}
+                  history={selectedDayRow.history}
                   highlightYear={model.asOfYear}
                 />
               ) : (
-                <p className="text-sm text-muted">
+                <p className="mt-4 text-sm text-muted">
                   No prior sessions for this day.
                 </p>
               )}
             </div>
-          </Section>
+          </Panel>
         </>
       )}
     </div>

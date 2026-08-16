@@ -54,6 +54,10 @@ import { useState, type ReactNode } from "react";
  *   Measure    copy inside a panel fills the panel. Do not pinch it to a
  *              reading column. That leaves a dead strip of empty card and
  *              wraps a sentence for no reason.
+ *   Split      title/copy + controls use SPLIT_ROW / SPLIT_COPY /
+ *              SPLIT_ACTIONS. Never `flex-wrap` + `min-w-0 flex-1` next to
+ *              shrink-0 chrome. On a phone that leftover strip is ~80px
+ *              and the sentence wraps one word per line.
  *
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
  * consultant's slide; "Price path" reads like a person wrote it.
@@ -81,6 +85,18 @@ const DISPLAY =
   "mt-1 font-sans text-lg font-semibold leading-none tabular-nums";
 
 export type PanelTone = keyof typeof SHELL_TONES;
+
+/**
+ * Copy on the left, chrome on the right. Stacks on a phone so the sentence
+ * gets the full card; sits on one row from `sm` up.
+ */
+export const SPLIT_ROW =
+  "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between";
+/** The text side of a SPLIT_ROW. Full width in the column; grows on `sm`. */
+export const SPLIT_COPY = "min-w-0 w-full sm:w-auto sm:min-w-[12rem] sm:flex-1";
+/** Buttons, selects, figures. Never shrink the copy to make room. */
+export const SPLIT_ACTIONS =
+  "flex max-w-full shrink-0 flex-wrap items-center gap-2";
 
 /** A top-level section. One per idea, never nested inside another Panel. */
 export function Panel({
@@ -143,14 +159,15 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap justify-between gap-x-4 gap-y-3",
-        subtitle ? "items-start" : "items-center",
+        SPLIT_ROW,
+        !subtitle && "sm:items-center",
         className
       )}
     >
       <div
         className={cn(
-          "flex min-w-0 flex-1 gap-3 sm:min-w-[12rem]",
+          SPLIT_COPY,
+          "flex gap-3",
           subtitle ? "items-start" : "items-center"
         )}
       >
@@ -182,11 +199,7 @@ export function PanelHeader({
           ) : null}
         </div>
       </div>
-      {actions && (
-        <div className="flex max-w-full shrink-0 items-center gap-2">
-          {actions}
-        </div>
-      )}
+      {actions && <div className={SPLIT_ACTIONS}>{actions}</div>}
     </div>
   );
 }
@@ -486,6 +499,7 @@ type ScoreProps = {
   tone?: "up" | "down";
   valueClassName?: string;
   subClassName?: string;
+  bulletsClassName?: string;
   className?: string;
 };
 
@@ -505,6 +519,7 @@ export function Score({
   tone,
   valueClassName,
   subClassName,
+  bulletsClassName,
   className,
 }: ScoreProps) {
   const noteClass = cn("mt-1.5 text-sm leading-snug", subClassName ?? "text-muted");
@@ -518,7 +533,7 @@ export function Score({
         {value}
       </p>
       {bullets && bullets.length > 0 ? (
-        <ul className={cn(noteClass, "space-y-1")}>
+        <ul className={cn(noteClass, "space-y-1", bulletsClassName)}>
           {bullets.map((line, i) => (
             <li key={`${i}:${line}`} className="flex gap-1.5">
               <span
