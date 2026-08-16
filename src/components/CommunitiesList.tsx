@@ -1,7 +1,5 @@
 "use client";
 
-import { HomeWorld } from "@/components/HomeWorld";
-import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
@@ -240,101 +238,98 @@ export function CommunitiesList() {
   return (
     <SignInGate>
       <div className={PAGE_FRAME_CLASS}>
-        <MobileChrome title="Communities" active="circle" />
-        <AppHeader className="hidden md:block" title="Communities" />
+        <MobileChrome title="Circle" active="circle" />
+        <AppHeader className="hidden md:block" title="Circle" />
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-lg font-bold text-foreground">
-              Communities
-            </h1>
+            <h1 className="text-lg font-bold text-foreground">Circle</h1>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Compare books with people you invite, or find a public circle
-              below. You pick which sheets to share. Members see today&apos;s
-              prices, not what you paid.
+              People you invite, and public circles you can ask to join. You
+              pick which portfolios they see. They see today&apos;s prices, not
+              what you paid.
             </p>
           </div>
-          <WidgetErrorBoundary name="Upside Fund">
-            <HomeWorld fundOnly />
-          </WidgetErrorBoundary>
           {error && <p className="text-sm text-loss">{error}</p>}
-          {communities.length === 0 && loading ? (
-            <div className="space-y-2" aria-hidden>
-              {[0, 1].map((i) => (
-                <div
-                  key={i}
-                  className="h-[3.75rem] animate-pulse rounded-2xl border border-border bg-card"
-                />
-              ))}
-            </div>
-          ) : (
-            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-              {communities.length === 0 && (
-                <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-                  <Users className="h-6 w-6 text-muted" />
-                  <p className="text-sm text-foreground">
-                    You are not in a circle yet.
-                  </p>
-                  <p className="text-sm leading-relaxed text-muted">
-                    Create one below for friends or family, or request to join
-                    a public community further down.
-                  </p>
-                </li>
-              )}
-              {communities.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/communities/${c.id}`}
-                    onPointerEnter={() => void prefetchCommunity(c.id)}
-                    onFocus={() => void prefetchCommunity(c.id)}
-                    className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-brand/5"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      {c.kind === "classroom" ? (
-                        <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
-                      ) : c.visibility === "public" ? (
-                        <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
-                      ) : (
-                        <Lock className="h-3.5 w-3.5 shrink-0 text-muted" />
-                      )}
-                      <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                        {c.name}
-                      </span>
-                      {c.kind === "classroom" ? (
-                        <span className="shrink-0 text-sm text-muted">
-                          Class
+          <Panel>
+            <PanelHeader
+              title="Your circles"
+              subtitle="Tap one to open it."
+              icon={<Users className="h-4 w-4" />}
+            />
+            {communities.length === 0 && loading ? (
+              <div className="mt-5 space-y-2" aria-hidden>
+                {[0, 1].map((i) => (
+                  <div
+                    key={i}
+                    className="h-[3.75rem] animate-pulse rounded-xl border border-border bg-raised"
+                  />
+                ))}
+              </div>
+            ) : (
+              <ul className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+                {communities.length === 0 && (
+                  <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                    <Users className="h-6 w-6 text-muted" />
+                    <p className="text-sm text-foreground">
+                      You are not in a circle yet.
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted">
+                      Start one below for friends or family, or request to join
+                      a public circle further down.
+                    </p>
+                  </li>
+                )}
+                {communities.map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      href={`/communities/${c.id}`}
+                      onPointerEnter={() => void prefetchCommunity(c.id)}
+                      onFocus={() => void prefetchCommunity(c.id)}
+                      className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-brand/5"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        {c.kind === "classroom" ? (
+                          <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
+                        ) : c.visibility === "public" ? (
+                          <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
+                        ) : (
+                          <Lock className="h-3.5 w-3.5 shrink-0 text-muted" />
+                        )}
+                        <span className="min-w-0 truncate text-base font-semibold text-foreground">
+                          {c.name}
                         </span>
-                      ) : null}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className="text-sm capitalize text-brand-bright/80">
-                        {c.role}
+                        {c.kind === "classroom" ? (
+                          <span className="shrink-0 text-sm text-muted">
+                            Class
+                          </span>
+                        ) : null}
                       </span>
-                      <ChevronRight className="h-4 w-4 text-muted" />
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                      <span className="flex shrink-0 items-center gap-2">
+                        <span className="text-sm capitalize text-muted">
+                          {c.role}
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-muted" />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
 
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <Compass className="h-4 w-4 text-brand-bright" />
-              <h2 className="text-sm font-semibold text-foreground">
-                Discover public circles
-              </h2>
-            </div>
-            <p className="mb-3 text-sm text-muted">
-              Anyone can ask to join. You pick which portfolios they can
-              see. An admin still has to approve.
-            </p>
+          <Panel>
+            <PanelHeader
+              title="Public circles"
+              subtitle="Anyone can ask to join. You pick which portfolios they can see. An admin still has to approve."
+              icon={<Compass className="h-4 w-4" />}
+            />
             {discover.length === 0 ? (
-              <p className="rounded-2xl border border-border bg-card px-4 py-6 text-sm leading-relaxed text-muted">
+              <p className="mt-5 rounded-xl border border-border bg-raised px-4 py-6 text-sm leading-relaxed text-muted">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+              <ul className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -343,7 +338,7 @@ export function CommunitiesList() {
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="flex min-w-0 items-center gap-2">
                         <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
-                        <span className="min-w-0 truncate text-sm font-medium text-foreground">
+                        <span className="min-w-0 truncate text-base font-medium text-foreground">
                           {c.name}
                         </span>
                         <span className="shrink-0 text-sm text-muted">
@@ -379,12 +374,12 @@ export function CommunitiesList() {
                 ))}
               </ul>
             )}
-          </div>
+          </Panel>
 
           <form onSubmit={(e) => void createCommunity(e)}>
             <Panel>
               <PanelHeader
-                title="Create a community"
+                title="Start a circle"
                 subtitle={
                   kind === "classroom"
                     ? "High school or uni. Students join with a link. Everyone starts with the same paper cash and an empty portfolio. Real prices. No brokerage."
@@ -414,7 +409,7 @@ export function CommunitiesList() {
                     placeholder={
                       kind === "classroom"
                         ? "Econ 201"
-                        : "Community name"
+                        : "Circle name"
                     }
                     className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
                   />
@@ -504,7 +499,7 @@ export function CommunitiesList() {
                 )}
 
                 <button type="submit" className="btn-primary">
-                  {kind === "classroom" ? "Start a class" : "Create community"}
+                  {kind === "classroom" ? "Start a class" : "Start circle"}
                 </button>
               </div>
             </Panel>

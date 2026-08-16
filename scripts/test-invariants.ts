@@ -1203,7 +1203,8 @@ run("home keeps Fund and Communities in view", () => {
   assert.ok(!overview.includes("CommunitiesSpotlight"));
   assert.ok(world.includes("Around Upside Lab"));
   assert.ok(world.includes("Upside Fund"));
-  assert.ok(world.includes("Communities"));
+  assert.ok(world.includes("Circle"));
+  assert.doesNotMatch(world, /fundOnly/);
 });
 
 run("community books lead with today's percent, not dollar size", () => {
@@ -2794,12 +2795,17 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.doesNotMatch(src, /hadCache = communities\.length/);
   assert.match(src, /loadCommunityListCache/);
   assert.match(src, /communities\.length === 0 && loading/);
-  assert.match(src, /Discover public circles/);
+  assert.match(src, /Public circles/);
   assert.match(src, /No public circles right now/);
   assert.doesNotMatch(src, /discover\.length > 0 &&/);
   assert.match(src, /<PanelHeader/);
   assert.match(src, /space-y-5/);
   assert.doesNotMatch(src, /sm:grid-cols-2/);
+  assert.doesNotMatch(src, /HomeWorld/);
+  assert.doesNotMatch(src, /fundOnly/);
+  assert.doesNotMatch(src, /Compare books/);
+  assert.doesNotMatch(src, /which sheets/);
+  assert.match(src, />Circle</);
   assert.doesNotMatch(src, /Start a class[\s\S]{0,80}How the class runs/);
 });
 

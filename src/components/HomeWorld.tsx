@@ -78,16 +78,13 @@ function teaserFromFundCache(): FundTeaser | null {
 }
 
 /**
- * Fund + Communities on Overview. Not a second hero, not a one-line
+ * Fund + Circle on Overview. Not a second hero, not a one-line
  * afterthought. These are rooms people come back for.
  */
 export function HomeWorld({
   className,
-  fundOnly = false,
 }: {
   className?: string;
-  /** On Circle, the communities card just links back here. Fund only. */
-  fundOnly?: boolean;
 }) {
   const [fund, setFund] = useHydratedCache<FundTeaser | null>(
     teaserFromFundCache,
@@ -121,7 +118,6 @@ export function HomeWorld({
   }, [setFund]);
 
   useEffect(() => {
-    if (fundOnly) return;
     const ctrl = new AbortController();
     void (async () => {
       try {
@@ -145,7 +141,7 @@ export function HomeWorld({
     return () => {
       ctrl.abort();
     };
-  }, [fundOnly]);
+  }, []);
 
   const primary = communities?.[0];
   const communityHref = primary ? `/communities/${primary.id}` : "/communities";
@@ -161,15 +157,10 @@ export function HomeWorld({
   return (
     <Panel className={cn("overview-fade", className)}>
       <PanelHeader
-        title={fundOnly ? "Upside Fund" : "Around Upside Lab"}
+        title="Around Upside Lab"
         icon={<Users className="h-4 w-4" />}
       />
-      <div
-        className={cn(
-          "mt-5 grid gap-3",
-          fundOnly ? "grid-cols-1" : "sm:grid-cols-2"
-        )}
-      >
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <Link href="/upside-portfolio" prefetch className="group block h-full">
           <Card
             tone="brand"
@@ -218,7 +209,6 @@ export function HomeWorld({
           </Card>
         </Link>
 
-        {!fundOnly && (
         <Link href={communityHref} prefetch className="group block h-full">
           <Card
             interactive
@@ -227,7 +217,7 @@ export function HomeWorld({
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
                 <Users className="h-3.5 w-3.5 text-muted" aria-hidden />
-                Communities
+                Circle
               </MicroLabel>
               <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             </div>
@@ -247,7 +237,6 @@ export function HomeWorld({
             </p>
           </Card>
         </Link>
-        )}
       </div>
     </Panel>
   );
