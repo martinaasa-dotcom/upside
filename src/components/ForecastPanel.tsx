@@ -181,7 +181,7 @@ function PlaybookItem({
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-well/40 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-raised px-4 py-3">
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
         <p className="mt-1 text-sm leading-relaxed text-muted">
@@ -917,7 +917,7 @@ export function ForecastPanel({
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
       <header className="border-b border-border p-6 sm:p-10">
         <PanelHeader
           title="Forecast"
@@ -986,7 +986,7 @@ export function ForecastPanel({
             {model.rows.map((r) => (
               <div
                 key={r.ticker}
-                className="rounded-xl border border-border bg-well/30 px-3 py-3"
+                className="rounded-xl border border-border bg-raised px-3 py-3"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
@@ -1042,7 +1042,7 @@ export function ForecastPanel({
               </div>
             ))}
 
-            <div className="rounded-xl border border-border bg-well/60 px-3 py-3">
+            <div className="rounded-xl border border-border bg-raised px-3 py-3">
               <p className="text-xs font-medium text-muted">
                 Whole sheet
               </p>

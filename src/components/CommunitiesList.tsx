@@ -262,12 +262,12 @@ export function CommunitiesList() {
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="h-[3.75rem] animate-pulse rounded-2xl border border-border bg-card/80"
+                  className="h-[3.75rem] animate-pulse rounded-2xl border border-border bg-card"
                 />
               ))}
             </div>
           ) : (
-            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card/80">
+            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
               {communities.length === 0 && (
                 <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                   <Users className="h-6 w-6 text-muted" />
@@ -329,12 +329,12 @@ export function CommunitiesList() {
               see. An admin still has to approve.
             </p>
             {discover.length === 0 ? (
-              <p className="rounded-2xl border border-border bg-card/80 px-4 py-6 text-sm leading-relaxed text-muted">
+              <p className="rounded-2xl border border-border bg-card px-4 py-6 text-sm leading-relaxed text-muted">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card/80">
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
                 {discover.map((c) => (
                   <li
                     key={c.id}

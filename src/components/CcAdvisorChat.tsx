@@ -1046,7 +1046,7 @@ export function CcAdvisorChat({
             className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
           >
             {messages.length === 0 && (
-              <div className="space-y-3 rounded-lg border border-dashed border-border bg-well/30 p-3">
+              <div className="space-y-3 rounded-lg border border-dashed border-border bg-raised p-3">
                 <p className="text-sm leading-relaxed text-muted">
                   {context.hideOptions
                     ? "I can read holdings and update shares, buy price, cash, or add/remove tickers."
@@ -1174,15 +1174,15 @@ export function CcAdvisorChat({
             )}
 
             {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
-              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-sm text-muted">
+              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : error && !isQuietChatFailure(error.message) ? (
-              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-sm text-muted">
+              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
                 {describeChatUiError(error.message)}
               </div>
             ) : lastIsEmptyAssistant && !error ? (
-              <div className="rounded-lg border border-border bg-well/50 px-3 py-2 text-sm text-muted">
+              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : null}

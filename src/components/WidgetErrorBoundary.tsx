@@ -53,7 +53,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           role="alert"
           className={
             this.props.className ??
-            "min-w-0 overflow-x-clip rounded-2xl border border-border bg-card/80 px-5 py-6"
+            "min-w-0 overflow-x-clip rounded-2xl border border-border bg-card px-5 py-6"
           }
         >
           <p className="text-sm font-semibold text-foreground">

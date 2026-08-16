@@ -113,7 +113,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
             {step === 3 ? (
               <div className="space-y-3">
-                <label className="flex items-start gap-3 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground">
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteMorning}
@@ -127,7 +127,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     </span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground">
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteSunday}
@@ -172,7 +172,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           }}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-border bg-well/60 text-foreground hover:border-brand/40 hover:bg-hover"
+                            "border-border bg-raised text-foreground hover:border-brand/40 hover:bg-hover"
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0 text-foreground/80" />
@@ -188,7 +188,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground transition hover:border-brand/40 hover:bg-hover"
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground transition hover:border-brand/40 hover:bg-hover"
                       >
                         {opt.label}
                       </button>
@@ -218,7 +218,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 Next, paste what you own. That is the whole start.
               </p>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-well/60 px-3.5 py-3 text-left text-sm text-foreground/80">
+            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground/80">
               <Settings className="h-4 w-4 shrink-0 text-foreground/80" />
               <span>
                 Change the view and the email notes anytime in{" "}

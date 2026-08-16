@@ -195,7 +195,7 @@ export function SnapshotsModal({
               {snapshots.map((s) => (
                 <li
                   key={s.id}
-                  className="rounded-lg border border-border px-3 py-2"
+                  className="rounded-lg border border-border bg-raised px-3 py-2"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">

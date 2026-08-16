@@ -35,7 +35,7 @@ export function ClassroomRoster({
   const rows = [...members].sort((a, b) => b.totalValue - a.totalValue);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">Roster</h2>
         <p className="mt-1.5 text-sm text-muted">

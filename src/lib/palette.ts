@@ -4,6 +4,9 @@
  */
 export const PALETTE = {
   app: "#08090c",
+  well: "#10141c",
+  card: "#161b25",
+  raised: "#1e2430",
   cream: "#f4f1ea",
   ink: "#08090c",
   muted: "#9aa3ad",

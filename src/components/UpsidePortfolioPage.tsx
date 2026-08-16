@@ -1065,7 +1065,7 @@ export function UpsidePortfolioPage() {
           <p className="text-sm text-loss">{error}</p>
         ) : (
           <>
-            <section className="rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+            <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat
                   label="Total value"
@@ -1096,7 +1096,7 @@ export function UpsidePortfolioPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+            <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="text-base font-semibold text-foreground">
@@ -1191,7 +1191,7 @@ export function UpsidePortfolioPage() {
                 <h2 className="text-sm font-semibold text-muted">
                   What he&apos;s betting on
                 </h2>
-                <div className="rounded-2xl border border-border bg-card/80 p-4">
+                <div className="rounded-2xl border border-border bg-card p-4">
                   <div className="flex h-3 overflow-hidden rounded-full bg-well">
                     {bettingSlices.map((t) => (
                       <div
@@ -1208,7 +1208,7 @@ export function UpsidePortfolioPage() {
                     {bettingSlices.map((t) => (
                       <div
                         key={t.key}
-                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-well/40 px-3 py-2"
+                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2"
                       >
                         <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
@@ -1264,7 +1264,7 @@ export function UpsidePortfolioPage() {
                         {fundWatchlist.map((w) => (
                           <li
                             key={w.ticker}
-                            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-well/40 px-3 py-2"
+                            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2"
                           >
                             <span className="shrink-0 text-sm font-semibold text-foreground">
                               {cashtag(w.ticker)}
@@ -1304,7 +1304,7 @@ export function UpsidePortfolioPage() {
                     return (
                       <div
                         key={h.id}
-                        className="flex h-full flex-col rounded-xl border border-border bg-card/80 p-3.5"
+                        className="flex h-full flex-col rounded-xl border border-border bg-card p-3.5"
                       >
                         <div className="flex items-baseline justify-between gap-2">
                           <span className="text-base font-semibold text-foreground">
@@ -1378,7 +1378,7 @@ export function UpsidePortfolioPage() {
                   {weeklyRecaps.map((r) => (
                     <article
                       key={r.id}
-                      className="space-y-2 rounded-2xl border border-border bg-card/80 p-4 sm:p-5"
+                      className="space-y-2 rounded-2xl border border-border bg-card p-4 sm:p-5"
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <p className="text-sm text-brand-bright">
@@ -1412,7 +1412,7 @@ export function UpsidePortfolioPage() {
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-2xl border border-border bg-card/80 px-4 py-6 text-center text-sm text-muted">
+                <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1428,7 +1428,7 @@ export function UpsidePortfolioPage() {
                     i === 0 ? (
                       <article
                         key={r.id}
-                        className="space-y-2 rounded-2xl border border-border bg-card/80 p-4"
+                        className="space-y-2 rounded-2xl border border-border bg-card p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1441,7 +1441,7 @@ export function UpsidePortfolioPage() {
                     ) : (
                       <details
                         key={r.id}
-                        className="group overflow-hidden rounded-2xl border border-border bg-card/50"
+                        className="group overflow-hidden rounded-2xl border border-border bg-card"
                       >
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
@@ -1470,7 +1470,7 @@ export function UpsidePortfolioPage() {
                 <h2 className="text-sm font-semibold text-muted">
                   Closed positions · {closedHoldings.length}
                 </h2>
-                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card/80">
+                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
                   {closedHoldings.map((h) => (
                     <li key={h.id} className="px-4 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-2">

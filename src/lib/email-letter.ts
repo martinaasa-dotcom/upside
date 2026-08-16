@@ -10,7 +10,7 @@ export const EMAIL = {
   gold: "#d6ad69",
   gain: "#10b981",
   loss: "#f43f5e",
-  line: "#181b22",
+  line: "#1e2430",
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
   serif: "Georgia,'Times New Roman',Times,serif",
   lockup: "https://upsidelab.app/icons/email-lockup.png?v=2",

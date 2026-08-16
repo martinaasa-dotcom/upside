@@ -204,7 +204,7 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4">
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="text-base font-semibold text-foreground">
@@ -305,7 +305,7 @@ export function TickerDrawer({
                         "rounded-lg border px-1 py-2 text-center transition hover:border-brand-mid",
                         isCurrentHorizon
                           ? "border-brand/50 bg-brand/10"
-                          : "border-border bg-well/40"
+                          : "border-border bg-raised"
                       )}
                     >
                       <p className="text-sm text-muted">
@@ -404,7 +404,7 @@ export function TickerDrawer({
                     "touch-target h-10 flex-1 rounded-lg text-sm font-semibold tabular-nums transition",
                     level === n
                       ? "bg-brand/25 text-brand-bright ring-1 ring-brand/50"
-                      : "border border-border bg-well/40 text-muted hover:text-foreground"
+                      : "border border-border bg-raised text-muted hover:text-foreground"
                   )}
                 >
                   {n}

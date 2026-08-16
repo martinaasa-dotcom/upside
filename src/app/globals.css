@@ -2,17 +2,19 @@
 
 :root {
   /* Brand board from 15 Aug: cool near-black, cream type, gold mark.
-     Green and red stay the bright up/down colors, never a wash on the room. */
+     Green and red stay the bright up/down colors, never a wash on the room.
+     Stack: field (--app) → inset (--well) → box (--card) → nested (--raised).
+     A box on the field is never the field color. */
   --background: #08090c;
   --foreground: #f4f1ea;
   --paper: #f4f1ea;
   --ink: #08090c;
   --muted: #9aa3ad;
   --app: #08090c;
-  --well: #0c0e12;
-  --card: #111318;
-  --raised: #181b22;
-  --hover: #1e222b;
+  --well: #10141c;
+  --card: #161b25;
+  --raised: #1e2430;
+  --hover: #272e3c;
   --brand: #d6ad69;
   --brand-bright: #eed7b5;
   --brand-mid: #dcad55;
@@ -24,8 +26,8 @@
   --caution: #dcad55;
   --gain: #10b981;
   --loss: #f43f5e;
-  --surface: #111318;
-  --panel: #111318;
+  --surface: #161b25;
+  --panel: #161b25;
   --border: rgb(214 173 105 / 0.22);
 }
 

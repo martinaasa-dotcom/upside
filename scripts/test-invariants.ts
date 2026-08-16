@@ -1233,8 +1233,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(css, /--paper: #f4f1ea/);
   assert.match(css, /--ink: #08090c/);
-  assert.match(css, /--card: #111318/);
-  assert.match(css, /--raised: #181b22/);
+  assert.match(css, /--card: #161b25/);
+  assert.match(css, /--raised: #1e2430/);
+  assert.match(css, /--well: #10141c/);
   assert.match(css, /--app: #08090c/);
   assert.match(css, /--muted: #9aa3ad/);
   assert.match(css, /--brand: #d6ad69/);
@@ -1301,7 +1302,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
   assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
-  assert.match(frame, /#111318_0%,_#08090c/);
+  assert.match(frame, /#161b25_0%,_#08090c/);
   assert.doesNotMatch(frame, /#141614/);
   assert.doesNotMatch(frame, /#0d110f/);
   assert.doesNotMatch(frame, /#1a2820/);
@@ -1343,6 +1344,61 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
       `${pattern} is outside the office palette. Offenders: ${offenders.join(", ")}`
     );
   }
+});
+
+run("boxes sit off the field, never the same color as the page", () => {
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ui/Panel.tsx"),
+    "utf8"
+  );
+  const members = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  const share = readFileSync(
+    join(process.cwd(), "src/components/ShareSheets.tsx"),
+    "utf8"
+  );
+  assert.match(css, /--app: #08090c/);
+  assert.match(css, /--card: #161b25/);
+  assert.notEqual("#08090c", "#161b25");
+  assert.match(panel, /export const BOX/);
+  assert.match(panel, /export const CARD/);
+  assert.match(panel, /export const LIST/);
+  assert.match(panel, /rounded-2xl border border-border bg-card/);
+  assert.match(
+    members,
+    /divide-y divide-border overflow-hidden rounded-xl border border-border bg-card/
+  );
+  assert.match(share, /rounded-xl border border-border bg-card p-4/);
+  assert.deepEqual(
+    offendersOf(/bg-card\/(?:80|50)\b/),
+    [],
+    "page boxes use solid bg-card, not a wash of the field"
+  );
+  assert.deepEqual(
+    offendersOf(/bg-app\/40\b/),
+    [],
+    "a box painted with the field color disappears"
+  );
+
+  const hollow = sources
+    .filter(({ src }) => {
+      for (const line of src.split("\n")) {
+        if (!/rounded-(xl|2xl)/.test(line)) continue;
+        if (!/border-border/.test(line)) continue;
+        if (/\bbg-/.test(line)) continue;
+        return true;
+      }
+      return false;
+    })
+    .map(({ file }) => file);
+  assert.deepEqual(
+    hollow,
+    [],
+    `xl/2xl bordered boxes need a fill. Offenders: ${hollow.join(", ")}`
+  );
 });
 
 run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {

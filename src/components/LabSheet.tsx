@@ -463,7 +463,7 @@ export function LabSheet({
                     {themes.map((t) => (
                       <div
                         key={t.theme}
-                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-well/40 px-3 py-2"
+                        className="flex h-full items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2"
                       >
                         <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span

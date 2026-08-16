@@ -300,7 +300,7 @@ export function WatchlistStrip({
                 <li
                   key={ticker}
                   className={cn(
-                    "flex flex-col rounded-xl border bg-app/40",
+                    "flex flex-col rounded-xl border bg-raised",
                     lookBorder(look?.kind)
                   )}
                 >

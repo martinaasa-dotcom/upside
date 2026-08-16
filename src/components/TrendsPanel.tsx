@@ -86,7 +86,7 @@ function TickerStoryCard({
   const story = useMemo(() => buildTrendStory(row), [row]);
 
   return (
-    <div className="rounded-xl border border-border bg-card/80 p-4 sm:p-5">
+    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold text-foreground">
@@ -348,13 +348,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       )}
 
       {rows == null && !error && (
-        <div className="rounded-xl border border-border bg-card/80 px-4 py-10 text-center text-sm text-muted">
+        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted">
           Reading four years of weekly bars …
         </div>
       )}
 
       {rows != null && rows.length === 0 && !error && (
-        <div className="rounded-xl border border-border bg-card/80 px-4 py-10 text-center text-sm text-muted">
+        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted">
           Add a holding, or watch a ticker above, and its trend read shows up
           here.
         </div>

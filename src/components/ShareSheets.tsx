@@ -104,7 +104,7 @@ export function ShareSheets({
   if (sheets && sheets.length === 0) return null;
 
   return (
-    <section className="space-y-3 rounded-xl border border-border p-4">
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4">
       <div>
         <h2 className="text-sm font-medium text-foreground">
           Portfolios this circle can see
@@ -119,7 +119,7 @@ export function ShareSheets({
         {(sheets ?? []).map((s) => (
           <li
             key={s.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-well/40 px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2"
           >
             <span className="min-w-0 truncate text-sm text-foreground">
               {s.name}

@@ -59,7 +59,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card/80 p-6 sm:p-8">
+    <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {subtitle ? (
         <p className="mt-1.5 text-sm text-muted">{subtitle}</p>
@@ -614,7 +614,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       )}
 
       {loading && !model ? (
-        <div className="rounded-xl border border-border bg-well/40 px-4 py-12 text-center text-sm text-muted">
+        <div className="rounded-xl border border-border bg-raised px-4 py-12 text-center text-sm text-muted">
           Loading seasonality for {cashtag(ticker)}…
         </div>
       ) : null}
@@ -633,7 +633,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               currentMonth={model.asOfMonth}
               onSelectMonth={setPlaybookMonth}
             />
-            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-well/40 p-2.5">
+            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-raised p-2.5">
               <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <p className="text-xs font-medium text-foreground/80">
                   {MONTH_NAMES[playbookMonth - 1]} in years like this
@@ -735,7 +735,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               }
               onSelectDay={setSelectedDay}
             />
-            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-well/40 p-2.5">
+            <div className="mt-4 min-h-[16.5rem] rounded-lg border border-border bg-raised p-2.5">
               <div className="mb-2 flex min-h-5 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <p className="text-xs font-medium text-foreground/80">
                   {selectedDayLabel}, prior sessions

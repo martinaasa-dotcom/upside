@@ -125,7 +125,7 @@ export function ClassroomPlanEditor({
           {scheduled.map((p) => (
             <li
               key={p.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2.5"
             >
               <span className="min-w-0 text-sm text-foreground/80">
                 {classPeriodLabel(p.kind)}
@@ -160,7 +160,7 @@ export function ClassroomPlanEditor({
         </ul>
       )}
 
-      <div className="mt-6 space-y-3 rounded-lg border border-border p-4">
+      <div className="mt-6 space-y-3 rounded-lg border border-border bg-raised p-4">
         <p className="text-sm font-medium text-muted">Add a stretch</p>
         <select
           value={draftKind}

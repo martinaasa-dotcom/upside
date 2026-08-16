@@ -2897,7 +2897,7 @@ export function Dashboard() {
                   key={a.id}
                   type="button"
                   onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-                  className="w-full rounded-2xl border border-border bg-card/80 p-4 text-left"
+                  className="w-full rounded-2xl border border-border bg-card p-4 text-left"
                 >
                   <p className="text-sm font-semibold text-foreground">{a.title}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted">

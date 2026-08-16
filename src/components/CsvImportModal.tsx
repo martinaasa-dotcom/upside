@@ -196,7 +196,7 @@ export function CsvImportModal({
               {/* overflow-x too: an imported file can carry long tickers and
                   wide numbers, and on a phone the preview needs to scroll
                   sideways instead of pushing the modal past the viewport. */}
-              <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border">
+              <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised">
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-well text-sm text-muted">
                     <tr>

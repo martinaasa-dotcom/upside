@@ -193,7 +193,7 @@ function PulseCard({
           ? statusBorder(status, c.isBigMove || leftHold, pinned)
           : pinned
             ? "border-white/20 bg-hover ring-1 ring-brand/30"
-            : "border-border bg-well/40"
+            : "border-border bg-raised"
       )}
     >
       <div className="flex items-start justify-between gap-3">

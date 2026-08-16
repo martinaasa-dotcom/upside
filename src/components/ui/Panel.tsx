@@ -20,6 +20,9 @@ import { useState, type ReactNode } from "react";
  *   Shell      black field, graphite card. Selected is brass. Mustard is
  *              the main button. Paper is type, never a white pill.
  *              Green is an up number, not a wash.
+ *   Stack      field is --app. A box on the field is bg-card. Nested is
+ *              bg-raised. Inputs sit in bg-well. Never paint a box with
+ *              the field color, and never a transparent card on the field.
  *   Card       border-border on bg-raised. Nested boxes lift off the panel.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
@@ -50,6 +53,14 @@ import { useState, type ReactNode } from "react";
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
  * consultant's slide; "Price path" reads like a person wrote it.
  */
+
+/** Page-level box. Solid fill so it never matches the field. */
+export const BOX = "rounded-2xl border border-border bg-card";
+/** Nested card inside a box. */
+export const CARD = "rounded-xl border border-border bg-raised";
+/** Member / row list on the field. */
+export const LIST =
+  "divide-y divide-border overflow-hidden rounded-xl border border-border bg-card";
 
 const SHELL_TONES = {
   default: "border-border bg-card",
@@ -506,7 +517,7 @@ export function Segmented<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 rounded-lg border border-border bg-app/50 p-0.5",
+        "inline-flex shrink-0 rounded-lg border border-border bg-well p-0.5",
         className
       )}
     >
@@ -585,7 +596,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-xl border border-dashed border-border px-5 py-10 text-center",
+        "rounded-xl border border-dashed border-border bg-raised px-5 py-10 text-center",
         className
       )}
     >

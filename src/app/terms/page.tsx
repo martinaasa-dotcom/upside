@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#111318_0%,_#08090c_55%)] text-foreground">
+    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_55%)] text-foreground">
       <header className="border-b border-border bg-app/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />

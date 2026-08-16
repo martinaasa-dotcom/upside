@@ -343,7 +343,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             {analysis.themeBreakdown.map((t) => (
               <div
                 key={t.theme}
-                className="flex h-full items-center justify-between gap-3 rounded-lg border border-border bg-well/60 px-3 py-2 text-sm"
+                className="flex h-full items-center justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2 text-sm"
               >
                 <span className="truncate text-foreground/80">{t.theme}</span>
                 <span

@@ -171,7 +171,7 @@ export function InvitePartnerModal({
         {err && <p className="mt-2 text-sm text-loss">{err}</p>}
         {msg && <p className="mt-2 text-sm text-gain">{msg}</p>}
         {(link || code) && (
-          <div className="mt-3 space-y-2 rounded-xl border border-border bg-well/50 p-3">
+          <div className="mt-3 space-y-2 rounded-xl border border-border bg-raised p-3">
             {code && (
               <div className="flex items-center justify-between gap-2">
                 <p className="font-mono text-sm text-brand-bright">{code}</p>
@@ -212,7 +212,7 @@ export function InvitePartnerModal({
         )}
 
         {owners.length > 0 && (
-          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border">
+          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
             {owners.map((o) => (
               <li
                 key={o.user_id}

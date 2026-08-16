@@ -355,7 +355,7 @@ function EmptyBook({
                 "group h-full rounded-xl border p-5 text-left transition active:scale-[0.99]",
                 r.primary
                   ? "border-brand/40 bg-hover hover:border-brand hover:bg-hover"
-                  : "border-border bg-well/40 hover:border-border hover:bg-well/70"
+                  : "border-border bg-raised hover:border-border hover:bg-well/70"
               )}
             >
               <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">

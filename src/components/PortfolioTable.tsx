@@ -375,7 +375,7 @@ export function PortfolioTable({
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card/80">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-foreground">Holdings</h2>
@@ -445,7 +445,7 @@ export function PortfolioTable({
       {/* Mobile cards */}
       <div className="space-y-2 p-3 md:hidden">
         {holdings.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-raised px-4 py-8 text-center">
             <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
@@ -453,7 +453,7 @@ export function PortfolioTable({
           holdings.map((h) => (
             <div
               key={h.id}
-              className="rounded-xl border border-border bg-well/30 px-3 py-3"
+              className="rounded-xl border border-border bg-raised px-3 py-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -585,7 +585,7 @@ export function PortfolioTable({
         )}
 
         {holdings.length > 0 && (
-          <div className="rounded-xl border border-border bg-well/60 px-3 py-3 text-sm">
+          <div className="rounded-xl border border-border bg-raised px-3 py-3 text-sm">
             <div className="flex justify-between font-semibold">
               <span className="text-foreground">Portfolio</span>
               <span className={cn("tabular-nums", signedTone(totals.roiPct))}>

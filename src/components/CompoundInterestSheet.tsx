@@ -1203,7 +1203,7 @@ export function CompoundInterestSheet({
           )}
           <div
             ref={milestoneScrollRef}
-            className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-border"
+            className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-border bg-raised"
           >
             <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
               <thead className="sticky top-0 z-10 bg-card">
@@ -1336,7 +1336,7 @@ export function CompoundInterestSheet({
 
           {/* The full grid used to be its own panel below. Same numbers, so it
             * lives here folded up instead of as a seventh thing to scroll past. */}
-          <details className="mt-4 rounded-xl border border-border">
+          <details className="mt-4 rounded-xl border border-border bg-raised">
             <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>
@@ -1436,7 +1436,7 @@ export function CompoundInterestSheet({
             {narrative.map((line) => (
               <li
                 key={line}
-                className="rounded-lg border border-border bg-well/30 px-3 py-2 text-sm leading-relaxed text-foreground/80"
+                className="rounded-lg border border-border bg-raised px-3 py-2 text-sm leading-relaxed text-foreground/80"
               >
                 {line}
               </li>
