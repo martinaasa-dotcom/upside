@@ -143,7 +143,11 @@ import {
   localTickerSuggestions,
   mergeTickerSuggestions,
 } from "../src/lib/market/ticker-search";
-import { normalizeYahooTicker, tickerStem } from "../src/lib/ticker";
+import {
+  normalizeYahooTicker,
+  tickerStem,
+  yahooQuoteCandidates,
+} from "../src/lib/ticker";
 import { watchLook } from "../src/lib/watch-look";
 import {
   formatEarningsCalendarBlock,
@@ -2667,9 +2671,28 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.equal(normalizeYahooTicker("vuaa"), "VUAA.DE");
   assert.equal(normalizeYahooTicker("VUAA.L"), "VUAA.L");
   assert.equal(normalizeYahooTicker("VWCE"), "VWCE.DE");
+  assert.equal(normalizeYahooTicker("SPY5"), "SPY5.DE");
+  assert.equal(normalizeYahooTicker("XETRA:SPY5"), "SPY5.DE");
+  assert.equal(normalizeYahooTicker("ETR:SPY5"), "SPY5.DE");
+  assert.equal(normalizeYahooTicker("SPYL"), "SPYL.DE");
+  assert.equal(normalizeYahooTicker("EUNL"), "EUNL.DE");
   assert.equal(normalizeYahooTicker("NVDA"), "NVDA");
   assert.equal(normalizeYahooTicker("€VUAA"), "VUAA.DE");
   assert.equal(normalizeYahooTicker("$€VUAA"), "VUAA.DE");
+  assert.deepEqual(yahooQuoteCandidates("SPY5"), ["SPY5.DE"]);
+  assert.deepEqual(yahooQuoteCandidates("XETRA:SPY5"), ["SPY5.DE"]);
+  assert.deepEqual(yahooQuoteCandidates("NVDA"), [
+    "NVDA",
+    "NVDA.DE",
+    "NVDA.L",
+    "NVDA.AS",
+  ]);
+  assert.deepEqual(yahooQuoteCandidates("ZZZX"), [
+    "ZZZX",
+    "ZZZX.DE",
+    "ZZZX.L",
+    "ZZZX.AS",
+  ]);
   assert.equal(tickerStem("VUAA.DE"), "VUAA");
   assert.equal(sanitizeTickerDraft("€vuaa"), "VUAA");
   assert.equal(sanitizeTickerDraft("$€VUAA"), "VUAA");
@@ -2685,11 +2708,24 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.match(pulse, /resolveListedTicker/);
   assert.match(pulse, /\/api\/market\/search/);
   assert.match(pulse, /sanitizeTickerDraft/);
+  assert.match(pulse, /\.DE/);
   const quotes = readFileSync(
     join(process.cwd(), "src/lib/market/quotes.ts"),
     "utf8"
   );
   assert.match(quotes, /aliasResolvedQuotes/);
+  assert.match(quotes, /yahooQuoteCandidates/);
+  const yahoo = readFileSync(
+    join(process.cwd(), "src/lib/market/yahoo.ts"),
+    "utf8"
+  );
+  assert.match(yahoo, /yahooQuoteCandidates/);
+  assert.match(yahoo, /resolveYahooListedSymbol/);
+  const search = readFileSync(
+    join(process.cwd(), "src/lib/market/ticker-search-yahoo.ts"),
+    "utf8"
+  );
+  assert.match(search, /\.DE/);
   const home = readFileSync(
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"

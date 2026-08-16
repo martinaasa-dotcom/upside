@@ -424,11 +424,14 @@ async function resolveListedTicker(
     );
     if (!res.ok) return resolved;
     const data = (await res.json()) as { results?: TickerSuggestion[] };
-    const hit = (data.results ?? []).find(
-      (row) =>
-        tickerStem(row.symbol) === tickerStem(resolved) ||
-        row.symbol.toUpperCase() === resolved
-    );
+    const stem = tickerStem(resolved);
+    const results = data.results ?? [];
+    const hit =
+      results.find((row) => row.symbol.toUpperCase() === resolved) ??
+      results.find(
+        (row) => tickerStem(row.symbol) === stem && row.symbol.endsWith(".DE")
+      ) ??
+      results.find((row) => tickerStem(row.symbol) === stem);
     return hit?.symbol ? normalizeYahooTicker(hit.symbol) : resolved;
   } catch (err) {
     if (isAbortError(err)) return resolved;
@@ -946,7 +949,7 @@ export function PulsePage({
                   void checkTicker(suggestions[0]!);
                 }
               }}
-              placeholder="Check any ticker: NVDA, VUAA, VWCE.DE"
+              placeholder="Check any ticker: NVDA, VUAA, SPY5"
               aria-label="Ticker to check"
               className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
               autoComplete="off"

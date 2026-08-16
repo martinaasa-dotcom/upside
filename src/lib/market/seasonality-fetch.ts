@@ -3,7 +3,7 @@ import {
   type DailyBar,
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
-import { normalizeYahooTicker } from "@/lib/ticker";
+import { yahooQuoteCandidates } from "@/lib/ticker";
 import { unstable_cache } from "next/cache";
 
 type YahooFinanceInstance = InstanceType<
@@ -30,32 +30,38 @@ function num(v: unknown): number | null {
 export async function fetchSeasonalityBars(ticker: string): Promise<{
   daily: DailyBar[];
 }> {
-  const symbol = normalizeYahooTicker(ticker);
   const yf = await getYahoo();
-
-  const dailyChart = await yf.chart(symbol, {
-    period1: new Date("1993-01-01"),
-    period2: new Date(),
-    interval: "1d",
-  });
-
   const daily: DailyBar[] = [];
-  for (const row of dailyChart.quotes ?? []) {
-    const rawDate = row.date as Date | string | undefined;
-    let date: string | null = null;
-    if (rawDate instanceof Date) {
-      date = toIsoDate(rawDate);
-    } else if (typeof rawDate === "string") {
-      date = rawDate.slice(0, 10);
+
+  for (const symbol of yahooQuoteCandidates(ticker)) {
+    try {
+      const dailyChart = await yf.chart(symbol, {
+        period1: new Date("1993-01-01"),
+        period2: new Date(),
+        interval: "1d",
+      });
+
+      for (const row of dailyChart.quotes ?? []) {
+        const rawDate = row.date as Date | string | undefined;
+        let date: string | null = null;
+        if (rawDate instanceof Date) {
+          date = toIsoDate(rawDate);
+        } else if (typeof rawDate === "string") {
+          date = rawDate.slice(0, 10);
+        }
+        const open = num(row.open);
+        const high = num(row.high);
+        const low = num(row.low);
+        const close = num(row.close);
+        if (!date || open == null || high == null || low == null || close == null) {
+          continue;
+        }
+        daily.push({ date, open, high, low, close });
+      }
+      if (daily.length > 0) return { daily };
+    } catch {
+      /* try the next exchange */
     }
-    const open = num(row.open);
-    const high = num(row.high);
-    const low = num(row.low);
-    const close = num(row.close);
-    if (!date || open == null || high == null || low == null || close == null) {
-      continue;
-    }
-    daily.push({ date, open, high, low, close });
   }
 
   return { daily };

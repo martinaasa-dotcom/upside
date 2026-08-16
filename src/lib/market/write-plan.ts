@@ -4,7 +4,7 @@ import {
   nextStrikeFromTarget,
   roundToStrike,
 } from "@/lib/market/resistance";
-import { fetchNextEarningsDate } from "@/lib/market/yahoo";
+import { fetchNextEarningsDate, resolveYahooListedSymbol } from "@/lib/market/yahoo";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 
 type YahooFinanceInstance = InstanceType<
@@ -102,9 +102,10 @@ async function fetchSpotAndHistory(ticker: string): Promise<{
   try {
     const yf = await getYahoo();
     const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
     const [quote, chart] = await Promise.all([
-      yf.quote(ticker),
-      yf.chart(ticker, { period1, interval: "1d" }),
+      yf.quote(symbol),
+      yf.chart(symbol, { period1, interval: "1d" }),
     ]);
     // Same fix as fetchQuotesYahoo: regularMarketPrice is stale (last
     // regular-session trade) through an active pre/post-market window —

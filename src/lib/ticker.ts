@@ -49,7 +49,8 @@ const KNOWN_SUFFIXES = new Set([
   ".HK",
 ]);
 
-/** Common Lightyear / EU-broker symbols → Yahoo */
+/** Common Lightyear / Trade Republic / Xetra codes → Yahoo.
+ * Bare names not listed here still get .DE / .L / .AS at quote time. */
 const BROKER_BARE_TO_YAHOO: Record<string, string> = {
   RHM: "RHM.DE",
   HAG: "HAG.DE",
@@ -57,10 +58,48 @@ const BROKER_BARE_TO_YAHOO: Record<string, string> = {
   VUAA: "VUAA.DE",
   "2B7K": "2B7K.DE",
   VWCE: "VWCE.DE",
+  VWCG: "VWCG.DE",
   IWDA: "IWDA.AS",
   SXR8: "SXR8.DE",
+  SPY5: "SPY5.DE",
+  SPYL: "SPYL.DE",
+  SPY4: "SPY4.DE",
+  EUNL: "EUNL.DE",
+  EXS1: "EXS1.DE",
+  EXW1: "EXW1.DE",
+  EXXT: "EXXT.DE",
+  IUSQ: "IUSQ.DE",
+  IUSN: "IUSN.DE",
+  IUS3: "IUS3.DE",
+  IS3N: "IS3N.DE",
+  IS3R: "IS3R.DE",
+  XDWD: "XDWD.DE",
+  XD9U: "XD9U.DE",
+  SPPW: "SPPW.DE",
+  SXRV: "SXRV.DE",
+  QDVE: "QDVE.DE",
+  QDV5: "QDV5.DE",
+  IQQH: "IQQH.DE",
+  EUN2: "EUN2.DE",
   CSPX: "CSPX.L",
+  VUSA: "VUSA.L",
 };
+
+/** Listings to try when a bare ticker is not a US name. Xetra first. */
+export const EU_QUOTE_SUFFIXES = [".DE", ".L", ".AS"] as const;
+
+/** Yahoo symbols to try for one typed ticker, Xetra before London. */
+export function yahooQuoteCandidates(raw: string): string[] {
+  const normalized = normalizeYahooTicker(raw);
+  if (!normalized) return [];
+  if (normalized.includes(".")) return [normalized];
+  const out = [normalized];
+  for (const suffix of EU_QUOTE_SUFFIXES) {
+    const next = `${normalized}${suffix}`;
+    if (!out.includes(next)) out.push(next);
+  }
+  return out;
+}
 
 export function normalizeYahooTicker(raw: string): string {
   let t = raw.trim().toUpperCase().replace(/\s+/g, "");

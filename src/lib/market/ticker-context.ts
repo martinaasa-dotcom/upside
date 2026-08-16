@@ -1,4 +1,5 @@
 import { resolveYahooEarnings } from "@/lib/market/earnings-dates";
+import { resolveYahooListedSymbol } from "@/lib/market/yahoo";
 import { sectorForTicker, type PulseHeadline } from "@/lib/thesis-pulse";
 import { unstable_cache } from "next/cache";
 
@@ -35,7 +36,8 @@ async function fetchTickerNewsUncached(
 ): Promise<PulseHeadline[]> {
   try {
     const yf = await getYahoo();
-    const result = await yf.search(ticker, { newsCount: count });
+    const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
+    const result = await yf.search(symbol, { newsCount: count });
     const items = result.news ?? [];
     return items.slice(0, count).map((n) => ({
       title: String(n.title ?? "").trim(),
@@ -75,7 +77,8 @@ async function fetchTickerPulseContextUncached(
     (async () => {
       try {
         const yf = await getYahoo();
-        return await yf.quoteSummary(ticker, {
+        const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
+        return await yf.quoteSummary(symbol, {
           modules: ["earningsHistory", "calendarEvents", "earnings"],
         });
       } catch (err) {

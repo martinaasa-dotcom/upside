@@ -138,13 +138,14 @@ export function HoldingModal({
                 setError(null);
               }}
               className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
-              placeholder="NBIS or VWCE.DE / VUSA.L"
+              placeholder="NBIS, SPY5, or VWCE.DE"
               required
             />
             <span className="text-sm leading-relaxed text-muted">
               US: bare symbol. London:{" "}
               <span className="text-muted">TICKER.L</span> or{" "}
               <span className="text-muted">LON:TICKER</span>. Xetra:{" "}
+              <span className="text-muted">SPY5</span> or{" "}
               <span className="text-muted">TICKER.DE</span>. Buy price in USD.
               {exchangeHint && normalized !== ticker.trim().toUpperCase() && (
                 <> → {normalized}</>

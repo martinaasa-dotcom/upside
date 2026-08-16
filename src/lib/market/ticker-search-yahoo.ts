@@ -1,4 +1,8 @@
-import { isPlausibleTicker, normalizeYahooTicker } from "@/lib/ticker";
+import {
+  isPlausibleTicker,
+  normalizeYahooTicker,
+  tickerStem,
+} from "@/lib/ticker";
 import type { TickerSuggestion } from "@/lib/market/ticker-search";
 
 const WATCH_SYMBOL = /^[A-Z0-9.=^-]{1,12}$/;
@@ -30,6 +34,44 @@ function companyName(raw: unknown): string | null {
   return name.slice(0, 48);
 }
 
+function collectSearchHits(
+  quotes: unknown[],
+  seen: Set<string>,
+  out: TickerSuggestion[],
+  limit: number
+) {
+  for (const row of quotes) {
+    if (!row || typeof row !== "object") continue;
+    const rec = row as Record<string, unknown>;
+    if (rec.isYahooFinance !== true) continue;
+    if (typeof rec.symbol !== "string") continue;
+    const quoteType = typeof rec.quoteType === "string" ? rec.quoteType : "";
+    if (SKIP_TYPES.has(quoteType)) continue;
+    const symbol = normalizeYahooTicker(rec.symbol);
+    if (!symbol || !isPlausibleTicker(symbol) || !WATCH_SYMBOL.test(symbol)) {
+      continue;
+    }
+    if (seen.has(symbol)) continue;
+    seen.add(symbol);
+    const name =
+      companyName(rec.shortname) ?? companyName(rec.longname);
+    out.push({ symbol, name });
+    if (out.length >= limit) return;
+  }
+}
+
+async function searchOnce(
+  yf: YahooFinanceInstance,
+  query: string
+): Promise<unknown[]> {
+  const result = await yf.search(query, {
+    quotesCount: 8,
+    newsCount: 0,
+    enableFuzzyQuery: true,
+  });
+  return result.quotes ?? [];
+}
+
 export async function searchYahooTickers(
   query: string
 ): Promise<TickerSuggestion[]> {
@@ -37,33 +79,27 @@ export async function searchYahooTickers(
   if (q.length < 1 || q.length > 24) return [];
   try {
     const yf = await getYahoo();
-    const result = await yf.search(q, {
-      quotesCount: 8,
-      newsCount: 0,
-      enableFuzzyQuery: true,
-    });
-    const out: TickerSuggestion[] = [];
+    const normalized = normalizeYahooTicker(q);
+    const stem = tickerStem(normalized || q);
     const seen = new Set<string>();
-    for (const row of result.quotes ?? []) {
-      if (!("isYahooFinance" in row) || row.isYahooFinance !== true) continue;
-      if (!("symbol" in row) || typeof row.symbol !== "string") continue;
-      const quoteType =
-        "quoteType" in row && typeof row.quoteType === "string"
-          ? row.quoteType
-          : "";
-      if (SKIP_TYPES.has(quoteType)) continue;
-      const symbol = normalizeYahooTicker(row.symbol);
-      if (!symbol || !isPlausibleTicker(symbol) || !WATCH_SYMBOL.test(symbol)) {
-        continue;
-      }
-      if (seen.has(symbol)) continue;
-      seen.add(symbol);
-      const name =
-        companyName("shortname" in row ? row.shortname : undefined) ??
-        companyName("longname" in row ? row.longname : undefined);
-      out.push({ symbol, name });
-      if (out.length >= 8) break;
+    const out: TickerSuggestion[] = [];
+
+    const firstQueries = [q];
+    if (normalized && normalized !== q.toUpperCase()) {
+      firstQueries.push(normalized);
     }
+    const firstHits = await Promise.all(
+      firstQueries.map((queryText) => searchOnce(yf, queryText))
+    );
+    for (const hits of firstHits) {
+      collectSearchHits(hits, seen, out, 8);
+    }
+
+    const hasStem = out.some((row) => tickerStem(row.symbol) === stem);
+    if (!hasStem && normalized && !normalized.includes(".")) {
+      collectSearchHits(await searchOnce(yf, `${normalized}.DE`), seen, out, 8);
+    }
+
     return out;
   } catch (err) {
     console.error("[ticker-search] Yahoo search failed", err);

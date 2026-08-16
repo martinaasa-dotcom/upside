@@ -9,10 +9,21 @@
 import { fetchFxOnly, fetchQuotesYahoo, type QuotesResult } from "@/lib/market/yahoo";
 import { fetchQuotesTwelveData, twelveDataConfigured } from "@/lib/market/providers/twelvedata";
 import { fetchQuotesFinnhub, finnhubConfigured } from "@/lib/market/providers/finnhub";
-import { normalizeYahooTicker } from "@/lib/ticker";
+import { yahooQuoteCandidates } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
 
 export { fetchFxOnly };
+
+function quoteForRequested(
+  quotes: Record<string, Quote>,
+  requested: string
+): Quote | undefined {
+  if (quotes[requested]) return quotes[requested];
+  for (const candidate of yahooQuoteCandidates(requested)) {
+    if (quotes[candidate]) return quotes[candidate];
+  }
+  return undefined;
+}
 
 function aliasResolvedQuotes(
   requested: string[],
@@ -21,10 +32,11 @@ function aliasResolvedQuotes(
 ) {
   for (const req of requested) {
     if (quotes[req]) continue;
-    const resolved = normalizeYahooTicker(req);
-    if (!resolved || resolved === req || !quotes[resolved]) continue;
-    quotes[req] = { ...quotes[resolved], ticker: req };
-    if (sources[resolved]) sources[req] = sources[resolved];
+    const hit = quoteForRequested(quotes, req);
+    if (!hit) continue;
+    quotes[req] = { ...hit, ticker: req };
+    const sourceKey = [req, ...yahooQuoteCandidates(req)].find((key) => sources[key]);
+    if (sourceKey) sources[req] = sources[sourceKey];
   }
 }
 
@@ -32,14 +44,7 @@ function unresolvedSymbols(
   requested: string[],
   quotes: Record<string, Quote>
 ): string[] {
-  return [
-    ...new Set(
-      requested
-        .filter((t) => !quotes[t] && !quotes[normalizeYahooTicker(t)])
-        .map((t) => normalizeYahooTicker(t))
-        .filter(Boolean)
-    ),
-  ];
+  return [...new Set(requested.filter((t) => !quoteForRequested(quotes, t)))];
 }
 
 export type QuotesResultWithSource = QuotesResult & {

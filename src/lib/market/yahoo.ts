@@ -1,7 +1,7 @@
 import type { Quote } from "@/lib/types";
 import { sessionMark } from "@/lib/market-session";
 import { synthesizeSparkline } from "@/lib/market/sparkline";
-import { normalizeYahooTicker } from "@/lib/ticker";
+import { yahooQuoteCandidates } from "@/lib/ticker";
 import { resolveYahooEarnings } from "@/lib/market/earnings-dates";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import type { EarningsPrint } from "@/lib/earnings-brief";
@@ -130,14 +130,161 @@ function scaleMoney(
   return value * (usdPrice / nativePrice);
 }
 
+/** First Yahoo listing that actually quotes. Xetra before London. */
+export async function resolveYahooListedSymbol(
+  raw: string
+): Promise<string | null> {
+  const yf = await getYahoo();
+  for (const symbol of yahooQuoteCandidates(raw)) {
+    try {
+      const quote = await yf.quote(symbol);
+      if (
+        numOrNull(quote.regularMarketPrice) ||
+        numOrNull(quote.postMarketPrice) ||
+        numOrNull(quote.preMarketPrice)
+      ) {
+        return symbol;
+      }
+    } catch {
+      /* try the next exchange */
+    }
+  }
+  return null;
+}
+
+async function quoteOneSymbol(
+  yf: YahooFinanceInstance,
+  symbol: string,
+  fx: FxRates,
+  period1: Date
+): Promise<Quote | null> {
+  const [quote, chart] = await Promise.all([
+    yf.quote(symbol),
+    yf.chart(symbol, { period1, interval: "1d" }),
+  ]);
+
+  // regularMarketPrice is the last REGULAR-session trade and does
+  // NOT move during extended hours — it holds yesterday's (or this
+  // morning's pre-open) close, stale, right through an active
+  // pre/post-market session. During those specific windows,
+  // pre/postMarketPrice are the genuinely current numbers and have
+  // to be what "the price" means everywhere in the app, not just a
+  // fallback for when regularMarketPrice happens to be missing.
+  const state = (
+    typeof quote.marketState === "string" ? quote.marketState : ""
+  ).toUpperCase();
+  const rawRegular = numOrNull(quote.regularMarketPrice);
+  const rawPost = numOrNull(quote.postMarketPrice);
+  const rawPre = numOrNull(quote.preMarketPrice);
+  const rawPreviousClose =
+    numOrNull(quote.regularMarketPreviousClose) ??
+    (rawRegular != null && quote.regularMarketChange != null
+      ? rawRegular - quote.regularMarketChange
+      : null);
+
+  const mark = sessionMark({
+    marketState: state,
+    regularPrice: rawRegular,
+    postPrice: rawPost,
+    prePrice: rawPre,
+    previousClose: rawPreviousClose,
+  });
+  const nativePrice = mark.price;
+  const currency =
+    typeof quote.currency === "string" ? quote.currency : undefined;
+  const price = priceToUsd(nativePrice, currency, fx);
+  const previousClose = priceToUsd(mark.previousClose, currency, fx);
+  // Derived directly from (current price vs yesterday's close)
+  // instead of reusing Yahoo's own change fields — regularMarket*
+  // and postMarket* changes are relative to two DIFFERENT baselines
+  // (previous close vs. the regular close), so summing them isn't
+  // valid; recomputing from scratch is correct in every session.
+  const change = previousClose > 0 ? price - previousClose : 0;
+  const changePercent = previousClose > 0 ? change / previousClose : 0;
+  const sparkline =
+    chart.quotes && chart.quotes.length > 1
+      ? chart.quotes
+          .map((row) => row.close)
+          .filter((c): c is number => typeof c === "number")
+          .map((c) => priceToUsd(c, currency, fx))
+      : synthesizeSparkline(price, changePercent * 100);
+  const dailyCloses = (chart.quotes ?? [])
+    .map((row) => {
+      const close = row.close;
+      const rawDate = row.date;
+      if (typeof close !== "number" || !rawDate) return null;
+      const when =
+        rawDate instanceof Date
+          ? rawDate
+          : new Date(
+              typeof rawDate === "number" && rawDate < 1e12
+                ? rawDate * 1000
+                : rawDate
+            );
+      if (Number.isNaN(when.getTime())) return null;
+      return {
+        date: dateKeyInTz(when, "America/New_York"),
+        close: priceToUsd(close, currency, fx),
+      };
+    })
+    .filter((b): b is { date: string; close: number } => b != null)
+    .slice(-15);
+
+  const preMarketPrice = scaleMoney(
+    typeof quote.preMarketPrice === "number" ? quote.preMarketPrice : null,
+    nativePrice,
+    price
+  );
+  const preMarketChange = scaleMoney(
+    typeof quote.preMarketChange === "number" ? quote.preMarketChange : null,
+    nativePrice,
+    price
+  );
+  const preMarketChangePercent =
+    typeof quote.preMarketChangePercent === "number"
+      ? quote.preMarketChangePercent / 100
+      : null;
+  const postMarketPrice = scaleMoney(
+    typeof quote.postMarketPrice === "number" ? quote.postMarketPrice : null,
+    nativePrice,
+    price
+  );
+  const postMarketChange = scaleMoney(
+    typeof quote.postMarketChange === "number" ? quote.postMarketChange : null,
+    nativePrice,
+    price
+  );
+  const postMarketChangePercent =
+    typeof quote.postMarketChangePercent === "number"
+      ? quote.postMarketChangePercent / 100
+      : null;
+  const marketState =
+    typeof quote.marketState === "string" ? quote.marketState : null;
+
+  return {
+    ticker: symbol,
+    price,
+    change,
+    changePercent,
+    previousClose,
+    sparkline,
+    marketState,
+    preMarketPrice,
+    preMarketChange,
+    preMarketChangePercent,
+    postMarketPrice,
+    postMarketChange,
+    postMarketChangePercent,
+    dailyCloses,
+  } satisfies Quote;
+}
+
 /** Yahoo-only attempt — no synthetic fallback merged in. */
 export async function fetchQuotesYahoo(
   tickers: string[]
 ): Promise<YahooQuotesAttempt> {
   const unique = [
-    ...new Set(
-      tickers.map((t) => normalizeYahooTicker(t)).filter(Boolean)
-    ),
+    ...new Set(tickers.map((t) => t.trim().toUpperCase()).filter(Boolean)),
   ];
   if (unique.length === 0) {
     return { quotes: {}, fx: { ...EMPTY_FX }, failed: [] };
@@ -149,148 +296,27 @@ export async function fetchQuotesYahoo(
     const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
     const results = await Promise.all(
-      unique.map(async (ticker) => {
-        try {
-          const [quote, chart] = await Promise.all([
-            yf.quote(ticker),
-            yf.chart(ticker, { period1, interval: "1d" }),
-          ]);
-
-          // regularMarketPrice is the last REGULAR-session trade and does
-          // NOT move during extended hours — it holds yesterday's (or this
-          // morning's pre-open) close, stale, right through an active
-          // pre/post-market session. During those specific windows,
-          // pre/postMarketPrice are the genuinely current numbers and have
-          // to be what "the price" means everywhere in the app, not just a
-          // fallback for when regularMarketPrice happens to be missing.
-          const state = (
-            typeof quote.marketState === "string" ? quote.marketState : ""
-          ).toUpperCase();
-          const rawRegular = numOrNull(quote.regularMarketPrice);
-          const rawPost = numOrNull(quote.postMarketPrice);
-          const rawPre = numOrNull(quote.preMarketPrice);
-          const rawPreviousClose =
-            numOrNull(quote.regularMarketPreviousClose) ??
-            (rawRegular != null && quote.regularMarketChange != null
-              ? rawRegular - quote.regularMarketChange
-              : null);
-
-          const mark = sessionMark({
-            marketState: state,
-            regularPrice: rawRegular,
-            postPrice: rawPost,
-            prePrice: rawPre,
-            previousClose: rawPreviousClose,
-          });
-          const nativePrice = mark.price;
-          const currency =
-            typeof quote.currency === "string" ? quote.currency : undefined;
-          const price = priceToUsd(nativePrice, currency, fx);
-          const previousClose = priceToUsd(mark.previousClose, currency, fx);
-          // Derived directly from (current price vs yesterday's close)
-          // instead of reusing Yahoo's own change fields — regularMarket*
-          // and postMarket* changes are relative to two DIFFERENT baselines
-          // (previous close vs. the regular close), so summing them isn't
-          // valid; recomputing from scratch is correct in every session.
-          const change = previousClose > 0 ? price - previousClose : 0;
-          const changePercent = previousClose > 0 ? change / previousClose : 0;
-          const sparkline =
-            chart.quotes && chart.quotes.length > 1
-              ? chart.quotes
-                  .map((row) => row.close)
-                  .filter((c): c is number => typeof c === "number")
-                  .map((c) => priceToUsd(c, currency, fx))
-              : synthesizeSparkline(price, changePercent * 100);
-          const dailyCloses = (chart.quotes ?? [])
-            .map((row) => {
-              const close = row.close;
-              const rawDate = row.date;
-              if (typeof close !== "number" || !rawDate) return null;
-              const when =
-                rawDate instanceof Date
-                  ? rawDate
-                  : new Date(
-                      typeof rawDate === "number" && rawDate < 1e12
-                        ? rawDate * 1000
-                        : rawDate
-                    );
-              if (Number.isNaN(when.getTime())) return null;
-              return {
-                date: dateKeyInTz(when, "America/New_York"),
-                close: priceToUsd(close, currency, fx),
-              };
-            })
-            .filter((b): b is { date: string; close: number } => b != null)
-            .slice(-15);
-
-          const preMarketPrice = scaleMoney(
-            typeof quote.preMarketPrice === "number"
-              ? quote.preMarketPrice
-              : null,
-            nativePrice,
-            price
-          );
-          const preMarketChange = scaleMoney(
-            typeof quote.preMarketChange === "number"
-              ? quote.preMarketChange
-              : null,
-            nativePrice,
-            price
-          );
-          const preMarketChangePercent =
-            typeof quote.preMarketChangePercent === "number"
-              ? quote.preMarketChangePercent / 100
-              : null;
-          const postMarketPrice = scaleMoney(
-            typeof quote.postMarketPrice === "number"
-              ? quote.postMarketPrice
-              : null,
-            nativePrice,
-            price
-          );
-          const postMarketChange = scaleMoney(
-            typeof quote.postMarketChange === "number"
-              ? quote.postMarketChange
-              : null,
-            nativePrice,
-            price
-          );
-          const postMarketChangePercent =
-            typeof quote.postMarketChangePercent === "number"
-              ? quote.postMarketChangePercent / 100
-              : null;
-          const marketState =
-            typeof quote.marketState === "string" ? quote.marketState : null;
-
-          return [
-            ticker,
-            {
-              ticker,
-              price,
-              change,
-              changePercent,
-              previousClose,
-              sparkline,
-              marketState,
-              preMarketPrice,
-              preMarketChange,
-              preMarketChangePercent,
-              postMarketPrice,
-              postMarketChange,
-              postMarketChangePercent,
-              dailyCloses,
-            } satisfies Quote,
-          ] as const;
-        } catch (err) {
-          console.error(`Quote failed for ${ticker}`, err);
-          return null;
+      unique.map(async (requested) => {
+        for (const symbol of yahooQuoteCandidates(requested)) {
+          try {
+            const quote = await quoteOneSymbol(yf, symbol, fx, period1);
+            if (quote) return { requested, symbol, quote };
+          } catch {
+            /* try the next exchange */
+          }
         }
+        console.error(`Quote failed for ${requested}`);
+        return null;
       })
     );
 
     const map: Record<string, Quote> = {};
     for (const row of results) {
-      if (row) map[row[0]] = row[1];
+      if (!row) continue;
+      map[row.requested] = { ...row.quote, ticker: row.requested };
+      if (row.symbol !== row.requested) {
+        map[row.symbol] = { ...row.quote, ticker: row.symbol };
+      }
     }
 
     const failed = unique.filter((ticker) => !map[ticker]);
@@ -399,18 +425,15 @@ export async function fetchYtdDailyCloses(
     const out: Record<string, DailyClose[]> = {};
     await Promise.all(
       unique.map(async (ticker) => {
-        const symbol = normalizeYahooTicker(ticker);
-        if (!symbol) {
-          out[ticker.toUpperCase()] = [];
-          return;
+        const key = ticker.toUpperCase();
+        for (const symbol of yahooQuoteCandidates(ticker)) {
+          const rows = await ytdClosesForSymbol(yf, fx, symbol, year, period1);
+          if (rows.length > 0) {
+            out[key] = rows;
+            return;
+          }
         }
-        out[ticker.toUpperCase()] = await ytdClosesForSymbol(
-          yf,
-          fx,
-          symbol,
-          year,
-          period1
-        );
+        out[key] = [];
       })
     );
     return out;
@@ -437,27 +460,29 @@ export async function fetchWeekReturns(
     const out: Record<string, WeekReturn> = {};
     await Promise.all(
       unique.map(async (ticker) => {
-        const symbol = normalizeYahooTicker(ticker);
-        if (!symbol) return;
-        try {
-          const chart = await yf.chart(symbol, { period1, interval: "1d" });
-          const currency =
-            typeof chart.meta?.currency === "string"
-              ? chart.meta.currency
-              : undefined;
-          const rows = chartRowsToDailyCloses(chart.quotes ?? [], currency, fx);
-          if (rows.length < 2) return;
-          const end = rows[rows.length - 1];
-          const start = rows.length >= 6 ? rows[rows.length - 6] : rows[0];
-          if (start.close <= 0) return;
-          out[ticker] = {
-            start: start.close,
-            end: end.close,
-            pct: (end.close - start.close) / start.close,
-          };
-        } catch (err) {
-          console.error(`Week return failed for ${ticker}`, err);
+        for (const symbol of yahooQuoteCandidates(ticker)) {
+          try {
+            const chart = await yf.chart(symbol, { period1, interval: "1d" });
+            const currency =
+              typeof chart.meta?.currency === "string"
+                ? chart.meta.currency
+                : undefined;
+            const rows = chartRowsToDailyCloses(chart.quotes ?? [], currency, fx);
+            if (rows.length < 2) continue;
+            const end = rows[rows.length - 1];
+            const start = rows.length >= 6 ? rows[rows.length - 6] : rows[0];
+            if (start.close <= 0) continue;
+            out[ticker] = {
+              start: start.close,
+              end: end.close,
+              pct: (end.close - start.close) / start.close,
+            };
+            return;
+          } catch {
+            /* try the next exchange */
+          }
         }
+        console.error(`Week return failed for ${ticker}`);
       })
     );
     return out;
@@ -550,7 +575,8 @@ export async function fetchNextEarningsDate(
 ): Promise<Date | null> {
   try {
     const yf = await getYahoo();
-    const summary = await yf.quoteSummary(ticker, {
+    const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
+    const summary = await yf.quoteSummary(symbol, {
       modules: ["earnings", "calendarEvents", "earningsHistory"],
     });
     const calendar = summary.calendarEvents?.earnings;

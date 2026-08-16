@@ -8,6 +8,7 @@
 
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import { normalizeYahooTicker } from "@/lib/ticker";
+import { resolveYahooListedSymbol } from "@/lib/market/yahoo";
 import { unstable_cache } from "next/cache";
 
 type YahooFinanceInstance = InstanceType<
@@ -237,7 +238,9 @@ async function fetchEarningsBriefUncached(
   date: string,
   days: number
 ): Promise<EarningsBrief> {
-  const symbol = normalizeYahooTicker(ticker) || ticker.toUpperCase();
+  const symbol =
+    (await resolveYahooListedSymbol(ticker)) ??
+    (normalizeYahooTicker(ticker) || ticker.toUpperCase());
   const empty: EarningsBrief = {
     ticker: ticker.toUpperCase(),
     date,

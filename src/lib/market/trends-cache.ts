@@ -6,7 +6,7 @@
  * the next person (and the next cold start) actually gets.
  */
 
-import { normalizeYahooTicker } from "@/lib/ticker";
+import { yahooQuoteCandidates } from "@/lib/ticker";
 import { unstable_cache } from "next/cache";
 import {
   macd,
@@ -104,23 +104,30 @@ async function fetchWeeklyClosesUncached(
     const yf = await getYahoo();
     const period1 = new Date();
     period1.setFullYear(period1.getFullYear() - YEARS_BACK);
-    const chart = await yf.chart(normalizeYahooTicker(ticker), {
-      period1,
-      interval: "1d",
-    });
-    const bars: Bar[] = [];
-    for (const row of chart.quotes ?? []) {
-      const raw = row.date as Date | string | undefined;
-      const close = typeof row.close === "number" ? row.close : null;
-      if (!raw || close == null || !Number.isFinite(close)) continue;
-      const date =
-        raw instanceof Date
-          ? raw.toISOString().slice(0, 10)
-          : String(raw).slice(0, 10);
-      bars.push({ date, close });
+    for (const symbol of yahooQuoteCandidates(ticker)) {
+      try {
+        const chart = await yf.chart(symbol, {
+          period1,
+          interval: "1d",
+        });
+        const bars: Bar[] = [];
+        for (const row of chart.quotes ?? []) {
+          const raw = row.date as Date | string | undefined;
+          const close = typeof row.close === "number" ? row.close : null;
+          if (!raw || close == null || !Number.isFinite(close)) continue;
+          const date =
+            raw instanceof Date
+              ? raw.toISOString().slice(0, 10)
+              : String(raw).slice(0, 10);
+          bars.push({ date, close });
+        }
+        if (bars.length < 60) continue;
+        return toWeekly(bars).map((b) => b.close);
+      } catch {
+        /* try the next exchange */
+      }
     }
-    if (bars.length < 60) return null;
-    return toWeekly(bars).map((b) => b.close);
+    return null;
   } catch {
     return null;
   }
