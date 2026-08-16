@@ -2,6 +2,10 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { useFeedback } from "@/components/FeedbackHost";
+import {
+  UpsideLogo,
+  UPSIDE_HEADER_WORDMARK_CLASS,
+} from "@/components/UpsideLogo";
 import { cn } from "@/lib/format";
 import Link from "next/link";
 import { Bell, MessageSquare } from "lucide-react";
@@ -9,6 +13,8 @@ import type { ReactNode } from "react";
 
 type Props = {
   title: string;
+  /** Gold A + UPSIDE LAB, same lockup as the desktop bar. */
+  brand?: boolean;
   avatar?: { url?: string | null; initial?: string };
   alertCount?: number;
   onAlerts?: () => void;
@@ -17,6 +23,9 @@ type Props = {
   end?: ReactNode;
   className?: string;
 };
+
+const ICON_BTN =
+  "inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground/80 hover:bg-hover hover:text-foreground";
 
 function FeedbackIconButton() {
   const { user } = useAuth();
@@ -27,7 +36,7 @@ function FeedbackIconButton() {
       type="button"
       onClick={openManual}
       aria-label="Feedback"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80"
+      className={ICON_BTN}
     >
       <MessageSquare className="h-5 w-5" />
     </button>
@@ -36,6 +45,7 @@ function FeedbackIconButton() {
 
 export function MobileTopBar({
   title,
+  brand = false,
   avatar,
   alertCount = 0,
   onAlerts,
@@ -44,7 +54,7 @@ export function MobileTopBar({
   className,
 }: Props) {
   const bell = (
-    <span className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80">
+    <span className={cn(ICON_BTN, "relative")}>
       <Bell className="h-5 w-5" />
       {alertCount > 0 && (
         <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-mustard" />
@@ -55,7 +65,7 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-app/95 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden",
+        "sticky top-0 z-40 border-b border-border bg-app/95 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden",
         className
       )}
     >
@@ -72,17 +82,28 @@ export function MobileTopBar({
               alt=""
               width={32}
               height={32}
-              className="h-8 w-8 rounded-full object-cover"
+              className="h-8 w-8 rounded-md border border-border object-cover"
             />
           ) : (
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand/20 text-xs font-semibold text-brand-bright">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-xs font-semibold text-foreground/80">
               {avatar?.initial ?? "?"}
             </span>
           )}
         </Link>
-        <h1 className="truncate text-center font-heading text-base font-bold text-foreground">
-          {title}
-        </h1>
+        {brand ? (
+          <div className="flex min-w-0 items-center justify-center">
+            <h1 className="sr-only">{title}</h1>
+            <UpsideLogo
+              variant="wordmark"
+              alwaysType
+              className={UPSIDE_HEADER_WORDMARK_CLASS}
+            />
+          </div>
+        ) : (
+          <h1 className="truncate text-center font-heading text-base font-bold text-foreground">
+            {title}
+          </h1>
+        )}
         <div className="flex items-center justify-end">
           <FeedbackIconButton />
           {end ? (

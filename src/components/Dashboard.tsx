@@ -2758,7 +2758,8 @@ export function Dashboard() {
     return (
       <div className="flex min-h-dvh flex-col bg-black text-foreground">
         <MobileTopBar
-          title="Dashboard"
+          title="Overview"
+          brand
           avatar={{
             url: profile?.avatar_url,
             initial: (profile?.display_name || user?.email || "?")
@@ -2786,9 +2787,10 @@ export function Dashboard() {
         missingTickers={missingQuoteTickers}
       />
       <MobileTopBar
+        brand={isOverview}
         title={
           isOverview
-            ? "Dashboard"
+            ? "Overview"
             : isAlerts
               ? "Alerts"
               : isCompound

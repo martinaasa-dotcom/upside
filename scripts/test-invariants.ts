@@ -1418,7 +1418,9 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"
   );
-  assert.match(home, /This year/);
+  assert.match(home, /BookNavChart/);
+  assert.doesNotMatch(home, /function MobileHomeHero/);
+  assert.doesNotMatch(home, /overview-fade hidden md:block/);
 });
 
 run("niceScale stays at a handful of ticks", () => {
@@ -3238,6 +3240,15 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     "utf8"
   );
   assert.match(home, /Add a holding/);
+  assert.doesNotMatch(home, /function MobileHomeHero/);
+  assert.doesNotMatch(home, /overview-fade hidden md:block/);
+  const topBar = readFileSync(
+    join(process.cwd(), "src/components/mobile/MobileTopBar.tsx"),
+    "utf8"
+  );
+  assert.match(topBar, /brand \?/);
+  assert.match(topBar, /UpsideLogo/);
+  assert.match(topBar, /alwaysType/);
 });
 
 run("listing currency chips and FX convert kronor", () => {

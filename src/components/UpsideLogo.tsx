@@ -9,6 +9,8 @@ type Props = {
   /** `mark` = A only; `wordmark` = inline lockup; `icon` = large inline; `stack` = splash */
   variant?: "mark" | "wordmark" | "icon" | "stack";
   title?: string;
+  /** Keep UPSIDE LAB visible on narrow screens (mobile app bar). */
+  alwaysType?: boolean;
 };
 
 /** Canonical header chrome size — keep every app bar on the same lockup. */
@@ -94,6 +96,7 @@ export function UpsideLogo({
   className,
   variant = "wordmark",
   title = PRODUCT_NAME,
+  alwaysType = false,
 }: Props) {
   if (variant === "mark") {
     return (
@@ -144,7 +147,7 @@ export function UpsideLogo({
       aria-label={title}
     >
       <UpsideMark className={cn("h-[1.4em] w-[1.4em]", LOCKUP_MARK_NUDGE)} />
-      <LogoType className="hidden xs:inline" />
+      <LogoType className={alwaysType ? undefined : "hidden xs:inline"} />
     </span>
   );
 }

@@ -3,11 +3,7 @@
 import { HomeWorld } from "@/components/HomeWorld";
 import { CashAlertCard } from "@/components/mobile/CashAlertCard";
 import { WatchlistStrip } from "@/components/WatchlistStrip";
-import {
-  BookNavChart,
-  useBookNavHistory,
-  type NavPoint,
-} from "@/components/mobile/GoldNavChart";
+import { BookNavChart, useBookNavHistory } from "@/components/mobile/GoldNavChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   MicroLabel,
@@ -23,14 +19,12 @@ import {
   currency,
   percent,
   signedCurrency,
-  signedPercent,
   cn,
   plural,
   signedTone,
   cashtag,
 } from "@/lib/format";
 import { parseHoldingsPaste, type CsvHoldingRow } from "@/lib/csv-import";
-import type { YtdAnchor } from "@/lib/market/ytd-anchor";
 import { buildMorningRead } from "@/lib/morning-read";
 import type { HomeSheetId } from "@/lib/home-sheet";
 import type { UpsideAlert } from "@/lib/alerts";
@@ -93,163 +87,6 @@ type Props = {
   homework?: boolean;
   homeworkCash?: number;
 };
-
-function MobileHomeHero({
-  totals,
-  alerts,
-  points,
-  assumed,
-  anchored,
-  anchor,
-  liveNav,
-  loading,
-  firstRealDate,
-  onDiscardAssumed,
-  onRestoreAssumed,
-  onApplyAnchor,
-  onClearAnchor,
-  onOpenCash,
-  onOpenAlerts,
-  morning,
-  previousAt,
-  onOpenPulse,
-  homeSheetId,
-  homeSheets,
-  onHomeSheet,
-  onAddHolding,
-}: {
-  totals: OverviewModel["totals"];
-  alerts: UpsideAlert[];
-  points: NavPoint[];
-  assumed: boolean;
-  anchored: boolean;
-  anchor: YtdAnchor | null;
-  liveNav: number;
-  loading: boolean;
-  firstRealDate: string | null;
-  onDiscardAssumed: () => void;
-  onRestoreAssumed: () => void;
-  onApplyAnchor: (next: YtdAnchor) => void;
-  onClearAnchor: () => void;
-  onOpenCash?: () => void;
-  onOpenAlerts?: () => void;
-  morning: ReturnType<typeof buildMorningRead>;
-  previousAt: string | null;
-  onOpenPulse?: (ticker?: string) => void;
-  homeSheetId: HomeSheetId;
-  homeSheets: Array<{ id: string; name: string }>;
-  onHomeSheet?: (id: HomeSheetId) => void;
-  onAddHolding?: () => void;
-}) {
-  const up = totals.roiPct >= 0;
-  const painted = points.filter((p) => Number.isFinite(p.nav));
-  const startNav = painted[0]?.nav;
-  const endNav = painted[painted.length - 1]?.nav;
-  const yearPct =
-    startNav != null && startNav > 0 && endNav != null
-      ? (endNav - startNav) / startNav
-      : null;
-  const yearDollar =
-    startNav != null && endNav != null ? endNav - startNav : null;
-
-  return (
-    <div className="space-y-5 md:hidden">
-      <div>
-        <p className="text-sm text-muted">Portfolio</p>
-        <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-          <p className="font-sans text-2xl font-semibold tabular-nums leading-none text-foreground">
-            {currency(totals.totalValue, 0)}
-          </p>
-          <p
-            className={cn(
-              "mb-0.5 text-sm font-semibold tabular-nums",
-              up ? "text-gain" : "text-loss"
-            )}
-          >
-            {up ? "▲" : "▼"} {percent(Math.abs(totals.roiPct))}
-          </p>
-        </div>
-        <p
-          className={cn(
-            "mt-2 text-sm tabular-nums",
-            tone(totals.todayDollar)
-          )}
-        >
-          {signedCurrency(totals.todayDollar, 0)}{" "}
-          {morning.moveLabel.toLowerCase()}
-          {totals.todayPct != null ? ` · ${percent(totals.todayPct)}` : ""}
-        </p>
-        {onAddHolding && (
-          <button
-            type="button"
-            onClick={onAddHolding}
-            className="btn-primary mt-4"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add a holding
-          </button>
-        )}
-        {onHomeSheet && homeSheets.length > 1 && (
-          <HomeSheetChip
-            className="mt-4"
-            value={homeSheetId}
-            sheets={homeSheets}
-            onChange={onHomeSheet}
-          />
-        )}
-      </div>
-      <Panel>
-        <PanelHeader
-          title="This year"
-          actions={
-            yearPct != null && yearDollar != null ? (
-              <p
-                className={cn(
-                  "text-sm font-semibold tabular-nums",
-                  tone(yearPct)
-                )}
-              >
-                {signedPercent(yearPct)}
-                <span className="font-medium text-muted">
-                  {" "}
-                  · {signedCurrency(yearDollar, 0)}
-                </span>
-              </p>
-            ) : null
-          }
-        />
-        <div className="mt-4">
-          <WidgetErrorBoundary name="Year chart">
-            <BookNavChart
-              points={points}
-              assumed={assumed}
-              anchored={anchored}
-              anchor={anchor}
-              liveNav={liveNav}
-              loading={loading}
-              firstRealDate={firstRealDate}
-              onDiscardAssumed={onDiscardAssumed}
-              onRestoreAssumed={onRestoreAssumed}
-              onApplyAnchor={onApplyAnchor}
-              onClearAnchor={onClearAnchor}
-            />
-          </WidgetErrorBoundary>
-        </div>
-      </Panel>
-      <MorningStack
-        morning={morning}
-        previousAt={previousAt}
-        onOpenPulse={onOpenPulse}
-      />
-      <CashAlertCard
-        cash={totals.cash}
-        alerts={alerts}
-        onOpenCash={onOpenCash}
-        onOpenAlerts={onOpenAlerts}
-      />
-    </div>
-  );
-}
 
 /**
  * What a brand-new account sees instead of a hero reading $0 followed by a
@@ -420,12 +257,12 @@ function HomeSheetChip({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("flex gap-2 overflow-x-auto scrollbar-none", className)}>
       <button
         type="button"
         onClick={() => onChange("all")}
         className={cn(
-          "rounded-full border px-3 py-1.5 text-sm",
+          "shrink-0 rounded-full border px-3 py-1.5 text-sm",
           value === "all"
             ? "border-select bg-select text-select-ink"
             : "border-border text-muted hover:border-brand-mid hover:text-foreground"
@@ -439,7 +276,7 @@ function HomeSheetChip({
           type="button"
           onClick={() => onChange(s.id)}
           className={cn(
-            "rounded-full border px-3 py-1.5 text-sm",
+            "shrink-0 rounded-full border px-3 py-1.5 text-sm",
             value === s.id
               ? "border-select bg-select text-select-ink"
               : "border-border text-muted hover:border-brand-mid hover:text-foreground"
@@ -865,33 +702,8 @@ export function OverviewDashboard({
 
   return (
     <div className="space-y-5 md:space-y-10">
-      <MobileHomeHero
-        totals={totals}
-        alerts={activeAlerts}
-        points={nav.points}
-        assumed={nav.assumed}
-        anchored={nav.anchored}
-        anchor={nav.anchor}
-        liveNav={totals.totalValue}
-        loading={nav.loading}
-        firstRealDate={nav.firstRealDate}
-        onDiscardAssumed={nav.discardAssumed}
-        onRestoreAssumed={nav.restoreAssumed}
-        onApplyAnchor={nav.applyAnchor}
-        onClearAnchor={nav.clearAnchor}
-        onOpenCash={onOpenCash}
-        onOpenAlerts={onOpenAlerts}
-        morning={morning}
-        previousAt={visitDiff?.previousAt ?? null}
-        onOpenPulse={onOpenPulse}
-        homeSheetId={homeSheetId}
-        homeSheets={homeSheets}
-        onHomeSheet={onHomeSheet}
-        onAddHolding={onAddHolding}
-      />
-
       {/* One screen: where you stand, then what to make of it. */}
-      <Panel className="overview-fade hidden md:block">
+      <Panel className="overview-fade">
         <div>
           <PanelHeader
             hero
@@ -929,7 +741,7 @@ export function OverviewDashboard({
                   <button
                     type="button"
                     onClick={onAskMargus}
-                    className="btn-secondary"
+                    className="btn-secondary hidden md:inline-flex"
                   >
                     <MessageCircle className="h-3.5 w-3.5" />
                     Ask Margus
@@ -1002,6 +814,14 @@ export function OverviewDashboard({
           </WidgetErrorBoundary>
         </div>
       </Panel>
+
+      <CashAlertCard
+        className="md:hidden"
+        cash={totals.cash}
+        alerts={activeAlerts}
+        onOpenCash={onOpenCash}
+        onOpenAlerts={onOpenAlerts}
+      />
 
       <Panel className="overview-fade">
         <PanelHeader
