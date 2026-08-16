@@ -173,7 +173,7 @@ Name something specific: a headline, a customer, a product, a percent, a price.
 
 For **each** ticker:
 1. **situation**: 2-4 bullets, one short line each (under ~18 words), grounded in the headlines. No preamble bullet, no summary bullet, no paragraphs. Unique to this name.
-2. **moveReason**: one sentence (cite headline when possible). Unique to this name.
+2. **moveReason**: one sentence (cite headline when possible). Unique to this name. Do not end it with a period.
 3. **thesisBreak**: one or two short sentences naming the actual thing that would kill why they own THIS name (a customer, a product, a filing, a launch). Use their "why they own it" note when they wrote one. Empty string if you cannot name something specific. Never a generic lost-customer / restatement / "quiet day is not that" line that could sit on every card.
 4. **thesisStatus**: intact / watch / broken, scored against thesisBreak and today's facts. Default intact.
 5. **action**: add / hold / trim / sell / watch per rules above.

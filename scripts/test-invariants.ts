@@ -43,6 +43,7 @@ import {
   sortPulseCandidates,
   statusLabel,
   verdictRepeatsTrim,
+  stripTrailingScanStop,
   buildPulseScan,
   pulseNeedsExplainer,
   pulseScanLine,
@@ -2622,6 +2623,48 @@ run("Pulse scan sits in its own card, not under the mood line", () => {
   );
   assert.doesNotMatch(page, /humanizeMargusText\(summary\)/);
   assert.doesNotMatch(schema, /lead with any sharp drops/);
+  assert.match(page, /stripTrailingScanStop/);
+
+  const pulseLib = readFileSync(
+    join(process.cwd(), "src/lib/thesis-pulse.ts"),
+    "utf8"
+  );
+  assert.match(pulseLib, /export function stripTrailingScanStop/);
+  assert.match(pulseLib, /stripTrailingScanStop\(body\.trim\(\)\)/);
+  assert.equal(
+    stripTrailingScanStop("What's Next for the Company?."),
+    "What's Next for the Company?"
+  );
+  assert.equal(
+    stripTrailingScanStop("Today move is -5.8%."),
+    "Today move is -5.8%"
+  );
+  assert.doesNotMatch(
+    pulseScanLine({
+      ticker: "AVGO",
+      effectivePct: -0.058,
+      moveLabel: "Today",
+    }),
+    /\.$/
+  );
+  assert.doesNotMatch(
+    pulseScanLine({
+      ticker: "RDDT",
+      effectivePct: 0.127,
+      moveLabel: "Today",
+      headline: "What's Next for the Company?",
+    }),
+    /\.$/
+  );
+  assert.doesNotMatch(
+    pulseScanLine({
+      ticker: "NBIS",
+      effectivePct: 0.089,
+      moveLabel: "Today",
+      headline: "Can South Wales Deployment Help Nebius Expand Its AI Cloud Footprint?",
+    }),
+    /\.\s*$/
+  );
 
   const quiet: PulseCheck = {
     ticker: "MSFT",
@@ -2633,6 +2676,19 @@ run("Pulse scan sits in its own card, not under the mood line", () => {
     addLevel: "",
     verdict: "Hold. Come back if the story actually changes.",
   };
+  assert.doesNotMatch(
+    pulseScanLine({
+      ticker: "AVGO",
+      effectivePct: -0.058,
+      moveLabel: "Today",
+      check: {
+        ...quiet,
+        ticker: "AVGO",
+        moveReason: "Today move is -5.8%.",
+      },
+    }),
+    /\.$/
+  );
   const hot: PulseCheck = {
     ticker: "RDDT",
     situation: ["It's running hot."],

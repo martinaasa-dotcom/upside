@@ -574,6 +574,14 @@ export type PulseScanInput = {
   price?: number | null;
 };
 
+/**
+ * Scan lines are a list, not sentences on a page. No stop at the end.
+ * Keeps ? and ! and % so "Company?" and "-5.8%" stay readable.
+ */
+export function stripTrailingScanStop(text: string): string {
+  return text.replace(/[.]+$/g, "").trimEnd();
+}
+
 /** Compare scan bodies so "$RDDT  Looks like a chase." matches the same line on $NBIS. */
 export function scanLineFingerprint(
   line: string,
@@ -612,7 +620,7 @@ function clipScanHeadline(raw: string | null | undefined): string {
 }
 
 function taggedScanLine(ticker: string, body: string): string {
-  const text = body.trim();
+  const text = stripTrailingScanStop(body.trim());
   if (!text) return "";
   return `${cashtag(ticker)}  ${text}`;
 }
@@ -639,31 +647,31 @@ function composeDistinctScanLine(row: {
   const lines: string[] = [];
 
   if (headline) {
-    lines.push(taggedScanLine(ticker, `${move} ${when} after ${headline}.`));
+    lines.push(taggedScanLine(ticker, `${move} ${when} after ${headline}`));
   }
 
   if (action === "trim") {
     const size =
       check?.trimPct != null && Number.isFinite(check.trimPct)
-        ? `Trim about ${check.trimPct}%.`
-        : "Take a little off.";
+        ? `Trim about ${check.trimPct}%`
+        : "Take a little off";
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. ${size} The price ran, the reason didn't.`
+        `${move} ${when}. ${size}. The price ran, the reason didn't`
       )
     );
   } else if (action === "add") {
     const add = check?.addLevel?.trim();
     if (add) {
       lines.push(
-        taggedScanLine(ticker, `${move} ${when}. ${add.replace(/[.]+$/, "")}.`)
+        taggedScanLine(ticker, `${move} ${when}. ${add.replace(/[.]+$/, "")}`)
       );
     }
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. A dip to add if the reason you own it still holds.`
+        `${move} ${when}. A dip to add if the reason you own it still holds`
       )
     );
   } else if (action === "sell") {

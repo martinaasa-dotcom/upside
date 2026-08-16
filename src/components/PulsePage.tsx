@@ -48,6 +48,7 @@ import {
   shouldAutoPulseTicker,
   sortPulseCandidates,
   buildPulseScan,
+  stripTrailingScanStop,
   loadPulseSummary,
   loadPulseTickerCache,
   reconcilePulseCheck,
@@ -116,7 +117,7 @@ function PulseHistory({ ticker }: { ticker: string }) {
 function scanLineBody(ticker: string, line: string): string {
   const tag = cashtag(ticker);
   const stripped = line.replace(new RegExp(`^\\${tag}\\s+`, "i"), "").trim();
-  return stripped || line;
+  return stripTrailingScanStop(stripped || line);
 }
 
 function thesisDisplayBullets(text: string | undefined): string[] {
