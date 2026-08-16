@@ -48,7 +48,7 @@ export function BookBottomNav({ className }: { className?: string }) {
       ref={dockRef}
       aria-label="Back to your portfolio"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-30 hidden border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
+        "keyboard-chrome fixed inset-x-0 bottom-0 z-30 hidden border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur md:block",
         className
       )}
     >

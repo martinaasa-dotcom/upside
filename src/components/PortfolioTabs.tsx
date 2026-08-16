@@ -199,7 +199,7 @@ export function PortfolioTabs({
     <nav
       ref={dockRef}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur",
+        "keyboard-chrome fixed inset-x-0 bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur",
         className
       )}
     >

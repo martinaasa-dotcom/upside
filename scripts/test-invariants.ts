@@ -1429,11 +1429,33 @@ run("sheets sit in the visible viewport so the keyboard cannot cover them", () =
   );
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
   assert.match(overlay, /--vv-height/);
-  assert.match(overlay, /scrollIntoView/);
+  assert.match(overlay, /keepFocusedFieldVisible/);
   assert.match(vars, /visualViewport/);
   assert.match(vars, /--vv-height/);
+  assert.match(vars, /--vv-keyboard/);
+  assert.match(vars, /dataset.keyboard/);
+  assert.match(vars, /keepFocusedFieldVisible/);
+  assert.match(vars, /focusin/);
   assert.match(providers, /VisualViewportVars/);
   assert.match(css, /\.viewport-overlay input/);
+  assert.match(css, /html\[data-keyboard="open"\] \.keyboard-chrome/);
+  assert.match(css, /--vv-keyboard/);
+  const chrome = [
+    "BookBottomNav.tsx",
+    "PortfolioTabs.tsx",
+    "mobile/MobileTabBar.tsx",
+    "ui/Toast.tsx",
+    "CcAdvisorChat.tsx",
+  ];
+  for (const name of chrome) {
+    const src = readFileSync(join(process.cwd(), "src/components", name), "utf8");
+    assert.match(src, /keyboard-chrome/, name);
+  }
+  const chat = readFileSync(
+    join(process.cwd(), "src/components/CcAdvisorChat.tsx"),
+    "utf8"
+  );
+  assert.match(chat, /--vv-height/);
   const sheets = [
     "HoldingModal.tsx",
     "CashModal.tsx",

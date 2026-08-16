@@ -1,7 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/format";
-import { useOverlayScrollLock } from "@/lib/use-visual-viewport";
+import {
+  isEditableField,
+  keepFocusedFieldVisible,
+  useOverlayScrollLock,
+} from "@/lib/use-visual-viewport";
 import type { CSSProperties, FocusEvent, ReactNode } from "react";
 
 type Props = {
@@ -11,14 +15,8 @@ type Props = {
 };
 
 function scrollFocusedField(e: FocusEvent<HTMLDivElement>) {
-  const el = e.target;
-  if (!(el instanceof HTMLElement)) return;
-  if (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA" && el.tagName !== "SELECT") {
-    return;
-  }
-  requestAnimationFrame(() => {
-    el.scrollIntoView({ block: "center", inline: "nearest" });
-  });
+  if (!isEditableField(e.target)) return;
+  requestAnimationFrame(() => keepFocusedFieldVisible(e.target));
 }
 
 /**

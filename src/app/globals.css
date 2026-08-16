@@ -71,6 +71,8 @@ html {
   -webkit-text-size-adjust: 100%;
   overflow-x: clip;
   scrollbar-gutter: stable;
+  scroll-padding-top: 5.5rem;
+  scroll-padding-bottom: max(var(--dock-pad, 0px), var(--vv-keyboard, 0px));
 }
 
 body {
@@ -105,8 +107,27 @@ h4 {
 /* Keep the focused field visible inside a keyboard-shrunk overlay. */
 .viewport-overlay input,
 .viewport-overlay textarea,
-.viewport-overlay select {
+.viewport-overlay select,
+input,
+textarea,
+select {
   scroll-margin-block: 1.5rem;
+}
+
+/*
+  Bottom docks and the Margus FAB sit on the layout viewport. While the
+  keys are up they would cover the field, so hide them unless the field
+  itself is inside that chrome (new portfolio name in the dock).
+*/
+html[data-keyboard="open"] .keyboard-chrome:not(:focus-within) {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
+html[data-keyboard="open"] .keyboard-chrome:focus-within {
+  bottom: var(--vv-keyboard, 0px);
+  padding-bottom: 0.25rem;
 }
 
 /* Comfortable touch targets on phones/tablets. */

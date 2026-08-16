@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-[max(1.25rem,calc(var(--dock-pad,1.25rem)+0.75rem))] right-4 z-[80] flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2">
+      <div className="keyboard-chrome pointer-events-none fixed bottom-[max(1.25rem,calc(var(--dock-pad,1.25rem)+0.75rem))] right-4 z-[80] flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2">
         {items.map((t) => (
           <div
             key={t.id}

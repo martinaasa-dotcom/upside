@@ -801,7 +801,23 @@ export function CcAdvisorChat({
     // this button covered the confirm action of any bottom-anchored mobile
     // modal, which on a phone is exactly where both of them live: Add
     // holding, Cash, Rename sheet, Delete account, and every ConfirmModal.
-    <div className="pointer-events-none fixed bottom-[max(1rem,calc(var(--dock-pad,1rem)+0.75rem))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3">
+    <div
+      className={
+        open
+          ? "pointer-events-none fixed z-40 flex flex-col items-end justify-end gap-3 p-3"
+          : "keyboard-chrome pointer-events-none fixed bottom-[max(1rem,calc(var(--dock-pad,1rem)+0.75rem))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3"
+      }
+      style={
+        open
+          ? {
+              top: "var(--vv-top, 0px)",
+              left: "var(--vv-left, 0px)",
+              width: "var(--vv-width, 100%)",
+              height: "var(--vv-height, 100%)",
+            }
+          : undefined
+      }
+    >
       <input
         ref={silentFileInputRef}
         type="file"
@@ -917,8 +933,8 @@ export function CcAdvisorChat({
           }`}
           style={{
             height: wide
-              ? "min(46rem, calc(100dvh - var(--dock-pad, 6.5rem) - 2rem))"
-              : "min(38rem, calc(100dvh - var(--dock-pad, 6.5rem) - 2rem))",
+              ? "min(46rem, calc(100% - 4.5rem))"
+              : "min(38rem, calc(100% - 4.5rem))",
           }}
           role="dialog"
           aria-label="Assistant Margus"
