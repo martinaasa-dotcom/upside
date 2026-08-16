@@ -2307,7 +2307,7 @@ export function CommunityView({ communityId }: Props) {
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
               </button>
-              <div className="sticky top-16 z-20 space-y-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
+              <div className="sticky top-24 z-20 space-y-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
                 <p className="text-sm font-semibold text-foreground">
                   Read-only · owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??

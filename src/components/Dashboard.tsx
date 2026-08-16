@@ -14,7 +14,6 @@ import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal"
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
 import { LabSheet } from "@/components/LabSheet";
 import { HeaderOverflowMenu, type HeaderMenuItem } from "@/components/HeaderOverflowMenu";
-import { MacroStrip } from "@/components/MacroStrip";
 import { OverviewDashboard, type LabDeepLink } from "@/components/OverviewDashboard";
 import {
   PortfolioTable,
@@ -49,7 +48,7 @@ import { buildSnapshot, STRATEGY } from "@/lib/calculations";
 import type { CsvHoldingRow } from "@/lib/csv-import";
 import { clearChatHistory } from "@/lib/chat-history";
 import { loadWatchlist } from "@/lib/watchlist";
-import { PAGE_COLUMN_CLASS, PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
+import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import {
   loadDismissedAlertIds,
   saveDismissedAlertIds,
@@ -180,110 +179,6 @@ const CcAdvisorChat = dynamic(
 );
 
 type DataSource = "demo" | "supabase";
-
-function ageSeconds(updatedAt: number | null, now: number): number | null {
-  if (updatedAt == null) return null;
-  return Math.max(0, Math.floor((now - updatedAt) / 1000));
-}
-
-function formatAge(sec: number): string {
-  if (sec < 5) return "just now";
-  if (sec < 60) return `${sec}s ago`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  return `${Math.floor(min / 60)}h ago`;
-}
-
-/** Book sync falling this far behind prices is worth calling out on its own. */
-const BOOK_LAG_CALLOUT_SEC = 20;
-
-/**
- * Ticks its own clock so the "Prices · Xs ago" status doesn't force a
- * re-render of the entire Dashboard tree once a second.
- */
-function PricesAgeStatus({
-  quotesUpdatedAt,
-  quotesDelayed,
-  bookSyncedAt,
-  source,
-  locked,
-  quotedCount,
-  totalCount,
-}: {
-  quotesUpdatedAt: number | null;
-  quotesDelayed: boolean;
-  bookSyncedAt: number | null;
-  source: DataSource;
-  locked: boolean;
-  quotedCount?: number;
-  totalCount?: number;
-}) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    let id: number | undefined;
-    const stop = () => {
-      if (id !== undefined) {
-        window.clearInterval(id);
-        id = undefined;
-      }
-    };
-    const start = () => {
-      stop();
-      // Every other interval in the app pauses on a hidden tab; this one
-      // was ticking 3,600 times an hour in the background to update a
-      // string that only changes once a minute after the first minute.
-      if (document.hidden) return;
-      id = window.setInterval(() => setNow(Date.now()), 1000);
-    };
-    const onVisibility = () => {
-      // Resync first: the clock stopped while hidden, so the age on screen
-      // is as stale as the time spent away.
-      setNow(Date.now());
-      start();
-    };
-    start();
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      stop();
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, []);
-
-  const pricesSec = ageSeconds(quotesUpdatedAt, now);
-  const bookSec = ageSeconds(bookSyncedAt, now);
-  // Quotes and the shared-book poll both run on their own ~45s interval, so
-  // under normal operation they're within a couple seconds of each other —
-  // showing "book Xs ago" right next to an identical "Prices Xs ago" was
-  // just the same fact twice. Only surface it once book sync has actually
-  // fallen behind (a real signal something's off — e.g. Supabase hiccup
-  // while quotes keep flowing fine), not as a second clock for its own sake.
-  const bookLagging =
-    source === "supabase" &&
-    bookSec != null &&
-    (pricesSec == null || bookSec - pricesSec > BOOK_LAG_CALLOUT_SEC);
-
-  return (
-    <span
-      className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted"
-      title={
-        source === "supabase"
-          ? "Shared live portfolio"
-          : locked
-            ? "Local demo (saved)"
-            : "Local demo"
-      }
-    >
-      {pricesSec == null ? "Prices · —" : `Prices · ${formatAge(pricesSec)}`}
-      {quotedCount != null && totalCount != null
-        ? ` · ${quotedCount}/${totalCount} names`
-        : ""}
-      {quotesDelayed && pricesSec != null && pricesSec >= 30 * 60
-        ? " · delayed"
-        : ""}
-      {bookLagging ? ` · portfolio sync ${formatAge(bookSec)}` : ""}
-    </span>
-  );
-}
 
 function extendedHoursFromQuote(q: Quote | null | undefined) {
   if (!q) {
@@ -440,7 +335,7 @@ export function Dashboard() {
     | null
   >(null);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
-  const [bookSyncedAt, setBookSyncedAt] = useState<number | null>(null);
+  const [, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
   const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
@@ -2857,6 +2752,12 @@ export function Dashboard() {
                   : activePortfolio!.name
         }
         end={accountEnd}
+        status={{
+          quotesUpdatedAt,
+          quotesDelayed,
+          quotedCount: Math.max(0, allTickers.length - missingTickers.length),
+          totalCount: allTickers.length,
+        }}
       >
             {!isMetaTab && canClassBuy && (
               <button
@@ -2885,23 +2786,6 @@ export function Dashboard() {
               icon={SlidersHorizontal}
             />
       </AppHeader>
-
-      {/* Status strip, below the header rather than inside it, so the bar
-        * itself stays exactly one fixed height on every page. */}
-      <div className="hidden border-b border-border bg-app/80 backdrop-blur-sm md:block">
-        <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col gap-1 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2")}>
-          <PricesAgeStatus
-            quotesUpdatedAt={quotesUpdatedAt}
-            quotesDelayed={quotesDelayed}
-            bookSyncedAt={bookSyncedAt}
-            source={source}
-            locked={locked}
-            quotedCount={Math.max(0, allTickers.length - missingTickers.length)}
-            totalCount={allTickers.length}
-          />
-          <MacroStrip />
-        </div>
-      </div>
 
       {!isMetaTab && (
         <div className="flex items-center gap-2 border-b border-border px-3 py-2 md:hidden">

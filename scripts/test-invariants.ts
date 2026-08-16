@@ -1152,7 +1152,8 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /const FIGURE/);
   assert.match(panel, /font-sans text-base font-semibold tabular-nums/);
-  assert.match(header, /border-b border-border bg-app\/95/);
+  assert.match(header, /bg-app\/95 backdrop-blur/);
+  assert.match(header, /border-b border-border/);
   assert.doesNotMatch(header, /border-b border-white\/10/);
   assert.match(home, /<Reading label="Worth noticing">/);
   assert.match(home, /<InsightText text=\{morning.insight\} \/>/);
@@ -1371,6 +1372,27 @@ run("signed-in pages share one column so rooms do not jump", () => {
   assert.doesNotMatch(shell, /md:\[--dock-pad:5.5rem\]/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:7.75rem\]/);
   assert.doesNotMatch(shell, /md:\[--dock-pad:8.5rem\]/);
+  assert.match(shell, /PAGE_CHROME_SPACER_CLASS/);
+  assert.match(shell, /hidden h-24 shrink-0 md:block/);
+  const header = readFileSync(
+    join(process.cwd(), "src/components/AppHeader.tsx"),
+    "utf8"
+  );
+  assert.match(header, /fixed top-0/);
+  assert.match(header, /AppStatusStrip/);
+  assert.match(header, /PAGE_CHROME_SPACER_CLASS/);
+  const strip = readFileSync(
+    join(process.cwd(), "src/components/AppStatusStrip.tsx"),
+    "utf8"
+  );
+  assert.match(strip, /flex h-10 items-center/);
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  assert.match(css, /scrollbar-gutter:\s*stable/);
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(dash, /Status strip, below the header/);
   const tabs = readFileSync(
     join(process.cwd(), "src/components/PortfolioTabs.tsx"),
     "utf8"
@@ -1388,7 +1410,6 @@ run("signed-in pages share one column so rooms do not jump", () => {
   assert.match(mobileDock, /useDockPad/);
   assert.match(bookDock, /useDockPad/);
   assert.match(bookDock, /fixed inset-x-0 bottom-0/);
-  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
   assert.match(css, /input\[type="range"\]/);
   assert.match(css, /touch-action:\s*pan-y/);
 });
@@ -1743,7 +1764,8 @@ run("Account is not a workspace room", () => {
     "utf8"
   );
   assert.doesNotMatch(switcher, /"Account"/);
-  assert.match(header, /\{showWorkspaceNav && <WorkspaceSwitcher \/>\}\s*\{end\}/);
+  assert.match(header, /\{showWorkspaceNav && <WorkspaceSwitcher \/>\}/);
+  assert.match(header, /\{end \?\? <DefaultAccountEnd \/>\}/);
 });
 
 run("Forecast is always the base case", () => {

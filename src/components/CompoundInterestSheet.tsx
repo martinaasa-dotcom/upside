@@ -666,7 +666,7 @@ export function CompoundInterestSheet({
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(320px,380px)_1fr]">
       {/* min-h-0: grid items won't shrink below content, so overflow never starts. */}
-      <div className="min-h-0 lg:sticky lg:top-[4.25rem] lg:max-h-[calc(100dvh-4.25rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
+      <div className="min-h-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
         <Panel>
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}

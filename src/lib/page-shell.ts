@@ -10,6 +10,10 @@ export const PAGE_COLUMN_CLASS = `mx-auto w-full min-w-0 ${PAGE_MAX_CLASS} ${PAG
 export const PAGE_FRAME_CLASS =
   "page-frame flex min-h-dvh flex-col bg-app text-foreground [--dock-pad:10.5rem] md:bg-[radial-gradient(ellipse_at_top,_#141414_0%,_#0b0b0b_55%)] md:[--dock-pad:11.5rem]";
 
+/** Desktop chrome is fixed: header 3.5rem + status 2.5rem. */
+export const PAGE_CHROME_SPACER_CLASS = "hidden h-24 shrink-0 md:block";
+export const PAGE_CHROME_STICKY_CLASS = "lg:top-24";
+
 /** Top pad only. Bottom pad is the live dock height. A shorthand
  * vertical pad would wipe that clearance and hide the last section. */
 export const PAGE_MAIN_CLASS = `${PAGE_COLUMN_CLASS} flex flex-1 flex-col gap-8 pt-8 pb-[var(--dock-pad)] sm:gap-10 sm:pt-10`;
