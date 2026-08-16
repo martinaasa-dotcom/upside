@@ -1,6 +1,6 @@
 "use client";
 
-import { cashtag, cn } from "@/lib/format";
+import { cashtag, cn, splitMoveTint } from "@/lib/format";
 import { Info } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
@@ -308,23 +308,22 @@ export function InsightText({ text }: { text: string }) {
 }
 
 function MoveTint({ text }: { text: string }) {
-  const re = /(up|down)(\s+about\s+\d+(?:\.\d+)?%)?/gi;
-  const out: ReactNode[] = [];
-  let last = 0;
-  let n = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text))) {
-    if (m.index > last) out.push(text.slice(last, m.index));
-    const up = m[1]!.toLowerCase() === "up";
-    out.push(
-      <span key={n++} className={up ? "text-gain" : "text-loss"}>
-        {m[0]}
-      </span>
-    );
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) out.push(text.slice(last));
-  return <>{out}</>;
+  return (
+    <>
+      {splitMoveTint(text).map((span, i) =>
+        span.tone ? (
+          <span
+            key={i}
+            className={span.tone === "up" ? "text-gain" : "text-loss"}
+          >
+            {span.text}
+          </span>
+        ) : (
+          span.text
+        )
+      )}
+    </>
+  );
 }
 
 /** A boxed list of ticker + line. Used for Today's scan. */

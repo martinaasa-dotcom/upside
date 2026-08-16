@@ -193,7 +193,7 @@ import {
   sumMoney,
   weightedMean,
 } from "../src/lib/money";
-import { cashtag, percent, signedPercent } from "../src/lib/format";
+import { cashtag, percent, signedPercent, splitMoveTint } from "../src/lib/format";
 import { sanitizeTickerDraft, sanitizeTickerQuery } from "../src/lib/input-guard";
 import { priorPriceFromChange, synthesizeSparkline } from "../src/lib/market/sparkline";
 import { concentrationRead, themeBreakdown } from "../src/lib/allocation";
@@ -1225,6 +1225,34 @@ run("community books lead with today's percent, not dollar size", () => {
   assert.match(roster, /signedPercent\(m\.todayPct\)/);
 });
 
+run("insight prose never greens the letters up inside group", () => {
+  const none = (s: string) =>
+    splitMoveTint(s)
+      .filter((span) => span.tone)
+      .map((span) => span.text);
+  assert.deepEqual(
+    none(
+      "If electricity stays tight, this group can stall. Add up what you have in that one group."
+    ),
+    []
+  );
+  assert.deepEqual(none("update the group and show up later"), []);
+  assert.deepEqual(none("Chin up. Download the sheet."), []);
+  assert.deepEqual(none("$RKLB is up 6.8% today."), ["up 6.8%"]);
+  assert.deepEqual(none("it is down about 2.1% this week"), ["down about 2.1%"]);
+  assert.deepEqual(none("the sparkline is trending up lately"), ["trending up"]);
+  assert.equal(
+    splitMoveTint("$RKLB is up 6.8% today.").find((span) => span.tone)?.tone,
+    "up"
+  );
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ui/Panel.tsx"),
+    "utf8"
+  );
+  assert.match(panel, /splitMoveTint/);
+  assert.doesNotMatch(panel, /\(up\|down\)\(\s\+about/);
+});
+
 run("product is Upside Lab on upsidelab.app", () => {
   const product = readFileSync("src/lib/product.ts", "utf8");
   assert.match(product, /PRODUCT_NAME = "Upside Lab"/);
@@ -1449,6 +1477,8 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
   assert.match(panel, /export function InsightText/);
+  assert.match(panel, /splitMoveTint/);
+  assert.doesNotMatch(panel, /\(up\|down\)\(\\s\+about/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
     /rounded-xl border border-border bg-raised/

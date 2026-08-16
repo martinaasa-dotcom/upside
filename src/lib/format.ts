@@ -111,6 +111,37 @@ export function signedTone(
   return neutral;
 }
 
+export type MoveTintSpan = { text: string; tone: "up" | "down" | null };
+
+/**
+ * Split prose so only a real price move is tinted. Whole words, with a
+ * number or "trending". Never the letters "up" inside "group" / "update",
+ * and never "add up" / "chin up" / "show up".
+ */
+const MOVE_TINT_RE =
+  /\btrending\s+(up|down)\b|\b(up|down)(?:\s+about)?\s+[+-]?\d+(?:\.\d+)?%/gi;
+
+export function splitMoveTint(text: string): MoveTintSpan[] {
+  const out: MoveTintSpan[] = [];
+  const re = new RegExp(MOVE_TINT_RE.source, "gi");
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    if (m.index > last) {
+      out.push({ text: text.slice(last, m.index), tone: null });
+    }
+    const word = (m[1] ?? m[2] ?? "").toLowerCase();
+    out.push({
+      text: m[0],
+      tone: word === "up" ? "up" : "down",
+    });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ text: text.slice(last), tone: null });
+  if (out.length === 0) out.push({ text, tone: null });
+  return out;
+}
+
 /**
  * "1 sheet" / "2 sheets". Pass an explicit plural for irregular words.
  * Counts here are small and human-scale (sheets, holdings, members), so
