@@ -110,7 +110,7 @@ export function SignInGate({ children }: Props) {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-app text-foreground">
+    <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-app text-foreground">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -130,7 +130,7 @@ export function SignInGate({ children }: Props) {
 
       <main
         id="main"
-        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-center px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:px-10"
+        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center md:px-10"
       >
         <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">

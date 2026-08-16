@@ -1247,7 +1247,8 @@ export function CcAdvisorChat({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onPaste={(e) => void onPaste(e)}
-                placeholder="Paste a screenshot or ask Margus …"
+                placeholder="Ask Margus …"
+                aria-label="Paste a screenshot or ask Margus"
                 disabled={busy}
                 className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand disabled:opacity-50"
               />

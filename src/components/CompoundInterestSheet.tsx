@@ -1000,7 +1000,7 @@ export function CompoundInterestSheet({
             * more here and the first thing a person sees is a wall. */}
           <div className="mt-5">
             <MicroLabel>Ends up at</MicroLabel>
-            <p className="mt-1 break-words text-2xl font-bold tabular-nums text-gain">
+            <p className="mt-1 text-2xl font-bold tabular-nums text-gain">
               {show(result.futureValue)}
             </p>
           </div>
@@ -1249,7 +1249,7 @@ export function CompoundInterestSheet({
           {storyRow && (
             <Card tone="raised" className="mt-4">
               <MicroLabel>After year {storyRow.index}</MicroLabel>
-              <p className="mt-1 break-words text-lg font-semibold tabular-nums text-foreground">
+              <p className="mt-1 text-base font-semibold tabular-nums text-foreground sm:text-lg">
                 {show(storyRow.balance)}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">

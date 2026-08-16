@@ -1587,7 +1587,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /padded && PANEL_PAD/);
   assert.match(panel, /export function Scoreboard/);
-  assert.match(panel, /font-sans text-lg font-semibold leading-none/);
+  assert.match(panel, /font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg/);
   assert.match(panel, /bg-select text-select-ink/);
   const segmented = panel.slice(panel.indexOf("export function Segmented"));
   assert.doesNotMatch(segmented, /font-semibold/);
@@ -2210,6 +2210,7 @@ run("sign-in reads as a product", () => {
   assert.doesNotMatch(gate, /\$50k|AI manage/);
   assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
   assert.match(gate, /signin-rise-3 h-auto/);
+  assert.match(gate, /overflow-x-clip overflow-y-auto/);
   assert.doesNotMatch(gate, /signin-rise-3 hidden h-auto md:block/);
   assert.doesNotMatch(gate, /Communities stay read-only/);
   assert.match(gate, /inviteLandingCopy/);

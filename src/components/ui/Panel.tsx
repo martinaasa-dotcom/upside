@@ -105,7 +105,7 @@ const SHELL_TONES = {
 const FIGURE =
   "mt-1 font-sans text-base font-semibold tabular-nums";
 const DISPLAY =
-  "mt-1 min-w-0 font-sans text-lg font-semibold leading-none break-words tabular-nums";
+  "mt-1 min-w-0 font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
