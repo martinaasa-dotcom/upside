@@ -3464,15 +3464,16 @@ run("Fund page labels Margus's note Thesis", () => {
     "utf8"
   );
   assert.match(src, /label="Thesis"/);
+  assert.match(src, /function FundPosition/);
+  assert.match(src, /md:grid-cols-\[minmax/);
   const positions = src.slice(
     src.indexOf("Open positions"),
     src.indexOf("Weekly recap")
   );
-  assert.match(positions, /<Metric/);
+  assert.match(positions, /<FundPosition/);
   assert.doesNotMatch(positions, /<Stat/);
-  assert.doesNotMatch(positions, /bg-loss\/10/);
-  assert.doesNotMatch(positions, /sm:grid-cols-2/);
-  assert.doesNotMatch(positions, /h-full/);
+  assert.doesNotMatch(src.slice(src.indexOf("function FundPosition"), src.indexOf("export function UpsidePortfolioPage")), /<Stat/);
+  assert.doesNotMatch(src, /grid gap-3 sm:grid-cols-2/);
 });
 
 run("prompts do not teach the model trader words as working vocab", () => {

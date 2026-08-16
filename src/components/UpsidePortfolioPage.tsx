@@ -352,37 +352,95 @@ function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   return `Prices ${mins}m old`;
 }
 
-function PositionCopy({
+function joinNotes(items: string[]): string {
+  return items
+    .map((s) => s.replace(/[.]+$/, "").trim())
+    .filter(Boolean)
+    .join(". ");
+}
+
+function PositionNote({
   label,
-  items,
-  extra,
+  text,
   quiet = false,
 }: {
   label: string;
-  items: string[];
-  extra?: string | null;
+  text: string;
   quiet?: boolean;
 }) {
-  if (items.length === 0 && !extra) return null;
+  if (!text) return null;
   return (
-    <div className="border-t border-border pt-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <MicroLabel>{label}</MicroLabel>
-        {extra ? <p className="text-sm text-muted">{extra}</p> : null}
-      </div>
-      {items.length > 0 && (
-        <ul
-          className={cn(
-            "mt-3 space-y-2.5 text-sm leading-relaxed",
-            quiet ? "text-muted" : "text-foreground/85"
-          )}
-        >
-          {items.map((b) => (
-            <li key={b}>{b}</li>
-          ))}
-        </ul>
-      )}
+    <div>
+      <MicroLabel>{label}</MicroLabel>
+      <p
+        className={cn(
+          "mt-2 leading-relaxed",
+          quiet ? "text-sm text-muted" : "text-base text-foreground"
+        )}
+      >
+        {text}
+      </p>
     </div>
+  );
+}
+
+function FundPosition({
+  holding,
+  price,
+}: {
+  holding: HoldingRow;
+  price: number;
+}) {
+  const pnlPct =
+    holding.cost_basis > 0 ? (price - holding.cost_basis) / holding.cost_basis : 0;
+  const marketValue = price * holding.shares;
+  const thesis = joinNotes(fundCopyBullets(holding.thesis).slice(0, 2));
+  const exit = joinNotes(fundCopyBullets(holding.exit_plan).slice(0, 2));
+  return (
+    <article className="rounded-2xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-8">
+      <div className="grid items-start gap-8 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-12 lg:gap-16">
+        <div>
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-base font-semibold text-foreground">
+              {cashtag(holding.ticker)}
+            </h3>
+            <p
+              className={cn(
+                "text-sm font-semibold tabular-nums",
+                signedTone(pnlPct)
+              )}
+            >
+              {percent(pnlPct)}
+            </p>
+          </div>
+          {holding.target_timeframe ? (
+            <p className="mt-1 text-sm text-muted">{holding.target_timeframe}</p>
+          ) : null}
+          <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5">
+            <Metric label="Entered">{fmtDate(holding.entry_date)}</Metric>
+            <Metric label="Cost">{currency(holding.cost_basis)}</Metric>
+            <Metric
+              label="Now"
+              valueClassName={signedTone(pnlPct, "text-foreground")}
+            >
+              {currency(price)}
+            </Metric>
+            <Metric
+              label="Portfolio"
+              hint={`${holding.shares.toLocaleString("en-US")} sh`}
+            >
+              {currency(marketValue, 0)}
+            </Metric>
+          </div>
+        </div>
+        {(thesis || exit) && (
+          <div className="flex flex-col justify-center gap-6 border-t border-border pt-6 md:border-l md:border-t-0 md:pl-12 md:pt-0 lg:pl-16">
+            <PositionNote label="Thesis" text={thesis} />
+            <PositionNote label="Exit" text={exit} quiet />
+          </div>
+        )}
+      </div>
+    </article>
   );
 }
 
@@ -1275,63 +1333,13 @@ export function UpsidePortfolioPage() {
                   Open positions · {openHoldings.length}
                 </h2>
                 <div className="space-y-6">
-                  {openHoldings.map((h) => {
-                    const q = quotes[h.ticker];
-                    const price = q?.price ?? h.cost_basis;
-                    const pnlPct =
-                      h.cost_basis > 0 ? (price - h.cost_basis) / h.cost_basis : 0;
-                    const marketValue = price * h.shares;
-                    const thesis = fundCopyBullets(h.thesis).slice(0, 2);
-                    const exits = fundCopyBullets(h.exit_plan).slice(0, 2);
-                    return (
-                      <article
-                        key={h.id}
-                        className="rounded-2xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-8"
-                      >
-                        <div className="flex items-baseline justify-between gap-4">
-                          <span className="text-base font-semibold text-foreground">
-                            {cashtag(h.ticker)}
-                          </span>
-                          <span
-                            className={cn(
-                              "text-sm font-semibold tabular-nums",
-                              signedTone(pnlPct)
-                            )}
-                          >
-                            {percent(pnlPct)}
-                          </span>
-                        </div>
-                        <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
-                          <Metric label="Entered">{fmtDate(h.entry_date)}</Metric>
-                          <Metric label="Cost">{currency(h.cost_basis)}</Metric>
-                          <Metric
-                            label="Now"
-                            valueClassName={signedTone(pnlPct, "text-foreground")}
-                          >
-                            {currency(price)}
-                          </Metric>
-                          <Metric
-                            label="Portfolio"
-                            hint={`${h.shares.toLocaleString("en-US")} sh`}
-                          >
-                            {currency(marketValue, 0)}
-                          </Metric>
-                        </div>
-                        <div className="mt-6 space-y-0">
-                          <PositionCopy
-                            label="Thesis"
-                            items={thesis}
-                            extra={h.target_timeframe || null}
-                          />
-                          <PositionCopy
-                            label="Exit"
-                            items={exits}
-                            quiet
-                          />
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {openHoldings.map((h) => (
+                    <FundPosition
+                      key={h.id}
+                      holding={h}
+                      price={quotes[h.ticker]?.price ?? h.cost_basis}
+                    />
+                  ))}
                 </div>
               </section>
               </WidgetErrorBoundary>
