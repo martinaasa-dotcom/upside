@@ -52,8 +52,8 @@ export type Signal = {
   label: string;
   value: string;
   tone: Tone;
-  /** The inputs, always visible. Hover help is not enough on a phone. */
-  detail: string;
+  /** Short bullets, always visible. Hover help is not enough on a phone. */
+  detail: string[];
   help: string;
 };
 
@@ -206,28 +206,28 @@ function applySurge(
   };
 }
 
-function rsiZone(rsi: number | null): { label: string; tone: Tone; help: string } {
+function rsiZone(rsi: number | null): { label: string; tone: Tone; read: string } {
   if (rsi == null) {
-    return { label: "—", tone: "neutral", help: "Not enough history yet." };
+    return { label: "—", tone: "neutral", read: "Not enough history yet." };
   }
   if (rsi >= 70) {
     return {
       label: "Overbought",
       tone: "warn",
-      help: "Weekly RSI is stretched to the upside. Not a sell signal on its own, momentum can stay stretched for months, but it means the easy gains are already behind it.",
+      read: "Stretched to the upside. Not a sell on its own.",
     };
   }
   if (rsi <= 30) {
     return {
       label: "Oversold",
       tone: "gain",
-      help: "Weekly RSI is washed out to the downside. Not a buy signal on its own, but selling pressure looks exhausted for now.",
+      read: "Washed out. Not a buy on its own.",
     };
   }
   return {
     label: "Neutral",
     tone: "neutral",
-    help: "Weekly RSI is in the middle of its range, neither stretched nor washed out.",
+    read: "Middle of its range. Neither stretched nor washed out.",
   };
 }
 
@@ -241,31 +241,38 @@ function signedPct(v: number | null, digits = 1): string {
   return `${v >= 0 ? "+" : ""}${(v * 100).toFixed(digits)}%`;
 }
 
-function trendDetail(row: TrendRowLike): string {
+function trendDetail(row: TrendRowLike): string[] {
   const price = row.lastClose;
   const ma = row.longMa;
   const vs = row.vsLongMaPct;
   const slope = row.longSlopePct;
   if (price == null || ma == null || vs == null) {
-    return "Needs about 40 weekly closes before the 40-week average exists.";
+    return ["Needs about 40 weekly closes before the 40-week average exists."];
   }
   const side = vs >= 0 ? "above" : "below";
   const vsText = `${(Math.abs(vs) * 100).toFixed(1)}%`;
-  const slopeBit =
-    slope == null
-      ? "Not enough history to say whether that average is rising or falling."
-      : `That average is ${slope >= 0 ? "up" : "down"} ${(Math.abs(slope) * 100).toFixed(1)}% over the last 8 weeks.`;
-  const rule =
+  const bullets = [
+    `Price ${currency(price)} is ${vsText} ${side} the 40-week average (${currency(ma)}).`,
+  ];
+  if (slope == null) {
+    bullets.push("Not enough history to say whether that average is rising or falling.");
+  } else {
+    bullets.push(
+      `That average is ${slope >= 0 ? "up" : "down"} ${(Math.abs(slope) * 100).toFixed(1)}% over the last 8 weeks.`
+    );
+  }
+  bullets.push(
     row.regime === "weakening"
-      ? "Weakening means price is still above the 40-week average, but that average itself is falling."
+      ? "Weakening: still above the 40-week average, but the average itself is falling."
       : row.regime === "recovering"
-        ? "Turning up means price is still below the 40-week average, but that average itself is rising."
+        ? "Turning up: still below the 40-week average, but the average itself is rising."
         : row.regime === "strong-up"
-          ? "Uptrend means price is above the 40-week average, and that average is still rising."
+          ? "Uptrend: above the 40-week average, and that average is still rising."
           : row.regime === "strong-down"
-            ? "Downtrend means price is below the 40-week average, and that average is still falling."
-            : "No trend means the 40-week average is not sloping enough to call a direction.";
-  return `Price ${currency(price)} is ${vsText} ${side} the 40-week average (${currency(ma)}). ${slopeBit} ${rule}`;
+            ? "Downtrend: below the 40-week average, and that average is still falling."
+            : "No trend: the 40-week average is not sloping enough to call a direction."
+  );
+  return bullets;
 }
 
 export function buildTrendStory(row: TrendRowLike): TrendStory {
@@ -303,8 +310,12 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
       tone: row.chg2w == null ? "neutral" : row.chg2w >= 0 ? "gain" : "loss",
       detail:
         row.chg2w == null && row.chg4w == null
-          ? "Not enough weekly closes yet."
-          : `Last two weekly closes ${signedPct(row.chg2w)}. Last four ${signedPct(row.chg4w)}. Raw price change, no average.`,
+          ? ["Not enough weekly closes yet."]
+          : [
+              `Last two weekly closes ${signedPct(row.chg2w)}.`,
+              `Last four ${signedPct(row.chg4w)}.`,
+              "Raw price change, no average.",
+            ],
       help: "Raw price change over the last two weekly closes, and the four-week change next to it. Usually the first place a real catalyst shows up.",
     },
     {
@@ -320,8 +331,14 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
             : "neutral",
       detail:
         hist != null && histPrev != null
-          ? `Weekly momentum reading ${hist.toFixed(2)} now, ${histPrev.toFixed(2)} four weeks ago. Building means today's reading is larger.`
-          : "Not enough weekly history for a momentum comparison.",
+          ? [
+              `Weekly reading ${hist.toFixed(2)} now.`,
+              `${histPrev.toFixed(2)} four weeks ago.`,
+              row.macdBuilding
+                ? "Building: today's reading is larger."
+                : "Fading: today's reading is smaller.",
+            ]
+          : ["Not enough weekly history for a momentum comparison."],
       help: "Whether the weekly momentum reading (12/26/9-week averages) is larger now than it was 4 weeks ago. Speeding up or losing pace, separate from which way price is going.",
     },
     {
@@ -331,8 +348,12 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
       tone: zone.tone,
       detail:
         row.rsi == null
-          ? "Not enough weekly history for a 14-week RSI."
-          : `14-week RSI at ${row.rsi.toFixed(0)}. Overbought starts at 70, oversold at 30. ${zone.help}`,
+          ? ["Not enough weekly history for a 14-week RSI."]
+          : [
+              `14-week RSI at ${row.rsi.toFixed(0)}.`,
+              "Overbought starts at 70, oversold at 30.",
+              zone.read,
+            ],
       help: "14-week RSI, the same formula a charting app shows, computed on weekly closes instead of daily.",
     },
     {
@@ -342,8 +363,12 @@ export function buildTrendStory(row: TrendRowLike): TrendStory {
       tone: row.rs13 == null ? "neutral" : row.rs13 >= 0 ? "gain" : "loss",
       detail:
         row.rs13 == null && row.rs26 == null
-          ? "S&P comparison needs history for both this name and the index."
-          : `13 weeks ${rsText(row.rs13)}. 26 weeks ${rsText(row.rs26)}. This name's return minus the S&P, so you can see if it is just floating with the market.`,
+          ? ["S&P comparison needs history for both this name and the index."]
+          : [
+              `13 weeks ${rsText(row.rs13)}.`,
+              `26 weeks ${rsText(row.rs26)}.`,
+              "This name's return minus the S&P.",
+            ],
       help: "This name's return minus the S&P 500 over 13 weeks, and 26 weeks. Positive means it beat the index, not just rose with everything else.",
     },
   ];

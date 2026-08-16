@@ -1651,10 +1651,18 @@ run("weakening trend names the 40-week average and the slope", () => {
   const trend = story.signals.find((s) => s.key === "trend");
   assert.ok(trend);
   assert.equal(trend!.value, "Weakening");
-  assert.match(trend!.detail, /40-week average/);
-  assert.match(trend!.detail, /falling/);
-  assert.match(trend!.detail, /8 weeks/);
-  assert.match(trend!.detail, /45\.20|\$45/);
+  assert.ok(trend!.detail.length >= 2);
+  const blob = trend!.detail.join(" ");
+  assert.match(blob, /40-week average/);
+  assert.match(blob, /falling/);
+  assert.match(blob, /8 weeks/);
+  assert.match(blob, /45\.20|\$45/);
+  for (const s of story.signals) {
+    assert.ok(Array.isArray(s.detail) && s.detail.length > 0, s.key);
+  }
+  const momentum = story.signals.find((s) => s.key === "momentum");
+  assert.ok(momentum!.detail.some((line) => /Building:/.test(line)));
+  assert.ok(!momentum!.detail.some((line) => /Fading:/.test(line)));
 });
 
 run("signed-in pages share one column so rooms do not jump", () => {

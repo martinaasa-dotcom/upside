@@ -119,10 +119,9 @@ function TickerStoryCard({
             key={s.key}
             label={s.label}
             value={s.value}
-            sub={s.detail}
+            bullets={s.detail}
             explain={s.help}
             valueClassName={TONE_TEXT[s.tone]}
-            subClassName="text-sm leading-relaxed text-muted"
           />
         ))}
       </Scoreboard>

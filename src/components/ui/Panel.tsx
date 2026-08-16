@@ -481,6 +481,8 @@ type ScoreProps = {
   label: ReactNode;
   value: ReactNode;
   sub?: ReactNode;
+  /** Short scan lines under the figure. Prefer this over a paragraph `sub`. */
+  bullets?: string[];
   explain?: string;
   tone?: "up" | "down";
   valueClassName?: string;
@@ -499,12 +501,14 @@ export function Score({
   label,
   value,
   sub,
+  bullets,
   explain,
   tone,
   valueClassName,
   subClassName,
   className,
 }: ScoreProps) {
+  const noteClass = cn("mt-1.5 text-sm leading-snug", subClassName ?? "text-muted");
   return (
     <div className={cn("bg-raised px-4 py-3.5", className)}>
       <MicroLabel>
@@ -514,10 +518,20 @@ export function Score({
       <p className={cn(DISPLAY, valueClassName ?? scoreTone(tone))}>
         {value}
       </p>
-      {sub != null && (
-        <p className={cn("mt-1 text-sm leading-snug", subClassName ?? "text-muted")}>
-          {sub}
-        </p>
+      {bullets && bullets.length > 0 ? (
+        <ul className={cn(noteClass, "space-y-1")}>
+          {bullets.map((line, i) => (
+            <li key={`${i}:${line}`} className="flex gap-1.5">
+              <span
+                aria-hidden
+                className="mt-[0.45em] h-1 w-1 shrink-0 rounded-full bg-current opacity-50"
+              />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        sub != null && <p className={noteClass}>{sub}</p>
       )}
     </div>
   );
