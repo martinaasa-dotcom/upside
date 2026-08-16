@@ -97,10 +97,10 @@ export function HeaderOverflowMenu({
             <img
               src={avatar.url}
               alt=""
-              className="h-6 w-6 rounded-full object-cover"
+              className="h-6 w-6 rounded-md object-cover"
             />
           ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-hover text-xs font-semibold text-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-hover text-xs font-semibold text-foreground">
               {avatar.initial ?? "?"}
             </span>
           )

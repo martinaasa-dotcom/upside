@@ -1121,7 +1121,7 @@ export function UpsidePortfolioPage() {
 
   return (
     <div className={PAGE_FRAME_CLASS}>
-      <MobileChrome title="Upside Fund" active="circle" />
+      <MobileChrome title="Upside Fund" active={null} />
       <AppHeader className="hidden md:block" title="Upside Fund">
         <span
           className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted"

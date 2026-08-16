@@ -188,7 +188,7 @@ export function CoveredCallPanel({
       </div>
 
       {/* Mobile cards */}
-      <div className="space-y-2 p-3 md:hidden">
+      <div className="space-y-3 p-4 md:hidden">
         {rows.length === 0 ? (
           <EmptyState
             title="Nothing to write calls on yet"

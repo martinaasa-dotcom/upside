@@ -194,7 +194,7 @@ export function AdminPage() {
   return (
     <SignInGate>
       <div className={PAGE_FRAME_CLASS}>
-        <MobileChrome title="Admin" active="settings" />
+        <MobileChrome title="Admin" active={null} />
         <AppHeader className="hidden md:block" title="Admin" />
 
         <main id="main" className={PAGE_MAIN_CLASS}>

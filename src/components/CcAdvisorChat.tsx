@@ -1059,7 +1059,7 @@ export function CcAdvisorChat({
                       type="button"
                       disabled={busy}
                       onClick={() => sendMessage({ text: s })}
-                      className="rounded-full border border-border px-2.5 py-1 text-sm text-foreground/80 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-foreground/80 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
                     >
                       {s}
                     </button>

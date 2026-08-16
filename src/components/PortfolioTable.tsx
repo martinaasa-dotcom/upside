@@ -13,6 +13,7 @@ import {
   usdToListingAmount,
 } from "@/lib/listing-currency";
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { Card, MicroLabel } from "@/components/ui/Panel";
 import {
   blockWheelChange,
   formatDecimal,
@@ -436,16 +437,16 @@ export function PortfolioTable({
                   : "Waiting on the euro rate"
               }
             >
-              {(["USD", "EUR"] as const).map((code) => (
+                  {(["USD", "EUR"] as const).map((code) => (
                 <button
                   key={code}
                   type="button"
                   onClick={() => onDisplayCurrencyChange(code)}
                   className={cn(
-                    "rounded-md px-2 py-1 text-xs font-semibold transition",
+                    "rounded-md px-2.5 py-1 text-sm font-medium transition",
                     displayCurrency === code
-                      ? "bg-brand/20 text-brand-bright"
-                      : "text-muted hover:text-foreground/80"
+                      ? "bg-select text-select-ink"
+                      : "text-muted hover:text-foreground"
                   )}
                 >
                   {code}
@@ -474,7 +475,7 @@ export function PortfolioTable({
               className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-hover disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
-              <span className="text-xs font-medium text-muted">
+              <span className="text-sm font-medium text-muted">
                 Cash
               </span>
               <span
@@ -491,7 +492,7 @@ export function PortfolioTable({
       </header>
 
       {/* Mobile / tablet cards. The 13-col table needs the 1080px column. */}
-      <div className="space-y-2 p-3 lg:hidden">
+      <div className="space-y-3 p-4 lg:hidden">
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-raised px-4 py-8 text-center">
             <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
@@ -500,21 +501,19 @@ export function PortfolioTable({
         ) : (
           holdings.map((h) => {
             const listed = rowMoney(h);
+            const today = rowToday(h);
             return (
-            <div
-              key={h.id}
-              className="rounded-xl border border-border bg-raised px-3 py-3"
-            >
+            <Card key={h.id} className="px-4 py-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-semibold text-foreground">
+                  <div className="text-base font-semibold text-foreground">
                     <TickerSymbol
                       ticker={h.ticker}
                       currency={listed.code}
                       onOpen={onOpenTicker}
                     />
                   </div>
-                  <p className="text-sm text-muted">
+                  <p className="mt-1 text-sm text-muted">
                     {percent(h.pctOfTotal)} of book
                   </p>
                 </div>
@@ -522,7 +521,7 @@ export function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded p-3.5 text-muted hover:bg-hover hover:text-loss"
+                  className="rounded-md p-2.5 text-muted hover:bg-hover hover:text-loss"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -531,9 +530,9 @@ export function PortfolioTable({
                   <span className="w-10" />
                 )}
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <label className="grid gap-1 text-muted">
-                  Shares
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <label className="grid gap-1">
+                  <MicroLabel>Shares</MicroLabel>
                   <InlineNumber
                     value={h.shares}
                     digits={4}
@@ -542,8 +541,8 @@ export function PortfolioTable({
                     className="w-full"
                   />
                 </label>
-                <label className="grid gap-1 text-muted">
-                  Buy
+                <label className="grid gap-1">
+                  <MicroLabel>Buy</MicroLabel>
                   <InlineNumber
                     value={listed.nativeBuy}
                     digits={listed.digits}
@@ -552,34 +551,34 @@ export function PortfolioTable({
                   />
                 </label>
                 <div>
-                  <p className="text-muted">Price</p>
-                  <p className="tabular-nums font-semibold text-foreground">
+                  <MicroLabel>Price</MicroLabel>
+                  <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
                     {currency(listed.nativeSpot, listed.digits, listed.code)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">ROI %</p>
-                  <p className={cn("tabular-nums font-medium", signedTone(h.roiPct))}>
+                  <MicroLabel>ROI %</MicroLabel>
+                  <p className={cn("mt-1 text-base font-semibold tabular-nums", signedTone(h.roiPct))}>
                     {percent(h.roiPct)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">Cost</p>
-                  <p className="tabular-nums text-muted">
+                  <MicroLabel>Cost</MicroLabel>
+                  <p className="mt-1 text-sm tabular-nums text-muted">
                     {money(h.buyValue, 0)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">Value</p>
-                  <p className="tabular-nums text-foreground">
+                  <MicroLabel>Value</MicroLabel>
+                  <p className="mt-1 text-sm tabular-nums text-foreground">
                     {money(h.currentValue, 0)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">ROI $</p>
+                  <MicroLabel>ROI $</MicroLabel>
                   <p
                     className={cn(
-                      "tabular-nums font-medium",
+                      "mt-1 text-sm font-medium tabular-nums",
                       signedTone(h.roiDollar)
                     )}
                   >
@@ -587,50 +586,33 @@ export function PortfolioTable({
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">Today %</p>
+                  <MicroLabel>Today</MicroLabel>
                   <p
                     className={cn(
-                      "tabular-nums font-medium",
-                      rowToday(h).pct != null
-                        ? signedTone(rowToday(h).pct!)
-                        : "text-muted"
+                      "mt-1 text-sm font-medium tabular-nums",
+                      today.pct != null ? signedTone(today.pct) : "text-muted"
                     )}
                   >
-                    {rowToday(h).pct != null
-                      ? percent(rowToday(h).pct!, 2)
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted">Today $</p>
-                  <p
-                    className={cn(
-                      "tabular-nums font-medium",
-                      rowToday(h).pct != null
-                        ? signedTone(rowToday(h).dollar)
-                        : "text-muted"
-                    )}
-                  >
-                    {rowToday(h).pct != null
-                      ? money(rowToday(h).dollar, 0)
+                    {today.pct != null
+                      ? `${percent(today.pct, 2)} · ${money(today.dollar, 0)}`
                       : "—"}
                   </p>
                 </div>
               </div>
-              <div className="mt-2">
+              <div className="mt-3">
                 <Sparkline
                   points={h.quote?.sparkline ?? []}
                   width={140}
                   height={28}
                 />
               </div>
-            </div>
+            </Card>
             );
           })
         )}
 
         {holdings.length > 0 && (
-          <div className="rounded-xl border border-border bg-raised px-3 py-3 text-sm">
+          <div className="rounded-xl border border-border bg-raised px-4 py-4 text-sm">
             <div className="flex justify-between font-semibold">
               <span className="text-foreground">Portfolio</span>
               <span className={cn("tabular-nums", signedTone(totals.roiPct))}>

@@ -2,10 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { useFeedback } from "@/components/FeedbackHost";
-import {
-  UpsideLogo,
-  UPSIDE_HEADER_WORDMARK_CLASS,
-} from "@/components/UpsideLogo";
+import { HeaderBrand } from "@/components/HeaderBrand";
 import { cn } from "@/lib/format";
 import Link from "next/link";
 import { Bell, MessageSquare } from "lucide-react";
@@ -13,19 +10,21 @@ import type { ReactNode } from "react";
 
 type Props = {
   title: string;
-  /** Gold A + UPSIDE LAB, same lockup as the desktop bar. */
+  /** Kept so older call sites still compile. The lockup always shows. */
   brand?: boolean;
   avatar?: { url?: string | null; initial?: string };
   alertCount?: number;
   onAlerts?: () => void;
   alertsHref?: string;
-  /** Replaces the bell (community settings, fund refresh, …). */
+  /** Page actions, left of Feedback. Same slot as AppHeader children. */
   end?: ReactNode;
+  /** Status row, same as desktop. Stays stuck with the bar. */
+  children?: ReactNode;
   className?: string;
 };
 
 const ICON_BTN =
-  "inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground/80 hover:bg-hover hover:text-foreground";
+  "inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-hover hover:text-foreground";
 
 function FeedbackIconButton() {
   const { user } = useAuth();
@@ -38,26 +37,26 @@ function FeedbackIconButton() {
       aria-label="Feedback"
       className={ICON_BTN}
     >
-      <MessageSquare className="h-5 w-5" />
+      <MessageSquare className="h-4 w-4" />
     </button>
   );
 }
 
 export function MobileTopBar({
   title,
-  brand = false,
   avatar,
   alertCount = 0,
   onAlerts,
   alertsHref = "/?tab=alerts",
   end,
+  children,
   className,
 }: Props) {
   const bell = (
     <span className={cn(ICON_BTN, "relative")}>
-      <Bell className="h-5 w-5" />
+      <Bell className="h-4 w-4" />
       {alertCount > 0 && (
-        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-mustard" />
+        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-mustard" />
       )}
     </span>
   );
@@ -65,50 +64,22 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-border bg-app/95 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden",
+        "sticky top-0 z-40 bg-app/95 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden",
         className
       )}
     >
-      <div className="grid h-12 grid-cols-[5rem_1fr_5rem] items-center px-5">
-        <Link
-          href="/account"
-          aria-label="Account"
-          className="flex h-10 w-10 items-center justify-center"
-        >
-          {avatar?.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatar.url}
-              alt=""
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-md border border-border object-cover"
-            />
-          ) : (
-            <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-xs font-semibold text-foreground/80">
-              {avatar?.initial ?? "?"}
-            </span>
-          )}
-        </Link>
-        {brand ? (
-          <div className="flex min-w-0 items-center justify-center">
-            <h1 className="sr-only">{title}</h1>
-            <UpsideLogo
-              variant="wordmark"
-              alwaysType
-              className={UPSIDE_HEADER_WORDMARK_CLASS}
-            />
-          </div>
-        ) : (
-          <h1 className="truncate text-center font-heading text-base font-bold text-foreground">
+      <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <HeaderBrand alwaysType />
+          <span className="h-3.5 w-px shrink-0 bg-border" aria-hidden />
+          <h1 className="min-w-0 truncate text-sm font-medium leading-none text-foreground/80">
             {title}
           </h1>
-        )}
-        <div className="flex items-center justify-end">
+        </div>
+        <div className="flex shrink-0 items-center justify-end gap-1">
+          {end}
           <FeedbackIconButton />
-          {end ? (
-            end
-          ) : onAlerts ? (
+          {onAlerts ? (
             <button
               type="button"
               onClick={onAlerts}
@@ -118,7 +89,7 @@ export function MobileTopBar({
             >
               {bell}
             </button>
-          ) : (
+          ) : alertsHref && !avatar ? (
             <Link
               href={alertsHref}
               aria-label={
@@ -127,9 +98,33 @@ export function MobileTopBar({
             >
               {bell}
             </Link>
-          )}
+          ) : null}
+          {avatar ? (
+            <Link
+              href="/account"
+              aria-label="Account"
+              title="Account"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
+            >
+              {avatar.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatar.url}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-xs font-semibold text-foreground/80">
+                  {avatar.initial ?? "?"}
+                </span>
+              )}
+            </Link>
+          ) : null}
         </div>
       </div>
+      {children}
     </header>
   );
 }

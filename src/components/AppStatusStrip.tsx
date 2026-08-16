@@ -58,7 +58,7 @@ export function AppStatusStrip({
       <div
         className={cn(
           PAGE_COLUMN_CLASS,
-          "flex h-10 items-center justify-between gap-3 overflow-hidden"
+          "flex h-10 items-center justify-between gap-3 overflow-x-auto"
         )}
       >
         <span className="min-w-0 truncate text-sm tabular-nums text-muted">

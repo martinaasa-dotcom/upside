@@ -981,18 +981,15 @@ export function ForecastPanel({
       ) : (
         <>
           {/* Mobile */}
-          <div className="space-y-2 p-3 md:hidden">
+          <div className="space-y-3 p-4 md:hidden">
             {model.rows.map((r) => (
-              <div
-                key={r.ticker}
-                className="rounded-xl border border-border bg-raised px-3 py-3"
-              >
+              <Card key={r.ticker}>
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
                     <p className="text-base font-semibold text-foreground">
                       {cashtag(r.ticker)}
                     </p>
-                    <p className="text-sm text-muted">
+                    <p className="mt-1 text-sm text-muted">
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · Margus is working on it"}
                     </p>
@@ -1008,23 +1005,20 @@ export function ForecastPanel({
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
                   </p>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-center">
-                    <p className="text-muted">Price now</p>
-                    <p className="tabular-nums text-foreground">
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div>
+                    <MicroLabel>Price now</MicroLabel>
+                    <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
                       {currency(r.currentPrice)}
                     </p>
                   </div>
                   {mobileYears.map((y) => (
-                    <div key={y} className="text-center">
-                      <p
-                        className={cn(
-                          "text-muted",
-                          isCurrentYear(y) && "text-foreground"
-                        )}
-                      >
-                        <YearColHeader year={y} />
-                      </p>
+                    <div key={y}>
+                      <MicroLabel>
+                        <span className={cn(isCurrentYear(y) && "text-foreground")}>
+                          <YearColHeader year={y} />
+                        </span>
+                      </MicroLabel>
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
                         targeted={r.targetedYears[y]}
@@ -1033,7 +1027,7 @@ export function ForecastPanel({
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
 
             <div className="rounded-xl border border-border bg-raised px-4 py-3.5">

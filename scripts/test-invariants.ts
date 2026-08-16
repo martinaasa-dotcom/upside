@@ -2149,7 +2149,8 @@ run("sign-in reads as a product", () => {
   assert.doesNotMatch(gate, /quiet down day/);
   assert.doesNotMatch(gate, /\$50k|AI manage/);
   assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
-  assert.match(gate, /signin-rise-3 hidden h-auto md:block/);
+  assert.match(gate, /signin-rise-3 h-auto/);
+  assert.doesNotMatch(gate, /signin-rise-3 hidden h-auto md:block/);
   assert.doesNotMatch(gate, /Communities stay read-only/);
   assert.match(gate, /inviteLandingCopy/);
 });
@@ -3261,9 +3262,27 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     join(process.cwd(), "src/components/mobile/MobileTopBar.tsx"),
     "utf8"
   );
-  assert.match(topBar, /brand \?/);
-  assert.match(topBar, /UpsideLogo/);
+  assert.match(topBar, /HeaderBrand/);
   assert.match(topBar, /alwaysType/);
+  assert.doesNotMatch(topBar, /grid-cols-\[5rem/);
+  const dock = readFileSync(
+    join(process.cwd(), "src/components/mobile/MobileTabBar.tsx"),
+    "utf8"
+  );
+  assert.match(dock, /bg-select text-select-ink/);
+  assert.match(dock, /rounded-lg bg-well/);
+  assert.match(dock, /stashOpenTab\("lab"\)/);
+  assert.match(dock, /stashOpenTab\("compound"\)/);
+  assert.doesNotMatch(dock, /label: "Account"/);
+  const frame = readFileSync(
+    join(process.cwd(), "src/lib/page-shell.ts"),
+    "utf8"
+  );
+  assert.match(
+    frame,
+    /bg-\[radial-gradient\(ellipse_at_top,_#161b25_0%,_#08090c_55%\)\]/
+  );
+  assert.doesNotMatch(frame, /md:bg-\[radial-gradient/);
 });
 
 run("listing currency chips and FX convert kronor", () => {

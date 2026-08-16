@@ -10,6 +10,8 @@ import Link from "next/link";
 
 type Props = {
   className?: string;
+  /** Keep UPSIDE LAB visible on the phone bar. Desktop already has the width. */
+  alwaysType?: boolean;
 };
 
 /**
@@ -31,7 +33,7 @@ const BRAND_INTERACTION_CLASS = cn(
   "focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
 );
 
-export function HeaderBrand({ className }: Props) {
+export function HeaderBrand({ className, alwaysType = false }: Props) {
   return (
     <Link
       href="/"
@@ -42,6 +44,7 @@ export function HeaderBrand({ className }: Props) {
     >
       <UpsideLogo
         variant="wordmark"
+        alwaysType={alwaysType}
         className={UPSIDE_HEADER_WORDMARK_CLASS}
       />
     </Link>

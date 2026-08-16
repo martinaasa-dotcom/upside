@@ -258,15 +258,20 @@ function HomeSheetChip({
   className?: string;
 }) {
   return (
-    <div className={cn("flex gap-2 overflow-x-auto scrollbar-none", className)}>
+    <div
+      className={cn(
+        "scrollbar-none flex max-w-full gap-0.5 overflow-x-auto rounded-lg border border-border bg-well p-0.5",
+        className
+      )}
+    >
       <button
         type="button"
         onClick={() => onChange("all")}
         className={cn(
-          "shrink-0 rounded-full border px-3 py-1.5 text-sm",
+          "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition",
           value === "all"
-            ? "border-select bg-select text-select-ink"
-            : "border-border text-muted hover:border-brand-mid hover:text-foreground"
+            ? "bg-select text-select-ink"
+            : "text-muted hover:text-foreground"
         )}
       >
         All sheets
@@ -277,10 +282,10 @@ function HomeSheetChip({
           type="button"
           onClick={() => onChange(s.id)}
           className={cn(
-            "shrink-0 rounded-full border px-3 py-1.5 text-sm",
+            "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition",
             value === s.id
-              ? "border-select bg-select text-select-ink"
-              : "border-border text-muted hover:border-brand-mid hover:text-foreground"
+              ? "bg-select text-select-ink"
+              : "text-muted hover:text-foreground"
           )}
         >
           {s.name}

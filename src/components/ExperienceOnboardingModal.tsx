@@ -207,7 +207,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
           </>
         ) : (
           <div className="space-y-4 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-hover text-foreground">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-hover text-foreground">
               <Check className="h-5 w-5" />
             </div>
             <div>

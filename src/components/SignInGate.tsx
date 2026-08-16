@@ -129,7 +129,7 @@ export function SignInGate({ children }: Props) {
         id="main"
         className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-center px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:px-10"
       >
-        <div className="signin-rise grid items-center gap-14 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
+        <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
@@ -212,14 +212,12 @@ const SAMPLE_MOVERS = [
 /** Static chrome of a day that moved. Sample figures, written like Home + Pulse. */
 function BookStill() {
   return (
-    <Panel className="signin-rise-3 hidden h-auto md:block" aria-hidden>
+    <Panel className="signin-rise-3 h-auto" aria-hidden>
       <div className="flex items-center justify-between gap-3">
         <MicroLabel>
           Today&apos;s briefing
         </MicroLabel>
-        <span className="rounded-full border border-border px-2 py-0.5 text-sm text-muted">
-          Sample
-        </span>
+        <Pill tone="neutral">Sample</Pill>
       </div>
 
       <Scoreboard className="mt-5" cols={3}>

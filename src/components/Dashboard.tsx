@@ -543,7 +543,15 @@ export function Dashboard() {
   const isPulse = activeId === PULSE_TAB_ID;
   const isAlerts = activeId === ALERTS_TAB_ID;
   const isMetaTab = isOverview || isCompound || isLab || isPulse || isAlerts;
-  const mobileTab: MobileTabId = isPulse ? "pulse" : "home";
+  const mobileTab: MobileTabId | null = isPulse
+    ? "pulse"
+    : isLab
+      ? "lab"
+      : isCompound
+        ? "compound"
+        : isOverview || isAlerts
+          ? "home"
+          : null;
 
   const activePortfolio =
     isMetaTab
@@ -2756,10 +2764,9 @@ export function Dashboard() {
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return (
-      <div className="flex min-h-dvh flex-col bg-black text-foreground">
+      <div className={PAGE_FRAME_CLASS}>
         <MobileTopBar
           title="Overview"
-          brand
           avatar={{
             url: profile?.avatar_url,
             initial: (profile?.display_name || user?.email || "?")
@@ -2774,7 +2781,7 @@ export function Dashboard() {
           title="Overview"
           end={accountEnd}
         />
-        <MobileTabBar active="home" />
+        <MobileTabBar active="home" hiddenModeIds={hiddenMetaTabIds} />
       </div>
     );
   }
@@ -2787,7 +2794,6 @@ export function Dashboard() {
         missingTickers={missingQuoteTickers}
       />
       <MobileTopBar
-        brand={isOverview}
         title={
           isOverview
             ? "Overview"
@@ -2809,7 +2815,26 @@ export function Dashboard() {
             .toUpperCase(),
         }}
         alertCount={activeAlerts.length}
-        onAlerts={() => setActiveId(ALERTS_TAB_ID)}
+        end={
+          <>
+            {!isMetaTab && canClassBuy && (
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                aria-label="Add holding"
+                className="btn-primary h-8 min-h-8 w-8 p-0"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <HeaderOverflowMenu
+              items={viewMenuItems}
+              label="View"
+              icon={SlidersHorizontal}
+              showLabel={false}
+            />
+          </>
+        }
       />
       <AppHeader
         className="hidden md:block"
@@ -2863,35 +2888,39 @@ export function Dashboard() {
             />
       </AppHeader>
 
-      {!isMetaTab && (
-        <div className="flex items-center gap-2 border-b border-border px-3 py-2 md:hidden">
-          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto">
+      {!isMetaTab && portfolios.length > 0 && (
+        <div className="border-b border-border px-5 md:hidden">
+          <div
+            role="tablist"
+            aria-label="Your portfolios"
+            className="scrollbar-none flex h-10 items-stretch gap-0.5 overflow-x-auto"
+          >
             {portfolios.map((p) => (
               <button
                 key={p.id}
                 type="button"
+                role="tab"
+                aria-selected={p.id === activeId}
                 onClick={() => setActiveId(p.id)}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-sm",
+                  "relative shrink-0 px-3 text-sm font-medium transition",
                   p.id === activeId
-                    ? "bg-select text-select-ink"
-                    : "bg-hover text-muted"
+                    ? "text-foreground"
+                    : "text-muted hover:text-foreground"
                 )}
               >
-                {p.name}
+                <span className="flex h-full items-center whitespace-nowrap">
+                  {p.name}
+                </span>
+                {p.id === activeId && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-select"
+                  />
+                )}
               </button>
             ))}
           </div>
-          {canClassBuy ? (
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-select px-3 py-1.5 text-sm font-medium text-select-ink"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add
-          </button>
-          ) : null}
         </div>
       )}
 
@@ -3157,6 +3186,7 @@ export function Dashboard() {
         active={mobileTab}
         alertCount={activeAlerts.length}
         pulseHref={pulseHiddenForTier ? "/" : "/?tab=pulse"}
+        hiddenModeIds={hiddenMetaTabIds}
         onSelect={(id) => {
           if (id === "home") {
             setActiveId(OVERVIEW_TAB_ID);
@@ -3165,6 +3195,15 @@ export function Dashboard() {
           if (id === "pulse") {
             if (pulseHiddenForTier) return false;
             setActiveId(PULSE_TAB_ID);
+            return true;
+          }
+          if (id === "lab") {
+            if (labHiddenForTier) return false;
+            setActiveId(LAB_TAB_ID);
+            return true;
+          }
+          if (id === "compound") {
+            setActiveId(COMPOUND_TAB_ID);
             return true;
           }
           return false;

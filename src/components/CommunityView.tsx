@@ -28,7 +28,7 @@ import {
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
 import { listingCurrency } from "@/lib/listing-currency";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { Score, Scoreboard } from "@/components/ui/Panel";
+import { Card, Score, Scoreboard } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -1356,7 +1356,7 @@ export function CommunityView({ communityId }: Props) {
                 type="button"
                 onClick={openSettings}
                 title="Community settings"
-                className="touch-target inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-hover hover:text-foreground"
               >
                 <Settings className="h-5 w-5" />
               </button>
@@ -1393,7 +1393,7 @@ export function CommunityView({ communityId }: Props) {
           {isAdmin && joinRequests.length > 0 && (
             <span
               title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-              className="shrink-0 rounded-full bg-select px-2 py-0.5 text-sm font-semibold text-select-ink"
+              className="shrink-0 rounded-lg bg-select px-2 py-0.5 text-sm font-semibold text-select-ink"
             >
               {joinRequests.length}
             </span>
@@ -3052,19 +3052,16 @@ function ReadOnlyHoldings({
         <Score label="Total value" value={currency(totalValue)} />
         <Score label="Cash" value={currency(cash)} />
       </Scoreboard>
-      <div className="space-y-2 md:hidden">
+      <div className="space-y-3 md:hidden">
         {sortedHoldings.map((h) => {
           const price = quotes[h.ticker]?.price ?? 0;
           const value = price * h.shares;
           const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
           const pctBook = totalValue > 0 ? value / totalValue : 0;
           return (
-            <div
-              key={h.id}
-              className="rounded-xl border border-border bg-raised px-3 py-3"
-            >
+            <Card key={h.id}>
               <div className="flex items-baseline justify-between gap-2">
-                <p className="font-semibold text-foreground">
+                <p className="text-base font-semibold text-foreground">
                   <TickerSymbol
                     ticker={h.ticker}
                     currency={listingCurrency(
@@ -3082,21 +3079,23 @@ function ReadOnlyHoldings({
                   {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
                 </p>
               </div>
-              <p className="mt-0.5 text-xs text-muted">
+              <p className="mt-1 text-sm text-muted">
                 {percent(pctBook)} of portfolio · {h.shares} sh · {currency(price)} · {currency(value)}
               </p>
-            </div>
+            </Card>
           );
         })}
         {holdings.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border bg-raised px-3 py-6 text-center text-sm text-muted">
+          <p className="rounded-xl border border-dashed border-border bg-raised px-4 py-6 text-center text-sm text-muted">
             No holdings in this portfolio.
           </p>
         )}
-        <div className="flex items-center justify-between rounded-xl border border-border bg-raised px-3 py-3 text-sm">
-          <span className="text-muted">Cash</span>
-          <span className="tabular-nums text-foreground">{currency(cash)}</span>
-        </div>
+        <Card>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted">Cash</span>
+            <span className="tabular-nums text-foreground">{currency(cash)}</span>
+          </div>
+        </Card>
       </div>
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
         <table className="w-full min-w-[36rem] text-left text-sm">

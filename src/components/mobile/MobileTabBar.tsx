@@ -3,41 +3,92 @@
 import { useCircleHref } from "@/components/CircleDockLink";
 import { stashOpenTab } from "@/lib/active-sheet";
 import { cn } from "@/lib/format";
+import {
+  COMPOUND_TAB_ID,
+  LAB_TAB_ID,
+  OVERVIEW_TAB_ID,
+  PULSE_TAB_ID,
+} from "@/lib/overview";
 import { useDockPad } from "@/lib/use-dock-pad";
-import { Compass, Home, Activity, Settings } from "lucide-react";
+import {
+  Activity,
+  Calculator,
+  Compass,
+  FlaskConical,
+  LayoutDashboard,
+} from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 
-export type MobileTabId = "home" | "pulse" | "circle" | "settings";
+export type MobileTabId = "home" | "pulse" | "lab" | "compound" | "circle";
 
 const TABS: {
   id: MobileTabId;
   href: string;
   label: string;
-  Icon: typeof Home;
+  shortLabel: string;
+  Icon: typeof LayoutDashboard;
+  metaId: string | null;
 }[] = [
-  { id: "home", href: "/", label: "Home", Icon: Home },
-  { id: "pulse", href: "/?tab=pulse", label: "Pulse", Icon: Activity },
-  { id: "circle", href: "/communities", label: "Circle", Icon: Compass },
-  { id: "settings", href: "/account", label: "Account", Icon: Settings },
+  {
+    id: "home",
+    href: "/?tab=overview",
+    label: "Overview",
+    shortLabel: "Home",
+    Icon: LayoutDashboard,
+    metaId: OVERVIEW_TAB_ID,
+  },
+  {
+    id: "pulse",
+    href: "/?tab=pulse",
+    label: "Pulse",
+    shortLabel: "Pulse",
+    Icon: Activity,
+    metaId: PULSE_TAB_ID,
+  },
+  {
+    id: "lab",
+    href: "/?tab=lab",
+    label: "Lab",
+    shortLabel: "Lab",
+    Icon: FlaskConical,
+    metaId: LAB_TAB_ID,
+  },
+  {
+    id: "compound",
+    href: "/?tab=compound",
+    label: "Compound",
+    shortLabel: "Growth",
+    Icon: Calculator,
+    metaId: COMPOUND_TAB_ID,
+  },
+  {
+    id: "circle",
+    href: "/communities",
+    label: "Circle",
+    shortLabel: "Circle",
+    Icon: Compass,
+    metaId: null,
+  },
 ];
 
 export function activeMobileTab(
   pathname: string,
   tabParam?: string | null
-): MobileTabId {
+): MobileTabId | null {
   if (pathname.startsWith("/account") || pathname.startsWith("/admin")) {
-    return "settings";
+    return null;
   }
-  if (
-    pathname.startsWith("/upside-portfolio") ||
-    pathname.startsWith("/communities")
-  ) {
+  if (pathname.startsWith("/upside-portfolio")) {
+    return null;
+  }
+  if (pathname.startsWith("/communities")) {
     return "circle";
   }
   const tab = (tabParam ?? "").toLowerCase();
   if (tab === "pulse") return "pulse";
-  if (tab === "lab" || tab === "compound") return "home";
+  if (tab === "lab") return "lab";
+  if (tab === "compound") return "compound";
   return "home";
 }
 
@@ -46,18 +97,25 @@ export function MobileTabBar({
   alertCount = 0,
   className,
   pulseHref,
+  hiddenModeIds = [],
   onSelect,
 }: {
-  active: MobileTabId;
+  active: MobileTabId | null;
   alertCount?: number;
   className?: string;
   pulseHref?: string;
+  hiddenModeIds?: string[];
   /** Return true to stay on this page (Dashboard SPA tabs). */
   onSelect?: (id: MobileTabId) => boolean | void;
 }) {
   const dockRef = useRef<HTMLElement>(null);
   const circleHref = useCircleHref();
   useDockPad(dockRef);
+  const tabs = TABS.filter(
+    (t) => !t.metaId || !hiddenModeIds.includes(t.metaId)
+  );
+  const cols = tabs.length;
+
   return (
     <nav
       ref={dockRef}
@@ -67,49 +125,65 @@ export function MobileTabBar({
         className
       )}
     >
-      <div className="grid h-16 grid-cols-4">
-        {TABS.map(({ id, href, label, Icon }) => {
-          const on = active === id;
-          const to =
-            id === "circle"
-              ? circleHref
-              : id === "pulse" && pulseHref
-                ? pulseHref
-                : href;
-          return (
-            <Link
-              key={id}
-              href={to}
-              prefetch
-              aria-label={label}
-              aria-current={on ? "page" : undefined}
-              onClick={(e) => {
-                if (id === "home") stashOpenTab("overview");
-                if (id === "pulse") stashOpenTab("pulse");
-                if (!onSelect) return;
-                if (onSelect(id)) e.preventDefault();
-              }}
-              className={cn(
-                "touch-target relative flex flex-col items-center justify-center gap-0.5 text-muted",
-                on && "text-foreground"
-              )}
-            >
-              {on && (
-                <span
-                  aria-hidden
-                  className="absolute top-0 h-0.5 w-8 rounded-full bg-select"
-                />
-              )}
-              <span className="relative">
-                <Icon className="h-5 w-5" strokeWidth={on ? 2.2 : 1.75} />
-                {id === "home" && alertCount > 0 && (
-                  <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-mustard" />
+      <div className="px-5 py-2">
+        <div
+          role="tablist"
+          className={cn(
+            "grid h-12 w-full overflow-hidden rounded-lg bg-well ring-1 ring-inset ring-border",
+            cols === 3 && "grid-cols-3",
+            cols === 4 && "grid-cols-4",
+            cols === 5 && "grid-cols-5"
+          )}
+        >
+          {tabs.map(({ id, href, label, shortLabel, Icon }) => {
+            const on = active === id;
+            const to =
+              id === "circle"
+                ? circleHref
+                : id === "pulse" && pulseHref
+                  ? pulseHref
+                  : href;
+            return (
+              <Link
+                key={id}
+                href={to}
+                prefetch
+                role="tab"
+                aria-label={label}
+                aria-current={on ? "page" : undefined}
+                aria-selected={on}
+                onClick={(e) => {
+                  if (id === "home") stashOpenTab("overview");
+                  if (id === "pulse") stashOpenTab("pulse");
+                  if (id === "lab") stashOpenTab("lab");
+                  if (id === "compound") stashOpenTab("compound");
+                  if (!onSelect) return;
+                  if (onSelect(id)) e.preventDefault();
+                }}
+                className={cn(
+                  "flex h-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1 text-sm font-medium transition",
+                  on
+                    ? "bg-select text-select-ink"
+                    : "text-muted hover:text-brand-bright"
                 )}
-              </span>
-              <span className="text-sm leading-none">{label}</span>
-            </Link>
-          );
-        })}
+              >
+                <span className="relative">
+                  <Icon
+                    className={cn("h-4 w-4", id === "compound" && "scale-125")}
+                    strokeWidth={2}
+                    aria-hidden
+                  />
+                  {id === "home" && alertCount > 0 && (
+                    <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-mustard" />
+                  )}
+                </span>
+                <span className="max-w-full truncate leading-none">
+                  {shortLabel}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

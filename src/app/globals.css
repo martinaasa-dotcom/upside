@@ -73,7 +73,7 @@ html {
   -webkit-text-size-adjust: 100%;
   overflow-x: clip;
   scrollbar-gutter: stable;
-  scroll-padding-top: 5.5rem;
+  scroll-padding-top: 6.5rem;
   scroll-padding-bottom: max(var(--dock-pad, 0px), var(--vv-keyboard, 0px));
 }
 

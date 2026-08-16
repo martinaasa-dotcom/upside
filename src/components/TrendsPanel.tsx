@@ -93,14 +93,14 @@ function TickerStoryCard({
             {cashtag(row.ticker)}
           </span>
           {!isHolding && (
-            <span className="rounded-full border border-border px-2 py-0.5 text-sm text-muted">
+            <span className="rounded-lg border border-border px-2 py-0.5 text-sm text-muted">
               watching
             </span>
           )}
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold",
+            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium",
             TONE_BADGE[story.tone]
           )}
         >
@@ -306,7 +306,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 if (e.key === "Enter") addToWatchlist();
               }}
               placeholder="BTC-USD, XLK, SPY …"
-              className="h-9 w-40 rounded-lg border border-border bg-black/20 px-2.5 text-sm text-foreground placeholder:text-muted focus:border-brand focus:outline-none"
+              className="h-9 w-40 rounded-lg border border-border bg-well px-2.5 text-sm text-foreground placeholder:text-muted focus:border-brand focus:outline-none"
             />
             <button
               type="button"

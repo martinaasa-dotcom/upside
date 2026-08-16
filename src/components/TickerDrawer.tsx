@@ -226,7 +226,7 @@ export function TickerDrawer({
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="min-w-0">
                   <MicroLabel>If it plays out by {targetYear}</MicroLabel>
-                  <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
                     {currency(targetPrice, 2)}
                   </p>
                   <p className="mt-0.5 text-sm text-muted">

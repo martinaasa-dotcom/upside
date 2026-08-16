@@ -260,7 +260,7 @@ export function AccountPage() {
   return (
     <SignInGate>
       <div className={PAGE_FRAME_CLASS}>
-        <MobileChrome title="Account" active="settings" />
+        <MobileChrome title="Account" active={null} />
         <AppHeader className="hidden md:block" title="Account">
           <button
             type="button"
