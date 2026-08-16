@@ -84,6 +84,8 @@ import {
   KARUD_PRIMARY_EMAIL,
   SEED_EMAIL_SLUGS,
 } from "../src/lib/auth/identity";
+import { ANIMAL_CARD_TONE } from "../src/lib/portfolio-personality";
+import { PALETTE } from "../src/lib/palette";
 import {
   asSurpriseFraction,
   buildEarningsNote,
@@ -247,6 +249,21 @@ run("briefing kinds use plain-English labels", () => {
   assert.equal(BRIEFING_KIND_LABEL.action, "Look at this");
   assert.equal(BRIEFING_KIND_LABEL.watch, "Note");
   assert.equal(BRIEFING_KIND_LABEL.play, "A thought");
+});
+
+run("power animals each keep their own color", () => {
+  const bars = Object.values(ANIMAL_CARD_TONE).map((t) => t.bar);
+  assert.equal(new Set(bars).size, bars.length);
+  assert.ok(bars.every((bar) => bar.startsWith("bg-[#")));
+  assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
+  assert.equal(PALETTE.brand, "#d4a24c");
+  assert.equal(PALETTE.gain, "#3ecf6e");
+  const community = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(community, /border-gain\/40 bg-gain\/10/);
+  assert.match(community, /border-border bg-raised/);
 });
 
 run("options UI is hidden unless the viewer explicitly said yes", () => {
@@ -971,7 +988,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /font-size:40px;line-height:1\.1;font-weight:700;letter-spacing:-0\.03em;color:\$\{CREAM\}/);
   assert.match(letter, /padding:48px 28px 52px 28px/);
   assert.match(letter, /app: "#0b0b0b"/);
-  assert.match(letter, /gain: "#5a9a4a"/);
+  assert.match(letter, /gain: "#3ecf6e"/);
   assert.match(letter, /Georgia,'Times New Roman',Times,serif/);
   assert.match(letter, /function emailPreheader/);
   assert.match(letter, /&#847;&zwnj;&nbsp;/);
@@ -1170,6 +1187,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     "utf8"
   );
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  const palette = readFileSync(join(process.cwd(), "src/lib/palette.ts"), "utf8");
   const header = readFileSync(
     join(process.cwd(), "src/components/AppHeader.tsx"),
     "utf8"
@@ -1199,11 +1217,11 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(css, /--card: #171717/);
   assert.match(css, /--raised: #212121/);
   assert.match(css, /--app: #0b0b0b/);
-  assert.match(css, /--muted: #9a9488/);
-  assert.match(css, /--brand: #c4a36a/);
-  assert.match(css, /--select: #c4a36a/);
+  assert.match(css, /--muted: #9c9a94/);
+  assert.match(css, /--brand: #d4a24c/);
+  assert.match(css, /--select: #d4a24c/);
   assert.match(css, /--mustard: #d4a24c/);
-  assert.match(css, /--gain: #5a9a4a/);
+  assert.match(css, /--gain: #3ecf6e/);
   assert.match(css, /--loss: #c46a58/);
   assert.match(css, /background: var\(--mustard\)/);
   assert.doesNotMatch(css, /--app: #0d110f/);
@@ -1214,13 +1232,17 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(css, /--card: #151716/);
   assert.doesNotMatch(css, /--card: #141414/);
   assert.doesNotMatch(css, /--raised: #242b27/);
+  assert.doesNotMatch(css, /--gain: #5a9a4a/);
   assert.doesNotMatch(css, /--gain: #6db85c/);
   assert.doesNotMatch(css, /--gain: #3f9d58/);
+  assert.doesNotMatch(css, /--brand: #c4a36a/);
   assert.doesNotMatch(css, /--brand: #8a9a86/);
   assert.doesNotMatch(css, /--brand: #c4a574/);
   assert.doesNotMatch(css, /--brand: #b8b3aa/);
   assert.doesNotMatch(css, /--caution: #c4a574/);
   assert.doesNotMatch(css, /--border: rgb\(196 163 106/);
+  assert.match(palette, /brand: "#d4a24c"/);
+  assert.match(palette, /gain: "#3ecf6e"/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
   assert.match(panel, /export function InsightText/);
@@ -1289,6 +1311,10 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /#1a2820/,
     /#2a2218/,
     /#2d3d32/,
+    /#5a9a4a/,
+    /#6a8f5a/,
+    /#a89878/,
+    /#0d110f/,
   ];
   for (const pattern of bland) {
     const offenders = offendersOf(pattern);

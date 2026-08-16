@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark field, gray boxes. Brass and mustard are the accent.
-     Green is only an up number, never a wash on the room. */
+  /* Dark field, gray boxes. One gold for selected chrome and CTAs.
+     Green is an up number, never a wash on the room. */
   --background: #0b0b0b;
   --foreground: #ede8dc;
   --paper: #ede8dc;
   --ink: #0c0c0c;
-  --muted: #9a9488;
+  --muted: #9c9a94;
   --app: #0b0b0b;
   --well: #0a0a0a;
   --card: #171717;
   --raised: #212121;
   --hover: #2b2b2b;
-  --brand: #c4a36a;
-  --brand-bright: #e0c48a;
-  --brand-mid: #a68654;
-  --brand-deep: #7a6240;
-  --brand-dark: #8a7350;
-  --select: #c4a36a;
+  --brand: #d4a24c;
+  --brand-bright: #e8be6a;
+  --brand-mid: #b88838;
+  --brand-deep: #8a6428;
+  --brand-dark: #8a6428;
+  --select: #d4a24c;
   --select-ink: #0c0c0c;
   --mustard: #d4a24c;
   --caution: #d4a24c;
-  --gain: #5a9a4a;
+  --gain: #3ecf6e;
   --loss: #c46a58;
   --surface: #171717;
   --panel: #171717;
@@ -181,15 +181,15 @@ input[type="range"] {
  * a full-cell dashed rule (that reads as a weird table separator).
  */
 .inline-edit {
-  border-bottom: 1px dashed rgba(196, 163, 106, 0.4);
+  border-bottom: 1px dashed rgba(212, 162, 76, 0.4);
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 .inline-edit:hover {
-  border-bottom-color: rgba(224, 196, 138, 0.55);
+  border-bottom-color: rgba(232, 190, 106, 0.55);
 }
 .inline-edit:focus {
   border-bottom-style: solid;
-  border-bottom-color: rgb(196 163 106 / 0.7);
+  border-bottom-color: rgb(212 162 76 / 0.7);
 }
 
 * {
@@ -225,7 +225,7 @@ button:disabled,
 }
 
 ::selection {
-  background: rgba(196, 163, 106, 0.35);
+  background: rgba(212, 162, 76, 0.35);
 }
 
 /* Financial figures stay on the body face, with lining tabular digits. */
@@ -233,7 +233,7 @@ button:disabled,
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Primary CTA: mustard lamp. Selected chrome is brass. Never a white pill. */
+/* Primary CTA and selected chrome share one gold. Hover is the same gold, lighter. */
 .btn-primary {
   display: inline-flex;
   align-items: center;

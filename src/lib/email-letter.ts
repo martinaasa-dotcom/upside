@@ -6,9 +6,9 @@
 export const EMAIL = {
   app: "#0b0b0b",
   cream: "#ede8dc",
-  muted: "#9a9488",
-  gold: "#c4a36a",
-  gain: "#5a9a4a",
+  muted: "#9c9a94",
+  gold: "#d4a24c",
+  gain: "#3ecf6e",
   loss: "#c46a58",
   line: "#212121",
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",

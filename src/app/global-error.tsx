@@ -63,7 +63,7 @@ export default function GlobalError({
               maxWidth: "22rem",
               fontSize: "0.875rem",
               lineHeight: 1.6,
-              color: "#9a9488",
+              color: "#9c9a94",
             }}
           >
             Your book is safe. This was a rendering error in the app shell,
@@ -92,9 +92,9 @@ export default function GlobalError({
             onClick={() => window.location.reload()}
             style={{
               borderRadius: "0.5rem",
-              border: "1px solid #c4a36a",
+              border: "1px solid #d4a24c",
               background: "transparent",
-              color: "#e0c48a",
+              color: "#e8be6a",
               fontSize: "0.875rem",
               padding: "0.5rem 1rem",
               cursor: "pointer",

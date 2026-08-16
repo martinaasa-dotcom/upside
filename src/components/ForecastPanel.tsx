@@ -9,6 +9,7 @@ import {
   Segmented,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
+import { PALETTE } from "@/lib/palette";
 import { isAbortError } from "@/lib/abort";
 import {
   cn,
@@ -440,8 +441,8 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
         >
           <defs>
             <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#c4a36a" stopOpacity="0.22" />
-              <stop offset="1" stopColor="#c4a36a" stopOpacity="0" />
+              <stop offset="0" stopColor={PALETTE.brand} stopOpacity="0.22" />
+              <stop offset="1" stopColor={PALETTE.brand} stopOpacity="0" />
             </linearGradient>
           </defs>
           {ticks.map((t) => (
@@ -458,7 +459,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
           <polygon points={area} fill={`url(#${gid})`} />
           <polyline
             fill="none"
-            stroke="#c4a36a"
+            stroke={PALETTE.brand}
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"

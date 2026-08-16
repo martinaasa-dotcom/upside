@@ -2186,7 +2186,7 @@ export function CommunityView({ communityId }: Props) {
                                 type="button"
                                 disabled={joinDecisionBusyId === r.user_id}
                                 onClick={() => void decideJoinRequest(r.user_id, "approve")}
-                                className="rounded-md bg-mustard px-2.5 py-1.5 text-xs font-semibold text-select-ink hover:bg-brand-bright disabled:opacity-50"
+                                className="btn-primary px-2.5 py-1.5 text-xs disabled:opacity-50"
                               >
                                 Approve
                               </button>
@@ -2239,23 +2239,23 @@ export function CommunityView({ communityId }: Props) {
                           type="button"
                           disabled={busy}
                           onClick={() => void createInvite()}
-                          className="inline-flex items-center gap-1 rounded-lg bg-mustard px-3 py-2 text-sm font-medium text-select-ink hover:bg-brand-bright"
+                          className="btn-primary"
                         >
                           <Link2 className="h-3.5 w-3.5" />
                           Create invite link
                         </button>
                       </div>
                       {inviteUrl && (
-                        <div className="space-y-2 rounded-lg border border-gain/40 bg-gain/10 px-3 py-2">
+                        <div className="space-y-2 rounded-lg border border-border bg-raised px-3 py-2">
                           {inviteEmailed > 0 && (
-                            <p className="text-xs text-gain">
+                            <p className="text-xs text-foreground">
                               {inviteEmailed === 1
                                 ? "Sent the link to 1 person."
                                 : `Sent the link to ${inviteEmailed} people.`}
                             </p>
                           )}
                           <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 flex-1 break-all text-xs text-gain">
+                          <p className="min-w-0 flex-1 break-all text-xs text-foreground">
                             {inviteUrl}
                           </p>
                           <button
@@ -2270,7 +2270,7 @@ export function CommunityView({ communityId }: Props) {
                                 1500
                               );
                             }}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gain/50 px-2 py-1 text-xs font-medium text-gain hover:bg-gain/15"
+                            className="btn-secondary px-2 py-1 text-xs"
                           >
                             {inviteCopied ? (
                               <Check className="h-3 w-3" />

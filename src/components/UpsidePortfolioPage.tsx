@@ -11,6 +11,7 @@ import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import { currency, percent, signedCurrency, cn, signedTone, cashtag } from "@/lib/format";
+import { PALETTE } from "@/lib/palette";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
@@ -55,9 +56,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
 const SERIES_COLOR = {
-  margus: "#d4a24c",
-  spy: "#c4a36a",
-  you: "#5a9a4a",
+  margus: PALETTE.brand,
+  spy: PALETTE.steel,
+  you: PALETTE.gain,
 } as const;
 
 type MyPortfolioBenchmark = {
@@ -615,7 +616,7 @@ export function UpsidePortfolioPage() {
         key: "cash",
         label: "Cash",
         pct: cash / totalValue,
-        color: "#a89878",
+        color: PALETTE.muted,
       });
     }
     return slices;

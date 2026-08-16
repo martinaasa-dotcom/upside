@@ -49,7 +49,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
 
-/** Overview sits on a forest field. Muted olive still reads; cool gray does not. */
+/** Signed numbers use gain/loss. Neutral figures stay on the cream. */
 const tone = (value: number | null | undefined) =>
   signedTone(value, "text-foreground/80");
 

@@ -28,6 +28,7 @@ import {
 } from "@/lib/compound-play";
 import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
 import { cn, percent } from "@/lib/format";
+import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
 import {
   displayToUsd,
@@ -277,7 +278,7 @@ function ComparePathsChart({
                 textAnchor="end"
                 dominantBaseline="middle"
                 fontSize="9"
-                fill="#9a9488"
+                fill={PALETTE.muted}
               >
                 {compact(max * s)}
               </text>
@@ -292,7 +293,7 @@ function ComparePathsChart({
             y={h - 6}
             textAnchor="middle"
             fontSize="9"
-            fill="#9a9488"
+            fill={PALETTE.muted}
           >
             Y{i}
           </text>
@@ -305,7 +306,7 @@ function ComparePathsChart({
               x2={xAt(tippingYear)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#5a9a4a"
+              stroke={PALETTE.gain}
               strokeWidth="1"
               strokeDasharray="3 3"
               opacity="0.6"
@@ -316,7 +317,7 @@ function ComparePathsChart({
               textAnchor="middle"
               fontSize="9"
               fontWeight="600"
-              fill="#5a9a4a"
+              fill={PALETTE.gain}
             >
               Tip Y{tippingYear}
             </text>
@@ -343,7 +344,7 @@ function ComparePathsChart({
               x2={xAt(hoverIdx)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#9a9488"
+              stroke={PALETTE.muted}
               strokeWidth="1"
               strokeDasharray="2 3"
               opacity="0.7"

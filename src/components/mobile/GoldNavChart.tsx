@@ -2,6 +2,7 @@
 
 import { YtdAnchorModal } from "@/components/YtdAnchorModal";
 import { cn, currency, percent, signedCurrency, signedTone } from "@/lib/format";
+import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
 import { paintBookNavSeries, usableNavPoints } from "@/lib/market/assumed-nav";
 import {
@@ -594,8 +595,8 @@ export function GoldNavChart({
           >
             <defs>
               <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#c4a36a" stopOpacity="0.22" />
-                <stop offset="1" stopColor="#c4a36a" stopOpacity="0" />
+                <stop offset="0" stopColor={PALETTE.brand} stopOpacity="0.22" />
+                <stop offset="1" stopColor={PALETTE.brand} stopOpacity="0" />
               </linearGradient>
             </defs>
             {ticks.map((t) => (
@@ -612,7 +613,7 @@ export function GoldNavChart({
             <polygon points={area} fill={`url(#${gid})`} />
             <polyline
               fill="none"
-              stroke="#c4a36a"
+              stroke={PALETTE.brand}
               strokeWidth={2}
               strokeLinejoin="round"
               strokeLinecap="round"

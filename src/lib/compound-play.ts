@@ -320,14 +320,14 @@ export function buildCompareScenarios(
       label: "Cash / HYSA",
       tagline: `~${COMPOUND_CASH_YIELD_ANNUAL_PCT}% · savings / money-market yield`,
       result: cashYield,
-      color: "#a89878",
+      color: "#9c9a94",
     },
     {
       id: "spy",
       label: "Index-ish",
       tagline: "~10% · a plain index bet",
       result: spy,
-      color: "#c4a36a",
+      color: "#7f93c9",
     },
     {
       id: "upside",

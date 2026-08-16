@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/format";
+import { PALETTE } from "@/lib/palette";
 
 type Props = {
   points: number[];
@@ -53,7 +54,7 @@ export function Sparkline({
     >
       <polyline
         fill="none"
-        stroke={up ? "#5a9a4a" : "#c46a58"}
+        stroke={up ? PALETTE.gain : PALETTE.loss}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
