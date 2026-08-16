@@ -115,7 +115,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "h-full rounded-2xl border",
+        "h-full min-w-0 max-w-full rounded-2xl border",
         SHELL_TONES[tone],
         padded && "p-5",
         className
@@ -594,8 +594,8 @@ export function Segmented<T extends string>({
       aria-label={ariaLabel}
       className={cn(
         fill
-          ? "grid w-full gap-px overflow-hidden rounded-lg border border-border bg-border"
-          : "inline-flex max-w-full shrink-0 flex-nowrap rounded-lg border border-border bg-well p-0.5",
+          ? "grid w-full min-w-0 max-w-full gap-px overflow-hidden rounded-lg border border-border bg-border"
+          : "inline-flex max-w-full min-w-0 flex-nowrap rounded-lg border border-border bg-well p-0.5",
         className
       )}
       style={
@@ -628,7 +628,7 @@ export function Segmented<T extends string>({
           <span
             className={
               fill
-                ? "block text-center leading-snug"
+                ? "block max-w-full text-center leading-snug break-words"
                 : "whitespace-nowrap"
             }
           >

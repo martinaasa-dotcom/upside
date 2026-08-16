@@ -1970,6 +1970,8 @@ run("Compound controls sit on one panel, not nested cards", () => {
     src.indexOf("Results & Projections")
   );
   assert.match(src, /var\(--dock-pad\)/);
+  assert.match(src, /overflow-x-clip/);
+  assert.match(src, /minmax\(0,380px\)/);
   assert.match(src, /touch-pan-y/);
   assert.doesNotMatch(src, /touch-none/);
   assert.match(controls, /divide-y divide-white\/10/);

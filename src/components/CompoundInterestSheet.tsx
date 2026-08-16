@@ -81,7 +81,10 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
 ];
 
 const FIELD_CLASS =
-  "w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-brand";
+  "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-brand";
+
+/** Tight padding on phones so the card stays inside the gutter. */
+const SHEET_PANEL = "h-auto min-w-0 max-w-full p-4 sm:p-5 lg:h-full";
 
 const YEAR_PRESETS = [5, 10, 20, 30] as const;
 const RATE_PRESETS = [
@@ -193,8 +196,13 @@ function ComparePathsChart({
 
   const gridSteps = [0, 0.25, 0.5, 0.75, 1];
   const compact = (n: number) => {
-    const shown = money(n, currency, eurUsd, 0);
-    return shown.length > 9 ? shown.replace(/\.00$/, "") : shown;
+    const shown = usdToDisplay(n, currency, eurUsd);
+    const sign = currency === "EUR" ? "€" : "$";
+    const abs = Math.abs(shown);
+    if (abs >= 1_000_000_000) return `${sign}${(shown / 1_000_000_000).toFixed(1)}B`;
+    if (abs >= 1_000_000) return `${sign}${(shown / 1_000_000).toFixed(1)}M`;
+    if (abs >= 10_000) return `${sign}${(shown / 1_000).toFixed(0)}k`;
+    return money(n, currency, eurUsd, 0);
   };
 
   const yearTickEvery = Math.max(1, Math.round(lastIdx / 5));
@@ -209,19 +217,19 @@ function ComparePathsChart({
   const yTicks = gridSteps.map((s) => max * s);
 
   return (
-    <div className="relative">
-      <div className="flex items-stretch gap-3">
+    <div className="relative min-w-0 max-w-full">
+      <div className="flex min-w-0 items-stretch gap-2 sm:gap-3">
         <ChartYAxis
           ticks={yTicks}
           yAt={yAt}
           height={h}
           format={compact}
-          className="w-16"
+          className="w-10 sm:w-16"
         />
         <svg
           ref={svgRef}
           viewBox={`0 0 ${w} ${h}`}
-          className="h-auto min-w-0 flex-1 touch-pan-y"
+          className="h-auto w-full min-w-0 flex-1 touch-pan-y"
           role="img"
           aria-label={`Same money four ways: ${labels}`}
           onMouseMove={(e) => updateHoverFromClientX(e.clientX)}
@@ -304,7 +312,7 @@ function ComparePathsChart({
         )}
       </svg>
       </div>
-      <ChartXRail railClassName="w-16">
+      <ChartXRail railClassName="w-10 sm:w-16">
         {yearTicks.map((i) => {
           const isFirst = i === 0;
           const isLast = i === lastIdx;
@@ -326,9 +334,9 @@ function ComparePathsChart({
           );
         })}
       </ChartXRail>
-      <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted sm:grid-cols-4">
+      <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm text-muted sm:grid-cols-4">
         {paths.map((p) => (
-          <li key={p.id} className="inline-flex items-center gap-1.5">
+          <li key={p.id} className="inline-flex min-w-0 items-center gap-1.5">
             <span
               className="inline-block w-3.5"
               style={{
@@ -344,7 +352,7 @@ function ComparePathsChart({
       </ul>
       {hoverIdx != null && (
         <div
-          className="pointer-events-none absolute top-2 rounded-md border border-border bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
+          className="pointer-events-none absolute top-2 max-w-[min(16rem,calc(100%-0.75rem))] rounded-md border border-border bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
           style={{
             left: `${Math.min(
               82,
@@ -649,10 +657,11 @@ export function CompoundInterestSheet({
   }
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(320px,380px)_1fr]">
-      {/* min-h-0: grid items won't shrink below content, so overflow never starts. */}
-      <div className="min-h-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
-        <Panel>
+    <div className="grid w-full min-w-0 max-w-full items-start gap-5 overflow-x-clip lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+      {/* min-h-0 / min-w-0: grid items default to min-content, which lets
+          wide tables below blow the calculator off a phone screen. */}
+      <div className="min-h-0 min-w-0 w-full max-w-full lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
+        <Panel className={SHEET_PANEL}>
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}
           title="Growth calculator"
@@ -690,7 +699,7 @@ export function CompoundInterestSheet({
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
             aria-label="Where the starting amount comes from"
-            className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-brand"
+            className="w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-brand"
           >
             {bookValue > 0 && (
               <option value="book">
@@ -868,7 +877,7 @@ export function CompoundInterestSheet({
             value={shock}
             onChange={setShock}
           />
-          <p className="min-h-[2.75rem] text-sm leading-relaxed text-muted">
+          <p className="min-h-[2.75rem] text-sm leading-relaxed text-muted break-words">
             {shock === "drawdown30"
               ? "Down 30% in year one, then your rate. The ending is worse because the drop hits when the pile is biggest."
               : shock === "flat2y"
@@ -881,9 +890,9 @@ export function CompoundInterestSheet({
       </div>
 
       {/* Results & Projections Section */}
-      <section className="space-y-5">
+      <section className="min-w-0 w-full max-w-full space-y-5">
         {/* Hero KPI Summary */}
-        <Panel>
+        <Panel className={SHEET_PANEL}>
           <PanelHeader
             hero
             title={`Where ${durationLabel} of this gets you`}
@@ -907,7 +916,7 @@ export function CompoundInterestSheet({
             * more here and the first thing a person sees is a wall. */}
           <div className="mt-5">
             <MicroLabel>Ends up at</MicroLabel>
-            <p className="mt-1 text-2xl font-bold tabular-nums text-gain">
+            <p className="mt-1 text-2xl font-bold tabular-nums text-gain break-all">
               {show(result.futureValue)}
             </p>
           </div>
@@ -967,7 +976,7 @@ export function CompoundInterestSheet({
         </Panel>
 
         {/* Dual Path Chart */}
-        <Panel>
+        <Panel className={SHEET_PANEL}>
           <PanelHeader
             title="Same money, four paths"
             actions={
@@ -989,7 +998,7 @@ export function CompoundInterestSheet({
         </Panel>
 
         {/* Milestone Tracker */}
-        <Panel>
+        <Panel className={SHEET_PANEL}>
           <PanelHeader
             icon={<Target className="h-4 w-4" />}
             title="When you cross each round number"
@@ -1001,7 +1010,7 @@ export function CompoundInterestSheet({
           )}
           <div
             ref={milestoneScrollRef}
-            className="relative mt-4 max-h-[24rem] overflow-y-auto overflow-x-auto rounded-lg border border-border bg-raised"
+            className="relative mt-4 max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised"
           >
             <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
               <thead className="sticky top-0 z-10 bg-card">
@@ -1092,22 +1101,14 @@ export function CompoundInterestSheet({
           </div>
         </Panel>
 
-        <Panel>
+        <Panel className={SHEET_PANEL}>
           <PanelHeader
             title="Any single year, in words"
           />
           <Segmented
             ariaLabel="Year to read"
             className="mt-3"
-            columns={
-              storyOpts.length <= 3
-                ? Math.max(storyOpts.length, 1)
-                : storyOpts.length === 4
-                  ? 2
-                  : storyOpts.length === 5
-                    ? 5
-                    : 3
-            }
+            columns={storyOpts.length <= 3 ? Math.max(storyOpts.length, 1) : 3}
             options={storyOpts.map((y) => ({
               id: String(y),
               label: `Year ${y}`,
@@ -1125,7 +1126,7 @@ export function CompoundInterestSheet({
           {storyRow && (
             <Card tone="raised" className="mt-4 p-4">
               <MicroLabel>After year {storyRow.index}</MicroLabel>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+              <p className="mt-1 text-lg font-semibold tabular-nums text-foreground break-all">
                 {show(storyRow.balance)}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">
@@ -1141,7 +1142,7 @@ export function CompoundInterestSheet({
             <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>
-            <div className="overflow-x-auto border-t border-border">
+            <div className="min-w-0 max-w-full overflow-x-auto border-t border-border">
               <table className="w-full min-w-[32rem] text-left text-xs">
                 <thead>
                   <tr className="border-b border-border text-xs text-muted">
@@ -1190,7 +1191,7 @@ export function CompoundInterestSheet({
           </details>
         </Panel>
 
-        <Panel>
+        <Panel className={SHEET_PANEL}>
           <PanelHeader
             icon={<Zap className="h-4 w-4" />}
             title="The same money, invested differently"
@@ -1226,7 +1227,7 @@ export function CompoundInterestSheet({
                     {s.label}
                   </p>
                   <p
-                    className="mt-2 text-lg font-semibold leading-none tabular-nums whitespace-nowrap"
+                    className="mt-2 text-lg font-semibold leading-none tabular-nums break-all"
                     style={{ color: s.color }}
                   >
                     {show(s.result.futureValue)}
@@ -1243,7 +1244,7 @@ export function CompoundInterestSheet({
           </div>
         </Panel>
 
-        <Panel>
+        <Panel className={SHEET_PANEL}>
           <PanelHeader
             icon={<Sparkles className="h-4 w-4" />}
             title="What this actually tells you"
