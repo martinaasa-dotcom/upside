@@ -22,6 +22,7 @@ import {
   saveMilestoneActuals,
   storyYears,
   type CompareScenario,
+  type CompoundMilestone,
   type MilestoneActuals,
   type ShockKind,
 } from "@/lib/compound-play";
@@ -66,15 +67,6 @@ import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 
 type CurrencyCode = DisplayCurrency;
 
-function tint(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  const r = Number.parseInt(h.slice(0, 2), 16);
-  const g = Number.parseInt(h.slice(2, 4), 16);
-  const b = Number.parseInt(h.slice(4, 6), 16);
-  if (![r, g, b].every(Number.isFinite)) return hex;
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
 const CURRENCIES: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD" },
   { code: "EUR", label: "EUR" },
@@ -93,6 +85,98 @@ const RATE_PRESETS = [
   { id: "15", label: "15%" },
   { id: "25", label: "25%" },
 ] as const;
+
+function milestoneDone(row: CompoundMilestone): boolean {
+  return row.hit || Boolean(row.actualDate);
+}
+
+function milestoneWhen(row: CompoundMilestone): string {
+  if (row.actualDate) {
+    const [y, m, d] = row.actualDate.split("-").map(Number);
+    if (y && m && d) return formatMilestoneDate(new Date(y, m - 1, d));
+  }
+  if (row.hit) return "Already past it";
+  if (row.targetDate) return formatMilestoneDate(row.targetDate);
+  return "50+ years out";
+}
+
+function milestoneWait(row: CompoundMilestone): string | null {
+  if (milestoneDone(row) || row.yearsUntil == null) return null;
+  return `${row.yearsUntil.toFixed(1)} years`;
+}
+
+function MilestoneLadderRow({
+  row,
+  amount,
+  isNext = false,
+  onSetActual,
+}: {
+  row: CompoundMilestone;
+  amount: string;
+  isNext?: boolean;
+  onSetActual: (goal: number, iso: string) => void;
+}) {
+  const [logOpen, setLogOpen] = useState(false);
+  const done = milestoneDone(row);
+  const wait = milestoneWait(row);
+  return (
+    <li className={cn(isNext && "bg-brand/[0.08]")}>
+      <button
+        type="button"
+        aria-expanded={logOpen}
+        onClick={() => setLogOpen((v) => !v)}
+        className="flex w-full items-center gap-3 px-3 py-3 text-left"
+      >
+        {done ? (
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-gain" aria-hidden />
+        ) : (
+          <span
+            className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-brand-mid bg-transparent"
+            aria-hidden
+          />
+        )}
+        <span
+          className={cn(
+            "min-w-0 flex-1 tabular-nums font-medium",
+            done ? "font-semibold text-gain" : "text-foreground"
+          )}
+        >
+          {amount}
+        </span>
+        <span className="max-w-[11rem] shrink-0 text-right text-sm leading-snug">
+          <span
+            className={cn(
+              "tabular-nums",
+              done ? "font-semibold text-gain" : "text-foreground/80"
+            )}
+          >
+            {milestoneWhen(row)}
+          </span>
+          {wait ? (
+            <span className="mt-0.5 block text-muted">{wait}</span>
+          ) : null}
+        </span>
+      </button>
+      {logOpen ? (
+        <label className="block px-3 pb-3">
+          <span className="text-sm text-muted">Got there on</span>
+          <input
+            type="date"
+            aria-label={`Date you reached ${amount}`}
+            value={row.actualDate ?? ""}
+            onChange={(e) => onSetActual(row.goal, e.target.value)}
+            className={cn(
+              "mt-1 w-full rounded-lg border bg-well px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-brand",
+              done
+                ? "border-gain/40 text-gain"
+                : "border-border text-foreground/80"
+            )}
+          />
+        </label>
+      ) : null}
+    </li>
+  );
+}
 
 export type CompoundSheetOption = {
   id: string;
@@ -543,6 +627,8 @@ export function CompoundInterestSheet({
     () => buildMilestoneTakeaway(milestones),
     [milestones]
   );
+  const clearedMilestones = milestones.filter(milestoneDone);
+  const upcomingMilestones = milestones.filter((m) => !milestoneDone(m));
 
   const firstPendingRowRef = useRef<HTMLTableRowElement | null>(null);
   const milestoneScrollRef = useRef<HTMLDivElement | null>(null);
@@ -1008,9 +1094,47 @@ export function CompoundInterestSheet({
               {milestoneTakeaway}
             </p>
           )}
+          <div className="mt-4 lg:hidden">
+            {upcomingMilestones.length > 0 ? (
+              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+                {upcomingMilestones.map((row, i) => (
+                  <MilestoneLadderRow
+                    key={row.goal}
+                    row={row}
+                    amount={show(row.goal)}
+                    isNext={i === 0}
+                    onSetActual={setMilestoneActual}
+                  />
+                ))}
+              </ul>
+            ) : null}
+            {clearedMilestones.length > 0 ? (
+              <details
+                className={cn(
+                  "rounded-xl border border-border bg-raised",
+                  upcomingMilestones.length > 0 && "mt-3"
+                )}
+                {...(upcomingMilestones.length === 0 ? { open: true } : {})}
+              >
+                <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
+                  {clearedMilestones.length} already crossed
+                </summary>
+                <ul className="divide-y divide-border border-t border-border">
+                  {clearedMilestones.map((row) => (
+                    <MilestoneLadderRow
+                      key={row.goal}
+                      row={row}
+                      amount={show(row.goal)}
+                      onSetActual={setMilestoneActual}
+                    />
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+          </div>
           <div
             ref={milestoneScrollRef}
-            className="relative mt-4 max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised"
+            className="relative mt-4 hidden max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised lg:block"
           >
             <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
               <thead className="sticky top-0 z-10 bg-card">
@@ -1108,7 +1232,7 @@ export function CompoundInterestSheet({
           <Segmented
             ariaLabel="Year to read"
             className="mt-3"
-            columns={storyOpts.length <= 3 ? Math.max(storyOpts.length, 1) : 3}
+            columns={3}
             options={storyOpts.map((y) => ({
               id: String(y),
               label: `Year ${y}`,
@@ -1142,7 +1266,52 @@ export function CompoundInterestSheet({
             <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>
-            <div className="min-w-0 max-w-full overflow-x-auto border-t border-border">
+            <div className="space-y-3 border-t border-border p-3 md:hidden">
+              {result.yearly.map((row, i) => {
+                const isLast = i === result.yearly.length - 1;
+                const principalShown = row.balance - row.accruedInterest;
+                return (
+                  <div
+                    key={row.index}
+                    className={cn(
+                      "rounded-lg border border-border bg-card px-3 py-3",
+                      isLast && "ring-1 ring-brand/30"
+                    )}
+                  >
+                    <p className="text-sm font-medium text-foreground">
+                      {row.label}
+                    </p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted">Your money in</p>
+                        <p className="tabular-nums text-foreground/80">
+                          {show(principalShown)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted">Growth that year</p>
+                        <p className="tabular-nums text-caution">
+                          {show(row.interest)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted">Growth so far</p>
+                        <p className="tabular-nums text-caution">
+                          {show(row.accruedInterest)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted">Pot at year end</p>
+                        <p className="tabular-nums font-semibold text-gain">
+                          {show(row.balance)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden min-w-0 max-w-full overflow-x-auto border-t border-border md:block">
               <table className="w-full min-w-[32rem] text-left text-xs">
                 <thead>
                   <tr className="border-b border-border text-xs text-muted">
@@ -1201,47 +1370,52 @@ export function CompoundInterestSheet({
               {compareTakeaway}
             </p>
           )}
-          <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+          <Scoreboard cols={2} className="mt-5 max-sm:grid-cols-1">
             {compare.map((s) => {
-              const featured = s.id === "upside";
               const dashed = s.id === "mattress";
+              const valueClass =
+                s.id === "upside"
+                  ? "text-brand"
+                  : s.id === "mattress"
+                    ? "text-muted"
+                    : undefined;
               return (
-                <div
+                <Score
                   key={s.id}
-                  className="px-4 py-3.5"
-                  style={{
-                    background: `linear-gradient(180deg, ${tint(s.color, featured ? 0.16 : 0.08)} 0%, ${tint(s.color, featured ? 0.05 : 0.02)} 100%)`,
-                    boxShadow: `inset 3px 0 0 ${s.color}`,
-                  }}
-                >
-                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <span
-                      className="inline-block w-3.5 shrink-0"
-                      style={{
-                        borderTop: dashed
-                          ? `1.5px dashed ${s.color}`
-                          : `2px solid ${s.color}`,
-                      }}
-                      aria-hidden
-                    />
-                    {s.label}
-                  </p>
-                  <p
-                    className="mt-2 text-lg font-semibold leading-none tabular-nums break-all"
-                    style={{ color: s.color }}
-                  >
-                    {show(s.result.futureValue)}
-                  </p>
-                  <p className="mt-2 text-sm tabular-nums text-muted">
-                    {show(s.result.totalInterest)} growth
-                  </p>
-                  <p className="mt-2 text-sm leading-snug text-muted">
-                    {s.tagline}
-                  </p>
-                </div>
+                  className="min-w-0"
+                  label={
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-3.5 shrink-0"
+                        style={{
+                          borderTop: dashed
+                            ? `1.5px dashed ${s.color}`
+                            : `2px solid ${s.color}`,
+                        }}
+                        aria-hidden
+                      />
+                      {s.label}
+                    </span>
+                  }
+                  value={show(s.result.futureValue)}
+                  valueClassName={valueClass}
+                  sub={
+                    <>
+                      <span
+                        className={cn(
+                          "tabular-nums",
+                          s.result.totalInterest < 0 && "text-loss"
+                        )}
+                      >
+                        {show(s.result.totalInterest)} growth
+                      </span>
+                      <span className="mt-1 block">{s.tagline}</span>
+                    </>
+                  }
+                />
               );
             })}
-          </div>
+          </Scoreboard>
         </Panel>
 
         <Panel className={SHEET_PANEL}>
