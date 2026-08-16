@@ -9,13 +9,16 @@ import {
   signedPercent,
   signedTone,
 } from "@/lib/format";
-import { sanitizeTickerDraft } from "@/lib/input-guard";
+import { sanitizeTickerQuery } from "@/lib/input-guard";
 import { quotesUrl } from "@/lib/market/session";
 import {
   localTickerSuggestions,
-  mergeTickerSuggestions,
-  type TickerSuggestion,
+  looksLikeTickerQuery,
+  mergeAndRankTickerSuggestions,
+  pickTickerSuggestion,
 } from "@/lib/market/ticker-search";
+import { normalizeYahooTicker } from "@/lib/ticker";
+import { useTickerSearch } from "@/lib/use-ticker-search";
 import { FALLBACK_POPULAR_TICKERS } from "@/lib/popular-tickers";
 import type { Quote } from "@/lib/types";
 import { watchLook, type WatchLookKind } from "@/lib/watch-look";
@@ -51,12 +54,11 @@ export function WatchlistStrip({
   const [draft, setDraft] = useState("");
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [popular, setPopular] = useState<string[]>(POPULAR_SEED);
-  const [remote, setRemote] = useState<TickerSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [reportDays, setReportDays] = useState<Record<string, number>>({});
   const boxRef = useRef<HTMLFormElement>(null);
-  const searchGen = useRef(0);
+  const remote = useTickerSearch(draft);
 
   const heldKey = heldTickers.join("|");
   const names = useMemo(() => {
@@ -73,7 +75,13 @@ export function WatchlistStrip({
   }, [heldTickers, list]);
 
   const suggestions = useMemo(
-    () => mergeTickerSuggestions(localTickerSuggestions(draft, popular, exclude), remote, exclude),
+    () =>
+      mergeAndRankTickerSuggestions(
+        draft,
+        localTickerSuggestions(draft, popular, exclude),
+        remote,
+        exclude
+      ),
     [draft, popular, remote, exclude]
   );
 
@@ -139,31 +147,6 @@ export function WatchlistStrip({
   }, []);
 
   useEffect(() => {
-    const q = draft.trim();
-    if (q.length < 1) {
-      setRemote([]);
-      return;
-    }
-    const gen = ++searchGen.current;
-    const timer = window.setTimeout(() => {
-      void fetch(`/api/market/search?q=${encodeURIComponent(q)}`, {
-        cache: "no-store",
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data: { results?: TickerSuggestion[] } | null) => {
-          if (searchGen.current !== gen) return;
-          setRemote(Array.isArray(data?.results) ? data.results : []);
-        })
-        .catch(() => {
-          if (searchGen.current === gen) setRemote([]);
-        });
-    }, 220);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [draft]);
-
-  useEffect(() => {
     setActive(0);
   }, [draft, suggestions.length]);
 
@@ -175,14 +158,34 @@ export function WatchlistStrip({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  function add(symbol?: string) {
-    const t = (symbol ?? draft).trim().toUpperCase();
+  async function add(symbol?: string) {
+    let t = (symbol ?? "").trim();
+    if (t && !looksLikeTickerQuery(t)) t = "";
+    if (!t) {
+      const picked = pickTickerSuggestion(draft, suggestions);
+      t = picked?.symbol ?? "";
+    }
+    if (!t && draft.trim()) {
+      try {
+        const res = await fetch(
+          `/api/market/search?q=${encodeURIComponent(draft.trim())}`,
+          { cache: "no-store" }
+        );
+        const data = (await res.json()) as {
+          results?: { symbol: string; name: string | null }[];
+        };
+        t = pickTickerSuggestion(draft, data.results ?? [])?.symbol ?? "";
+      } catch {
+        t = "";
+      }
+    }
+    if (!t && looksLikeTickerQuery(draft)) t = normalizeYahooTicker(draft);
+    t = normalizeYahooTicker(t);
     if (!/^[A-Z0-9.=^-]{1,12}$/.test(t)) return;
     if (heldTickers.some((h) => h.toUpperCase() === t)) return;
     const next = addWatchlistTicker(list, t);
     setList(next);
     setDraft("");
-    setRemote([]);
     setOpen(false);
   }
 
@@ -195,13 +198,13 @@ export function WatchlistStrip({
           className="relative flex items-center gap-1.5"
           onSubmit={(e) => {
             e.preventDefault();
-            add(suggestions[active]?.symbol ?? draft);
+            void add(suggestions[active]?.symbol);
           }}
         >
           <input
             value={draft}
             onChange={(e) => {
-              setDraft(sanitizeTickerDraft(e.target.value).slice(0, 12));
+              setDraft(sanitizeTickerQuery(e.target.value));
               setOpen(true);
             }}
             onFocus={() => {
@@ -220,8 +223,8 @@ export function WatchlistStrip({
                 setOpen(false);
               }
             }}
-            placeholder="Add a name"
-            maxLength={12}
+            placeholder="Apple or NVDA"
+            maxLength={48}
             autoComplete="off"
             role="combobox"
             aria-expanded={open && suggestions.length > 0}
@@ -232,7 +235,7 @@ export function WatchlistStrip({
                 ? `watchlist-suggest-${suggestions[active]!.symbol}`
                 : undefined
             }
-            className="w-28 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
+            className="w-40 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand sm:w-52"
           />
           <button
             type="submit"

@@ -141,7 +141,9 @@ import {
 } from "../src/lib/popular-tickers";
 import {
   localTickerSuggestions,
+  looksLikeTickerQuery,
   mergeTickerSuggestions,
+  pickTickerSuggestion,
 } from "../src/lib/market/ticker-search";
 import {
   normalizeYahooTicker,
@@ -172,7 +174,7 @@ import {
   weightedMean,
 } from "../src/lib/money";
 import { cashtag, percent, signedPercent } from "../src/lib/format";
-import { sanitizeTickerDraft } from "../src/lib/input-guard";
+import { sanitizeTickerDraft, sanitizeTickerQuery } from "../src/lib/input-guard";
 import { priorPriceFromChange, synthesizeSparkline } from "../src/lib/market/sparkline";
 import { concentrationRead, themeBreakdown } from "../src/lib/allocation";
 import { analyzePortfolioShock } from "../src/lib/book-shock";
@@ -2659,11 +2661,52 @@ run("watchlist typeahead matches names as you type", () => {
   );
   assert.equal(merged[0]?.symbol, "GOOGL");
   assert.equal(merged[0]?.name, "Alphabet Inc.");
+  assert.equal(looksLikeTickerQuery("NVDA"), true);
+  assert.equal(looksLikeTickerQuery("spy5"), true);
+  assert.equal(looksLikeTickerQuery("Apple"), false);
+  assert.equal(looksLikeTickerQuery("iShares Core"), false);
+  assert.equal(
+    pickTickerSuggestion("Apple", [
+      { symbol: "AAPL", name: "Apple Inc." },
+      { symbol: "APLE", name: "Apple Hospitality REIT" },
+    ])?.symbol,
+    "AAPL"
+  );
+  assert.equal(
+    pickTickerSuggestion("NVDA", [
+      { symbol: "NVDL", name: "GraniteShares 2x NVIDIA" },
+      { symbol: "NVDA", name: "NVIDIA Corporation" },
+    ])?.symbol,
+    "NVDA"
+  );
+  assert.equal(
+    pickTickerSuggestion("SPY5", [
+      { symbol: "SPY", name: "SPDR S&P 500 ETF Trust" },
+      { symbol: "SPY5.DE", name: "iShares Core S&P 500" },
+    ])?.symbol,
+    "SPY5.DE"
+  );
+  assert.equal(
+    pickTickerSuggestion("NVIDIA", [
+      { symbol: "NVDA", name: "NVIDIA Corporation" },
+    ])?.symbol,
+    "NVDA"
+  );
+  assert.equal(sanitizeTickerQuery("Apple Inc"), "Apple Inc");
+  assert.equal(sanitizeTickerQuery("SPY5"), "SPY5");
   const strip = readFileSync(
     join(process.cwd(), "src/components/WatchlistStrip.tsx"),
     "utf8"
   );
   assert.match(strip, /\/api\/market\/search/);
+  assert.match(strip, /sanitizeTickerQuery/);
+  assert.match(strip, /pickTickerSuggestion/);
+  const holding = readFileSync(
+    join(process.cwd(), "src/components/HoldingModal.tsx"),
+    "utf8"
+  );
+  assert.match(holding, /sanitizeTickerQuery/);
+  assert.match(holding, /pickTickerSuggestion/);
 });
 
 run("Pulse can price a bare EU ETF like VUAA", () => {
@@ -2707,8 +2750,9 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
   assert.match(pulse, /normalizeYahooTicker/);
   assert.match(pulse, /resolveListedTicker/);
   assert.match(pulse, /\/api\/market\/search/);
-  assert.match(pulse, /sanitizeTickerDraft/);
-  assert.match(pulse, /\.DE/);
+  assert.match(pulse, /sanitizeTickerQuery/);
+  assert.match(pulse, /pickTickerSuggestion/);
+  assert.match(pulse, /looksLikeTickerQuery/);
   const quotes = readFileSync(
     join(process.cwd(), "src/lib/market/quotes.ts"),
     "utf8"

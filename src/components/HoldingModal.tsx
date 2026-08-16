@@ -1,13 +1,21 @@
 "use client";
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
+import { cashtag } from "@/lib/format";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   isSafePositiveMoney,
   isSafeShares,
-  sanitizeTickerDraft,
+  sanitizeTickerQuery,
 } from "@/lib/input-guard";
+import {
+  localTickerSuggestions,
+  looksLikeTickerQuery,
+  mergeAndRankTickerSuggestions,
+  pickTickerSuggestion,
+} from "@/lib/market/ticker-search";
+import { useTickerSearch } from "@/lib/use-ticker-search";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
 import { roundMoney, roundShares } from "@/lib/money";
 import {
@@ -47,6 +55,18 @@ export function HoldingModal({
   const [targetCall, setTargetCall] = useState("15");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
+  const remote = useTickerSearch(open ? ticker : "");
+  const suggestions = useMemo(
+    () =>
+      mergeAndRankTickerSuggestions(
+        ticker,
+        localTickerSuggestions(ticker, [], new Set()),
+        remote,
+        new Set()
+      ),
+    [ticker, remote]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -56,19 +76,40 @@ export function HoldingModal({
     setTargetCall("15");
     setError(null);
     setBusy(false);
+    setListOpen(false);
   }, [open]);
 
   if (!open) return null;
 
-  function submit(e: React.FormEvent) {
+  async function resolveHoldingTicker(raw: string): Promise<string> {
+    const picked = pickTickerSuggestion(raw, suggestions);
+    if (picked?.symbol) return normalizeYahooTicker(picked.symbol);
+    if (looksLikeTickerQuery(raw)) return normalizeYahooTicker(raw);
+    try {
+      const res = await fetch(
+        `/api/market/search?q=${encodeURIComponent(raw)}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) return "";
+      const data = (await res.json()) as {
+        results?: { symbol: string; name: string | null }[];
+      };
+      const hit = pickTickerSuggestion(raw, data.results ?? []);
+      return hit?.symbol ? normalizeYahooTicker(hit.symbol) : "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
     const sharesN = parseDecimal(shares);
     const buyN = parseDecimal(buyPrice);
     const callN = Math.round(parseDecimal(targetCall));
-    const normalizedTicker = normalizeYahooTicker(ticker);
+    const normalizedTicker = await resolveHoldingTicker(ticker.trim());
     if (!normalizedTicker) {
-      setError("Type a ticker first.");
+      setError("Type a ticker or a company name.");
       return;
     }
     if (!isPlausibleTicker(normalizedTicker)) {
@@ -97,7 +138,9 @@ export function HoldingModal({
     });
   }
 
-  const normalized = ticker.trim() ? normalizeYahooTicker(ticker) : "";
+  const normalized = looksLikeTickerQuery(ticker)
+    ? normalizeYahooTicker(ticker)
+    : pickTickerSuggestion(ticker, suggestions)?.symbol ?? "";
   const exchangeHint = normalized ? tickerExchangeHint(normalized) : null;
 
   return (
@@ -109,7 +152,7 @@ export function HoldingModal({
         onClick={onClose}
       />
       <form
-        onSubmit={submit}
+        onSubmit={(e) => void submit(e)}
         className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -129,22 +172,59 @@ export function HoldingModal({
 
         <div className="grid gap-3">
           <label className="grid gap-1 text-sm text-muted">
-            Ticker
-            <input
-              autoFocus
-              value={ticker}
-              onChange={(e) => {
-                setTicker(sanitizeTickerDraft(e.target.value));
-                setError(null);
-              }}
-              className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
-              placeholder="NBIS, SPY5, or VWCE.DE"
-              required
-            />
+            Ticker or company
+            <div className="relative">
+              <input
+                autoFocus
+                value={ticker}
+                onChange={(e) => {
+                  setTicker(sanitizeTickerQuery(e.target.value));
+                  setListOpen(true);
+                  setError(null);
+                }}
+                onFocus={() => {
+                  if (ticker.trim()) setListOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && suggestions[0] && listOpen) {
+                    e.preventDefault();
+                    setTicker(suggestions[0]!.symbol);
+                    setListOpen(false);
+                  }
+                }}
+                className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+                placeholder="Apple, NVDA, or SPY5"
+                required
+                autoComplete="off"
+              />
+              {listOpen && suggestions.length > 0 && (
+                <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-well shadow-xl">
+                  {suggestions.map((row) => (
+                    <li key={row.symbol}>
+                      <button
+                        type="button"
+                        className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-hover"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setTicker(row.symbol);
+                          setListOpen(false);
+                        }}
+                      >
+                        <span className="font-medium text-foreground">
+                          {cashtag(row.symbol)}
+                        </span>
+                        {row.name && (
+                          <span className="truncate text-muted">{row.name}</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <span className="text-sm leading-relaxed text-muted">
-              US: bare symbol. London:{" "}
-              <span className="text-muted">TICKER.L</span> or{" "}
-              <span className="text-muted">LON:TICKER</span>. Xetra:{" "}
+              Type the ticker or the company. London:{" "}
+              <span className="text-muted">TICKER.L</span>. Xetra:{" "}
               <span className="text-muted">SPY5</span> or{" "}
               <span className="text-muted">TICKER.DE</span>. Buy price in USD.
               {exchangeHint && normalized !== ticker.trim().toUpperCase() && (

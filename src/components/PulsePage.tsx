@@ -29,8 +29,14 @@ import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
-import type { TickerSuggestion } from "@/lib/market/ticker-search";
-import { sanitizeTickerDraft } from "@/lib/input-guard";
+import {
+  looksLikeTickerQuery,
+  mergeAndRankTickerSuggestions,
+  pickTickerSuggestion,
+  type TickerSuggestion,
+} from "@/lib/market/ticker-search";
+import { sanitizeTickerQuery } from "@/lib/input-guard";
+import { useTickerSearch } from "@/lib/use-ticker-search";
 import { normalizeYahooTicker, tickerStem } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
 import {
@@ -414,28 +420,22 @@ async function resolveListedTicker(
   raw: string,
   signal?: AbortSignal
 ): Promise<string> {
-  const resolved = normalizeYahooTicker(raw);
-  if (!resolved) return raw.trim().toUpperCase();
-  if (resolved.includes(".")) return resolved;
+  const query = raw.trim();
+  const resolved = looksLikeTickerQuery(query)
+    ? normalizeYahooTicker(query)
+    : "";
   try {
     const res = await fetch(
-      `/api/market/search?q=${encodeURIComponent(resolved)}`,
+      `/api/market/search?q=${encodeURIComponent(query)}`,
       { signal, cache: "no-store" }
     );
-    if (!res.ok) return resolved;
+    if (!res.ok) return resolved || query.toUpperCase();
     const data = (await res.json()) as { results?: TickerSuggestion[] };
-    const stem = tickerStem(resolved);
-    const results = data.results ?? [];
-    const hit =
-      results.find((row) => row.symbol.toUpperCase() === resolved) ??
-      results.find(
-        (row) => tickerStem(row.symbol) === stem && row.symbol.endsWith(".DE")
-      ) ??
-      results.find((row) => tickerStem(row.symbol) === stem);
-    return hit?.symbol ? normalizeYahooTicker(hit.symbol) : resolved;
+    const hit = pickTickerSuggestion(query, data.results ?? []);
+    return hit?.symbol ? normalizeYahooTicker(hit.symbol) : resolved || query.toUpperCase();
   } catch (err) {
-    if (isAbortError(err)) return resolved;
-    return resolved;
+    if (isAbortError(err)) return resolved || query.toUpperCase();
+    return resolved || query.toUpperCase();
   }
 }
 
@@ -452,6 +452,7 @@ export function PulsePage({
   const [pinnedTicker, setPinnedTicker] = useState<string | null>(null);
   const [lookupQuotes, setLookupQuotes] = useState<Record<string, Quote>>({});
   const searchRef = useRef<HTMLDivElement>(null);
+  const remoteSuggestions = useTickerSearch(searchInput);
 
   // Dashboard passes onStamp as an inline arrow and re-renders on a 1s timer,
   // so its identity changes constantly. Depending on it directly would rebuild
@@ -475,18 +476,19 @@ export function PulsePage({
   );
 
   const suggestions = useMemo(() => {
-    const q = searchInput.trim().toUpperCase();
+    const q = searchInput.trim();
     if (!q) return [];
-    const stem = tickerStem(q);
-    return bookTickers
+    const stem = tickerStem(q.toUpperCase());
+    const local = bookTickers
       .filter(
         (t) =>
-          t.includes(q) ||
+          t.includes(q.toUpperCase()) ||
           tickerStem(t) === stem ||
           tickerStem(t).startsWith(stem)
       )
-      .slice(0, 8);
-  }, [bookTickers, searchInput]);
+      .map((t) => ({ symbol: t, name: "in your portfolio" }));
+    return mergeAndRankTickerSuggestions(q, local, remoteSuggestions, new Set());
+  }, [bookTickers, remoteSuggestions, searchInput]);
 
   const candidates = useMemo(
     () => buildPulseCandidates(model, mergedQuotes),
@@ -872,18 +874,27 @@ export function PulsePage({
   }, [candidateSetKey]);
 
   async function checkTicker(tickerRaw: string) {
-    const typed = sanitizeTickerDraft(tickerRaw);
+    const typed = sanitizeTickerQuery(tickerRaw).trim();
     if (!typed) return;
     setSearchInput("");
     setError(null);
 
-    let ticker = normalizeYahooTicker(typed);
-    setPinnedTicker(ticker);
-    hydrateTicker(ticker);
+    const named = looksLikeTickerQuery(typed)
+      ? null
+      : pickTickerSuggestion(typed, suggestions);
+    let ticker = named?.symbol
+      ? normalizeYahooTicker(named.symbol)
+      : looksLikeTickerQuery(typed)
+        ? normalizeYahooTicker(typed)
+        : "";
+    if (ticker) {
+      setPinnedTicker(ticker);
+      hydrateTicker(ticker);
+    }
 
     let quoteMap = mergedQuotes;
-    let q = quoteForTicker(quoteMap, ticker);
-    if (!q) {
+    let q = ticker ? quoteForTicker(quoteMap, ticker) : null;
+    if (ticker && !q) {
       q = await fetchQuote(ticker, pageAbortRef.current.signal);
     }
     if (!q) {
@@ -894,7 +905,8 @@ export function PulsePage({
         (await fetchQuote(ticker, pageAbortRef.current.signal));
     }
     if (!q) {
-      setError(`Couldn't get a price for ${cashtag(typed)}. Check the ticker.`);
+      const label = looksLikeTickerQuery(typed) ? cashtag(typed) : typed;
+      setError(`Couldn't get a price for ${label}. Try the ticker or the company name.`);
       return;
     }
 
@@ -942,29 +954,31 @@ export function PulsePage({
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               value={searchInput}
-              onChange={(e) => setSearchInput(sanitizeTickerDraft(e.target.value))}
+              onChange={(e) => setSearchInput(sanitizeTickerQuery(e.target.value))}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && suggestions[0]) {
                   e.preventDefault();
-                  void checkTicker(suggestions[0]!);
+                  void checkTicker(suggestions[0]!.symbol);
                 }
               }}
-              placeholder="Check any ticker: NVDA, VUAA, SPY5"
-              aria-label="Ticker to check"
+              placeholder="NVDA, Apple, or SPY5"
+              aria-label="Ticker or company name to check"
               className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
               autoComplete="off"
             />
             {suggestions.length > 0 && searchInput.trim().length > 0 && (
               <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-well shadow-xl">
-                {suggestions.map((t) => (
-                  <li key={t}>
+                {suggestions.map((row) => (
+                  <li key={row.symbol}>
                     <button
                       type="button"
-                      className="block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-well"
-                      onClick={() => void checkTicker(t)}
+                      className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-well"
+                      onClick={() => void checkTicker(row.symbol)}
                     >
-                      {t}
-                      <span className="ml-2 text-sm text-muted">in your portfolio</span>
+                      <span className="font-medium">{cashtag(row.symbol)}</span>
+                      {row.name && (
+                        <span className="truncate text-muted">{row.name}</span>
+                      )}
                     </button>
                   </li>
                 ))}

@@ -1,9 +1,14 @@
+import { TICKER_QUERY_MAX } from "@/lib/input-guard";
+import {
+  looksLikeTickerQuery,
+  rankTickerSuggestions,
+  type TickerSuggestion,
+} from "@/lib/market/ticker-search";
 import {
   isPlausibleTicker,
   normalizeYahooTicker,
   tickerStem,
 } from "@/lib/ticker";
-import type { TickerSuggestion } from "@/lib/market/ticker-search";
 
 const WATCH_SYMBOL = /^[A-Z0-9.=^-]{1,12}$/;
 const SKIP_TYPES = new Set([
@@ -76,11 +81,12 @@ export async function searchYahooTickers(
   query: string
 ): Promise<TickerSuggestion[]> {
   const q = query.trim();
-  if (q.length < 1 || q.length > 24) return [];
+  if (q.length < 1 || q.length > TICKER_QUERY_MAX) return [];
   try {
     const yf = await getYahoo();
-    const normalized = normalizeYahooTicker(q);
-    const stem = tickerStem(normalized || q);
+    const tickerQuery = looksLikeTickerQuery(q);
+    const normalized = tickerQuery ? normalizeYahooTicker(q) : "";
+    const stem = tickerStem(normalized || q.toUpperCase());
     const seen = new Set<string>();
     const out: TickerSuggestion[] = [];
 
@@ -96,11 +102,19 @@ export async function searchYahooTickers(
     }
 
     const hasStem = out.some((row) => tickerStem(row.symbol) === stem);
-    if (!hasStem && normalized && !normalized.includes(".")) {
+    if (tickerQuery && !hasStem && normalized && !normalized.includes(".")) {
       collectSearchHits(await searchOnce(yf, `${normalized}.DE`), seen, out, 8);
     }
+    if (
+      tickerQuery &&
+      normalized &&
+      !seen.has(normalized) &&
+      (normalized.includes(".") || normalized !== q.toUpperCase())
+    ) {
+      out.unshift({ symbol: normalized, name: null });
+    }
 
-    return out;
+    return rankTickerSuggestions(q, out).slice(0, 8);
   } catch (err) {
     console.error("[ticker-search] Yahoo search failed", err);
     return [];

@@ -1,3 +1,4 @@
+import { TICKER_QUERY_MAX } from "@/lib/input-guard";
 import { searchYahooTickers } from "@/lib/market/ticker-search-yahoo";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -9,7 +10,7 @@ const CDN =
 
 export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
-  if (q.length < 1 || q.length > 24) {
+  if (q.length < 1 || q.length > TICKER_QUERY_MAX) {
     return NextResponse.json({ results: [] });
   }
 

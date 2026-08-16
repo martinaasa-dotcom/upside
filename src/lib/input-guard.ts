@@ -20,6 +20,19 @@ export function sanitizeTickerDraft(raw: string): string {
     .slice(0, 24);
 }
 
+/** Search box: a ticker or a company name. Keeps spaces. */
+export const TICKER_QUERY_MAX = 48;
+
+export function sanitizeTickerQuery(raw: string): string {
+  return raw
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/^[€$£]+/, "")
+    .replace(/[^A-Za-z0-9.:=\-^&/' ]/g, "")
+    .replace(/\s+/g, " ")
+    .slice(0, TICKER_QUERY_MAX);
+}
+
 export function isSafeShares(n: number): boolean {
   return Number.isFinite(n) && n > 0 && n <= MAX_SAFE_SHARES;
 }
