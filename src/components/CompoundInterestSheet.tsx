@@ -3,6 +3,7 @@
 import {
   COMPOUND_STORAGE_KEY,
   DEFAULT_COMPOUND_INPUTS,
+  calculateCompound,
   type CompoundInputs,
   type ContributionFrequency,
   type ContributionMode,
@@ -14,7 +15,6 @@ import {
   buildMilestoneTakeaway,
   buildNarrative,
   buildYearStories,
-  calculateWithShock,
   COMPOUND_CASH_YIELD_ANNUAL_PCT,
   findTippingYear,
   formatMilestoneDate,
@@ -24,7 +24,6 @@ import {
   type CompareScenario,
   type CompoundMilestone,
   type MilestoneActuals,
-  type ShockKind,
 } from "@/lib/compound-play";
 import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
 import { cn, percent } from "@/lib/format";
@@ -477,7 +476,6 @@ export function CompoundInterestSheet({
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   const [principalSource, setPrincipalSource] = useState<string>("custom");
   const [hydrated, setHydrated] = useState(false);
-  const [shock, setShock] = useState<ShockKind>("none");
   const [milestoneActuals, setMilestoneActuals] = useState<MilestoneActuals>(
     {}
   );
@@ -564,8 +562,8 @@ export function CompoundInterestSheet({
   );
 
   const result = useMemo(
-    () => calculateWithShock(liveInputs, shock),
-    [liveInputs, shock]
+    () => calculateCompound(liveInputs),
+    [liveInputs]
   );
 
   const tipping = useMemo(
@@ -687,7 +685,6 @@ export function CompoundInterestSheet({
       liveInputs.depositAmount > 0
         ? `+${show(liveInputs.depositAmount)}/mo deposits @ ${liveInputs.annualIncrease}% YoY`
         : `No deposits · pure compound`,
-      shock !== "none" ? `Shock: ${shock}` : null,
     ]
       .filter(Boolean)
       .join("\n");
@@ -944,30 +941,6 @@ export function CompoundInterestSheet({
               className={FIELD_CLASS}
             />
           </fieldset>
-        </section>
-
-        <section className="space-y-3 pt-5">
-          <span className="text-sm font-semibold text-foreground">
-            If it starts badly
-          </span>
-          <Segmented
-            ariaLabel="Rough start"
-            columns={3}
-            options={[
-              { id: "none", label: "Even years" },
-              { id: "drawdown30", label: "Crash first" },
-              { id: "flat2y", label: "Slow start" },
-            ]}
-            value={shock}
-            onChange={setShock}
-          />
-          <p className="min-h-[2.75rem] text-sm leading-relaxed text-muted break-words">
-            {shock === "drawdown30"
-              ? "Down 30% in year one, then your rate. The ending is worse because the drop hits when the pile is biggest."
-              : shock === "flat2y"
-                ? "Two quiet years first. Those two years cost more than they look like."
-                : "Years run at your rate from the start."}
-          </p>
         </section>
         </div>
         </Panel>

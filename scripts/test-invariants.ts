@@ -2041,6 +2041,9 @@ run("Compound controls sit on one panel, not nested cards", () => {
     controls,
     /id: "none"[\s\S]*?id: "deposits"[\s\S]*?id: "withdrawals"[\s\S]*?id: "both"/
   );
+  assert.doesNotMatch(src, /If it starts badly/);
+  assert.doesNotMatch(src, /Crash first|Slow start|Even years/);
+  assert.doesNotMatch(src, /drawdown30|flat2y|calculateWithShock|ShockKind/);
 });
 
 run("every tier's default surface uses the shared Panel shell", () => {
