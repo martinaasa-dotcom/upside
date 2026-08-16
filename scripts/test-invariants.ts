@@ -3221,6 +3221,34 @@ run("email and admin RPCs are not callable with a user JWT", () => {
       redeem
     )
   );
+  const reuse = readFileSync(
+    join(process.cwd(), "supabase/migrations/047_reusable_community_invites.sql"),
+    "utf8"
+  );
+  assert.match(reuse, /and email is null/);
+  assert.match(reuse, /and email is not null/);
+  assert.doesNotMatch(
+    reuse,
+    /and accepted_at is null\s+and \(expires_at is null or expires_at > now\(\)\)\s+and \(email is null/
+  );
+  const mint = readFileSync(
+    join(process.cwd(), "src/app/api/communities/[id]/invites/route.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(mint, /daysValid \?\? 14/);
+  assert.match(mint, /expiresAt: string \| null = null/);
+  const communityView = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(communityView, /daysValid: community\?\.kind === "classroom" \? 90 : 14/);
+  assert.match(communityView, /This link stays live/);
+  const joinPeek = readFileSync(
+    join(process.cwd(), "src/app/api/communities/join/route.ts"),
+    "utf8"
+  );
+  assert.match(joinPeek, /if \(row\.email && row\.accepted_at\)/);
+  assert.doesNotMatch(joinPeek, /row\.accepted_at \|\| row\.revoked_at/);
 });
 
 run("fund page does not read localStorage during render", () => {

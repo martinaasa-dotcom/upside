@@ -10,6 +10,7 @@ const KNOWN: Record<string, string> = {
   "name required": "Give it a name first.",
   "cash or holdings required": "Add cash or at least one holding.",
   "token required": "That invite link is missing a code.",
+  "Days must be at least 1.": "Put a number of days, or leave it empty to keep the link live.",
   "Invite code required": "Paste an invite code first.",
   "snapshotId required": "Pick a save first.",
   "snapshotId and portfolioId required": "Pick a save and a sheet first.",

@@ -45,18 +45,22 @@ export async function GET(req: NextRequest) {
 
   const { data: invite } = await supabase
     .from(PORTFELL_TABLES.communityInvites)
-    .select("community_id, expires_at, accepted_at, revoked_at")
+    .select("community_id, email, expires_at, accepted_at, revoked_at")
     .eq("token_hash", hashToken(token))
     .maybeSingle();
 
   const row = invite as {
     community_id?: string;
+    email?: string | null;
     expires_at?: string | null;
     accepted_at?: string | null;
     revoked_at?: string | null;
   } | null;
 
-  if (!row?.community_id || row.accepted_at || row.revoked_at) {
+  if (!row?.community_id || row.revoked_at) {
+    return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
+  }
+  if (row.email && row.accepted_at) {
     return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
   }
   if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
@@ -82,8 +86,8 @@ export async function GET(req: NextRequest) {
  *
  * Redemption goes through a security-definer RPC: the redeemer is by
  * definition not a member yet, so membership-based RLS can never authorize
- * this lookup directly — possessing the valid token is what should grant
- * access to that one invite row, not an existing relationship.
+ * this lookup directly. Possessing the valid token is the grant. Open
+ * community links stay reusable. Email-locked invites are still one use.
  */
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();

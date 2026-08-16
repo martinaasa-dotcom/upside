@@ -294,6 +294,7 @@ export function CommunityView({ communityId }: Props) {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteDays, setInviteDays] = useState("");
   const [busy, setBusy] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<{
@@ -1014,12 +1015,13 @@ export function CommunityView({ communityId }: Props) {
     setBusy(true);
     setInviteUrl(null);
     try {
+      const days = Math.floor(Number(inviteDays.trim()));
       const res = await fetch(`/api/communities/${communityId}/invites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: inviteEmail.trim() || undefined,
-          daysValid: community?.kind === "classroom" ? 90 : 14,
+          ...(Number.isFinite(days) && days >= 1 ? { daysValid: days } : {}),
         }),
       });
       const data = await res.json();
@@ -2204,8 +2206,8 @@ export function CommunityView({ communityId }: Props) {
                       </h2>
                       <p className="text-xs text-muted">
                         {isClassroom
-                          ? "Students join with this link. Each one gets the same paper cash and an empty sheet."
-                          : "Invites join the community. Each person picks which sheets to share. Today's prices only."}
+                          ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty sheet. Put a number of days only if you want it to die on its own."
+                          : "This link stays live. Anyone with it can join. Each person picks which sheets to share. Today's prices only. Put an email to lock it to one person. Put a number of days only if you want it to die on its own."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input
@@ -2214,6 +2216,16 @@ export function CommunityView({ communityId }: Props) {
                           onChange={(e) => setInviteEmail(e.target.value)}
                           placeholder="Email (optional)"
                           className="min-w-[12rem] flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="number"
+                          min={1}
+                          max={365}
+                          inputMode="numeric"
+                          value={inviteDays}
+                          onChange={(e) => setInviteDays(e.target.value)}
+                          placeholder="Days live (optional)"
+                          className="w-[9.5rem] rounded-lg border border-border bg-well px-3 py-2 text-sm"
                         />
                         <button
                           type="button"

@@ -31,12 +31,23 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const body = (await req.json().catch(() => ({}))) as {
     email?: string;
     role?: "admin" | "member";
-    daysValid?: number;
+    daysValid?: number | string | null;
   };
 
   const token = randomBytes(24).toString("base64url");
-  const days = Math.min(90, Math.max(1, Number(body.daysValid ?? 14)));
-  const expiresAt = new Date(Date.now() + days * 86400000).toISOString();
+  let expiresAt: string | null = null;
+  if (body.daysValid != null && body.daysValid !== "") {
+    const days = Math.floor(Number(body.daysValid));
+    if (!Number.isFinite(days) || days < 1) {
+      return NextResponse.json(
+        { error: "Days must be at least 1." },
+        { status: 400 }
+      );
+    }
+    expiresAt = new Date(
+      Date.now() + Math.min(365, days) * 86400000
+    ).toISOString();
+  }
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.communityInvites)
