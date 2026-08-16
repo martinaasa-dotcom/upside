@@ -11,7 +11,15 @@ import {
   type CycleMonthlyRow,
   type SeasonalityModel,
 } from "@/lib/market/seasonality";
-import { Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
+import {
+  Panel,
+  PanelHeader,
+  Score,
+  Scoreboard,
+  SPLIT_ACTIONS,
+  SPLIT_COPY,
+  SPLIT_ROW,
+} from "@/components/ui/Panel";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAbortError } from "@/lib/abort";
@@ -435,11 +443,12 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-xl border px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between",
+        SPLIT_ROW,
+        "rounded-xl border px-4 py-3.5",
         stanceStyles(s.stance)
       )}
     >
-      <div className="min-w-0 flex-1">
+      <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-muted">
           {stanceLabel(s.stance)} · this month
         </p>
@@ -447,7 +456,8 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
         <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.detail}</p>
       </div>
       {typeof s.figurePct === "number" ? (
-        <div className="shrink-0 sm:text-right">
+        <div className={cn(SPLIT_ACTIONS, "sm:justify-end")}>
+          <div className="sm:text-right">
           <p
             className={cn(
               "text-lg font-semibold tabular-nums",
@@ -460,6 +470,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
             {s.winRate}% of years up · {s.samples}{" "}
             {s.samples === 1 ? "year" : "years"}
           </p>
+          </div>
         </div>
       ) : null}
     </div>
@@ -588,18 +599,16 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   return (
     <div className="flex flex-col gap-5">
       <Panel>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
+        <div className={SPLIT_ROW}>
+          <div className={SPLIT_COPY}>
             {model ? (
-              <>
-                <p className="text-sm leading-relaxed text-muted">
-                  {model.asOfYear} · {model.currentCycleLabel} year ·{" "}
-                  {cashtag(model.ticker)} since {model.from.slice(0, 4)}. Months
-                  and days that have historically been kind, and those that
-                  have not. Only prior {model.currentCycleLabel.toLowerCase()}{" "}
-                  years. Nothing about your own holdings.
-                </p>
-              </>
+              <p className="text-sm leading-relaxed text-muted">
+                {model.asOfYear} · {model.currentCycleLabel} year ·{" "}
+                {cashtag(model.ticker)} since {model.from.slice(0, 4)}. Months
+                and days that have historically been kind, and those that
+                have not. Only prior {model.currentCycleLabel.toLowerCase()}{" "}
+                years. Nothing about your own holdings.
+              </p>
             ) : (
               <p className="text-sm leading-relaxed text-muted">
                 Which months and days have historically been kind to the
@@ -608,7 +617,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               </p>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className={SPLIT_ACTIONS}>
             <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted sm:flex-none">
               <span className="shrink-0">Benchmark</span>
               <select
