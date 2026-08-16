@@ -10,6 +10,7 @@ import {
   startPeriodNow,
   type ClassPeriodKind,
 } from "@/lib/classroom";
+import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -148,6 +149,11 @@ export async function POST(req: NextRequest) {
   if (mErr) {
     return NextResponse.json({ error: mErr.message }, { status: 500 });
   }
+
+  await shareOwnedSheetsIntoCommunity(supabase, {
+    communityId: (community as { id: string }).id,
+    userId: auth.user.id,
+  });
 
   return NextResponse.json({
     community: { ...(community as object), role: "admin" },

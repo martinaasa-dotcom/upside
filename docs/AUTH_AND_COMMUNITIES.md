@@ -4,7 +4,7 @@
 
 - **My book**: Google-signed-in users co-own portfolios via `portfell_portfolio_owners` (many users ↔ many portfolios). Full live read **and** write for every co-owner.
 - `portfell_portfolios.owner_id` remains as optional primary/creator hint; **authorization uses the junction table**.
-- **Communities**: members see each co-owner’s book live, **read-only**.
+- **Communities**: members see each co-owner’s book live, **read-only**. Invite joins and existing members show every real portfolio unless the owner turns one off. A public join request lets them pick which portfolios the circle will see. Classrooms stay paper-only. Never share a real book into a class.
 - Sheet PIN/password and guest share links are **removed** — Google session + co-ownership is the only gate.
 - Community membership is **always opt-in, never automatic**. Signing in never adds anyone to any community (fixed in `030`, see below). A community is either:
   - **Private** (default): invite-link only, exactly like portfolio co-ownership.
@@ -84,7 +84,8 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `015` superadmin overview RPC  
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
 - `049` Karud household alias (`karukaroliine99@gmail.com` → `rasmusmarjapuu@gmail.com`) so Circle and the community book show one person, and Karoliine claims Karud instead of an empty first-run book
-- `050` community invite uses log + `token_hint`. Redeem RPC records who used which link. Admin list + retire.  
+- `050` community invite uses log + `token_hint`. Redeem RPC records who used which link. Admin list + retire.
+- `051` circle share is opt-out again. Backfill members' real portfolios into non-class circles. Public join requests can store `share_portfolio_ids`.  
 
 - `017` RLS hardening — closed a self co-owner-escalation hole on `portfell_portfolio_owners`, a world-readable `portfell_book_snapshots` policy, a stale shared-row leak on `portfell_lab_state`, and a null-email coalesce bug on invite `SELECT` policies
 - `018` fixed `portfell_claim_seed_for_me()` — a PL/pgSQL loop variable named `slug` collided with the `portfell_portfolios.slug` column, so every first-time seed claim raised "column reference is ambiguous" and rolled back (profile included). Silently broken since `010`; only worked for people seeded directly via `scripts/seed-ownership.sql` (Martin/Martina/Amanda). Rasmus was backfilled manually after the fix; Karoliine and Liina will claim normally on their first sign-in now

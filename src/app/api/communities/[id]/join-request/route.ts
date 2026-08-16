@@ -3,6 +3,10 @@ import {
   userIsCommunityMember,
 } from "@/lib/auth/ownership";
 import { provisionClassroomSheet } from "@/lib/classroom";
+import {
+  parseSharePortfolioIds,
+  shareOwnedSheetsIntoCommunity,
+} from "@/lib/community-share";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -15,7 +19,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /** Request to join a PUBLIC community — never auto-joins; an admin has to
  * approve. Re-requesting after a rejection resets the same row to pending
  * rather than erroring on the unique constraint. */
-export async function POST(_req: NextRequest, ctx: Ctx) {
+export async function POST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -44,6 +48,11 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Already a member" }, { status: 400 });
   }
 
+  const body = (await req.json().catch(() => ({}))) as {
+    portfolioIds?: unknown;
+  };
+  const shareIds = parseSharePortfolioIds(body.portfolioIds);
+
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.communityJoinRequests)
     .upsert(
@@ -54,6 +63,7 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
         requested_at: new Date().toISOString(),
         decided_at: null,
         decided_by: null,
+        share_portfolio_ids: shareIds,
       },
       { onConflict: "community_id,user_id" }
     )
@@ -115,7 +125,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const { data: request } = await supabase
     .from(PORTFELL_TABLES.communityJoinRequests)
-    .select("id, status")
+    .select("id, status, share_portfolio_ids")
     .eq("community_id", id)
     .eq("user_id", targetUserId)
     .maybeSingle();
@@ -133,6 +143,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     await provisionClassroomSheet(supabase, {
       communityId: id,
       userId: targetUserId,
+    });
+    const picked = (request as { share_portfolio_ids?: string[] | null })
+      .share_portfolio_ids;
+    await shareOwnedSheetsIntoCommunity(supabase, {
+      communityId: id,
+      userId: targetUserId,
+      portfolioIds: picked ?? null,
     });
   }
 

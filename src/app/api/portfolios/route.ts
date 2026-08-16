@@ -12,6 +12,7 @@ import {
   type ClassroomTrade,
 } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
+import { shareNewSheetIntoMemberCircles } from "@/lib/community-share";
 import { sanitizeSheetName } from "@/lib/input-guard";
 import { roundMoney } from "@/lib/money";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
@@ -190,6 +191,16 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const created = data as { id?: string; name?: string } | null;
+  const dataClient = await getSupabaseDataClient();
+  if (dataClient && created?.id) {
+    await shareNewSheetIntoMemberCircles(dataClient, {
+      userId: auth.user.id,
+      portfolioId: created.id,
+      name: created.name ?? name,
+    });
   }
 
   return NextResponse.json({

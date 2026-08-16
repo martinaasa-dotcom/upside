@@ -2255,7 +2255,7 @@ export function CommunityView({ communityId }: Props) {
                       <p className="text-xs text-muted">
                         {isClassroom
                           ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty portfolio. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."
-                          : "This link stays live. Anyone with it can join. Each person picks which portfolios to share. Today's prices only. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."}
+                          : "This link stays live. Anyone with it can join. Their portfolios show up here. They can turn one off later. Today's prices only. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <input

@@ -78,6 +78,7 @@ import {
   parseManualFeedback,
   parseWeeklyFeedback,
 } from "../src/lib/feedback";
+import { parseSharePortfolioIds } from "../src/lib/community-share";
 import {
   inviteFromLocation,
   inviteLandingCopy,
@@ -3681,6 +3682,48 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   );
   assert.doesNotMatch(joinPeek, /row\.email && row\.accepted_at/);
   assert.doesNotMatch(joinPeek, /row\.accepted_at \|\| row\.revoked_at/);
+});
+
+run("circle portfolios show unless you turn one off", () => {
+  assert.equal(parseSharePortfolioIds(null), null);
+  assert.deepEqual(parseSharePortfolioIds([]), []);
+  assert.deepEqual(
+    parseSharePortfolioIds(["a0000000-0000-4000-8000-000000000001", "nope"]),
+    ["a0000000-0000-4000-8000-000000000001"]
+  );
+  const share = readFileSync(
+    join(process.cwd(), "src/lib/community-share.ts"),
+    "utf8"
+  );
+  assert.match(share, /isClassroomKind/);
+  assert.match(share, /classroom_community_id/);
+  const joinRoute = readFileSync(
+    join(process.cwd(), "src/app/api/communities/join/route.ts"),
+    "utf8"
+  );
+  assert.match(joinRoute, /shareOwnedSheetsIntoCommunity/);
+  const req = readFileSync(
+    join(process.cwd(), "src/app/api/communities/[id]/join-request/route.ts"),
+    "utf8"
+  );
+  assert.match(req, /share_portfolio_ids/);
+  const mig = readFileSync(
+    join(process.cwd(), "supabase/migrations/051_circle_share_opt_out.sql"),
+    "utf8"
+  );
+  assert.match(mig, /is distinct from 'classroom'/);
+  assert.match(mig, /classroom_community_id is null/);
+  const sheetsUi = readFileSync(
+    join(process.cwd(), "src/components/ShareSheets.tsx"),
+    "utf8"
+  );
+  assert.match(sheetsUi, /These are on unless you turn one off/);
+  const list = readFileSync(
+    join(process.cwd(), "src/components/CommunitiesList.tsx"),
+    "utf8"
+  );
+  assert.match(list, /What should /);
+  assert.match(list, /portfolioIds/);
 });
 
 run("in-app feedback is directed weekly and freeform when you open it", () => {

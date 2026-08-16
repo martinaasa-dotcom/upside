@@ -249,6 +249,7 @@ export type Database = {
           id: string
           message: string | null
           requested_at: string
+          share_portfolio_ids: string[] | null
           status: string
           user_id: string
         }
@@ -259,6 +260,7 @@ export type Database = {
           id?: string
           message?: string | null
           requested_at?: string
+          share_portfolio_ids?: string[] | null
           status?: string
           user_id: string
         }
@@ -269,6 +271,7 @@ export type Database = {
           id?: string
           message?: string | null
           requested_at?: string
+          share_portfolio_ids?: string[] | null
           status?: string
           user_id?: string
         }

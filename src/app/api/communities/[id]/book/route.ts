@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Full community book: only sheets someone opted to share (read-only). */
+/** Full community book: portfolios shown here, opt-out (read-only). */
 export async function GET(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;

@@ -107,11 +107,11 @@ export function ShareSheets({
     <section className="space-y-3 rounded-xl border border-border p-4">
       <div>
         <h2 className="text-sm font-medium text-foreground">
-          Sheets you share here
+          Portfolios this circle can see
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Off means this circle cannot see that book. Today&apos;s prices only.
-          Cost stays on your sheet.
+          These are on unless you turn one off. Today&apos;s prices only. What
+          you paid stays with you.
         </p>
       </div>
       {error && <p className="text-sm text-loss">{error}</p>}

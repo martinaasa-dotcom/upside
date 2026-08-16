@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { provisionClassroomSheet } from "@/lib/classroom";
+import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { clipInviteName } from "@/lib/invite-landing";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
@@ -131,6 +132,10 @@ export async function POST(req: NextRequest) {
   let kind: string | null = null;
   if (dataClient && result.community_id) {
     await provisionClassroomSheet(dataClient, {
+      communityId: result.community_id,
+      userId: auth.user.id,
+    });
+    await shareOwnedSheetsIntoCommunity(dataClient, {
       communityId: result.community_id,
       userId: auth.user.id,
     });

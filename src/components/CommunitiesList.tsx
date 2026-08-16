@@ -20,6 +20,7 @@ import {
   type CommunityListRow,
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
+import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { Panel, PanelHeader, Segmented } from "@/components/ui/Panel";
 import {
   CLASS_TEMPLATES,
@@ -69,6 +70,12 @@ export function CommunitiesList() {
     []
   );
   const [requestBusyId, setRequestBusyId] = useState<string | null>(null);
+  const [joinPick, setJoinPick] = useState<{
+    communityId: string;
+    name: string;
+    sheets: { id: string; name: string }[];
+    selected: string[];
+  } | null>(null);
 
   async function load(signal?: AbortSignal) {
     const hadCache = (loadCommunityListCache()?.length ?? 0) > 0;
@@ -126,17 +133,25 @@ export function CommunitiesList() {
     void loadDiscover(ctrl.signal);
   });
 
-  async function requestToJoin(communityId: string) {
+  async function sendJoinRequest(
+    communityId: string,
+    portfolioIds: string[] | null
+  ) {
     setRequestBusyId(communityId);
     try {
       const res = await fetch(`/api/communities/${communityId}/join-request`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          portfolioIds != null ? { portfolioIds } : {}
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(plainError(data.error, "Couldn't send that request."));
         return;
       }
+      setJoinPick(null);
       setDiscover((rows) => {
         const next = rows.map((r) =>
           r.id === communityId ? { ...r, requestStatus: "pending" as const } : r
@@ -144,6 +159,45 @@ export function CommunitiesList() {
         saveCommunityDiscoverCache(next);
         return next;
       });
+    } finally {
+      setRequestBusyId(null);
+    }
+  }
+
+  async function beginJoinRequest(communityId: string, communityName: string) {
+    setRequestBusyId(communityId);
+    setError(null);
+    try {
+      const res = await fetch("/api/portfolios", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          plainError(data.error, "Couldn't load your portfolios.")
+        );
+      }
+      const sheets = (
+        (data.portfolios ?? []) as {
+          id: string;
+          name: string;
+          classroom_community_id?: string | null;
+        }[]
+      )
+        .filter((p) => !p.classroom_community_id)
+        .map((p) => ({ id: p.id, name: p.name }));
+      if (sheets.length === 0) {
+        await sendJoinRequest(communityId, null);
+        return;
+      }
+      setJoinPick({
+        communityId,
+        name: communityName,
+        sheets,
+        selected: sheets.map((s) => s.id),
+      });
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Couldn't load your portfolios."
+      );
     } finally {
       setRequestBusyId(null);
     }
@@ -271,8 +325,8 @@ export function CommunitiesList() {
               </h2>
             </div>
             <p className="mb-3 text-sm text-muted">
-              Anyone can ask to join. An admin still has to approve before
-              you see any books.
+              Anyone can ask to join. You pick which portfolios they can
+              see. An admin still has to approve.
             </p>
             {discover.length === 0 ? (
               <p className="rounded-2xl border border-border bg-card/80 px-4 py-6 text-sm leading-relaxed text-muted">
@@ -310,7 +364,7 @@ export function CommunitiesList() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => void requestToJoin(c.id)}
+                        onClick={() => void beginJoinRequest(c.id, c.name)}
                         disabled={requestBusyId === c.id}
                         className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
                       >
@@ -458,6 +512,90 @@ export function CommunitiesList() {
         </main>
         <BookBottomNav />
       </div>
+
+      {joinPick && (
+        <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            aria-label="Close"
+            onClick={() => setJoinPick(null)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="join-share-title"
+            className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+          >
+            <h3
+              id="join-share-title"
+              className="text-base font-semibold text-foreground"
+            >
+              What should {joinPick.name} see?
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Everything is on. Turn one off if you want it private. You can
+              change this later.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {joinPick.sheets.map((s) => {
+                const on = joinPick.selected.includes(s.id);
+                return (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setJoinPick((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                selected: on
+                                  ? prev.selected.filter((id) => id !== s.id)
+                                  : [...prev.selected, s.id],
+                              }
+                            : prev
+                        )
+                      }
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm",
+                        on
+                          ? "border-white/25 bg-hover text-foreground"
+                          : "border-border bg-well/60 text-foreground/80"
+                      )}
+                    >
+                      <span className="min-w-0 truncate">{s.name}</span>
+                      <span className="shrink-0 text-sm text-muted">
+                        {on ? "On" : "Off"}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setJoinPick(null)}
+                className="touch-target rounded-lg px-3 py-2 text-sm text-muted hover:bg-hover hover:text-foreground"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={requestBusyId === joinPick.communityId}
+                onClick={() =>
+                  void sendJoinRequest(joinPick.communityId, joinPick.selected)
+                }
+                className="btn-primary disabled:opacity-50"
+              >
+                {requestBusyId === joinPick.communityId
+                  ? "Requesting …"
+                  : "Send request"}
+              </button>
+            </div>
+          </div>
+        </ViewportOverlay>
+      )}
     </SignInGate>
   );
 }
