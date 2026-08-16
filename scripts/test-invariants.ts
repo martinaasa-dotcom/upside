@@ -72,6 +72,13 @@ import {
   inviteUsesLabel,
 } from "../src/lib/community-invite-admin";
 import {
+  FEEDBACK_TO,
+  FEEDBACK_WEEK_MS,
+  isWeeklyFeedbackDue,
+  parseManualFeedback,
+  parseWeeklyFeedback,
+} from "../src/lib/feedback";
+import {
   inviteFromLocation,
   inviteLandingCopy,
 } from "../src/lib/invite-landing";
@@ -3671,6 +3678,92 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   );
   assert.doesNotMatch(joinPeek, /row\.email && row\.accepted_at/);
   assert.doesNotMatch(joinPeek, /row\.accepted_at \|\| row\.revoked_at/);
+});
+
+run("in-app feedback is directed weekly and freeform when you open it", () => {
+  assert.equal(FEEDBACK_TO, "martin.aasa@upthink.ee");
+  assert.equal(FEEDBACK_WEEK_MS, 7 * 24 * 60 * 60 * 1000);
+  const now = Date.parse("2026-08-16T12:00:00Z");
+  assert.equal(
+    isWeeklyFeedbackDue(
+      {
+        firstSeenAt: "2026-08-16T11:00:00Z",
+        lastPromptAt: null,
+        lastSubmittedAt: null,
+        snoozeUntil: null,
+      },
+      now
+    ),
+    false
+  );
+  assert.equal(
+    isWeeklyFeedbackDue(
+      {
+        firstSeenAt: "2026-08-01T12:00:00Z",
+        lastPromptAt: null,
+        lastSubmittedAt: null,
+        snoozeUntil: null,
+      },
+      now
+    ),
+    true
+  );
+  assert.equal(
+    isWeeklyFeedbackDue(
+      {
+        firstSeenAt: "2026-08-01T12:00:00Z",
+        lastPromptAt: "2026-08-15T12:00:00Z",
+        lastSubmittedAt: null,
+        snoozeUntil: "2026-08-22T12:00:00Z",
+      },
+      now
+    ),
+    false
+  );
+  assert.equal(parseWeeklyFeedback({}).ok, false);
+  assert.equal(parseWeeklyFeedback({ feel: "easy" }).ok, true);
+  assert.equal(parseWeeklyFeedback({ feel: "nope" }).ok, false);
+  assert.equal(parseManualFeedback({ topic: "Bug", body: "short" }).ok, false);
+  assert.equal(
+    parseManualFeedback({
+      topic: "Bug",
+      body: "The add name flow ate my ticker.",
+    }).ok,
+    true
+  );
+  const api = readFileSync(
+    join(process.cwd(), "src/app/api/feedback/route.ts"),
+    "utf8"
+  );
+  assert.match(api, /FEEDBACK_TO/);
+  assert.match(api, /kind === "weekly"/);
+  assert.match(api, /kind === "manual"/);
+  assert.match(api, /replyTo/);
+  const modal = readFileSync(
+    join(process.cwd(), "src/components/FeedbackModal.tsx"),
+    "utf8"
+  );
+  assert.match(modal, /How was this week\?/);
+  assert.match(modal, /Tell Martin/);
+  assert.match(modal, /What actually helped\?/);
+  assert.match(modal, /What is this about\?/);
+  assert.match(modal, /mode === "weekly"/);
+  assert.equal(
+    (modal.match(/<textarea/g) || []).length,
+    1,
+    "only the manual form is a free box"
+  );
+  const header = readFileSync(
+    join(process.cwd(), "src/components/AppHeader.tsx"),
+    "utf8"
+  );
+  assert.match(header, /FeedbackHeaderButton/);
+  const host = readFileSync(
+    join(process.cwd(), "src/components/FeedbackHost.tsx"),
+    "utf8"
+  );
+  assert.match(host, /isWeeklyFeedbackDue/);
+  assert.match(host, /setMode\("manual"\)/);
 });
 
 run("community invite admin list reads like Discord", () => {

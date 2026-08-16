@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProvider } from "@/components/AuthProvider";
+import { FeedbackHost } from "@/components/FeedbackHost";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useVisualViewportVars } from "@/lib/use-visual-viewport";
 import type { ReactNode } from "react";
@@ -33,7 +34,7 @@ export function Providers({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <OfflineBanner />
-      {children}
+      <FeedbackHost>{children}</FeedbackHost>
     </AuthProvider>
   );
 }

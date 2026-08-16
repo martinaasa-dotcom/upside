@@ -14,6 +14,7 @@ export async function sendNoteEmail(input: {
   subject: string;
   text: string;
   html?: string;
+  replyTo?: string;
 }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY?.trim();
   const from = process.env.RESEND_FROM?.trim() || DEFAULT_FROM;
@@ -25,6 +26,7 @@ export async function sendNoteEmail(input: {
     subject: input.subject,
     text: input.text,
     html: input.html ?? fallbackNoteHtml(input.text),
+    ...(input.replyTo ? { replyTo: input.replyTo } : {}),
     headers: {
       "List-Unsubscribe": "<https://upsidelab.app/account>",
       "X-Entity-Ref-ID": crypto.randomUUID(),

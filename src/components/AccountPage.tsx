@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { AppHeader } from "@/components/AppHeader";
 import { BookBottomNav } from "@/components/BookBottomNav";
+import { useFeedback } from "@/components/FeedbackHost";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
@@ -32,6 +33,7 @@ import {
   Gauge,
   Link2,
   LogOut,
+  MessageSquare,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -73,6 +75,7 @@ function VisitStreakCard() {
 export function AccountPage() {
   const router = useRouter();
   const { profile, user, signOut, refresh } = useAuth();
+  const { openManual } = useFeedback();
   const later = useTimeout();
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -282,6 +285,27 @@ export function AccountPage() {
           </div>
 
           <WidgetErrorBoundary name="Account">
+          <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
+                <MessageSquare className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-foreground">Feedback</h2>
+                <p className="text-sm text-muted">
+                  A bug, a missing thing, or a rant. Martin reads these.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={openManual}
+              className="btn-primary"
+            >
+              Tell Martin
+            </button>
+          </section>
+
           <VisitStreakCard />
 
           <section className="space-y-3 rounded-2xl border border-border bg-card/80 p-4 sm:p-5">

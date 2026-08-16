@@ -13,6 +13,7 @@ import { ForecastPanel, ForecastOffStub } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
 import { LabSheet } from "@/components/LabSheet";
+import { useFeedback } from "@/components/FeedbackHost";
 import { HeaderOverflowMenu, type HeaderMenuItem } from "@/components/HeaderOverflowMenu";
 import { OverviewDashboard, type LabDeepLink } from "@/components/OverviewDashboard";
 import {
@@ -294,6 +295,7 @@ function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
 export function Dashboard() {
   const { push: toast } = useToast();
   const { profile, signOut, refresh, user } = useAuth();
+  const { openManual } = useFeedback();
   const later = useTimeout();
   const router = useRouter();
   // Picked once per mount, not per render, so it doesn't shuffle mid-load.
@@ -2673,6 +2675,11 @@ export function Dashboard() {
         id: "account",
         label: "Account",
         onSelect: () => router.push("/account"),
+      },
+      {
+        id: "feedback",
+        label: "Feedback",
+        onSelect: () => openManual(),
       },
       {
         id: "snapshots",

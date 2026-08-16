@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useFeedback } from "@/components/FeedbackHost";
 import { AppStatusStrip, type AppStatusProps } from "@/components/AppStatusStrip";
 import { HeaderBrand } from "@/components/HeaderBrand";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
@@ -25,6 +26,21 @@ type Props = {
   className?: string;
   status?: AppStatusProps;
 };
+
+function FeedbackHeaderButton() {
+  const { user } = useAuth();
+  const { openManual } = useFeedback();
+  if (!user) return null;
+  return (
+    <button
+      type="button"
+      onClick={openManual}
+      className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-sm font-medium text-muted hover:border-brand hover:text-foreground"
+    >
+      Feedback
+    </button>
+  );
+}
 
 function DefaultAccountEnd() {
   const { user, profile } = useAuth();
@@ -106,6 +122,7 @@ export function AppHeader({
             </div>
             <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-1.5">
               {children}
+              <FeedbackHeaderButton />
               {showWorkspaceNav && <WorkspaceSwitcher />}
               {end ?? <DefaultAccountEnd />}
             </div>
