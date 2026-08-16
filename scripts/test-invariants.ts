@@ -3393,8 +3393,10 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
     join(process.cwd(), "src/components/CompoundInterestSheet.tsx"),
     "utf8"
   );
-  assert.match(compareUi, /featured \? "brand"/);
-  assert.match(compareUi, /This plan/);
+  assert.doesNotMatch(compareUi, /This plan/);
+  assert.doesNotMatch(compareUi, /featured \? "brand"/);
+  assert.match(compareUi, /inset 3px 0 0/);
+  assert.match(compareUi, /s\.color/);
 });
 
 run("Fund page labels Margus's note Thesis", () => {

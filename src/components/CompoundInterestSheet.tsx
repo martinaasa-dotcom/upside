@@ -63,6 +63,15 @@ import {
 
 type CurrencyCode = DisplayCurrency;
 
+function tint(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = Number.parseInt(h.slice(0, 2), 16);
+  const g = Number.parseInt(h.slice(2, 4), 16);
+  const b = Number.parseInt(h.slice(4, 6), 16);
+  if (![r, g, b].every(Number.isFinite)) return hex;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 const CURRENCIES: { code: CurrencyCode; label: string }[] = [
   { code: "USD", label: "USD" },
   { code: "EUR", label: "EUR" },
@@ -1250,38 +1259,43 @@ export function CompoundInterestSheet({
               {compareTakeaway}
             </p>
           )}
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {compare.map((s) => {
               const featured = s.id === "upside";
+              const dashed = s.id === "mattress";
               return (
                 <Card
                   key={s.id}
-                  tone={featured ? "brand" : "raised"}
-                  className={cn(
-                    "row-span-4 grid h-full grid-rows-subgrid border-t-2",
-                    featured &&
-                      "order-first ring-1 ring-brand/50 lg:order-none"
-                  )}
-                  style={{ borderTopColor: s.color }}
+                  className="border"
+                  style={{
+                    borderColor: tint(s.color, featured ? 0.5 : 0.28),
+                    background: `linear-gradient(180deg, ${tint(s.color, featured ? 0.16 : 0.08)} 0%, ${tint(s.color, featured ? 0.05 : 0.02)} 100%)`,
+                    boxShadow: `inset 3px 0 0 ${s.color}`,
+                  }}
                 >
-                  <p className="flex items-center gap-2 text-sm font-semibold leading-5 text-foreground">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <span
+                      className="inline-block w-3.5 shrink-0"
+                      style={{
+                        borderTop: dashed
+                          ? `1.5px dashed ${s.color}`
+                          : `2px solid ${s.color}`,
+                      }}
+                      aria-hidden
+                    />
                     {s.label}
-                    {featured && <Pill>This plan</Pill>}
-                  </p>
-                  <p className="mt-1.5 min-h-[2.75rem] text-sm leading-snug text-muted">
-                    {s.tagline}
                   </p>
                   <p
-                    className={cn(
-                      "mt-3 font-bold leading-7 tabular-nums whitespace-nowrap",
-                      featured ? "text-2xl" : "text-lg"
-                    )}
+                    className="mt-3 text-2xl font-bold leading-none tabular-nums whitespace-nowrap"
                     style={{ color: s.color }}
                   >
                     {show(s.result.futureValue)}
                   </p>
-                  <p className="mt-1.5 text-sm leading-5 text-muted">
-                    {show(s.result.totalInterest)} of that is growth
+                  <p className="mt-2 text-sm tabular-nums text-muted">
+                    {show(s.result.totalInterest)} growth
+                  </p>
+                  <p className="mt-3 text-sm leading-snug text-muted">
+                    {s.tagline}
                   </p>
                 </Card>
               );
