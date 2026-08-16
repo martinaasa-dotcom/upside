@@ -1,5 +1,6 @@
 import {
   collapseMembersByAlias,
+  HOUSEHOLD_PENDING_EMAILS,
   loadAliasMap,
   type PendingHousehold,
   type RawMember,
@@ -158,10 +159,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       : { data: [] };
 
     const emailsBySlug = new Map<string, string[]>(
-      Object.entries({
-        karud: ["rasmusmarjapuu@gmail.com", "karukaroliine99@gmail.com"],
-        lap: ["liinaanette@gmail.com"],
-      })
+      Object.entries(HOUSEHOLD_PENDING_EMAILS)
     );
     for (const c of (claims ?? []) as {
       email: string;

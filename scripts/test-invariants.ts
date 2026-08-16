@@ -72,7 +72,18 @@ import {
 } from "../src/lib/invite-landing";
 import { pulseFlagsFromChecks } from "../src/lib/morning-read";
 import { LAB_TAB_ID, PULSE_TAB_ID, todayDollarFor, buildOverview } from "../src/lib/overview";
-import { shouldHideOptions, TIER_HIDDEN_META_TABS } from "../src/lib/experience-tier";
+import {
+  shouldHideOptions,
+  shouldSkipExperienceOnboarding,
+  TIER_HIDDEN_META_TABS,
+} from "../src/lib/experience-tier";
+import {
+  ACCOUNT_ALIAS_FALLBACK,
+  collapseMembersByAlias,
+  KARUD_ALIAS_EMAIL,
+  KARUD_PRIMARY_EMAIL,
+  SEED_EMAIL_SLUGS,
+} from "../src/lib/auth/identity";
 import {
   asSurpriseFraction,
   buildEarningsNote,
@@ -242,6 +253,89 @@ run("options UI is hidden unless the viewer explicitly said yes", () => {
   assert.equal(shouldHideOptions(true), false);
   assert.equal(shouldHideOptions(false), true);
   assert.equal(shouldHideOptions(null), true);
+});
+
+run("Karud household is one person and skips first-run onboarding", () => {
+  assert.equal(ACCOUNT_ALIAS_FALLBACK[KARUD_ALIAS_EMAIL], KARUD_PRIMARY_EMAIL);
+  assert.deepEqual(SEED_EMAIL_SLUGS[KARUD_ALIAS_EMAIL], ["karud"]);
+  assert.deepEqual(SEED_EMAIL_SLUGS[KARUD_PRIMARY_EMAIL], ["karud"]);
+  assert.equal(
+    shouldSkipExperienceOnboarding({
+      holdingsCount: 0,
+      portfolioSlugs: ["karud"],
+    }),
+    true
+  );
+  assert.equal(
+    shouldSkipExperienceOnboarding({
+      holdingsCount: 8,
+      portfolioSlugs: ["my-portfolio"],
+    }),
+    true
+  );
+  assert.equal(
+    shouldSkipExperienceOnboarding({
+      holdingsCount: 0,
+      portfolioSlugs: [],
+    }),
+    false
+  );
+
+  const people = collapseMembersByAlias(
+    [
+      {
+        user_id: "rasmus-id",
+        role: "member",
+        joined_at: "2026-01-01T00:00:00.000Z",
+        profile: {
+          id: "rasmus-id",
+          email: KARUD_PRIMARY_EMAIL,
+          display_name: "Rasmus-Richard Marjapuu",
+          avatar_url: null,
+        },
+      },
+      {
+        user_id: "karoliine-id",
+        role: "member",
+        joined_at: "2026-08-16T00:00:00.000Z",
+        profile: {
+          id: "karoliine-id",
+          email: KARUD_ALIAS_EMAIL,
+          display_name: "Karoliine Karu",
+          avatar_url: null,
+        },
+      },
+    ],
+    "karoliine-id"
+  );
+  assert.equal(people.length, 1);
+  assert.equal(people[0]?.person_id, "rasmus-id");
+  assert.equal(people[0]?.is_you, true);
+  assert.deepEqual(people[0]?.emails.sort(), [
+    KARUD_ALIAS_EMAIL,
+    KARUD_PRIMARY_EMAIL,
+  ]);
+
+  const seedSql = readFileSync(
+    join(process.cwd(), "scripts/seed-ownership.sql"),
+    "utf8"
+  );
+  assert.match(seedSql, /karukaroliine99@gmail.com.*karud/s);
+  assert.match(
+    seedSql,
+    /karukaroliine99@gmail.com.*rasmusmarjapuu@gmail.com/s
+  );
+  const ensure = readFileSync(
+    join(process.cwd(), "src/lib/auth/ensure-profile.ts"),
+    "utf8"
+  );
+  assert.match(ensure, /SEED_EMAIL_SLUGS/);
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  assert.match(dash, /shouldSkipExperienceOnboarding/);
+  assert.match(dash, /skipExperienceOnboarding/);
 });
 
 run("Home briefing never rotates a covered-call pep talk", () => {

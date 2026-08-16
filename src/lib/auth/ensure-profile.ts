@@ -1,3 +1,4 @@
+import { SEED_EMAIL_SLUGS } from "@/lib/auth/identity";
 import { createSupabaseServerAuth } from "@/lib/supabase/server-auth";
 import {
   getSupabaseServer,
@@ -9,14 +10,14 @@ import {
 } from "@/lib/supabase/tables";
 import type { User } from "@supabase/supabase-js";
 
-/** Extra seed emails for Karud/Lap (Martin is in DB seed_claims). */
+/** Seed slugs from code, plus optional Vercel extras for Karud/Lap. */
 function envSeedSlugs(email: string): string[] {
   const e = email.toLowerCase();
-  const out: string[] = [];
+  const out = [...(SEED_EMAIL_SLUGS[e] ?? [])];
   const karud = process.env.UPSIDE_SEED_KARUD_EMAIL?.trim().toLowerCase();
   const lap = process.env.UPSIDE_SEED_LAP_EMAIL?.trim().toLowerCase();
-  if (karud && karud === e) out.push("karud");
-  if (lap && lap === e) out.push("lap");
+  if (karud && karud === e && !out.includes("karud")) out.push("karud");
+  if (lap && lap === e && !out.includes("lap")) out.push("lap");
   return out;
 }
 

@@ -1,12 +1,29 @@
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export const KARUD_PRIMARY_EMAIL = "rasmusmarjapuu@gmail.com";
+export const KARUD_ALIAS_EMAIL = "karukaroliine99@gmail.com";
+
+/** Seed emails that claim a household sheet on first Google sign-in. */
+export const SEED_EMAIL_SLUGS: Record<string, string[]> = {
+  [KARUD_PRIMARY_EMAIL]: ["karud"],
+  [KARUD_ALIAS_EMAIL]: ["karud"],
+  "liinaanette@gmail.com": ["lap"],
+};
+
+/** Pending Circle households before every owner has signed in. */
+export const HOUSEHOLD_PENDING_EMAILS: Record<string, string[]> = {
+  karud: [KARUD_PRIMARY_EMAIL, KARUD_ALIAS_EMAIL],
+  lap: ["liinaanette@gmail.com"],
+};
+
 /**
- * Hard-coded fallback matching migration 016.
+ * Hard-coded fallback matching migrations 016 and 049.
  * Prefer DB (`portfell_account_aliases`) when readable.
  */
 export const ACCOUNT_ALIAS_FALLBACK: Record<string, string> = {
   "aasamartinaasa@gmail.com": "martin.aasa@upthink.ee",
+  [KARUD_ALIAS_EMAIL]: KARUD_PRIMARY_EMAIL,
 };
 
 export function normalizeEmail(email: string | null | undefined): string | null {

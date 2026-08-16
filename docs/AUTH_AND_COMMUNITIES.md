@@ -18,8 +18,9 @@ Multiple Google emails can map to **one person** in communities (`portfell_accou
 | Alias | Primary |
 |-------|---------|
 | `aasamartinaasa@gmail.com` | `martin.aasa@upthink.ee` |
+| `karukaroliine99@gmail.com` | `rasmusmarjapuu@gmail.com` |
 
-Both logins stay separate in Auth (Google), but Upside Circle shows **one** Martin with both emails listed. Co-ownership of Aasad/Anu/MaryAnn is unchanged.
+Both logins stay separate in Auth (Google), but Upside Circle shows **one** person with both emails listed. Co-ownership of the shared sheet is unchanged (Aasad/Anu/MaryAnn for Martin, Karud for Rasmus and Karoliine).
 
 ## Community-pinned sheets
 
@@ -76,6 +77,8 @@ Shows every Upside profile (Google sign-ins), every community, and each communit
 - `014` community members RLS recursion fix  
 - `015` superadmin overview RPC  
 - `016` account aliases + community-pinned sheets (Karud/Lap)  
+- `049` Karud household alias (`karukaroliine99@gmail.com` → `rasmusmarjapuu@gmail.com`) so Circle and the community book show one person, and Karoliine claims Karud instead of an empty first-run book  
+
 - `017` RLS hardening — closed a self co-owner-escalation hole on `portfell_portfolio_owners`, a world-readable `portfell_book_snapshots` policy, a stale shared-row leak on `portfell_lab_state`, and a null-email coalesce bug on invite `SELECT` policies
 - `018` fixed `portfell_claim_seed_for_me()` — a PL/pgSQL loop variable named `slug` collided with the `portfell_portfolios.slug` column, so every first-time seed claim raised "column reference is ambiguous" and rolled back (profile included). Silently broken since `010`; only worked for people seeded directly via `scripts/seed-ownership.sql` (Martin/Martina/Amanda). Rasmus was backfilled manually after the fix; Karoliine and Liina will claim normally on their first sign-in now
 - `029` community admin delete RLS policy (rename already had one from `008`)

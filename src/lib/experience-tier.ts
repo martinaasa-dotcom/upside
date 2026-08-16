@@ -94,6 +94,29 @@ export function shouldHideOptions(knowsOptions: boolean | null): boolean {
   return knowsOptions !== true;
 }
 
+/**
+ * Household / already-filled books skip the first-run questionnaire.
+ * Karoliine claiming Karud should land on the shared names, not "Add
+ * what you own".
+ */
+export const HOUSEHOLD_SEED_SLUGS = new Set([
+  "karud",
+  "lap",
+  "aasad",
+  "anu",
+  "maryann",
+]);
+
+export function shouldSkipExperienceOnboarding(input: {
+  holdingsCount: number;
+  portfolioSlugs: Array<string | null | undefined>;
+}): boolean {
+  if (input.holdingsCount > 0) return true;
+  return input.portfolioSlugs.some(
+    (slug) => typeof slug === "string" && HOUSEHOLD_SEED_SLUGS.has(slug)
+  );
+}
+
 export function loadStoredKnowsOptions(): boolean | null {
   if (typeof window === "undefined") return null;
   try {

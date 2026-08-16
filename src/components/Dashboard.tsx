@@ -144,6 +144,7 @@ import {
 } from "@/lib/panel-visibility";
 import {
   shouldHideOptions,
+  shouldSkipExperienceOnboarding,
   loadStoredKnowsOptions,
   loadStoredTier,
   saveStoredKnowsOptions,
@@ -481,6 +482,39 @@ export function Dashboard() {
       ctrl.abort();
     };
   }, [source, user]);
+
+  const skipExperienceOnboarding = shouldSkipExperienceOnboarding({
+    holdingsCount: holdings.length,
+    portfolioSlugs: portfolios.map((p) => p.slug),
+  });
+
+  // Seed-claimed household (Karud, Lap, family books) already has names.
+  // Don't send them through "Add what you own". Persist investor so the
+  // next device also skips. Leave options unanswered (hidden).
+  const inheritedTierRef = useRef(false);
+  useEffect(() => {
+    if (inheritedTierRef.current) return;
+    if (!tierChecked || experienceTier) return;
+    if (source !== "supabase" || !user || loading) return;
+    if (!skipExperienceOnboarding) return;
+    inheritedTierRef.current = true;
+    setExperienceTier("investor");
+    saveStoredTier("investor");
+    void fetch("/api/account/experience-tier", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tier: "investor" }),
+    }).catch(() => {
+      /* localStorage already has the tier */
+    });
+  }, [
+    tierChecked,
+    experienceTier,
+    source,
+    user,
+    loading,
+    skipExperienceOnboarding,
+  ]);
 
   // If the tier changes (questionnaire just answered, or changed later in
   // Account) and it hides whatever meta-tab is currently open, don't leave
@@ -3200,7 +3234,12 @@ export function Dashboard() {
         }}
       />
 
-      {tierChecked && !experienceTier && source === "supabase" && user && (
+      {tierChecked &&
+        !experienceTier &&
+        source === "supabase" &&
+        user &&
+        !loading &&
+        !skipExperienceOnboarding && (
         <ExperienceOnboardingModal
           onDone={(tier, knows) => {
             setExperienceTier(tier);
