@@ -1,5 +1,6 @@
 "use client";
 
+import { stashOpenTab } from "@/lib/active-sheet";
 import { cn } from "@/lib/format";
 import { useDockPad } from "@/lib/use-dock-pad";
 import { Compass, Home, Activity, Settings } from "lucide-react";
@@ -75,6 +76,8 @@ export function MobileTabBar({
               aria-label={label}
               aria-current={on ? "page" : undefined}
               onClick={(e) => {
+                if (id === "home") stashOpenTab("overview");
+                if (id === "pulse") stashOpenTab("pulse");
                 if (!onSelect) return;
                 if (onSelect(id)) e.preventDefault();
               }}

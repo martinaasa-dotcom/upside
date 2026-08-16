@@ -3630,6 +3630,32 @@ run("workspace nav marks the current room and the skip link exists", () => {
     "utf8"
   );
   assert.ok(/max-w-\[36rem\]/.test(dock));
+  assert.match(dock, /stashOpenTab/);
+  assert.match(dock, /\/\?tab=overview/);
+  assert.match(dock, /CircleDockLink/);
+  const tabs = readFileSync(
+    join(process.cwd(), "src/components/PortfolioTabs.tsx"),
+    "utf8"
+  );
+  assert.match(tabs, /CircleDockLink/);
+  assert.ok(
+    tabs.indexOf("CircleDockLink") < tabs.indexOf("Sheets —"),
+    "Circle sits between the book modes and the sheets rail"
+  );
+  const community = readFileSync(
+    join(process.cwd(), "src/components/CommunityView.tsx"),
+    "utf8"
+  );
+  assert.match(
+    community,
+    /pathname\.startsWith\(`\/communities\/\$\{communityId\}`\)/
+  );
+  const mobile = readFileSync(
+    join(process.cwd(), "src/components/mobile/MobileTabBar.tsx"),
+    "utf8"
+  );
+  assert.match(mobile, /stashOpenTab\("overview"\)/);
+  assert.match(mobile, /stashOpenTab\("pulse"\)/);
 });
 
 run("holding and cash saves cannot double-fire", () => {

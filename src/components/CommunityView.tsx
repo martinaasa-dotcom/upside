@@ -418,6 +418,9 @@ export function CommunityView({ communityId }: Props) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!window.location.pathname.startsWith(`/communities/${communityId}`)) {
+      return;
+    }
     const url = new URL(window.location.href);
     if (selectedOwnerId) url.searchParams.set("member", selectedOwnerId);
     else url.searchParams.delete("member");
@@ -444,7 +447,7 @@ export function CommunityView({ communityId }: Props) {
       return;
     }
     window.history.pushState(window.history.state, "", href);
-  }, [selectedOwnerId, selectedPortfolioId, view]);
+  }, [communityId, selectedOwnerId, selectedPortfolioId, view]);
 
   // A ?member=/?portfolio= link can go stale (member left, sheet deleted) or
   // just be wrong — once real data is in, drop selections that don't

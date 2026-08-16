@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleDockLink } from "@/components/CircleDockLink";
 import { Activity, Calculator, FlaskConical, LayoutDashboard, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -203,7 +204,7 @@ export function PortfolioTabs({
         className
       )}
     >
-      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-6 sm:py-2.5")}>
+      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-5 sm:py-2.5")}>
         {/* App modes — sits at the thumb edge on phones */}
         <div className="flex w-full shrink-0 items-end sm:w-auto">
           <div className="min-w-0 flex-1 sm:flex-none">
@@ -254,6 +255,11 @@ export function PortfolioTabs({
               })}
             </div>
           </div>
+        </div>
+
+        <div className="hidden shrink-0 sm:block">
+          <p className="mb-1.5 text-sm font-medium text-muted">Circle</p>
+          <CircleDockLink />
         </div>
 
         {/* Sheets — different language: text rail, not twin chips */}

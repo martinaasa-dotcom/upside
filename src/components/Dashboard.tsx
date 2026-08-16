@@ -63,6 +63,7 @@ import {
 import {
   loadActiveSheetId,
   saveActiveSheetId,
+  takeOpenTab,
 } from "@/lib/active-sheet";
 import { loadLastUser } from "@/lib/last-session";
 import { isAbortError, retryOnNetwork } from "@/lib/abort";
@@ -256,10 +257,16 @@ function metaTabFromToken(raw: string): string | null {
   return null;
 }
 
-function resolveSheetIdFromUrl(list: Portfolio[]): string | null {
+function resolveSheetIdFromUrl(
+  list: Portfolio[],
+  pendingTab?: string | null
+): string | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
-  const tabParam = params.get("tab")?.trim().toLowerCase() || "";
+  const tabParam =
+    pendingTab?.trim().toLowerCase() ||
+    params.get("tab")?.trim().toLowerCase() ||
+    "";
   const portfolioParam = params.get("portfolio")?.trim().toLowerCase() || "";
   const sheetParam = params.get("sheet")?.trim().toLowerCase() || "";
   // `tab=book` is a sheet view; the actual sheet is `portfolio` / `sheet`.
@@ -404,7 +411,7 @@ export function Dashboard() {
       setHoldings(cached.holdings);
       setLocked(cached.locked);
       setLoading(false);
-      const fromUrl = resolveSheetIdFromUrl(cached.portfolios);
+      const fromUrl = resolveSheetIdFromUrl(cached.portfolios, takeOpenTab());
       if (fromUrl) {
         setActiveId(fromUrl);
       } else {
@@ -418,7 +425,7 @@ export function Dashboard() {
         }
       }
     } else {
-      const fromUrl = resolveSheetIdFromUrl([]);
+      const fromUrl = resolveSheetIdFromUrl([], takeOpenTab());
       if (fromUrl) setActiveId(fromUrl);
       else {
         const saved = loadActiveSheetId();
