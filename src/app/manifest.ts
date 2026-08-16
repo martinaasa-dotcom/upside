@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: PRODUCT_BLURB,
     start_url: "/",
     display: "standalone",
-    background_color: "#0d110f",
-    theme_color: "#0d110f",
+    background_color: "#080808",
+    theme_color: "#080808",
     icons: [
       {
         src: "/icons/icon-192.png",

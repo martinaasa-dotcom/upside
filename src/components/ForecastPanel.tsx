@@ -490,7 +490,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                 cy={yAt(hoverPoint.value)}
                 r={4.5}
                 fill="#ede8dc"
-                stroke="#0d110f"
+                stroke="#080808"
                 strokeWidth={1.5}
               />
             </g>

@@ -57,7 +57,7 @@ const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
 const SERIES_COLOR = {
   margus: "#d4a24c",
   spy: "#c4a36a",
-  you: "#5a9a4a",
+  you: "#3f9d58",
 } as const;
 
 type MyPortfolioBenchmark = {

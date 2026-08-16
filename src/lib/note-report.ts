@@ -770,15 +770,15 @@ export function noteReportText(r: NoteReport): string {
   return lines.join("\n");
 }
 
-const APP = "#0d110f";
-const CARD = "#1a1f1c";
+const APP = "#080808";
+const CARD = "#141414";
 const CREAM = "#ede8dc";
-const MUTED = "#a89e8c";
+const MUTED = "#9c9486";
 const GOLD = "#c4a36a";
-const GAIN = "#6db85c";
-const LOSS = "#d47a6c";
-const LINE = "#242b27";
-const EDGE = "#2c342f";
+const GAIN = "#3f9d58";
+const LOSS = "#d46558";
+const LINE = "#1e1e1e";
+const EDGE = "#2a2a2a";
 const SANS =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const BOOK_URL = "https://upsidelab.app";
@@ -929,7 +929,7 @@ export function noteReportHtml(r: NoteReport): string {
     <td style="padding:2px 0 2px 16px">
       ${kicker("Margus")}
       <p style="margin:10px 0 0 0;font-family:${SANS};font-size:18px;line-height:1.5;font-weight:500;color:${CREAM}">${escapeHtml(r.margus)}</p>
-      <p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:#9a9488">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
+      <p style="margin:12px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.45;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
     </td>
   </tr>
 </table>`
@@ -1086,7 +1086,7 @@ ${
             ${hero}
             ${bodyOrder}
             ${openBookButton()}
-            <p style="margin:28px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:#9a9488">Turn these notes off in <a href="https://upsidelab.app/account" style="color:#c4a36a;text-decoration:underline">Account</a>.</p>
+            <p style="margin:28px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">Turn these notes off in <a href="https://upsidelab.app/account" style="color:#c4a36a;text-decoration:underline">Account</a>.</p>
           </td>
         </tr>
       </table>

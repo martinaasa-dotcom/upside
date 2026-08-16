@@ -396,7 +396,7 @@ export function animalCardTone(id: string | undefined | null): AnimalCardTone {
 export const THEME_COLOR: Record<ForecastTheme, string> = {
   crypto: "#d4a24c",
   space: "#c4a36a",
-  ai_infra: "#5a9a4a",
+  ai_infra: "#3f9d58",
   drones: "#a89878",
   semi: "#e0c48a",
   ai_power: "#c46a58",

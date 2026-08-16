@@ -53,7 +53,7 @@ export function Sparkline({
     >
       <polyline
         fill="none"
-        stroke={up ? "#5a9a4a" : "#c46a58"}
+        stroke={up ? "#3f9d58" : "#d46558"}
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"

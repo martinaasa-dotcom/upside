@@ -17,8 +17,9 @@ import { useState, type ReactNode } from "react";
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      black field, charcoal card. Selected is brass. Mustard is
+ *   Shell      black field, graphite card. Selected is brass. Mustard is
  *              the main button. Paper is type, never a white pill.
+ *              Green is an up number, not a wash.
  *   Card       border-border on bg-raised. Nested boxes lift off the panel.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
