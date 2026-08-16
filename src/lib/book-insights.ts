@@ -14,8 +14,8 @@ import { THEME_LABEL } from "@/lib/portfolio-personality";
 
 /** Kitchen-table names for the day-move sentence. Charts keep THEME_LABEL. */
 const THEME_PLAIN: Record<ForecastTheme, string> = {
-  ai_infra: "companies that build or rent AI computers",
-  ai_power: "power companies that feed data centers",
+  ai_infra: "AI computer companies",
+  ai_power: "data-center power companies",
   crypto: "crypto companies",
   space: "space companies",
   semi: "chip makers",
@@ -88,7 +88,7 @@ const NEXT_GROUP: Partial<
     {
       need: "ai_power",
       line: (share) =>
-        `${sharePct(share)} of this portfolio is companies that build or rent AI computers. Those names need cheap, reliable power, and you barely own the utilities that sell it. If electricity stays tight, this group can stall even when demand is fine. Add up what you have in that one group. If it is most of the money, a power shortage is a portfolio problem.`,
+        `${sharePct(share)} of this portfolio is AI computer companies. Those names need cheap, reliable power, and you barely own the utilities that sell it. If electricity stays tight, this group can stall even when demand is fine. Add up what you have in that one group. If it is most of the money, a power shortage is a portfolio problem.`,
     },
     {
       need: "semi",

@@ -270,7 +270,7 @@ function BookStill() {
       </div>
 
       <Reading className="mt-5" label="Worth noticing">
-        <InsightText text="$RKLB jumped 6.8% today. Amazon and Microsoft barely moved." />
+        <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
       <div className="mt-3 rounded-xl border border-border bg-card px-3.5 py-3">
@@ -296,7 +296,7 @@ function BookStill() {
           </div>
         </div>
         <Reading className="mt-3" label="Thesis">
-          Cheaper launches. That&apos;s why it&apos;s in your portfolio.
+          Cheaper launches. That is why it is in the portfolio. A one-day jump does not change that on its own.
         </Reading>
       </div>
     </Panel>

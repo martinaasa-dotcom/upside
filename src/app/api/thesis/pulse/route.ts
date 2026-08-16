@@ -175,7 +175,7 @@ For **each** ticker:
 8. **earningsNote**: if relevant; else empty string.
 9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own it.
 
-**summary**: one short sentence on the book as a whole. Name the 5% movers (up or down) and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with "the sharp drop".
+**summary**: one short sentence on the portfolio as a whole. Name the 5% movers (up or down) and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with "the sharp drop".
 
 If the owner didn't write why they own it, still pick action and thesisStatus from headlines and today's prices. Never ask them to write a note. Never say you are guessing. Never say "tape".
 

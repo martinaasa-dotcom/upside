@@ -45,7 +45,7 @@ export const forecastPlanSchema = z.object({
         add: z
           .string()
           .describe(
-            'Bullet list, semicolon-separated. ONE name or group per item: "TICKER (current% -> target%): why + trigger" or "electricity for AI (~0% to 5%): why". Never pack two tickers with a slash into one item. Never empty; say "Hold, no add" if nothing. Never say sleeve.'
+            'Bullet list, semicolon-separated. ONE name or group per item: "TICKER (current% -> target%): why + trigger" or "data-center power (~0% to 5%): why". Never pack two tickers with a slash into one item. Never empty; say "Hold, no add" if nothing. Never say sleeve.'
           ),
         trim: z
           .string()

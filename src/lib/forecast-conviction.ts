@@ -320,7 +320,7 @@ from this backdrop by default. You do not need to caveat it into meaninglessness
 - Inference is the bigger prize than training. Agents that run continuously
   consume orders of magnitude more compute than a training run, and that
   demand curve is only starting.
-- Agentic software and money apps are the second-order trade. Once agents can
+- Agentic software and payment companies are the second-order trade. Once agents can
   transact, the payments, ledger, and risk rails they run on take a cut of a
   much larger transaction volume. Treat that as a genuine growth vector, not
   a story stock premium.

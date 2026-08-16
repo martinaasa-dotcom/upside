@@ -26,7 +26,7 @@ export function buildStrikeAlerts(
         id: `strike-target-${cashtag(r.ticker)}`,
         kind: "strike",
         title: `${cashtag(r.ticker)} passed the price you were aiming for`,
-        detail: `It's at ${r.spot.toFixed(2)}, above your ${r.stockTarget.toFixed(2)} target. Worth revisiting the call plan.`,
+        detail: `Spot is ${r.spot.toFixed(2)}, above the ${r.stockTarget.toFixed(2)} you set. Decide whether to raise the target, take some off, or leave the plan.`,
         ticker: r.ticker,
         at: Date.now(),
       });
@@ -36,7 +36,7 @@ export function buildStrikeAlerts(
         id: `strike-near-${cashtag(r.ticker)}`,
         kind: "strike",
         title: `${cashtag(r.ticker)} is closing in on your strike`,
-        detail: `Within about 2% of ${r.nextStrike.toFixed(2)}. This is your planned level, not a call you've actually sold.`,
+        detail: `Within about 2% of ${r.nextStrike.toFixed(2)}. This is your planned level, not a call you have already sold. Check the plan before the price walks through it.`,
         ticker: r.ticker,
         at: Date.now(),
       });
@@ -65,8 +65,8 @@ export function buildEarningsAlerts(
           ? `${cashtag(e.ticker)} reports today`
           : `${cashtag(e.ticker)} reports in ${e.days} ${e.days === 1 ? "day" : "days"}`,
       detail: hideOptions
-        ? `Set for ${e.date}. Results days tend to move a stock more than usual, in either direction.`
-        : `Set for ${e.date}. Prices swing harder around results, which makes options pricier to sell and riskier to hold through.`,
+        ? `Set for ${e.date}. Results days move a stock more than usual, either way. Decide before then whether you want to sit through that.`
+        : `Set for ${e.date}. Prices swing harder around results, which makes options pricier to sell and riskier to hold through. Decide the plan before the day, not during it.`,
       ticker: e.ticker,
       at: Date.now(),
     }));
@@ -84,7 +84,7 @@ export function buildDecisionAlerts(input: {
       id: "decision-margin",
       kind: "info",
       title: "You're using borrowed money",
-      detail: `Cash is ${currency(input.cash, 0)}, so part of your portfolio is on margin. Losses get amplified the same way gains do.`,
+      detail: `Cash is ${currency(input.cash, 0)}, so part of your portfolio is borrowed. Losses get larger the same way gains do. Check what a rough day does to that borrowed slice.`,
       at: Date.now(),
     });
   }
@@ -99,7 +99,7 @@ export function buildDecisionAlerts(input: {
       kind: "info",
       title: `${cashtag(input.topTicker.ticker)} is ${percent(share, 0)} of your stocks`,
       detail:
-        "One name this big means your year mostly rides on it. Fine if you meant it. A problem if you didn't.",
+        "One name this big means your year mostly rides on it. Fine if you meant it. If you did not, that weight is the thing to fix.",
       ticker: input.topTicker.ticker,
       at: Date.now(),
     });

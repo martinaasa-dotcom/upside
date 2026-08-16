@@ -13,7 +13,7 @@ export const pulseReportSchema = z.object({
   summary: z
     .string()
     .describe(
-      "One short sentence on the book as a whole. Name the names that moved 5% or more, up or down, and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with the sharp drop."
+      "One short sentence on the portfolio as a whole. Name the names that moved 5% or more, up or down, and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with the sharp drop."
     ),
   checks: z.array(
     z.object({

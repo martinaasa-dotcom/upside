@@ -409,17 +409,17 @@ export const THEME_COLOR: Record<ForecastTheme, string> = {
 
 export const THEME_LABEL: Record<ForecastTheme, string> = {
   ai_infra: "AI computer builders",
-  ai_power: "electricity for AI",
+  ai_power: "data-center power",
   crypto: "crypto",
   space: "space",
   semi: "chip makers",
-  fintech: "money apps",
+  fintech: "payments and finance",
   software: "software",
   healthcare: "healthcare",
   // Covers the defense primes as well as pure drone/autonomy names, so
   // "drones" alone would mislabel a Lockheed or an RTX.
   drones: "defense and drones",
-  index: "a bit of everything",
+  index: "broad market funds",
   // Not "a mixed bag": this is the bucket for names the sector map doesn't
   // recognise, and as the label on a 51% slice it explained nothing.
   other: "other businesses",
@@ -453,15 +453,15 @@ function riskBandFor(score: number): ScoreBand {
   if (score < 55)
     return { label: "Balanced", description: "A mix of steady and speculative." };
   if (score < 75)
-    return { label: "Aggressive", description: "Leans hard into the jumpy, fast-moving names." };
-  return { label: "High-octane", description: "Most of your portfolio is in the hottest, jumpiest names." };
+    return { label: "Aggressive", description: "Leans into names that swing hard." };
+  return { label: "High-octane", description: "Most of the money sits in names that swing hard." };
 }
 
 function convictionBandFor(score: number): ScoreBand {
   if (score >= 50)
     return {
       label: "All-in",
-      description: "One name is half the book or more.",
+      description: "One name is half the portfolio or more.",
     };
   if (score >= 35)
     return {

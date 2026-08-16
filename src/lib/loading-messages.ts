@@ -7,7 +7,7 @@
  * cleaner than jamming it right against the last word.
  */
 const LOADING_MESSAGES = [
-  "Opening your book …",
+  "Opening your portfolio …",
   "Finding your keys …",
   "Looking under the couch cushions …",
   "Checking your pockets one more time …",

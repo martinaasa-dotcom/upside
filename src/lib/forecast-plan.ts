@@ -353,7 +353,7 @@ function themeDynamicsLabel(
     case "semi":
       return "AI chip cycle that pauses, then runs again on spend";
     case "fintech":
-      return "money apps that move with easy money and how bold people feel";
+      return "payment and finance companies that move when rates and risk appetite move";
     case "software":
       return "software / SaaS adoption with a quiet stretch in the middle";
     case "healthcare":
@@ -595,16 +595,16 @@ Requirements:
    - Reference each name's CURRENT weight (given above) and state the size of the move: a target weight or a rough trim/add fraction (e.g. "trim $RKLB from 14% to ~9%", "add ~3-5% of the sheet into software"), not just a direction with no size.
    - Ground the "why" in something specific and falsifiable for THAT company (a metric, catalyst, or event with rough timing). Never a generic sector vibe that could be pasted onto any ticker in the theme.
    - Name the trigger/condition when it isn't "do this now": a price, an earnings date, a number that just came out. So it reads as a plan, not a headline.
-   - Each item: "TICKER (current% -> target%): specific why + trigger". Groups: "electricity for AI (~0% to 5%): why + size". Sheet tickers preferred; NEW tickers and sectors are welcome when the reason you own the sheet needs them.
+   - Each item: "TICKER (current% -> target%): specific why + trigger". Groups: "data-center power (~0% to 5%): why + size". Sheet tickers preferred; NEW tickers and sectors are welcome when the reason you own the sheet needs them.
    - Plain English only. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.
    - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
    - Never use em dashes or en-dash clause breaks in add/trim lines.
-4. sectorRotation: talk through money moving between groups (AI computer builders, chip makers, electricity for data centers, crypto, space, software, healthcare, drones, money apps, etc.). Chip makers and AI computer builders are different bets. Do not stay stuck in one box. Plain speech, no em dashes.
+4. sectorRotation: talk through money moving between groups (AI computer builders, chip makers, data-center power, crypto, space, software, healthcare, drones, payments and finance, etc.). Chip makers and AI computer builders are different bets. Do not stay stuck in one box. Plain speech, no em dashes.
 5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences. Sound like a person at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
    - Year ${year} is December 31 ${year}, not today's spot. Do not paste today's price into that cell.
-   - NON-LINEAR only. Crypto: include a winter year. AI computers / electricity for AI: big multi-year upside. Space: a quiet year in the middle.
+   - NON-LINEAR only. Crypto: include a winter year. AI computers / data-center power: big multi-year upside. Space: a quiet year in the middle.
    - rationale: one human sentence on why this company + how the path wiggles. FORBIDDEN words/phrases: overridden, rejected, too timid, sheet-aligned, calibrated path. No em dashes. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.
 7. Consistency: if the reason you own the names is unchanged from a prior run, keep year-end prices in a similar neighborhood. Do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.

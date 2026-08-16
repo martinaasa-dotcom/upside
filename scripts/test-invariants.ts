@@ -274,8 +274,8 @@ run("Pulse CTA is offered when Pulse is reachable, even if Lab is hidden", () =>
 });
 
 run("briefing kinds use plain-English labels", () => {
-  assert.equal(BRIEFING_KIND_LABEL.action, "Look at this");
-  assert.equal(BRIEFING_KIND_LABEL.watch, "Note");
+  assert.equal(BRIEFING_KIND_LABEL.action, "Check this");
+  assert.equal(BRIEFING_KIND_LABEL.watch, "Context");
   assert.equal(BRIEFING_KIND_LABEL.play, "What's missing");
 });
 
@@ -1894,7 +1894,8 @@ run("sign-in reads as a product", () => {
   assert.match(gate, /ticker: "RKLB"/);
   assert.match(gate, /ticker: "AMZN"/);
   assert.match(gate, /ticker: "MSFT"/);
-  assert.match(gate, /\$RKLB jumped 6\.8% today/);
+  assert.match(gate, /\$RKLB is up 6\.8% today/);
+  assert.match(gate, /Check whether cheaper launches still hold/);
   assert.match(gate, /Thesis intact/);
   assert.match(gate, /Up ≥5%/);
   assert.doesNotMatch(gate, /did most of today/);
@@ -2022,6 +2023,32 @@ run("gap thoughts name the weight and a next step", () => {
   );
   assert.match(morning, /What's missing/);
   assert.doesNotMatch(morning, /A thought/);
+  assert.doesNotMatch(morning, /A few names did the work/);
+  assert.match(morning, /A few holdings moved the whole number/);
+});
+
+run("advice copy names a check, not a vibe", () => {
+  const briefing = readFileSync(
+    join(process.cwd(), "src/lib/investor-briefing.ts"),
+    "utf8"
+  );
+  const shock = readFileSync(join(process.cwd(), "src/lib/book-shock.ts"), "utf8");
+  const themes = readFileSync(
+    join(process.cwd(), "src/lib/portfolio-personality.ts"),
+    "utf8"
+  );
+  const insights = readFileSync(
+    join(process.cwd(), "src/lib/book-insights.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(briefing, /Look at this/);
+  assert.doesNotMatch(shock, /money-app|money apps/);
+  assert.doesNotMatch(themes, /money apps/);
+  assert.doesNotMatch(themes, /a bit of everything/);
+  assert.match(themes, /payments and finance/);
+  assert.match(themes, /broad market funds/);
+  assert.doesNotMatch(insights, /computer side/);
+  assert.doesNotMatch(insights, /usual neighbor/);
 });
 
 run("Worth noticing names the two groups in plain English", () => {

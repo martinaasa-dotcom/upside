@@ -83,7 +83,7 @@ function daySentence(
   }
   return {
     quiet: false,
-    sentence: "A few names did the work.",
+    sentence: "A few holdings moved the whole number. Who is listed below.",
   };
 }
 
