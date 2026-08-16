@@ -1401,8 +1401,11 @@ run("movers are compact tiles, not a stretched table or sparkline", () => {
   );
   assert.doesNotMatch(row, /Sparkline/);
   assert.doesNotMatch(src, /MOVER_GRID/);
+  assert.doesNotMatch(row, /8\.5rem/);
   assert.match(row, /percent\(pct/);
-  assert.match(row, /signedCurrency\(dollars\)/);
+  assert.match(row, /signedCurrency\(dollars/);
+  assert.match(row, /min-w-0/);
+  assert.match(row, /shrink-0/);
   assert.match(src, /sm:grid-cols-2/);
   assert.doesNotMatch(row, /label="Price"/);
   assert.doesNotMatch(row, />Recent</);

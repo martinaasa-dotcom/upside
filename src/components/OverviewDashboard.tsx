@@ -600,7 +600,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative grid min-h-11 h-full w-full grid-cols-[minmax(4.5rem,1fr)_5.75rem_8.5rem] items-center gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-5 pr-4 text-left transition hover:border-brand/40 hover:bg-hover"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-5 pr-4 text-left transition hover:border-brand/40 hover:bg-hover"
     >
       <span
         className={cn(
@@ -609,13 +609,15 @@ function MoverTile({
         )}
         aria-hidden
       />
-      <span className="min-w-0 truncate font-heading text-base font-bold text-foreground">
-        {cashtag(ticker.ticker)}
+      <span className="min-w-0">
+        <span className="block truncate font-heading text-base font-bold text-foreground">
+          {cashtag(ticker.ticker)}
+        </span>
+        <span className="mt-0.5 block font-sans text-sm tabular-nums text-muted">
+          {currency(ticker.price)}
+        </span>
       </span>
-      <span className="text-right font-sans text-base font-semibold tabular-nums text-foreground">
-        {currency(ticker.price)}
-      </span>
-      <span className="text-right">
+      <span className="shrink-0 text-right">
         <span
           className={cn(
             "block font-sans text-base font-semibold tabular-nums",
@@ -625,7 +627,7 @@ function MoverTile({
           {pct != null ? percent(pct, lifetime ? 1 : 2) : "—"}
         </span>
         <span className={cn("mt-0.5 block text-sm tabular-nums", tone(dollars))}>
-          {signedCurrency(dollars)}
+          {signedCurrency(dollars, 0)}
         </span>
       </span>
     </button>
