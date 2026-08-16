@@ -1,4 +1,5 @@
 import type { Holding, Portfolio } from "./types";
+import { tracksTradeCash } from "@/lib/cash-balance";
 import { tradeCashDelta } from "@/lib/cash-delta";
 import { supabaseIsConfigured } from "@/lib/supabase/env";
 
@@ -193,6 +194,8 @@ function applyDemoCash(
   delta: number
 ): DemoStore {
   if (!Number.isFinite(delta) || delta === 0) return store;
+  const sheet = store.portfolios.find((p) => p.id === portfolioId);
+  if (!sheet || !tracksTradeCash(sheet)) return store;
   return {
     ...store,
     portfolios: store.portfolios.map((p) =>

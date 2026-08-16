@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { tracksTradeCash } from "@/lib/cash-balance";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { roundMoney } from "@/lib/money";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -32,6 +33,31 @@ async function readCashBalance(
   if (error || !data) return null;
   const n = Number(data.cash_balance);
   return Number.isFinite(n) ? roundMoney(n) : null;
+}
+
+export async function portfolioTracksTradeCash(
+  supabase: SupabaseClient,
+  portfolioId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from(PORTFELL_TABLES.portfolios)
+    .select("classroom_community_id")
+    .eq("id", portfolioId)
+    .maybeSingle();
+  if (error || !data) return false;
+  return tracksTradeCash(data as { classroom_community_id?: string | null });
+}
+
+/** Buy/sell cash only moves on a classroom paper sheet. */
+export async function applyTradeCashDelta(
+  supabase: SupabaseClient,
+  portfolioId: string,
+  delta: number
+): Promise<number | null> {
+  if (!(await portfolioTracksTradeCash(supabase, portfolioId))) {
+    return readCashBalance(supabase, portfolioId);
+  }
+  return applyPortfolioCashDelta(supabase, portfolioId, delta);
 }
 
 /**

@@ -1,6 +1,6 @@
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import {
-  applyPortfolioCashDelta,
+  applyTradeCashDelta,
   salePriceFor,
   tradeCashDelta,
 } from "@/lib/cash-trade";
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
       sellPrice: px,
     });
   }
-  const cash = await applyPortfolioCashDelta(supabase, portfolioId, delta);
+  const cash = await applyTradeCashDelta(supabase, portfolioId, delta);
   return NextResponse.json({ holding: data, cash_balance: cash });
 }
 
@@ -321,7 +321,7 @@ export async function PATCH(req: NextRequest) {
       sellPrice: px,
     });
   }
-  const cash = await applyPortfolioCashDelta(supabase, portfolioId, delta);
+  const cash = await applyTradeCashDelta(supabase, portfolioId, delta);
   return NextResponse.json({ holding: data, cash_balance: cash });
 }
 
@@ -366,7 +366,7 @@ export async function DELETE(req: NextRequest) {
   const buy = Number(existing.buy_price) || 0;
   const ticker = String(existing.ticker ?? "");
   const px = ticker ? await salePriceFor(ticker, buy) : buy;
-  const cash = await applyPortfolioCashDelta(
+  const cash = await applyTradeCashDelta(
     supabase,
     portfolioId,
     tradeCashDelta({ sellShares: shares, sellPrice: px })

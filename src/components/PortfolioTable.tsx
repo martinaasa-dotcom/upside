@@ -11,6 +11,7 @@ import {
   formatDecimal,
   parseDecimal,
 } from "@/lib/number-input";
+import { sheetCashBalance } from "@/lib/cash-balance";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
 import { ArrowDown, ArrowUp, ArrowUpDown, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
@@ -432,10 +433,10 @@ export function PortfolioTable({
               <span
                 className={cn(
                   "text-sm font-semibold tabular-nums",
-                  portfolio.cash_balance < 0 ? "text-loss" : "text-foreground"
+                  sheetCashBalance(portfolio) < 0 ? "text-loss" : "text-foreground"
                 )}
               >
-                {money(portfolio.cash_balance)}
+                {money(sheetCashBalance(portfolio))}
               </span>
             </button>
           </div>

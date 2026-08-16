@@ -1,4 +1,5 @@
 import { SUPERADMIN_EMAILS } from "@/lib/auth/superadmin";
+import { sheetCashBalance } from "@/lib/cash-balance";
 import { realBookPortfolios } from "@/lib/classroom";
 import { hasLiveHoldings } from "@/lib/empty-book-nudge";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
@@ -163,10 +164,15 @@ export async function dispatchOptedInNotes(
       (kind === "morning" || kind === "sunday") && tickers.length > 0
         ? (await fetchMarketEvents(tickers)).earnings
         : undefined;
-    const cash = (noteBooks as { cash_balance?: number }[]).reduce(
-      (s, p) => s + Number(p.cash_balance ?? 0),
-      0
-    );
+    const cash = (
+      noteBooks as {
+        cash_balance?: number;
+        classroom_community_id?: string | null;
+      }[]
+    ).reduce((s, p) => s + sheetCashBalance({
+      cash_balance: Number(p.cash_balance ?? 0),
+      classroom_community_id: p.classroom_community_id,
+    }), 0);
     const { data: lab } = await supabase
       .from(PORTFELL_TABLES.labState)
       .select("conviction")

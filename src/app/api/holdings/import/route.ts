@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePortfolioOwner } from "@/lib/auth/ownership";
 import {
-  applyPortfolioCashDelta,
+  applyTradeCashDelta,
   importCashDelta,
+  portfolioTracksTradeCash,
   salePriceFor,
 } from "@/lib/cash-trade";
 import { classifyImportWrite } from "@/lib/classroom";
@@ -89,12 +90,16 @@ export async function POST(req: NextRequest) {
   });
   if (blocked) return blocked;
 
+  const paperCash = await portfolioTracksTradeCash(supabase, portfolioId);
   let cashUpdated = false;
   if (body.cash != null && Number.isFinite(Number(body.cash))) {
+    const nextCash = paperCash
+      ? Number(body.cash)
+      : Math.max(0, Number(body.cash));
     const { error } = await supabase
       .from(PORTFELL_TABLES.portfolios)
       .update({
-        cash_balance: Number(body.cash),
+        cash_balance: nextCash,
         updated_at: new Date().toISOString(),
       })
       .eq("id", portfolioId);
@@ -250,14 +255,24 @@ export async function POST(req: NextRequest) {
         );
       })
     );
-    const delta = importCashDelta(
-      existingRows,
-      accepted,
-      replacing,
-      salePx
-    );
-    cashBalance = await applyPortfolioCashDelta(supabase, portfolioId, delta);
-    cashUpdated = delta !== 0;
+    if (paperCash) {
+      const delta = importCashDelta(
+        existingRows,
+        accepted,
+        replacing,
+        salePx
+      );
+      cashBalance = await applyTradeCashDelta(supabase, portfolioId, delta);
+      cashUpdated = delta !== 0;
+    } else {
+      const { data: port } = await supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .select("cash_balance")
+        .eq("id", portfolioId)
+        .maybeSingle();
+      const n = Number((port as { cash_balance?: number } | null)?.cash_balance);
+      cashBalance = Number.isFinite(n) ? n : null;
+    }
   }
 
   return NextResponse.json({

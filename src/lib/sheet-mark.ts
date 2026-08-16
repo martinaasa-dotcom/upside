@@ -1,9 +1,11 @@
+import { sheetCashBalance } from "@/lib/cash-balance";
 import { finiteNumber, roundMoney, safeDiv, sumMoney } from "@/lib/money";
 import type { Quote } from "@/lib/types";
 
 export type SheetMeta = {
   id: string;
   cash_balance: number;
+  classroom_community_id?: string | null;
 };
 
 export type SheetHolding = {
@@ -51,7 +53,7 @@ function portfolioValueAt(
         return finiteNumber(h.shares) * px;
       })
   );
-  return roundMoney(finiteNumber(meta.cash_balance) + equity);
+  return roundMoney(sheetCashBalance(meta) + equity);
 }
 
 export function quotesCoverDate(
@@ -90,7 +92,7 @@ export function portfolioCostValue(
       .filter((h) => h.portfolio_id === meta.id)
       .map((h) => finiteNumber(h.shares) * finiteNumber(h.buy_price))
   );
-  return roundMoney(finiteNumber(meta.cash_balance) + cost);
+  return roundMoney(sheetCashBalance(meta) + cost);
 }
 
 /** Mark-to-market on a past NY session, using dated daily bars when we have them. */

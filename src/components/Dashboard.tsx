@@ -24,6 +24,7 @@ import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
+import { sheetCashBalance, tracksTradeCash } from "@/lib/cash-balance";
 import { realBookPortfolios } from "@/lib/classroom";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
@@ -2407,6 +2408,7 @@ export function Dashboard() {
     if (!activePortfolio) return;
     const portfolioId = activePortfolio.id;
     const previousCash = activePortfolio.cash_balance;
+    if (!tracksTradeCash(activePortfolio) && cash < 0) cash = 0;
 
     if (source === "demo") {
       const next = updateCash(loadDemoStore(), portfolioId, cash);
@@ -3175,7 +3177,12 @@ export function Dashboard() {
       <CashModal
         open={cashModalOpen}
         portfolioName={activePortfolio?.name ?? ""}
-        initialCash={activePortfolio?.cash_balance ?? 0}
+        initialCash={
+          activePortfolio ? sheetCashBalance(activePortfolio) : 0
+        }
+        allowNegative={
+          activePortfolio ? tracksTradeCash(activePortfolio) : false
+        }
         onClose={() => setCashModalOpen(false)}
         onSave={handleSaveCash}
       />

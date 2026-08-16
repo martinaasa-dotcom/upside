@@ -31,6 +31,7 @@ import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
 import { overlapRows } from "@/lib/circle-overlap";
+import { sheetCashBalance } from "@/lib/cash-balance";
 import { buildOverview } from "@/lib/overview";
 import {
   loadCommunityCache,
@@ -626,7 +627,7 @@ export function CommunityView({ communityId }: Props) {
       const todayDollar = scores.reduce((s, sc) => s + sc.todayDollar, 0);
       const previousTotal = totalValue - todayDollar;
       const todayPct = previousTotal > 0 ? todayDollar / previousTotal : null;
-      const cash = sheets.reduce((s, p) => s + p.cash_balance, 0);
+      const cash = sheets.reduce((s, p) => s + sheetCashBalance(p), 0);
       const tickerValues = holdings
         .filter((h) => sheetIds.has(h.portfolio_id))
         .map((h) => ({
@@ -1004,8 +1005,8 @@ export function CommunityView({ communityId }: Props) {
   }, [selectedPortfolioId, ownerPortfolios, holdings]);
 
   const selectedCash = selectedPortfolio
-    ? selectedPortfolio.cash_balance
-    : ownerPortfolios.reduce((s, p) => s + p.cash_balance, 0);
+    ? sheetCashBalance(selectedPortfolio)
+    : ownerPortfolios.reduce((s, p) => s + sheetCashBalance(p), 0);
 
   const loadInvites = useCallback(async () => {
     const res = await fetch(`/api/communities/${communityId}/invites`, {
@@ -1979,7 +1980,7 @@ export function CommunityView({ communityId }: Props) {
                           return sum + (score?.todayDollar ?? 0);
                         }, 0);
                         const memberCash = sheets.reduce(
-                          (sum, p) => sum + p.cash_balance,
+                          (sum, p) => sum + sheetCashBalance(p),
                           0
                         );
                         const memberTickerValues = holdings

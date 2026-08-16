@@ -34,6 +34,7 @@ import type { HomeSheetId } from "@/lib/home-sheet";
 import type { UpsideAlert } from "@/lib/alerts";
 import { statusLabel } from "@/lib/thesis-pulse";
 import { sessionLabel, sessionKind } from "@/lib/market-session";
+import { sheetCashBalance } from "@/lib/cash-balance";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
 import { recordWeekMark } from "@/lib/week-marks";
 import type { CoveredCallRow } from "@/lib/types";
@@ -660,8 +661,8 @@ function PortfolioLane({
           </p>
           <p className="mt-1.5 text-sm text-muted">
             {plural(sheet.holdingCount, "holding")}
-            {sheet.portfolio.cash_balance !== 0
-              ? ` · ${currency(sheet.portfolio.cash_balance, 0)} cash`
+            {sheetCashBalance(sheet.portfolio) !== 0
+              ? ` · ${currency(sheetCashBalance(sheet.portfolio), 0)} cash`
               : ""}
           </p>
         </div>

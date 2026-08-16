@@ -1,3 +1,4 @@
+import { sheetCashBalance } from "@/lib/cash-balance";
 import { nextStrikeFromTarget, resolveStockTarget } from "@/lib/market/resistance";
 import { finiteNumber, mean, roundMoney, safeDiv, sumMoney } from "@/lib/money";
 import type {
@@ -109,7 +110,8 @@ export function buildSnapshot(
   optionsByTicker: Record<string, OptionCandidate | null>
 ): PortfolioSnapshot {
   // Default sort: largest % of total first
-  const enriched = enrichHoldings(holdings, quotes, portfolio.cash_balance).sort(
+  const cash = sheetCashBalance(portfolio);
+  const enriched = enrichHoldings(holdings, quotes, cash).sort(
     (a, b) => b.pctOfTotal - a.pctOfTotal
   );
 
@@ -126,7 +128,7 @@ export function buildSnapshot(
   const buyValue = sumMoney(enriched.map((h) => h.buyValue));
   const currentValue = roundMoney(
     sumMoney(enriched.map((h) => h.currentValue)) +
-      finiteNumber(portfolio.cash_balance)
+      cash
   );
   // Cost-weighted portfolio return: Σ(P&L) / Σ(cost) — not a simple average of row ROI%
   const roiDollar = sumMoney(enriched.map((h) => h.roiDollar));

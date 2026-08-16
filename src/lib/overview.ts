@@ -1,3 +1,4 @@
+import { sheetCashBalance } from "@/lib/cash-balance";
 import { enrichHoldings } from "@/lib/calculations";
 import { buildDailyFunFacts } from "@/lib/fun-facts";
 import {
@@ -110,11 +111,11 @@ export function buildOverview(
 ): OverviewModel {
   const sheets: SheetScore[] = portfolios.map((portfolio) => {
     const rows = holdings.filter((h) => h.portfolio_id === portfolio.id);
-    const enriched = enrichHoldings(rows, quotes, portfolio.cash_balance);
+    const cash = sheetCashBalance(portfolio);
+    const enriched = enrichHoldings(rows, quotes, cash);
     const buyValue = sumMoney(enriched.map((h) => h.buyValue));
     const equityValue = sumMoney(enriched.map((h) => h.currentValue));
     const roiDollar = sumMoney(enriched.map((h) => h.roiDollar));
-    const cash = finiteNumber(portfolio.cash_balance);
     const todayMoves = enriched.map((h) =>
       todayDollarFor(h.currentValue, h.quote?.changePercent)
     );
@@ -155,7 +156,7 @@ export function buildOverview(
 
   for (const portfolio of portfolios) {
     const rows = holdings.filter((h) => h.portfolio_id === portfolio.id);
-    const enriched = enrichHoldings(rows, quotes, portfolio.cash_balance);
+    const enriched = enrichHoldings(rows, quotes, sheetCashBalance(portfolio));
     for (const h of enriched) {
       const key = h.ticker.toUpperCase();
       const existing = byTicker.get(key) ?? {
@@ -211,7 +212,7 @@ export function buildOverview(
 
   const buyValue = sumMoney(sheets.map((x) => x.buyValue));
   const equityValue = sumMoney(sheets.map((x) => x.equityValue));
-  const cash = sumMoney(portfolios.map((p) => finiteNumber(p.cash_balance)));
+  const cash = sumMoney(portfolios.map((p) => sheetCashBalance(p)));
   const roiDollar = sumMoney(sheets.map((x) => x.roiDollar));
   const todayDollar = sumMoney(sheets.map((x) => x.todayDollar));
   const todayPct = weightedMean(

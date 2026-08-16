@@ -163,7 +163,9 @@ import {
   NIGHTLY_SNAPSHOT_WINDOW,
   snapshotSheetsForOwner,
 } from "../src/lib/book-snapshot";
+import { sheetCashBalance, tracksTradeCash } from "../src/lib/cash-balance";
 import { importCashDelta, tradeCashDelta } from "../src/lib/cash-delta";
+import { upsertHolding } from "../src/lib/demo-store";
 import {
   cagr,
   finiteNumber,
@@ -3230,6 +3232,121 @@ run("buying a name spends cash and selling adds it back", () => {
     ),
     820
   );
+  assert.equal(
+    sheetCashBalance({ cash_balance: -1600 }),
+    0
+  );
+  assert.equal(
+    sheetCashBalance({
+      cash_balance: -1600,
+      classroom_community_id: "class-1",
+    }),
+    -1600
+  );
+  assert.equal(tracksTradeCash({}), false);
+  assert.equal(tracksTradeCash({ classroom_community_id: "class-1" }), true);
+  const before = {
+    portfolios: [
+      {
+        id: "real-1",
+        name: "Real",
+        slug: "real",
+        sort_order: 1,
+        cash_balance: 0,
+      },
+    ],
+    holdings: [],
+  };
+  const after = upsertHolding(before, {
+    portfolio_id: "real-1",
+    ticker: "AAPL",
+    shares: 10,
+    buy_price: 160,
+    eoy_target: null,
+    target_call_pct: 0.15,
+    stock_target_override: null,
+    sort_order: 1,
+  });
+  assert.equal(after.portfolios[0]!.cash_balance, 0);
+  const paper = upsertHolding(
+    {
+      portfolios: [
+        {
+          id: "hw-1",
+          name: "Homework",
+          slug: "hw",
+          sort_order: 1,
+          cash_balance: 10_000,
+          classroom_community_id: "class-1",
+        },
+      ],
+      holdings: [],
+    },
+    {
+      portfolio_id: "hw-1",
+      ticker: "AAPL",
+      shares: 10,
+      buy_price: 160,
+      eoy_target: null,
+      target_call_pct: 0.15,
+      stock_target_override: null,
+      sort_order: 1,
+    }
+  );
+  assert.equal(paper.portfolios[0]!.cash_balance, 8400);
+  const realNav = buildOverview(
+    [{ id: "r", name: "R", slug: "r", sort_order: 0, cash_balance: -1600 }],
+    [
+      {
+        id: "h1",
+        portfolio_id: "r",
+        ticker: "AAPL",
+        shares: 10,
+        buy_price: 100,
+        eoy_target: null,
+        target_call_pct: 0.15,
+        stock_target_override: null,
+        sort_order: 1,
+      },
+    ],
+    {
+      AAPL: {
+        ticker: "AAPL",
+        price: 200,
+        change: 0,
+        changePercent: 0,
+        previousClose: 200,
+        sparkline: [],
+        marketState: null,
+        preMarketPrice: null,
+        preMarketChange: null,
+        preMarketChangePercent: null,
+        postMarketPrice: null,
+        postMarketChange: null,
+        postMarketChangePercent: null,
+      },
+    }
+  );
+  assert.equal(realNav.totals.cash, 0);
+  assert.equal(realNav.totals.equityValue, 2000);
+  assert.equal(realNav.totals.totalValue, 2000);
+  const holdingsApi = readFileSync(
+    join(process.cwd(), "src/app/api/holdings/route.ts"),
+    "utf8"
+  );
+  assert.match(holdingsApi, /applyTradeCashDelta/);
+  assert.doesNotMatch(holdingsApi, /applyPortfolioCashDelta/);
+  const cashModal = readFileSync(
+    join(process.cwd(), "src/components/CashModal.tsx"),
+    "utf8"
+  );
+  assert.match(cashModal, /allowNegative/);
+  assert.doesNotMatch(cashModal, /can be negative/);
+  const portfoliosApi = readFileSync(
+    join(process.cwd(), "src/app/api/portfolios/route.ts"),
+    "utf8"
+  );
+  assert.match(portfoliosApi, /cannot go below zero/);
 });
 
 run("saves list hides nightly rows", () => {

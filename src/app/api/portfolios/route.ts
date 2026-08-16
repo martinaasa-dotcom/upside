@@ -11,6 +11,7 @@ import {
   resolveClassroomTrade,
   type ClassroomTrade,
 } from "@/lib/classroom";
+import { tracksTradeCash } from "@/lib/cash-balance";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
 import { shareNewSheetIntoMemberCircles } from "@/lib/community-share";
 import { sanitizeSheetName } from "@/lib/input-guard";
@@ -72,6 +73,26 @@ export async function GET(req: NextRequest) {
 
   if (pErr) {
     return NextResponse.json({ error: pErr.message }, { status: 500 });
+  }
+
+  const healIds = (
+    (portfolios ?? []) as {
+      id: string;
+      cash_balance?: number;
+      classroom_community_id?: string | null;
+    }[]
+  )
+    .filter((p) => !tracksTradeCash(p) && Number(p.cash_balance) < 0)
+    .map((p) => p.id);
+  if (healIds.length) {
+    await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .update({ cash_balance: 0, updated_at: new Date().toISOString() })
+      .in("id", healIds);
+    for (const p of portfolios ?? []) {
+      const row = p as { id: string; cash_balance?: number };
+      if (healIds.includes(row.id)) row.cash_balance = 0;
+    }
   }
 
   const portfolioIds = (portfolios ?? []).map(
@@ -243,6 +264,22 @@ export async function PATCH(req: NextRequest) {
     if (!Number.isFinite(raw)) {
       return NextResponse.json(
         { error: "Cash has to be a real dollar amount." },
+        { status: 400 }
+      );
+    }
+    const { data: sheet } = await supabase
+      .from(PORTFELL_TABLES.portfolios)
+      .select("classroom_community_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (
+      !tracksTradeCash(
+        (sheet ?? {}) as { classroom_community_id?: string | null }
+      ) &&
+      raw < 0
+    ) {
+      return NextResponse.json(
+        { error: "Cash on a real portfolio cannot go below zero." },
         { status: 400 }
       );
     }

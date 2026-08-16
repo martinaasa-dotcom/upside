@@ -11,6 +11,8 @@ type Props = {
   open: boolean;
   portfolioName: string;
   initialCash: number;
+  /** Paper class sheets can go below zero. Real books cannot. */
+  allowNegative?: boolean;
   onClose: () => void;
   onSave: (cash: number) => void;
 };
@@ -19,6 +21,7 @@ export function CashModal({
   open,
   portfolioName,
   initialCash,
+  allowNegative = false,
   onClose,
   onSave,
 }: Props) {
@@ -41,6 +44,10 @@ export function CashModal({
     const n = parseDecimal(cash);
     if (!isSafeSignedMoney(n)) {
       setError("That has to be a real dollar amount, not enormous.");
+      return;
+    }
+    if (!allowNegative && n < 0) {
+      setError("Cash on a real portfolio cannot go below zero.");
       return;
     }
     setBusy(true);
@@ -75,7 +82,9 @@ export function CashModal({
         </div>
 
         <label className="grid gap-1 text-sm text-muted">
-          Cash balance (can be negative)
+          {allowNegative
+            ? "Paper cash. Buys spend it, sells add it back."
+            : "Money sitting ready, not yet in a stock."}
           <input
             autoFocus
             type="text"
@@ -83,7 +92,9 @@ export function CashModal({
             value={cash}
             onChange={(e) => {
               setCash(
-                e.target.value.replace(/,/g, ".").replace(/[^\d.-]/g, "")
+                e.target.value
+                  .replace(/,/g, ".")
+                  .replace(allowNegative ? /[^\d.-]/g : /[^\d.]/g, "")
               );
               setError(null);
             }}
