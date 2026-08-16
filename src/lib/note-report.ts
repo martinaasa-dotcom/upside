@@ -9,6 +9,7 @@ import {
   EMAIL,
   emailAccountFooter,
   emailButton,
+  emailCard,
   emailKicker,
   emailSection,
   escapeEmail,
@@ -728,7 +729,8 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
         ticker: p.ticker,
         value: p.value,
         todayPct: p.pct,
-      }))
+      })),
+      input.kind === "sunday" ? "this week" : "today"
     ).lines,
   };
 }
@@ -974,28 +976,19 @@ export function noteReportHtml(r: NoteReport): string {
 
   const insightsInner =
     r.insights.length > 0
-      ? section(
-          "Worth noticing",
-          r.insights
-            .map(
-              (line, i) =>
-                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
+      ? r.insights
+          .map((line, i) =>
+            emailCard(
+              `${kicker(i === 0 ? "Worth noticing" : "A thought")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div><p style="margin:0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
             )
-            .join("")
-        )
+          )
+          .join("")
       : "";
 
   const margusInner = r.margus
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:36px 0 0 0">
-  <tr>
-    <td style="width:2px;background:${GOLD};font-size:0;line-height:0">&nbsp;</td>
-    <td style="padding:0 0 0 18px">
-      ${kicker("Margus")}
-      ${noteTakeHtml(r.margus)}
-      <p style="margin:16px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>
-    </td>
-  </tr>
-</table>`
+    ? emailCard(
+        `${kicker("Margus")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div>${noteTakeHtml(r.margus)}<p style="margin:16px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>`
+      )
     : "";
 
   const perspectiveInner =
@@ -1091,7 +1084,7 @@ export function noteReportHtml(r: NoteReport): string {
         )
       : "";
 
-  const hero =
+  const heroInner =
     r.kind === "morning"
       ? `<p style="margin:0;font-family:${SERIF};font-size:26px;line-height:1.35;font-weight:400;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
 <p style="margin:18px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
@@ -1102,6 +1095,7 @@ ${
     : ""
 }
 <p style="margin:16px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`;
+  const hero = emailCard(`${kicker(r.title)}<div style="height:14px;font-size:0;line-height:0">&nbsp;</div>${heroInner}`);
 
   const bodyOrder =
     r.kind === "morning"
@@ -1115,9 +1109,7 @@ ${
     preview,
     dateLine: r.dateLine,
     body: `<!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
-<div style="height:40px;font-size:0;line-height:0">&nbsp;</div>
-${kicker(r.title)}
-<div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
+<div style="height:28px;font-size:0;line-height:0">&nbsp;</div>
 ${hero}
 ${bodyOrder}
 ${emailButton(BOOK_URL, "Open your portfolio")}`,

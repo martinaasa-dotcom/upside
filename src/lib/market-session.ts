@@ -78,17 +78,32 @@ export function isNyWeekday(now = new Date()): boolean {
   return weekday !== "Sat" && weekday !== "Sun";
 }
 
-/** After the US cash session, including Saturday leftover of Friday. */
+export function isUsWeekend(now = new Date()): boolean {
+  const { weekday } = nyClock(now);
+  return weekday === "Sat" || weekday === "Sun";
+}
+
+/**
+ * After the US cash session, including the weekend leftover of Friday.
+ * Sunday used to return false, so Home talked about Friday's leftover
+ * change as if the market was still open.
+ */
 export function isUsAfterCashClose(
   session: SessionKind,
   now = new Date()
 ): boolean {
-  const { weekday, hour } = nyClock(now);
-  if (weekday === "Sat") return true;
-  if (weekday === "Sun") return false;
+  if (isUsWeekend(now)) return true;
   if (session === "open" || session === "pre") return false;
   if (session === "ah") return true;
-  return hour >= 16;
+  return nyClock(now).hour >= 16;
+}
+
+/** How leftover daily % should be named in a sentence a person reads. */
+export function insightWhen(
+  session: SessionKind = "unknown",
+  now = new Date()
+): "today" | "friday" {
+  return isUsWeekend(now) ? "friday" : "today";
 }
 
 export function sessionKind(state: string | null | undefined): SessionKind {

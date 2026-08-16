@@ -43,6 +43,13 @@ export function emailSection(title: string, inner: string): string {
 </table>`;
 }
 
+/** A raised box so the week hero, Margus, and each notice sit apart. */
+export function emailCard(inner: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0 0 0;background:${EMAIL.line};border:1px solid rgba(214,173,105,0.22);border-radius:12px">
+  <tr><td style="padding:20px 18px">${inner}</td></tr>
+</table>`;
+}
+
 export function emailButton(href: string, label: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:36px 0 0 0">
   <tr>

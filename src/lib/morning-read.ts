@@ -1,7 +1,9 @@
 import { buildBookInsights } from "@/lib/book-insights";
 import { cashtag, signedCurrency } from "@/lib/format";
 import {
+  insightWhen,
   isUsAfterCashClose,
+  isUsWeekend,
   type SessionKind,
 } from "@/lib/market-session";
 import type { OverviewModel } from "@/lib/overview";
@@ -37,18 +39,33 @@ export type SundayRecap = {
   worst: SundayName | null;
 };
 
+export type MorningNotice = {
+  label: string;
+  text: string;
+};
+
 export type MorningRead = {
   quiet: boolean;
   sentence: string;
-  insight: string | null;
+  notices: MorningNotice[];
   pulseFlags: MorningPulseFlag[];
   awayLines: VisitDiff["lines"];
   drivers: MorningDriver[];
   afterClose: boolean;
   sunday: SundayRecap | null;
+  moveLabel: "Today" | "Friday";
 };
 
-function daySentence(model: OverviewModel): { quiet: boolean; sentence: string } {
+function daySentence(
+  model: OverviewModel,
+  weekend: boolean
+): { quiet: boolean; sentence: string } {
+  if (weekend) {
+    return {
+      quiet: true,
+      sentence: "US markets are closed. These are Friday's numbers.",
+    };
+  }
   const pct = model.totals.todayPct;
   if (pct == null) {
     return { quiet: true, sentence: "Prices are still coming in." };
@@ -56,7 +73,7 @@ function daySentence(model: OverviewModel): { quiet: boolean; sentence: string }
   const dollars = signedCurrency(model.totals.todayDollar, 0);
   const swing = Math.abs(pct);
   if (swing < 0.005) {
-    return { quiet: true, sentence: "Quiet day. Book barely moved." };
+    return { quiet: true, sentence: "Quiet day. Your portfolio barely moved." };
   }
   if (swing < 0.02) {
     return {
@@ -174,26 +191,39 @@ export function buildMorningRead(
   visitDiff: VisitDiff | null,
   session: SessionKind = "unknown"
 ): MorningRead {
-  const { quiet, sentence } = daySentence(model);
+  const weekend = isUsWeekend();
+  const when = insightWhen(session);
+  const { quiet, sentence } = daySentence(model, weekend);
   const awayLines = visitDiff?.lines.slice(0, 3) ?? [];
   const sunday = isSundayTallinn() ? buildSundayRecap(model) : null;
   const afterClose = isUsAfterCashClose(session);
-  const insight =
-    buildBookInsights(
-      model.tickers.map((t) => ({
-        ticker: t.ticker,
-        value: t.currentValue,
-        todayPct: t.todayPct,
-      }))
-    ).lines[0] ?? null;
+  const insights = buildBookInsights(
+    model.tickers.map((t) => ({
+      ticker: t.ticker,
+      value: t.currentValue,
+      todayPct: t.todayPct,
+    })),
+    when
+  );
+  const notices: MorningNotice[] = [];
+  if (insights.rotation) {
+    notices.push({
+      label: when === "friday" ? "Friday's close" : "Worth noticing",
+      text: insights.rotation,
+    });
+  }
+  if (insights.idea) {
+    notices.push({ label: "A thought", text: insights.idea });
+  }
   return {
     quiet: quiet && awayLines.length === 0,
     sentence,
-    insight,
+    notices,
     pulseFlags: pulseFlagsFor(model),
     awayLines,
     drivers: sunday ? [] : driversFor(model),
     afterClose: !sunday && afterClose,
     sunday,
+    moveLabel: when === "friday" ? "Friday" : "Today",
   };
 }

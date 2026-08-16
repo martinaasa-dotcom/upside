@@ -93,7 +93,7 @@ import {
   priceRange,
   sessionReaction,
 } from "../src/lib/earnings-brief";
-import { sessionMark } from "../src/lib/market-session";
+import { insightWhen, isUsAfterCashClose, sessionMark } from "../src/lib/market-session";
 import { quotePollMs } from "../src/lib/market/session";
 import {
   isLegacyHost,
@@ -970,7 +970,9 @@ run("Sunday note never ships the writing brief", () => {
   assert.ok(preview.length <= 88);
   const html = noteReportHtml(report);
   assert.match(html, /\$NBIS was the gainer/);
+  assert.match(html, /border-radius:12px/);
   assert.match(html, /&#847;&zwnj;&nbsp;/);
+  assert.doesNotMatch(report.insights.join(" "), /\btoday\b/);
   assert.ok(
     html.indexOf("$NBIS was the gainer") < html.indexOf(report.dateLine)
   );
@@ -1277,8 +1279,8 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(header, /bg-app\/95 backdrop-blur/);
   assert.match(header, /border-b border-border/);
   assert.doesNotMatch(header, /border-b border-white\/10/);
-  assert.match(home, /<Reading label="Worth noticing">/);
-  assert.match(home, /<InsightText text=\{morning.insight\} \/>/);
+  assert.match(home, /morning.notices.map/);
+  assert.match(home, /<InsightText text=\{notice.text\} \/>/);
   assert.doesNotMatch(home, /opened the book/);
   assert.doesNotMatch(home, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
@@ -1829,6 +1831,11 @@ run("inbox letters share one letterhead", () => {
   assert.doesNotMatch(nudge, /\u2014/);
   const send = readFileSync("src/lib/send-note.ts", "utf8");
   assert.match(send, /fallbackNoteHtml/);
+  const letter = readFileSync(
+    join(process.cwd(), "src/lib/email-letter.ts"),
+    "utf8"
+  );
+  assert.match(letter, /export function emailCard/);
 });
 
 run("one community invite can name several emails", () => {
@@ -1881,20 +1888,35 @@ run("the recent Pulse and briefing bugs stay gone", () => {
 });
 
 run("Worth noticing names the two groups in plain English", () => {
-  const out = buildBookInsights([
+  const holdings = [
     { ticker: "AVGO", value: 20_000, todayPct: -0.06 },
     { ticker: "CRWV", value: 18_000, todayPct: 0.05 },
     { ticker: "MSFT", value: 5_000, todayPct: 0.01 },
-  ]);
+  ];
+  const out = buildBookInsights(holdings);
   const line = out.rotation ?? "";
   assert.match(line, /\$AVGO/);
   assert.match(line, /chip makers/);
   assert.match(line, /\$CRWV/);
   assert.match(line, /AI computer/);
   assert.match(line, /not the same bet/);
+  assert.match(line, /today/);
   assert.doesNotMatch(line, /money is leaving/);
   assert.doesNotMatch(line, /computer chips/);
   assert.doesNotMatch(line, /If you didn't mean to take that bet/);
+
+  const friday = buildBookInsights(holdings, "friday").rotation ?? "";
+  assert.match(friday, /on Friday/);
+  assert.doesNotMatch(friday, /today/);
+  const week = buildBookInsights(holdings, "this week").rotation ?? "";
+  assert.match(week, /this week/);
+  assert.doesNotMatch(week, /today/);
+
+  const sunday = new Date("2026-08-16T12:00:00+03:00");
+  assert.equal(insightWhen("closed", sunday), "friday");
+  assert.equal(isUsAfterCashClose("closed", sunday), true);
+  const monday = new Date("2026-08-17T11:00:00-04:00");
+  assert.equal(insightWhen("open", monday), "today");
 });
 
 run("empty book does not lead with Fund", () => {

@@ -161,7 +161,8 @@ function MobileHomeHero({
           tone(totals.todayDollar)
         )}
       >
-        {signedCurrency(totals.todayDollar, 0)} today
+        {signedCurrency(totals.todayDollar, 0)}{" "}
+        {morning.moveLabel.toLowerCase()}
         {totals.todayPct != null ? ` · ${percent(totals.todayPct)}` : ""}
       </p>
       {onAddHolding && (
@@ -440,6 +441,9 @@ function MorningStack({
     <div className={cn("space-y-6", className)}>
       {sunday ? (
         <div className="space-y-4">
+          <Reading label="Sunday">
+            {morning.sentence}
+          </Reading>
           <MicroLabel>Sunday look</MicroLabel>
           {(sunday.best || sunday.worst) && (
             <div
@@ -507,40 +511,51 @@ function MorningStack({
         </>
       )}
       {morning.awayLines.length > 0 && (
-        <div>
-          <p className="text-sm text-muted">
-            Since you last looked
-            {previousAt
-              ? ` · ${new Date(previousAt).toLocaleString("en-GB", {
-                  timeZone: "Europe/Tallinn",
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}`
-              : ""}
-          </p>
-          <ul className="mt-1.5 space-y-1">
+        <Reading
+          label={
+            previousAt
+              ? `Since you last looked · ${new Date(previousAt).toLocaleString(
+                  "en-GB",
+                  {
+                    timeZone: "Europe/Tallinn",
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }
+                )}`
+              : "Since you last looked"
+          }
+        >
+          <ul className="space-y-2">
             {morning.awayLines.map((line) => (
               <li
                 key={line.id}
-                className={cn(
-                  "text-sm",
+                className={
                   line.tone === "up"
                     ? "text-gain"
                     : line.tone === "down"
                       ? "text-loss"
-                      : "text-foreground/80"
-                )}
+                      : undefined
+                }
               >
                 {line.text}
               </li>
             ))}
           </ul>
-        </div>
-      )}
-      {morning.insight && (
-        <Reading label="Worth noticing">
-          <InsightText text={morning.insight} />
         </Reading>
+      )}
+      {morning.notices.length > 0 && (
+        <div
+          className={cn(
+            "grid gap-3",
+            morning.notices.length > 1 && "sm:grid-cols-2"
+          )}
+        >
+          {morning.notices.map((notice) => (
+            <Reading key={notice.label} label={notice.label}>
+              <InsightText text={notice.text} />
+            </Reading>
+          ))}
+        </div>
       )}
       {morning.pulseFlags.length > 0 && (
         <div className="space-y-2">
@@ -852,7 +867,7 @@ export function OverviewDashboard({
         <div>
           <PanelHeader
             hero
-            title="Today"
+            title={morning.moveLabel}
             actions={
               <>
                 <span
@@ -903,7 +918,7 @@ export function OverviewDashboard({
               sub={plural(totals.sheetCount, "portfolio")}
             />
             <Stat
-              label="Today"
+              label={morning.moveLabel}
               value={signedCurrency(totals.todayDollar)}
               sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
               valueClassName={tone(totals.todayDollar)}
@@ -966,7 +981,7 @@ export function OverviewDashboard({
           actions={
             <Segmented
               options={[
-                { id: "today", label: "Today" },
+                { id: "today", label: morning.moveLabel },
                 { id: "lifetime", label: "All time" },
               ]}
               value={moverHorizon}

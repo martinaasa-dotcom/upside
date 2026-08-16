@@ -40,12 +40,36 @@ export type InsightHolding = {
   todayPct?: number | null;
 };
 
+export type InsightWhen = "today" | "friday" | "this week";
+
 export type BookInsights = {
   idea: string | null;
   rotation: string | null;
   lines: string[];
   promptBlock: string;
 };
+
+function whenCopy(when: InsightWhen): { verb: string; tail: string; closer: string } {
+  if (when === "friday") {
+    return {
+      verb: "were",
+      tail: "on Friday",
+      closer: "Friday's close treated them that way.",
+    };
+  }
+  if (when === "this week") {
+    return {
+      verb: "are",
+      tail: "this week",
+      closer: "The week treated them that way.",
+    };
+  }
+  return {
+    verb: "are",
+    tail: "today",
+    closer: "Today's prices treated them that way.",
+  };
+}
 
 const GAP = 0.08;
 
@@ -166,7 +190,10 @@ function groupLead(ticker: string | null, group: string): string {
   return group.charAt(0).toUpperCase() + group.slice(1);
 }
 
-function dayRotation(holdings: InsightHolding[]): string | null {
+function dayRotation(
+  holdings: InsightHolding[],
+  when: InsightWhen
+): string | null {
   const withMove = holdings.filter(
     (h) => h.value > 0 && h.todayPct != null && Number.isFinite(h.todayPct)
   );
@@ -202,19 +229,23 @@ function dayRotation(holdings: InsightHolding[]): string | null {
 
   const down = groupLead(loudestInTheme(withMove, worst.theme), THEME_PLAIN[worst.theme]);
   const up = groupLead(loudestInTheme(withMove, best.theme), THEME_PLAIN[best.theme]);
+  const w = whenCopy(when);
   const closer =
     AI_NEIGHBORS.has(best.theme) && AI_NEIGHBORS.has(worst.theme)
       ? "Both sit in the AI story, but they are not the same bet."
-      : "Those are two different parts of your portfolio. Today's prices treated them that way.";
-  return `${down} are ${aboutPct(worst.pct)} today. ${up} are ${aboutPct(best.pct)}. ${closer}`;
+      : `Those are two different parts of your portfolio. ${w.closer}`;
+  return `${down} ${w.verb} ${aboutPct(worst.pct)} ${w.tail}. ${up} ${w.verb} ${aboutPct(best.pct)} ${w.tail}. ${closer}`;
 }
 
-export function buildBookInsights(holdings: InsightHolding[]): BookInsights {
+export function buildBookInsights(
+  holdings: InsightHolding[],
+  when: InsightWhen = "today"
+): BookInsights {
   const slices = themeBreakdown(
     holdings.map((h) => ({ ticker: h.ticker, currentValue: h.value }))
   );
   const idea = ideaFor(slices);
-  const rotation = dayRotation(holdings) ?? structuralRotation(slices);
+  const rotation = dayRotation(holdings, when) ?? structuralRotation(slices);
   const lines = [rotation, idea].filter((x): x is string => Boolean(x));
   const promptBlock =
     lines.length === 0
