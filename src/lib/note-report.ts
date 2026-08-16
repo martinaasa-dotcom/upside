@@ -595,14 +595,17 @@ function sundayLead(input: {
   const hook = signedMoney(input.today);
   const best = [...input.movers].sort((a, b) => b.pct - a.pct)[0];
   const worst = [...input.movers].sort((a, b) => a.pct - b.pct)[0];
-  const bits = [`${signedMoney(input.today)} this week.`];
+  const bits: string[] = [];
   if (best && best.pct > 0) {
     bits.push(`${cashtag(best.ticker)} was the gainer.`);
   }
   if (worst && worst.ticker !== best?.ticker && worst.pct < 0) {
     bits.push(`${cashtag(worst.ticker)} was the drop.`);
   }
-  return { lead: bits.join(" "), subjectHook: hook };
+  return {
+    lead: bits.join(" ") || "A quiet week.",
+    subjectHook: hook,
+  };
 }
 
 export function buildNoteReport(input: NoteReportInput): NoteReport {
@@ -770,15 +773,15 @@ export function noteReportText(r: NoteReport): string {
   return lines.join("\n");
 }
 
-const APP = "#080808";
-const CARD = "#141414";
+const APP = "#0b0b0b";
+const CARD = "#171717";
 const CREAM = "#ede8dc";
-const MUTED = "#9c9486";
+const MUTED = "#9a9488";
 const GOLD = "#c4a36a";
-const GAIN = "#3f9d58";
-const LOSS = "#d46558";
-const LINE = "#1e1e1e";
-const EDGE = "#2a2a2a";
+const GAIN = "#5a9a4a";
+const LOSS = "#c46a58";
+const LINE = "#212121";
+const EDGE = "#2b2b2b";
 const SANS =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const BOOK_URL = "https://upsidelab.app";
@@ -838,7 +841,6 @@ export function noteReportHtml(r: NoteReport): string {
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
   const preview = notePreview(r);
   const previewPad = Array.from({ length: 40 }, () => "&zwnj;&nbsp;").join("");
-  const topPad = r.kind === "sunday" ? "36px" : "28px";
 
   const moverRows = r.movers
     .map((m, i) => {
@@ -1030,16 +1032,20 @@ export function noteReportHtml(r: NoteReport): string {
 
   const hero =
     r.kind === "morning"
-      ? `<p style="margin:18px 0 0 0;font-family:${SANS};font-size:22px;line-height:1.35;font-weight:600;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
-<p style="margin:12px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
-      : `<p style="margin:18px 0 0 0;font-family:${SANS};font-size:40px;line-height:1.05;font-weight:700;letter-spacing:-0.03em;color:${todayColor}">${escapeHtml(signedMoney(r.todayDollar))}</p>
+      ? `<p style="margin:0;font-family:${SANS};font-size:22px;line-height:1.4;font-weight:600;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
+      : `<p style="margin:0;font-family:${SANS};font-size:40px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:${CREAM}">${escapeHtml(signedMoney(r.todayDollar))}</p>
 ${
   r.todayPct != null
-    ? `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(signedPct(r.todayPct))} ${escapeHtml(r.todayLabel.toLowerCase())}</p>`
+    ? `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${todayColor}">${escapeHtml(signedPct(r.todayPct))}</p>`
     : ""
 }
-<p style="margin:10px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
-<p style="margin:16px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.45;color:${CREAM}">${escapeHtml(r.lead)}</p>`;
+<p style="margin:16px 0 0 0;font-family:${SANS};font-size:14px;color:${MUTED}">Book ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>
+${
+  r.lead
+    ? `<p style="margin:24px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(r.lead)}</p>`
+    : ""
+}`;
 
   const bodyOrder =
     r.kind === "morning"
@@ -1069,20 +1075,15 @@ ${
     <td align="center" style="padding:0;background:${APP}" bgcolor="${APP}">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;background:${APP}">
         <tr>
-          <td style="height:3px;background:${GOLD};font-size:0;line-height:0">&nbsp;</td>
+          <td style="height:2px;background:${GOLD};font-size:0;line-height:0">&nbsp;</td>
         </tr>
         <tr>
-          <td style="padding:${topPad} 24px 40px 24px;background:${APP}">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">
-              <tr>
-                <td style="vertical-align:middle">
-                  <img src="${LOCKUP}" width="156" height="29" alt="Upside Lab" style="display:block;border:0" />
-                </td>
-                <td style="vertical-align:middle;text-align:right;font-family:${SANS};font-size:12px;color:${MUTED}">${escapeHtml(r.dateLine)}</td>
-              </tr>
-            </table>
-            <div style="height:22px;font-size:0;line-height:0">&nbsp;</div>
+          <td style="padding:48px 28px 52px 28px;background:${APP}">
+            <img src="${LOCKUP}" width="156" height="29" alt="Upside Lab" style="display:block;border:0" />
+            <p style="margin:14px 0 0 0;font-family:${SANS};font-size:14px;line-height:1.4;color:${MUTED}">${escapeHtml(r.dateLine)}</p>
+            <div style="height:40px;font-size:0;line-height:0">&nbsp;</div>
             ${kicker(r.title)}
+            <div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
             ${hero}
             ${bodyOrder}
             ${openBookButton()}

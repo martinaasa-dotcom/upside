@@ -29,7 +29,7 @@ function noteHtml(text: string): string {
       return `<p style="${style}">${escapeHtml(block).replace(/\n/g, "<br>")}</p>`;
     })
     .join("");
-  return `<div style="width:100%;padding:22px 16px;background:#080808;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ede8dc">
+  return `<div style="width:100%;padding:22px 16px;background:#0b0b0b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#ede8dc">
 <img src="${MARK_URL}" width="180" height="33" alt="Upside Lab" style="display:block;margin:0 0 16px 0;border:0" />
 ${body}
 </div>`;

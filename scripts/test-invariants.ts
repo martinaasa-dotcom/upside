@@ -818,6 +818,13 @@ run("Sunday note never ships the writing brief", () => {
   assert.equal(looksLikePromptLeak(fallback), false);
   assert.ok(fallback.length >= 20);
   assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
+  assert.doesNotMatch(report.lead, /this week/);
+  assert.match(report.lead, /\$NBIS was the gainer/);
+  const email = readFileSync("src/lib/note-report.ts", "utf8");
+  assert.match(email, /font-size:40px;line-height:1\.1;font-weight:700;letter-spacing:-0\.03em;color:\$\{CREAM\}/);
+  assert.match(email, /padding:48px 28px 52px 28px/);
+  assert.match(email, /const APP = "#0b0b0b"/);
+  assert.match(email, /const GAIN = "#5a9a4a"/);
 });
 
 run("novice hides Lab, not Pulse", () => {
@@ -997,24 +1004,27 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     "utf8"
   );
   assert.match(css, /--paper: #ede8dc/);
-  assert.match(css, /--ink: #0a0a0a/);
-  assert.match(css, /--card: #141414/);
-  assert.match(css, /--raised: #1e1e1e/);
-  assert.match(css, /--app: #080808/);
-  assert.match(css, /--muted: #9c9486/);
+  assert.match(css, /--ink: #0c0c0c/);
+  assert.match(css, /--card: #171717/);
+  assert.match(css, /--raised: #212121/);
+  assert.match(css, /--app: #0b0b0b/);
+  assert.match(css, /--muted: #9a9488/);
   assert.match(css, /--brand: #c4a36a/);
   assert.match(css, /--select: #c4a36a/);
   assert.match(css, /--mustard: #d4a24c/);
-  assert.match(css, /--gain: #3f9d58/);
-  assert.match(css, /--loss: #d46558/);
+  assert.match(css, /--gain: #5a9a4a/);
+  assert.match(css, /--loss: #c46a58/);
   assert.match(css, /background: var\(--mustard\)/);
   assert.doesNotMatch(css, /--app: #0d110f/);
   assert.doesNotMatch(css, /--app: #1a2820/);
+  assert.doesNotMatch(css, /--app: #080808/);
   assert.doesNotMatch(css, /--card: #1a1f1c/);
   assert.doesNotMatch(css, /--card: #2a2218/);
   assert.doesNotMatch(css, /--card: #151716/);
+  assert.doesNotMatch(css, /--card: #141414/);
   assert.doesNotMatch(css, /--raised: #242b27/);
   assert.doesNotMatch(css, /--gain: #6db85c/);
+  assert.doesNotMatch(css, /--gain: #3f9d58/);
   assert.doesNotMatch(css, /--brand: #8a9a86/);
   assert.doesNotMatch(css, /--brand: #c4a574/);
   assert.doesNotMatch(css, /--brand: #b8b3aa/);
@@ -1058,7 +1068,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
   assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
-  assert.match(frame, /#161616_0%,_#080808/);
+  assert.match(frame, /#141414_0%,_#0b0b0b/);
   assert.doesNotMatch(frame, /#141614/);
   assert.doesNotMatch(frame, /#0d110f/);
   assert.doesNotMatch(frame, /#1a2820/);

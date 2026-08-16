@@ -46,7 +46,7 @@ export default function GlobalError({
           gap: "1.5rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#080808",
+          background: "#0b0b0b",
           color: "#ede8dc",
         }}
       >
@@ -78,7 +78,7 @@ export default function GlobalError({
               borderRadius: "0.5rem",
               border: "none",
               background: "#d4a24c",
-              color: "#0a0a0a",
+              color: "#0c0c0c",
               fontWeight: 600,
               fontSize: "0.875rem",
               padding: "0.5rem 1rem",

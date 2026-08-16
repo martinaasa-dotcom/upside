@@ -268,7 +268,7 @@ function ComparePathsChart({
                 x2={w - padR}
                 y1={y}
                 y2={y}
-                stroke="#2a2a2a"
+                stroke="#2b2b2b"
                 strokeWidth="1"
               />
               <text
@@ -305,7 +305,7 @@ function ComparePathsChart({
               x2={xAt(tippingYear)}
               y1={padT}
               y2={padT + plotH}
-              stroke="#3f9d58"
+              stroke="#5a9a4a"
               strokeWidth="1"
               strokeDasharray="3 3"
               opacity="0.6"
@@ -316,7 +316,7 @@ function ComparePathsChart({
               textAnchor="middle"
               fontSize="9"
               fontWeight="600"
-              fill="#3f9d58"
+              fill="#5a9a4a"
             >
               Tip Y{tippingYear}
             </text>
@@ -355,7 +355,7 @@ function ComparePathsChart({
                 cy={yAt(p.series[hoverIdx] ?? 0)}
                 r={p.thick ? 4 : 3.25}
                 fill={p.color}
-                stroke="#080808"
+                stroke="#0b0b0b"
                 strokeWidth="1.5"
               />
             ))}
