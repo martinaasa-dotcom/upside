@@ -1,18 +1,12 @@
 "use client";
 
-import { CircleDockLink } from "@/components/CircleDockLink";
-import { Activity, Calculator, FlaskConical, LayoutDashboard, Plus } from "lucide-react";
+import { BookModeDock } from "@/components/BookModeDock";
+import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
 import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import { useDockPad } from "@/lib/use-dock-pad";
-import {
-  COMPOUND_TAB_ID,
-  LAB_TAB_ID,
-  OVERVIEW_TAB_ID,
-  PULSE_TAB_ID,
-} from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
 
 type Props = {
@@ -38,33 +32,6 @@ type OpenMenu = {
   y: number;
 };
 
-const MODES = [
-  {
-    id: OVERVIEW_TAB_ID,
-    label: "Overview",
-    shortLabel: "Home",
-    Icon: LayoutDashboard,
-  },
-  {
-    id: PULSE_TAB_ID,
-    label: "Pulse",
-    shortLabel: "Pulse",
-    Icon: Activity,
-  },
-  {
-    id: LAB_TAB_ID,
-    label: "Lab",
-    shortLabel: "Lab",
-    Icon: FlaskConical,
-  },
-  {
-    id: COMPOUND_TAB_ID,
-    label: "Compound",
-    shortLabel: "Growth",
-    Icon: Calculator,
-  },
-] as const;
-
 export function PortfolioTabs({
   portfolios,
   activeId,
@@ -86,12 +53,6 @@ export function PortfolioTabs({
   useDockPad(dockRef);
   const sheetRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sheetActive = portfolios.some((p) => p.id === activeId);
-  const modes = MODES.filter((m) => {
-    if (guest && m.id === LAB_TAB_ID) return false;
-    if (hiddenModeIds.includes(m.id)) return false;
-    return true;
-  });
-  const modeCols = modes.length;
 
   useEffect(() => {
     setMounted(true);
@@ -205,61 +166,17 @@ export function PortfolioTabs({
       )}
     >
       <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-5 sm:py-2.5")}>
-        {/* App modes — sits at the thumb edge on phones */}
-        <div className="flex w-full shrink-0 items-end sm:w-auto">
-          <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="mb-1.5 hidden text-sm font-medium text-muted sm:block">
-              In your portfolio
-            </p>
-            <div
-              role="tablist"
-              aria-label="In your portfolio"
-              className={cn(
-                "grid h-12 w-full overflow-hidden rounded-lg bg-well/80 ring-1 ring-inset ring-brand/30 sm:h-12",
-                modeCols === 2 && "grid-cols-2 sm:w-[18rem]",
-                modeCols === 3 && "grid-cols-3 sm:w-[28rem]",
-                modeCols === 4 && "grid-cols-4 sm:w-[36rem]",
-                modeCols >= 5 && "grid-cols-5 sm:w-[44rem]"
-              )}
-            >
-              {modes.map(({ id, label, shortLabel, Icon }) => {
-                const active = activeId === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    title={label}
-                    onClick={() => {
-                      setMenu(null);
-                      onChange(id);
-                    }}
-                    className={cn(
-                      "flex h-full w-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 font-medium transition",
-                      "sm:flex-row sm:gap-1.5 sm:px-2",
-                      active
-                        ? "bg-select text-select-ink"
-                        : "text-muted hover:text-brand-bright"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0 opacity-90 sm:h-3.5 sm:w-3.5" aria-hidden />
-                    <span className="max-w-full text-sm leading-none sm:hidden">
-                      {shortLabel}
-                    </span>
-                    <span className="hidden whitespace-nowrap text-sm sm:inline">
-                      {label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden shrink-0 sm:block">
-          <p className="mb-1.5 text-sm font-medium text-muted">Circle</p>
-          <CircleDockLink />
+        <div className="w-full shrink-0 sm:w-auto">
+          <BookModeDock
+            activeId={activeId}
+            onSelectMode={(id) => {
+              setMenu(null);
+              onChange(id);
+            }}
+            hiddenModeIds={hiddenModeIds}
+            guest={guest}
+            hideCircleOnPhone
+          />
         </div>
 
         {/* Sheets — different language: text rail, not twin chips */}

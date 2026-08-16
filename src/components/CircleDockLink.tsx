@@ -5,8 +5,14 @@ import { Compass } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/** Circle chip for the book dock. Sits off the Overview/Pulse/Lab/Compound cluster. */
-export function CircleDockLink({ className }: { className?: string }) {
+/** Circle cell inside the shared book dock well. Same size as the other tabs. */
+export function CircleDockLink({
+  className,
+  hideOnPhone = false,
+}: {
+  className?: string;
+  hideOnPhone?: boolean;
+}) {
   const pathname = usePathname();
   const on =
     pathname.startsWith("/communities") ||
@@ -17,15 +23,17 @@ export function CircleDockLink({ className }: { className?: string }) {
       title="Upside Circle"
       aria-current={on ? "page" : undefined}
       className={cn(
-        "flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3.5 text-sm font-medium ring-1 ring-inset transition",
+        hideOnPhone ? "hidden sm:flex" : "flex",
+        "h-full w-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-sm font-medium transition sm:flex-row sm:gap-1.5 sm:px-2",
         on
-          ? "bg-select text-select-ink ring-select"
-          : "bg-well/80 text-muted ring-brand/30 hover:text-brand-bright",
+          ? "bg-select text-select-ink"
+          : "text-muted hover:text-brand-bright",
         className
       )}
     >
-      <Compass className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-      Circle
+      <Compass className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+      <span className="max-w-full text-sm leading-none sm:hidden">Circle</span>
+      <span className="hidden whitespace-nowrap text-sm sm:inline">Circle</span>
     </Link>
   );
 }

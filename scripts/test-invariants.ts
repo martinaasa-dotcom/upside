@@ -1261,6 +1261,10 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     join(process.cwd(), "src/components/PortfolioTabs.tsx"),
     "utf8"
   );
+  const modeDock = readFileSync(
+    join(process.cwd(), "src/components/BookModeDock.tsx"),
+    "utf8"
+  );
   assert.match(css, /--paper: #f4f1ea/);
   assert.match(css, /--ink: #08090c/);
   assert.match(css, /--card: #161b25/);
@@ -1337,7 +1341,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(frame, /#0d110f/);
   assert.doesNotMatch(frame, /#1a2820/);
   assert.doesNotMatch(frame, /#2d3d32/);
-  assert.match(tabs, /bg-select text-select-ink/);
+  assert.match(modeDock, /bg-select text-select-ink/);
   assert.doesNotMatch(tabs, /bg-white text-black/);
 
   const bland = [
@@ -3838,20 +3842,25 @@ run("workspace nav marks the current room and the skip link exists", () => {
   assert.ok(/href="#main"/.test(providers));
   assert.ok(/Skip to content/.test(providers));
   const dock = readFileSync(
-    join(process.cwd(), "src/components/BookBottomNav.tsx"),
+    join(process.cwd(), "src/components/BookModeDock.tsx"),
     "utf8"
   );
-  assert.ok(/max-w-\[36rem\]/.test(dock));
+  assert.ok(/sm:w-\[42rem\]/.test(dock));
   assert.match(dock, /stashOpenTab/);
   assert.match(dock, /\/\?tab=overview/);
   assert.match(dock, /CircleDockLink/);
+  const bookNav = readFileSync(
+    join(process.cwd(), "src/components/BookBottomNav.tsx"),
+    "utf8"
+  );
+  assert.match(bookNav, /BookModeDock/);
   const tabs = readFileSync(
     join(process.cwd(), "src/components/PortfolioTabs.tsx"),
     "utf8"
   );
-  assert.match(tabs, /CircleDockLink/);
+  assert.match(tabs, /BookModeDock/);
   assert.ok(
-    tabs.indexOf("CircleDockLink") < tabs.indexOf("Sheets —"),
+    tabs.indexOf("BookModeDock") < tabs.indexOf("Sheets —"),
     "Circle sits between the book modes and the sheets rail"
   );
   const community = readFileSync(
