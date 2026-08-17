@@ -1260,11 +1260,14 @@ run("note letters are one mix story, not stacked cards", () => {
   });
   morning.margus = fallbackNoteTake(morning);
   assert.equal(morning.margus.split(/\n\n/).length, 2);
-  assert.match(morning.margus, /\$RDDT jumped 8\.0% this morning/);
+  assert.match(morning.margus, /\$RDDT/);
+  assert.match(morning.margus, /8\.0%/);
+  assert.match(morning.margus, /jumped/);
   assert.match(morning.margus, /\$DRAM was up 1\.4%/);
   assert.match(morning.margus, /\$CRWV was steady/);
-  assert.match(morning.margus, /nothing you need to buy or sell/);
-  assert.match(morning.margus, /let your money do its work in the background/);
+  assert.equal((morning.margus.match(/\$RDDT\b/g) ?? []).length, 1);
+  assert.equal((morning.margus.match(/\$DRAM\b/g) ?? []).length, 1);
+  assert.match(morning.margus, /hold|sit back|nothing to buy|No need to do anything|Keep holding|let (your|the) money/i);
   assert.match(morning.margus, /[.!?]$/);
   assert.doesNotMatch(morning.margus, /64%/);
   assert.doesNotMatch(morning.margus, /cost basis|falling knife|\bgap\b|catalyst|pre-bell|read on the business/i);
@@ -1273,7 +1276,7 @@ run("note letters are one mix story, not stacked cards", () => {
   assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
   const html = noteReportHtml(morning);
   assert.match(html, /Morning Pre-Market/);
-  assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for/);
+  assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for|Coming up/);
   morning.news = {
     ticker: "RDDT",
     title: "Reddit to join the S&P 500",
@@ -1283,37 +1286,42 @@ run("note letters are one mix story, not stacked cards", () => {
   assert.match(morning.margus, /\$RDDT jumped this morning because it was added to the S&P 500/);
   assert.match(morning.margus, /big index funds have to buy it automatically/);
   assert.match(morning.margus, /\$DRAM was up 1\.4%/);
+  assert.equal((morning.margus.match(/\$RDDT\b/g) ?? []).length, 1);
   assert.doesNotMatch(morning.margus, /Reddit to join the S&P 500/);
   assert.doesNotMatch(morning.margus, /is moving this morning/);
   assert.doesNotMatch(morning.margus, /\[\[source:/);
   assert.doesNotMatch(morning.margus, /TradingView|XTB\.com/i);
   assert.doesNotMatch(noteReportHtml(morning), /TradingView|XTB\.com|\[\[source:/i);
   assert.doesNotMatch(noteReportHtml(morning), /border-radius:999px/);
+  const closeQuotes = {
+    CRWV: { ...blank, ticker: "CRWV", price: 100, changePercent: 0.01 },
+    DRAM: { ...blank, ticker: "DRAM", price: 100, changePercent: 0.014 },
+    NBIS: { ...blank, ticker: "NBIS", price: 100, changePercent: -0.01 },
+    RDDT: {
+      ...blank,
+      ticker: "RDDT",
+      price: 100,
+      changePercent: 0.08,
+      change: 8,
+    },
+  };
   const close = buildNoteReport({
     kind: "close",
     name: "Test",
     cash: 0,
     holdings,
-    quotes: {
-      CRWV: { ...blank, ticker: "CRWV", price: 100, changePercent: 0.01 },
-      DRAM: { ...blank, ticker: "DRAM", price: 100, changePercent: 0.014 },
-      NBIS: { ...blank, ticker: "NBIS", price: 100, changePercent: -0.01 },
-      RDDT: {
-        ...blank,
-        ticker: "RDDT",
-        price: 100,
-        changePercent: 0.08,
-        change: 8,
-      },
-    },
+    quotes: closeQuotes,
   });
   const closeTake = fallbackNoteTake(close);
   assert.equal(closeTake.split(/\n\n/).length, 2);
-  assert.match(closeTake, /ended the day up /);
-  assert.match(closeTake, /\$RDDT climbed/);
+  assert.match(closeTake, /up /);
+  assert.match(closeTake, /\$RDDT/);
+  assert.match(closeTake, /8\.0%/);
   assert.match(closeTake, /\$DRAM was up 1\.4%/);
   assert.match(closeTake, /\$CRWV was up 1\.0%/);
-  assert.match(closeTake, /keep compounding/);
+  assert.equal((closeTake.match(/\$RDDT\b/g) ?? []).length, 1);
+  assert.equal((closeTake.match(/\$DRAM\b/g) ?? []).length, 1);
+  assert.match(closeTake, /tonight|evening|let it sit|Leave it as it is|compounding/i);
   assert.match(closeTake, /[.!?]$/);
   assert.doesNotMatch(closeTake, /64%/);
   assert.doesNotMatch(closeTake, /cost basis|falling knife|\bgap\b|catalyst/i);
@@ -1335,18 +1343,40 @@ run("note letters are one mix story, not stacked cards", () => {
       NBIS: { start: 110, end: 100, pct: -0.09 },
       RDDT: { start: 90, end: 108, pct: 0.2 },
     },
+    earnings: [{ ticker: "NBIS", date: "2026-08-18", days: 1 }],
   });
   const sundayTake = fallbackNoteTake(sunday);
   assert.equal(sundayTake.split(/\n\n/).length, 2);
-  assert.match(sundayTake, /Your portfolio gained /);
-  assert.match(sundayTake, /\$RDDT led, up 20\.0%/);
+  assert.match(sundayTake, /this week|week \(/i);
+  assert.match(sundayTake, /\$RDDT/);
+  assert.match(sundayTake, /20\.0%/);
   assert.match(sundayTake, /\$DRAM was up 5\.0%/);
   assert.match(sundayTake, /\$CRWV was up 2\.0%/);
+  assert.equal((sundayTake.match(/\$RDDT\b/g) ?? []).length, 1);
+  assert.equal((sundayTake.match(/\$DRAM\b/g) ?? []).length, 1);
   assert.doesNotMatch(sundayTake, /\n- \$/);
   assert.doesNotMatch(sundayTake, /64%/);
   assert.doesNotMatch(sundayTake, /up 19\.2$/);
-  assert.match(sundayTake, /Enjoy the rest of your weekend/);
+  assert.match(sundayTake, /weekend|next week|Monday|on track/i);
   assert.match(sundayTake, /[.!?]$/);
+  assert.doesNotMatch(sundayTake, /reports results/);
+  const sundayHtml = noteReportHtml({ ...sunday, margus: sundayTake });
+  assert.match(sundayHtml, /Coming up/);
+  assert.match(sundayHtml, /\$NBIS reports results on Tuesday/);
+  assert.doesNotMatch(sundayHtml, /Worth noticing/);
+  const holds = new Set<string>();
+  for (const day of [10, 11, 12, 13, 14, 15, 16, 17]) {
+    const stamped = buildNoteReport({
+      kind: "close",
+      name: "Test",
+      cash: 0,
+      holdings,
+      now: new Date(`2026-08-${String(day).padStart(2, "0")}T12:00:00+03:00`),
+      quotes: closeQuotes,
+    });
+    holds.add(fallbackNoteTake(stamped).split(/\n\n/)[1] ?? "");
+  }
+  assert.ok(holds.size >= 2);
 });
 
 run("manual note cron stays on Martin", () => {

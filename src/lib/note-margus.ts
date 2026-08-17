@@ -19,20 +19,24 @@ import type { NoteReport } from "@/lib/note-report";
 const JOB: Record<NoteReport["kind"], string> = {
   morning: `This is the morning note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Finish every sentence. Never we/us/our. Never name a website or paste a link.
 
-Open with the names that moved overnight, cashtags, and why when facts give a headline. More than one name is fine. Then name the biggest holdings from facts and say each was steady, up, or down, with the percent. Do not paste a headline as its own sentence.
-Then: there is nothing to buy or sell. Sit back, hold, and let the money work in the background.
+Open with the names that moved overnight, cashtags, and why when facts give a headline. More than one name is fine. Then the other big holdings from facts: each was steady, up, or down, with the percent. Do not paste a headline as its own sentence.
+Name each cashtag at most once. If $CRWV is in the opening, skip it when you talk about the other big holdings.
+Then hold: nothing to buy or sell. Sit back and let the money work. Say that in a fresh way. Do not reuse yesterday's sentences.
 
 Never invent news. Never name how much of the portfolio sits in one group. Overnight only.`,
   close: `This is the after-the-close note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Finish every sentence. Never we/us/our. Never name a website or paste a link.
 
-Open with how the day ended, percent and dollars. Name the names that did the work, more than one if facts show more than one. Then name the biggest holdings from facts and say each was steady, up, or down, with the percent.
-Then: no reason to make any moves tonight. Enjoy the evening, and let the investments keep compounding.
+Open with how the day ended, percent and dollars. Name who did the work. Then the other big holdings from facts: each was steady, up, or down, with the percent.
+Name each cashtag at most once. If you already said $CRWV climbed, do not list $CRWV again.
+Then hold: no reason to make moves tonight. Enjoy the evening. Say that in a fresh way. Do not reuse this morning's sentences.
 
 Never invent news. Never name how much of the portfolio sits in one group.`,
   sunday: `This is the Sunday weekly recap. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Finish every sentence. Never we/us/our. Never name a website or paste a link.
 
-Open with the week's percent and dollar. Name who led, more than one name if facts show more than one. Then name the biggest holdings from facts and say each was steady, up, or down, with the percent.
-Then: everything is on track, no changes needed for the week ahead, enjoy the rest of the weekend.
+Open with the week's percent and dollar. Name who led. Then the other big holdings from facts: each was steady, up, or down, with the percent.
+Name each cashtag at most once. If $NBIS already led the letter, skip it in the holdings sentence.
+Then hold: no changes needed next week. Enjoy the weekend. Say that in a fresh way.
+Do not list upcoming earnings. That list is already a separate section in the email.
 
 Never invent news. Never name how much of the portfolio sits in one group.`,
 };
@@ -150,72 +154,193 @@ function holdingCheck(ticker: string, pct: number | undefined): string {
 function joinChecks(bits: string[]): string {
   if (bits.length === 0) return "";
   if (bits.length === 1) return bits[0] ?? "";
-  if (bits.length === 2) return `${bits[0]}, and ${bits[1]}`;
+  if (bits.length === 2) return `${bits[0]} and ${bits[1]}`;
   return `${bits.slice(0, -1).join(", ")}, and ${bits[bits.length - 1]}`;
 }
 
-function biggestLine(r: NoteReport): string {
-  const top = r.weights.slice(0, 4);
+function hashSeed(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function pick<T>(items: readonly T[], seed: string): T {
+  return items[hashSeed(seed) % items.length]!;
+}
+
+function voiceSeed(r: NoteReport, slot: string): string {
+  return `${r.kind}:${r.shortDate}:${slot}`;
+}
+
+function onceMovers(r: NoteReport): NoteReport["movers"] {
+  const out: NoteReport["movers"] = [];
+  for (const m of r.movers) {
+    if (out.length >= 2) break;
+    if (out.length === 0) {
+      out.push(m);
+      continue;
+    }
+    if (Math.abs(m.pct) >= 0.01) out.push(m);
+  }
+  return out;
+}
+
+function skipTickers(movers: NoteReport["movers"]): Set<string> {
+  return new Set(movers.map((m) => m.ticker.toUpperCase()));
+}
+
+const BIGGEST_INTROS = [
+  (joined: string) => `Among your biggest holdings, ${joined}.`,
+  (joined: string) => `On the rest of the big names, ${joined}.`,
+  (joined: string) => `Your other large holdings: ${joined}.`,
+  (joined: string) => `The other big ones: ${joined}.`,
+  (joined: string) => `${joined}.`,
+] as const;
+
+function biggestLine(r: NoteReport, skip: Set<string>): string {
+  const top = r.weights
+    .slice(0, 4)
+    .filter((w) => !skip.has(w.ticker.toUpperCase()));
   const bits = top.map((w) => holdingCheck(w.ticker, holdingPct(r, w.ticker)));
   const joined = joinChecks(bits);
   if (!joined) return "";
-  return `Among your biggest holdings, ${joined}.`;
+  return pick(BIGGEST_INTROS, voiceSeed(r, "biggest"))(joined);
 }
 
-function letter(r: NoteReport): string {
-  const mover = r.movers[0];
-  const tag = mover ? cashtag(mover.ticker) : null;
+const HOLD_MORNING = [
+  "There is nothing you need to buy or sell. The best thing to do right now is sit back, hold, and let your money do its work in the background.",
+  "Sit back and hold. Nothing to buy or sell this morning. Let the money work in the background.",
+  "No need to do anything with this. Hold what you have and let it work.",
+  "Keep holding. The rest can wait. Let your money do its work in the background.",
+] as const;
+
+const HOLD_CLOSE = [
+  "There is no reason to make any moves tonight. Enjoy your evening, and let your investments keep compounding.",
+  "Nothing to do tonight. Enjoy the evening and let it sit.",
+  "Leave it as it is. Enjoy your evening.",
+  "No reason to make moves tonight. Let the investments keep compounding, and enjoy the evening.",
+] as const;
+
+const HOLD_SUNDAY = [
+  "Everything is on track, so there are no changes needed for the week ahead. Enjoy the rest of your weekend.",
+  "No changes needed next week. Enjoy the rest of your weekend.",
+  "Same plan next week. Enjoy the weekend.",
+  "Sit with it. Nothing to change before Monday. Enjoy the rest of your weekend.",
+] as const;
+
+const VOICE_HINTS = [
+  "Write short and direct. Short sentences. No extra warmth.",
+  "Write a little warmer, like a note to family. Still plain words.",
+  "Write in a calm, unhurried way. One extra breath of ease is fine.",
+  "Write plainly, almost blunt. Get to the point fast.",
+] as const;
+
+function extraMoverLine(m: NoteReport["movers"][number]): string {
+  const tag = cashtag(m.ticker);
+  if (Math.abs(m.pct) < 0.005) return `${tag} was steady.`;
+  if (m.pct > 0) return `${tag} was up ${unsignedPct(m.pct)} too.`;
+  return `${tag} was down ${unsignedPct(m.pct)} too.`;
+}
+
+function morningOpen(r: NoteReport, lead: NoteReport["movers"][number]): string {
+  const tag = cashtag(lead.ticker);
   const headline = r.news?.title ? clipHeadline(r.news.title) : null;
   const why = whyMoved(headline);
   const indexHow = indexExplain(headline);
-  const biggest = biggestLine(r);
-
-  if (r.kind === "morning") {
-    let first: string;
-    if (tag && why && indexHow) {
-      first = `${tag} jumped this morning because ${why}. ${indexHow}`;
-    } else if (tag && why) {
-      first = `${tag} ${jumpedOrDropped(mover?.pct ?? 0)} this morning because ${why}.`;
-    } else if (tag && mover && Math.abs(mover.pct) >= 0.02) {
-      first = `${tag} ${jumpedOrDropped(mover.pct)} ${unsignedPct(mover.pct)} this morning.`;
-    } else if (tag) {
-      first = `${tag} is the name that moved this morning.`;
-    } else {
-      first = r.lead;
-    }
-    if (biggest) first = `${first} ${biggest}`;
-    const second =
-      "There is nothing you need to buy or sell. The best thing to do right now is sit back, hold, and let your money do its work in the background.";
-    return `${first}\n\n${second}`;
+  if (why && indexHow) {
+    return `${tag} jumped this morning because ${why}. ${indexHow}`;
   }
-
-  if (r.kind === "close") {
-    const result = dayResult(r.todayPct, r.todayDollar);
-    let first = `Your portfolio ended the day ${result}.`;
-    if (tag && mover) {
-      first = `${first} ${cashtag(mover.ticker)} ${mover.pct < 0 ? "fell" : "climbed"}, ${mover.pct < 0 ? "down" : "up"} ${unsignedPct(mover.pct)}.`;
-    }
-    if (biggest) first = `${first} ${biggest}`;
-    const second =
-      "There is no reason to make any moves tonight. Enjoy your evening, and let your investments keep compounding.";
-    return `${first}\n\n${second}`;
+  if (why) {
+    return `${tag} ${jumpedOrDropped(lead.pct)} this morning because ${why}.`;
   }
+  const style = pick([0, 1, 2, 3] as const, voiceSeed(r, "open"));
+  const verb = jumpedOrDropped(lead.pct);
+  const pct = unsignedPct(lead.pct);
+  if (Math.abs(lead.pct) < 0.02) {
+    return `${tag} is the name that moved this morning.`;
+  }
+  if (style === 1) return `Overnight, ${tag} ${verb} ${pct}.`;
+  if (style === 2) return `${tag} ${verb} ${pct} before the open.`;
+  if (style === 3) return `${tag} is the one that ${verb} overnight, ${pct}.`;
+  return `${tag} ${verb} ${pct} this morning.`;
+}
 
+function closeOpen(r: NoteReport, lead: NoteReport["movers"][number] | undefined): string {
+  const result = dayResult(r.todayPct, r.todayDollar);
+  const style = pick([0, 1, 2, 3] as const, voiceSeed(r, "open"));
+  const first =
+    style === 1
+      ? `Day closed ${result}.`
+      : style === 2
+        ? `The day finished ${result}.`
+        : style === 3
+          ? `Today finished ${result}.`
+          : `Your portfolio ended the day ${result}.`;
+  if (!lead) return first;
+  const tag = cashtag(lead.ticker);
+  const verb = lead.pct < 0 ? "fell" : "climbed";
+  const dir = lead.pct < 0 ? "down" : "up";
+  const led =
+    style === 1
+      ? `${tag} led, ${dir} ${unsignedPct(lead.pct)}.`
+      : style === 2
+        ? `${tag} ${verb} ${unsignedPct(lead.pct)}.`
+        : `${tag} ${verb}, ${dir} ${unsignedPct(lead.pct)}.`;
+  return `${first} ${led}`;
+}
+
+function sundayOpen(r: NoteReport, lead: NoteReport["movers"][number] | undefined): string {
+  const style = pick([0, 1, 2, 3] as const, voiceSeed(r, "open"));
   let first: string;
   if (r.todayPct != null && r.todayPct >= 0) {
-    first = `Your portfolio gained ${unsignedPct(r.todayPct)} this week (${money(r.todayDollar)}).`;
+    const gained = `gained ${unsignedPct(r.todayPct)} this week (${money(r.todayDollar)})`;
+    first =
+      style === 1
+        ? `This week your portfolio ${gained}.`
+        : style === 2
+          ? `A ${unsignedPct(r.todayPct)} week (${money(r.todayDollar)}).`
+          : `Your portfolio ${gained}.`;
   } else {
     first = `Your portfolio was ${dayResult(r.todayPct, r.todayDollar)} this week.`;
   }
-  if (tag && mover && mover.pct > 0) {
-    first = `${first} ${tag} led, up ${unsignedPct(mover.pct)}.`;
-  } else if (tag && mover && mover.pct < 0) {
-    first = `${first} ${tag} led, down ${unsignedPct(mover.pct)}.`;
+  if (!lead) return first;
+  const tag = cashtag(lead.ticker);
+  const dir = lead.pct < 0 ? "down" : "up";
+  const led =
+    style === 1
+      ? `${tag} did most of the work, ${dir} ${unsignedPct(lead.pct)}.`
+      : style === 2
+        ? `${tag} was the one that moved, ${dir} ${unsignedPct(lead.pct)}.`
+        : `${tag} led, ${dir} ${unsignedPct(lead.pct)}.`;
+  return `${first} ${led}`;
+}
+
+function letter(r: NoteReport): string {
+  const named = onceMovers(r);
+  const lead = named[0];
+  const extra = named[1];
+  const skip = skipTickers(named);
+  const biggest = biggestLine(r, skip);
+  const extraBit = extra ? extraMoverLine(extra) : "";
+
+  if (r.kind === "morning") {
+    let first = lead ? morningOpen(r, lead) : r.lead;
+    if (extraBit) first = `${first} ${extraBit}`;
+    if (biggest) first = `${first} ${biggest}`;
+    return `${first}\n\n${pick(HOLD_MORNING, voiceSeed(r, "hold"))}`;
   }
+
+  if (r.kind === "close") {
+    let first = closeOpen(r, lead);
+    if (extraBit) first = `${first} ${extraBit}`;
+    if (biggest) first = `${first} ${biggest}`;
+    return `${first}\n\n${pick(HOLD_CLOSE, voiceSeed(r, "hold"))}`;
+  }
+
+  let first = sundayOpen(r, lead);
+  if (extraBit) first = `${first} ${extraBit}`;
   if (biggest) first = `${first} ${biggest}`;
-  const second =
-    "Everything is on track, so there are no changes needed for the week ahead. Enjoy the rest of your weekend.";
-  return `${first}\n\n${second}`;
+  return `${first}\n\n${pick(HOLD_SUNDAY, voiceSeed(r, "hold"))}`;
 }
 
 function fallbackSunday(r: NoteReport): string {
@@ -267,26 +392,31 @@ function money(n: number): string {
 }
 
 function facts(r: NoteReport): string {
+  const named = onceMovers(r);
+  const skip = skipTickers(named);
   const lines = [
     `Kind: ${r.kind}`,
     `Lead: ${r.lead}`,
+    `Voice for this letter: ${pick(VOICE_HINTS, voiceSeed(r, "hint"))}`,
     `Portfolio: $${Math.round(r.book).toLocaleString("en-US")} across ${r.nameCount} names`,
     `${r.todayLabel}: ${money(r.todayDollar)}${r.todayPct != null ? ` (${(r.todayPct * 100).toFixed(1)}%)` : ""}`,
   ];
-  const loud = r.loudMovers.length > 0 ? r.loudMovers : r.movers;
-  if (loud[0]) {
+  if (named[0]) {
     lines.push(
-      "Names that moved:",
-      ...loud.map(
+      "Say these names once in the opening (do not repeat them later):",
+      ...named.map(
         (m) =>
           `  ${cashtag(m.ticker)} ${m.pct >= 0 ? "+" : "-"}${(Math.abs(m.pct) * 100).toFixed(1)}% ${money(m.dollar)} at $${m.price.toFixed(2)}`
       )
     );
   }
-  if (r.weights[0]) {
+  const rest = r.weights
+    .slice(0, 4)
+    .filter((w) => !skip.has(w.ticker.toUpperCase()));
+  if (rest[0]) {
     lines.push(
-      "Biggest holdings (name each one: steady, or up/down with the percent):",
-      ...r.weights.slice(0, 4).map((w) => {
+      "Other big holdings (skip any name already used in the opening):",
+      ...rest.map((w) => {
         const m = r.movers.find((row) => row.ticker === w.ticker);
         const move =
           m && Math.abs(m.pct) >= 0.005
@@ -302,6 +432,9 @@ function facts(r: NoteReport): string {
   } else {
     lines.push("No headline. Describe the move from the numbers only.");
   }
+  lines.push(
+    "Vary the wording. Do not start with the same stock phrases every day. Name each cashtag at most once."
+  );
   return lines.filter((x): x is string => Boolean(x)).join("\n");
 }
 
@@ -326,6 +459,16 @@ function looksTruncated(text: string): boolean {
   return !/[.!?]"?'?$/.test(text.trim());
 }
 
+function repeatsCashtag(text: string): boolean {
+  const tags = text.toUpperCase().match(/\$[A-Z]{1,6}\b/g) ?? [];
+  const seen = new Set<string>();
+  for (const tag of tags) {
+    if (seen.has(tag)) return true;
+    seen.add(tag);
+  }
+  return false;
+}
+
 function acceptNote(text: string): string | null {
   const lined = stripCitations(
     text
@@ -338,10 +481,12 @@ function acceptNote(text: string): string | null {
   );
   const clean = finishNote(lined);
   if (clean.length < 40) return null;
+  if (clean.length > 1800) return null;
   if (looksLikePromptLeak(clean)) return null;
   if (stillJargon(clean)) return null;
   if (looksTruncated(clean)) return null;
-  return clean.length > 1800 ? clean.slice(0, 1760).trim() : clean;
+  if (repeatsCashtag(clean)) return null;
+  return clean;
 }
 
 async function attachNews(report: NoteReport): Promise<void> {
@@ -385,6 +530,8 @@ export async function writeMargusNoteTake(
 You are writing one block for an Upside Lab inbox note. The numbers and lists are already in the email. You add the human read.
 
 ${JOB[report.kind]}
+
+Voice for this letter: ${pick(VOICE_HINTS, voiceSeed(report, "hint"))}
 
 Write the finished note only. First word is the first word of the note.
 Do not restate these rules. Do not list words to avoid. Do not plan out loud.`,
