@@ -2,6 +2,7 @@ import {
   readBookCache,
   writeBookCache,
 } from "@/lib/book-cache";
+import { cacheIsFamilyDemoLeak } from "@/lib/book-isolation";
 import { loadLastUser } from "@/lib/last-session";
 import {
   OFFLINE_CACHE_READY,
@@ -50,7 +51,13 @@ export async function hydrateFromIndexedDb(): Promise<void> {
 
   const { book, quotes } = await restoreOfflineSnapshots();
   let restored = false;
-  if (book && !liveBook) {
+  if (
+    book &&
+    !liveBook &&
+    uid &&
+    book.userId === uid &&
+    !cacheIsFamilyDemoLeak(book)
+  ) {
     writeBookCache(book);
     restored = true;
   }

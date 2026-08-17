@@ -6055,6 +6055,44 @@ run("GDPR hard-delete, export engine, and session purge", () => {
   assert.doesNotMatch(engine, /select\([^)]*token_hash/);
 });
 
+run("signed-in users never receive the family demo book", () => {
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  assert.match(dash, /cacheIsFamilyDemoLeak/);
+  assert.match(dash, /stripLocalFamilyDemoBook/);
+  assert.match(dash, /isLocalFamilyDemoSheet/);
+  assert.match(dash, /user \? "supabase" : "demo"/);
+  const addSheet = dash.slice(
+    dash.indexOf("async function handleAddSheet"),
+    dash.indexOf("async function ensureFirstSheet")
+  );
+  assert.match(addSheet, /if \(user\) \{/);
+  assert.doesNotMatch(addSheet, /if \(source === "supabase"\)/);
+  const load = dash.slice(
+    dash.indexOf("const loadPortfolios"),
+    dash.indexOf("function beginBookWrite")
+  );
+  assert.match(load, /sourceName === "supabase" \|\| userId/);
+  assert.doesNotMatch(load, /source: "demo"/);
+
+  const api = readFileSync(
+    join(process.cwd(), "src/app/api/portfolios/route.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(api, /DEMO_PORTFOLIOS/);
+  assert.doesNotMatch(api, /DEMO_HOLDINGS/);
+  assert.match(api, /Authenticated users never receive the local family demo book/);
+
+  const runtime = readFileSync(
+    join(process.cwd(), "src/lib/offline/runtime.ts"),
+    "utf8"
+  );
+  assert.match(runtime, /cacheIsFamilyDemoLeak/);
+  assert.match(runtime, /book\.userId === uid/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

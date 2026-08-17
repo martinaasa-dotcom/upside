@@ -108,6 +108,11 @@ import {
   isBookFetchFresh,
 } from "@/lib/book-cache";
 import {
+  cacheIsFamilyDemoLeak,
+  isLocalFamilyDemoSheet,
+  stripLocalFamilyDemoBook,
+} from "@/lib/book-isolation";
+import {
   GO_HOME_EVENT,
   WORKSPACE_SHOW_EVENT,
   isWorkspaceRoomActive,
@@ -334,7 +339,9 @@ export function Dashboard() {
   const router = useRouter();
   // Picked once per mount, not per render, so it doesn't shuffle mid-load.
   const [loadingMessage] = useState(pickLoadingMessage);
-  const [source, setSource] = useState<DataSource>("demo");
+  const [source, setSource] = useState<DataSource>(
+    user ? "supabase" : "demo"
+  );
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [saveFlash, setSaveFlash] = useState(false);
@@ -442,16 +449,28 @@ export function Dashboard() {
   useLayoutEffect(() => {
     const uid = user?.id ?? loadLastUser()?.id ?? null;
     const cached = readBookCache(uid);
-    if (cached) {
-      setSource(cached.source);
-      setPortfolios(cached.portfolios);
-      setHoldings(cached.holdings);
+    const signedIn = Boolean(user?.id);
+    if (cached && !(signedIn && cacheIsFamilyDemoLeak(cached))) {
+      const book = signedIn
+        ? stripLocalFamilyDemoBook(cached.portfolios, cached.holdings)
+        : { portfolios: cached.portfolios, holdings: cached.holdings };
+      setSource(signedIn ? "supabase" : cached.source);
+      setPortfolios(book.portfolios);
+      setHoldings(book.holdings);
       setLocked(cached.locked);
       setLoading(false);
       bookFetchedAtRef.current = cached.fetchedAt;
-      const fromUrl = resolveSheetIdFromUrl(cached.portfolios, takeOpenTab());
+      const fromUrl = resolveSheetIdFromUrl(book.portfolios, takeOpenTab());
       setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
     } else {
+      if (signedIn) {
+        setSource("supabase");
+        setPortfolios([]);
+        setHoldings([]);
+        setLocked(false);
+        bookFetchedAtRef.current = 0;
+        setLoading(true);
+      }
       const fromUrl = resolveSheetIdFromUrl([], takeOpenTab());
       setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
     }
@@ -482,9 +501,14 @@ export function Dashboard() {
       const uid = user?.id ?? loadLastUser()?.id ?? null;
       const cached = readBookCache(uid);
       if (!cached || bookFetchedAtRef.current > 0) return;
-      setSource(cached.source);
-      setPortfolios(cached.portfolios);
-      setHoldings(cached.holdings);
+      const signedIn = Boolean(user?.id);
+      if (signedIn && cacheIsFamilyDemoLeak(cached)) return;
+      const book = signedIn
+        ? stripLocalFamilyDemoBook(cached.portfolios, cached.holdings)
+        : { portfolios: cached.portfolios, holdings: cached.holdings };
+      setSource(signedIn ? "supabase" : cached.source);
+      setPortfolios(book.portfolios);
+      setHoldings(book.holdings);
       setLocked(cached.locked);
       setLoading(false);
       bookFetchedAtRef.current = cached.fetchedAt;
@@ -953,9 +977,15 @@ export function Dashboard() {
 
       const payload = isRecord(data) ? data : {};
       const sourceName = typeof payload.source === "string" ? payload.source : "";
-      if (sourceName === "supabase") {
-        const nextPortfolios = parsePortfolioList(payload.portfolios);
-        const nextHoldings = parseHoldingList(payload.holdings);
+      if (sourceName === "supabase" || userId) {
+        const parsed = stripLocalFamilyDemoBook(
+          parsePortfolioList(payload.portfolios),
+          parseHoldingList(payload.holdings)
+        );
+        const nextPortfolios =
+          sourceName === "supabase" ? parsed.portfolios : [];
+        const nextHoldings =
+          sourceName === "supabase" ? parsed.holdings : [];
         const fetchedAt = Date.now();
         bookFetchedAtRef.current = fetchedAt;
         const sameBook =
@@ -966,6 +996,8 @@ export function Dashboard() {
           setPortfolios(nextPortfolios);
           setHoldings(nextHoldings);
           setActiveId(() => pickInitialSheet(nextPortfolios));
+        } else {
+          setSource("supabase");
         }
         if (userId) {
           writeBookCache({
@@ -985,16 +1017,6 @@ export function Dashboard() {
         setActiveId(() => pickInitialSheet(demo.portfolios));
         const isLocked = hasLockedSave();
         setLocked(isLocked);
-        if (userId) {
-          writeBookCache({
-            userId,
-            source: "demo",
-            portfolios: demo.portfolios,
-            holdings: demo.holdings,
-            locked: isLocked,
-            fetchedAt: Date.now(),
-          });
-        }
       }
     } catch (err) {
       if (bookAbortRef.current !== ctrl) return;
@@ -1006,17 +1028,34 @@ export function Dashboard() {
             ? "Timed out loading your portfolio. Check the connection and retry."
             : err instanceof Error
               ? err.message
-              : "Couldn’t load the shared portfolio. Showing local demo, retry when ready."
+              : userId
+                ? "Couldn't load your portfolio. Retry when ready."
+                : "Couldn't load the shared portfolio. Showing local demo, retry when ready."
         );
         if (!timedOut && !(err instanceof Error && /Sign in/i.test(err.message))) {
-          const demo = loadDemoStore();
-          setSource("demo");
-          setPortfolios(demo.portfolios);
-          setHoldings(demo.holdings);
-          setActiveId(() => pickInitialSheet(demo.portfolios));
-          setLocked(hasLockedSave());
+          if (userId) {
+            setSource("supabase");
+            setPortfolios([]);
+            setHoldings([]);
+            setLocked(false);
+            writeBookCache({
+              userId,
+              source: "supabase",
+              portfolios: [],
+              holdings: [],
+              locked: false,
+              fetchedAt: Date.now(),
+            });
+          } else {
+            const demo = loadDemoStore();
+            setSource("demo");
+            setPortfolios(demo.portfolios);
+            setHoldings(demo.holdings);
+            setActiveId(() => pickInitialSheet(demo.portfolios));
+            setLocked(hasLockedSave());
+          }
         } else if (!hasCache) {
-          setSource("supabase");
+          setSource(userId ? "supabase" : "demo");
           setPortfolios([]);
           setHoldings([]);
         }
@@ -1251,12 +1290,16 @@ export function Dashboard() {
   }, [loadPortfolios, refreshMarkets, allTickers, holdings]);
 
   // Keep session cache warm so My book remounts paint instantly.
+  // Never persist the family demo book, or another person's sheets,
+  // under a signed-in user. Empty supabase books must still write so a
+  // poisoned MaryAnn/Karud cache cannot come back on the next paint.
   useEffect(() => {
     if (loading || !user?.id) return;
-    if (source === "supabase" && portfolios.length === 0) return;
+    if (source !== "supabase") return;
+    if (portfolios.some(isLocalFamilyDemoSheet)) return;
     writeBookCache({
       userId: user.id,
-      source,
+      source: "supabase",
       portfolios,
       holdings,
       locked,
@@ -2560,10 +2603,12 @@ export function Dashboard() {
   ): Promise<Portfolio | undefined> {
     if (addingSheetRef.current) return addingSheetRef.current;
     const run = (async () => {
-    const isFirstSheet = bookRef.current.portfolios.length === 0;
+    const isFirstSheet = bookRef.current.portfolios.filter(
+      (p) => !isLocalFamilyDemoSheet(p)
+    ).length === 0;
     const trimmed = sanitizeSheetName(name);
     if (!trimmed) return undefined;
-    if (source === "supabase") {
+    if (user) {
       const res = await apiFetch("/api/portfolios", {
         method: "POST",
         body: JSON.stringify({ name: trimmed }),
@@ -2582,8 +2627,13 @@ export function Dashboard() {
         toast("Couldn't add that portfolio. Try again.", "error");
         return undefined;
       }
-      setPortfolios((prev) =>
-        prev.some((p) => p.id === created.id) ? prev : [...prev, created]
+      setSource("supabase");
+      setPortfolios((prev) => {
+        const own = prev.filter((p) => !isLocalFamilyDemoSheet(p));
+        return own.some((p) => p.id === created.id) ? own : [...own, created];
+      });
+      setHoldings((prev) =>
+        prev.filter((h) => !isLocalFamilyDemoSheet({ id: h.portfolio_id }))
       );
       seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
@@ -2609,7 +2659,8 @@ export function Dashboard() {
   }
 
   async function ensureFirstSheet(): Promise<Portfolio | undefined> {
-    if (portfolios[0]) return portfolios[0];
+    const own = portfolios.filter((p) => !isLocalFamilyDemoSheet(p));
+    if (own[0]) return own[0];
     if (creatingFirstSheetRef.current) return creatingFirstSheetRef.current;
     const pending = handleAddSheet(FIRST_SHEET_NAME, { silent: true });
     creatingFirstSheetRef.current = pending;

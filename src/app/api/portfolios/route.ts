@@ -1,4 +1,3 @@
-import { DEMO_HOLDINGS, DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import { captureBookPayload, saveBookSnapshot } from "@/lib/book-snapshot";
 import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import {
@@ -43,11 +42,14 @@ async function handleGET(req: NextRequest) {
 
   const supabase = await getSupabaseDataClient();
 
+  // Authenticated users never receive the local family demo book
+  // (Aasad / Anu / MaryAnn / Karud). Missing Supabase is an empty
+  // owned book, not someone else's sheets.
   if (!supabase) {
     return NextResponse.json({
-      source: "demo",
-      portfolios: DEMO_PORTFOLIOS,
-      holdings: DEMO_HOLDINGS,
+      source: "supabase",
+      portfolios: [],
+      holdings: [],
     });
   }
 
