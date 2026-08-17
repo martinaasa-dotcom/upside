@@ -6,14 +6,9 @@ import { UpsideLogo } from "@/components/UpsideLogo";
 import {
   InsightText,
   MicroLabel,
-  NESTED_PAD,
   Panel,
   Pill,
   Reading,
-  Score,
-  Scoreboard,
-  SPLIT_COPY,
-  SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { cn } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -117,7 +112,7 @@ export function SignInGate({ children }: Props) {
         id="main"
         className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
       >
-        <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
+        <div className="signin-rise grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:gap-12 lg:gap-16">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
@@ -198,10 +193,10 @@ const SAMPLE_MOVERS = [
   { ticker: "MSFT", pct: "-0.6%", dollar: "-$180", up: false },
 ] as const;
 
-/** Static chrome of a day that moved. Sample figures, written like Home + Pulse. */
+/** Compact sample of a day that moved. Not a full-size Home panel. */
 function BookStill() {
   return (
-    <Panel className="signin-rise-3 h-auto" aria-hidden>
+    <Panel className="signin-rise-3 h-auto gap-4 p-4" aria-hidden>
       <div className="flex items-center justify-between gap-3">
         <MicroLabel>
           Today&apos;s briefing
@@ -209,17 +204,32 @@ function BookStill() {
         <Pill tone="neutral">Sample</Pill>
       </div>
 
-      <Scoreboard cols={3}>
-        <Score className="bg-muted ring-0" label="Portfolio" value="$91,400" />
-        <Score className="bg-muted ring-0" label="Today" value="+$4,180" valueClassName="text-gain" />
-        <Score className="bg-muted ring-0" label="All time" value="+18%" valueClassName="text-gain" />
-      </Scoreboard>
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <MicroLabel>Portfolio</MicroLabel>
+          <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-foreground">
+            $91,400
+          </p>
+        </div>
+        <div>
+          <MicroLabel>Today</MicroLabel>
+          <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-gain">
+            +$4,180
+          </p>
+        </div>
+        <div>
+          <MicroLabel>All time</MicroLabel>
+          <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-gain">
+            +18%
+          </p>
+        </div>
+      </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
-            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-lg bg-muted py-3 pl-4 pr-4"
+            className="relative flex items-center justify-between gap-3 overflow-hidden rounded-lg bg-muted py-2 pl-4 pr-3"
           >
             <span
               className={cn(
@@ -228,26 +238,17 @@ function BookStill() {
               )}
               aria-hidden
             />
-            <span className="font-heading text-base font-semibold text-foreground">
+            <span className="font-heading text-sm font-semibold text-foreground">
               ${row.ticker}
             </span>
-            <span className="text-right">
-              <span
-                className={cn(
-                  "block font-sans text-base font-semibold tabular-nums",
-                  row.up ? "text-gain" : "text-loss"
-                )}
-              >
-                {row.pct}
-              </span>
-              <span
-                className={cn(
-                  "mt-0.5 block text-sm tabular-nums",
-                  row.up ? "text-gain" : "text-loss"
-                )}
-              >
-                {row.dollar}
-              </span>
+            <span
+              className={cn(
+                "text-sm font-semibold tabular-nums",
+                row.up ? "text-gain" : "text-loss"
+              )}
+            >
+              {row.pct}{" "}
+              <span className="font-normal">{row.dollar}</span>
             </span>
           </div>
         ))}
@@ -257,31 +258,18 @@ function BookStill() {
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
-      <div className={cn("rounded-lg bg-muted", NESTED_PAD)}>
-        <div className={SPLIT_ROW}>
-          <div className={SPLIT_COPY}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-base font-semibold text-foreground">$RKLB</span>
-              <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-sm font-medium text-gain">
-                Up ≥5%
-              </span>
-            </div>
-            <p className="mt-1 font-sans text-sm font-semibold tabular-nums text-gain">
-              +6.8%{" "}
-              <span className="font-normal text-muted-foreground">today</span>
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <Pill>Hold</Pill>
-            <Pill tone="good">
-              <CheckCircle2 className="h-3.5 w-3.5 text-gain" />
-              Thesis intact
-            </Pill>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">$RKLB</span>
+          <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-sm font-medium text-gain">
+            Up ≥5%
+          </span>
         </div>
-        <Reading nested className="mt-3" label="Thesis">
-          Cheaper launches. That is why it is in the portfolio. A one-day jump does not change that on its own.
-        </Reading>
+        <Pill>Hold</Pill>
+        <Pill tone="good">
+          <CheckCircle2 className="h-3.5 w-3.5 text-gain" />
+          Thesis intact
+        </Pill>
       </div>
     </Panel>
   );

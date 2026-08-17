@@ -2,8 +2,10 @@
 
 import { track } from "@vercel/analytics";
 import { SignInGate } from "@/components/SignInGate";
+import { rememberJoinedCommunity } from "@/lib/community-cache";
 import { plainError } from "@/lib/plain-error";
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { saveLastCircleId } from "@/lib/workspace-rooms";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -39,7 +41,20 @@ function JoinInner() {
         if (ctrl.signal.aborted) return;
         track("community_invite_redeemed");
         const classroom = data.kind === "classroom";
+        const communityId =
+          typeof data.communityId === "string" ? data.communityId : "";
         const label = typeof data.name === "string" ? data.name : null;
+        if (communityId) {
+          rememberJoinedCommunity({
+            id: communityId,
+            name: label || (classroom ? "Class" : "Circle"),
+            role: "member",
+            kind: classroom ? "classroom" : "circle",
+          });
+          if (!classroom) saveLastCircleId(communityId);
+        } else {
+          throw new Error("Couldn't join. Try the link again.");
+        }
         setStatus(
           classroom
             ? label
@@ -49,7 +64,7 @@ function JoinInner() {
               ? `You're in ${label}. Opening the circle …`
               : "You're in. Opening the circle …"
         );
-        router.replace(`/communities/${data.communityId}`);
+        router.replace(`/communities/${communityId}`);
       } catch (e) {
         if (ctrl.signal.aborted) return;
         setStatus(null);

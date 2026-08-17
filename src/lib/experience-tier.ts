@@ -97,7 +97,8 @@ export function shouldHideOptions(knowsOptions: boolean | null): boolean {
 /**
  * Household / already-filled books skip the first-run questionnaire.
  * Karoliine claiming Karud should land on the shared names, not "Add
- * what you own".
+ * what you own". Circle invite joins skip it too: they came to look at
+ * someone else's book, not to paste their own.
  */
 export const HOUSEHOLD_SEED_SLUGS = new Set([
   "karud",
@@ -110,7 +111,9 @@ export const HOUSEHOLD_SEED_SLUGS = new Set([
 export function shouldSkipExperienceOnboarding(input: {
   holdingsCount: number;
   portfolioSlugs: Array<string | null | undefined>;
+  inACircle?: boolean;
 }): boolean {
+  if (input.inACircle) return true;
   if (input.holdingsCount > 0) return true;
   return input.portfolioSlugs.some(
     (slug) => typeof slug === "string" && HOUSEHOLD_SEED_SLUGS.has(slug)

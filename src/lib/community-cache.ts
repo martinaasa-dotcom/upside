@@ -218,6 +218,22 @@ export function saveCommunityListCache(rows: CommunityListRow[]) {
   }
 }
 
+/** True when the list has a real circle, not only a classroom. */
+export function communityListHasCircle(
+  rows: CommunityListRow[] | null | undefined
+): boolean {
+  return Boolean(rows?.some((c) => c.kind !== "classroom"));
+}
+
+/** Stamp a just-redeemed invite into the list so Home can skip onboarding. */
+export function rememberJoinedCommunity(row: CommunityListRow) {
+  const existing = loadCommunityListCache() ?? [];
+  saveCommunityListCache([
+    row,
+    ...existing.filter((c) => c.id !== row.id),
+  ]);
+}
+
 export type CommunityDiscoverRow = {
   id: string;
   name: string;

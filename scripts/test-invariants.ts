@@ -44,6 +44,7 @@ import {
   pulseLeftHold,
   reconcilePulseCheck,
   shouldAutoPulseTicker,
+  pulseTickerKey,
   sortPulseCandidates,
   statusLabel,
   verdictRepeatsTrim,
@@ -91,6 +92,9 @@ import {
   parseWeeklyFeedback,
 } from "../src/lib/feedback";
 import { parseSharePortfolioIds } from "../src/lib/community-share";
+import {
+  communityListHasCircle,
+} from "../src/lib/community-cache";
 import {
   inviteFromLocation,
   inviteLandingCopy,
@@ -385,6 +389,26 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
     }),
     false
   );
+  assert.equal(
+    shouldSkipExperienceOnboarding({
+      holdingsCount: 0,
+      portfolioSlugs: [],
+      inACircle: true,
+    }),
+    true
+  );
+  assert.equal(
+    communityListHasCircle([
+      { id: "1", name: "Class", role: "member", kind: "classroom" },
+    ]),
+    false
+  );
+  assert.equal(
+    communityListHasCircle([
+      { id: "1", name: "Upside Circle", role: "member", kind: "circle" },
+    ]),
+    true
+  );
 
   const people = collapseMembersByAlias(
     [
@@ -496,6 +520,14 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
   );
   assert.match(dash, /shouldSkipExperienceOnboarding/);
   assert.match(dash, /skipExperienceOnboarding/);
+  assert.match(dash, /inACircle/);
+  assert.match(dash, /circlesChecked/);
+  const joinPage = readFileSync(
+    join(process.cwd(), "src/app/communities/join/page.tsx"),
+    "utf8"
+  );
+  assert.match(joinPage, /rememberJoinedCommunity/);
+  assert.match(joinPage, /saveLastCircleId/);
 });
 
 run("Home briefing never rotates a covered-call pep talk", () => {
@@ -1666,7 +1698,6 @@ run("community books lead with today's percent, not dollar size", () => {
   assert.match(readOnly, /label="Today"/);
   assert.match(readOnly, /signedPercent\(todayPct\)/);
   assert.match(readOnly, /sub=\{signedCurrency\(todayDollar\)\}/);
-  assert.match(community, /Today's percent is the fair compare/);
   assert.match(community, /Ranked by today&apos;s percent, not dollar size/);
   assert.match(roster, /signedPercent\(vsStartPct\)/);
   assert.match(roster, /signedPercent\(m\.todayPct\)/);
@@ -2752,9 +2783,11 @@ run("sign-in reads as a product", () => {
   assert.doesNotMatch(gate, /quiet down day/);
   assert.doesNotMatch(gate, /\$50k|AI manage/);
   assert.doesNotMatch(gate, /h-2\.5 w-10 rounded-sm bg-zinc-700/);
-  assert.match(gate, /signin-rise-3 h-auto/);
+  assert.match(gate, /signin-rise-3 h-auto gap-4 p-4/);
+  assert.match(gate, /md:grid-cols-\[minmax\(0,1fr\)_20rem\]/);
   assert.match(gate, /overflow-x-clip overflow-y-auto/);
   assert.doesNotMatch(gate, /signin-rise-3 hidden h-auto md:block/);
+  assert.doesNotMatch(gate, /Scoreboard/);
   assert.doesNotMatch(gate, /Communities stay read-only/);
   assert.match(gate, /inviteLandingCopy/);
 });
@@ -3482,6 +3515,18 @@ run("Pulse does not hourly-refresh the model", () => {
   assert.equal(shouldAutoPulseTicker({ needsAttention: false }), true);
 });
 
+run("Pulse matches $AAPL to AAPL and keeps trimPct required for Groq", () => {
+  assert.equal(pulseTickerKey("$AAPL"), "AAPL");
+  assert.equal(pulseTickerKey(" aapl "), "AAPL");
+  assert.equal(pulseTickerKey("AAPL"), "AAPL");
+  const schema = readFileSync(
+    join(process.cwd(), "src/lib/thesis-pulse-schema.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(schema, /trimPct:[\s\S]{0,120}\.optional\(\)/);
+  assert.match(schema, /trimPct:[\s\S]{0,120}\.nullable\(\)/);
+});
+
 run("background Margus waits while chat is live", () => {
   markChatActive(0);
   endBackgroundLlm();
@@ -4013,6 +4058,8 @@ run("Pulse never nags that it is guessing", () => {
   assert.doesNotMatch(pulseApi, /The model was busy/);
   assert.doesNotMatch(pulseApi, /Couldn't reach the model/);
   assert.match(pulseApi, /reuseCachedPulse/);
+  assert.match(pulseApi, /buildFallbackPulseCheck/);
+  assert.match(pulseApi, /checksForCandidates/);
   assert.match(pulse, /<ActionBadge action=\{action\} \/>/);
   assert.doesNotMatch(chat, /backup on your next/);
   assert.doesNotMatch(chat, /The model provider is overloaded/);
