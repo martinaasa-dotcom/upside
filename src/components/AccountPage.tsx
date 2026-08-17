@@ -70,7 +70,7 @@ function VisitStreakCard() {
         ))}
       </div>
       <p className="text-sm text-muted-foreground">
-        {streak.currentStreak} day streak · best {streak.longestStreak} ·{" "}
+        {streak.currentStreak} day streak - best {streak.longestStreak} -{" "}
         {streak.totalVisits} visits on this device
       </p>
     </section>
@@ -296,7 +296,7 @@ export function AccountPage() {
                 </p>
               </div>
             </div>
-            <Button type="button" className="rounded-full" onClick={openManual}>
+            <Button type="button" onClick={openManual}>
               Tell Upside
             </Button>
           </section>
@@ -422,7 +422,7 @@ export function AccountPage() {
               <label className="flex flex-col gap-1">
                 <span className="flex items-baseline justify-between">
                   <span className="text-sm text-muted-foreground">
-                    Bio · communities
+                    Bio - communities
                   </span>
                   <span className="text-sm tabular-nums text-muted-foreground">
                     {bio.length}/280
@@ -658,7 +658,7 @@ export function AccountPage() {
             aria-label="Close"
             onClick={() => !deleting && setDeleteOpen(false)}
           />
-          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl border border-loss/50 bg-muted p-4 sm:max-w-md sm:rounded-xl">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl border border-loss/50 bg-muted p-6 sm:max-w-md sm:rounded-xl">
             <h3 className="text-base font-semibold text-loss">
               Delete your account?
             </h3>

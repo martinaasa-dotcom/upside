@@ -320,7 +320,7 @@ function MorningStack({
         <Reading
           label={
             previousAt
-              ? `Since you last looked · ${new Date(previousAt).toLocaleString(
+              ? `Since you last looked - ${new Date(previousAt).toLocaleString(
                   "en-GB",
                   {
                     timeZone: "Europe/Tallinn",

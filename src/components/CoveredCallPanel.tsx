@@ -192,12 +192,12 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
       id={COVERED_CALLS_ANCHOR}
       className="scroll-mt-28 overflow-hidden"
     >
-      <div className="border-b border-border p-4">
+      <div className="border-b border-border p-6">
         <PanelHeader title="Covered calls" />
       </div>
 
       {/* Mobile cards */}
-      <div className="flex flex-col gap-3 p-4 md:hidden">
+      <div className="flex flex-col gap-3 p-6 md:hidden">
         {rows.length === 0 ? (
           <EmptyState
             title="Nothing to write calls on yet"
@@ -289,7 +289,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <p className="mt-2 text-sm text-muted-foreground">
                 {Math.round(r.contracts)} contracts
                 {r.expiration
-                  ? ` · expires ${format(parseISO(r.expiration), "MMM d")}`
+                  ? ` - expires ${format(parseISO(r.expiration), "MMM d")}`
                   : ""}
               </p>
             </Card>

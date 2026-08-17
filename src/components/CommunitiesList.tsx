@@ -358,7 +358,7 @@ export function CommunitiesList() {
                     </span>
                     {c.requestStatus === "pending" ? (
                       <span className="shrink-0 text-sm font-medium text-caution">
-                        Requested · pending
+                        Requested - pending
                       </span>
                     ) : (
                       <Button
@@ -502,7 +502,7 @@ export function CommunitiesList() {
                   </div>
                 )}
 
-                <Button type="submit" className="rounded-full">
+                <Button type="submit">
                   {kind === "classroom" ? "Start a class" : "Start circle"}
                 </Button>
               </div>

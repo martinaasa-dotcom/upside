@@ -89,12 +89,12 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
   return (
     <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/10 p-4">
-      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 p-4 sm:max-w-lg sm:p-6">
+      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-card p-6 ring-1 ring-foreground/10 sm:max-w-lg">
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
               <p className="text-sm font-semibold text-muted-foreground">
-                Quick question · {step}/3
+                Quick question - {step}/3
               </p>
               <h2 className="mt-1 text-lg font-semibold text-foreground">
                 {step === 1

@@ -141,7 +141,7 @@ export function TickerDrawer({
         onClick={onClose}
       />
       <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-background sm:max-w-md">
-        <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
+        <div className="flex items-start justify-between gap-2 border-b border-border px-6 py-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-sm font-medium tracking-tight text-foreground">
@@ -266,7 +266,7 @@ export function TickerDrawer({
 
             <div>
               <MicroLabel className="mb-2">
-                Year by year · tap to change
+                Year by year - tap to change
               </MicroLabel>
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
                 {FORECAST_YEARS.map((yr) => {

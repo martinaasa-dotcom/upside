@@ -64,16 +64,16 @@ export function AppStatusStrip({
       >
         <span className="text-sm tabular-nums text-muted-foreground sm:shrink-0 sm:whitespace-nowrap">
           {sec == null
-            ? "Prices · —"
+            ? "Prices —"
             : quotesDelayed && sec >= 60
               ? `Price as of ${formatAge(sec)}`
-              : `Prices · ${formatAge(sec)}`}
+              : `Prices - ${formatAge(sec)}`}
           {quotedCount != null && totalCount != null ? (
             <span className="hidden sm:inline">
               {` · ${quotedCount}/${totalCount} names`}
             </span>
           ) : null}
-          {quotesDelayed && sec != null && sec >= 30 * 60 ? " · delayed" : ""}
+          {quotesDelayed && sec != null && sec >= 30 * 60 ? " - delayed" : ""}
         </span>
         <WidgetErrorBoundary name="Market" className="min-w-0">
           <MacroStrip />

@@ -1472,7 +1472,7 @@ export function CommunityView({ communityId }: Props) {
                   </p>
                 ) : null}
                 {isClassroom && !myClassSheet ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card ring-1 ring-foreground/10 px-6 py-4">
                     <p className="min-w-0 flex-1 text-sm text-foreground/80">
                       {isAdmin
                         ? "You are watching the class. Get a paper portfolio if you want to trade alongside them."
@@ -1647,7 +1647,7 @@ export function CommunityView({ communityId }: Props) {
                     </WidgetErrorBoundary>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                    <section className="overview-fade order-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-muted p-2 text-primary">
@@ -1696,7 +1696,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                    <section className="overview-fade order-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
@@ -1740,7 +1740,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                    <section className="overview-fade order-1 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-muted p-2 text-primary">
@@ -1825,7 +1825,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
-                    <section className="overview-fade order-4 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                    <section className="overview-fade order-4 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-gain/15 p-2 text-gain">
                           <Layers className="h-4 w-4" />
@@ -1877,7 +1877,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                    <section className="overview-fade order-5 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-muted p-2 text-primary">
                           <PieChart className="h-4 w-4" />
@@ -1928,7 +1928,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && (
-                  <section className="overview-fade order-6 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                  <section className="overview-fade order-6 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                     <div className="mb-4 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="rounded-xl bg-muted p-2 text-primary">
@@ -2107,7 +2107,7 @@ export function CommunityView({ communityId }: Props) {
                                 {sheets.length === 1 ? "" : "s"}
                                 {sheets.length > 0 && (
                                   <>
-                                    {" · today "}
+                                    {" - today "}
                                     <span
                                       className={signedTone(
                                         sheetTodayPct,
@@ -2217,7 +2217,7 @@ export function CommunityView({ communityId }: Props) {
                                 {sheets.length === 1 ? "" : "s"}
                                 {sheets.length > 0 && (
                                   <>
-                                    {" · today "}
+                                    {" - today "}
                                     <span
                                       className={signedTone(
                                         sheetTodayPct,
@@ -2241,7 +2241,7 @@ export function CommunityView({ communityId }: Props) {
                   </section>
 
                   {isAdmin && joinRequests.length > 0 && (
-                    <section className="flex flex-col gap-3 rounded-lg bg-accent p-4">
+                    <section className="flex flex-col gap-3 rounded-lg bg-muted p-6">
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <UserCheck className="h-4 w-4 text-foreground/80" />
                         Join requests
@@ -2293,9 +2293,9 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {isAdmin && (
-                    <section className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+                    <section className="flex flex-col gap-3 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
                       <h2 className="text-sm font-medium text-foreground">
-                        Admin · invite
+                        Admin - invite
                       </h2>
                       <p className="text-xs text-muted-foreground">
                         {isClassroom
@@ -2464,7 +2464,7 @@ export function CommunityView({ communityId }: Props) {
               </button>
               <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl bg-card/95 px-4 py-3 shadow-sm ring-1 ring-foreground/10 backdrop-blur-sm">
                 <p className="text-sm font-semibold text-foreground">
-                  Read-only · owned by{" "}
+                  Read-only - owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
                 </p>
@@ -2580,7 +2580,7 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
           />
-          <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-xl sm:pb-4">
+          <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:rounded-xl sm:pb-6">
             <div className="mb-4 flex items-start justify-between gap-3">
               <h3 className="text-base font-semibold text-foreground">
                 Community settings
@@ -2765,7 +2765,7 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setBestiaryOpen(false)}
           />
-          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-4">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-6">
             <div className="mb-1 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
@@ -2886,7 +2886,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "relative flex flex-col gap-4 overflow-hidden rounded-xl border p-4 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
+        "relative flex flex-col gap-4 overflow-hidden rounded-xl border p-6 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
         tone.border,
         tone.wash
       )}

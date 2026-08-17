@@ -217,7 +217,7 @@ export function PortfolioTabs({
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  title={`${p.name} · long-press to rename or delete`}
+                  title={`${p.name} - long-press to rename or delete`}
                   onClick={() => {
                     setMenu(null);
                     onChange(p.id);

@@ -992,7 +992,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {r.shares.toLocaleString("en-US")} shares
-                      {!r.hasTargets && " · Margus is working on it"}
+                      {!r.hasTargets && " - Margus is working on it"}
                     </p>
                   </div>
                   <p
@@ -1166,7 +1166,7 @@ export const ForecastPanel = memo(function ForecastPanel({
           {plan?.generatedAt && (
             <p className="mt-1.5 text-sm text-muted-foreground">
               Worked out {formatGeneratedAt(plan.generatedAt)}
-              {appliedFlash ? " · prices updated" : ""}
+              {appliedFlash ? " - prices updated" : ""}
             </p>
           )}
         </div>

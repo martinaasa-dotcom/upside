@@ -12,7 +12,7 @@
  * A price from a few minutes ago is off by normal drift. Cost basis is off
  * by every gain ever made. So we hydrate from cache and let the refresh
  * (already running within a second) correct it, and we carry `savedAt` so
- * the header's "Prices · Xs ago" tells the truth about the age meanwhile.
+ * the header's "Prices - Xs ago" tells the truth about the age meanwhile.
  */
 
 import type { Quote } from "@/lib/types";

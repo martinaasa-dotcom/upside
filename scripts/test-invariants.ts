@@ -3607,6 +3607,8 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.match(src, /loadCommunityListCache/);
   assert.match(src, /communities\.length === 0 && loading/);
   assert.match(src, /Public circles/);
+  assert.match(src, /Requested - pending/);
+  assert.doesNotMatch(src, /Requested · pending/);
   assert.match(src, /No public circles right now/);
   assert.doesNotMatch(src, /discover\.length > 0 &&/);
   assert.match(src, /<PanelHeader/);

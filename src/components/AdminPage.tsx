@@ -439,8 +439,8 @@ export function AdminPage() {
                             </div>
                           </div>
                           <div className="shrink-0 text-left text-xs text-muted-foreground sm:text-right">
-                            <p>Last sign-in · {fmtDate(u.last_sign_in_at)}</p>
-                            <p>Profile · {fmtDate(u.profile_created_at)}</p>
+                            <p>Last sign-in - {fmtDate(u.last_sign_in_at)}</p>
+                            <p>Profile - {fmtDate(u.profile_created_at)}</p>
                           </div>
                         </li>
                       );
@@ -468,7 +468,7 @@ export function AdminPage() {
                     communities.map((c) => (
                       <article
                         key={c.id}
-                        className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4"
+                        className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>

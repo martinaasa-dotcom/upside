@@ -398,8 +398,8 @@ function ViewMoreButton({
 function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   if (quotesAt == null) return "Loading prices …";
   const secs = Math.max(0, Math.round((nowMs - quotesAt) / 1000));
-  if (secs < 10) return "Live · just now";
-  if (secs < 90) return `Live · ${secs}s ago`;
+  if (secs < 10) return "Live - just now";
+  if (secs < 90) return `Live - ${secs}s ago`;
   const mins = Math.round(secs / 60);
   return `Prices ${mins}m old`;
 }
@@ -485,7 +485,7 @@ function FundPosition({
   const thesis = fundCopyBullets(holding.thesis).slice(0, 2);
   const exit = fundCopyBullets(holding.exit_plan).slice(0, 2);
   return (
-    <article className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+    <article className="rounded-xl bg-card ring-1 ring-foreground/10 p-6">
       <h3 className="text-base font-semibold text-foreground">
         {cashtag(holding.ticker)}
       </h3>
@@ -1167,7 +1167,7 @@ export function UpsidePortfolioPage() {
                 }
                 subtitle={
                   fund
-                    ? `Day ${dayNumber} · started ${fmtDate(fund.inception_date)}. One decision a day in public.`
+                    ? `Day ${dayNumber} - started ${fmtDate(fund.inception_date)}. One decision a day in public.`
                     : "One decision a day in public."
                 }
                 actions={
@@ -1390,7 +1390,7 @@ export function UpsidePortfolioPage() {
               <WidgetErrorBoundary name="Fund positions">
               <section className="flex flex-col gap-4">
                 <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                  Open positions · {openHoldings.length}
+                  Open positions - {openHoldings.length}
                 </h2>
                 <div className="flex flex-col gap-3">
                   {openHoldings.map((h) => (
@@ -1420,7 +1420,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-4"
+                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <RecapMeta r={r} />
@@ -1484,7 +1484,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-4"
+                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1528,7 +1528,7 @@ export function UpsidePortfolioPage() {
             {closedHoldings.length > 0 && (
               <section className="flex flex-col gap-4">
                 <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                  Closed positions · {closedHoldings.length}
+                  Closed positions - {closedHoldings.length}
                 </h2>
                 <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
                   {closedHoldings.map((h) => (

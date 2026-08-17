@@ -413,8 +413,8 @@ export const LabSheet = memo(function LabSheet({
                     />
                   </div>
                   <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                    <span>0 · all in one name</span>
-                    <span>100 · index-broad</span>
+                    <span>0 - all in one name</span>
+                    <span>100 - index-broad</span>
                   </div>
                 </div>
 

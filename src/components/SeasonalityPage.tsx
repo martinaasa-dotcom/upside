@@ -458,7 +458,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
     >
       <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-muted-foreground">
-          {stanceLabel(s.stance)} · this month
+          {stanceLabel(s.stance)} - this month
         </p>
         <p className="mt-1.5 text-base font-semibold text-foreground">{s.headline}</p>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.detail}</p>

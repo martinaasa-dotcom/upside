@@ -2369,11 +2369,11 @@ export function Dashboard() {
               const upserted = Number(data.upserted ?? 0);
               const removed = Number(data.removed ?? 0);
               const failed = Array.isArray(data.failed) ? data.failed.length : 0;
-              const cashBit = data.cashUpdated ? " · cash updated" : "";
-              const removeBit = removed ? ` · removed ${removed}` : "";
+              const cashBit = data.cashUpdated ? " - cash updated" : "";
+              const removeBit = removed ? ` - removed ${removed}` : "";
               toast(
                 `Imported ${upserted} ticker${upserted === 1 ? "" : "s"}${cashBit}${removeBit}${
-                  failed ? ` · ${failed} failed` : ""
+                  failed ? ` - ${failed} failed` : ""
                 }`,
                 failed ? "error" : "success"
               );
@@ -2983,7 +2983,7 @@ export function Dashboard() {
         id: "statistics",
         label: "Seasonality",
         group: "Go",
-        hint: "In Lab · year & calendar patterns",
+        hint: "In Lab - year & calendar patterns",
         run: () => {
           setLabIntent("seasonality");
           setActiveId(LAB_TAB_ID);
@@ -3407,7 +3407,6 @@ export function Dashboard() {
             {!isMetaTab && canClassBuy && (
               <Button
                 type="button"
-                size="lg"
                 onClick={() => setModalOpen(true)}
               >
                 <Plus data-icon="inline-start" />
@@ -3419,7 +3418,6 @@ export function Dashboard() {
               <Button
                 type="button"
                 variant="outline"
-                size="lg"
                 onClick={() => setInviteOpen(true)}
                 className="hidden md:inline-flex"
               >
@@ -3468,7 +3466,7 @@ export function Dashboard() {
                   key={a.id}
                   type="button"
                   onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-                  className="w-full rounded-xl bg-card ring-1 ring-foreground/10 p-4 text-left"
+                  className="w-full rounded-xl bg-card ring-1 ring-foreground/10 p-6 text-left"
                 >
                   <p className="text-sm font-semibold text-foreground">{a.title}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">

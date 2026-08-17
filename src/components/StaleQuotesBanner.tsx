@@ -37,7 +37,7 @@ export function StaleQuotesBanner({
             Quotes may be stale
             {ageMin != null ? ` (${ageMin}m since last refresh)` : ""}
             {delayed && ageMin != null && ageMin >= 30
-              ? " · provider delayed flag"
+              ? " - provider delayed flag"
               : ""}
             .
           </span>

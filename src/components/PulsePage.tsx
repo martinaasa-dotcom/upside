@@ -338,7 +338,7 @@ function PulseCard({
         </Scoreboard>
       ) : (
         <p className="mt-3 text-sm tabular-nums text-muted-foreground">
-          {currency(c.price)} · not in your portfolio
+          {currency(c.price)} - not in your portfolio
         </p>
       )}
 
@@ -1026,7 +1026,7 @@ export const PulsePage = memo(function PulsePage({
           <Button
             type="submit"
             disabled={!searchInput.trim() || pinnedLoading}
-            className="w-full shrink-0 rounded-full sm:w-auto"
+            className="w-full shrink-0 sm:w-auto"
           >
             {pinnedLoading ? "Checking …" : "Check"}
           </Button>

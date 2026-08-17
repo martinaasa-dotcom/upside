@@ -165,11 +165,11 @@ export function CsvImportModal({
         onClick={handleClose}
       />
       <div className="relative z-10 flex max-h-[min(100%,640px)] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2">
             <FileUp className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold text-foreground">
-              Import CSV · {portfolioName}
+              Import CSV - {portfolioName}
             </h2>
           </div>
           <Button
@@ -184,7 +184,7 @@ export function CsvImportModal({
           </Button>
         </div>
 
-        <div className="min-h-0 flex-1 gap-4 overflow-y-auto px-4 py-4">
+        <div className="min-h-0 flex-1 gap-4 overflow-y-auto px-6 py-6">
           <p className="text-sm text-muted-foreground">
             Replace this portfolio, or paste lines like{" "}
             <span className="text-foreground">NBIS 500 85.10</span>. CSV columns:
@@ -251,7 +251,7 @@ export function CsvImportModal({
           {rows.length > 0 && (
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Preview · {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
+                <span>Preview - {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
                 {cash != null && (
                   <span className="text-muted-foreground">
                     Cash ${cash.toLocaleString("en-US", { maximumFractionDigits: 0 })}
@@ -336,7 +336,7 @@ export function CsvImportModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
           <Button type="button" variant="ghost" onClick={handleClose}>
             Cancel
           </Button>
