@@ -17,34 +17,28 @@ import { fetchTickerNews } from "@/lib/market/ticker-context";
 import type { NoteReport } from "@/lib/note-report";
 
 const JOB: Record<NoteReport["kind"], string> = {
-  morning: `This is the morning pre-market note. You/your. Four short paragraphs with a blank line between them. Varied sentence length. Candid, like a quick desk note. Never we/us/our.
+  morning: `This is the morning pre-market note. You/your. Three short sections with a blank line between them. Varied sentence length. Never we/us/our. Never name a website, publisher, or paste a link.
 
-Paragraph 1. The name that's moving overnight. Cashtag. The actual headline if facts give one, or the overnight number if they don't. Why it moved. Two or three sentences.
-Then a blank line, then one line exactly: [[source: Publisher]] using the publisher from facts. Skip that line if facts say no headline. Never invent a publisher.
-Paragraph 2. What that means for you. Tempting to jump in. Buying a gap like this is how people wreck what they paid. The move for you is doing nothing. Let the shares you already have run.
-Paragraph 3. As for the rest of your portfolio. Name the percent once. Name the missing group. You don't need to chase fresh highs today. Do not paste the insight lines.
-Paragraph 4. Nothing you need to do before the open. Enjoy your morning and let it play out.
+Section 1. The name that's moving overnight. Cashtag. The actual headline if facts give one, or the overnight number if they don't. Then why chasing a gap like this ruins your cost basis. Two or three sentences, one paragraph.
+Section 2. The real concentration percent from facts, once. Tie it to this morning. Standing down keeps cash free for the missing group (utilities that sell power, when facts say that's the gap). Fresh wording. Do not paste the insight lines.
+Section 3. Sit tight before the bell. Enjoy your morning and let it play out.
 
 Never invent news. Overnight and today's calendar only. Do not recap yesterday's regular session.
-Never write orders. No "do not buy more", "no trades", "no moves", "hands off the buy button", "do not add", "sell some".`,
-  close: `This is the after-the-close note. You/your. Four short paragraphs with a blank line between them. Same voice as the morning letter.
+Never write "do not buy more", "no trades", "do not add", "sell some".`,
+  close: `This is the after-the-close note. You/your. Three short sections with a blank line between them. Never we/us/our. Never name a website, publisher, or paste a link.
 
-Paragraph 1. Who did the work today. Cashtag. The actual headline if facts give one. How much that name did versus the rest. Two or three sentences.
-Then a blank line, then [[source: Publisher]] if facts give a publisher. Skip if none. Never invent it.
-Paragraph 2. What that means for you. Holding off tonight is the smart read. Buying more after a surge is how people chase. Chasing a name that's already down is catching a drop with both hands. The move for you is doing nothing.
-Paragraph 3. As for the rest of your portfolio. Name the percent once. Name the missing group. Do not paste the insight lines.
-Paragraph 4. Your portfolio did its job today. Nothing you need to change tonight. Log off and let it sit.
+Section 1. Session for this portfolio, percent and dollars if facts give them. Who did the work. Cashtag. The actual headline if facts give one. How much that name did versus the rest.
+Section 2. Why standing down tonight is the smart play. Buying more after a surge is chasing. Buying falling utilities is catching a falling knife. Name the concentration percent once, tied to today. Do not paste the insight lines.
+Section 3. Log off and let it sit.
 
-Never write orders. Never we/us/our.`,
-  sunday: `This is the Sunday weekly recap. You/your. Four short paragraphs with a blank line between them. The loud-mover numbers are already a table. Do not make a second list of those names.
+Never write "do not buy more", "no trades", "do not add", "sell some".`,
+  sunday: `This is the Sunday weekly recap. You/your. Three short sections with a blank line between them. The loud-mover numbers are already a table. Do not list those names again. Never we/us/our. Never name a website, publisher, or paste a link.
 
-Paragraph 1. Who stole the show this week. Cashtag. The actual headline if facts give one, and what that did to the week's number. Two or three sentences.
-Then a blank line, then [[source: Publisher]] if facts give a publisher. Skip if none.
-Paragraph 2. Looking at the rest of your portfolio. Name the percent once. Name the missing group. What slipped, what held. Do not paste the insight lines.
-Paragraph 3. Holding steady through the headlines was the right read. Buying into a spike is how people chase. The plan for next week does not need a rewrite tonight.
-Paragraph 4. Enjoy the rest of your Sunday. Nothing you need to do tonight.
+Section 1. The week's percent and dollar for this portfolio. Who stole the show. Cashtag. The actual headline if facts give one.
+Section 2. Concentration versus the missing group for the week. Name the percent once. Fresh wording. Do not paste the insight lines.
+Section 3. The plan for next week stays unchanged. Enjoy the rest of your Sunday.
 
-Never invent news. Never write orders. Never we/us/our.`,
+Never invent news. Never write "do not buy more", "no trades", "do not add", "sell some".`,
 };
 
 /** Phrases that only show up when the model dumps the prompt instead of the note. */
@@ -88,24 +82,15 @@ const LEAK = [
   /Paragraph 2\./i,
   /Paragraph 3\./i,
   /Paragraph 4\./i,
+  /Section 1\./i,
+  /Section 2\./i,
+  /Section 3\./i,
 ];
 
 export function looksLikePromptLeak(text: string): boolean {
   const s = text.trim();
   if (!s) return false;
   return LEAK.some((re) => re.test(s));
-}
-
-function firstSentences(s: string, n: number): string {
-  const parts = s.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g);
-  if (!parts) return s.trim();
-  return parts.slice(0, n).join(" ").replace(/ {2,}/g, " ").trim();
-}
-
-function mixBody(r: NoteReport): string | null {
-  const mix = r.insights[1] ?? r.insights[0];
-  if (!mix) return null;
-  return firstSentences(mix, 2);
 }
 
 function clipHeadline(title: string): string {
@@ -116,51 +101,52 @@ function clipHeadline(title: string): string {
   return at > 80 ? cut.slice(0, at) : cut;
 }
 
-function sourceLine(r: NoteReport): string | null {
-  const pub = r.news?.publisher?.trim();
-  if (!pub) return null;
-  return `[[source: ${pub}]]`;
-}
-
-function mixParagraph(r: NoteReport): string | null {
-  const mix = mixBody(r);
+function mixBits(r: NoteReport): { pct: string; group: string; power: boolean } | null {
+  const mix = r.insights[1] ?? r.insights[0];
   if (!mix) return null;
-  return `As for the rest of your portfolio, ${mix.charAt(0).toLowerCase()}${mix.slice(1)}`;
+  const power = /utilit|electric|power/.test(mix);
+  const named =
+    mix.match(/(\d+%) of (?:this|your|our) portfolio is ([^.]+)/i) ??
+    mix.match(/Most of your portfolio is ([^(]+)\s*\((\d+%)\)/i);
+  if (named) {
+    if (named[1]?.includes("%")) {
+      return {
+        pct: named[1] ?? "",
+        group: (named[2] ?? "one group").trim(),
+        power,
+      };
+    }
+    return {
+      pct: named[2] ?? "",
+      group: (named[1] ?? "one group").trim(),
+      power,
+    };
+  }
+  const simple = mix.match(/(\d+%) is ([^.]+)/i);
+  if (simple) {
+    return {
+      pct: simple[1] ?? "",
+      group: (simple[2] ?? "one group").trim(),
+      power,
+    };
+  }
+  const pctOnly = mix.match(/(\d+%)/);
+  if (!pctOnly) return null;
+  return { pct: pctOnly[1] ?? "", group: "one group", power };
 }
 
-function chaseParagraph(kind: NoteReport["kind"]): string {
-  if (kind === "close") {
-    return "Holding off tonight is the smart read. Buying more after a surge is how people chase. The move for you is doing nothing.";
-  }
-  if (kind === "sunday") {
-    return "Holding steady through the headlines was the right read. Buying into a spike is how people chase. The plan for next week does not need a rewrite tonight.";
-  }
-  return "It's tempting to jump in on that move. Buying a gap like this is how people wreck what they paid. The move for you is doing nothing. Let the shares you already have run.";
-}
-
-function closeParagraph(kind: NoteReport["kind"]): string {
-  if (kind === "morning") {
-    return "Nothing you need to do before the open. Enjoy your morning and let it play out.";
-  }
-  if (kind === "sunday") {
-    return "Enjoy the rest of your Sunday. Nothing you need to do tonight.";
-  }
-  return "Your portfolio did its job today. Nothing you need to change tonight. Log off and let it sit.";
-}
-
-function leadParagraph(r: NoteReport): string {
+function section1(r: NoteReport): string {
   const gap = r.movers[0];
   const tag = gap ? cashtag(gap.ticker) : null;
   const headline = r.news?.title ? clipHeadline(r.news.title) : null;
   if (r.kind === "morning") {
-    if (tag && headline) {
-      return `${tag} is moving this morning. ${headline}.`;
-    }
-    if (tag && gap && Math.abs(gap.pct) >= 0.02) {
-      return `${tag} is ${pct(gap.pct)} overnight. That's the name doing the work this morning.`;
-    }
-    if (tag) return `${tag} is the name to watch this morning.`;
-    return r.lead;
+    let lead: string;
+    if (tag && headline) lead = `${tag} is moving this morning. ${headline}.`;
+    else if (tag && gap && Math.abs(gap.pct) >= 0.02) {
+      lead = `${tag} is ${pct(gap.pct)} overnight. That's the name doing the work this morning.`;
+    } else if (tag) lead = `${tag} is the name to watch this morning.`;
+    else lead = r.lead;
+    return `${lead} Chasing a gap like this ruins your cost basis.`;
   }
   if (r.kind === "sunday") {
     const week =
@@ -168,31 +154,67 @@ function leadParagraph(r: NoteReport): string {
         ? `Your portfolio was ${pct(r.todayPct)} this week, ${money(r.todayDollar)}.`
         : `Your portfolio moved ${money(r.todayDollar)} this week.`;
     if (tag && headline) {
-      return `${tag} stole the show this week. ${headline}. ${week}`;
+      return `${week} ${tag} stole the show this week. ${headline}.`;
     }
     if (tag && gap && gap.pct > 0) {
-      return `${tag} stole the show this week, ${pct(gap.pct)}. ${week}`;
+      return `${week} ${tag} stole the show this week, ${pct(gap.pct)}.`;
     }
     return week;
   }
+  const session =
+    r.todayPct != null
+      ? `Your portfolio was ${pct(r.todayPct)} today, ${money(r.todayDollar)}.`
+      : `Your portfolio moved ${money(r.todayDollar)} today.`;
   if (tag && headline) {
-    return `${tag} had the session. ${headline}. That move did most of the day's work in your portfolio.`;
+    return `${session} ${tag} did the work today. ${headline}.`;
   }
   if (tag) {
-    return `${tag} did the work today. Let that sit.`;
+    return `${session} ${tag} did the work today.`;
   }
   return r.lead;
 }
 
+function section2(r: NoteReport): string {
+  const bits = mixBits(r);
+  if (r.kind === "morning") {
+    if (bits?.power) {
+      return `Keeping ${bits.pct} in ${bits.group} means you don't need to chase fresh highs today. Standing down keeps cash free for utilities that sell power when they get cheaper.`;
+    }
+    if (bits) {
+      return `Keeping ${bits.pct} in ${bits.group} means you don't need to chase a new name this morning. Standing down keeps cash free for later.`;
+    }
+    return "Standing down this morning keeps cash free for later. You don't need to chase a gap.";
+  }
+  if (r.kind === "close") {
+    const knife = bits?.power
+      ? " Buying falling utilities tonight is catching a falling knife."
+      : "";
+    const weight = bits
+      ? ` The ${bits.pct} in ${bits.group} is still the bulk of your portfolio.`
+      : "";
+    return `Standing down tonight is the smart play. Buying more after a surge is chasing.${knife}${weight}`;
+  }
+  if (bits?.power) {
+    return `Your ${bits.pct} in ${bits.group} held through the week. Utilities that sell power barely showed up. That's still the gap.`;
+  }
+  if (bits) {
+    return `Your ${bits.pct} in ${bits.group} is still the week to sit with. The mix did not need a rewrite.`;
+  }
+  return "The mix did not need a rewrite this week. Hold what you hold.";
+}
+
+function section3(kind: NoteReport["kind"]): string {
+  if (kind === "morning") {
+    return "Sit tight before the bell. Enjoy your morning and let it play out.";
+  }
+  if (kind === "sunday") {
+    return "The plan for next week stays unchanged. Enjoy the rest of your Sunday.";
+  }
+  return "Log off and let it sit.";
+}
+
 function letter(r: NoteReport): string {
-  const parts = [leadParagraph(r)];
-  const source = sourceLine(r);
-  if (source) parts.push(source);
-  parts.push(chaseParagraph(r.kind));
-  const mix = mixParagraph(r);
-  if (mix) parts.push(mix);
-  parts.push(closeParagraph(r.kind));
-  return parts.join("\n\n");
+  return [section1(r), section2(r), section3(r.kind)].join("\n\n");
 }
 
 function fallbackSunday(r: NoteReport): string {
@@ -281,24 +303,34 @@ function facts(r: NoteReport): string {
     lines.push("Background only, do not paste:", ...r.insights.map((l) => `  ${l}`));
   }
   if (r.news) {
-    lines.push(
-      `Headline for ${cashtag(r.news.ticker)}: ${r.news.title}`,
-      `Publisher: ${r.news.publisher}`
-    );
+    lines.push(`Headline for ${cashtag(r.news.ticker)}: ${r.news.title}`);
   } else {
-    lines.push("No headline. Describe the move from the numbers. Skip the source line.");
+    lines.push("No headline. Describe the move from the numbers.");
   }
   return lines.filter((x): x is string => Boolean(x)).join("\n");
 }
 
-function acceptNote(text: string): string | null {
-  const lined = text
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
+function stripCitations(text: string): string {
+  return text
     .split("\n")
-    .map((line) => line.replace(/[ \t]{2,}/g, " ").trimEnd())
+    .filter((line) => !/^\[\[source:/i.test(line.trim()))
     .join("\n")
+    .replace(/\[\[source:[^\]]*\]\]/gi, "")
+    .replace(/https?:\/\/[^\s)]+/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function acceptNote(text: string): string | null {
+  const lined = stripCitations(
+    text
+      .replace(/\r\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .split("\n")
+      .map((line) => line.replace(/[ \t]{2,}/g, " ").trimEnd())
+      .join("\n")
+      .trim()
+  );
   const clean = humanizeMargusText(lined);
   if (clean.length < 40) return null;
   if (looksLikePromptLeak(clean)) return null;

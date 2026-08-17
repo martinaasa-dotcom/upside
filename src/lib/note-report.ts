@@ -12,7 +12,6 @@ import {
   emailCard,
   emailKicker,
   emailSection,
-  emailSourceChip,
   escapeEmail,
   wrapEmailLetter,
 } from "@/lib/email-letter";
@@ -783,7 +782,7 @@ export function noteReportText(r: NoteReport): string {
     );
   }
   if (r.margus) {
-    lines.push("", "Margus", r.margus.replace(/^\[\[source:\s*(.+?)\]\]$/gim, "$1"), ADVICE_DISCLAIMER_SHORT);
+    lines.push("", "Margus", r.margus, ADVICE_DISCLAIMER_SHORT);
   } else if (r.kind === "morning") {
     lines.push("", r.lead);
   }
@@ -878,13 +877,6 @@ function noteTakeHtml(text: string): string {
     if (!line) {
       flushProse();
       flushBullets();
-      continue;
-    }
-    const source = line.match(/^\[\[source:\s*(.+?)\]\]$/i);
-    if (source) {
-      flushProse();
-      flushBullets();
-      chunks.push(emailSourceChip(source[1] ?? ""));
       continue;
     }
     const bullet = line.match(/^[-*•]\s+(.*)$/);

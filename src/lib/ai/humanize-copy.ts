@@ -146,7 +146,6 @@ function scrubMarketJargon(text: string): string {
   s = s.replace(/\bwhen we are not\b/gi, "when you are not");
   s = s.replace(/\bthe reason we own\b/gi, "the reason you own");
   s = s.replace(/\bIf we did not mean\b/gi, "If you did not mean");
-  s = s.replace(/\bbefore the bell\b/gi, "before the open");
   s = s.replace(/\boverexposed\b/gi, "heavy in one group");
   s = s.replace(/\bwe aren't hedged\b/gi, "that one group is the whole portfolio");
   s = s.replace(/\baren't hedged\b/gi, "are all in that one group");
