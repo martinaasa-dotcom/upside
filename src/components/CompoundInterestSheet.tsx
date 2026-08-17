@@ -47,11 +47,10 @@ import {
   CheckCircle2,
   Copy,
   Share2,
-  Sparkles,
   Target,
   Zap,
 } from "lucide-react";
-import { Fragment, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { useTimeout } from "@/lib/use-timeout";
 import {
   Card,
@@ -69,8 +68,7 @@ import {
   ItemContent,
   ItemDescription,
   ItemGroup,
-  ItemMedia,
-  ItemSeparator,
+  ItemTitle,
 } from "@/components/ui/item";
 import {
   NativeSelect,
@@ -1419,25 +1417,19 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
         </Panel>
 
         <Panel className={SHEET_PANEL}>
-          <PanelHeader
-            icon={<Sparkles className="h-4 w-4" />}
-            title="What this actually tells you"
-          />
-          <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
-            {narrative.map((line, i) => (
-              <Fragment key={line}>
-                {i > 0 ? <ItemSeparator className="my-0" /> : null}
-                <Item size="sm" className="px-0">
-                  <ItemMedia className="text-sm tabular-nums text-muted-foreground">
-                    {i + 1}
-                  </ItemMedia>
-                  <ItemContent>
-                    <ItemDescription className="line-clamp-none text-foreground">
-                      {line}
-                    </ItemDescription>
-                  </ItemContent>
-                </Item>
-              </Fragment>
+          <PanelHeader title="What this actually tells you" />
+          <ItemGroup>
+            {narrative.map((beat) => (
+              <Item key={beat.label} className="px-0 py-0">
+                <ItemContent>
+                  <ItemTitle className="font-semibold tracking-tight">
+                    {beat.label}
+                  </ItemTitle>
+                  <ItemDescription className="line-clamp-none leading-relaxed">
+                    {beat.body}
+                  </ItemDescription>
+                </ItemContent>
+              </Item>
             ))}
           </ItemGroup>
         </Panel>

@@ -237,114 +237,116 @@ export function storyYears(horizon: number): number[] {
   return picked.slice(0, 6);
 }
 
+export type NarrativeBeat = {
+  label: string;
+  body: string;
+};
+
 type NarrativeAngle = (ctx: {
   result: CompoundResult;
   tip: number | null;
   rng: () => number;
-}) => string | null;
+}) => NarrativeBeat | null;
+
+function beat(label: string, rng: () => number, bodies: string[]): NarrativeBeat {
+  return { label, body: pick(rng, bodies) };
+}
 
 const NARRATIVE_ANGLES: NarrativeAngle[] = [
-  // Contributions vs the S-curve.
   ({ result, tip, rng }) => {
     if (!(result.totalContributions > 0)) return null;
-    const tipSuffix = tip ? ` (tips past deposits by year ${tip})` : "";
-    return pick(rng, [
-      `You add ${fmt(result.totalContributions)} along the way. Deposits are the fuel, compounding is the S-curve${tipSuffix}.`,
-      `${fmt(result.totalContributions)} of that final number is your own deposits. The rest is the multiplier doing its job${tipSuffix}.`,
-      `Fuel in: ${fmt(result.totalContributions)} deposited over the horizon. Everything past that is the curve bending${tipSuffix}.`,
+    const tipSuffix = tip ? ` Tips past deposits by year ${tip}.` : "";
+    return beat("Fuel in", rng, [
+      `You add ${fmt(result.totalContributions)} along the way. Deposits are the fuel, compounding is the S-curve.${tipSuffix}`,
+      `${fmt(result.totalContributions)} of that final number is your own deposits. The rest is the multiplier doing its job.${tipSuffix}`,
+      `${fmt(result.totalContributions)} deposited over the horizon. Everything past that is the curve bending.${tipSuffix}`,
     ]);
   },
-  // No deposits at all.
   ({ result, tip, rng }) => {
     if (result.totalContributions > 0 || tip != null) return null;
-    return pick(rng, [
+    return beat("Sitting still", rng, [
       `No fresh deposits, pure compounding. Rough double pace: ~${result.doubleYears}y ${result.doubleMonths}m at this rate. Stay the course through the breathers.`,
       `Zero new cash added. ${fmt(result.totalInterest)} of growth came purely from letting it sit.`,
       `This path never sees another deposit. Doubling every ~${result.doubleYears}y ${result.doubleMonths}m does the rest.`,
     ]);
   },
-  // Tipping point.
   ({ tip, rng }) => {
     if (tip == null) return null;
-    return pick(rng, [
-      `Tipping point: year ${tip} is when yearly interest first beats what you put in. Money working harder than you, that's the multi-year edge.`,
+    return beat("Tipping point", rng, [
+      `Year ${tip} is when yearly interest first beats what you put in. Money working harder than you, that's the multi-year edge.`,
       `By year ${tip}, a single year of interest outearns a full year of your deposits. That's the moment compounding takes the wheel.`,
       `Year ${tip} is the flip. Interest starts out-earning your own contributions from here on.`,
     ]);
   },
-  // Halfway checkpoint.
   ({ result, rng }) => {
     const mid = result.yearly.find(
       (y) => y.index === Math.floor(result.durationYears / 2)
     );
     if (!mid || mid.index <= 0) return null;
-    return pick(rng, [
-      `Halfway checkpoint (year ${mid.index}): ${fmt(mid.balance)} already on the books. Pullbacks along the way are resets, not a reason to quit.`,
-      `By the midpoint (year ${mid.index}) you're already sitting on ${fmt(mid.balance)}. The back half does the heavier lifting.`,
+    return beat("Halfway", rng, [
+      `Year ${mid.index}: ${fmt(mid.balance)} already on the books. Pullbacks along the way are resets, not a reason to quit.`,
+      `By year ${mid.index} you're already sitting on ${fmt(mid.balance)}. The back half does the heavier lifting.`,
     ]);
   },
-  // Doubling count across the full horizon.
   ({ result, rng }) => {
     if (!Number.isFinite(result.doubleYears) || result.durationYears <= 0) return null;
     const doubleYearsExact = result.doubleYears + result.doubleMonths / 12;
     if (!(doubleYearsExact > 0)) return null;
     const doublings = result.durationYears / doubleYearsExact;
     if (!(doublings >= 0.4)) return null;
-    return pick(rng, [
+    return beat("Doubling", rng, [
       `At this rate, money doubles every ~${result.doubleYears}y ${result.doubleMonths}m. That's roughly ${doublings.toFixed(1)} doublings over the full horizon.`,
-      `Doubling clock: ~${result.doubleYears}y ${result.doubleMonths}m per double. This horizon fits about ${doublings.toFixed(1)} of them.`,
+      `About ${result.doubleYears}y ${result.doubleMonths}m per double. This horizon fits about ${doublings.toFixed(1)} of them.`,
     ]);
   },
-  // First-year vs last-year interest growth.
   ({ result, rng }) => {
     const first = result.yearly.find((y) => y.index === 1);
     const last = result.yearly[result.yearly.length - 1];
     if (!first || !last || first.interest <= 0 || last.index <= 1) return null;
     const growthMult = last.interest / first.interest;
     if (!(growthMult >= 1.4)) return null;
-    return pick(rng, [
-      `Year 1 earned ${fmt(first.interest)} in interest; the final year earns ${fmt(last.interest)}: ${growthMult.toFixed(1)}x more, same discipline.`,
+    return beat("The curve", rng, [
+      `Year 1 earned ${fmt(first.interest)} in interest. The final year earns ${fmt(last.interest)}: ${growthMult.toFixed(1)}x more, same discipline.`,
       `Interest per year grew ${growthMult.toFixed(1)}x from year 1 (${fmt(first.interest)}) to year ${last.index} (${fmt(last.interest)}). That's the curve, not you, working harder.`,
     ]);
   },
-  // Nominal vs effective rate from compounding frequency.
   ({ result, rng }) => {
     if (!(result.effectiveAnnualRate > result.nominalAnnualRate + 0.001)) return null;
-    return pick(rng, [
-      `Compounding monthly turns your ${(result.nominalAnnualRate * 100).toFixed(1)}% nominal rate into ${(result.effectiveAnnualRate * 100).toFixed(1)}% effective. Free lunch, technically.`,
-      `The nominal rate reads ${(result.nominalAnnualRate * 100).toFixed(1)}%, but compounding frequency bumps the effective rate to ${(result.effectiveAnnualRate * 100).toFixed(1)}%.`,
+    return beat("The rate", rng, [
+      `Compounding monthly turns your ${(result.nominalAnnualRate * 100).toFixed(1)}% stated rate into ${(result.effectiveAnnualRate * 100).toFixed(1)}% effective. Free lunch, technically.`,
+      `The stated rate reads ${(result.nominalAnnualRate * 100).toFixed(1)}%, but compounding frequency bumps the effective rate to ${(result.effectiveAnnualRate * 100).toFixed(1)}%.`,
     ]);
   },
 ];
 
-export function buildNarrative(result: CompoundResult): string[] {
+export function buildNarrative(result: CompoundResult): NarrativeBeat[] {
   const tip = findTippingYear(result.yearly);
   const seed = hashSeed(
     `upside-narrative|${result.principal}|${result.totalInterest.toFixed(0)}|${result.durationYears.toFixed(2)}|${result.totalContributions.toFixed(0)}`
   );
   const rng = mulberry32(seed);
 
-  const lines: string[] = [
-    pick(rng, [
-      `Path: ${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Slow at first, then not.`,
+  const beats: NarrativeBeat[] = [
+    beat("Path", rng, [
+      `${fmt(result.principal)} → ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Slow at first, then not.`,
       `${fmt(result.principal)} becomes ${fmt(result.futureValue)} over ${formatHorizon(result.durationYears)}. Slow at first, then not slow at all.`,
       `Over ${formatHorizon(result.durationYears)}, ${fmt(result.principal)} compounds into ${fmt(result.futureValue)}. Slow at first, then it isn't.`,
     ]),
-    pick(rng, [
-      `Interest does ${fmt(result.totalInterest)} of the work (${(result.allTimeRoR * 100).toFixed(0)}% all-time).`,
-      `${fmt(result.totalInterest)} of the final number is interest, not principal. Compounding earned its keep (${(result.allTimeRoR * 100).toFixed(0)}% all-time RoR).`,
-      `Of what you end up with, ${fmt(result.totalInterest)} came from the math, not your wallet (${(result.allTimeRoR * 100).toFixed(0)}% RoR).`,
+    beat("Interest", rng, [
+      `${fmt(result.totalInterest)} of the work (${(result.allTimeRoR * 100).toFixed(0)}% all-time).`,
+      `${fmt(result.totalInterest)} of the final number is interest, not principal. Compounding earned its keep (${(result.allTimeRoR * 100).toFixed(0)}% all-time).`,
+      `Of what you end up with, ${fmt(result.totalInterest)} came from the math, not your wallet (${(result.allTimeRoR * 100).toFixed(0)}% all-time).`,
     ]),
   ];
 
   const angleOrder = shuffleInPlace(rng, NARRATIVE_ANGLES.map((_, i) => i));
   for (const idx of angleOrder) {
-    if (lines.length >= 5) break;
+    if (beats.length >= 5) break;
     const candidate = NARRATIVE_ANGLES[idx]!({ result, tip, rng });
-    if (candidate) lines.push(candidate);
+    if (candidate) beats.push(candidate);
   }
 
-  return lines.slice(0, 5);
+  return beats.slice(0, 5);
 }
 
 function fmt(n: number): string {
