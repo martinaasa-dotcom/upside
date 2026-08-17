@@ -128,9 +128,13 @@ function thesisDisplayBullets(text: string | undefined): string[] {
 }
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
-  if (status === "watch") return <Eye className="h-4 w-4 text-muted-foreground" />;
-  if (status === "broken") return <XCircle className="h-4 w-4 text-loss" />;
-  return <CheckCircle2 className="h-4 w-4 text-gain" />;
+  if (status === "watch") {
+    return <Eye data-icon="inline-start" />;
+  }
+  if (status === "broken") {
+    return <XCircle data-icon="inline-start" />;
+  }
+  return <CheckCircle2 data-icon="inline-start" />;
 }
 
 function ActionBadge({ action }: { action: PulseAction }) {
@@ -139,11 +143,9 @@ function ActionBadge({ action }: { action: PulseAction }) {
       ? "good"
       : action === "sell"
         ? "bad"
-        : action === "trim"
-          ? "info"
-          : action === "watch"
-            ? "info"
-            : "neutral";
+        : action === "trim" || action === "watch"
+          ? "warn"
+          : "neutral";
   return <Pill tone={tone}>{actionLabel(action)}</Pill>;
 }
 
@@ -281,7 +283,15 @@ function PulseCard({
           {shown ? (
             <>
               <ActionBadge action={action} />
-              <Pill>
+              <Pill
+                tone={
+                  status === "broken"
+                    ? "bad"
+                    : status === "watch"
+                      ? "warn"
+                      : "good"
+                }
+              >
                 <StatusIcon status={status} />
                 {statusLabel(status)}
               </Pill>
@@ -293,7 +303,7 @@ function PulseCard({
             <Button
               type="button"
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={onRefresh}
               disabled={loading}
               title={

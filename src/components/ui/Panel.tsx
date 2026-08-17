@@ -928,17 +928,21 @@ export function Segmented<T extends string>({
 }
 
 const PILL_TONES = {
-  neutral: "border-border bg-muted text-foreground/80",
+  neutral: "border-border bg-muted/50 text-muted-foreground",
   brand: "border-transparent bg-primary text-primary-foreground",
-  good: "border-transparent bg-gain/15 text-gain",
-  warn: "border-transparent bg-warning/15 text-warning",
-  bad: "border-transparent bg-destructive/15 text-destructive",
+  good: "border-gain/40 bg-gain/20 text-gain",
+  warn: "border-caution/50 bg-caution/20 text-caution",
+  bad: "border-destructive/40 bg-destructive/20 text-destructive",
   info: "border-border bg-muted text-foreground",
 } as const;
 
 export type PillTone = keyof typeof PILL_TONES;
 
-/** Status chip. Same size as other chrome. Never a bare coloured dot alone. */
+/**
+ * Status chip. Same size as Button sm (h-7, text-sm), not the tiny
+ * shadcn Badge default (h-5, text-xs). That size is for table metadata.
+ * These sit in card headers and have to read at a glance.
+ */
 export function Pill({
   tone = "neutral",
   title,
@@ -957,7 +961,7 @@ export function Pill({
       title={title}
       variant={variant}
       className={cn(
-        "h-auto rounded-lg px-2.5 py-0.5 text-xs font-medium",
+        "h-7 rounded-lg px-2.5 text-sm font-medium [&>svg]:size-3.5!",
         PILL_TONES[tone],
         className
       )}
