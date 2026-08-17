@@ -2287,6 +2287,23 @@ run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {
   assert.match(season, /text-lg font-semibold tabular-nums/);
 });
 
+run("explainers portal and sit on a lifted popover", () => {
+  const panel = readFileSync(
+    join(process.cwd(), "src/components/ui/Panel.tsx"),
+    "utf8"
+  );
+  const pop = readFileSync(
+    join(process.cwd(), "src/components/ui/popover.tsx"),
+    "utf8"
+  );
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  assert.match(panel, /PopoverContent/);
+  assert.doesNotMatch(panel, /left-1\/2 top-full/);
+  assert.match(pop, /collisionPadding=\{12\}/);
+  assert.match(css, /--card: oklch\(0\.145 0 0\)/);
+  assert.match(css, /--popover: oklch\(0\.269 0 0\)/);
+});
+
 run("Geist headings and body, no third face", () => {
   const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");

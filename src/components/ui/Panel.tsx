@@ -10,13 +10,17 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
 import { cn, splitMoveTint } from "@/lib/format";
 import { Info } from "lucide-react";
 import {
   Children,
-  useState,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -489,36 +493,29 @@ export function Metric({
 }
 
 /**
- * Tap-to-open explainer. Not hover-only: hover doesn't exist on touch, and
- * the numbers these sit beside are the first thing a new user reads.
+ * Tap-to-open explainer. Portaled so a parent `overflow-hidden` cannot
+ * clip it, and Radix keeps it inside the viewport.
  */
 export function InfoTip({ text, label }: { text: string; label?: string }) {
-  const [open, setOpen] = useState(false);
   return (
-    <span className="relative inline-flex shrink-0">
-      <button
+    <Popover>
+      <PopoverTrigger
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((o) => !o);
-        }}
-        onBlur={() => setOpen(false)}
         aria-label={label ?? "What does this mean?"}
-        aria-expanded={open}
-        className="relative inline-flex size-4 items-center justify-center text-muted-foreground transition hover:text-foreground"
+        className="relative inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground transition hover:text-foreground"
+        onClick={(e) => e.stopPropagation()}
       >
         <span className="absolute -inset-3.5 lg:-inset-2.5" aria-hidden />
         <Info className="relative h-3.5 w-3.5" />
-      </button>
-      {open && (
-        <span
-          role="tooltip"
-          className="absolute left-1/2 top-full z-30 mt-1 w-52 -translate-x-1/2 rounded-lg border border-border bg-popover px-3 py-2.5 text-xs font-normal normal-case leading-relaxed tracking-normal text-popover-foreground shadow-sm"
-        >
-          {text}
-        </span>
-      )}
-    </span>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="center"
+        className="w-64 max-w-[min(16rem,calc(100vw-1.5rem))] text-xs font-normal normal-case leading-relaxed tracking-normal"
+      >
+        {text}
+      </PopoverContent>
+    </Popover>
   );
 }
 
