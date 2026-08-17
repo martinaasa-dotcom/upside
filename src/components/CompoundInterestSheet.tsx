@@ -153,13 +153,13 @@ function MilestoneLadderRow({
             {milestoneWhen(row)}
           </span>
           {wait ? (
-            <span className="mt-0.5 block text-muted">{wait}</span>
+            <span className="mt-0.5 block text-muted-foreground">{wait}</span>
           ) : null}
         </span>
       </button>
       {logOpen ? (
         <label className="block px-3 pb-3">
-          <span className="text-sm text-muted">Got there on</span>
+          <span className="text-sm text-muted-foreground">Got there on</span>
           <input
             type="date"
             aria-label={`Date you reached ${amount}`}
@@ -420,7 +420,7 @@ function ComparePathsChart({
           );
         })}
       </ChartXRail>
-      <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm text-muted sm:grid-cols-4">
+      <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm text-muted-foreground sm:grid-cols-4">
         {paths.map((p) => (
           <li key={p.id} className="inline-flex min-w-0 items-center gap-1.5">
             <span
@@ -767,7 +767,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
         />
 
         <div className="mt-6 divide-y divide-white/10">
-        <section className="space-y-3 pb-5">
+        <section className="flex flex-col gap-3 pb-5">
           <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
             Starting from
           </label>
@@ -802,7 +802,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </select>
         </section>
 
-        <section className="space-y-3 py-5">
+        <section className="flex flex-col gap-3 py-5">
           <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
             Growing at
           </label>
@@ -817,7 +817,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               }}
               className={cn(FIELD_CLASS, "pr-16")}
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               a year
             </span>
           </div>
@@ -830,7 +830,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           />
         </section>
 
-        <section className="space-y-3 py-5">
+        <section className="flex flex-col gap-3 py-5">
           <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
             For how long
           </label>
@@ -847,7 +847,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               }}
               className={cn(FIELD_CLASS, "no-spinner pr-16")}
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               years
             </span>
           </div>
@@ -863,7 +863,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           />
         </section>
 
-        <section className="space-y-3 py-5">
+        <section className="flex flex-col gap-3 py-5">
           <span className="text-sm font-semibold text-foreground">
             Adding along the way
           </span>
@@ -884,7 +884,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
 
           <fieldset
             disabled={!payIn}
-            className={cn("space-y-3", !payIn && "opacity-40")}
+            className={cn("flex flex-col gap-3", !payIn && "opacity-40")}
           >
             <legend className="sr-only">Paying in</legend>
             <FormattedNumberInput
@@ -910,7 +910,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               }
               disabled={!payIn}
             />
-            <label className="flex items-center justify-between gap-3 text-sm text-muted">
+            <label className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
               Raise it each year
               <FormattedNumberInput
                 kind="percent"
@@ -919,7 +919,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
               />
             </label>
-            <p className="min-h-5 text-sm text-muted">
+            <p className="min-h-5 text-sm text-muted-foreground">
               {tipping != null
                 ? `From year ${tipping}, growth adds more than you do.`
                 : payIn
@@ -931,7 +931,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             disabled={!takeOut}
             className={cn(!takeOut && "opacity-40")}
           >
-            <legend className="mb-1.5 block text-sm text-muted">
+            <legend className="mb-1.5 block text-sm text-muted-foreground">
               Taking out each month
             </legend>
             <FormattedNumberInput
@@ -953,7 +953,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
       </div>
 
       {/* Results & Projections Section */}
-      <section className="min-w-0 w-full max-w-full space-y-5">
+      <section className="flex flex-col min-w-0 w-full max-w-full gap-5">
         {/* Hero KPI Summary */}
         <Panel className={SHEET_PANEL}>
           <PanelHeader
@@ -1068,7 +1068,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             title="When you cross each round number"
           />
           {milestoneTakeaway && (
-            <p className="mt-3 text-sm leading-relaxed text-muted">
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               {milestoneTakeaway}
             </p>
           )}
@@ -1116,7 +1116,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           >
             <table className={cn(htmlTable, "min-w-[30rem] text-xs")}>
               <thead className="sticky top-0 z-10 bg-card">
-                <tr className="border-b border-border text-xs text-muted">
+                <tr className="border-b border-border text-xs text-muted-foreground">
                   <th className={cn(htmlCell, "font-medium")}>Milestone</th>
                   <th className={cn(htmlCell, "font-medium")}>On this plan</th>
                   <th className={cn(htmlCell, "font-medium")}>How far off</th>
@@ -1244,7 +1244,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>
-            <div className="space-y-3 border-t border-border p-3 md:hidden">
+            <div className="flex flex-col gap-3 border-t border-border p-3 md:hidden">
               {result.yearly.map((row, i) => {
                 const isLast = i === result.yearly.length - 1;
                 const principalShown = row.balance - row.accruedInterest;
@@ -1261,25 +1261,25 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                     </p>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-muted">Your money in</p>
+                        <p className="text-muted-foreground">Your money in</p>
                         <p className="tabular-nums text-foreground/80">
                           {show(principalShown)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted">Growth that year</p>
+                        <p className="text-muted-foreground">Growth that year</p>
                         <p className="tabular-nums text-caution">
                           {show(row.interest)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted">Growth so far</p>
+                        <p className="text-muted-foreground">Growth so far</p>
                         <p className="tabular-nums text-caution">
                           {show(row.accruedInterest)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted">Pot at year end</p>
+                        <p className="text-muted-foreground">Pot at year end</p>
                         <p className="tabular-nums font-semibold text-gain">
                           {show(row.balance)}
                         </p>
@@ -1292,7 +1292,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             <div className="hidden min-w-0 max-w-full overflow-x-auto border-t border-border md:block">
               <table className={cn(htmlTable, "min-w-[32rem] text-xs")}>
                 <thead>
-                  <tr className="border-b border-border text-xs text-muted">
+                  <tr className="border-b border-border text-xs text-muted-foreground">
                     <th className={cn(htmlCell, "font-medium")}>Year</th>
                     <th className={cn(htmlCell, "font-medium")}>Your money in</th>
                     <th className={cn(htmlCell, "font-medium")}>Growth that year</th>
@@ -1344,7 +1344,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             title="The same money, invested differently"
           />
           {compareTakeaway && (
-            <p className="mt-3 text-sm leading-relaxed text-muted">
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               {compareTakeaway}
             </p>
           )}
@@ -1355,7 +1355,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 s.id === "upside"
                   ? "text-brand"
                   : s.id === "mattress"
-                    ? "text-muted"
+                    ? "text-muted-foreground"
                     : undefined;
               return (
                 <Score
@@ -1401,7 +1401,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             icon={<Sparkles className="h-4 w-4" />}
             title="What this actually tells you"
           />
-          <ul className="mt-3 space-y-2">
+          <ul className="flex flex-col mt-3 gap-2">
             {narrative.map((line) => (
               <li
                 key={line}

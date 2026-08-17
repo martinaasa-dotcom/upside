@@ -174,14 +174,14 @@ export function CsvImportModal({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          <p className="text-sm text-muted">
+        <div className="min-h-0 flex-1 gap-4 overflow-y-auto px-4 py-4">
+          <p className="text-sm text-muted-foreground">
             Replace this portfolio, or paste lines like{" "}
             <span className="text-foreground">NBIS 500 85.10</span>. CSV columns:
             Ticker, Shares, Buy Price. Buy price is in that listing&apos;s own money.
@@ -202,7 +202,7 @@ export function CsvImportModal({
             }}
             rows={4}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-border bg-well px-3 py-2 font-mono text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
+            className="w-full rounded-xl border border-border bg-well px-3 py-2 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -234,7 +234,7 @@ export function CsvImportModal({
               Download template
             </button>
             {fileName && (
-              <span className="text-sm text-muted">{fileName}</span>
+              <span className="text-sm text-muted-foreground">{fileName}</span>
             )}
           </div>
 
@@ -246,11 +246,11 @@ export function CsvImportModal({
           )}
 
           {rows.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm text-muted">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Preview · {rows.length} holding{rows.length === 1 ? "" : "s"}</span>
                 {cash != null && (
-                  <span className="text-muted">
+                  <span className="text-muted-foreground">
                     Cash ${cash.toLocaleString("en-US", { maximumFractionDigits: 0 })}
                   </span>
                 )}
@@ -260,7 +260,7 @@ export function CsvImportModal({
                   sideways instead of pushing the modal past the viewport. */}
               <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised">
                 <table className={htmlTable}>
-                  <thead className="sticky top-0 bg-well text-sm text-muted">
+                  <thead className="sticky top-0 bg-well text-sm text-muted-foreground">
                     <tr>
                       <th className={cn(tickerTd, "py-1.5 font-medium")}>Ticker</th>
                       <th className={cn(htmlCell, "py-1.5 font-medium")}>Shares</th>
@@ -290,7 +290,7 @@ export function CsvImportModal({
                           )}
                         </td>
                         {!hideCallPct && (
-                          <td className={cn(htmlCell, "py-1.5 tabular-nums text-muted")}>
+                          <td className={cn(htmlCell, "py-1.5 tabular-nums text-muted-foreground")}>
                             {r.callPct != null
                               ? `${Math.round(r.callPct * 100)}%`
                               : "default"}
@@ -305,11 +305,11 @@ export function CsvImportModal({
           )}
 
           {skipped.length > 0 && (
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <p className="text-sm text-caution">
                 Skipped {skipped.length} row{skipped.length === 1 ? "" : "s"}
               </p>
-              <ul className="max-h-24 space-y-1 overflow-y-auto text-sm text-muted">
+              <ul className="flex flex-col max-h-24 gap-1 overflow-y-auto text-sm text-muted-foreground">
                 {skipped.slice(0, 10).map((s) => (
                   <li key={`${s.line}-${s.raw}`}>
                     Line {s.line}: {s.reason}
@@ -337,7 +337,7 @@ export function CsvImportModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
+            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

@@ -1,6 +1,6 @@
-import { twMerge } from "tailwind-merge";
 import { roundMoney } from "@/lib/money";
 import { normalizeYahooTicker } from "@/lib/ticker";
+export { cn } from "@/lib/utils";
 
 /**
  * Every formatter rejects non-finite input, not just NaN. Division by a
@@ -155,6 +155,3 @@ export function plural(
   return `${count} ${count === 1 ? singular : pluralForm}`;
 }
 
-export function cn(...parts: Array<string | false | null | undefined>): string {
-  return twMerge(parts.filter(Boolean).join(" "));
-}

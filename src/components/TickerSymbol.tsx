@@ -23,7 +23,7 @@ export function ListingCurrencyChip({
           : `This listing's share price is in ${unit}`
       }
       className={cn(
-        "inline-flex h-5 shrink-0 items-center rounded-md border border-border bg-well/50 px-1.5 text-xs font-semibold leading-none tracking-wide text-muted",
+        "inline-flex h-5 shrink-0 items-center rounded-md border border-border bg-well/50 px-1.5 text-xs font-semibold leading-none tracking-wide text-muted-foreground",
         className
       )}
     >

@@ -24,16 +24,16 @@ export default function Error({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_52%)] px-4 text-center">
       <UpsideLogo variant="icon" />
-      <div className="max-w-sm space-y-2">
+      <div className="flex flex-col max-w-sm gap-2">
         <h1 className="text-lg font-semibold text-foreground">
           Something broke on this screen
         </h1>
-        <p className="text-sm leading-relaxed text-muted">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Your holdings are safe. This screen hit a snag. Try again, or
           reload if it keeps happening.
         </p>
         {error.digest && (
-          <p className="text-sm text-muted">Ref: {error.digest}</p>
+          <p className="text-sm text-muted-foreground">Ref: {error.digest}</p>
         )}
       </div>
       <div className="flex items-center gap-2">

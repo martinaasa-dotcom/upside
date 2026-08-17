@@ -44,7 +44,7 @@ export function CashAlertCard({
         <p className="text-base font-semibold text-foreground">
           {openCash ? "Cash" : "Alert"}
         </p>
-        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
+        <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
       </div>
       <div className="mt-4 flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-loss/15 text-loss">

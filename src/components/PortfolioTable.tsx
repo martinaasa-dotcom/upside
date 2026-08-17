@@ -409,13 +409,13 @@ export const PortfolioTable = memo(function PortfolioTable({
           </button>
         )}
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-xs text-muted-foreground">
         Screenshot or CSV drops every row in at once. Pick whichever&apos;s
         easier to get your hands on.
       </p>
     </div>
   ) : (
-    <p className="mt-4 text-center text-xs text-muted">
+    <p className="mt-4 text-center text-xs text-muted-foreground">
       {tradeLock?.message}
     </p>
   );
@@ -443,7 +443,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     "rounded-md px-2.5 py-1 text-sm font-medium transition",
                     displayCurrency === code
                       ? "bg-select text-select-ink"
-                      : "text-muted hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {code}
@@ -459,7 +459,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 type="button"
                 onClick={onImportCsv}
                 title="Import / update holdings from a CSV file"
-                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted hover:bg-hover hover:text-foreground/80"
+                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground/80"
                 aria-label="Import CSV"
               >
                 <FileUp className="h-3.5 w-3.5" />
@@ -472,7 +472,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-hover disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
-              <span className="text-sm font-medium text-muted">
+              <span className="text-sm font-medium text-muted-foreground">
                 Cash
               </span>
               <span
@@ -489,10 +489,10 @@ export const PortfolioTable = memo(function PortfolioTable({
       </header>
 
       {/* Mobile / tablet cards. The 13-col table needs the 1080px column. */}
-      <div className="space-y-3 p-4 lg:hidden">
+      <div className="flex flex-col gap-3 p-4 lg:hidden">
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-raised px-4 py-8 text-center">
-            <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
+            <p className="text-sm text-muted-foreground">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
         ) : (
@@ -511,7 +511,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                       showCurrency={mixedListings}
                     />
                   </div>
-                  <p className="mt-1 text-sm text-muted">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {percent(h.pctOfTotal)} of book
                   </p>
                 </div>
@@ -519,7 +519,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded-md p-2.5 text-muted hover:bg-hover hover:text-loss"
+                  className="rounded-md p-2.5 text-muted-foreground hover:bg-hover hover:text-loss"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -565,7 +565,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 </div>
                 <div>
                   <MicroLabel>Cost</MicroLabel>
-                  <p className="mt-1 text-sm tabular-nums text-muted">
+                  <p className="mt-1 text-sm tabular-nums text-muted-foreground">
                     {money(h.buyValue, 0)}
                   </p>
                 </div>
@@ -591,7 +591,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                   <p
                     className={cn(
                       "mt-1 text-sm font-medium tabular-nums",
-                      today.pct != null ? signedTone(today.pct) : "text-muted"
+                      today.pct != null ? signedTone(today.pct) : "text-muted-foreground"
                     )}
                   >
                     {today.pct != null
@@ -620,7 +620,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 {percent(totals.roiPct)}
               </span>
             </div>
-            <div className="mt-1 flex justify-between text-muted">
+            <div className="mt-1 flex justify-between text-muted-foreground">
               <span>Cost {money(totals.buyValue, 0)}</span>
               <span>Value {money(totals.currentValue, 0)}</span>
             </div>
@@ -633,7 +633,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                   <span className={signedTone(today.pct)}>
                     {percent(today.pct, 2)}
                   </span>
-                  <span className="text-muted"> </span>
+                  <span className="text-muted-foreground"> </span>
                   <span className={signedTone(today.dollar)}>
                     {money(today.dollar, 0)}
                   </span>
@@ -648,12 +648,12 @@ export const PortfolioTable = memo(function PortfolioTable({
       <div className="hidden lg:block">
         {holdings.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <p className="text-sm text-muted">No holdings in this portfolio yet.</p>
+            <p className="text-sm text-muted-foreground">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
         ) : (
           <FluidTable template={template}>
-            <FluidRow className="border-border text-xs font-medium text-muted">
+            <FluidRow className="border-border text-xs font-medium text-muted-foreground">
               {COLUMNS.map((col, i) => (
                 <div key={col.label} className={i === 0 ? tickerCell : cellBase}>
                   {col.key ? (
@@ -705,7 +705,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     showCurrency={mixedListings}
                   />
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-muted")}>
+                <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                   {percent(h.pctOfTotal)}
                 </div>
                 <div className={cellBase}>
@@ -738,7 +738,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 >
                   {percent(h.roiPct)}
                 </div>
-                <div className={cn(cellBase, "tabular-nums text-muted")}>
+                <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                   {money(h.buyValue, 0)}
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-foreground")}>
@@ -766,7 +766,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     "tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).pct!)
-                      : "text-muted"
+                      : "text-muted-foreground"
                   )}
                 >
                   {rowToday(h).pct != null
@@ -779,7 +779,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     "relative tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).dollar)
-                      : "text-muted"
+                      : "text-muted-foreground"
                   )}
                 >
                   {rowToday(h).pct != null
@@ -789,7 +789,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     <button
                       type="button"
                       onClick={() => onDelete(h.id)}
-                      className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted opacity-0 transition hover:text-loss group-hover:opacity-100"
+                      className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition hover:text-loss group-hover:opacity-100"
                       aria-label={`Delete ${h.ticker}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -802,7 +802,7 @@ export const PortfolioTable = memo(function PortfolioTable({
 
             <FluidRow footer className="border-t border-border font-semibold">
               <div className={cn(tickerCell, "text-foreground")}>PORTFOLIO</div>
-              <div className={cn(cellBase, "tabular-nums text-muted")}>
+              <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                 100%
               </div>
               <div className={cellBase} />
@@ -837,7 +837,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 className={cn(
                   cellBase,
                   "tabular-nums font-medium",
-                  today.pct != null ? signedTone(today.pct) : "text-muted"
+                  today.pct != null ? signedTone(today.pct) : "text-muted-foreground"
                 )}
               >
                 {today.pct != null ? percent(today.pct, 2) : "—"}
@@ -846,7 +846,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 className={cn(
                   cellBase,
                   "tabular-nums font-medium",
-                  today.pct != null ? signedTone(today.dollar) : "text-muted"
+                  today.pct != null ? signedTone(today.dollar) : "text-muted-foreground"
                 )}
               >
                 {today.pct != null ? money(today.dollar, 0) : "—"}

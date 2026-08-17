@@ -120,7 +120,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             disabled={busy}
             aria-label="Close"
             title="Close"
-            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground disabled:opacity-40 sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-40 sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -131,13 +131,13 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             Got it. Upside reads these.
           </p>
         ) : mode === "weekly" ? (
-          <div className="space-y-5">
-            <p className="text-sm leading-relaxed text-muted">
+          <div className="flex flex-col gap-5">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               A few pointed questions about this week in Upside Lab. Skip any
               that don&apos;t fit.
             </p>
 
-            <fieldset className="space-y-2">
+            <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium text-foreground">
                 How did this week feel?
               </legend>
@@ -159,11 +159,11 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
               </div>
             </fieldset>
 
-            <fieldset className="space-y-2">
+            <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium text-foreground">
                 What actually helped?
               </legend>
-              <p className="text-xs text-muted">Pick every one that did.</p>
+              <p className="text-xs text-muted-foreground">Pick every one that did.</p>
               <div className="grid gap-2">
                 {WEEKLY_HELPED.map((opt) => (
                   <Chip
@@ -182,11 +182,11 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
               </div>
             </fieldset>
 
-            <fieldset className="space-y-2">
+            <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium text-foreground">
                 What got in the way?
               </legend>
-              <p className="text-xs text-muted">Pick every one that did.</p>
+              <p className="text-xs text-muted-foreground">Pick every one that did.</p>
               <div className="grid gap-2">
                 {WEEKLY_BLOCKED.map((opt) => (
                   <Chip
@@ -205,7 +205,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
               </div>
             </fieldset>
 
-            <fieldset className="space-y-2">
+            <fieldset className="flex flex-col gap-2">
               <legend className="text-sm font-medium text-foreground">
                 If you could change one thing for next week, what is it?
               </legend>
@@ -227,8 +227,8 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
                 ))}
               </div>
               {weekly.change && (
-                <label className="block space-y-1 pt-1">
-                  <span className="text-sm text-muted">
+                <label className="flex flex-col gap-1 pt-1">
+                  <span className="text-sm text-muted-foreground">
                     In one sentence, what should be different?
                   </span>
                   <input
@@ -245,13 +245,13 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             </fieldset>
           </div>
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-muted">
+          <div className="flex flex-col gap-4">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               What is this about, then dump the rest. A bug, a missing thing, or
               a rant. Upside reads these.
             </p>
-            <label className="block space-y-1">
-              <span className="text-sm text-muted">What is this about?</span>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm text-muted-foreground">What is this about?</span>
               <input
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
@@ -260,8 +260,8 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
                 className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
               />
             </label>
-            <label className="block space-y-1">
-              <span className="text-sm text-muted">Say it</span>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm text-muted-foreground">Say it</span>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -282,7 +282,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
               type="button"
               onClick={onClose}
               disabled={busy}
-              className="touch-target rounded-lg px-3 py-2 text-sm text-muted hover:bg-hover hover:text-foreground disabled:opacity-40"
+              className="touch-target rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-40"
             >
               {mode === "weekly" ? "Not this week" : "Cancel"}
             </button>

@@ -51,13 +51,13 @@ export function ClassroomRoster({
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">Roster</h2>
-        <p className="mt-1.5 text-sm text-muted">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           Same start. Ranked by percent vs start. Who wrote a why, who is all-in on one name.
         </p>
       </div>
-      <div className="space-y-3 p-4 md:hidden">
+      <div className="flex flex-col gap-3 p-4 md:hidden">
         {rows.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted">
+          <p className="py-4 text-center text-sm text-muted-foreground">
             Nobody in the class yet.
           </p>
         ) : (
@@ -93,7 +93,7 @@ export function ClassroomRoster({
                   <p className="text-base font-semibold text-foreground">
                     {m.name}
                     {m.isYou ? (
-                      <span className="ml-1.5 text-sm font-normal text-muted">
+                      <span className="ml-1.5 text-sm font-normal text-muted-foreground">
                         you
                       </span>
                     ) : null}
@@ -104,20 +104,20 @@ export function ClassroomRoster({
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-muted">vs start</p>
+                    <p className="text-muted-foreground">vs start</p>
                     <p
                       className={`font-semibold tabular-nums ${
-                        vsStart == null ? "text-muted" : signedTone(vsStart)
+                        vsStart == null ? "text-muted-foreground" : signedTone(vsStart)
                       }`}
                     >
                       {vsStartPct == null ? "—" : signedPercent(vsStartPct)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted">Today</p>
+                    <p className="text-muted-foreground">Today</p>
                     <p
                       className={`font-semibold tabular-nums ${
-                        m.sheetCount ? signedTone(m.todayPct) : "text-muted"
+                        m.sheetCount ? signedTone(m.todayPct) : "text-muted-foreground"
                       }`}
                     >
                       {m.sheetCount && m.todayPct != null
@@ -126,11 +126,11 @@ export function ClassroomRoster({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted">Why</p>
+                    <p className="text-muted-foreground">Why</p>
                     <p className="text-foreground/80">{why}</p>
                   </div>
                   <div>
-                    <p className="text-muted">Biggest</p>
+                    <p className="text-muted-foreground">Biggest</p>
                     <p className="text-foreground/80">
                       {biggest?.ticker
                         ? `${cashtag(biggest.ticker)}${
@@ -162,7 +162,7 @@ export function ClassroomRoster({
       <div className="hidden overflow-x-auto md:block">
         <table className={cn(htmlTable, "min-w-[36rem] text-xs")}>
           <thead>
-            <tr className="border-b border-border text-muted">
+            <tr className="border-b border-border text-muted-foreground">
               <th className={cn(htmlCell, "font-medium")}>Student</th>
               <th className={cn(htmlCell, "font-medium")}>Now</th>
               <th className={cn(htmlCell, "font-medium")}>vs start</th>
@@ -174,7 +174,7 @@ export function ClassroomRoster({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className={cn(htmlCell, "h-auto py-8 text-muted")}>
+                <td colSpan={6} className={cn(htmlCell, "h-auto py-8 text-muted-foreground")}>
                   Nobody in the class yet.
                 </td>
               </tr>
@@ -211,7 +211,7 @@ export function ClassroomRoster({
                         >
                           {m.name}
                           {m.isYou ? (
-                            <span className="ml-1.5 font-normal text-muted">
+                            <span className="ml-1.5 font-normal text-muted-foreground">
                               you
                             </span>
                           ) : null}
@@ -220,7 +220,7 @@ export function ClassroomRoster({
                         <span className="font-medium text-foreground/80">
                           {m.name}
                           {m.isYou ? (
-                            <span className="ml-1.5 font-normal text-muted">
+                            <span className="ml-1.5 font-normal text-muted-foreground">
                               you
                             </span>
                           ) : null}
@@ -234,7 +234,7 @@ export function ClassroomRoster({
                       className={cn(
                         htmlCell,
                         "font-semibold tabular-nums",
-                        vsStart == null ? "text-muted" : signedTone(vsStart)
+                        vsStart == null ? "text-muted-foreground" : signedTone(vsStart)
                       )}
                     >
                       {vsStartPct == null ? "—" : signedPercent(vsStartPct)}
@@ -243,7 +243,7 @@ export function ClassroomRoster({
                       className={cn(
                         htmlCell,
                         "font-semibold tabular-nums",
-                        m.sheetCount ? signedTone(m.todayPct) : "text-muted"
+                        m.sheetCount ? signedTone(m.todayPct) : "text-muted-foreground"
                       )}
                     >
                       {m.sheetCount && m.todayPct != null

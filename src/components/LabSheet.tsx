@@ -271,7 +271,7 @@ export const LabSheet = memo(function LabSheet({
   const corrHeat = useMemo(() => correlationGrid(corrSeries), [corrSeries]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <Panel padded={false} className="px-panel py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
@@ -293,7 +293,7 @@ export const LabSheet = memo(function LabSheet({
                     "min-w-0 px-2 py-2.5 text-center text-sm font-medium transition",
                     tab === t.id
                       ? "bg-select text-select-ink"
-                      : "bg-well text-muted hover:bg-hover hover:text-foreground"
+                      : "bg-well text-muted-foreground hover:bg-hover hover:text-foreground"
                   )}
                 >
                   <span className="block truncate">{t.label}</span>
@@ -322,7 +322,7 @@ export const LabSheet = memo(function LabSheet({
                       "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition touch-target",
                       tab === t.id
                         ? "bg-select text-select-ink"
-                        : "text-muted hover:text-brand-bright"
+                        : "text-muted-foreground hover:text-brand-bright"
                     )}
                   >
                     {t.label}
@@ -338,7 +338,7 @@ export const LabSheet = memo(function LabSheet({
             </div>
           </div>
           <label className="flex shrink-0 items-center gap-2">
-            <span className="shrink-0 text-sm font-medium text-muted">
+            <span className="shrink-0 text-sm font-medium text-muted-foreground">
               Looking at
             </span>
             <select
@@ -368,7 +368,7 @@ export const LabSheet = memo(function LabSheet({
 
       {tab === "alloc" && !hiddenTabs.includes("alloc") && (
         <WidgetErrorBoundary name="Allocation">
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {concentration.positionCount === 0 ? (
             <EmptyState
               title="Nothing to look at yet"
@@ -382,7 +382,7 @@ export const LabSheet = memo(function LabSheet({
                     <h3 className="text-base font-bold text-foreground">
                       How spread out you are
                     </h3>
-                    <p className="mt-1.5 text-sm text-muted">
+                    <p className="mt-1.5 text-sm text-muted-foreground">
                       {personality.diversificationBand.description} ·{" "}
                       {scopeLabel}
                     </p>
@@ -390,9 +390,9 @@ export const LabSheet = memo(function LabSheet({
                   <div className="text-right">
                     <p className="text-lg font-semibold tabular-nums text-foreground">
                       {personality.diversificationScore}
-                      <span className="text-sm text-muted">/100</span>
+                      <span className="text-sm text-muted-foreground">/100</span>
                     </p>
-                    <p className="text-sm font-medium text-muted">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Diversified
                     </p>
                   </div>
@@ -409,7 +409,7 @@ export const LabSheet = memo(function LabSheet({
                       }}
                     />
                   </div>
-                  <div className="mt-2 flex justify-between text-sm text-muted">
+                  <div className="mt-2 flex justify-between text-sm text-muted-foreground">
                     <span>0 · all in one name</span>
                     <span>100 · index-broad</span>
                   </div>
@@ -473,7 +473,7 @@ export const LabSheet = memo(function LabSheet({
                   <h3 className="text-base font-bold text-foreground">
                     What you&apos;re actually betting on
                   </h3>
-                  <p className="mt-1.5 mb-5 text-sm text-muted">
+                  <p className="mt-1.5 mb-5 text-sm text-muted-foreground">
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
                   </p>
@@ -502,7 +502,7 @@ export const LabSheet = memo(function LabSheet({
                           />
                           {t.label}
                         </span>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted">
+                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">
                           {Math.round(t.pct * 100)}%
                         </span>
                       </div>
@@ -541,12 +541,12 @@ export const LabSheet = memo(function LabSheet({
           cash={scopedCash}
           scopeLabel={scopeLabel}
         />
-        <Panel tone="plain" className="space-y-4">
+        <Panel tone="plain" className="flex flex-col gap-4">
           <div>
             <h3 className="text-base font-bold text-foreground">
               Do these move together?
             </h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               How closely each pair has tracked each other over the last 90
               days, up to 8 names. Near <span className="tabular-nums">+1</span> means they
               rise and fall as one, so holding both spreads your money without
@@ -556,7 +556,7 @@ export const LabSheet = memo(function LabSheet({
             </p>
           </div>
           {corrHeat.tickers.length < 2 ? (
-            <p className="text-sm text-muted">
+            <p className="text-sm text-muted-foreground">
               Need at least two names with price history to compare.
             </p>
           ) : (
@@ -577,14 +577,14 @@ export const LabSheet = memo(function LabSheet({
                       <div
                         key={`h-${t}`}
                         title={cashtag(t)}
-                        className="flex h-8 items-end justify-center pb-0.5 text-xs font-medium leading-none text-muted"
+                        className="flex h-8 items-end justify-center pb-0.5 text-xs font-medium leading-none text-muted-foreground"
                       >
                         <span className="max-w-full truncate">{cashtag(t)}</span>
                       </div>
                     ))}
                     {corrHeat.tickers.map((row, i) => (
                       <div key={row} className="contents">
-                        <div className="flex h-10 items-center pr-2 text-xs font-medium text-muted">
+                        <div className="flex h-10 items-center pr-2 text-xs font-medium text-muted-foreground">
                           {cashtag(row)}
                         </div>
                         {corrHeat.grid[i]!.map((c, j) => (
@@ -614,7 +614,7 @@ export const LabSheet = memo(function LabSheet({
                 </div>
 
                 <div className="flex min-w-0 flex-col">
-                  <p className="flex h-8 items-end pb-0.5 text-xs text-muted">
+                  <p className="flex h-8 items-end pb-0.5 text-xs text-muted-foreground">
                     Tightest pairs
                   </p>
                   <ul className="flex min-h-0 flex-1 flex-col gap-1">
@@ -633,7 +633,7 @@ export const LabSheet = memo(function LabSheet({
                               ? "text-loss"
                               : c.corr <= -0.3
                                 ? "text-gain"
-                                : "text-muted"
+                                : "text-muted-foreground"
                           )}
                         >
                           {Number.isFinite(c.corr) ? c.corr.toFixed(2) : "—"}
@@ -643,7 +643,7 @@ export const LabSheet = memo(function LabSheet({
                   </ul>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <span
                     aria-hidden
@@ -682,10 +682,10 @@ function AllocCard({
   return (
     <Panel tone="plain">
       <h3 className="mb-3 text-base font-bold text-foreground">{title}</h3>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {slices.map((s) => (
           <div key={s.label}>
-            <div className="mb-0.5 flex justify-between text-sm text-muted">
+            <div className="mb-0.5 flex justify-between text-sm text-muted-foreground">
               <span>{s.label}</span>
               <span className="tabular-nums">
                 {Number.isFinite(s.pct)
@@ -702,7 +702,7 @@ function AllocCard({
           </div>
         ))}
         {slices.length === 0 && (
-          <p className="text-sm text-muted">No equity to allocate.</p>
+          <p className="text-sm text-muted-foreground">No equity to allocate.</p>
         )}
       </div>
     </Panel>

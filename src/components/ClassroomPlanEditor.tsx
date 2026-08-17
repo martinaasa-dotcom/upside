@@ -77,8 +77,8 @@ export function ClassroomPlanEditor({
 
   return (
     <div className="mt-8 border-t border-border pt-6">
-      <p className="text-sm font-medium text-muted">What students can do</p>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
+      <p className="text-sm font-medium text-muted-foreground">What students can do</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         Change this whenever the lesson changes. Buy week, closed, sell
         and move money, or leave it open.
       </p>
@@ -115,13 +115,13 @@ export function ClassroomPlanEditor({
         ))}
       </div>
 
-      <p className="mt-8 text-sm font-medium text-muted">Schedule</p>
+      <p className="mt-8 text-sm font-medium text-muted-foreground">Schedule</p>
       {scheduled.length === 0 ? (
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-muted-foreground">
           Nothing dated. Use the buttons above, or add a stretch with dates.
         </p>
       ) : (
-        <ul className="mt-3 space-y-2.5">
+        <ul className="flex flex-col mt-3 gap-2.5">
           {scheduled.map((p) => (
             <li
               key={p.id}
@@ -129,7 +129,7 @@ export function ClassroomPlanEditor({
             >
               <span className="min-w-0 text-sm text-foreground/80">
                 {classPeriodLabel(p.kind)}
-                <span className="block text-muted">
+                <span className="block text-muted-foreground">
                   {new Date(p.startsAt).toLocaleString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -150,7 +150,7 @@ export function ClassroomPlanEditor({
                 type="button"
                 disabled={busy}
                 onClick={() => remove(p.id)}
-                className="rounded-md p-1 text-muted hover:text-loss disabled:opacity-50"
+                className="rounded-md p-1 text-muted-foreground hover:text-loss disabled:opacity-50"
                 title="Remove"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -160,8 +160,8 @@ export function ClassroomPlanEditor({
         </ul>
       )}
 
-      <div className="mt-6 space-y-3 rounded-lg border border-border bg-raised p-4">
-        <p className="text-sm font-medium text-muted">Add a stretch</p>
+      <div className="flex flex-col mt-6 gap-3 rounded-lg border border-border bg-raised p-4">
+        <p className="text-sm font-medium text-muted-foreground">Add a stretch</p>
         <select
           value={draftKind}
           onChange={(e) => setDraftKind(e.target.value as ClassPeriodKind)}
@@ -173,7 +173,7 @@ export function ClassroomPlanEditor({
             </option>
           ))}
         </select>
-        <label className="block text-sm text-muted">
+        <label className="block text-sm text-muted-foreground">
           Starts
           <input
             type="datetime-local"
@@ -182,7 +182,7 @@ export function ClassroomPlanEditor({
             className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
           />
         </label>
-        <label className="block text-sm text-muted">
+        <label className="block text-sm text-muted-foreground">
           Ends (optional)
           <input
             type="datetime-local"

@@ -69,19 +69,19 @@ export function CashModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">Edit cash</h3>
-            <p className="text-sm text-muted">{portfolioName}</p>
+            <p className="text-sm text-muted-foreground">{portfolioName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <label className="grid gap-1 text-sm text-muted">
+        <label className="grid gap-1 text-sm text-muted-foreground">
           {allowNegative
             ? "Paper cash. Buys spend it, sells add it back."
             : "Money sitting ready, not yet in a stock."}
@@ -110,7 +110,7 @@ export function CashModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
+            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

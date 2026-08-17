@@ -26,17 +26,17 @@ export default function PrivacyPage() {
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
+            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-brand hover:text-foreground"
           >
             Back
           </Link>
         </div>
       </header>
 
-      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
+      <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
           <h1 className="text-lg font-bold text-foreground">Privacy Policy</h1>
-          <p className="mt-1 text-sm text-muted">Last updated {LAST_UPDATED}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Last updated {LAST_UPDATED}</p>
         </div>
 
         <p>
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="2. What we collect">
-          <ul className="list-disc space-y-1.5 pl-5">
+          <ul className="list-disc pl-5 [&>li+li]:mt-1.5">
             <li>
               <strong className="text-foreground">From Google sign-in:</strong>{" "}
               your email, name, and profile photo, used to create your
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             A few processors see limited data, only as needed to run the
             feature:
           </p>
-          <ul className="list-disc space-y-1.5 pl-5">
+          <ul className="list-disc pl-5 [&>li+li]:mt-1.5">
             <li>
               <strong className="text-foreground">Supabase</strong> (EU-hosted),
               our database and authentication provider. Everything you
@@ -223,7 +223,7 @@ export default function PrivacyPage() {
           .
         </Section>
 
-        <p className="pt-4 text-sm text-muted">
+        <p className="pt-4 text-sm text-muted-foreground">
           See also our{" "}
           <Link href="/terms" className="underline hover:text-foreground">
             Terms of service
@@ -245,7 +245,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-2">
+    <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <div>{children}</div>
     </section>

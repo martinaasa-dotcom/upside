@@ -263,7 +263,7 @@ const ACTION_STYLE: Record<
   add: { label: "Added", cls: "bg-gain/15 text-gain" },
   trim: { label: "Trimmed", cls: "bg-caution/15 text-caution" },
   exit: { label: "Exited", cls: "bg-loss/15 text-loss" },
-  hold: { label: "Held", cls: "bg-hover text-muted" },
+  hold: { label: "Held", cls: "bg-hover text-muted-foreground" },
 };
 
 function ActionBadge({ action }: { action: FundActionRow }) {
@@ -285,13 +285,13 @@ function ActionBadge({ action }: { action: FundActionRow }) {
 function ReportMeta({ r }: { r: ReportRow }) {
   return (
     <>
-      <p className="text-sm text-muted">
+      <p className="text-sm text-muted-foreground">
         {fmtDate(r.report_date)}
       </p>
       <p
         className={cn(
           "text-sm font-semibold tabular-nums",
-          signedTone(r.day_change_dollar ?? 0, "text-muted")
+          signedTone(r.day_change_dollar ?? 0, "text-muted-foreground")
         )}
       >
         {currency(r.portfolio_value, 0)}
@@ -323,14 +323,14 @@ function ReportDetail({ r }: { r: ReportRow }) {
 function RecapMeta({ r }: { r: WeeklyRecapRow }) {
   return (
     <>
-      <p className="text-sm text-muted">{fmtDate(r.week_ending)}</p>
+      <p className="text-sm text-muted-foreground">{fmtDate(r.week_ending)}</p>
       {r.week_return_pct != null && (
         <p className="text-sm font-semibold tabular-nums">
           <span className={r.week_return_pct >= 0 ? "text-gain" : "text-loss"}>
             {percent(r.week_return_pct)}
           </span>
           {r.spy_week_return_pct != null && (
-            <span className="ml-2 text-muted">
+            <span className="ml-2 text-muted-foreground">
               SPY {percent(r.spy_week_return_pct)}
             </span>
           )}
@@ -352,8 +352,8 @@ function RecapBody({
   return (
     <ul
       className={cn(
-        "space-y-1.5 text-sm leading-relaxed",
-        muted ? "text-muted" : "text-foreground/80"
+        "flex flex-col gap-1.5 text-sm leading-relaxed",
+        muted ? "text-muted-foreground" : "text-foreground/80"
       )}
     >
       {bullets.map((b) => (
@@ -381,7 +381,7 @@ function ViewMoreButton({
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-xl border border-border bg-raised px-4 py-2.5 text-sm font-medium text-muted hover:text-foreground"
+      className="w-full rounded-xl border border-border bg-raised px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground"
     >
       View more
       {remaining > 7 ? ` · ${remaining}` : ""}
@@ -409,7 +409,7 @@ function FundFreshness({ quotesAt }: { quotesAt: number | null }) {
   const label = freshnessLabel(quotesAt, nowMs);
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted"
+      className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted-foreground"
       title="Prices include pre-market and after hours, not just the regular close"
       aria-label={label}
     >
@@ -442,7 +442,7 @@ function FundNote({
     >
       <MicroLabel>{label}</MicroLabel>
       {items.length > 0 ? (
-        <ul className="mt-2 space-y-1.5">
+        <ul className="flex flex-col mt-2 gap-1.5">
           {items.map((item) => (
             <li key={item} className="flex gap-2">
               <span
@@ -459,7 +459,7 @@ function FundNote({
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-sm text-muted">Not written yet.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Not written yet.</p>
       )}
     </div>
   );
@@ -511,7 +511,7 @@ function FundPosition({
               value={percent(pnlPct)}
               sub={signedCurrency(pnlDollar, 0)}
               valueClassName={signedTone(pnlPct)}
-              subClassName={signedTone(pnlDollar, "text-muted")}
+              subClassName={signedTone(pnlDollar, "text-muted-foreground")}
             />
           </Scoreboard>
         </div>
@@ -1147,7 +1147,7 @@ export function UpsidePortfolioPage() {
         <h1 className="sr-only">Upside Fund</h1>
 
         {loading ? (
-          <p className="text-sm text-muted">{loadingMessage}</p>
+          <p className="text-sm text-muted-foreground">{loadingMessage}</p>
         ) : error ? (
           <p className="text-sm text-loss">{error}</p>
         ) : (
@@ -1169,7 +1169,7 @@ export function UpsidePortfolioPage() {
                     <button
                       type="button"
                       onClick={handleClearBenchmark}
-                      className="shrink-0 text-sm text-muted hover:text-foreground"
+                      className="shrink-0 text-sm text-muted-foreground hover:text-foreground"
                     >
                       Remove
                     </button>
@@ -1194,14 +1194,14 @@ export function UpsidePortfolioPage() {
                   value={signedCurrency(todayDollar, 0)}
                   sub={todayPct != null ? percent(todayPct) : undefined}
                   valueClassName={signedTone(todayDollar, "text-foreground")}
-                  subClassName={signedTone(todayDollar, "text-muted")}
+                  subClassName={signedTone(todayDollar, "text-muted-foreground")}
                 />
                 <Score
                   label="Total return"
                   value={percent(totalReturnPct)}
                   sub={signedCurrency(totalReturnDollar, 0)}
                   valueClassName={signedTone(totalReturnDollar, "text-foreground")}
-                  subClassName={signedTone(totalReturnDollar, "text-muted")}
+                  subClassName={signedTone(totalReturnDollar, "text-muted-foreground")}
                 />
                 <Score
                   label="Cash"
@@ -1215,11 +1215,11 @@ export function UpsidePortfolioPage() {
               </Scoreboard>
 
               {!benchmark && pickerOpen && (
-                <div className="mt-3 space-y-2">
+                <div className="flex flex-col mt-3 gap-2">
                   {myPortfolios === null ? (
-                    <p className="text-sm text-muted">Loading your portfolios …</p>
+                    <p className="text-sm text-muted-foreground">Loading your portfolios …</p>
                   ) : myPortfolios.length === 0 ? (
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted-foreground">
                       You don&apos;t have any portfolios to compare yet.
                     </p>
                   ) : (
@@ -1237,7 +1237,7 @@ export function UpsidePortfolioPage() {
                             </option>
                           ))}
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       </div>
                       <button
                         type="button"
@@ -1250,7 +1250,7 @@ export function UpsidePortfolioPage() {
                       <button
                         type="button"
                         onClick={() => setPickerOpen(false)}
-                        className="touch-target rounded-md px-2 py-1.5 text-sm text-muted hover:text-foreground/80"
+                        className="touch-target rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground/80"
                       >
                         Cancel
                       </button>
@@ -1269,7 +1269,7 @@ export function UpsidePortfolioPage() {
                 labels={comparisonLabels}
               />
               </WidgetErrorBoundary>
-              <p className="mt-4 text-sm leading-relaxed text-muted">
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                 {UPSIDE_PORTFOLIO_DISCLAIMER}
               </p>
             </Panel>
@@ -1303,7 +1303,7 @@ export function UpsidePortfolioPage() {
                           />
                           {t.label}
                         </span>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted">
+                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">
                           {Math.round(t.pct * 100)}%
                         </span>
                       </div>
@@ -1346,7 +1346,7 @@ export function UpsidePortfolioPage() {
                   <div className="mt-4 border-t border-border pt-4">
                     <MicroLabel>Watching</MicroLabel>
                     {fundWatchlist.length > 0 ? (
-                      <ul className="mt-2 space-y-2">
+                      <ul className="flex flex-col mt-2 gap-2">
                         {fundWatchlist.map((w) => (
                           <li
                             key={w.ticker}
@@ -1355,14 +1355,14 @@ export function UpsidePortfolioPage() {
                             <span className="shrink-0 text-sm font-semibold text-foreground">
                               {cashtag(w.ticker)}
                             </span>
-                            <span className="min-w-0 text-right text-sm leading-relaxed text-muted">
+                            <span className="min-w-0 text-right text-sm leading-relaxed text-muted-foreground">
                               {w.waitFor}
                             </span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                         {watchingNote ??
                           "He'll name names in the next daily report."}
                       </p>
@@ -1374,11 +1374,11 @@ export function UpsidePortfolioPage() {
 
             {openHoldings.length > 0 && (
               <WidgetErrorBoundary name="Fund positions">
-              <section className="space-y-3">
-                <h2 className="text-sm font-medium text-muted">
+              <section className="flex flex-col gap-3">
+                <h2 className="text-sm font-medium text-muted-foreground">
                   Open positions · {openHoldings.length}
                 </h2>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {openHoldings.map((h) => (
                     <FundPosition
                       key={h.id}
@@ -1392,11 +1392,11 @@ export function UpsidePortfolioPage() {
             )}
 
             {weeklyRecaps.length > 0 && (
-              <section className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted">
+              <section className="flex flex-col gap-3">
+                <h2 className="text-sm font-semibold text-muted-foreground">
                   Weekly recap
                 </h2>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {weeklyRecaps.slice(0, weeklyVisible).map((r, i) => {
                     const title = numberedReportHeadline(
                       r.headline,
@@ -1406,7 +1406,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="space-y-2 rounded-2xl border border-border bg-card p-5"
+                        className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-5"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <RecapMeta r={r} />
@@ -1424,7 +1424,7 @@ export function UpsidePortfolioPage() {
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
                             aria-hidden
-                            className="h-3.5 w-3.5 shrink-0 text-muted transition-transform group-open:rotate-90"
+                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
                           />
                           <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
                             {title}
@@ -1433,7 +1433,7 @@ export function UpsidePortfolioPage() {
                             <RecapMeta r={r} />
                           </span>
                         </summary>
-                        <div className="space-y-2 border-t border-border px-4 py-3">
+                        <div className="flex flex-col gap-2 border-t border-border px-4 py-3">
                           <RecapBody text={r.body} />
                         </div>
                       </details>
@@ -1447,12 +1447,12 @@ export function UpsidePortfolioPage() {
               </section>
             )}
 
-            <section className="space-y-3">
-              <h2 className="text-sm font-semibold text-muted">
+            <section className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold text-muted-foreground">
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted">
+                <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1460,7 +1460,7 @@ export function UpsidePortfolioPage() {
                 /* Latest report in full. Older ones stay collapsed, and
                  * View more only reveals the next seven so the page does
                  * not grow a wall of history. */
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {reports.slice(0, dailyVisible).map((r, i) => {
                     const title = numberedReportHeadline(
                       r.headline,
@@ -1470,7 +1470,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="space-y-2 rounded-2xl border border-border bg-card p-4"
+                        className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1488,7 +1488,7 @@ export function UpsidePortfolioPage() {
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
                             aria-hidden
-                            className="h-3.5 w-3.5 shrink-0 text-muted transition-transform group-open:rotate-90"
+                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
                           />
                           <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
                             {title}
@@ -1497,7 +1497,7 @@ export function UpsidePortfolioPage() {
                             <ReportMeta r={r} />
                           </span>
                         </summary>
-                        <div className="space-y-2 border-t border-border px-4 py-3">
+                        <div className="flex flex-col gap-2 border-t border-border px-4 py-3">
                           <ReportDetail r={r} />
                         </div>
                       </details>
@@ -1512,8 +1512,8 @@ export function UpsidePortfolioPage() {
             </section>
 
             {closedHoldings.length > 0 && (
-              <section className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted">
+              <section className="flex flex-col gap-3">
+                <h2 className="text-sm font-semibold text-muted-foreground">
                   Closed positions · {closedHoldings.length}
                 </h2>
                 <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
@@ -1537,7 +1537,7 @@ export function UpsidePortfolioPage() {
                           {currency(Math.abs(h.realized_pnl ?? 0), 0)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-sm text-muted">
+                      <p className="mt-0.5 text-sm text-muted-foreground">
                         {fmtDate(h.entry_date)} → {h.closed_at ? fmtDate(h.closed_at) : "—"}
                         {h.exit_reasoning ? ` · ${h.exit_reasoning}` : ""}
                       </p>

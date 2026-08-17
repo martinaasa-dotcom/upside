@@ -1,6 +1,15 @@
 "use client";
 
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { Badge } from "@/components/ui/badge";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
 import { cn, splitMoveTint } from "@/lib/format";
@@ -45,7 +54,7 @@ import {
  *   Headings   text-base font-bold (hero: text-lg) · sentence case
  *   Type       Montserrat Bold for titles. Inter for body, labels, and
  *              every money figure. No third face. Lockup is Montserrat.
- *   Micro      text-sm font-medium text-muted · sentence case
+ *   Micro      text-sm font-medium text-muted-foreground · sentence case
  *              Caps stay on the logo only.
  *   Metrics    A row of numbers is ONE box (Scoreboard) with hairline
  *              columns (Score). Do not nest four Stat tiles in a panel.
@@ -55,7 +64,7 @@ import {
  *   Reading    a dark card, quiet label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
  *              not loose type on the field.
- *   Body       text-sm leading-relaxed text-muted for chrome
+ *   Body       text-sm leading-relaxed text-muted-foreground for chrome
  *   Floor      nothing below text-xs. Ever.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
  *              a blurb, and a hint that all say the same thing.
@@ -219,7 +228,7 @@ export function PanelHeader({
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-1.5 text-sm leading-relaxed text-muted">
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {subtitle}
             </p>
           ) : null}
@@ -283,7 +292,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-1 text-sm font-medium text-muted",
+        "flex items-center gap-1 text-sm font-medium text-muted-foreground",
         className
       )}
     >
@@ -315,7 +324,7 @@ export function Reading({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-sm font-medium text-muted">{label}</div>
+        <div className="text-sm font-medium text-muted-foreground">{label}</div>
       ) : null}
       <div
         className={cn(
@@ -389,7 +398,7 @@ export function ScanList({
     >
       {label != null && label !== "" ? (
         <div className="border-b border-border px-nested py-3">
-          <p className="text-sm font-medium text-muted">{label}</p>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
         </div>
       ) : null}
       <ul>
@@ -456,7 +465,7 @@ export function Metric({
         {children}
       </p>
       {hint != null && hint !== "" ? (
-        <p className="mt-1 truncate text-sm tabular-nums text-muted">{hint}</p>
+        <p className="mt-1 truncate text-sm tabular-nums text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );
@@ -479,7 +488,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
         onBlur={() => setOpen(false)}
         aria-label={label ?? "What does this mean?"}
         aria-expanded={open}
-        className="relative inline-flex size-4 items-center justify-center text-muted transition hover:text-foreground"
+        className="relative inline-flex size-4 items-center justify-center text-muted-foreground transition hover:text-foreground"
       >
         <span className="absolute -inset-3 md:-inset-1.5" aria-hidden />
         <Info className="relative h-3.5 w-3.5" />
@@ -618,7 +627,7 @@ export function Score({
   bulletsClassName,
   className,
 }: ScoreProps) {
-  const noteClass = cn("mt-2 text-sm leading-snug", subClassName ?? "text-muted");
+  const noteClass = cn("mt-2 text-sm leading-snug", subClassName ?? "text-muted-foreground");
   return (
     <div className={cn(SCORE_CELL, className)}>
       <MicroLabel>
@@ -629,7 +638,7 @@ export function Score({
         {value}
       </p>
       {bullets && bullets.length > 0 ? (
-        <ul className={cn(noteClass, "space-y-1", bulletsClassName)}>
+        <ul className={cn(noteClass, "flex flex-col gap-1", bulletsClassName)}>
           {bullets.map((line, i) => (
             <li key={`${i}:${line}`} className="flex gap-1.5">
               <span
@@ -684,22 +693,46 @@ export function Segmented<T extends string>({
   columns?: number;
 }) {
   const fill = columns != null && columns > 0;
-  const cols = fill ? filledGridColumns(options.length, columns) : 1;
+  if (!fill) {
+    return (
+      <ToggleGroup
+        type="single"
+        value={value ?? undefined}
+        onValueChange={(next) => {
+          if (next) onChange(next as T);
+        }}
+        spacing={0}
+        variant="outline"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={cn(
+          "max-w-full min-w-0 border border-border bg-well p-0.5",
+          className
+        )}
+      >
+        {options.map((o) => (
+          <ToggleGroupItem
+            key={o.id}
+            value={o.id}
+            title={o.title}
+            className="touch-target md:min-h-0 md:min-w-0"
+          >
+            {o.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    );
+  }
+  const cols = filledGridColumns(options.length, columns);
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        fill
-          ? "grid w-full min-w-0 max-w-full gap-px overflow-hidden rounded-lg border border-border bg-border"
-          : "inline-flex max-w-full min-w-0 flex-nowrap rounded-lg border border-border bg-well p-0.5",
+        "grid w-full min-w-0 max-w-full gap-px overflow-hidden rounded-lg border border-border bg-border",
         className
       )}
-      style={
-        fill
-          ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }
-          : undefined
-      }
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {options.map((o) => (
         <button
@@ -711,24 +744,13 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "touch-target text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
-            fill
-              ? "flex min-w-0 items-center justify-center bg-well px-2 py-2.5"
-              : "inline-flex shrink-0 items-center justify-center rounded-md px-2.5 py-1.5 sm:px-3",
+            "touch-target flex min-w-0 items-center justify-center bg-well px-2 py-2.5 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
             value === o.id
-              ? "bg-select text-select-ink"
-              : fill
-                ? "text-muted hover:bg-hover hover:text-foreground"
-                : "text-muted hover:text-foreground"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-hover hover:text-foreground"
           )}
         >
-          <span
-            className={
-              fill
-                ? "block max-w-full text-center leading-snug break-words"
-                : "whitespace-nowrap"
-            }
-          >
+          <span className="block max-w-full text-center leading-snug break-words">
             {o.label}
           </span>
         </button>
@@ -760,17 +782,20 @@ export function Pill({
   className?: string;
   children: ReactNode;
 }) {
+  const variant =
+    tone === "bad" ? "destructive" : tone === "brand" ? "default" : "outline";
   return (
-    <span
+    <Badge
       title={title}
+      variant={variant}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium",
+        "h-auto rounded-lg px-3 py-1.5 text-sm font-medium",
         PILL_TONES[tone],
         className
       )}
     >
       {children}
-    </span>
+    </Badge>
   );
 }
 
@@ -787,19 +812,17 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div
+    <Empty
       className={cn(
-        "rounded-xl border border-dashed border-border bg-raised px-panel py-10 text-center",
+        "flex-none border border-dashed border-border bg-raised px-panel py-10",
         className
       )}
     >
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      {detail && (
-        <p className="mx-auto mt-1 max-w-md text-sm leading-relaxed text-muted">
-          {detail}
-        </p>
-      )}
-      {action && <div className="mt-4 flex justify-center">{action}</div>}
-    </div>
+      <EmptyHeader>
+        <EmptyTitle>{title}</EmptyTitle>
+        {detail ? <EmptyDescription>{detail}</EmptyDescription> : null}
+      </EmptyHeader>
+      {action ? <EmptyContent>{action}</EmptyContent> : null}
+    </Empty>
   );
 }

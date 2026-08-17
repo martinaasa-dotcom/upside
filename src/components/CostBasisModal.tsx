@@ -50,7 +50,7 @@ export function CostBasisModal({
             <h3 className="text-base font-semibold text-foreground">
               What you paid
             </h3>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-muted-foreground">
               The import used today&apos;s prices as what you paid. Type your
               real average buy price in dollars, then apply, so the gain and
               loss numbers are right.
@@ -60,16 +60,16 @@ export function CostBasisModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3">
+        <div className="min-h-0 flex-1 gap-2 overflow-y-auto px-4 py-3">
           {rows.map((r) => (
             <label
               key={r.ticker}
-              className="grid grid-cols-[1fr_7rem] items-center gap-2 text-sm text-muted"
+              className="grid grid-cols-[1fr_7rem] items-center gap-2 text-sm text-muted-foreground"
             >
               <span>
                 <span className="inline-flex font-semibold text-foreground">
@@ -78,7 +78,7 @@ export function CostBasisModal({
                     showCurrency={mixedListings}
                   />
                 </span>
-                <span className="ml-2 text-muted">
+                <span className="ml-2 text-muted-foreground">
                   {r.shares.toLocaleString("en-US")} sh · mark≈$
                   {r.suggestedBuy.toFixed(2)}
                 </span>
@@ -98,7 +98,7 @@ export function CostBasisModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
+            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
           >
             Skip
           </button>

@@ -5,6 +5,8 @@ import { FeedbackHost } from "@/components/FeedbackHost";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { OfflineRuntime } from "@/components/OfflineRuntime";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useVisualViewportVars } from "@/lib/use-visual-viewport";
 import type { ReactNode } from "react";
 
@@ -28,18 +30,21 @@ function VisualViewportVars() {
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
-      <VisualViewportVars />
-      <OfflineRuntime />
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-brand-bright focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-app"
-      >
-        Skip to content
-      </a>
-      <OfflineBanner />
-      <FeedbackHost>
-        <WorkspaceShell>{children}</WorkspaceShell>
-      </FeedbackHost>
+      <TooltipProvider>
+        <VisualViewportVars />
+        <OfflineRuntime />
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-brand-bright focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-app"
+        >
+          Skip to content
+        </a>
+        <OfflineBanner />
+        <FeedbackHost>
+          <WorkspaceShell>{children}</WorkspaceShell>
+        </FeedbackHost>
+        <Toaster />
+      </TooltipProvider>
     </AuthProvider>
   );
 }

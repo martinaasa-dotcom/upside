@@ -206,7 +206,7 @@ export function AdminPage() {
               <h1 className="text-lg font-bold text-foreground">
                 Superadmin
               </h1>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Activation funnel, then every signed-in profile and community.
               </p>
             </div>
@@ -217,18 +217,18 @@ export function AdminPage() {
               This account is not a superadmin.
             </p>
           ) : loading ? (
-            <p className="text-sm text-muted">Loading overview …</p>
+            <p className="text-sm text-muted-foreground">Loading overview …</p>
           ) : error ? (
             <p className="text-sm text-loss">{error}</p>
           ) : (
             <WidgetErrorBoundary name="Admin">
             <>
               {funnel && (
-                <section className="space-y-2">
-                  <h2 className="text-sm font-semibold text-muted">
+                <section className="flex flex-col gap-2">
+                  <h2 className="text-sm font-semibold text-muted-foreground">
                     Activation
                   </h2>
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-muted-foreground">
                     Signed in, has a sheet, has holdings, signed in this week,
                     and holdings plus a visit in the last 7 days.
                   </p>
@@ -249,21 +249,21 @@ export function AdminPage() {
                         <p className="text-lg font-semibold tabular-nums text-foreground">
                           {n}
                         </p>
-                        <p className="mt-0.5 text-xs text-muted">{label}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
                       </div>
                     ))}
                   </div>
                 </section>
               )}
 
-              <section className="space-y-3">
+              <section className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted">
+                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
                     <Bug className="h-3.5 w-3.5" />
                     Errors
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">
+                    <span className="text-xs text-muted-foreground">
                       {errorLog.length >= 150 ? "150+" : errorLog.length} recent
                     </span>
                     {errorLog.length > 0 && (
@@ -271,7 +271,7 @@ export function AdminPage() {
                         type="button"
                         onClick={() => setConfirmClearErrors(true)}
                         title="Clear log"
-                        className="rounded-md border border-border p-1.5 text-muted hover:border-loss/40 hover:text-loss"
+                        className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-loss/40 hover:text-loss"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -281,7 +281,7 @@ export function AdminPage() {
                       onClick={() => void loadErrorLog()}
                       disabled={errorLogLoading}
                       title="Refresh"
-                      className="rounded-md border border-border p-1.5 text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
+                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${errorLogLoading ? "animate-spin" : ""}`}
@@ -290,7 +290,7 @@ export function AdminPage() {
                   </div>
                 </div>
                 {errorLogLoading && errorLog.length === 0 ? (
-                  <p className="text-sm text-muted">Loading …</p>
+                  <p className="text-sm text-muted-foreground">Loading …</p>
                 ) : errorLog.length === 0 ? (
                   <p className="rounded-2xl border border-gain/40 bg-gain/10 px-4 py-4 text-center text-sm text-gain">
                     Nothing logged, all clear.
@@ -317,7 +317,7 @@ export function AdminPage() {
                                 >
                                   {e.source}
                                 </span>
-                                <span className="truncate text-muted">
+                                <span className="truncate text-muted-foreground">
                                   {e.path || "—"}
                                 </span>
                               </p>
@@ -325,17 +325,17 @@ export function AdminPage() {
                                 {e.message}
                               </p>
                             </div>
-                            <span className="shrink-0 text-xs text-muted">
+                            <span className="shrink-0 text-xs text-muted-foreground">
                               {fmtDate(e.created_at)}
                             </span>
                           </button>
                           {open && (
-                            <div className="mt-2 space-y-1 rounded-lg bg-well/80 p-2.5 text-xs text-muted">
+                            <div className="flex flex-col mt-2 gap-1 rounded-lg bg-well/80 p-2.5 text-xs text-muted-foreground">
                               {e.user_email && <p>User: {e.user_email}</p>}
                               {e.route_type && <p>Route type: {e.route_type}</p>}
                               {e.digest && <p>Digest: {e.digest}</p>}
                               {e.stack && (
-                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-xs text-muted">
+                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-xs text-muted-foreground">
                                   {e.stack}
                                 </pre>
                               )}
@@ -348,13 +348,13 @@ export function AdminPage() {
                 )}
               </section>
 
-              <section className="space-y-3">
+              <section className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-muted">
+                  <h2 className="text-sm font-semibold text-muted-foreground">
                     Users signed in
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted">
+                    <span className="text-xs text-muted-foreground">
                       {filteredUsers.length}
                       {search ? ` of ${users.length}` : ""} profile
                       {users.length === 1 ? "" : "s"}
@@ -364,7 +364,7 @@ export function AdminPage() {
                       onClick={() => void load(true)}
                       disabled={refreshing}
                       title="Refresh"
-                      className="rounded-md border border-border p-1.5 text-muted hover:border-brand hover:text-foreground disabled:opacity-50"
+                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -374,18 +374,18 @@ export function AdminPage() {
                 </div>
                 {users.length > 3 && (
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search name, email, or sheet …"
-                      className="w-full rounded-lg border border-border bg-well py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
+                      className="w-full rounded-lg border border-border bg-well py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
                     />
                   </div>
                 )}
                 <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
                   {filteredUsers.length === 0 ? (
-                    <li className="px-4 py-6 text-center text-sm text-muted">
+                    <li className="px-4 py-6 text-center text-sm text-muted-foreground">
                       {users.length === 0
                         ? "No profiles yet."
                         : "No profiles match that search."}
@@ -402,11 +402,11 @@ export function AdminPage() {
                             <p className="truncate text-sm font-medium text-foreground">
                               {u.display_name || "—"}
                             </p>
-                            <p className="truncate text-xs text-muted">
+                            <p className="truncate text-xs text-muted-foreground">
                               {u.email || u.id}
                             </p>
                             {u.bio ? (
-                              <p className="mt-0.5 line-clamp-2 text-xs text-muted">
+                              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
                                 {u.bio}
                               </p>
                             ) : null}
@@ -430,14 +430,14 @@ export function AdminPage() {
                                 ))
                               )}
                               {(u.holding_count ?? 0) > 0 && (
-                                <span className="text-xs text-muted">
+                                <span className="text-xs text-muted-foreground">
                                   {u.holding_count} holding
                                   {u.holding_count === 1 ? "" : "s"}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="shrink-0 text-left text-xs text-muted sm:text-right">
+                          <div className="shrink-0 text-left text-xs text-muted-foreground sm:text-right">
                             <p>Last sign-in · {fmtDate(u.last_sign_in_at)}</p>
                             <p>Profile · {fmtDate(u.profile_created_at)}</p>
                           </div>
@@ -448,33 +448,33 @@ export function AdminPage() {
                 </ul>
               </section>
 
-              <section className="space-y-3">
+              <section className="flex flex-col gap-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-muted">
+                  <h2 className="text-sm font-semibold text-muted-foreground">
                     Communities
                   </h2>
-                  <span className="text-xs text-muted">
+                  <span className="text-xs text-muted-foreground">
                     {communities.length}{" "}
                     {communities.length === 1 ? "community" : "communities"}
                   </span>
                 </div>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {communities.length === 0 ? (
-                    <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted">
+                    <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
                       No communities yet.
                     </p>
                   ) : (
                     communities.map((c) => (
                       <article
                         key={c.id}
-                        className="space-y-3 rounded-2xl border border-border bg-card p-4"
+                        className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>
                             <h3 className="text-base font-semibold text-foreground">
                               {c.name}
                             </h3>
-                            <p className="text-xs text-muted">
+                            <p className="text-xs text-muted-foreground">
                               Created {fmtDate(c.created_at)} ·{" "}
                               {c.member_count} member
                               {c.member_count === 1 ? "" : "s"}
@@ -498,7 +498,7 @@ export function AdminPage() {
                                   {m.display_name || m.email || m.user_id}
                                 </p>
                                 {m.display_name && m.email ? (
-                                  <p className="truncate text-xs text-muted">
+                                  <p className="truncate text-xs text-muted-foreground">
                                     {m.email}
                                   </p>
                                 ) : null}
@@ -507,7 +507,7 @@ export function AdminPage() {
                                 className={
                                   m.role === "admin"
                                     ? "shrink-0 rounded-md bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright"
-                                    : "shrink-0 text-xs text-muted"
+                                    : "shrink-0 text-xs text-muted-foreground"
                                 }
                               >
                                 {m.role}

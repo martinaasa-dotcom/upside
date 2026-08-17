@@ -245,7 +245,7 @@ export function CommunitiesList() {
             <h1 className="text-lg font-bold text-foreground">
               Circle
             </h1>
-            <p className="mt-1 text-sm leading-relaxed text-muted">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               People you invite, and public circles you can ask to join. You pick which portfolios they see. They see prices from today, not what you paid.
             </p>
           </div>
@@ -257,7 +257,7 @@ export function CommunitiesList() {
               icon={<Users className="h-4 w-4" />}
             />
             {communities.length === 0 && loading ? (
-              <div className="mt-5 space-y-2" aria-hidden>
+              <div className="flex flex-col mt-5 gap-2" aria-hidden>
                 {[0, 1].map((i) => (
                   <div
                     key={i}
@@ -269,11 +269,11 @@ export function CommunitiesList() {
               <ul className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
                 {communities.length === 0 && (
                   <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-                    <Users className="h-6 w-6 text-muted" />
+                    <Users className="h-6 w-6 text-muted-foreground" />
                     <p className="text-sm text-foreground">
                       You are not in a circle yet.
                     </p>
-                    <p className="text-sm leading-relaxed text-muted">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
                       Start one below for friends or family, or request to join
                       a public circle further down.
                     </p>
@@ -294,22 +294,22 @@ export function CommunitiesList() {
                         ) : c.visibility === "public" ? (
                           <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
                         ) : (
-                          <Lock className="h-3.5 w-3.5 shrink-0 text-muted" />
+                          <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         )}
                         <span className="min-w-0 truncate text-base font-semibold text-foreground">
                           {c.name}
                         </span>
                         {c.kind === "classroom" ? (
-                          <span className="shrink-0 text-sm text-muted">
+                          <span className="shrink-0 text-sm text-muted-foreground">
                             Class
                           </span>
                         ) : null}
                       </span>
                       <span className="flex shrink-0 items-center gap-2">
-                        <span className="text-sm capitalize text-muted">
+                        <span className="text-sm capitalize text-muted-foreground">
                           {c.role}
                         </span>
-                        <ChevronRight className="h-4 w-4 text-muted" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </span>
                     </Link>
                   </li>
@@ -325,7 +325,7 @@ export function CommunitiesList() {
               icon={<Compass className="h-4 w-4" />}
             />
             {discover.length === 0 ? (
-              <p className="mt-5 rounded-xl border border-border bg-raised px-4 py-6 text-sm leading-relaxed text-muted">
+              <p className="mt-5 rounded-xl border border-border bg-raised px-4 py-6 text-sm leading-relaxed text-muted-foreground">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
@@ -342,13 +342,13 @@ export function CommunitiesList() {
                         <span className="min-w-0 truncate text-base font-medium text-foreground">
                           {c.name}
                         </span>
-                        <span className="shrink-0 text-sm text-muted">
+                        <span className="shrink-0 text-sm text-muted-foreground">
                           {c.memberCount}{" "}
                           {c.memberCount === 1 ? "member" : "members"}
                         </span>
                       </span>
                       {c.houseNote?.trim() ? (
-                        <span className="pl-5 text-sm leading-relaxed text-muted">
+                        <span className="pl-5 text-sm leading-relaxed text-muted-foreground">
                           {c.houseNote.trim()}
                         </span>
                       ) : null}
@@ -399,9 +399,9 @@ export function CommunitiesList() {
                 }
               />
 
-              <div className="mt-5 space-y-5">
+              <div className="flex flex-col mt-5 gap-5">
                 <label className="block">
-                  <span className="text-sm font-medium text-muted">
+                  <span className="text-sm font-medium text-muted-foreground">
                     {kind === "classroom" ? "Class name" : "Name"}
                   </span>
                   <input
@@ -412,17 +412,17 @@ export function CommunitiesList() {
                         ? "Econ 201"
                         : "Circle name"
                     }
-                    className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
+                    className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
                   />
                 </label>
 
                 {kind === "classroom" ? (
                   <>
                     <div>
-                      <p className="text-sm font-medium text-muted">
+                      <p className="text-sm font-medium text-muted-foreground">
                         How the class runs
                       </p>
-                      <p className="mt-1 text-sm leading-relaxed text-muted">
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                         Pick the closest match. You can change the cash, the
                         note, and the trading rules after you start.
                       </p>
@@ -455,7 +455,7 @@ export function CommunitiesList() {
                               >
                                 {t.title}
                               </span>
-                              <span className="text-sm leading-relaxed text-muted">
+                              <span className="text-sm leading-relaxed text-muted-foreground">
                                 {t.blurb}
                               </span>
                             </button>
@@ -468,7 +468,7 @@ export function CommunitiesList() {
                       onChange={setStartingCash}
                     />
                     <label className="block">
-                      <span className="text-sm font-medium text-muted">
+                      <span className="text-sm font-medium text-muted-foreground">
                         What we&apos;re learning
                       </span>
                       <textarea
@@ -477,13 +477,13 @@ export function CommunitiesList() {
                         maxLength={800}
                         rows={4}
                         placeholder={DEFAULT_CLASS_ASSIGNMENT}
-                        className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted focus:border-brand"
+                        className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
                       />
                     </label>
                   </>
                 ) : (
                   <div>
-                    <p className="text-sm font-medium text-muted">Who can join</p>
+                    <p className="text-sm font-medium text-muted-foreground">Who can join</p>
                     <div className="mt-3">
                       <Segmented
                         ariaLabel="Who can join"
@@ -529,11 +529,11 @@ export function CommunitiesList() {
             >
               What should {joinPick.name} see?
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Everything is on. Turn one off if you want it private. You can
               change this later.
             </p>
-            <ul className="mt-4 space-y-2">
+            <ul className="flex flex-col mt-4 gap-2">
               {joinPick.sheets.map((s) => {
                 const on = joinPick.selected.includes(s.id);
                 return (
@@ -560,7 +560,7 @@ export function CommunitiesList() {
                       )}
                     >
                       <span className="min-w-0 truncate">{s.name}</span>
-                      <span className="shrink-0 text-sm text-muted">
+                      <span className="shrink-0 text-sm text-muted-foreground">
                         {on ? "On" : "Off"}
                       </span>
                     </button>
@@ -572,7 +572,7 @@ export function CommunitiesList() {
               <button
                 type="button"
                 onClick={() => setJoinPick(null)}
-                className="touch-target rounded-lg px-3 py-2 text-sm text-muted hover:bg-hover hover:text-foreground"
+                className="touch-target rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-hover hover:text-foreground"
               >
                 Cancel
               </button>

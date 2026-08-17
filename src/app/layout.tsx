@@ -11,10 +11,11 @@ import {
   SITE_DESCRIPTION,
 } from "@/lib/site-metadata";
 import { siteUrl } from "@/lib/site-url";
+import { cn } from "@/lib/utils";
 import "./globals.css";
 
 const inter = Inter({
-  variable: "--font-inter",
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
@@ -95,10 +96,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" data-timezone="Europe/Tallinn">
-      <body
-        className={`${inter.variable} ${montserrat.variable} antialiased`}
-      >
+    <html
+      lang="en"
+      className={cn("dark font-sans", inter.variable, montserrat.variable)}
+      data-timezone="Europe/Tallinn"
+    >
+      <body className="antialiased">
         <Providers>{children}</Providers>
         <WebVitals />
         <Analytics />

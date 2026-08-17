@@ -23,8 +23,8 @@ export function StartingCashField({
 
   return (
     <div>
-      <p className="text-sm font-medium text-muted">Starting cash</p>
-      <p className="mt-1 text-sm leading-relaxed text-muted">
+      <p className="text-sm font-medium text-muted-foreground">Starting cash</p>
+      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
         Every student gets this on a paper portfolio. Same number for the whole
         class.
       </p>
@@ -39,7 +39,7 @@ export function StartingCashField({
               "bg-well px-2 py-2.5 text-sm tabular-nums transition disabled:opacity-50",
               value === n
                 ? "bg-select text-select-ink"
-                : "text-muted hover:bg-hover hover:text-foreground"
+                : "text-muted-foreground hover:bg-hover hover:text-foreground"
             )}
           >
             ${formatCashDigits(n)}
@@ -47,7 +47,7 @@ export function StartingCashField({
         ))}
       </HairlineGrid>
       <label className="mt-4 block">
-        <span className="text-sm font-medium text-muted">Or type another amount</span>
+        <span className="text-sm font-medium text-muted-foreground">Or type another amount</span>
         <input
           inputMode="numeric"
           autoComplete="off"

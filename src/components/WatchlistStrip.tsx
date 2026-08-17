@@ -243,12 +243,12 @@ export function WatchlistStrip({
                 ? `watchlist-suggest-${suggestions[active]!.symbol}`
                 : undefined
             }
-            className="w-40 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand sm:w-52"
+            className="w-40 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand sm:w-52"
           />
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="rounded-md p-1 text-muted hover:text-foreground disabled:opacity-40"
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
             aria-label="Add to watchlist"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -278,7 +278,7 @@ export function WatchlistStrip({
                       {cashtag(row.symbol)}
                     </span>
                     {row.name && (
-                      <span className="truncate text-sm text-muted">
+                      <span className="truncate text-sm text-muted-foreground">
                         {row.name}
                       </span>
                     )}
@@ -291,13 +291,13 @@ export function WatchlistStrip({
         }
       />
       {names.length === 0 ? (
-        <p className="mt-5 text-sm text-muted">
+        <p className="mt-5 text-sm text-muted-foreground">
           Names you don&apos;t own. Add one to see the price, the recent
           range, and whether now looks quiet or rushed.
         </p>
       ) : (
         <>
-          <p className="mt-5 text-sm text-muted">
+          <p className="mt-5 text-sm text-muted-foreground">
             Today&apos;s price and a plain read of the last few weeks. Not a
             buy order.
           </p>
@@ -323,7 +323,7 @@ export function WatchlistStrip({
                     <button
                       type="button"
                       onClick={() => setList(removeWatchlistTicker(list, ticker))}
-                      className="shrink-0 rounded p-1 text-muted hover:text-foreground/80"
+                      className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground/80"
                       aria-label={`Remove ${ticker}`}
                     >
                       <X className="h-3 w-3" />
@@ -343,7 +343,7 @@ export function WatchlistStrip({
                     <p
                       className={cn(
                         "text-sm tabular-nums",
-                        pct == null ? "text-muted" : signedTone(pct)
+                        pct == null ? "text-muted-foreground" : signedTone(pct)
                       )}
                     >
                       {pct == null
@@ -351,7 +351,7 @@ export function WatchlistStrip({
                         : `${signedCurrency(q!.change)} today · ${signedPercent(pct)}`}
                     </p>
                     {look?.low != null && look.high != null && (
-                      <p className="mt-1.5 text-sm text-muted">
+                      <p className="mt-1.5 text-sm text-muted-foreground">
                         Lately {currency(look.low)} to {currency(look.high)}
                       </p>
                     )}
@@ -360,7 +360,7 @@ export function WatchlistStrip({
                         <p className="mt-3 text-sm font-semibold text-foreground">
                           {look.headline}
                         </p>
-                        <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                           {look.detail}
                         </p>
                       </>
@@ -375,7 +375,7 @@ export function WatchlistStrip({
               );
             })}
           </ul>
-          <p className="mt-4 text-sm text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
+          <p className="mt-4 text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
         </>
       )}
     </div>

@@ -347,17 +347,17 @@ function ChatMarkdown({ children }: { children: string }) {
             </p>
           ),
           ul: ({ children: c }) => (
-            <ul className="mb-2.5 list-disc space-y-1.5 pl-4 text-base text-foreground last:mb-0">
+            <ul className="mb-2.5 list-disc pl-4 text-base text-foreground last:mb-0 [&>li+li]:mt-1.5">
               {c}
             </ul>
           ),
           ol: ({ children: c }) => (
-            <ol className="mb-2.5 list-decimal space-y-1.5 pl-4 text-base text-foreground last:mb-0">
+            <ol className="mb-2.5 list-decimal pl-4 text-base text-foreground last:mb-0 [&>li+li]:mt-1.5">
               {c}
             </ol>
           ),
           li: ({ children: c }) => (
-            <li className="break-words leading-relaxed marker:text-muted">{c}</li>
+            <li className="break-words leading-relaxed marker:text-muted-foreground">{c}</li>
           ),
           strong: ({ children: c }) => (
             <strong className="font-semibold text-foreground">{c}</strong>
@@ -403,7 +403,7 @@ function ChatMarkdown({ children }: { children: string }) {
             </div>
           ),
           thead: ({ children: c }) => (
-            <thead className="border-b border-border text-sm text-muted">
+            <thead className="border-b border-border text-sm text-muted-foreground">
               {c}
             </thead>
           ),
@@ -425,7 +425,7 @@ function ChatMarkdown({ children }: { children: string }) {
           ),
           hr: () => <hr className="my-3 border-border" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 break-words border-l-2 border-white/20 pl-3 text-base text-muted last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-white/20 pl-3 text-base text-muted-foreground last:mb-0">
               {c}
             </blockquote>
           ),
@@ -942,11 +942,11 @@ export function CcAdvisorChat({
                       : "Margus"}
               </p>
               {silentPhase === "sending" ? (
-                <p className="mt-0.5 text-sm text-muted">
+                <p className="mt-0.5 text-sm text-muted-foreground">
                   Usually takes a few seconds.
                 </p>
               ) : (
-                <div className="mt-0.5 space-y-1.5">
+                <div className="flex flex-col mt-0.5 gap-1.5">
                   {silentSummary?.lines.map((line, i) => (
                     <p
                       key={i}
@@ -956,7 +956,7 @@ export function CcAdvisorChat({
                           : silentSummary.kind === "empty" && i === 0
                             ? "text-caution"
                             : silentSummary.kind === "empty"
-                              ? "text-muted"
+                              ? "text-muted-foreground"
                               : "text-foreground/80"
                       }`}
                     >
@@ -983,7 +983,7 @@ export function CcAdvisorChat({
                   </button>
                 )}
               {silentPhase === "result" && (
-                <p className="mt-1.5 text-sm text-muted">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   Tap to open chat
                 </p>
               )}
@@ -995,7 +995,7 @@ export function CcAdvisorChat({
                 setSilentPhase("idle");
                 setSilentSummary(null);
               }}
-              className="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-foreground"
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-hover hover:text-foreground"
               aria-label="Dismiss"
             >
               <X className="h-3.5 w-3.5" />
@@ -1028,7 +1028,7 @@ export function CcAdvisorChat({
               <h2 className="text-sm font-semibold text-foreground">
                 Assistant Margus
               </h2>
-              <p className="text-sm leading-snug text-muted">
+              <p className="text-sm leading-snug text-muted-foreground">
                 {context.adviseOnly
                   ? "Advise-only. Open a sheet to apply changes."
                   : `Chat for ${context.portfolioName}`}
@@ -1037,7 +1037,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={toggleWide}
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted transition hover:bg-hover hover:text-foreground/80"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition hover:bg-hover hover:text-foreground/80"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
               title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >
@@ -1060,7 +1060,7 @@ export function CcAdvisorChat({
                     className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                       rulesOpen
                         ? "bg-brand/15 text-brand"
-                        : "text-muted hover:bg-hover hover:text-foreground/80"
+                        : "text-muted-foreground hover:bg-hover hover:text-foreground/80"
                     }`}
                     aria-label="Strategy rules"
                     aria-expanded={rulesOpen}
@@ -1070,37 +1070,37 @@ export function CcAdvisorChat({
                   {rulesOpen && (
                     <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-well p-3 shadow-2xl shadow-black/50">
                       <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-muted">
+                        <p className="text-sm font-semibold text-muted-foreground">
                           Strategy rules
                         </p>
                         <button
                           type="button"
                           onClick={() => setRulesOpen(false)}
-                          className="rounded p-3 text-muted hover:text-foreground/80 sm:p-0.5"
+                          className="rounded p-3 text-muted-foreground hover:text-foreground/80 sm:p-0.5"
                           aria-label="Close rules"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <ul className="max-h-72 space-y-2.5 overflow-y-auto">
+                      <ul className="flex flex-col max-h-72 gap-2.5 overflow-y-auto">
                         {RULES.map((r) => (
                           <li
                             key={r.title}
                             className="border-b border-border pb-2.5 last:border-0 last:pb-0"
                           >
-                            <p className="text-sm font-medium text-muted">
+                            <p className="text-sm font-medium text-muted-foreground">
                               {r.title}
                             </p>
                             <p className="mt-0.5 text-sm font-semibold text-brand">
                               {r.rule}
                             </p>
-                            <p className="mt-0.5 text-sm leading-relaxed text-muted">
+                            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
                               {r.detail}
                             </p>
                           </li>
                         ))}
                       </ul>
-                      <p className="mt-2.5 border-t border-border pt-2.5 text-sm leading-relaxed text-muted">
+                      <p className="mt-2.5 border-t border-border pt-2.5 text-sm leading-relaxed text-muted-foreground">
                         {ADVICE_DISCLAIMER_SHORT}
                       </p>
                     </div>
@@ -1111,24 +1111,24 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1.5 text-muted hover:bg-hover hover:text-foreground"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground"
               aria-label="Close Margus"
             >
               <X className="h-4 w-4" />
             </button>
           </header>
 
-          <p className="shrink-0 border-b border-border px-3 py-1.5 text-center text-sm leading-snug text-muted">
+          <p className="shrink-0 border-b border-border px-3 py-1.5 text-center text-sm leading-snug text-muted-foreground">
             {ADVICE_DISCLAIMER_SHORT}
           </p>
 
           <div
             ref={scrollerRef}
-            className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3"
+            className="min-h-0 flex-1 gap-3 overflow-y-auto px-3 py-3"
           >
             {messages.length === 0 && (
-              <div className="space-y-3 rounded-lg border border-dashed border-border bg-raised p-3">
-                <p className="text-sm leading-relaxed text-muted">
+              <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-raised p-3">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {context.hideOptions
                     ? "I can read holdings and update shares, buy price, cash, or add/remove tickers."
                     : "I can read holdings and covered calls, and update shares, buy price, cash, Call %, or add/remove tickers. Open the book icon for the strategy rules."}
@@ -1211,8 +1211,8 @@ export function CcAdvisorChat({
                   <p
                     className={
                       message.role === "assistant"
-                        ? "mb-1 text-sm font-medium text-muted"
-                        : "mb-1 text-sm font-medium text-muted"
+                        ? "mb-1 text-sm font-medium text-muted-foreground"
+                        : "mb-1 text-sm font-medium text-muted-foreground"
                     }
                   >
                     {message.role === "user" ? "You" : "Margus"}
@@ -1231,7 +1231,7 @@ export function CcAdvisorChat({
                     </div>
                   )}
                   {screenshotIssue ? (
-                    <div className="space-y-1.5">
+                    <div className="flex flex-col gap-1.5">
                       <p className="text-sm font-semibold text-foreground">
                         {screenshotIssue.title}
                       </p>
@@ -1239,7 +1239,7 @@ export function CcAdvisorChat({
                         <p
                           key={i}
                           className={`text-sm leading-relaxed ${
-                            i === 0 ? "text-caution" : "text-muted"
+                            i === 0 ? "text-caution" : "text-muted-foreground"
                           }`}
                         >
                           {line}
@@ -1256,7 +1256,7 @@ export function CcAdvisorChat({
                     </div>
                   ) : null}
                   {toolPending && !text && toolNotes.length === 0 ? (
-                    <p className="text-sm text-muted">Running analysis …</p>
+                    <p className="text-sm text-muted-foreground">Running analysis …</p>
                   ) : null}
                   {toolNotes.map((note, i) => (
                     <p
@@ -1271,13 +1271,13 @@ export function CcAdvisorChat({
             })}
 
             {busy && (
-              <div className="flex items-center gap-2 text-sm text-muted">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Thinking …
                 <button
                   type="button"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-sm text-muted hover:border-loss/40 hover:text-loss"
+                  className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-sm text-muted-foreground hover:border-loss/40 hover:text-loss"
                 >
                   <Square className="h-2.5 w-2.5 fill-current" />
                   Stop
@@ -1286,11 +1286,11 @@ export function CcAdvisorChat({
             )}
 
             {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
-              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
+              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted-foreground">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : screenshotTurn && !busy && (lastIsEmptyAssistant || error) ? (
-              <div className="space-y-1.5 rounded-lg border border-border bg-raised px-3 py-2">
+              <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-raised px-3 py-2">
                 <p className="text-sm font-semibold text-foreground">
                   {screenshotFailCopy.title}
                 </p>
@@ -1298,7 +1298,7 @@ export function CcAdvisorChat({
                   <p
                     key={i}
                     className={`text-sm leading-relaxed ${
-                      i === 0 ? "text-caution" : "text-muted"
+                      i === 0 ? "text-caution" : "text-muted-foreground"
                     }`}
                   >
                     {line}
@@ -1306,11 +1306,11 @@ export function CcAdvisorChat({
                 ))}
               </div>
             ) : error && !isQuietChatFailure(error.message) ? (
-              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
+              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted-foreground">
                 {describeChatUiError(error.message)}
               </div>
             ) : lastIsEmptyAssistant && !error ? (
-              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
+              <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted-foreground">
                 Didn&apos;t land that time. Send it again.
               </div>
             ) : null}
@@ -1365,7 +1365,7 @@ export function CcAdvisorChat({
                 type="button"
                 disabled={busy}
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 text-muted hover:border-brand hover:text-foreground disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-40"
                 aria-label="Attach image"
                 title="Attach screenshot"
               >
@@ -1378,7 +1378,7 @@ export function CcAdvisorChat({
                 placeholder="Ask Margus …"
                 aria-label="Paste a screenshot or ask Margus"
                 disabled={busy}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand disabled:opacity-50"
               />
               <button
                 type="submit"

@@ -196,7 +196,7 @@ export function DailyDuelCard({
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
-            <p className="mt-0.5 text-sm text-muted">{sessionLine}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{sessionLine}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -291,11 +291,11 @@ export function DailyDuelCard({
           </div>
           <div>
             <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
-            <p className="mt-0.5 text-sm text-muted">{sessionLine}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{sessionLine}</p>
           </div>
         </div>
         {communityId && (community?.pickCount ?? 0) > 0 ? (
-          <p className="shrink-0 text-sm text-muted">
+          <p className="shrink-0 text-sm text-muted-foreground">
             <span className="font-semibold tabular-nums text-foreground">
               {community?.pickCount ?? 0}
             </span>
@@ -305,12 +305,12 @@ export function DailyDuelCard({
           !communityId &&
           stats.totalPlayed > 0 && (
             <div className="rounded-xl border border-border bg-raised px-3 py-2 text-right">
-              <p className="text-sm text-muted">
+              <p className="text-sm text-muted-foreground">
                 Record
               </p>
               <p className="text-sm font-semibold tabular-nums text-foreground">
                 {stats.totalCorrect}/{stats.totalPlayed}
-                <span className="ml-1.5 font-normal text-muted">
+                <span className="ml-1.5 font-normal text-muted-foreground">
                   ({percent(stats.accuracyPct ?? 0, 0)})
                 </span>
               </p>
@@ -380,13 +380,13 @@ export function DailyDuelCard({
                 decided &&
                 community &&
                 community.counts[side] > 0 && (
-                <p className="mt-1 text-sm text-muted">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {community.counts[side]} vote
                   {community.counts[side] === 1 ? "" : "s"}
                 </p>
               )}
               {waitingOnClose && isPick && !communityId && (
-                <p className="mt-2 text-sm text-muted">Locked. No peek</p>
+                <p className="mt-2 text-sm text-muted-foreground">Locked. No peek</p>
               )}
               {pct != null && (
                 <p
@@ -396,7 +396,7 @@ export function DailyDuelCard({
                       ? "text-gain"
                       : pct < 0
                         ? "text-loss"
-                        : "text-muted"
+                        : "text-muted-foreground"
                   )}
                 >
                   {percent(pct)}
@@ -407,7 +407,7 @@ export function DailyDuelCard({
         })}
       </div>
 
-      <p className="mt-4 text-center text-sm leading-relaxed text-muted">
+      <p className="mt-4 text-center text-sm leading-relaxed text-muted-foreground">
         {communityId
           ? communityLine
           : myPick == null

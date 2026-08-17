@@ -1,6 +1,15 @@
 "use client";
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -326,13 +335,13 @@ export function HoldingModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">Add holding</h3>
-            <p className="text-sm text-muted">{portfolioName}</p>
+            <p className="text-sm text-muted-foreground">{portfolioName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -341,7 +350,7 @@ export function HoldingModal({
         {collapsed.length > 0 && (
           <div className="mb-4 max-h-48 overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-raised">
             <div
-              className="grid h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted"
+              className="grid h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted-foreground"
               style={rowStyle}
             >
               <span className={mixedListings ? "justify-self-start" : "justify-self-center"}>
@@ -382,18 +391,19 @@ export function HoldingModal({
                   <span className="justify-self-center tabular-nums text-foreground/80">
                     {currency(row.buyPrice, listingPriceDigits(code), code)}
                   </span>
-                  <ChevronRight className="h-3.5 w-3.5 justify-self-end text-muted" />
+                  <ChevronRight className="h-3.5 w-3.5 justify-self-end text-muted-foreground" />
                 </button>
               );
             })}
           </div>
         )}
 
-        <div className="grid gap-3">
-          <label className="grid gap-1 text-sm text-muted">
-            Ticker or company
+        <FieldGroup className="gap-3">
+          <Field>
+            <FieldLabel htmlFor="holding-ticker">Ticker or company</FieldLabel>
             <div className="relative">
-              <input
+              <Input
+                id="holding-ticker"
                 ref={tickerRef}
                 autoFocus
                 value={ticker}
@@ -412,17 +422,17 @@ export function HoldingModal({
                     setListOpen(false);
                   }
                 }}
-                className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
                 placeholder="Apple, NVDA, or SPY5"
                 autoComplete="off"
+                aria-invalid={Boolean(error)}
               />
               {listOpen && suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-well shadow-xl">
+                <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-xl">
                   {suggestions.map((row) => (
                     <li key={row.symbol}>
                       <button
                         type="button"
-                        className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-hover"
+                        className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           setTicker(row.symbol);
@@ -436,7 +446,7 @@ export function HoldingModal({
                           />
                         </span>
                         {row.name && (
-                          <span className="truncate text-muted">{row.name}</span>
+                          <span className="truncate text-muted-foreground">{row.name}</span>
                         )}
                       </button>
                     </li>
@@ -444,24 +454,21 @@ export function HoldingModal({
                 </ul>
               )}
             </div>
-            <span className="text-sm leading-relaxed text-muted">
-              Type the ticker or the company. London:{" "}
-              <span className="text-muted">TICKER.L</span>. Xetra:{" "}
-              <span className="text-muted">SPY5</span> or{" "}
-              <span className="text-muted">TICKER.DE</span>. Tallinn:{" "}
-              <span className="text-muted">LHV1T</span>. Average buy in this
-              listing&apos;s money
+            <FieldDescription>
+              Type the ticker or the company. London: TICKER.L. Xetra: SPY5 or
+              TICKER.DE. Tallinn: LHV1T. Average buy in this listing&apos;s money
               {buyCode !== "USD" ? ` (${buyCode})` : ""}.
               {exchangeHint && normalized !== ticker.trim().toUpperCase() && (
                 <> → {normalized}</>
               )}
               {exchangeHint && <> · {exchangeHint}</>}
-            </span>
-          </label>
+            </FieldDescription>
+          </Field>
           <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1 text-sm text-muted">
-              Shares
-              <input
+            <Field>
+              <FieldLabel htmlFor="holding-shares">Shares</FieldLabel>
+              <Input
+                id="holding-shares"
                 type="text"
                 inputMode="decimal"
                 value={shares}
@@ -472,12 +479,15 @@ export function HoldingModal({
                   setError(null);
                 }}
                 onWheel={blockWheelChange}
-                className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-brand"
+                className="tabular-nums"
               />
-            </label>
-            <label className="grid gap-1 text-sm text-muted">
-              Average buy{buyCode !== "USD" ? ` (${buyCode})` : ""}
-              <input
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="holding-buy">
+                Average buy{buyCode !== "USD" ? ` (${buyCode})` : ""}
+              </FieldLabel>
+              <Input
+                id="holding-buy"
                 type="text"
                 inputMode="decimal"
                 value={buyPrice}
@@ -488,14 +498,17 @@ export function HoldingModal({
                   setError(null);
                 }}
                 onWheel={blockWheelChange}
-                className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-brand"
+                className="tabular-nums"
               />
-            </label>
+            </Field>
           </div>
           {!hideCallPct && (
-            <label className="grid gap-1 text-sm text-muted">
-              How far above your target to sell (%)
-              <input
+            <Field>
+              <FieldLabel htmlFor="holding-call">
+                How far above your target to sell (%)
+              </FieldLabel>
+              <Input
+                id="holding-call"
                 type="text"
                 inputMode="numeric"
                 value={targetCall}
@@ -504,37 +517,35 @@ export function HoldingModal({
                   setError(null);
                 }}
                 onWheel={blockWheelChange}
-                className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-brand"
+                className="tabular-nums"
               />
-            </label>
+            </Field>
           )}
-        </div>
+        </FieldGroup>
 
-        {error && <p className="mt-3 text-sm text-loss">{error}</p>}
+        {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
         <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={onClose}
-            className="mr-auto rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
+            className="mr-auto"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             disabled={busy}
             onClick={() => void addAnother()}
-            className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             Add another
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {busy ? <Spinner data-icon="inline-start" /> : null}
             {busy ? "Saving…" : "Save"}
-          </button>
+          </Button>
         </div>
       </form>
     </ViewportOverlay>

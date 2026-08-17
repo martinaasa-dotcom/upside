@@ -142,7 +142,7 @@ export function InvitePartnerModal({
             <h2 className="text-base font-semibold text-foreground">
               Invite a partner
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               They get live edit access to {portfolioName}, not a read-only
               peek.
             </p>
@@ -150,15 +150,15 @@ export function InvitePartnerModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted hover:bg-hover hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <label className="mt-4 block space-y-1">
-          <span className="text-sm text-muted">
+        <label className="mt-4 flex flex-col gap-1">
+          <span className="text-sm text-muted-foreground">
             Partner email (optional)
           </span>
           <input
@@ -180,7 +180,7 @@ export function InvitePartnerModal({
         {err && <p className="mt-2 text-sm text-loss">{err}</p>}
         {msg && <p className="mt-2 text-sm text-gain">{msg}</p>}
         {(link || code) && (
-          <div className="mt-3 space-y-2 rounded-xl border border-border bg-raised p-3">
+          <div className="flex flex-col mt-3 gap-2 rounded-xl border border-border bg-raised p-3">
             {code && (
               <div className="flex items-center justify-between gap-2">
                 <p className="font-mono text-sm text-brand-bright">{code}</p>
@@ -200,7 +200,7 @@ export function InvitePartnerModal({
             )}
             {link && (
               <div className="flex items-center justify-between gap-2">
-                <p className="min-w-0 flex-1 truncate text-sm text-muted">
+                <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                   {link}
                 </p>
                 <button
@@ -230,14 +230,14 @@ export function InvitePartnerModal({
                 <span className="min-w-0 truncate text-foreground">
                   {o.profile?.display_name || o.profile?.email || o.user_id.slice(0, 8)}
                   {o.user_id === user?.id ? (
-                    <span className="ml-2 text-sm text-muted">(you)</span>
+                    <span className="ml-2 text-sm text-muted-foreground">(you)</span>
                   ) : null}
                 </span>
                 {owners.length > 1 && (
                   <button
                     type="button"
                     onClick={() => setRemoveTarget(o)}
-                    className="rounded-md p-1.5 text-muted hover:text-loss"
+                    className="rounded-md p-1.5 text-muted-foreground hover:text-loss"
                     aria-label="Remove"
                   >
                     <UserMinus className="h-3.5 w-3.5" />

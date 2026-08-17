@@ -144,21 +144,21 @@ export function SignInGate({ children }: Props) {
               </p>
             )}
 
-            <div className="signin-rise-2 mt-10 max-w-md space-y-4">
+            <div className="flex flex-col signin-rise-2 mt-10 max-w-md gap-4">
               {invite && (
-                <p className="text-sm font-medium text-muted">
+                <p className="text-sm font-medium text-muted-foreground">
                   Invite
                 </p>
               )}
               <h1 className="font-heading text-lg font-bold leading-snug text-foreground">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
-              <p className="text-sm leading-relaxed text-muted">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 {invite ? inviteLandingCopy(invite).detail : SIGNIN_WHO}
               </p>
             </div>
 
-            <ul className="signin-rise-2 mt-8 max-w-md space-y-3.5 text-left text-sm leading-relaxed text-muted">
+            <ul className="flex flex-col signin-rise-2 mt-8 max-w-md gap-3.5 text-left text-sm leading-relaxed text-muted-foreground">
               {SIGNIN_POINTS.map((line) => (
                 <li key={line} className="flex gap-3">
                   <span
@@ -186,13 +186,13 @@ export function SignInGate({ children }: Props) {
               </p>
             )}
 
-            <p className="signin-rise-4 mt-6 max-w-sm text-sm leading-relaxed text-muted">
+            <p className="signin-rise-4 mt-6 max-w-sm text-sm leading-relaxed text-muted-foreground">
               By continuing you agree to the{" "}
-              <Link href="/terms" className="underline hover:text-muted">
+              <Link href="/terms" className="underline hover:text-muted-foreground">
                 Terms
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="underline hover:text-muted">
+              <Link href="/privacy" className="underline hover:text-muted-foreground">
                 Privacy policy
               </Link>
               . Not financial advice.
@@ -229,7 +229,7 @@ function BookStill() {
         <Score label="All time" value="+18%" valueClassName="text-gain" />
       </Scoreboard>
 
-      <div className="mt-6 space-y-2">
+      <div className="flex flex-col mt-6 gap-2">
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
@@ -282,7 +282,7 @@ function BookStill() {
             </div>
             <p className="mt-1 font-sans text-sm font-semibold tabular-nums text-gain">
               +6.8%{" "}
-              <span className="font-normal text-muted">today</span>
+              <span className="font-normal text-muted-foreground">today</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-1.5">

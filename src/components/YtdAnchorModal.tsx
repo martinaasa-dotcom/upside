@@ -97,7 +97,7 @@ export function YtdAnchorModal({
             <h3 className="text-base font-semibold text-foreground">
               Your real year
             </h3>
-            <p className="mt-1 text-sm leading-relaxed text-muted">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               The chart still uses today&apos;s names for the shape. This
               number sets how big the year actually was.
             </p>
@@ -106,13 +106,13 @@ export function YtdAnchorModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <label className="grid gap-1 text-sm text-muted">
+        <label className="grid gap-1 text-sm text-muted-foreground">
           Book on January 1
           <input
             autoFocus
@@ -130,9 +130,9 @@ export function YtdAnchorModal({
           />
         </label>
 
-        <p className="mt-3 text-sm text-muted">or</p>
+        <p className="mt-3 text-sm text-muted-foreground">or</p>
 
-        <label className="mt-3 grid gap-1 text-sm text-muted">
+        <label className="mt-3 grid gap-1 text-sm text-muted-foreground">
           Year-to-date your broker shows
           <input
             type="text"
@@ -150,7 +150,7 @@ export function YtdAnchorModal({
         </label>
 
         {impliedPct != null && startNav != null && (
-          <p className="mt-3 text-sm tabular-nums text-muted">
+          <p className="mt-3 text-sm tabular-nums text-muted-foreground">
             That makes this year {impliedPct >= 0 ? "+" : ""}
             {percent(impliedPct)}, from {currency(startNav, 0)} to{" "}
             {currency(liveNav, 0)}.
@@ -161,7 +161,7 @@ export function YtdAnchorModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
+            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
           >
             Cancel
           </button>

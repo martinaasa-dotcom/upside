@@ -84,11 +84,11 @@ export function CommandPalette({ open, onClose, items }: Props) {
             }
           }}
           placeholder="Jump to portfolio, ticker, unlock, Lab …"
-          className="w-full border-b border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted"
+          className="w-full border-b border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
         <ul className="max-h-80 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
-            <li className="px-3 py-6 text-center text-sm text-muted">
+            <li className="px-3 py-6 text-center text-sm text-muted-foreground">
               No matches
             </li>
           )}
@@ -107,14 +107,14 @@ export function CommandPalette({ open, onClose, items }: Props) {
               >
                 <span>
                   {item.group && (
-                    <span className="mr-2 text-xs text-muted">
+                    <span className="mr-2 text-xs text-muted-foreground">
                       {item.group}
                     </span>
                   )}
                   {item.label}
                 </span>
                 {item.hint && (
-                  <span className="shrink-0 text-xs text-muted">
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {item.hint}
                   </span>
                 )}
@@ -122,7 +122,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
             </li>
           ))}
         </ul>
-        <p className="border-t border-border px-3 py-2 text-sm text-muted">
+        <p className="border-t border-border px-3 py-2 text-sm text-muted-foreground">
           ↑↓ navigate · Enter run · Esc close · ⌘K toggle
         </p>
       </div>

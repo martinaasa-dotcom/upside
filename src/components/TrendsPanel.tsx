@@ -94,7 +94,7 @@ function TickerStoryCard({
             {cashtag(row.ticker)}
           </span>
           {!isHolding && (
-            <span className="rounded-lg border border-border px-2 py-0.5 text-sm text-muted">
+            <span className="rounded-lg border border-border px-2 py-0.5 text-sm text-muted-foreground">
               watching
             </span>
           )}
@@ -126,7 +126,7 @@ function TickerStoryCard({
             className={s.key === "trend" ? "col-span-2" : undefined}
             bulletsClassName={
               s.key === "trend"
-                ? "sm:grid sm:grid-cols-3 sm:gap-x-6 sm:space-y-0"
+                ? "sm:grid sm:grid-cols-3 sm:gap-x-6 sm:gap-0"
                 : undefined
             }
           />
@@ -134,7 +134,7 @@ function TickerStoryCard({
       </Scoreboard>
 
       {row.divergence && (
-        <p className="mt-4 text-sm leading-relaxed text-muted">
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
           {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
           other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
@@ -266,7 +266,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
     .sort((a, b) => (b.rs13 ?? 0) - (a.rs13 ?? 0));
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <Panel>
         <PanelHeader
           title="Is the trend changing?"
@@ -282,7 +282,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             </button>
           }
         />
-        <p className="mt-3 text-sm leading-relaxed text-muted">
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Showing up to {MAX_TICKERS} names at once
           {combined.length > MAX_TICKERS
             ? ` (${MAX_TICKERS} of ${combined.length} queued).`
@@ -298,7 +298,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           <h3 className="text-base font-bold text-foreground">
             Watch anything, not just what you hold
           </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted">
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
             Add a sector ETF, an index, or a crypto pair to read its trend the
             same way, e.g. $XLK for tech, $SPY for the index, or BTC-USD.
           </p>
@@ -313,7 +313,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 if (e.key === "Enter") addToWatchlist();
               }}
               placeholder="BTC-USD, XLK, SPY …"
-              className="h-9 w-40 rounded-lg border border-border bg-well px-2.5 text-sm text-foreground placeholder:text-muted focus:border-brand focus:outline-none"
+              className="h-9 w-40 rounded-lg border border-border bg-well px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand focus:outline-none"
             />
             <button
               type="button"
@@ -334,7 +334,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   type="button"
                   onClick={() => removeFromWatchlist(t)}
                   aria-label={`Remove ${t} from watchlist`}
-                  className="text-muted hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -354,13 +354,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       )}
 
       {rows == null && !error && (
-        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted">
+        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
           Reading four years of weekly bars …
         </div>
       )}
 
       {rows != null && rows.length === 0 && !error && (
-        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted">
+        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
           Add a holding, or watch a ticker above, and its trend read shows up
           here.
         </div>
@@ -368,13 +368,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
       {rows != null && rows.length > 0 && (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             {attentionCount === 0
               ? "Nothing below is diverging or rolling over right now. Sorted by who's beating the S&P."
               : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing, those come first.`}
           </p>
 
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             {stories.map(({ row }) => (
               <TickerStoryCard
                 key={row.ticker}
@@ -387,12 +387,12 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           {leaders.length > 1 && (
             <Panel>
               <PanelHeader title="Who's leading, who's fading" />
-              <p className="mt-3 mb-4 text-sm leading-relaxed text-muted">
+              <p className="mt-3 mb-4 text-sm leading-relaxed text-muted-foreground">
                 The same names, ranked by how they did against the S&amp;P over
                 the last quarter. This is money moving from one group to
                 another, not just prices going up with everything else.
               </p>
-              <div className="space-y-1.5">
+              <div className="flex flex-col gap-1.5">
                 {leaders.map((r) => {
                   const v = r.rs13 ?? 0;
                   const width = Math.min(100, Math.abs(v) * 100 * 1.6);
@@ -423,13 +423,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   );
                 })}
               </div>
-              <p className="mt-4 text-right text-sm text-muted">
+              <p className="mt-4 text-right text-sm text-muted-foreground">
                 vs S&amp;P, last 13 weeks
               </p>
             </Panel>
           )}
 
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             Technical readings on past prices, not a forecast and not advice.
             Divergences can persist for months before anything happens, or
             resolve with no break at all.

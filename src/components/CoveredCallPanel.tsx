@@ -68,7 +68,7 @@ function InlineTargetCall({
         }}
         className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
       />
-      <span className="text-sm text-muted">%</span>
+      <span className="text-sm text-muted-foreground">%</span>
     </div>
   );
 }
@@ -91,7 +91,7 @@ function InlineStockTarget({
 
   return (
     <div className="inline-flex items-center justify-center gap-0.5">
-      <span className="text-sm text-muted">$</span>
+      <span className="text-sm text-muted-foreground">$</span>
       <input
         type="text"
         inputMode="decimal"
@@ -155,7 +155,7 @@ function writeProximity(distance: number | null): {
   className: string;
 } {
   if (distance == null || !Number.isFinite(distance)) {
-    return { label: "—", className: "text-muted" };
+    return { label: "—", className: "text-muted-foreground" };
   }
   if (distance <= 0) {
     return { label: "At write level", className: "text-brand-bright" };
@@ -166,7 +166,7 @@ function writeProximity(distance: number | null): {
   if (distance < 0.12) {
     return { label: "Getting near", className: "text-foreground" };
   }
-  return { label: "Far from write", className: "text-muted" };
+  return { label: "Far from write", className: "text-muted-foreground" };
 }
 
 /** Anchor Home uses to land on this table from "Open covered calls". */
@@ -196,7 +196,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
       </div>
 
       {/* Mobile cards */}
-      <div className="space-y-3 p-4 md:hidden">
+      <div className="flex flex-col gap-3 p-4 md:hidden">
         {rows.length === 0 ? (
           <EmptyState
             title="Nothing to write calls on yet"
@@ -223,20 +223,20 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                     showCurrency={mixedListings}
                   />
                 </p>
-                <p className="text-sm tabular-nums text-muted">
+                <p className="text-sm tabular-nums text-muted-foreground">
                   Spot {currency(r.spot)}
                 </p>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="mb-1 text-muted">Strike gap</p>
+                  <p className="mb-1 text-muted-foreground">Strike gap</p>
                   <InlineTargetCall
                     value={r.targetCall}
                     onCommit={(pct) => onPatchTargetCall(r.holding.id, pct)}
                   />
                 </div>
                 <div>
-                  <p className="mb-1 text-muted">Happy to sell at</p>
+                  <p className="mb-1 text-muted-foreground">Happy to sell at</p>
                   <InlineStockTarget
                     value={r.stockTarget}
                     onCommit={(price) =>
@@ -245,13 +245,13 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                   />
                 </div>
                 <div>
-                  <p className="text-muted">Still to go</p>
+                  <p className="text-muted-foreground">Still to go</p>
                   <p
                     className={cn(
                       "tabular-nums font-medium",
                       r.targetDistance != null
                         ? signedTone(r.targetDistance)
-                        : "text-muted"
+                        : "text-muted-foreground"
                     )}
                   >
                     {r.targetDistance != null
@@ -260,7 +260,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">Write</p>
+                  <p className="text-muted-foreground">Write</p>
                   <p
                     className={cn(
                       "font-medium",
@@ -271,25 +271,25 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">Strike</p>
+                  <p className="text-muted-foreground">Strike</p>
                   <p className="tabular-nums font-semibold text-brand">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">2-week %</p>
+                  <p className="text-muted-foreground">2-week %</p>
                   <p className="tabular-nums font-medium text-brand-bright">
                     {r.yield2w != null ? percent(r.yield2w) : "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted">Premium</p>
+                  <p className="text-muted-foreground">Premium</p>
                   <p className="tabular-nums text-foreground">
                     {r.premium != null ? currency(r.premium) : "—"}
                   </p>
                 </div>
               </div>
-              <p className="mt-2 text-sm text-muted">
+              <p className="mt-2 text-sm text-muted-foreground">
                 {Math.round(r.contracts)} contracts
                 {r.expiration
                   ? ` · expires ${format(parseISO(r.expiration), "MMM d")}`
@@ -316,7 +316,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
       {/* Desktop table */}
       <div className="hidden md:block">
         <FluidTable template={template}>
-          <FluidRow className="border-border text-xs font-medium text-muted">
+          <FluidRow className="border-border text-xs font-medium text-muted-foreground">
             {HEADERS.map((label, i) => (
               <div
                 key={label}
@@ -382,7 +382,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                   "tabular-nums font-medium",
                   r.targetDistance != null
                     ? signedTone(r.targetDistance)
-                    : "text-muted"
+                    : "text-muted-foreground"
                 )}
               >
                 {r.targetDistance != null ? percent(r.targetDistance) : "—"}
@@ -404,7 +404,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               >
                 {r.nextStrike != null ? currency(r.nextStrike) : "—"}
               </div>
-              <div className={cn(cellBase, "text-muted")}>
+              <div className={cn(cellBase, "text-muted-foreground")}>
                 {r.expiration
                   ? format(parseISO(r.expiration), "MMM d, yyyy")
                   : "—"}

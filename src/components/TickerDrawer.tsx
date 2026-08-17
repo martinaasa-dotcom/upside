@@ -147,7 +147,7 @@ export function TickerDrawer({
               </h2>
               <Pill tone="neutral">{THEME_LABEL[theme] ?? "other businesses"}</Pill>
             </div>
-            <p className="mt-1 text-sm tabular-nums text-muted">
+            <p className="mt-1 text-sm tabular-nums text-muted-foreground">
               {spot != null ? currency(spot) : "—"}
               {todayChangePct != null && (
                 <span
@@ -167,13 +167,13 @@ export function TickerDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="touch-target shrink-0 rounded-lg p-2 text-muted transition hover:bg-hover hover:text-foreground"
+            className="touch-target shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-hover hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-panel py-nested pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 gap-4 overflow-y-auto px-panel py-nested pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Card>
             <MicroLabel>Thesis</MicroLabel>
             <textarea
@@ -182,19 +182,19 @@ export function TickerDrawer({
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg border border-border bg-app p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted focus:border-white/25"
+              className="mt-2 w-full rounded-lg border border-border bg-app p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-white/25"
             />
-            <p className="mt-1.5 text-sm text-muted">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
             </p>
             {conviction?.stamps && conviction.stamps.length > 0 && (
-              <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+              <ul className="flex flex-col mt-3 gap-1.5 border-t border-border pt-3">
                 {conviction.stamps.slice(0, 3).map((s) => (
-                  <li key={s.at} className="text-sm text-muted">
+                  <li key={s.at} className="text-sm text-muted-foreground">
                     <span className="text-foreground/80">{s.verdict}</span>
                     {" · "}
                     {s.line}
-                    <span className="ml-1 text-muted">
+                    <span className="ml-1 text-muted-foreground">
                       {new Date(s.at).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -208,13 +208,13 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="space-y-3 rounded-2xl border border-border bg-card p-panel">
+          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-panel">
             <div className={SPLIT_ROW}>
               <div className={SPLIT_COPY}>
                 <h3 className="text-base font-semibold text-foreground">
                   Price path
                 </h3>
-                <p className="mt-0.5 text-sm text-muted">
+                <p className="mt-0.5 text-sm text-muted-foreground">
                   A modeled scenario, not a target. Same numbers as Forecast.
                 </p>
               </div>
@@ -233,7 +233,7 @@ export function TickerDrawer({
                   <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
                     {currency(targetPrice, 2)}
                   </p>
-                  <p className="mt-0.5 text-sm text-muted">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     Works out to about{" "}
                     <span className="font-medium tabular-nums text-gain">
                       {Number.isFinite(targetCagrPct)
@@ -253,7 +253,7 @@ export function TickerDrawer({
                     {targetGainPct >= 0 ? "+" : ""}
                     {percent(targetGainPct)}
                   </p>
-                  <p className="mt-0.5 text-sm text-muted">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     from today&apos;s price
                   </p>
                 </div>
@@ -313,7 +313,7 @@ export function TickerDrawer({
                           : "border-border bg-raised"
                       )}
                     >
-                      <p className="text-sm text-muted">
+                      <p className="text-sm text-muted-foreground">
                         &apos;{String(yr).slice(2)}
                       </p>
                       <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
@@ -362,13 +362,13 @@ export function TickerDrawer({
               </div>
               <div className="mt-2.5 grid grid-cols-3 gap-2">
                 <div>
-                  <p className="text-sm text-muted">Strike</p>
+                  <p className="text-sm text-muted-foreground">Strike</p>
                   <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {currency(coveredCallRow.nextStrike)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Room above</p>
+                  <p className="text-sm text-muted-foreground">Room above</p>
                   <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {coveredCallRow.targetDistance != null
                       ? percent(coveredCallRow.targetDistance)
@@ -376,7 +376,7 @@ export function TickerDrawer({
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Contracts</p>
+                  <p className="text-sm text-muted-foreground">Contracts</p>
                   <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
                     {coveredCallRow.contracts}
                   </p>
@@ -409,7 +409,7 @@ export function TickerDrawer({
                     "touch-target h-10 flex-1 rounded-lg text-sm font-semibold tabular-nums transition",
                     level === n
                       ? "bg-brand/25 text-brand-bright ring-1 ring-brand/50"
-                      : "border border-border bg-raised text-muted hover:text-foreground"
+                      : "border border-border bg-raised text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {n}

@@ -9,7 +9,7 @@ export function DashboardLoading({ message }: { message: string }) {
         variant="icon"
         className="animate-pulse motion-reduce:animate-none"
       />
-      <p className="mt-6 text-sm text-muted" role="status">
+      <p className="mt-6 text-sm text-muted-foreground" role="status">
         {message}
       </p>
     </div>

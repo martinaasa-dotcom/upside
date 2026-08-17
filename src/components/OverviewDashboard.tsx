@@ -175,35 +175,35 @@ function EmptyBook({
       </h2>
       {homework ? (
         <>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-sm text-muted-foreground">
             This is paper class. Everyone started with the same cash. Buy
             names with that paper money. Do not paste a real portfolio in here.
           </p>
           {homeworkCash != null && homeworkCash > 0 ? (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-2 text-sm text-muted-foreground">
               You have {currency(homeworkCash, 0)} sitting ready.
             </p>
           ) : null}
         </>
       ) : (
         <>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-sm text-muted-foreground">
             Paste what you own. One name per line: ticker, shares, cost.
           </p>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-sm text-muted-foreground">
             This portfolio is only yours until you invite someone.
           </p>
         </>
       )}
 
       {!homework && onPasteHoldings && (
-        <div className="mt-8 space-y-3">
+        <div className="flex flex-col mt-8 gap-3">
           <textarea
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
             rows={5}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
+            className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
           />
           {pasteErr && <p className="text-sm text-loss">{pasteErr}</p>}
           <button
@@ -240,7 +240,7 @@ function EmptyBook({
                 />
               </p>
               {"hint" in r && r.hint ? (
-                <p className="mt-1 text-sm text-muted">{r.hint}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{r.hint}</p>
               ) : null}
             </button>
           ))}
@@ -271,9 +271,9 @@ function MorningStack({
 }) {
   const sunday = morning.sunday;
   return (
-    <div className={cn("space-y-5", className)}>
+    <div className={cn("flex flex-col gap-5", className)}>
       {sunday ? (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <Reading label="Sunday">
             {morning.sentence}
           </Reading>
@@ -350,7 +350,7 @@ function MorningStack({
               : "Since you last looked"
           }
         >
-          <ul className="space-y-2">
+          <ul className="flex flex-col gap-2">
             {morning.awayLines.map((line) => (
               <li
                 key={line.id}
@@ -383,7 +383,7 @@ function MorningStack({
         </div>
       )}
       {morning.pulseFlags.length > 0 && (
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           {morning.pulseFlags.map((flag) => (
             <button
               key={flag.ticker}
@@ -438,7 +438,7 @@ function MoverTile({
         <span className="block truncate font-heading text-base font-bold text-foreground">
           {cashtag(ticker.ticker)}
         </span>
-        <span className="mt-0.5 block font-sans text-sm tabular-nums text-muted">
+        <span className="mt-0.5 block font-sans text-sm tabular-nums text-muted-foreground">
           {currency(ticker.price)}
         </span>
       </span>
@@ -483,7 +483,7 @@ function PortfolioLane({
           <p className="truncate font-heading text-base font-bold text-foreground">
             {sheet.portfolio.name}
           </p>
-          <p className="mt-1.5 text-sm text-muted">
+          <p className="mt-1.5 text-sm text-muted-foreground">
             {plural(sheet.holdingCount, "holding")}
             {sheetCashBalance(sheet.portfolio) !== 0
               ? ` · ${currency(sheetCashBalance(sheet.portfolio), 0)} cash`
@@ -505,7 +505,7 @@ function PortfolioLane({
         />
       </div>
 
-      <p className="mt-3 text-sm tabular-nums text-muted">
+      <p className="mt-3 text-sm tabular-nums text-muted-foreground">
         <span className={tone(sheet.roiPct)}>{percent(sheet.roiPct)}</span>
         {" all time"}
         {sheet.todayDollar !== 0 ? (
@@ -690,7 +690,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
 
   if (bookIsEmpty) {
     return (
-      <div className="space-y-5 md:space-y-10">
+      <div className="flex flex-col gap-5 md:gap-10">
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
@@ -704,7 +704,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
   }
 
   return (
-    <div className="space-y-5 md:space-y-10">
+    <div className="flex flex-col gap-5 md:gap-10">
       {/* Desktop: one opening screen. Phone: same parts, one idea per card,
           so the stack matches Movers / portfolios / Watching. */}
       <Panel className="overview-fade">
@@ -714,7 +714,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
           actions={
             <>
               <span
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
                 title={sessionLabel(marketState)}
               >
                 <span
@@ -814,7 +814,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
                 )}
               >
                 {signedPercent(yearPct)}
-                <span className="font-medium text-muted">
+                <span className="font-medium text-muted-foreground">
                   {" "}
                   · {signedCurrency(yearDollar, 0)}
                 </span>
@@ -862,7 +862,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
         />
         <div className="mt-5">
           {movers.length === 0 ? (
-            <p className="py-5 text-center text-sm text-muted">
+            <p className="py-5 text-center text-sm text-muted-foreground">
               Waiting on prices.
             </p>
           ) : (
@@ -883,7 +883,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
       {multiSheet && (
         <Panel className="overview-fade">
           <PanelHeader title="Your portfolios" />
-          <div className="mt-6 space-y-4">
+          <div className="flex flex-col mt-6 gap-4">
             {sheets.map((sheet) => (
               <PortfolioLane
                 key={sheet.portfolio.id}

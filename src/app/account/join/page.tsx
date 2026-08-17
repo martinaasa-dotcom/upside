@@ -59,9 +59,9 @@ function JoinInner() {
     <SignInGate>
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_55%)] px-4 text-foreground">
         <UpsideLogo variant="icon" className="mb-2" />
-        <div className="w-full max-w-sm space-y-4 text-center">
+        <div className="flex flex-col w-full max-w-sm gap-4 text-center">
           <h1 className="text-lg font-bold">Join a portfolio</h1>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             Your partner invited you to edit this portfolio together. Paste the
             code if the link did not fill it in.
           </p>
@@ -87,7 +87,7 @@ function JoinInner() {
               </button>
             </form>
           )}
-          {status && <p className="text-sm text-muted">{status}</p>}
+          {status && <p className="text-sm text-muted-foreground">{status}</p>}
           {error && <p className="text-sm text-loss">{error}</p>}
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function AccountJoinPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-app text-muted">
+        <div className="flex min-h-dvh items-center justify-center bg-app text-muted-foreground">
           Loading …
         </div>
       }

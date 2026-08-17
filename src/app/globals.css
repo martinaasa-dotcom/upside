@@ -1,18 +1,52 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
   /* Brand board from 15 Aug: cool near-black, cream type, gold mark.
      Green and red stay the bright up/down colors, never a wash on the room.
      Stack: field (--app) → inset (--well) → box (--card) → nested (--raised).
-     A box on the field is never the field color. */
+     A box on the field is never the field color.
+     Semantic tokens follow shadcn (background/foreground pairs). The app
+     is dark-only, so :root and .dark share these values. */
   --background: #08090c;
   --foreground: #f4f1ea;
+  --card: #161b25;
+  --card-foreground: #f4f1ea;
+  --popover: #161b25;
+  --popover-foreground: #f4f1ea;
+  --primary: #dcad55;
+  --primary-foreground: #08090c;
+  --secondary: #1e2430;
+  --secondary-foreground: #f4f1ea;
+  --muted: #10141c;
+  --muted-foreground: #9aa3ad;
+  --accent: #272e3c;
+  --accent-foreground: #f4f1ea;
+  --destructive: #f43f5e;
+  --border: rgb(214 173 105 / 0.22);
+  --input: rgb(214 173 105 / 0.28);
+  --ring: #d6ad69;
+  --chart-1: #d6ad69;
+  --chart-2: #10b981;
+  --chart-3: #9aa3ad;
+  --chart-4: #dcad55;
+  --chart-5: #f43f5e;
+  --radius: 0.625rem;
+  --sidebar: #10141c;
+  --sidebar-foreground: #f4f1ea;
+  --sidebar-primary: #dcad55;
+  --sidebar-primary-foreground: #08090c;
+  --sidebar-accent: #272e3c;
+  --sidebar-accent-foreground: #f4f1ea;
+  --sidebar-border: rgb(214 173 105 / 0.22);
+  --sidebar-ring: #d6ad69;
   --paper: #f4f1ea;
   --ink: #08090c;
-  --muted: #9aa3ad;
   --app: #08090c;
   --well: #10141c;
-  --card: #161b25;
   --raised: #1e2430;
   --hover: #272e3c;
   --brand: #d6ad69;
@@ -28,7 +62,6 @@
   --loss: #f43f5e;
   --surface: #161b25;
   --panel: #161b25;
-  --border: rgb(214 173 105 / 0.22);
   /* One inset scale. Phone and desktop use the same numbers.
      Panel pad matches the page gutter. Nested cards and score
      cells step in once. Do not invent a tighter mobile pad. */
@@ -62,9 +95,9 @@
   --color-surface: var(--surface);
   --color-panel: var(--panel);
   --color-border: var(--border);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-montserrat);
-  --font-logo: var(--font-montserrat);
+  --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Montserrat", "Montserrat Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Montserrat", "Montserrat Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, Menlo, Consolas, monospace;
   --spacing-panel: var(--inset-panel);
   --spacing-nested: var(--inset-nested);
@@ -73,6 +106,39 @@
      class silently did nothing, so anything between 480px and sm rendered
      the nav as unlabelled icons. */
   --breakpoint-xs: 30rem;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 html {
@@ -85,9 +151,8 @@ html {
 }
 
 body {
-  background: var(--app);
-  color: var(--foreground);
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  background: var(--background);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   overflow-x: clip;
   min-height: 100dvh;
@@ -252,9 +317,9 @@ button:disabled,
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  border-radius: 0.5rem;
-  background: var(--mustard);
-  color: var(--select-ink);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25rem;
@@ -281,8 +346,8 @@ button:disabled,
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--brand);
+  border-radius: var(--radius);
+  border: 1px solid var(--primary);
   background: transparent;
   color: var(--brand-bright);
   font-size: 0.875rem;
@@ -394,5 +459,51 @@ button:disabled,
   .signin-rise-3,
   .signin-rise-4 {
     animation: none;
+  }
+}
+
+.dark {
+  --background: #08090c;
+  --foreground: #f4f1ea;
+  --card: #161b25;
+  --card-foreground: #f4f1ea;
+  --popover: #161b25;
+  --popover-foreground: #f4f1ea;
+  --primary: #dcad55;
+  --primary-foreground: #08090c;
+  --secondary: #1e2430;
+  --secondary-foreground: #f4f1ea;
+  --muted: #10141c;
+  --muted-foreground: #9aa3ad;
+  --accent: #272e3c;
+  --accent-foreground: #f4f1ea;
+  --destructive: #f43f5e;
+  --border: rgb(214 173 105 / 0.22);
+  --input: rgb(214 173 105 / 0.28);
+  --ring: #d6ad69;
+  --chart-1: #d6ad69;
+  --chart-2: #10b981;
+  --chart-3: #9aa3ad;
+  --chart-4: #dcad55;
+  --chart-5: #f43f5e;
+  --sidebar: #10141c;
+  --sidebar-foreground: #f4f1ea;
+  --sidebar-primary: #dcad55;
+  --sidebar-primary-foreground: #08090c;
+  --sidebar-accent: #272e3c;
+  --sidebar-accent-foreground: #f4f1ea;
+  --sidebar-border: rgb(214 173 105 / 0.22);
+  --sidebar-ring: #d6ad69;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }

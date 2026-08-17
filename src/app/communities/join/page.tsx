@@ -67,16 +67,16 @@ function JoinInner() {
     <SignInGate>
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-app px-4 text-foreground">
         <UpsideLogo variant="mark" className="h-10 w-10" />
-        <div className="w-full max-w-sm space-y-2 text-center">
+        <div className="flex flex-col w-full max-w-sm gap-2 text-center">
           <h1 className="text-lg font-bold text-foreground">Join with an invite</h1>
-          <p className="text-sm leading-relaxed text-muted">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             A friend or a teacher sent this. Sign in with Google if you
             haven&apos;t yet. Then we put you in the circle or the class.
           </p>
           {error ? (
             <p className="text-sm text-loss">{error}</p>
           ) : status ? (
-            <p className="text-sm text-muted">{status}</p>
+            <p className="text-sm text-muted-foreground">{status}</p>
           ) : null}
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function JoinCommunityPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-app text-muted">
+        <div className="flex min-h-dvh items-center justify-center bg-app text-muted-foreground">
           Loading …
         </div>
       }

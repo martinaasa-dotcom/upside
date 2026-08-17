@@ -108,7 +108,7 @@ function PulseHistory({ ticker }: { ticker: string }) {
   const prior = loadPulseHistory(ticker).slice(0, -1).at(-1);
   if (!prior) return null;
   return (
-    <p className="mt-2 text-sm text-muted">
+    <p className="mt-2 text-sm text-muted-foreground">
       Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus)}
     </p>
   );
@@ -127,7 +127,7 @@ function thesisDisplayBullets(text: string | undefined): string[] {
 }
 
 function StatusIcon({ status }: { status: ThesisStatus }) {
-  if (status === "watch") return <Eye className="h-4 w-4 text-muted" />;
+  if (status === "watch") return <Eye className="h-4 w-4 text-muted-foreground" />;
   if (status === "broken") return <XCircle className="h-4 w-4 text-loss" />;
   return <CheckCircle2 className="h-4 w-4 text-gain" />;
 }
@@ -240,7 +240,7 @@ function PulseCard({
               </span>
             )}
             {!c.inBook && (
-              <span className="rounded-md bg-hover px-2 py-0.5 text-sm text-muted">
+              <span className="rounded-md bg-hover px-2 py-0.5 text-sm text-muted-foreground">
                 Lookup
               </span>
             )}
@@ -274,7 +274,7 @@ function PulseCard({
               <TrendingDown className="h-3.5 w-3.5" />
             )}
             {formatMovePct(c.effectivePct)}
-            <span className="font-normal text-muted">{c.moveLabel}</span>
+            <span className="font-normal text-muted-foreground">{c.moveLabel}</span>
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -287,7 +287,7 @@ function PulseCard({
               </Pill>
             </>
           ) : loading ? (
-            <span className="text-sm text-muted">Checking …</span>
+            <span className="text-sm text-muted-foreground">Checking …</span>
           ) : null}
           {onRefresh && (
             <button
@@ -300,7 +300,7 @@ function PulseCard({
                   : "Re-check just this ticker now"
               }
               aria-label={`Re-check ${c.ticker}`}
-              className="relative rounded-lg border border-border/80 bg-well/70 p-1.5 text-muted transition after:absolute after:-inset-2 after:content-[''] hover:border-brand hover:text-foreground disabled:opacity-40"
+              className="relative rounded-lg border border-border/80 bg-well/70 p-1.5 text-muted-foreground transition after:absolute after:-inset-2 after:content-[''] hover:border-brand hover:text-foreground disabled:opacity-40"
             >
               <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
             </button>
@@ -332,7 +332,7 @@ function PulseCard({
           />
         </Scoreboard>
       ) : (
-        <p className="mt-3 text-sm tabular-nums text-muted">
+        <p className="mt-3 text-sm tabular-nums text-muted-foreground">
           {currency(c.price)} · not in your portfolio
         </p>
       )}
@@ -340,7 +340,7 @@ function PulseCard({
       <PulseHistory ticker={c.ticker} />
 
       {hasBody ? (
-        <div className="mt-6 space-y-4 border-t border-border pt-5">
+        <div className="flex flex-col mt-6 gap-4 border-t border-border pt-5">
           {thesisBullets.length > 0 && (
             <Reading
               label={
@@ -350,7 +350,7 @@ function PulseCard({
                     <button
                       type="button"
                       onClick={onWriteThesis}
-                      className="text-sm font-medium text-muted hover:text-foreground"
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground"
                     >
                       {writtenThesis.length > 0 ? "Edit" : "Add yours"}
                     </button>
@@ -358,7 +358,7 @@ function PulseCard({
                 </span>
               }
             >
-              <ul className="space-y-1.5">
+              <ul className="flex flex-col gap-1.5">
                 {thesisBullets.slice(0, 3).map((point, i) => (
                   <li key={i} className="flex gap-2">
                     <span
@@ -388,7 +388,7 @@ function PulseCard({
             </p>
           ) : null}
           {shown?.earningsNote ? (
-            <p className="text-sm text-muted">{shown.earningsNote}</p>
+            <p className="text-sm text-muted-foreground">{shown.earningsNote}</p>
           ) : null}
           {shown?.thesisBreak ? (
             <Reading label="Breaks if">{shown.thesisBreak}</Reading>
@@ -399,14 +399,14 @@ function PulseCard({
       {headlines.length > 0 && (
         <div className="mt-5 border-t border-border pt-4">
           <MicroLabel>In the news</MicroLabel>
-          <ul className="mt-2 space-y-2">
+          <ul className="flex flex-col mt-2 gap-2">
             {headlines.slice(0, 2).map((h) => (
               <li key={h.link || h.title}>
                 <a
                   href={h.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm leading-snug text-muted hover:text-foreground"
+                  className="text-sm leading-snug text-muted-foreground hover:text-foreground"
                 >
                   {h.title}
                 </a>
@@ -966,18 +966,18 @@ export const PulsePage = memo(function PulsePage({
   );
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <Panel>
         <PanelHeader
           hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
         />
-        <p className="mt-3 text-sm text-muted">{ADVICE_DISCLAIMER_SHORT}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
 
         <form onSubmit={(e) => void submitSearch(e)} className="mt-5 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(sanitizeTickerQuery(e.target.value))}
@@ -989,7 +989,7 @@ export const PulsePage = memo(function PulsePage({
               }}
               placeholder="NVDA, Apple, or SPY5"
               aria-label="Ticker or company name to check"
-              className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand"
+              className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
               autoComplete="off"
             />
             {suggestions.length > 0 && searchInput.trim().length > 0 && (
@@ -1003,7 +1003,7 @@ export const PulsePage = memo(function PulsePage({
                     >
                       <span className="font-medium">{cashtag(row.symbol)}</span>
                       {row.name && (
-                        <span className="truncate text-muted">{row.name}</span>
+                        <span className="truncate text-muted-foreground">{row.name}</span>
                       )}
                     </button>
                   </li>
@@ -1021,12 +1021,12 @@ export const PulsePage = memo(function PulsePage({
         </form>
 
         {pinnedTicker && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-muted">
+          <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
             <span>Pinned: {pinnedTicker}</span>
             <button
               type="button"
               onClick={() => setPinnedTicker(null)}
-              className="inline-flex items-center gap-0.5 text-muted hover:text-foreground/80"
+              className="inline-flex items-center gap-0.5 text-muted-foreground hover:text-foreground/80"
             >
               <X className="h-3 w-3" /> Clear
             </button>
@@ -1035,7 +1035,7 @@ export const PulsePage = memo(function PulsePage({
 
         {fearGreed && (
           <p
-            className="mt-4 text-sm text-muted"
+            className="mt-4 text-sm text-muted-foreground"
             title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
           >
             Market mood:{" "}
@@ -1079,10 +1079,10 @@ export const PulsePage = memo(function PulsePage({
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-3 text-sm font-medium text-muted">
+          <h3 className="mb-3 text-sm font-medium text-muted-foreground">
             The one you asked about
           </h3>
-          <ul className="space-y-4">
+          <ul className="flex flex-col gap-4">
             <PulseCard
               candidate={pinnedCandidate}
               check={checksByTicker[pinnedCandidate.ticker.toUpperCase()]}
@@ -1115,7 +1115,7 @@ export const PulsePage = memo(function PulsePage({
           detail="Add a holding and Pulse starts watching it automatically. You can also type any ticker above for a one-off look."
         />
       ) : (
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           {attention.length > 0 && (
             <section>
               <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
@@ -1125,7 +1125,7 @@ export const PulsePage = memo(function PulsePage({
                 />
                 Needs a look
               </h3>
-              <ul className="space-y-4">
+              <ul className="flex flex-col gap-4">
                 {attention.map((c) => (
                   <PulseCard
                     key={c.ticker}
@@ -1151,12 +1151,12 @@ export const PulsePage = memo(function PulsePage({
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-3 text-sm font-medium text-muted">
+              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
                 {attention.length > 0
                   ? "Everything else"
                   : `Your ${plural(rest.length, "biggest holding")}`}
               </h3>
-              <ul className="space-y-4">
+              <ul className="flex flex-col gap-4">
                 {rest.map((c) => (
                   <PulseCard
                     key={c.ticker}
@@ -1182,7 +1182,7 @@ export const PulsePage = memo(function PulsePage({
       )}
 
       {lastGeneratedAt && (
-        <p className="text-center text-sm text-muted">
+        <p className="text-center text-sm text-muted-foreground">
           Last checked{" "}
           {new Date(lastGeneratedAt).toLocaleString(undefined, {
             dateStyle: "medium",

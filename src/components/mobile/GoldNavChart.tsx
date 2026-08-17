@@ -450,8 +450,8 @@ export function GoldNavChart({
       <p
         className={
           className
-            ? `py-12 text-center text-sm text-muted ${className}`
-            : "py-12 text-center text-sm text-muted"
+            ? `py-12 text-center text-sm text-muted-foreground ${className}`
+            : "py-12 text-center text-sm text-muted-foreground"
         }
       >
         History builds up night by night.
@@ -534,7 +534,7 @@ export function GoldNavChart({
         <div className="flex min-h-9 items-end justify-center px-10 pb-1">
           {hoverPoint ? (
             <p className="pointer-events-none max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
-              <span className="text-muted">{formatDay(hoverPoint.date)}</span>
+              <span className="text-muted-foreground">{formatDay(hoverPoint.date)}</span>
               <span className="mx-1.5 font-semibold text-foreground">
                 {currency(hoverPoint.nav, 0)}
               </span>
@@ -542,7 +542,7 @@ export function GoldNavChart({
                 <span className={signedTone(ytdRoi)}>
                   {ytdRoi > 0 ? "+" : ""}
                   {percent(ytdRoi)}
-                  <span className="text-muted">
+                  <span className="text-muted-foreground">
                     {" "}
                     · {signedCurrency(ytdDollar, 0)}
                   </span>
@@ -761,15 +761,15 @@ export function BookNavChart({
   return (
     <div className={className}>
       {loading && !hasChart ? (
-        <p className="py-12 text-center text-sm text-muted">
+        <p className="py-12 text-center text-sm text-muted-foreground">
           Working out this year’s path …
         </p>
       ) : (
         <GoldNavChart points={points} />
       )}
       {assumed && hasChart && (
-        <div className="mt-5 space-y-3">
-          <p className="text-sm text-muted">
+        <div className="flex flex-col mt-5 gap-3">
+          <p className="text-sm text-muted-foreground">
             {anchored
               ? "Using the year you gave us."
               : "Held these names all year."}
@@ -826,7 +826,7 @@ export function BookNavChart({
               <button
                 type="button"
                 onClick={onClearAnchor}
-                className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+                className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
                 Back to assumed names
               </button>
@@ -835,7 +835,7 @@ export function BookNavChart({
               <button
                 type="button"
                 onClick={onDiscardAssumed}
-                className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground/80 hover:underline"
+                className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground/80 hover:underline"
               >
                 {recorded ? `Start from ${recorded}` : "Only recorded nights"}
               </button>
@@ -855,7 +855,7 @@ export function BookNavChart({
           <button
             type="button"
             onClick={onRestoreAssumed}
-            className="text-sm font-medium text-muted underline-offset-2 hover:text-foreground hover:underline"
+            className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Fill in an assumed year
           </button>

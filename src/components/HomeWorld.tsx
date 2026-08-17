@@ -169,10 +169,10 @@ export function HomeWorld({
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
-                <Bot className="h-3.5 w-3.5 text-muted" aria-hidden />
+                <Bot className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 Upside Fund
               </MicroLabel>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             </div>
             {fund ? (
               <>
@@ -182,7 +182,7 @@ export function HomeWorld({
                 <p
                   className={cn(
                     "mt-0.5 text-sm tabular-nums",
-                    signedTone(fund.todayDollar, "text-muted")
+                    signedTone(fund.todayDollar, "text-muted-foreground")
                   )}
                 >
                   {signedCurrency(fund.todayDollar)} today
@@ -191,7 +191,7 @@ export function HomeWorld({
                     : ""}
                   {` · day ${fund.dayNumber}`}
                 </p>
-                <p className="mt-3 line-clamp-2 text-sm text-muted">
+                <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
                   {fund.headline ??
                     "Paper money. One decision a day."}
                 </p>
@@ -201,7 +201,7 @@ export function HomeWorld({
                 <p className="mt-2 text-base font-semibold text-foreground">
                   Watch Margus trade
                 </p>
-                <p className="mt-3 text-sm text-muted">
+                <p className="mt-3 text-sm text-muted-foreground">
                   A paper portfolio run in public.
                 </p>
               </>
@@ -216,10 +216,10 @@ export function HomeWorld({
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
-                <Users className="h-3.5 w-3.5 text-muted" aria-hidden />
+                <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
                 Circle
               </MicroLabel>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             </div>
             <p className="mt-2 text-base font-semibold text-foreground">
               {communitiesError
@@ -228,7 +228,7 @@ export function HomeWorld({
                   ? "Your circles"
                   : communityTitle}
             </p>
-            <p className="mt-3 text-sm text-muted">
+            <p className="mt-3 text-sm text-muted-foreground">
               {communitiesError
                 ? "Open the page to try again."
                 : communities === null

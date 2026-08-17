@@ -54,7 +54,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           <p className="text-sm font-semibold text-foreground">
             {this.props.name} hit a snag
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-muted">
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             Your book is fine. This panel failed to render.
           </p>
           <button

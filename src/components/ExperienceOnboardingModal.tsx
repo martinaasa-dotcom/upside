@@ -93,7 +93,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
-              <p className="text-sm font-semibold text-muted">
+              <p className="text-sm font-semibold text-muted-foreground">
                 Quick question · {step}/3
               </p>
               <h2 className="mt-1 text-lg font-semibold text-foreground">
@@ -103,7 +103,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     ? "Have you used covered calls or other options strategies?"
                     : "Want a report in your inbox?"}
               </h2>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {step === 3
                   ? "Sunday is on. Weekdays only if you want them. These start once there are names in your portfolio. Change this anytime in Account."
                   : "This just simplifies what you see. Nothing is locked, and you can change it anytime in Account."}
@@ -111,7 +111,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
             </div>
 
             {step === 3 ? (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 <label className="flex items-start gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
@@ -121,7 +121,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   />
                   <span>
                     <span className="font-medium text-foreground">Weekdays</span>
-                    <span className="mt-0.5 block text-sm text-muted">
+                    <span className="mt-0.5 block text-sm text-muted-foreground">
                       What to watch before the open, then a recap after the US close.
                     </span>
                   </span>
@@ -135,7 +135,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   />
                   <span>
                     <span className="font-medium text-foreground">Sundays</span>
-                    <span className="mt-0.5 block text-sm text-muted">
+                    <span className="mt-0.5 block text-sm text-muted-foreground">
                       The week that just finished, plus a look at the next ones.
                     </span>
                   </span>
@@ -151,13 +151,13 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="w-full text-sm text-muted hover:text-foreground/80"
+                  className="w-full text-sm text-muted-foreground hover:text-foreground/80"
                 >
                   ← Back
                 </button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {step === 1
                   ? Q1_OPTIONS.map((opt) => {
                       const Icon = opt.icon;
@@ -196,7 +196,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="mt-1 text-sm text-muted hover:text-foreground/80"
+                    className="mt-1 text-sm text-muted-foreground hover:text-foreground/80"
                   >
                     ← Back
                   </button>
@@ -205,7 +205,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
             )}
           </>
         ) : (
-          <div className="space-y-4 text-center">
+          <div className="flex flex-col gap-4 text-center">
             <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-hover text-foreground">
               <Check className="h-5 w-5" />
             </div>
@@ -213,7 +213,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
               <h2 className="text-lg font-semibold text-foreground">
                 You&apos;re set to {resultLabel}
               </h2>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Next, paste what you own. That is the whole start.
               </p>
             </div>

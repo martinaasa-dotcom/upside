@@ -26,17 +26,17 @@ export default function TermsPage() {
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted hover:border-brand hover:text-foreground"
+            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-brand hover:text-foreground"
           >
             Back
           </Link>
         </div>
       </header>
 
-      <main id="main" className="mx-auto min-w-0 max-w-3xl space-y-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
+      <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
           <h1 className="text-lg font-bold text-foreground">Terms of Service</h1>
-          <p className="mt-1 text-sm text-muted">Last updated {LAST_UPDATED}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Last updated {LAST_UPDATED}</p>
         </div>
 
         <p>
@@ -172,7 +172,7 @@ export default function TermsPage() {
           .
         </Section>
 
-        <p className="pt-4 text-sm text-muted">
+        <p className="pt-4 text-sm text-muted-foreground">
           See also our{" "}
           <Link href="/privacy" className="underline hover:text-foreground">
             Privacy policy
@@ -194,7 +194,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-2">
+    <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p>{children}</p>
     </section>

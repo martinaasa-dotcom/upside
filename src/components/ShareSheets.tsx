@@ -104,18 +104,18 @@ export function ShareSheets({
   if (sheets && sheets.length === 0) return null;
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
       <div>
         <h2 className="text-sm font-medium text-foreground">
           Portfolios this circle can see
         </h2>
-        <p className="mt-1 text-sm leading-relaxed text-muted">
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           These are on unless you turn one off. Today&apos;s prices only. What
           you paid stays with you.
         </p>
       </div>
       {error && <p className="text-sm text-loss">{error}</p>}
-      <ul className="space-y-2">
+      <ul className="flex flex-col gap-2">
         {(sheets ?? []).map((s) => (
           <li
             key={s.id}

@@ -87,7 +87,7 @@ export const ComparisonChart = memo(function ComparisonChart({
   if (!geometry) {
     return (
       <div
-        className="flex items-center justify-center text-sm text-muted"
+        className="flex items-center justify-center text-sm text-muted-foreground"
         style={{ height }}
       >
         History builds up day by day. Check back tomorrow.
@@ -220,7 +220,7 @@ export const ComparisonChart = memo(function ComparisonChart({
                 style={{ backgroundColor: s.color }}
                 aria-hidden
               />
-              <span className="text-sm text-muted">{s.label}</span>
+              <span className="text-sm text-muted-foreground">{s.label}</span>
               <span
                 className={cn(
                   "text-base font-semibold tabular-nums",
@@ -230,7 +230,7 @@ export const ComparisonChart = memo(function ComparisonChart({
                 {percent(last)}
               </span>
               {s.hint ? (
-                <span className={cn("text-sm tabular-nums", signedTone(last, "text-muted"))}>
+                <span className={cn("text-sm tabular-nums", signedTone(last, "text-muted-foreground"))}>
                   {s.hint}
                 </span>
               ) : null}

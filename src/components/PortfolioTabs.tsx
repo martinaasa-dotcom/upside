@@ -193,7 +193,7 @@ export function PortfolioTabs({
 
         {/* Sheets — different language: text rail, not twin chips */}
         <div className="min-w-0 flex-1">
-          <p className="mb-1.5 hidden text-sm font-medium text-muted sm:block">
+          <p className="mb-1.5 hidden text-sm font-medium text-muted-foreground sm:block">
             Sheets
           </p>
           <div
@@ -231,7 +231,7 @@ export function PortfolioTabs({
                     "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition",
                     active
                       ? "text-foreground"
-                      : "text-muted hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <span className="flex h-full items-center gap-1.5 whitespace-nowrap">
@@ -286,7 +286,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted hover:text-foreground/80"
+                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted-foreground hover:text-foreground/80"
                 aria-label="Add portfolio"
               >
                 <Plus className="h-3.5 w-3.5" />

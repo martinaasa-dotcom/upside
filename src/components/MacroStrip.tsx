@@ -164,7 +164,7 @@ export function MacroStrip() {
 
   const itemNodes = items.map((i) => (
     <span key={i.label} className="shrink-0" title={i.title}>
-      <span className="text-muted">{i.label}</span>{" "}
+      <span className="text-muted-foreground">{i.label}</span>{" "}
       <span
         className={cn(
           "text-foreground/80",
@@ -178,12 +178,12 @@ export function MacroStrip() {
   ));
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-sm text-muted sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-3">
       <div className="flex min-w-0 items-center justify-start gap-2 sm:justify-end">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="shrink-0 rounded-md px-2 py-1 font-medium text-muted hover:text-foreground"
+          className="shrink-0 rounded-md px-2 py-1 font-medium text-muted-foreground hover:text-foreground"
           aria-expanded={open}
         >
           Markets

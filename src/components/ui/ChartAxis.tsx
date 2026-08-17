@@ -35,7 +35,7 @@ export function ChartYAxis({
         <span
           key={t}
           className={cn(
-            "absolute -translate-y-1/2 text-xs tabular-nums text-muted",
+            "absolute -translate-y-1/2 text-xs tabular-nums text-muted-foreground",
             overlay ? "left-0" : "right-0"
           )}
           style={{ top: `${(yAt(t) / height) * 100}%` }}
@@ -62,7 +62,7 @@ export function ChartXRail({
   return (
     <div className={cn("mt-1.5 flex", className)}>
       {inset ? null : <div className={cn("w-12 shrink-0", railClassName)} />}
-      <div className="relative h-4 min-w-0 flex-1 text-xs text-muted">
+      <div className="relative h-4 min-w-0 flex-1 text-xs text-muted-foreground">
         {children}
       </div>
     </div>

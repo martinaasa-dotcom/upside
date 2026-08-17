@@ -82,7 +82,7 @@ export function HeaderOverflowMenu({
           setOpen((o) => !o);
         }}
         className={cn(
-          "inline-flex h-9 items-center justify-center gap-1 rounded-md border border-border text-sm font-medium text-muted hover:border-brand hover:text-foreground",
+          "inline-flex h-9 items-center justify-center gap-1 rounded-md border border-border text-sm font-medium text-muted-foreground hover:border-brand hover:text-foreground",
           // A fixed height (rather than relying on padding to add up to the
           // same total as the icon+text buttons next to it) guarantees this
           // lines up with View exactly, however the avatar image or
@@ -145,7 +145,7 @@ export function HeaderOverflowMenu({
                       // and this keeps "unavailable" visually distinct from
                       // the normal muted text now that both greys resolved
                       // to the same olive.
-                      "cursor-not-allowed text-muted opacity-50"
+                      "cursor-not-allowed text-muted-foreground opacity-50"
                     : item.danger
                       ? "text-loss hover:bg-loss/10"
                       : "text-foreground hover:bg-hover"
@@ -153,7 +153,7 @@ export function HeaderOverflowMenu({
               >
                 <span>{item.label}</span>
                 {item.hint && (
-                  <span className="tabular-nums text-xs text-muted">
+                  <span className="tabular-nums text-xs text-muted-foreground">
                     {item.hint}
                   </span>
                 )}

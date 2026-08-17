@@ -100,7 +100,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <Panel>
         <PanelHeader
           icon={<Shield className="h-4 w-4" />}
@@ -121,13 +121,13 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   "flex min-w-0 items-center justify-center gap-1.5 bg-well px-2 py-2.5 text-sm font-medium transition",
                   isSelected
                     ? "bg-select text-select-ink"
-                    : "text-muted hover:bg-hover hover:text-foreground"
+                    : "text-muted-foreground hover:bg-hover hover:text-foreground"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 shrink-0",
-                    isSelected ? "text-select-ink" : "text-muted"
+                    isSelected ? "text-select-ink" : "text-muted-foreground"
                   )}
                   aria-hidden
                 />
@@ -149,7 +149,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 </h3>
                 <Pill tone="neutral">{activeScenario.driver}</Pill>
               </div>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-muted-foreground">
                 Headline move{" "}
                 <span className="font-semibold tabular-nums text-foreground">
                   {activeScenario.headlinePct > 0 ? "+" : ""}
@@ -176,7 +176,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             >
               {signedPercent(analysis.deltaPct)}
             </span>
-            <span className="text-muted">
+            <span className="text-muted-foreground">
               {" "}
               · {signedCurrency(analysis.deltaVal, 0)} from today&apos;s{" "}
               {currency(analysis.liveTotalVal, 0)}
@@ -191,7 +191,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               ) : (
                 <Pill tone="good">Comfortable</Pill>
               )}
-              <p className="text-sm text-muted">
+              <p className="text-sm text-muted-foreground">
                 {analysis.margin.shockedLeverage.toFixed(2)}x borrowed. Room
                 before a forced sale:{" "}
                 <span
@@ -207,7 +207,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               </p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-muted">
+            <p className="mt-3 text-sm text-muted-foreground">
               {analysis.cash > 0
                 ? `Cash ${currency(analysis.cash, 0)} · ${analysis.margin.shockedCashPct.toFixed(1)}% of the book after this.`
                 : "No cash sitting out as a buffer."}
@@ -250,7 +250,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               analysis.topShockAbsorber &&
               analysis.topShockAbsorber.deltaVal >= 0
                 ? "text-gain"
-                : "text-muted"
+                : "text-muted-foreground"
             }
           />
         </Scoreboard>
@@ -261,7 +261,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           <h3 className="text-base font-semibold text-foreground">
             Where the damage lands
           </h3>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted-foreground">
             Your holdings pooled by what they actually bet on.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -292,19 +292,19 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             <h3 className="text-base font-semibold text-foreground">
               Every position
             </h3>
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-1 text-sm text-muted-foreground">
               Sorted by the biggest dollar change. Tap a column to re-sort.
             </p>
           </div>
-          <span className="text-sm text-muted">
+          <span className="text-sm text-muted-foreground">
             {sortedRows.length}{" "}
             {sortedRows.length === 1 ? "position" : "positions"}
           </span>
         </div>
 
-        <div className="mt-3 space-y-3 md:hidden">
+        <div className="flex flex-col mt-3 gap-3 md:hidden">
           {sortedRows.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               Nothing held in this scope yet.
             </p>
           ) : (
@@ -321,7 +321,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     className={cn(
                       "text-sm font-semibold tabular-nums",
                       r.deltaVal === 0
-                        ? "text-muted"
+                        ? "text-muted-foreground"
                         : r.deltaVal > 0
                           ? "text-gain"
                           : "text-loss"
@@ -331,15 +331,15 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     {currency(r.deltaVal, 0)}
                   </p>
                 </div>
-                <p className="mt-1 truncate text-sm text-muted">{r.label}</p>
+                <p className="mt-1 truncate text-sm text-muted-foreground">{r.label}</p>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-muted">Move</p>
+                    <p className="text-muted-foreground">Move</p>
                     <p
                       className={cn(
                         "font-medium tabular-nums",
                         r.movePct === 0
-                          ? "text-muted"
+                          ? "text-muted-foreground"
                           : r.movePct > 0
                             ? "text-gain"
                             : "text-loss"
@@ -350,25 +350,25 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted">Price now</p>
+                    <p className="text-muted-foreground">Price now</p>
                     <p className="tabular-nums text-foreground">
                       {currency(r.livePx, 2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted">Price after</p>
+                    <p className="text-muted-foreground">Price after</p>
                     <p className="tabular-nums text-foreground">
                       {currency(r.shockPx, 2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted">Value now</p>
-                    <p className="tabular-nums text-muted">
+                    <p className="text-muted-foreground">Value now</p>
+                    <p className="tabular-nums text-muted-foreground">
                       {currency(r.liveVal, 0)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted">Value after</p>
+                    <p className="text-muted-foreground">Value after</p>
                     <p className="tabular-nums text-foreground">
                       {currency(r.shockVal, 0)}
                     </p>
@@ -382,7 +382,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         <div className="mt-3 hidden overflow-x-auto md:block">
           <table className={cn(htmlTable, "min-w-[40rem]")}>
             <thead>
-              <tr className="border-b border-border text-xs text-muted">
+              <tr className="border-b border-border text-xs text-muted-foreground">
                   <th
                     onClick={() => handleSort("ticker")}
                     className={cn(tickerTd, "cursor-pointer font-medium hover:text-foreground")}
@@ -445,7 +445,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                       showCurrency={mixedListings}
                     />
                   </td>
-                  <td className={cn(htmlCell, "truncate text-muted")}>
+                  <td className={cn(htmlCell, "truncate text-muted-foreground")}>
                     {r.label}
                   </td>
                   <td className={htmlCell}>
@@ -453,7 +453,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                       className={cn(
                         "inline-block rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums",
                         r.movePct === 0
-                          ? "bg-hover text-muted"
+                          ? "bg-hover text-muted-foreground"
                           : r.movePct > 0
                             ? "bg-gain/15 text-gain ring-1 ring-gain/30"
                             : "bg-loss/15 text-loss ring-1 ring-loss/30"
@@ -463,13 +463,13 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                       {percent(r.movePct)}
                     </span>
                   </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
+                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
                     {currency(r.livePx, 2)}
                   </td>
                   <td className={cn(htmlCell, "font-medium tabular-nums text-foreground")}>
                     {currency(r.shockPx, 2)}
                   </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
+                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
                     {currency(r.liveVal, 0)}
                   </td>
                   <td className={cn(htmlCell, "tabular-nums text-foreground/80")}>
@@ -480,7 +480,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                       htmlCell,
                       "font-semibold tabular-nums",
                       r.deltaVal === 0
-                        ? "text-muted"
+                        ? "text-muted-foreground"
                         : r.deltaVal > 0
                           ? "text-gain"
                           : "text-loss"
@@ -495,7 +495,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 <tr>
                   <td
                     colSpan={8}
-                    className={cn(htmlCell, "h-auto py-6 text-muted")}
+                    className={cn(htmlCell, "h-auto py-6 text-muted-foreground")}
                   >
                     Nothing held in this scope yet.
                   </td>

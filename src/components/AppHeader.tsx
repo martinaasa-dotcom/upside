@@ -31,7 +31,7 @@ function FeedbackHeaderButton() {
     <button
       type="button"
       onClick={openManual}
-      className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-sm font-medium text-muted hover:border-brand hover:text-foreground"
+      className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-sm font-medium text-muted-foreground hover:border-brand hover:text-foreground"
     >
       Feedback
     </button>

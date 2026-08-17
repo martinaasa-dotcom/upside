@@ -43,7 +43,7 @@ function fmtPct(v: number, digits = 1): string {
 function retText(v: number): string {
   if (v > 0.05) return "text-gain";
   if (v < -0.05) return "text-loss";
-  return "text-muted";
+  return "text-muted-foreground";
 }
 
 function retBarColor(v: number): string {
@@ -133,7 +133,7 @@ function CycleMonthlyChart({
                   ? "font-bold text-foreground"
                   : isCurrent
                     ? "font-semibold text-foreground"
-                    : "text-muted"
+                    : "text-muted-foreground"
               )}
             >
               {row.label}
@@ -187,7 +187,7 @@ function CycleMonthlyTiles({
                 "text-sm",
                 isSelected || isCurrent
                   ? "font-semibold text-foreground"
-                  : "text-muted"
+                  : "text-muted-foreground"
               )}
             >
               {row.label}
@@ -217,7 +217,7 @@ function CycleHistoryBars({
 }) {
   if (history.length === 0) {
     return (
-      <p className="text-sm text-muted">No prior data in this cycle phase.</p>
+      <p className="text-sm text-muted-foreground">No prior data in this cycle phase.</p>
     );
   }
 
@@ -241,7 +241,7 @@ function CycleHistoryBars({
             <span
               className={cn(
                 "text-sm tabular-nums",
-                isHighlight ? "font-semibold text-foreground" : "text-muted"
+                isHighlight ? "font-semibold text-foreground" : "text-muted-foreground"
               )}
             >
               {h.year}
@@ -299,13 +299,13 @@ function SelectedHistory({
   const wins = history.filter((h) => h.returnPct > 0).length;
 
   return (
-    <div className="mt-5 space-y-4">
+    <div className="flex flex-col mt-5 gap-4">
       <div>
-        <p className="text-sm font-medium text-muted">{heading}</p>
+        <p className="text-sm font-medium text-muted-foreground">{heading}</p>
         <p className={cn("mt-1 text-lg font-semibold tabular-nums", retText(avgPct))}>
           {fmtPct(avgPct, digits)} average
         </p>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-muted-foreground">
           {Math.round(winRate)}% of years were up · {samples}{" "}
           {samples === 1 ? "year" : "years"}
         </p>
@@ -374,7 +374,7 @@ function DayOfMonthChart({
   });
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <div className="grid grid-cols-7 gap-1.5 md:grid-cols-11 md:gap-1">
         {cells.map((row, i) => {
           const day = i + 1;
@@ -422,7 +422,7 @@ function DayOfMonthChart({
               <span
                 className={cn(
                   "mt-0.5 hidden font-semibold tabular-nums md:block md:text-xs",
-                  empty ? "text-muted" : retText(v)
+                  empty ? "text-muted-foreground" : retText(v)
                 )}
               >
                 {empty ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}`}
@@ -431,7 +431,7 @@ function DayOfMonthChart({
           );
         })}
       </div>
-      <p className="hidden text-sm text-muted md:block">
+      <p className="hidden text-sm text-muted-foreground md:block">
         Average session return on that calendar day in {monthLabel}. Pick a
         day for the years behind it.
       </p>
@@ -452,11 +452,11 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
       )}
     >
       <div className={SPLIT_COPY}>
-        <p className="text-sm font-medium text-muted">
+        <p className="text-sm font-medium text-muted-foreground">
           {stanceLabel(s.stance)} · this month
         </p>
         <p className="mt-1.5 text-base font-semibold text-foreground">{s.headline}</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted">{s.detail}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.detail}</p>
       </div>
       {typeof s.figurePct === "number" ? (
         <div className={cn(SPLIT_ACTIONS, "sm:justify-end")}>
@@ -469,7 +469,7 @@ function ActionCards({ signals }: { signals: ActionSignal[] }) {
           >
             {fmtPct(s.figurePct, 2)}
           </p>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             {s.winRate}% of years up · {s.samples}{" "}
             {s.samples === 1 ? "year" : "years"}
           </p>
@@ -605,7 +605,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
         <div className={SPLIT_ROW}>
           <div className={SPLIT_COPY}>
             {model ? (
-              <p className="text-sm leading-relaxed text-muted">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 {model.asOfYear} · {model.currentCycleLabel} year ·{" "}
                 {cashtag(model.ticker)} since {model.from.slice(0, 4)}. Months
                 and days that have historically been kind, and those that
@@ -613,7 +613,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 years. Nothing about your own holdings.
               </p>
             ) : (
-              <p className="text-sm leading-relaxed text-muted">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 Which months and days have historically been kind to the
                 market, and which have not. Patterns from the past, nothing
                 about your own holdings and no claim about what happens next.
@@ -621,7 +621,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
             )}
           </div>
           <div className={SPLIT_ACTIONS}>
-            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted sm:flex-none">
+            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground sm:flex-none">
               <span className="shrink-0">Benchmark</span>
               <select
                 value={ticker}
@@ -655,7 +655,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       )}
 
       {loading && !model ? (
-        <div className="rounded-xl border border-border bg-raised px-4 py-12 text-center text-sm text-muted">
+        <div className="rounded-xl border border-border bg-raised px-4 py-12 text-center text-sm text-muted-foreground">
           Loading seasonality for {cashtag(ticker)}…
         </div>
       ) : null}
@@ -689,7 +689,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   highlightYear={model.asOfYear}
                 />
               ) : (
-                <p className="mt-4 text-sm text-muted">
+                <p className="mt-4 text-sm text-muted-foreground">
                   No prior sessions for this month.
                 </p>
               )}
@@ -703,7 +703,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 <button
                   type="button"
                   onClick={() => shiftViewMonth(-1)}
-                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
+                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">Prev</span>
@@ -714,12 +714,12 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   </p>
                   {viewMonth === marketToday.month &&
                   selectedDay === marketToday.day ? (
-                    <p className="text-sm text-muted">Today</p>
+                    <p className="text-sm text-muted-foreground">Today</p>
                   ) : (
                     <button
                       type="button"
                       onClick={goToToday}
-                      className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
+                      className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                     >
                       Jump to today
                     </button>
@@ -728,7 +728,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 <button
                   type="button"
                   onClick={() => shiftViewMonth(1)}
-                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
+                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
                 >
                   <span className="hidden sm:inline">Next</span>
                   <ChevronRight className="h-4 w-4" />
@@ -748,7 +748,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                           ? "bg-select text-select-ink"
                           : m === marketToday.month
                             ? "text-foreground ring-1 ring-brand/40 hover:bg-hover"
-                            : "text-muted hover:bg-hover hover:text-foreground"
+                            : "text-muted-foreground hover:bg-hover hover:text-foreground"
                       )}
                     >
                       {label}
@@ -776,7 +776,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                   highlightYear={model.asOfYear}
                 />
               ) : (
-                <p className="mt-4 text-sm text-muted">
+                <p className="mt-4 text-sm text-muted-foreground">
                   No prior sessions for this day.
                 </p>
               )}

@@ -3414,9 +3414,9 @@ export function Dashboard() {
 
         {isAlerts ? (
           <WidgetErrorBoundary name="Alerts">
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             {activeAlerts.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted">
+              <p className="py-10 text-center text-sm text-muted-foreground">
                 Nothing waiting. That&apos;s a good hour.
               </p>
             ) : (
@@ -3428,7 +3428,7 @@ export function Dashboard() {
                   className="w-full rounded-2xl border border-border bg-card p-4 text-left"
                 >
                   <p className="text-sm font-semibold text-foreground">{a.title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     {a.detail}
                   </p>
                 </button>

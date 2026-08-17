@@ -120,7 +120,7 @@ export function BookModeDock({
           ITEM,
           active
             ? "bg-select text-select-ink"
-            : "text-muted hover:text-brand-bright"
+            : "text-muted-foreground hover:text-brand-bright"
         );
         if (onSelectMode) {
           return (

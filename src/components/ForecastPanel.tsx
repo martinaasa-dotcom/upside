@@ -149,10 +149,10 @@ function PlaybookList({
 }) {
   const items = playbookBullets(text);
   if (items.length === 0) {
-    return <p className="mt-1.5 text-sm text-muted">{empty}</p>;
+    return <p className="mt-1.5 text-sm text-muted-foreground">{empty}</p>;
   }
   return (
-    <ul className="mt-1.5 space-y-2.5">
+    <ul className="flex flex-col mt-1.5 gap-2.5">
       {items.map((item, i) => (
         <PlaybookItem key={`${item.head}-${i}`} item={item} tone={tone} />
       ))}
@@ -181,7 +181,7 @@ function PlaybookItem({
           {item.head}
         </p>
         {item.detail && (
-          <p className="mt-0.5 text-sm leading-snug text-muted">
+          <p className="mt-0.5 text-sm leading-snug text-muted-foreground">
             {item.detail}
           </p>
         )}
@@ -195,7 +195,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
     <div className={cn(SPLIT_ROW, NESTED_PAD, "sm:items-center rounded-xl border border-border bg-raised")}>
       <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
-        <p className="mt-1 text-sm leading-relaxed text-muted">
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           Margus&apos;s year-by-year path for this portfolio. Same idea as Pulse,
           sitting under the table.
         </p>
@@ -272,7 +272,7 @@ function EoyPriceInput({
       }}
       className={cn(
         "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50",
-        targeted ? "text-foreground" : "text-muted"
+        targeted ? "text-foreground" : "text-muted-foreground"
       )}
     />
   );
@@ -381,7 +381,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
         {hoverPoint ? (
           <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center px-10">
             <p className="max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
-              <span className="text-muted">{hoverPoint.label}</span>
+              <span className="text-muted-foreground">{hoverPoint.label}</span>
               <span className="mx-1.5 font-semibold text-foreground">
                 {currency(hoverPoint.value, 0)}
               </span>
@@ -389,7 +389,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                 <span className={signedTone(vsNowPct)}>
                   {vsNowPct > 0 ? "+" : ""}
                   {percent(vsNowPct)}
-                  <span className="text-muted">
+                  <span className="text-muted-foreground">
                     {" "}
                     · {signedCurrency(vsNowDollar, 0)}
                   </span>
@@ -928,7 +928,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                 <button
                   type="button"
                   onClick={onClearOverrides}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition hover:border-brand hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:border-brand hover:text-foreground"
                   title="Throw away every price you or Margus changed on this portfolio"
                 >
                   <RotateCcw className="h-3 w-3" aria-hidden />
@@ -952,14 +952,14 @@ export const ForecastPanel = memo(function ForecastPanel({
             </>
           }
         />
-        <p className="mt-4 text-sm leading-relaxed text-muted">
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           {FORECAST_DISCLAIMER}
         </p>
         {statusHint && (
-          <p className="mt-2 text-sm text-muted">{statusHint}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{statusHint}</p>
         )}
         {busy && (
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-sm text-muted-foreground">
             Margus is updating the forecast …
           </p>
         )}
@@ -976,13 +976,13 @@ export const ForecastPanel = memo(function ForecastPanel({
       </header>
 
       {model.rows.length === 0 ? (
-        <div className="px-4 py-10 text-center text-sm text-muted">
+        <div className="px-4 py-10 text-center text-sm text-muted-foreground">
           Add a holding and Margus will work out where it could go.
         </div>
       ) : (
         <>
           {/* Mobile */}
-          <div className="space-y-3 p-4 md:hidden">
+          <div className="flex flex-col gap-3 p-4 md:hidden">
             {model.rows.map((r) => (
               <Card key={r.ticker}>
                 <div className="flex items-baseline justify-between gap-2">
@@ -993,7 +993,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                         showCurrency={mixedListings}
                       />
                     </p>
-                    <p className="mt-1 text-sm text-muted">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {r.shares.toLocaleString("en-US")} shares
                       {!r.hasTargets && " · Margus is working on it"}
                     </p>
@@ -1003,7 +1003,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                       "text-sm font-medium tabular-nums",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
-                        : "text-muted"
+                        : "text-muted-foreground"
                     )}
                   >
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
@@ -1035,7 +1035,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             ))}
 
             <div className={cn("rounded-xl border border-border bg-raised", NESTED_PAD)}>
-              <p className="text-sm font-medium text-muted">
+              <p className="text-sm font-medium text-muted-foreground">
                 Whole portfolio
               </p>
               <p className="mt-1.5 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
@@ -1046,7 +1046,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   <div key={y}>
                     <p
                       className={cn(
-                        "text-muted",
+                        "text-muted-foreground",
                         isCurrentYear(y) && "text-foreground"
                       )}
                     >
@@ -1074,7 +1074,7 @@ export const ForecastPanel = memo(function ForecastPanel({
           {/* Desktop */}
           <div className="hidden md:block">
             <FluidTable template={template}>
-              <FluidRow className="text-xs font-medium text-muted">
+              <FluidRow className="text-xs font-medium text-muted-foreground">
                 <div className={tickerCell}>Ticker</div>
                 <div className={cn(cellBase, "tabular-nums")}>Price now</div>
                 {yearCols.map((y) => (
@@ -1125,7 +1125,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                       "font-medium",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
-                        : "text-muted"
+                        : "text-muted-foreground"
                     )}
                   >
                     {r.gainPct != null ? percent(r.gainPct) : "—"}
@@ -1150,7 +1150,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                     cellBase,
                     model.gainPct != null
                       ? signedTone(model.gainPct)
-                      : "text-muted"
+                      : "text-muted-foreground"
                   )}
                 >
                   {model.gainPct != null ? percent(model.gainPct) : "—"}
@@ -1167,7 +1167,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             What Margus makes of it
           </h3>
           {plan?.generatedAt && (
-            <p className="mt-1.5 text-sm text-muted">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Worked out {formatGeneratedAt(plan.generatedAt)}
               {appliedFlash ? " · prices updated" : ""}
             </p>
@@ -1195,7 +1195,7 @@ export const ForecastPanel = memo(function ForecastPanel({
           </div>
         )}
         {plan && (
-          <div className="mt-5 space-y-5">
+          <div className="flex flex-col mt-5 gap-5">
             {(plan.generalAdvice || plan.sectorRotation) && (
               <Reading>
                 {plan.generalAdvice && (
@@ -1204,7 +1204,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   </p>
                 )}
                 {plan.sectorRotation && (
-                  <p className={plan.generalAdvice ? "mt-3 text-muted" : undefined}>
+                  <p className={plan.generalAdvice ? "mt-3 text-muted-foreground" : undefined}>
                     <InsightText text={plan.sectorRotation} />
                   </p>
                 )}
@@ -1218,7 +1218,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             {lastPlanDiffs.length > 0 && (
               <div className="overflow-hidden rounded-xl border border-border bg-raised">
                 <div className="border-b border-border px-panel py-3">
-                  <p className="text-sm font-medium text-muted">Vs last plan</p>
+                  <p className="text-sm font-medium text-muted-foreground">Vs last plan</p>
                 </div>
                 <ul>
                   {lastPlanDiffs.map((d) => (
@@ -1237,7 +1237,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                           showCurrency={mixedListings}
                         />
                       </span>
-                      <span className="min-w-0 text-sm text-muted">
+                      <span className="min-w-0 text-sm text-muted-foreground">
                         {`End ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}
                       </span>
                     </li>
@@ -1271,13 +1271,13 @@ export const ForecastPanel = memo(function ForecastPanel({
             )}
 
             {activePeriod && (
-              <div className="space-y-4">
+              <div className="flex flex-col gap-4">
                 <div>
                   <MicroLabel>Modeled checks for this stretch</MicroLabel>
                   <p className="mt-2 text-sm font-semibold text-foreground">
                     {activePeriod.theme}
                   </p>
-                  <p className="mt-1 text-sm text-muted">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {activePeriod.label}
                   </p>
                 </div>

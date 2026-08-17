@@ -43,7 +43,7 @@ export function CircleDockLink({
         "h-full w-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-sm font-medium transition sm:flex-row sm:gap-1.5 sm:px-2",
         on
           ? "bg-select text-select-ink"
-          : "text-muted hover:text-brand-bright",
+          : "text-muted-foreground hover:text-brand-bright",
         className
       )}
     >
