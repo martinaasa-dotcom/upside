@@ -2,7 +2,7 @@
 
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
-import { cashtag } from "@/lib/format";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { X } from "lucide-react";
 
 export type CostBasisRow = {
@@ -67,7 +67,9 @@ export function CostBasisModal({
               className="grid grid-cols-[1fr_7rem] items-center gap-2 text-sm text-muted"
             >
               <span>
-                <span className="font-semibold text-foreground">{cashtag(r.ticker)}</span>
+                <span className="inline-flex font-semibold text-foreground">
+                  <TickerSymbol ticker={r.ticker} />
+                </span>
                 <span className="ml-2 text-muted">
                   {r.shares.toLocaleString("en-US")} sh · mark≈$
                   {r.suggestedBuy.toFixed(2)}

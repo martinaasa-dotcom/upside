@@ -1,6 +1,6 @@
 "use client";
 
-import { listingCurrencyName } from "@/lib/listing-currency";
+import { listingCurrency, listingCurrencyName } from "@/lib/listing-currency";
 import { cashtag, cn } from "@/lib/format";
 
 /** Compact listing-currency chip. Same language as the EUR/USD toggle:
@@ -44,6 +44,7 @@ export function TickerSymbol({
   className?: string;
 }) {
   const label = cashtag(ticker);
+  const code = listingCurrency(ticker, currency);
   const name = onOpen ? (
     <button
       type="button"
@@ -59,7 +60,7 @@ export function TickerSymbol({
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       {name}
-      {currency ? <ListingCurrencyChip code={currency} /> : null}
+      <ListingCurrencyChip code={code} />
     </span>
   );
 }

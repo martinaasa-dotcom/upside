@@ -7,8 +7,9 @@ import {
   type CsvHoldingRow,
   type CsvSkippedRow,
 } from "@/lib/csv-import";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
-import { cn, cashtag } from "@/lib/format";
+import { cn } from "@/lib/format";
 import { AlertTriangle, Download, FileUp, X } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -200,7 +201,7 @@ export function CsvImportModal({
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-well text-sm text-muted">
                     <tr>
-                      <th className="px-3 py-1.5 font-medium">Ticker</th>
+                      <th className="px-3 py-1.5 text-right font-medium">Ticker</th>
                       <th className="px-3 py-1.5 font-medium">Shares</th>
                       <th className="px-3 py-1.5 font-medium">Buy price</th>
                       {!hideCallPct && (
@@ -211,8 +212,8 @@ export function CsvImportModal({
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.ticker} className="border-t border-border">
-                        <td className="px-3 py-1.5 font-medium text-foreground">
-                          {cashtag(r.ticker)}
+                        <td className="px-3 py-1.5 text-right font-medium text-foreground">
+                          <TickerSymbol ticker={r.ticker} />
                         </td>
                         <td className="px-3 py-1.5 tabular-nums text-foreground/80">
                           {r.shares}

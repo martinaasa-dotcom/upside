@@ -26,7 +26,7 @@ import { todayDollarFor } from "@/lib/overview";
 import { ArrowDown, ArrowUp, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
-import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellLast, cellTicker } from "@/components/FluidTable";
 
 export type HoldingPatch = {
   id: string;
@@ -227,7 +227,6 @@ const COLUMNS: { label: string; key?: SortKey; explain?: string }[] = [
     key: "todayDollar",
     explain: "What today's share-price move did to this position, in dollars",
   },
-  { label: "" },
 ];
 
 function sortValue(h: EnrichedHolding, key: SortKey): number | string {
@@ -263,22 +262,8 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   }
 }
 
-/** Even leftover width across the row so the left six don't pack tighter than Cost/Value/ROI $. */
-const TEMPLATE = [
-  "minmax(7.25rem, 1.1fr)",
-  "minmax(0, 0.9fr)",
-  "minmax(0, 0.95fr)",
-  "minmax(0, 1fr)",
-  "minmax(0, 1fr)",
-  "minmax(0, 0.9fr)",
-  "minmax(0, 1.05fr)",
-  "minmax(0, 1.05fr)",
-  "minmax(0, 1.05fr)",
-  "4.5rem",
-  "minmax(0, 0.9fr)",
-  "minmax(0, 1fr)",
-  "2.25rem",
-].join(" ");
+/** Same even-spread as Covered calls: leftover width goes into every column. */
+const TEMPLATE = "repeat(12, minmax(0, 1fr))";
 
 export const PortfolioTable = memo(function PortfolioTable({
   portfolio,
@@ -659,10 +644,19 @@ export const PortfolioTable = memo(function PortfolioTable({
             {emptyCta}
           </div>
         ) : (
-          <FluidTable template={TEMPLATE} className="overflow-x-clip">
+          <FluidTable template={TEMPLATE}>
             <FluidRow className="border-border text-xs font-medium text-muted">
-              {COLUMNS.map((col) => (
-                <div key={col.label || "actions"} className={cellBase}>
+              {COLUMNS.map((col, i) => (
+                <div
+                  key={col.label}
+                  className={
+                    i === 0
+                      ? cellTicker
+                      : i === COLUMNS.length - 1
+                        ? cellLast
+                        : cellBase
+                  }
+                >
                   {col.key ? (
                     <button
                       type="button"
@@ -701,7 +695,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               <FluidRow key={h.id} className="group hover:bg-well/50">
                 <div
                   className={cn(
-                    cellBase,
+                    cellTicker,
                     "font-semibold tracking-wide text-foreground"
                   )}
                 >
@@ -761,7 +755,6 @@ export const PortfolioTable = memo(function PortfolioTable({
                     points={h.quote?.sparkline ?? []}
                     width={56}
                     height={24}
-                    fill
                   />
                 </div>
                 <div
@@ -779,8 +772,8 @@ export const PortfolioTable = memo(function PortfolioTable({
                 </div>
                 <div
                   className={cn(
-                    cellBase,
-                    "tabular-nums font-medium",
+                    cellLast,
+                    "relative tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).dollar)
                       : "text-muted"
@@ -789,17 +782,15 @@ export const PortfolioTable = memo(function PortfolioTable({
                   {rowToday(h).pct != null
                     ? money(rowToday(h).dollar, 0)
                     : "—"}
-                </div>
-                <div className={cellBase}>
                   {canSell ? (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(h.id)}
-                    className="rounded p-1 text-muted opacity-0 transition hover:text-loss group-hover:opacity-100"
-                    aria-label={`Delete ${h.ticker}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(h.id)}
+                      className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted opacity-0 transition hover:text-loss group-hover:opacity-100"
+                      aria-label={`Delete ${h.ticker}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   ) : null}
                 </div>
               </FluidRow>
@@ -807,7 +798,7 @@ export const PortfolioTable = memo(function PortfolioTable({
             })}
 
             <FluidRow className="border-t border-border bg-well/60 font-semibold">
-              <div className={cn(cellBase, "py-2.5 text-foreground")}>PORTFOLIO</div>
+              <div className={cn(cellTicker, "py-2.5 text-foreground")}>PORTFOLIO</div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-muted")}>
                 100%
               </div>
@@ -850,14 +841,13 @@ export const PortfolioTable = memo(function PortfolioTable({
               </div>
               <div
                 className={cn(
-                  cellBase,
+                  cellLast,
                   "py-2.5 tabular-nums font-medium",
                   today.pct != null ? signedTone(today.dollar) : "text-muted"
                 )}
               >
                 {today.pct != null ? money(today.dollar, 0) : "—"}
               </div>
-              <div className={cn(cellBase, "py-2.5")} />
             </FluidRow>
           </FluidTable>
         )}

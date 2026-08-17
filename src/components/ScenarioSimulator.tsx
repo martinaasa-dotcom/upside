@@ -5,6 +5,7 @@ import {
   analyzePortfolioShock,
   type ShockId,
 } from "@/lib/book-shock";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { cashtag, cn, currency, percent, signedCurrency, signedPercent, signedTone } from "@/lib/format";
 import { Card, EmptyState, HairlineGrid, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
@@ -304,7 +305,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               <Card key={r.ticker}>
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="text-base font-semibold text-foreground">
-                    {cashtag(r.ticker)}
+                    <TickerSymbol ticker={r.ticker} />
                   </p>
                   <p
                     className={cn(
@@ -372,17 +373,17 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead>
               <tr className="border-b border-border text-xs text-muted">
-                <th
-                  onClick={() => handleSort("ticker")}
-                  className="cursor-pointer py-2 pr-2 font-medium hover:text-foreground"
-                >
-                  <span className="flex items-center gap-1">
-                    Ticker
-                    {sortField === "ticker" && (
-                      <ChevronDown className="h-3 w-3" aria-hidden />
-                    )}
-                  </span>
-                </th>
+                  <th
+                    onClick={() => handleSort("ticker")}
+                    className="cursor-pointer py-2 pr-2 text-right font-medium hover:text-foreground"
+                  >
+                    <span className="flex items-center justify-end gap-1">
+                      Ticker
+                      {sortField === "ticker" && (
+                        <ChevronDown className="h-3 w-3" aria-hidden />
+                      )}
+                    </span>
+                  </th>
                 <th className="py-2 pr-2 font-medium">Bet</th>
                 <th
                   onClick={() => handleSort("move")}
@@ -428,8 +429,8 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   key={r.ticker}
                   className="border-b border-border transition hover:bg-hover/30"
                 >
-                  <td className="py-2 pr-2 font-semibold text-foreground">
-                    {cashtag(r.ticker)}
+                  <td className="py-2 pr-2 text-right font-semibold text-foreground">
+                    <TickerSymbol ticker={r.ticker} />
                   </td>
                   <td className="max-w-[11rem] truncate py-2 pr-2 text-muted">
                     {r.label}

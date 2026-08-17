@@ -1,7 +1,8 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { FluidRow, FluidTable } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellLast, cellTicker } from "@/components/FluidTable";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import {
   Card,
   EmptyState,
@@ -24,7 +25,6 @@ import {
   currency,
   percent,
   signedCurrency,
-  cashtag,
 } from "@/lib/format";
 import { compactAxis, niceScale } from "@/components/mobile/GoldNavChart";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
@@ -60,6 +60,7 @@ import {
   useMemo,
   useRef,
   useState,
+  memo,
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
@@ -276,12 +277,6 @@ function EoyPriceInput({
   );
 }
 
-// Centered throughout, matching the shared `cellBase` convention every
-// other table (PortfolioTable, CoveredCallPanel) already uses — this used
-// to be right-aligned here specifically, which read as an inconsistent
-// one-off next to its siblings.
-const cellLabel =
-  "flex min-w-0 w-full flex-col items-center justify-center whitespace-nowrap px-3 py-2 text-center";
 const cellNum =
   "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-3 py-2 text-center tabular-nums";
 
@@ -548,7 +543,7 @@ function SheetPath({
   );
 }
 
-export function ForecastPanel({
+export const ForecastPanel = memo(function ForecastPanel({
   model,
   portfolioId,
   portfolioName,
@@ -564,7 +559,7 @@ export function ForecastPanel({
   const mobileYears = yearCols.filter((y) => y !== 2030);
   // Ticker | Price now | End-year cols | Change. Numbers only in the grid.
   // Rationale lives under the table so a sentence cannot blow a row open.
-  const template = `minmax(5.5rem, 0.8fr) repeat(${yearCols.length + 1}, minmax(5rem, 1fr)) minmax(4.5rem, 0.6fr)`;
+  const template = `repeat(${yearCols.length + 3}, minmax(0, 1fr))`;
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -991,7 +986,7 @@ export function ForecastPanel({
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
                     <p className="text-base font-semibold text-foreground">
-                      {cashtag(r.ticker)}
+                      <TickerSymbol ticker={r.ticker} />
                     </p>
                     <p className="mt-1 text-sm text-muted">
                       {r.shares.toLocaleString("en-US")} shares
@@ -1075,7 +1070,7 @@ export function ForecastPanel({
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
               <FluidRow className="text-xs font-medium text-muted">
-                <div className={cellLabel}>Ticker</div>
+                <div className={cn(cellTicker, "px-3")}>Ticker</div>
                 <div className={cellNum}>Price now</div>
                 {yearCols.map((y) => (
                   <div
@@ -1089,13 +1084,13 @@ export function ForecastPanel({
                     <YearColHeader year={y} />
                   </div>
                 ))}
-                <div className={cellNum}>Change</div>
+                <div className={cellLast}>Change</div>
               </FluidRow>
 
               {model.rows.map((r) => (
                 <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-well/50">
-                  <div className={cn(cellLabel, "font-semibold tracking-wide text-foreground")}>
-                    {cashtag(r.ticker)}
+                  <div className={cn(cellTicker, "flex-col items-end px-3 font-semibold tracking-wide text-foreground")}>
+                    <TickerSymbol ticker={r.ticker} />
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-xs font-normal tracking-normal text-muted">
                         working on it
@@ -1116,7 +1111,7 @@ export function ForecastPanel({
                   ))}
                   <div
                     className={cn(
-                      cellNum,
+                      cellLast,
                       "font-medium",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
@@ -1129,7 +1124,7 @@ export function ForecastPanel({
               ))}
 
               <FluidRow className="border-t border-border bg-well/60 font-semibold">
-                <div className={cn(cellLabel, "py-2.5 text-foreground")}>
+                <div className={cn(cellTicker, "px-3 py-2.5 text-foreground")}>
                   Portfolio
                 </div>
                 <div className={cn(cellNum, "py-2.5 text-foreground")}>
@@ -1142,7 +1137,7 @@ export function ForecastPanel({
                 ))}
                 <div
                   className={cn(
-                    cellNum,
+                    cellLast,
                     "py-2.5",
                     model.gainPct != null
                       ? signedTone(model.gainPct)
@@ -1222,8 +1217,8 @@ export function ForecastPanel({
                       key={d.ticker}
                       className="flex gap-3 border-t border-border px-panel py-3.5 first:border-t-0"
                     >
-                      <span className="w-[4.75rem] shrink-0 font-semibold text-foreground">
-                        {cashtag(d.ticker)}
+                      <span className="flex w-[7.5rem] shrink-0 justify-end font-semibold text-foreground">
+                        <TickerSymbol ticker={d.ticker} />
                       </span>
                       <span className="min-w-0 text-sm text-muted">
                         {`End ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}
@@ -1316,4 +1311,4 @@ export function ForecastPanel({
       </div>
     </section>
   );
-}
+});

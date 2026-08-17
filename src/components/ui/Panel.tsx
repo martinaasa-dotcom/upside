@@ -1,7 +1,8 @@
 "use client";
 
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
-import { cashtag, cn, splitMoveTint } from "@/lib/format";
+import { cn, splitMoveTint } from "@/lib/format";
 import { Info } from "lucide-react";
 import {
   Children,
@@ -393,8 +394,8 @@ export function ScanList({
         {rows.map((row) => {
           const body = (
             <>
-              <span className="w-[4.75rem] shrink-0 font-semibold tabular-nums text-foreground">
-                {cashtag(row.ticker)}
+              <span className="flex w-[7.5rem] shrink-0 justify-end font-semibold tabular-nums text-foreground">
+                <TickerSymbol ticker={row.ticker} />
               </span>
               <span className="min-w-0 text-sm leading-snug text-foreground/80">
                 {row.text}

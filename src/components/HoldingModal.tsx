@@ -1,7 +1,7 @@
 "use client";
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
-import { cashtag } from "@/lib/format";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -28,7 +28,6 @@ import {
   listingCurrency,
   usdPerMapFromFx,
 } from "@/lib/listing-currency";
-import { ListingCurrencyChip } from "@/components/TickerSymbol";
 
 export type HoldingFormValues = {
   ticker: string;
@@ -256,8 +255,7 @@ export function HoldingModal({
                         }}
                       >
                         <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                          {cashtag(row.symbol)}
-                          <ListingCurrencyChip code={listingCurrency(row.symbol)} />
+                          <TickerSymbol ticker={row.symbol} />
                         </span>
                         {row.name && (
                           <span className="truncate text-muted">{row.name}</span>

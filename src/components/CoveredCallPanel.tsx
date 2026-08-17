@@ -1,8 +1,9 @@
 "use client";
 
-import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellLast, cellTicker } from "@/components/FluidTable";
+import { TickerSymbol } from "@/components/TickerSymbol";
 import { Card, EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
-import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
+import { cn, signedTone, currency, percent } from "@/lib/format";
 import { isSafePositiveMoney } from "@/lib/input-guard";
 import {
   blockWheelChange,
@@ -11,7 +12,7 @@ import {
 } from "@/lib/number-input";
 import type { CoveredCallRow } from "@/lib/types";
 import { format, parseISO } from "date-fns";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 type Props = {
   rows: CoveredCallRow[];
@@ -122,7 +123,7 @@ function InlineStockTarget({
   );
 }
 
-const TEMPLATE = "repeat(11, minmax(max-content, 1fr))";
+const TEMPLATE = "repeat(11, minmax(0, 1fr))";
 
 const HEADERS = [
   "Ticker",
@@ -172,7 +173,7 @@ function writeProximity(distance: number | null): {
 /** Anchor Home uses to land on this table from "Open covered calls". */
 export const COVERED_CALLS_ANCHOR = "covered-calls";
 
-export function CoveredCallPanel({
+export const CoveredCallPanel = memo(function CoveredCallPanel({
   rows,
   yield2wAvg,
   premiumTotal,
@@ -213,7 +214,7 @@ export function CoveredCallPanel({
             <Card key={r.holding.id} tone="raised">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-base font-semibold text-foreground">
-                  {cashtag(r.holding.ticker)}
+                  <TickerSymbol ticker={r.holding.ticker} />
                 </p>
                 <p className="text-sm tabular-nums text-muted">
                   Spot {currency(r.spot)}
@@ -309,10 +310,16 @@ export function CoveredCallPanel({
       <div className="hidden md:block">
         <FluidTable template={TEMPLATE}>
           <FluidRow className="border-border text-xs font-medium text-muted">
-            {HEADERS.map((label) => (
+            {HEADERS.map((label, i) => (
               <div
                 key={label}
-                className={cellBase}
+                className={
+                  i === 0
+                    ? cellTicker
+                    : i === HEADERS.length - 1
+                      ? cellLast
+                      : cellBase
+                }
                 title={HEADER_HINTS[label]}
               >
                 {label}
@@ -344,11 +351,11 @@ export function CoveredCallPanel({
             <FluidRow key={r.holding.id} className="min-h-10 hover:bg-well/50">
               <div
                 className={cn(
-                  cellBase,
+                  cellTicker,
                   "font-semibold tracking-wide text-foreground"
                 )}
               >
-                {cashtag(r.holding.ticker)}
+                <TickerSymbol ticker={r.holding.ticker} />
               </div>
               <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {currency(r.spot)}
@@ -406,7 +413,7 @@ export function CoveredCallPanel({
               >
                 {r.yield2w != null ? percent(r.yield2w) : "—"}
               </div>
-              <div className={cn(cellBase, "tabular-nums text-foreground")}>
+              <div className={cn(cellLast, "tabular-nums text-foreground")}>
                 {r.premium != null ? currency(r.premium) : "—"}
               </div>
             </FluidRow>
@@ -414,7 +421,7 @@ export function CoveredCallPanel({
 
           {rows.length > 0 && (
             <FluidRow className="border-t border-border bg-well/60 font-semibold">
-              <div className={cn(cellBase, "py-2.5 text-foreground")}>All</div>
+              <div className={cn(cellTicker, "py-2.5 text-foreground")}>All</div>
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
@@ -426,7 +433,7 @@ export function CoveredCallPanel({
               <div className={cn(cellBase, "py-2.5 tabular-nums text-brand-bright")}>
                 {percent(yield2wAvg)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
+              <div className={cn(cellLast, "py-2.5 tabular-nums text-foreground")}>
                 {currency(premiumTotal)}
               </div>
             </FluidRow>
@@ -435,4 +442,4 @@ export function CoveredCallPanel({
       </div>
     </Panel>
   );
-}
+});
