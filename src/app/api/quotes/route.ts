@@ -1,3 +1,4 @@
+import { publicCdnHeaders } from "@/lib/cdn-cache";
 import { fetchFxOnly, fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { marketSession } from "@/lib/market/session";
 import { NextRequest, NextResponse } from "next/server";
@@ -22,15 +23,6 @@ function cacheSeconds(): number {
   }
 }
 
-function cacheHeaders(seconds: number) {
-  const value = `public, max-age=0, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`;
-  return {
-    "Cache-Control": value,
-    "CDN-Cache-Control": value,
-    "Vercel-CDN-Cache-Control": value,
-  };
-}
-
 async function handleGET(req: NextRequest) {
   const tickersParam = req.nextUrl.searchParams.get("tickers") ?? "";
   const tickers = tickersParam
@@ -51,7 +43,7 @@ async function handleGET(req: NextRequest) {
         delayed: false,
         updatedAt: new Date().toISOString(),
       },
-      { headers: cacheHeaders(Math.max(60, cacheSeconds())) }
+      { headers: publicCdnHeaders(Math.max(60, cacheSeconds())) }
     );
   }
 
@@ -66,7 +58,7 @@ async function handleGET(req: NextRequest) {
       missing,
       updatedAt: new Date().toISOString(),
     },
-    { headers: cacheHeaders(cacheSeconds()) }
+    { headers: publicCdnHeaders(cacheSeconds()) }
   );
 }
 

@@ -1,8 +1,8 @@
+import { noStoreHeaders, publicCdnHeaders } from "@/lib/cdn-cache";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed";
 import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 
-export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 async function handleGET() {
@@ -10,12 +10,12 @@ async function handleGET() {
   if (!snapshot) {
     return NextResponse.json(
       { error: "Fear & Greed index unavailable" },
-      { status: 502 }
+      { status: 502, headers: noStoreHeaders() }
     );
   }
   return NextResponse.json(snapshot, {
-    headers: { "Cache-Control": "s-maxage=900, stale-while-revalidate=1800" },
+    headers: publicCdnHeaders(900, 1800),
   });
 }
 
-export const GET = observeRoute(handleGET, '/api/market/fear-greed');
+export const GET = observeRoute(handleGET, "/api/market/fear-greed");

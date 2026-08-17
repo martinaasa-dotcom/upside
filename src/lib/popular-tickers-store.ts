@@ -4,28 +4,11 @@ import {
   sanitizePopularTickers,
   type PopularTickersPayload,
 } from "@/lib/popular-tickers";
-import type { AppSupabaseClient } from "@/lib/supabase/server";
+import { readPopularTickers } from "@/lib/popular-tickers-read";
+import type { AppSupabaseClient } from "@/lib/supabase/client-types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
-type PopularRow = {
-  month: string;
-  tickers: unknown;
-};
-
-export async function readPopularTickers(
-  supabase: AppSupabaseClient,
-  month: string
-): Promise<string[] | null> {
-  const { data, error } = await supabase
-    .from(PORTFELL_TABLES.popularTickers)
-    .select("month, tickers")
-    .eq("month", month)
-    .maybeSingle();
-  if (error || !data) return null;
-  const row = data as PopularRow;
-  const tickers = sanitizePopularTickers(row.tickers);
-  return tickers.length > 0 ? tickers : null;
-}
+export { readPopularTickers } from "@/lib/popular-tickers-read";
 
 export async function writePopularTickers(
   supabase: AppSupabaseClient,

@@ -1,18 +1,19 @@
+import { noStoreHeaders, publicCdnHeaders } from "@/lib/cdn-cache";
 import { getSeasonalityModel } from "@/lib/market/seasonality-fetch";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
 
-const CDN =
-  "public, max-age=0, s-maxage=3600, stale-while-revalidate=21600";
-
 async function handleGET(req: NextRequest) {
   const ticker = (req.nextUrl.searchParams.get("ticker") ?? "SPY")
     .trim()
     .toUpperCase();
   if (!ticker || ticker.length > 12) {
-    return NextResponse.json({ error: "Invalid ticker" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid ticker" },
+      { status: 400, headers: noStoreHeaders() }
+    );
   }
   const force = req.nextUrl.searchParams.get("force") === "1";
 
@@ -21,21 +22,17 @@ async function handleGET(req: NextRequest) {
     if (!model) {
       return NextResponse.json(
         { error: "Not enough history for seasonality" },
-        { status: 502 }
+        { status: 502, headers: noStoreHeaders() }
       );
     }
     return NextResponse.json(model, {
-      headers: {
-        "Cache-Control": CDN,
-        "CDN-Cache-Control": CDN,
-        "Vercel-CDN-Cache-Control": CDN,
-      },
+      headers: publicCdnHeaders(3600, 21600),
     });
   } catch (err) {
     console.error("seasonality fetch failed", err);
     return NextResponse.json(
       { error: "Seasonality data unavailable" },
-      { status: 502 }
+      { status: 502, headers: noStoreHeaders() }
     );
   }
 }

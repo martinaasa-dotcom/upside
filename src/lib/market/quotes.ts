@@ -7,8 +7,6 @@
  * price instead of inventing one. A hole in the table beats a fake NAV.
  */
 import { fetchFxOnly, fetchQuotesYahoo, type QuotesResult } from "@/lib/market/yahoo";
-import { fetchQuotesTwelveData, twelveDataConfigured } from "@/lib/market/providers/twelvedata";
-import { fetchQuotesFinnhub, finnhubConfigured } from "@/lib/market/providers/finnhub";
 import { downsampleSparkline } from "@/lib/market/sparkline";
 import { yahooQuoteCandidates } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
@@ -84,24 +82,34 @@ export async function fetchQuotesWithFallback(
 
   let stillMissing = unresolvedSymbols(unique, quotes);
 
-  if (stillMissing.length > 0 && twelveDataConfigured()) {
-    const fromTwelveData = await fetchQuotesTwelveData(stillMissing);
-    for (const [ticker, q] of Object.entries(fromTwelveData)) {
-      quotes[ticker] = q;
-      sources[ticker] = "twelvedata";
+  if (stillMissing.length > 0) {
+    const { fetchQuotesTwelveData, twelveDataConfigured } = await import(
+      "@/lib/market/providers/twelvedata"
+    );
+    if (twelveDataConfigured()) {
+      const fromTwelveData = await fetchQuotesTwelveData(stillMissing);
+      for (const [ticker, q] of Object.entries(fromTwelveData)) {
+        quotes[ticker] = q;
+        sources[ticker] = "twelvedata";
+      }
+      aliasResolvedQuotes(unique, quotes, sources);
+      stillMissing = unresolvedSymbols(unique, quotes);
     }
-    aliasResolvedQuotes(unique, quotes, sources);
-    stillMissing = unresolvedSymbols(unique, quotes);
   }
 
-  if (stillMissing.length > 0 && finnhubConfigured()) {
-    const fromFinnhub = await fetchQuotesFinnhub(stillMissing);
-    for (const [ticker, q] of Object.entries(fromFinnhub)) {
-      quotes[ticker] = q;
-      sources[ticker] = "finnhub";
+  if (stillMissing.length > 0) {
+    const { fetchQuotesFinnhub, finnhubConfigured } = await import(
+      "@/lib/market/providers/finnhub"
+    );
+    if (finnhubConfigured()) {
+      const fromFinnhub = await fetchQuotesFinnhub(stillMissing);
+      for (const [ticker, q] of Object.entries(fromFinnhub)) {
+        quotes[ticker] = q;
+        sources[ticker] = "finnhub";
+      }
+      aliasResolvedQuotes(unique, quotes, sources);
+      stillMissing = unresolvedSymbols(unique, quotes);
     }
-    aliasResolvedQuotes(unique, quotes, sources);
-    stillMissing = unresolvedSymbols(unique, quotes);
   }
 
   const delayed =

@@ -1,10 +1,9 @@
-import { attachEarningsBriefs } from "@/lib/earnings-brief";
+import { publicCdnHeaders } from "@/lib/cdn-cache";
 import { fetchMarketEvents } from "@/lib/market/yahoo";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 async function handleGET(req: NextRequest) {
@@ -15,17 +14,25 @@ async function handleGET(req: NextRequest) {
     .filter(Boolean);
 
   if (tickers.length === 0) {
-    return NextResponse.json({ earnings: [], catalysts: [] });
+    return NextResponse.json(
+      { earnings: [], catalysts: [] },
+      { headers: publicCdnHeaders(3600, 7200) }
+    );
   }
 
   const events = await fetchMarketEvents(tickers);
   const withBriefs =
     req.nextUrl.searchParams.get("brief") === "1"
-      ? { ...events, earnings: await attachEarningsBriefs(events.earnings) }
+      ? {
+          ...events,
+          earnings: await (
+            await import("@/lib/earnings-brief")
+          ).attachEarningsBriefs(events.earnings),
+        }
       : events;
   return NextResponse.json(withBriefs, {
-    headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=7200" },
+    headers: publicCdnHeaders(3600, 7200),
   });
 }
 
-export const GET = observeRoute(handleGET, '/api/market/events');
+export const GET = observeRoute(handleGET, "/api/market/events");
