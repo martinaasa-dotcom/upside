@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { track } from "@vercel/analytics";
 import {
@@ -971,16 +972,16 @@ export const PulsePage = memo(function PulsePage({
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <Panel>
         <PanelHeader
           hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
+          subtitle={ADVICE_DISCLAIMER_SHORT}
         />
-        <p className="mt-3 text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
 
-        <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <form onSubmit={(e) => void submitSearch(e)} className="flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -1019,44 +1020,51 @@ export const PulsePage = memo(function PulsePage({
           <Button
             type="submit"
             disabled={!searchInput.trim() || pinnedLoading}
-            className="w-full shrink-0 sm:w-auto"
+            className="w-full shrink-0 rounded-full sm:w-auto"
           >
             {pinnedLoading ? "Checking …" : "Check"}
           </Button>
         </form>
 
         {pinnedTicker && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Pinned: {pinnedTicker}</span>
-            <button
-              type="button"
-              onClick={() => setPinnedTicker(null)}
-              className="inline-flex items-center gap-0.5 text-muted-foreground hover:text-foreground/80"
-            >
-              <X className="h-3 w-3" /> Clear
-            </button>
+          <div>
+            <Badge variant="secondary" className="h-8 gap-1.5 pr-1">
+              {cashtag(pinnedTicker)}
+              <button
+                type="button"
+                onClick={() => setPinnedTicker(null)}
+                className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                aria-label="Clear pinned ticker"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
           </div>
         )}
 
         {fearGreed && (
-          <p
-            className="mt-4 text-sm text-muted-foreground"
-            title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
-          >
-            Market mood:{" "}
-            <span
-              className={cn(
-                "font-semibold tabular-nums",
-                fearGreedTone(fearGreed.score) === "fear" && "text-loss",
-                fearGreedTone(fearGreed.score) === "neutral" && "text-foreground/80",
-                fearGreedTone(fearGreed.score) === "greed" && "text-gain"
-              )}
+          <div>
+            <Badge
+              variant="outline"
+              className="h-auto gap-1.5 py-1"
+              title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
             >
-              {fearGreed.rating.toLowerCase()}
-            </span>
-            {", "}
-            <span className="tabular-nums">{fearGreed.score} of 100</span>.
-          </p>
+              Market mood
+              <span
+                className={cn(
+                  "font-semibold tabular-nums",
+                  fearGreedTone(fearGreed.score) === "fear" && "text-loss",
+                  fearGreedTone(fearGreed.score) === "neutral" && "text-foreground",
+                  fearGreedTone(fearGreed.score) === "greed" && "text-gain"
+                )}
+              >
+                {fearGreed.rating.toLowerCase()}
+              </span>
+              <span className="tabular-nums text-muted-foreground">
+                {fearGreed.score}/100
+              </span>
+            </Badge>
+          </div>
         )}
 
         {error && (

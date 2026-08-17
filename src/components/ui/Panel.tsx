@@ -228,7 +228,7 @@ export function PanelHeader({
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {subtitle}
             </p>
           ) : null}
@@ -324,17 +324,19 @@ export function Reading({
         nested
           ? "rounded-lg bg-muted text-foreground"
           : "rounded-xl bg-card text-foreground ring-1 ring-foreground/10",
-        nested ? "p-4" : "p-6",
+        "p-6",
         className
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-xs font-medium text-muted-foreground">{label}</div>
+        <div className="text-sm font-semibold tracking-tight text-foreground">
+          {label}
+        </div>
       ) : null}
       <div
         className={cn(
           label != null && label !== "" && "mt-2",
-          "text-sm leading-relaxed"
+          "text-sm leading-relaxed text-foreground"
         )}
       >
         {children}

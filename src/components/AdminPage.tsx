@@ -204,7 +204,7 @@ export function AdminPage() {
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-medium tracking-tight text-foreground">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 Superadmin
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">

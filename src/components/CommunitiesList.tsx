@@ -245,7 +245,7 @@ export function CommunitiesList() {
         <AppHeader className="hidden md:block" title="Circle" />
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-lg font-medium tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               Circle
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">

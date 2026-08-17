@@ -2078,7 +2078,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(panel, /text-xs font-medium text-muted-foreground/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /text-xs font-medium text-muted-foreground/
+    /text-sm font-semibold tracking-tight text-foreground/
   );
   assert.match(panel, /padded && "flex flex-col gap-6 p-6"/);
   assert.match(panel, /export function Scoreboard/);
@@ -2105,7 +2105,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
   assert.doesNotMatch(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
-  assert.match(gate, /<Reading nested className="mt-4" label="Worth noticing">/);
+  assert.match(gate, /<Reading nested label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
   assert.match(frame, /bg-background text-foreground/);
   assert.doesNotMatch(frame, /#141614/);

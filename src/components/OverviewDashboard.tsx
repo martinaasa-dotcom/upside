@@ -7,11 +7,11 @@ import {
   BookNavChart,
   useBookNavHistory,
 } from "@/components/mobile/GoldNavChart";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
-  MicroLabel,
   NESTED_PAD,
   Panel,
   PanelHeader,
@@ -170,36 +170,21 @@ function EmptyBook({
     });
   }
 
+  const emptyTitle = homework
+    ? "Your homework portfolio is empty."
+    : "Your portfolio is empty.";
+  const emptySubtitle = homework
+    ? homeworkCash != null && homeworkCash > 0
+      ? `This is paper class. Everyone started with the same cash. Buy names with that paper money. Do not paste a real portfolio in here. You have ${currency(homeworkCash, 0)} sitting ready.`
+      : "This is paper class. Everyone started with the same cash. Buy names with that paper money. Do not paste a real portfolio in here."
+    : "Paste what you own. One name per line: ticker, shares, cost. This portfolio is only yours until you invite someone.";
+
   return (
     <Panel tone="brand" className="overview-fade">
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-        {homework ? "Your homework portfolio is empty." : "Your portfolio is empty."}
-      </h2>
-      {homework ? (
-        <>
-          <p className="mt-3 text-sm text-muted-foreground">
-            This is paper class. Everyone started with the same cash. Buy
-            names with that paper money. Do not paste a real portfolio in here.
-          </p>
-          {homeworkCash != null && homeworkCash > 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              You have {currency(homeworkCash, 0)} sitting ready.
-            </p>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Paste what you own. One name per line: ticker, shares, cost.
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            This portfolio is only yours until you invite someone.
-          </p>
-        </>
-      )}
+      <PanelHeader hero title={emptyTitle} subtitle={emptySubtitle} />
 
       {!homework && onPasteHoldings && (
-        <div className="flex flex-col mt-8 gap-3">
+        <div className="flex flex-col gap-3">
           <Textarea
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
@@ -210,6 +195,8 @@ function EmptyBook({
           {pasteErr && <p className="text-sm text-loss">{pasteErr}</p>}
           <Button
             type="button"
+            size="lg"
+            className="rounded-full"
             onClick={submitPaste}
             disabled={!paste.trim()}
           >
@@ -219,7 +206,7 @@ function EmptyBook({
       )}
 
       {routes.length > 0 && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           {routes.map((r) => (
             <button
               key={r.key}
@@ -278,7 +265,6 @@ function MorningStack({
           <Reading label="Sunday">
             {morning.sentence}
           </Reading>
-          <MicroLabel>Sunday look</MicroLabel>
           {(sunday.best || sunday.worst) && (
             <Scoreboard cols={sunday.best && sunday.worst ? 2 : 1}>
               {sunday.best && (
@@ -302,12 +288,6 @@ function MorningStack({
         </div>
       ) : (
         <>
-          {!morning.afterClose &&
-            (morning.quiet || morning.drivers.length === 0) && (
-            <p className="text-base leading-relaxed text-foreground">
-              {morning.sentence}
-            </p>
-          )}
           {!morning.quiet && morning.drivers.length > 0 && (
             <Scoreboard
               cols={
@@ -390,12 +370,12 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl bg-card px-4 py-4 text-left ring-1 ring-foreground/10 transition hover:bg-accent"
+              className="w-full rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:bg-accent"
             >
-              <MicroLabel>
+              <p className="text-sm font-semibold tracking-tight text-foreground">
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
-              </MicroLabel>
-              <p className="mt-1.5 text-base leading-relaxed text-foreground">
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                 {flag.line}
               </p>
             </button>
@@ -426,7 +406,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl bg-card py-4 pl-4 pr-3 text-left ring-1 ring-foreground/10 transition hover:bg-accent sm:gap-3 sm:pr-4"
+      className="relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:bg-accent sm:gap-3"
     >
       <span
         className={cn(
@@ -436,7 +416,7 @@ function MoverTile({
         aria-hidden
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-heading text-base font-bold text-foreground">
+        <span className="block truncate font-heading text-base font-semibold text-foreground">
           {cashtag(ticker.ticker)}
         </span>
         <span className="mt-0.5 block font-sans text-sm tabular-nums text-muted-foreground">
@@ -706,14 +686,22 @@ export const OverviewDashboard = memo(function OverviewDashboard({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="overview-fade flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {morning.moveLabel}
-        </h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <span
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
+      <div className="overview-fade flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {morning.moveLabel}
+          </h1>
+          {!morning.sunday ? (
+            <p className="text-sm text-muted-foreground">
+              {morning.sentence}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant="outline"
             title={sessionLabel(marketState)}
+            className="h-8 gap-1.5 px-2.5"
           >
             <span
               className={cn(
@@ -722,14 +710,19 @@ export const OverviewDashboard = memo(function OverviewDashboard({
                   ? "bg-gain"
                   : kind === "pre" || kind === "ah"
                     ? "bg-primary"
-                    : "bg-muted"
+                    : "bg-muted-foreground"
               )}
               aria-hidden
             />
             {sessionLabel(marketState)}
-          </span>
+          </Badge>
           {onAddHolding && (
-            <Button type="button" onClick={onAddHolding}>
+            <Button
+              type="button"
+              size="lg"
+              className="rounded-full"
+              onClick={onAddHolding}
+            >
               <Plus data-icon="inline-start" />
               Add a holding
             </Button>
@@ -774,6 +767,25 @@ export const OverviewDashboard = memo(function OverviewDashboard({
       />
 
       <Panel className="hidden md:block">
+        <PanelHeader
+          title="This year"
+          actions={
+            yearPct != null && yearDollar != null ? (
+              <p
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  tone(yearPct)
+                )}
+              >
+                {signedPercent(yearPct)}
+                <span className="font-medium text-muted-foreground">
+                  {" "}
+                  · {signedCurrency(yearDollar, 0)}
+                </span>
+              </p>
+            ) : null
+          }
+        />
         <OverviewYearChart
           nav={nav}
           liveNav={totals.totalValue}
@@ -836,30 +848,28 @@ export const OverviewDashboard = memo(function OverviewDashboard({
             />
           }
         />
-        <div className="mt-4">
-          {movers.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              Waiting on prices.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {movers.map(({ t, mode }) => (
-                <MoverTile
-                  key={`${mode}-${t.ticker}`}
-                  ticker={t}
-                  mode={mode}
-                  onOpen={() => openFirstPortfolio(t)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {movers.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Waiting on prices.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {movers.map(({ t, mode }) => (
+              <MoverTile
+                key={`${mode}-${t.ticker}`}
+                ticker={t}
+                mode={mode}
+                onOpen={() => openFirstPortfolio(t)}
+              />
+            ))}
+          </div>
+        )}
       </Panel>
 
       {multiSheet && (
         <Panel className="overview-fade">
           <PanelHeader title="Your portfolios" />
-          <div className="flex flex-col mt-6 gap-4">
+          <div className="flex flex-col gap-4">
             {sheets.map((sheet) => (
               <PortfolioLane
                 key={sheet.portfolio.id}

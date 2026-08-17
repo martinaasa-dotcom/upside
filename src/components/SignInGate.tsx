@@ -115,7 +115,7 @@ export function SignInGate({ children }: Props) {
     <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-background text-foreground">
       <main
         id="main"
-        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-4 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
+        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
       >
         <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
@@ -160,7 +160,7 @@ export function SignInGate({ children }: Props) {
               size="lg"
               disabled={busy}
               onClick={() => void onSignIn()}
-              className="signin-rise-3 mt-10 h-10 w-full max-w-sm gap-2.5 md:w-auto md:min-w-[17rem]"
+              className="signin-rise-3 mt-10 h-10 w-full max-w-sm gap-2.5 rounded-full md:w-auto md:min-w-[17rem]"
             >
               {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
               {busy ? "Redirecting …" : "Continue with Google"}
@@ -209,13 +209,13 @@ function BookStill() {
         <Pill tone="neutral">Sample</Pill>
       </div>
 
-      <Scoreboard className="mt-4" cols={3}>
-        <Score label="Portfolio" value="$91,400" />
-        <Score label="Today" value="+$4,180" valueClassName="text-gain" />
-        <Score label="All time" value="+18%" valueClassName="text-gain" />
+      <Scoreboard cols={3}>
+        <Score className="bg-muted ring-0" label="Portfolio" value="$91,400" />
+        <Score className="bg-muted ring-0" label="Today" value="+$4,180" valueClassName="text-gain" />
+        <Score className="bg-muted ring-0" label="All time" value="+18%" valueClassName="text-gain" />
       </Scoreboard>
 
-      <div className="flex flex-col mt-6 gap-2">
+      <div className="flex flex-col gap-2">
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
@@ -228,7 +228,7 @@ function BookStill() {
               )}
               aria-hidden
             />
-            <span className="font-heading text-base font-bold text-foreground">
+            <span className="font-heading text-base font-semibold text-foreground">
               ${row.ticker}
             </span>
             <span className="text-right">
@@ -253,11 +253,11 @@ function BookStill() {
         ))}
       </div>
 
-      <Reading nested className="mt-4" label="Worth noticing">
+      <Reading nested label="Worth noticing">
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
-      <div className={cn("mt-3 rounded-lg bg-muted", NESTED_PAD)}>
+      <div className={cn("rounded-lg bg-muted", NESTED_PAD)}>
         <div className={SPLIT_ROW}>
           <div className={SPLIT_COPY}>
             <div className="flex flex-wrap items-center gap-2">

@@ -198,9 +198,14 @@ export function WatchlistStrip({
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       <PanelHeader
         title="Watching"
+        subtitle={
+          names.length === 0
+            ? "Names you don't own. Add one to see the price, the recent range, and whether now looks quiet or rushed."
+            : "Today's price and a plain read of the last few weeks. Not a buy order."
+        }
         actions={
           <form
             ref={boxRef}
@@ -291,18 +296,9 @@ export function WatchlistStrip({
         </form>
         }
       />
-      {names.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Names you don&apos;t own. Add one to see the price, the recent
-          range, and whether now looks quiet or rushed.
-        </p>
-      ) : (
+      {names.length === 0 ? null : (
         <>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Today&apos;s price and a plain read of the last few weeks. Not a
-            buy order.
-          </p>
-          <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {names.map((ticker) => {
               const q = quotes[ticker];
               const look = q
@@ -313,11 +309,11 @@ export function WatchlistStrip({
                 <li
                   key={ticker}
                   className={cn(
-                    "flex flex-col rounded-xl border bg-muted",
+                    "flex flex-col rounded-lg border bg-muted p-6",
                     lookBorder(look?.kind)
                   )}
                 >
-                  <div className="flex items-start justify-between gap-2 px-3 pt-3">
+                  <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-semibold text-foreground">
                       {cashtag(ticker)}
                     </p>
@@ -333,7 +329,7 @@ export function WatchlistStrip({
                   <button
                     type="button"
                     onClick={() => onOpenPulse?.(ticker)}
-                    className="flex flex-1 flex-col px-3 pb-3 text-left"
+                    className="flex flex-1 flex-col text-left"
                   >
                     <p
                       className="mt-1 text-sm font-semibold tabular-nums text-foreground"
@@ -376,7 +372,7 @@ export function WatchlistStrip({
               );
             })}
           </ul>
-          <p className="mt-4 text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
+          <p className="text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
         </>
       )}
     </div>

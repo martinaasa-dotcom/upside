@@ -919,10 +919,10 @@ export const ForecastPanel = memo(function ForecastPanel({
 
   return (
     <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-      <header className="border-b border-border p-4">
+      <header className="border-b border-border p-6">
         <PanelHeader
           title="Forecast"
-          subtitle="A yearly price for each holding, to 2030."
+          subtitle={`A yearly price for each holding, to 2030. ${FORECAST_DISCLAIMER}`}
           actions={
             <>
               {overrideCount > 0 && (
@@ -938,6 +938,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               )}
               <Button
                 type="button"
+                className="rounded-full"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
                 title="Work the whole forecast out again from scratch"
@@ -952,11 +953,8 @@ export const ForecastPanel = memo(function ForecastPanel({
             </>
           }
         />
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          {FORECAST_DISCLAIMER}
-        </p>
         {statusHint && (
-          <p className="mt-2 text-sm text-muted-foreground">{statusHint}</p>
+          <p className="mt-4 text-sm text-muted-foreground">{statusHint}</p>
         )}
         {busy && (
           <p className="mt-2 text-sm text-muted-foreground">
