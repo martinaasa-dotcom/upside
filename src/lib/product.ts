@@ -29,3 +29,8 @@ export const SIGNIN_POINTS = [
 ] as const;
 
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";
+
+/** Named on /terms and /privacy. Do not invent a company registry here. */
+export const LEGAL_OPERATOR = "Martin Aasa";
+
+export const LEGAL_COUNTRY = "Estonia";

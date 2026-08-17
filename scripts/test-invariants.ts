@@ -5068,6 +5068,55 @@ run("empty books skip holdings emails and get one week-later nudge", () => {
   assert.match(route, /dispatchEmptyBookNudges/);
 });
 
+run("legal pages name the operator and match the product", () => {
+  const product = readFileSync(
+    join(process.cwd(), "src/lib/product.ts"),
+    "utf8"
+  );
+  const terms = readFileSync(
+    join(process.cwd(), "src/app/terms/page.tsx"),
+    "utf8"
+  );
+  const privacy = readFileSync(
+    join(process.cwd(), "src/app/privacy/page.tsx"),
+    "utf8"
+  );
+
+  assert.match(product, /LEGAL_OPERATOR = "Martin Aasa"/);
+  assert.match(product, /LEGAL_COUNTRY = "Estonia"/);
+  assert.match(product, /PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app"/);
+
+  for (const src of [terms, privacy]) {
+    assert.match(src, /LEGAL_OPERATOR/);
+    assert.match(src, /LEGAL_COUNTRY/);
+    assert.match(src, /PRODUCT_CONTACT_EMAIL/);
+    assert.match(src, /Under 13 is never allowed/);
+    assert.match(src, /Classroom/);
+    assert.match(src, /paper/);
+    assert.doesNotMatch(src, /Amanda|Rasmus|Karoliine/);
+    assert.doesNotMatch(src, /martin\.aasa@upthink\.ee/);
+    assert.doesNotMatch(src, /below the age required to hold a brokerage/);
+    assert.doesNotMatch(src, /\u2014/);
+  }
+
+  assert.match(terms, /governed by the laws of \{LEGAL_COUNTRY\}/);
+  assert.match(terms, /Courts in/);
+  assert.match(terms, /what you paid/);
+
+  assert.match(privacy, /today&apos;s prices, the names you hold, cash, and returns/);
+  assert.match(privacy, /They do not see what you paid/);
+  assert.match(privacy, /Pulse, weekday notes/);
+  assert.match(privacy, /screenshot/);
+  assert.match(privacy, /Resend/);
+  assert.match(privacy, /United States/);
+  assert.match(privacy, /household/);
+  assert.match(privacy, /Feedback/);
+  assert.match(privacy, /Google sets cookies/);
+  assert.doesNotMatch(privacy, /explicitly ask them to/);
+  assert.doesNotMatch(privacy, /not your raw cash balance/);
+  assert.doesNotMatch(privacy, /only when you explicitly ask/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);
