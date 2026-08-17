@@ -325,6 +325,7 @@ export function CommunitiesList() {
           </Panel>
 
           {paper.only ? null : (
+            <>
           <Panel>
             <PanelHeader
               title="Public circles"
@@ -512,6 +513,7 @@ export function CommunitiesList() {
               </div>
             </Panel>
           </form>
+            </>
           )}
         </main>
         <BookBottomNav />
