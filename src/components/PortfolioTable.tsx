@@ -24,7 +24,7 @@ import { sheetCashBalance } from "@/lib/cash-balance";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
 import { ArrowDown, ArrowUp, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
 
@@ -263,24 +263,24 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   }
 }
 
-/** Shrink-to-fit inside the 1080px page column. Money cols get the extra width. */
+/** Even leftover width across the row so the left six don't pack tighter than Cost/Value/ROI $. */
 const TEMPLATE = [
-  "minmax(6.5rem, 1.2fr)",
-  "minmax(0, 0.6fr)",
-  "minmax(0, 0.75fr)",
-  "minmax(0, 0.75fr)",
-  "minmax(0, 0.8fr)",
-  "minmax(0, 0.6fr)",
-  "minmax(0, 1.25fr)",
-  "minmax(0, 1.25fr)",
-  "minmax(0, 1.25fr)",
-  "minmax(0, 0.65fr)",
-  "minmax(0, 0.7fr)",
-  "minmax(0, 0.7fr)",
+  "minmax(7.25rem, 1.1fr)",
+  "minmax(0, 0.9fr)",
+  "minmax(0, 0.95fr)",
+  "minmax(0, 1fr)",
+  "minmax(0, 1fr)",
+  "minmax(0, 0.9fr)",
+  "minmax(0, 1.05fr)",
+  "minmax(0, 1.05fr)",
+  "minmax(0, 1.05fr)",
+  "4.5rem",
+  "minmax(0, 0.9fr)",
+  "minmax(0, 1fr)",
   "2.25rem",
 ].join(" ");
 
-export function PortfolioTable({
+export const PortfolioTable = memo(function PortfolioTable({
   portfolio,
   holdings,
   totals,
@@ -864,4 +864,4 @@ export function PortfolioTable({
       </div>
     </section>
   );
-}
+});
