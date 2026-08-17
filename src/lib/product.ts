@@ -31,6 +31,10 @@ export const SIGNIN_POINTS = [
 /** Live inbox. Named on /terms and /privacy. */
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";
 
+/** Public X account for the paper fund. Cron posts weekday notes here. */
+export const FUND_X_HANDLE = "UpsideFund";
+export const FUND_X_URL = `https://x.com/${FUND_X_HANDLE}`;
+
 /** Named on /terms and /privacy. From the Estonian business register. */
 export const LEGAL_OPERATOR = "Upthink Solutions OÜ";
 

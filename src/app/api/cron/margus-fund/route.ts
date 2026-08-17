@@ -28,6 +28,11 @@ import {
 } from "@/lib/margus-fund";
 import { sanitizeFundWatchlist } from "@/lib/fund-watchlist";
 import { stripReportSerialPrefix } from "@/lib/fund-copy";
+import {
+  composeDailyFundPost,
+  composeWeeklyFundPost,
+} from "@/lib/fund-x-copy";
+import { postTweet, xPostingConfigured } from "@/lib/x-post";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/error-log";
 import { todayKeyInTz } from "@/lib/timezone";
@@ -186,6 +191,10 @@ async function maybeGenerateWeeklyRecap(
     );
     const recap = humanizeMargusTree(rawRecap);
 
+    const { count: existingRecapCount } = await supabase
+      .from(PORTFELL_TABLES.margusFundWeeklyRecaps)
+      .select("id", { count: "exact", head: true });
+
     await supabase.from(PORTFELL_TABLES.margusFundWeeklyRecaps).insert({
       week_ending: weekEnding,
       headline: recap.headline,
@@ -195,6 +204,15 @@ async function maybeGenerateWeeklyRecap(
       portfolio_value_start: portfolioValueStart,
       portfolio_value_end: portfolioValueEnd,
     });
+
+    await maybeTweetFundUpdate(
+      composeWeeklyFundPost({
+        serial: (existingRecapCount ?? 0) + 1,
+        headline: recap.headline,
+        weekReturnPct,
+        spyWeekReturnPct,
+      })
+    );
   } catch (err) {
     await logError({
       source: "server",
@@ -203,6 +221,21 @@ async function maybeGenerateWeeklyRecap(
       path: "/api/cron/margus-fund",
     });
   }
+}
+
+/** Best-effort X post. Never fails the fund run. */
+async function maybeTweetFundUpdate(text: string): Promise<boolean> {
+  if (!xPostingConfigured()) return false;
+  const result = await postTweet(text);
+  if (!result.ok) {
+    await logError({
+      source: "server",
+      message: `Upside Fund X post failed: ${result.error}`,
+      path: "/api/cron/margus-fund",
+    });
+    return false;
+  }
+  return !result.skipped;
 }
 
 /** Vercel Cron (Bearer CRON_SECRET) OR a signed-in superadmin manually
@@ -298,11 +331,12 @@ async function handleGET(req: Request) {
     if (holdingsErr) throw new Error(holdingsErr.message);
     const holdings = (holdingRows ?? []) as FundHolding[];
 
-    const { data: recentReportRows } = await supabase
-      .from(PORTFELL_TABLES.margusFundReports)
-      .select("headline, report_date, portfolio_value")
-      .order("report_date", { ascending: false })
-      .limit(5);
+    const { data: recentReportRows, count: existingReportCount } =
+      await supabase
+        .from(PORTFELL_TABLES.margusFundReports)
+        .select("headline, report_date, portfolio_value", { count: "exact" })
+        .order("report_date", { ascending: false })
+        .limit(5);
     const recentHeadlines = (
       (recentReportRows ?? []) as { headline: string; report_date: string }[]
     ).map((r) => `${r.report_date}: ${stripReportSerialPrefix(r.headline)}`);
@@ -617,6 +651,16 @@ async function handleGET(req: Request) {
       .single();
     if (reportErr) throw new Error(reportErr.message);
 
+    const tweeted = await maybeTweetFundUpdate(
+      composeDailyFundPost({
+        serial: (existingReportCount ?? 0) + 1,
+        headline: decision.headline,
+        dayChangePct,
+        dayChangeDollar,
+        actions,
+      })
+    );
+
     // Fire-and-forget-ish: still awaited so logs/errors are captured in
     // this invocation, but wrapped so a recap issue never fails the
     // (already-committed) daily decision above. Uses the start-of-run
@@ -638,6 +682,7 @@ async function handleGET(req: Request) {
       cash,
       actions: actions.length,
       headline: decision.headline,
+      tweeted,
     });
   } catch (err) {
     await logError({

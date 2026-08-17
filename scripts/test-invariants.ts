@@ -20,6 +20,10 @@ import {
   stripReportSerialPrefix,
 } from "../src/lib/fund-copy";
 import {
+  composeDailyFundPost,
+  composeWeeklyFundPost,
+} from "../src/lib/fund-x-copy";
+import {
   applyYtdAnchor,
   downsampleToWeeks,
   paintBookNavSeries,
@@ -846,6 +850,83 @@ run("fund report headlines number with digits, not spelled-out days", () => {
     numberedReportHeadline("Quiet week, held the book", "Week", 1),
     "Week 1: Quiet week, held your portfolio"
   );
+});
+
+run("Upside Fund X posts stay under 280 and name paper money", () => {
+  const daily = composeDailyFundPost({
+    serial: 3,
+    headline: "Day one: AI\u2011heavy paper portfolio holds steady amid modest market dip",
+    dayChangePct: 0.00361,
+    dayChangeDollar: 180.54,
+    actions: [],
+  });
+  assert.match(daily, /^Day 3: /);
+  assert.match(daily, /AI-heavy paper portfolio/);
+  assert.doesNotMatch(daily, /\u2011/);
+  assert.match(daily, /Paper fund \+0\.4% \(\+\$181\)/);
+  assert.match(daily, /No trades\./);
+  assert.match(daily, /Paper money\. Not a real fund\./);
+  assert.doesNotMatch(daily, /\u2014/);
+  assert.ok([...daily].length <= 280);
+
+  const traded = composeDailyFundPost({
+    serial: 4,
+    headline: "Opened a power name and trimmed a runner",
+    dayChangePct: -0.012,
+    dayChangeDollar: -640,
+    actions: [
+      { type: "buy", ticker: "AMD" },
+      { type: "trim", ticker: "NVDA" },
+      { type: "hold", ticker: "MSFT" },
+    ],
+  });
+  assert.match(traded, /Opened \$AMD/);
+  assert.match(traded, /Trimmed \$NVDA/);
+  assert.doesNotMatch(traded, /\$MSFT/);
+  assert.ok([...traded].length <= 280);
+
+  const weekly = composeWeeklyFundPost({
+    serial: 1,
+    headline: "Quiet week, held the line",
+    weekReturnPct: 0.003885,
+    spyWeekReturnPct: 0.007005,
+  });
+  assert.match(weekly, /^Week 1: /);
+  assert.match(weekly, /Paper fund \+0\.4% vs the S&P \+0\.7%\./);
+  assert.match(weekly, /Paper money\. Not a real fund\./);
+  assert.doesNotMatch(weekly, /\bSPY\b/);
+  assert.ok([...weekly].length <= 280);
+
+  const long = composeDailyFundPost({
+    serial: 12,
+    headline: `${"Word ".repeat(80)}end`,
+    dayChangePct: 0.01,
+    dayChangeDollar: 500,
+    actions: [
+      { type: "buy", ticker: "RKLB" },
+      { type: "buy", ticker: "VST" },
+      { type: "exit", ticker: "RIOT" },
+    ],
+  });
+  assert.ok([...long].length <= 280);
+  assert.match(long, /Paper money\. Not a real fund\.$/);
+});
+
+run("fund cron posts to X after a new daily report", () => {
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/cron/margus-fund/route.ts"),
+    "utf8"
+  );
+  assert.match(route, /composeDailyFundPost/);
+  assert.match(route, /composeWeeklyFundPost/);
+  assert.match(route, /maybeTweetFundUpdate/);
+  assert.match(route, /xPostingConfigured/);
+  const page = readFileSync(
+    join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
+    "utf8"
+  );
+  assert.match(page, /FUND_X_URL/);
+  assert.match(page, /Daily notes on X/);
 });
 
 run("forecast add/trim lines split into bullets", () => {
@@ -1696,6 +1777,10 @@ run("set env values that are not https are rejected", () => {
   assert.equal(
     validateServerEnv({
       NEXT_PUBLIC_SUPABASE_URL: "https://uzrnybyggznpvgxgrvgl.supabase.co",
+      X_API_KEY: "xk_test_key",
+      X_API_SECRET: "xk_test_secret",
+      X_ACCESS_TOKEN: "xk_test_token",
+      X_ACCESS_TOKEN_SECRET: "xk_test_token_secret",
     }).length,
     0
   );

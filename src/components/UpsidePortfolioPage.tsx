@@ -14,6 +14,7 @@ import { PALETTE } from "@/lib/palette";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { isWorkspaceRoomActive } from "@/lib/workspace-rooms";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
+import { FUND_X_URL } from "@/lib/product";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import { concentrationRead, themeBreakdown } from "@/lib/allocation";
@@ -1270,7 +1271,16 @@ export function UpsidePortfolioPage() {
               />
               </WidgetErrorBoundary>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                {UPSIDE_PORTFOLIO_DISCLAIMER}
+                {UPSIDE_PORTFOLIO_DISCLAIMER}{" "}
+                <a
+                  href={FUND_X_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Daily notes on X
+                </a>
+                .
               </p>
             </Panel>
 
