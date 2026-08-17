@@ -489,8 +489,8 @@ function FundPosition({
       <h3 className="text-base font-semibold text-foreground">
         {cashtag(holding.ticker)}
       </h3>
-      <div className="mt-4 grid items-stretch gap-4 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-0">
-        <div className="h-full md:pr-6">
+      <div className="mt-4 grid items-stretch gap-6 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)]">
+        <div className="h-full">
           <Scoreboard
             className="h-full auto-rows-[minmax(min-content,1fr)]"
             cols={2}
@@ -521,7 +521,7 @@ function FundPosition({
             />
           </Scoreboard>
         </div>
-        <div className="h-full border-t border-border pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+        <div className="h-full">
           <div className="flex h-full flex-col gap-px overflow-hidden rounded-xl border border-border bg-border">
             <FundNote label="Thesis" items={thesis} accent="brand" />
             <FundNote label="Sell if" items={exit} accent="loss" />

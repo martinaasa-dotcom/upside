@@ -4702,6 +4702,7 @@ run("Fund page labels Margus's note Thesis", () => {
   assert.match(card, /label="Since buy"/);
   assert.match(card, /label="Sell if"/);
   assert.match(card, /items-stretch/);
+  assert.doesNotMatch(card, /md:border-l/);
   const positions = src.slice(
     src.indexOf("Open positions"),
     src.indexOf("Weekly recap")
