@@ -1,11 +1,10 @@
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import { stripReportSerialPrefix } from "@/lib/fund-copy";
-import { cashtag, signedCurrency, signedPercent } from "@/lib/format";
+import { cashtag, currency, signedCurrency, signedPercent } from "@/lib/format";
 import type { FundAction } from "@/lib/margus-fund";
 import { FUND_X_HANDLE, FUND_X_URL } from "@/lib/product";
 
 export { FUND_X_HANDLE, FUND_X_URL };
-export const FUND_X_FOOTER = "Paper money. Not a real fund.";
 export const TWEET_MAX = 280;
 
 const TRADE_VERB: Record<Exclude<FundAction["type"], "hold">, string> = {
@@ -31,31 +30,43 @@ function clipHeadline(headline: string, budget: number): string {
   return `${base.replace(/[.,;:]+$/, "")}.`;
 }
 
-function moneyLine(
-  changePct: number | null | undefined,
-  changeDollar: number | null | undefined,
-  vsLabel?: string,
-  vsPct?: number | null
-): string | null {
+function finite(n: number | null | undefined): n is number {
+  return n != null && Number.isFinite(n);
+}
+
+/** Two decimals so a +$14 day does not round to 0.0%. */
+function pct(n: number): string {
+  return signedPercent(n, 2);
+}
+
+/**
+ * Dollar P&L, percent, ending value, and the S&P over the same stretch.
+ * Missing S&P is omitted (first day has no prior close in this book).
+ */
+export function fundScoreboard(input: {
+  changePct?: number | null;
+  changeDollar?: number | null;
+  portfolioValue?: number | null;
+  spyChangePct?: number | null;
+}): string | null {
+  const value = finite(input.portfolioValue)
+    ? currency(input.portfolioValue, 0)
+    : null;
+  const dollar = finite(input.changeDollar)
+    ? signedCurrency(input.changeDollar, 0)
+    : null;
+  const change = finite(input.changePct) ? pct(input.changePct) : null;
+  if (!value && !dollar && !change) return null;
+
   const move =
-    changePct != null && Number.isFinite(changePct)
-      ? signedPercent(changePct)
-      : changeDollar != null && Number.isFinite(changeDollar)
-        ? signedCurrency(changeDollar, 0)
-        : null;
-  if (!move) return null;
-  const vs =
-    vsLabel && vsPct != null && Number.isFinite(vsPct)
-      ? ` vs ${vsLabel} ${signedPercent(vsPct)}`
-      : "";
-  const dollars =
-    changePct != null &&
-    Number.isFinite(changePct) &&
-    changeDollar != null &&
-    Number.isFinite(changeDollar)
-      ? ` (${signedCurrency(changeDollar, 0)})`
-      : "";
-  return `Paper fund ${move}${dollars}${vs}.`;
+    dollar && change
+      ? `${dollar} (${change})`
+      : dollar ?? change ?? "flat";
+  const to = value ? ` to ${value}` : "";
+  const spy = finite(input.spyChangePct)
+    ? `. S&P ${pct(input.spyChangePct)}.`
+    : ".";
+  return `Paper fund ${move}${to}${spy}`;
 }
 
 function tradeLine(
@@ -96,8 +107,7 @@ function joinAnd(items: string[]): string {
 }
 
 function assemble(headline: string, mid: string): string {
-  const footer = FUND_X_FOOTER;
-  const wrap = (h: string) => `${h}\n\n${mid}\n\n${footer}`;
+  const wrap = (h: string) => `${h}\n\n${mid}`;
   const full = wrap(headline);
   if (charCount(full) <= TWEET_MAX) return full;
   const overhead = charCount(wrap(""));
@@ -116,10 +126,17 @@ export function composeDailyFundPost(input: {
   headline: string;
   dayChangePct?: number | null;
   dayChangeDollar?: number | null;
+  portfolioValue?: number | null;
+  spyChangePct?: number | null;
   actions: Array<Pick<FundAction, "type" | "ticker">>;
 }): string {
   const title = `Day ${input.serial}: ${cleanHeadline(input.headline)}`;
-  const money = moneyLine(input.dayChangePct, input.dayChangeDollar);
+  const money = fundScoreboard({
+    changePct: input.dayChangePct,
+    changeDollar: input.dayChangeDollar,
+    portfolioValue: input.portfolioValue,
+    spyChangePct: input.spyChangePct,
+  });
   const trades = tradeLine(input.actions);
   const mid = [money, trades].filter(Boolean).join(" ");
   return assemble(title, mid);
@@ -129,15 +146,17 @@ export function composeWeeklyFundPost(input: {
   serial: number;
   headline: string;
   weekReturnPct?: number | null;
+  weekChangeDollar?: number | null;
+  portfolioValue?: number | null;
   spyWeekReturnPct?: number | null;
 }): string {
   const title = `Week ${input.serial}: ${cleanHeadline(input.headline)}`;
   const money =
-    moneyLine(
-      input.weekReturnPct,
-      null,
-      "the S&P",
-      input.spyWeekReturnPct
-    ) ?? "Quiet week on the paper fund.";
+    fundScoreboard({
+      changePct: input.weekReturnPct,
+      changeDollar: input.weekChangeDollar,
+      portfolioValue: input.portfolioValue,
+      spyChangePct: input.spyWeekReturnPct,
+    }) ?? "Quiet week on the paper fund.";
   return assemble(title, money);
 }

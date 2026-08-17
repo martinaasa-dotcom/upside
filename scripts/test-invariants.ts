@@ -852,28 +852,45 @@ run("fund report headlines number with digits, not spelled-out days", () => {
   );
 });
 
-run("Upside Fund X posts stay under 280 and name paper money", () => {
+run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", () => {
   const daily = composeDailyFundPost({
     serial: 3,
     headline: "Day one: AI\u2011heavy paper portfolio holds steady amid modest market dip",
     dayChangePct: 0.00361,
     dayChangeDollar: 180.54,
+    portfolioValue: 50194.25,
+    spyChangePct: 0.004488,
     actions: [],
   });
   assert.match(daily, /^Day 3: /);
   assert.match(daily, /AI-heavy paper portfolio/);
   assert.doesNotMatch(daily, /\u2011/);
-  assert.match(daily, /Paper fund \+0\.4% \(\+\$181\)/);
+  assert.match(daily, /Paper fund \+\$181 \(\+0\.36%\) to \$50,194\. S&P \+0\.45%\./);
   assert.match(daily, /No trades\./);
-  assert.match(daily, /Paper money\. Not a real fund\./);
+  assert.doesNotMatch(daily, /Paper money/);
+  assert.doesNotMatch(daily, /\bSPY\b/);
   assert.doesNotMatch(daily, /\u2014/);
   assert.ok([...daily].length <= 280);
+
+  const firstDay = composeDailyFundPost({
+    serial: 1,
+    headline: "built an 8-position paper portfolio",
+    dayChangePct: 0,
+    dayChangeDollar: 0,
+    portfolioValue: 50000,
+    spyChangePct: null,
+    actions: [{ type: "buy", ticker: "NVDA" }],
+  });
+  assert.match(firstDay, /Paper fund \$0 \(0\.00%\) to \$50,000\./);
+  assert.doesNotMatch(firstDay, /S&P/);
 
   const traded = composeDailyFundPost({
     serial: 4,
     headline: "Opened a power name and trimmed a runner",
     dayChangePct: -0.012,
     dayChangeDollar: -640,
+    portfolioValue: 49360,
+    spyChangePct: -0.004,
     actions: [
       { type: "buy", ticker: "AMD" },
       { type: "trim", ticker: "NVDA" },
@@ -882,6 +899,7 @@ run("Upside Fund X posts stay under 280 and name paper money", () => {
   });
   assert.match(traded, /Opened \$AMD/);
   assert.match(traded, /Trimmed \$NVDA/);
+  assert.match(traded, /S&P -0\.40%\./);
   assert.doesNotMatch(traded, /\$MSFT/);
   assert.ok([...traded].length <= 280);
 
@@ -889,11 +907,13 @@ run("Upside Fund X posts stay under 280 and name paper money", () => {
     serial: 1,
     headline: "Quiet week, held the line",
     weekReturnPct: 0.003885,
+    weekChangeDollar: 194.25,
+    portfolioValue: 50194.25,
     spyWeekReturnPct: 0.007005,
   });
   assert.match(weekly, /^Week 1: /);
-  assert.match(weekly, /Paper fund \+0\.4% vs the S&P \+0\.7%\./);
-  assert.match(weekly, /Paper money\. Not a real fund\./);
+  assert.match(weekly, /Paper fund \+\$194 \(\+0\.39%\) to \$50,194\. S&P \+0\.70%\./);
+  assert.doesNotMatch(weekly, /Paper money/);
   assert.doesNotMatch(weekly, /\bSPY\b/);
   assert.ok([...weekly].length <= 280);
 
@@ -902,6 +922,8 @@ run("Upside Fund X posts stay under 280 and name paper money", () => {
     headline: `${"Word ".repeat(80)}end`,
     dayChangePct: 0.01,
     dayChangeDollar: 500,
+    portfolioValue: 50500,
+    spyChangePct: 0.008,
     actions: [
       { type: "buy", ticker: "RKLB" },
       { type: "buy", ticker: "VST" },
@@ -909,7 +931,8 @@ run("Upside Fund X posts stay under 280 and name paper money", () => {
     ],
   });
   assert.ok([...long].length <= 280);
-  assert.match(long, /Paper money\. Not a real fund\.$/);
+  assert.match(long, /to \$50,500/);
+  assert.doesNotMatch(long, /Paper money/);
 });
 
 run("fund cron posts to X after a new daily report", () => {

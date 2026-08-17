@@ -210,6 +210,8 @@ async function maybeGenerateWeeklyRecap(
         serial: (existingRecapCount ?? 0) + 1,
         headline: recap.headline,
         weekReturnPct,
+        weekChangeDollar: portfolioValueEnd - portfolioValueStart,
+        portfolioValue: portfolioValueEnd,
         spyWeekReturnPct,
       })
     );
@@ -334,7 +336,9 @@ async function handleGET(req: Request) {
     const { data: recentReportRows, count: existingReportCount } =
       await supabase
         .from(PORTFELL_TABLES.margusFundReports)
-        .select("headline, report_date, portfolio_value", { count: "exact" })
+        .select("headline, report_date, portfolio_value, spy_price", {
+          count: "exact",
+        })
         .order("report_date", { ascending: false })
         .limit(5);
     const recentHeadlines = (
@@ -343,6 +347,9 @@ async function handleGET(req: Request) {
     const previousValue =
       (recentReportRows?.[0] as { portfolio_value?: number } | undefined)
         ?.portfolio_value ?? null;
+    const previousSpy =
+      (recentReportRows?.[0] as { spy_price?: number | null } | undefined)
+        ?.spy_price ?? null;
 
     const heldTickers = holdings.map((h) => h.ticker);
     const { quotes } = await fetchQuotesWithFallback([...heldTickers, "SPY"]);
@@ -368,6 +375,10 @@ async function handleGET(req: Request) {
 
     const spyQuote = quotes.SPY;
     const spyMovePct = spyQuote ? spyQuote.changePercent : null;
+    const spyChangePct =
+      spyQuote?.price && previousSpy && previousSpy > 0
+        ? (spyQuote.price - previousSpy) / previousSpy
+        : null;
 
     const chain = buildAdvisorProviderChain({ reasoning: true });
     if (chain.length === 0) {
@@ -657,6 +668,8 @@ async function handleGET(req: Request) {
         headline: decision.headline,
         dayChangePct,
         dayChangeDollar,
+        portfolioValue: totalValueAfter,
+        spyChangePct,
         actions,
       })
     );
