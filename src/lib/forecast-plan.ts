@@ -609,7 +609,7 @@ Requirements:
 7. Consistency: if the reason you own the names is unchanged from a prior run, keep year-end prices in a similar neighborhood. Do not randomly reshuffle for no reason.
 8. Do not invent fake share counts or claim trades already happened.
 9. Be concise.
-10. Frame everything as a modeled scenario for the user's own thinking, never as a personalized recommendation or a guarantee.`;
+10. Frame everything as a modeled scenario for the user's own thinking, never as a personalized recommendation or a guarantee. Write checks, not orders. Never "trim $RKLB now" or "add software today". "A modeled take-off: $RKLB from 14% to about 9% if X" is the shape.`;
 }
 
 export function planEoyPaths(

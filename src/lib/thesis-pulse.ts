@@ -84,7 +84,7 @@ export type PulseCheck = {
   action: PulseAction;
   /** Suggested trim size when action=trim, e.g. 15 means trim 15% of position. */
   trimPct?: number | null;
-  /** When to add — "Add now ~$X" or "Add now · more below ~$Y". Empty if trim. */
+  /** Modeled add check, e.g. "A level to think about: around $X. Then another look if it drops to around $Y." Empty if trim. */
   addLevel: string;
   verdict: string;
   /**
@@ -653,8 +653,8 @@ function composeDistinctScanLine(row: {
   if (action === "trim") {
     const size =
       check?.trimPct != null && Number.isFinite(check.trimPct)
-        ? `Trim about ${check.trimPct}%`
-        : "Take a little off";
+        ? `One check: selling about ${check.trimPct}%`
+        : "One check: selling a little into the run";
     lines.push(
       taggedScanLine(
         ticker,
@@ -671,7 +671,7 @@ function composeDistinctScanLine(row: {
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. A dip to add if the reason you own it still holds`
+        `${move} ${when}. A dip people sometimes add to if the reason still holds`
       )
     );
   } else if (action === "sell") {
@@ -854,7 +854,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: `Take a little off ${cashtag(candidate.ticker)}. It ran ${movePct}. The reason you own it is the same.`,
+      verdict: `One check on ${cashtag(candidate.ticker)}: selling a little into the run. It ran ${movePct}. The reason you own it is the same.`,
       thesisBreak: "",
     };
   }
@@ -872,10 +872,10 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       earningsNote: "",
       action: "add",
       trimPct: null,
-      addLevel: `Add now ~$${price} · then more if it drops to ~${(
+      addLevel: `A level to think about: around $${price}. Then another look if it drops to around ${(
         candidate.price * 0.92
-      ).toFixed(2)}`,
-      verdict: `If you still believe the story, ${cashtag(candidate.ticker)} at $${price} is a dip to add, not a sell.`,
+      ).toFixed(2)}.`,
+      verdict: `If you still believe the story, ${cashtag(candidate.ticker)} at $${price} is a dip people sometimes add to, not a sell.`,
       thesisBreak: "",
     };
   }

@@ -395,16 +395,18 @@ function weekActionLine(input: {
   const down = input.weekPct != null && input.weekPct <= -0.03;
   const upHot = input.weekPct != null && input.weekPct >= 0.08;
 
-  if (risk || action === "sell") return "Thesis broken. Do not add this week.";
+  if (risk || action === "sell") {
+    return "Thesis broken. Adding here would make a broken story bigger.";
+  }
   if (action === "trim") {
-    return "Thesis intact. If it ran too far, sell some. Otherwise do nothing.";
+    return "Thesis intact. If it ran too far, selling some is one way to take heat off. Sitting still is fine too.";
   }
   if (watch || action === "watch") return "Wait. Best thing this week is to wait.";
   if (action === "add" || (intact && down)) {
-    return "Thesis intact. Look to add this week on the dip.";
+    return "Thesis intact. A dip this week is where people who still believe the reason sometimes add.";
   }
   if (intact && upHot) {
-    return "Thesis intact. If it ran too far, sell some. Otherwise do nothing.";
+    return "Thesis intact. If it ran too far, selling some is one way to take heat off. Sitting still is fine too.";
   }
   if (intact || action === "hold") {
     return "Thesis intact. Best thing this week is nothing.";
@@ -468,11 +470,15 @@ function dayActionLine(input: {
     status.includes("shaky");
   const down = input.overnightPct != null && input.overnightPct <= -0.02;
 
-  if (risk || action === "sell") return "Do not add today.";
-  if (action === "trim") return "If it runs, sell some. Don't chase.";
+  if (risk || action === "sell") {
+    return "Thesis broken. Adding today would make a broken story bigger.";
+  }
+  if (action === "trim") {
+    return "If it runs, selling some is one way not to chase.";
+  }
   if (watch || action === "watch") return "Wait. Best thing today is to wait.";
   if (action === "add" || (intact && down)) {
-    return "Thesis intact. Look to add if it dips.";
+    return "Thesis intact. A dip is where people who still believe the reason sometimes add.";
   }
   return null;
 }
@@ -582,11 +588,11 @@ function morningLead(input: {
       subjectHook: `${cashtag(gap.ticker)} ${signedPct(gap.pct)} overnight`,
     };
   }
-  const add = input.watches.find((w) => /look to add/i.test(w.line));
+  const add = input.watches.find((w) => /sometimes add/i.test(w.line));
   if (add?.ticker) {
     return {
-      lead: `${cashtag(add.ticker)}. Thesis intact. Look to add if it dips.`,
-      subjectHook: `Look to add ${cashtag(add.ticker)}`,
+      lead: `${cashtag(add.ticker)}. Thesis intact. A dip is where people who still believe the reason sometimes add.`,
+      subjectHook: `Dip check on ${cashtag(add.ticker)}`,
     };
   }
   if (input.watches[0]) {

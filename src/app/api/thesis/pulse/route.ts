@@ -148,10 +148,10 @@ ${insightsPromptBlock(
   - **sell** = the reason they own it is actually **broken**. You're exiting because that reason is gone, not because it went up too much.
 - **intact reason + red day** on a name they are very sure about (AI computer builders, chip makers, electricity for data centers, space, or any name whose multi-year story is unbroken): lean **add**, not hold. A quiet down day that didn't break the multi-year story is a **steal**, not a trim signal. This is about why they own it, not a fixed ticker list; apply it to whatever the user actually holds.
 - If a line ran hard and the reason is still intact: prefer **trim** with a size, and set thesisStatus to **intact**. Happy news. Not a warning.
-- **addLevel**: always give a concrete, self-explanatory price plan when the reason is intact or action is add:
-  - \`Add now ~$X\` when spot is already attractive (e.g. after a −5–10% flush).
-  - Or \`Add now ~$X · then more if it drops to ~$Y\` where Y is **realistic** (~5–12% under spot, not fantasy). Spell out that Y is a second, lower buy trigger, never bare jargon like "stagger below".
-  - Example RKLB ~$80 after −7% AH: \`Add now ~$80 · then more if it drops to ~$72\`, NOT "wait for $50".
+- **addLevel**: always give a concrete, self-explanatory price check when the reason is intact or action is add. Never write orders.
+  - \`A level to think about: around $X\` when spot already looks like a dip (e.g. after a 5-10% drop).
+  - Or \`A level to think about: around $X. Then another look if it drops to around $Y\` where Y is **realistic** (about 5-12% under spot, not fantasy). Spell out that Y is a second, lower level, never bare jargon like "stagger below".
+  - Example RKLB around $80 after a 7% after-hours drop: \`A level to think about: around $80. Then another look if it drops to around $72\`, NOT "wait for $50". Never write "Add now".
 - Use **hold** only when you would not deploy (max concentration, no cash story) but aren't ready to sell either. Hold never pairs with a broken reason.
 - Use **sell** only when thesisStatus is broken. Never use **trim** for a broken reason. Never use **hold** for a broken reason either: that's what puts a Hold badge next to "Thesis broken".
 - On a screen with multiple intact dips, **most** names should be **add**, not all hold.
@@ -180,7 +180,7 @@ For **each** ticker:
 6. **trimPct**: only when action=trim, choose 10, 15, 20, 25, 30 (% of position). Never set for sell.
 7. **addLevel**: price trigger string (required for add; required for intact+down; empty for trim/sell).
 8. **earningsNote**: if relevant; else empty string.
-9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own THIS name. Unique in this report. Name the company, the headline, or a concrete number.
+9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own THIS name, as a check, never an order. Unique in this report. Name the company, the headline, or a concrete number. Never write do not add, sell some, look to add, or trim 10% as an instruction.
 
 **summary**: one short sentence on the portfolio as a whole. Name the 5% movers (up or down) and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with "the sharp drop".
 

@@ -17,18 +17,20 @@ import type { NoteReport } from "@/lib/note-report";
 
 const JOB: Record<NoteReport["kind"], string> = {
   morning: `This is the morning note. Look ahead, not back.
-What should this person watch today, what can they ignore, and is there one thing worth doing or is the move "do nothing".
+What should this person watch today, what can they ignore, and is there one check worth sitting with or is the move to do nothing.
+Never write orders. No "do not add", "sell some", "look to add", "buy more". Frame as a check. Always their call.
 Do not recap yesterday's regular session. Overnight and today's calendar only.`,
   close: `This is the after-close note. Recap the day for THIS portfolio.
 What actually happened, who did it, and whether the reason they own the loud name still holds.
-No new trade plan unless the day's facts changed the story.`,
+No new trade plan unless the day's facts changed the story. Never write orders. Frame as a check. Always their call.`,
   sunday: `This is the Sunday note. Write a complete thought, not a pile of leftover lines.
 
 Part 1. A short story of the week for this portfolio. Two to four sentences that connect. What happened, which names did it, what that means from here. Read it out loud. If it sounds like three unrelated texts, rewrite it.
 
 Part 2. A blank line, then a bullet list. One bullet per name under Loud movers. Every one of them. Start each line with "- " then the cashtag, the week's move, and one short clause. If Loud movers is empty, skip the list.
 
-Do not copy the Worth noticing or next-weeks lines. Write your own story from the numbers. Say "your portfolio", never book or sheet.`,
+Do not copy the Worth noticing or next-weeks lines. Write your own story from the numbers. Say "your portfolio", never book or sheet.
+Never write orders. No "do not add", "sell some", "look to add". Frame as a check. Always their call.`,
 };
 
 /** Phrases that only show up when the model dumps the prompt instead of the note. */

@@ -19,10 +19,10 @@ import { Bot, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const CONVICTION_LABELS: Record<ConvictionLevel, string> = {
-  1: "Weak, watching for an exit",
-  2: "Below average, trimming candidate",
+  1: "Weak, watching the reason",
+  2: "Below average, the size may be big",
   3: "Neutral, holding as-is",
-  4: "Strong, comfortable adding",
+  4: "Strong, still believe the reason",
   5: "Max, you're sure why you own it",
 };
 

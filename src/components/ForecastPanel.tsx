@@ -1260,7 +1260,7 @@ export function ForecastPanel({
             {activePeriod && (
               <div className="space-y-4">
                 <div>
-                  <MicroLabel>Where he&apos;d add or trim</MicroLabel>
+                  <MicroLabel>Modeled checks for this stretch</MicroLabel>
                   <p className="mt-2 text-sm font-semibold text-foreground">
                     {activePeriod.theme}
                   </p>

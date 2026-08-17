@@ -373,16 +373,18 @@ function PulseCard({
           )}
           {trimLine ? (
             <p className="font-medium text-brand-bright">
-              Trim about {shown?.trimPct}% into this strength.
+              One check: selling about {shown?.trimPct}% into this strength.
             </p>
           ) : null}
           {shown?.addLevel ? (
-            <p className="font-medium text-foreground">{shown.addLevel}</p>
+            <p className="font-medium text-foreground">
+              {humanizeMargusText(shown.addLevel)}
+            </p>
           ) : null}
           {shown?.verdict &&
           !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
             <p className="text-base leading-relaxed text-foreground">
-              {shown.verdict}
+              {humanizeMargusText(shown.verdict)}
             </p>
           ) : null}
           {shown?.earningsNote ? (

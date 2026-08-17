@@ -38,7 +38,7 @@ export const pulseReportSchema = z.object({
       action: z
         .enum(["add", "hold", "trim", "sell", "watch"])
         .describe(
-          "add = buy more on an intact dip. hold = no change, reason intact or watch, never broken. trim = take some profit on a winner that ran too hot. Pair with intact. A run-up is the story working, never Thesis watch. sell = the reason is broken and you're exiting, not taking profit. watch = wait for clarity."
+          "add = a dip-check on an intact reason. hold = no change, reason intact or watch, never broken. trim = a take-off check on a winner that ran. Pair with intact. A run-up is the story working, never Thesis watch. sell = the reason is broken, an exit check, not taking profit. watch = wait for clarity. Verdict and addLevel must read as checks, never orders like Add now or Trim about 10%."
         ),
       trimPct: z
         .number()
@@ -47,12 +47,12 @@ export const pulseReportSchema = z.object({
         .nullable()
         .optional()
         .describe(
-          "Only when action=trim: percent of position to trim as take-profit (e.g. 10, 15, 20). Null otherwise, including for sell."
+          "Only when action=trim: modeled percent of the position for a take-off check (e.g. 10, 15, 20). Null otherwise, including for sell. Never write 'trim 10%' as an order in verdict."
         ),
       addLevel: z
         .string()
         .describe(
-          'Concrete, self-explanatory add trigger, e.g. "Add now ~$X · then more if it drops to ~$Y". Spell out that Y is a SECOND, lower buy trigger, never just "stagger below" jargon. Required when action=add or the reason is intact on a dip. Empty only for trim. Not greedy, Y within ~5-12% below spot.'
+          'Modeled add check, e.g. "A level to think about: around $X. Then another look if it drops to around $Y." Spell out that Y is a SECOND, lower level, never just "stagger below" jargon. Required when action=add or the reason is intact on a dip. Empty only for trim. Not greedy, Y within about 5-12% below spot. Never write Add now.'
         ),
       earningsNote: z
         .string()
@@ -62,7 +62,7 @@ export const pulseReportSchema = z.object({
       verdict: z
         .string()
         .describe(
-          "One sentence tying action + addLevel/trimPct to why they own THIS name. Must not match any other ticker's verdict in this report. Name the company, the headline, or a concrete number. Never reuse a stock phrase like 'looks like a chase, not a new story' or 'this is a dip to add, not a sell' on a second name."
+          "One sentence tying action + addLevel/trimPct to why they own THIS name, as a check, never an order. Must not match any other ticker's verdict in this report. Name the company, the headline, or a concrete number. Never reuse a stock phrase like 'looks like a chase, not a new story' or 'this is a dip to add, not a sell' on a second name. Never write do not add, sell some, look to add, or trim 10% as an instruction."
         ),
       thesisBreak: z
         .string()

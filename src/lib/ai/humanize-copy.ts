@@ -141,10 +141,72 @@ function scrubMarketJargon(text: string): string {
   return s;
 }
 
+/** Kill leftover buy/sell orders the model still emits. Ban lists may
+ * name the phrases. Output must read as a check, never an instruction. */
+function scrubTradeOrders(text: string): string {
+  if (!text) return text;
+  let s = text;
+  s = s.replace(
+    /\bIf it runs, sell some\.?/gi,
+    "If it runs, selling some is one way not to chase."
+  );
+  s = s.replace(
+    /\bIf it ran too far, sell some\.?/gi,
+    "If it ran too far, selling some is one way to take heat off."
+  );
+  s = s.replace(/\bDon'?t chase\.?/gi, "Chasing a run is how people overpay.");
+  s = s.replace(/\bDo not chase\.?/gi, "Chasing a run is how people overpay.");
+  s = s.replace(
+    /\bDo not add this week\.?/gi,
+    "Adding here would make a broken story bigger."
+  );
+  s = s.replace(
+    /\bDo not add today\.?/gi,
+    "Adding today would make a broken story bigger."
+  );
+  s = s.replace(
+    /\bDo not add\b/gi,
+    "Adding is how a broken story gets bigger"
+  );
+  s = s.replace(
+    /\bDon'?t add\b/gi,
+    "Adding is how a broken story gets bigger"
+  );
+  s = s.replace(
+    /\bLook to add this week on the dip\.?/gi,
+    "A dip this week is where people who still believe the reason sometimes add."
+  );
+  s = s.replace(
+    /\bLook to add if it dips\.?/gi,
+    "A dip is where people who still believe the reason sometimes add."
+  );
+  s = s.replace(
+    /\bLook to add\b/gi,
+    "A dip is a place people sometimes add"
+  );
+  s = s.replace(
+    /\bTrim about (\d+)\s*%/gi,
+    "One check: selling about $1%"
+  );
+  s = s.replace(/\bAdd now\s*~?\s*/gi, "A level to think about: around ");
+  s = s.replace(/\bYou should not add\b/gi, "Adding is how a broken story gets bigger");
+  s = s.replace(/\bYou should sell\b/gi, "Selling is one check");
+  s = s.replace(/\bYou should buy\b/gi, "Buying is one check");
+  s = s.replace(/\bYou should add\b/gi, "Adding is one check");
+  s = s.replace(
+    /\bI recommend (buying|selling|adding|trimming)\b/gi,
+    "One check is $1"
+  );
+  s = s.replace(/[ \t]{2,}/g, " ");
+  return s;
+}
+
 /** Full pass for a single Margus string. */
 export function humanizeMargusText(text: string): string {
   if (!text) return text;
-  return scrubAiPhrases(stripAiDashes(scrubMarketJargon(text)));
+  return scrubAiPhrases(
+    stripAiDashes(scrubTradeOrders(scrubMarketJargon(text)))
+  );
 }
 
 /**

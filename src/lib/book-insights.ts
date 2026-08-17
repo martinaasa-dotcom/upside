@@ -107,7 +107,7 @@ const NEXT_GROUP: Partial<
     {
       need: "index",
       line: (share) =>
-        `${sharePct(share)} is crypto. A bad year there is a bad year for the whole portfolio. A broad fund next to it is how people keep one crash from being the only story. If crypto is more than half, that is the risk. Own it on purpose or cut it.`,
+        `${sharePct(share)} is crypto. A bad year there is a bad year for the whole portfolio. A broad fund next to it is how people keep one crash from being the only story. If crypto is more than half, that is the risk. Either you meant that weight, or the mix is the thing to sit with.`,
     },
   ],
   space: [

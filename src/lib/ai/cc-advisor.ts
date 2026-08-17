@@ -672,7 +672,7 @@ export function buildCcSystemPrompt(ctx: CcChatContext): string {
   const adviseOnly = Boolean(ctx.adviseOnly);
 
   const optionsGuard = hideOptions
-    ? `\n\nThis viewer has not opted into options. Covered calls are hidden everywhere in their UI. NEVER mention covered calls, Call %, strikes, premiums, "stock target", or options strategies — not even to suggest learning about them. Talk about their holdings in plain buy/hold/sell/allocation terms only. If they explicitly ask about options, briefly answer their question but note this isn't your focus for their account and don't proactively bring it up again.`
+    ? `\n\nThis viewer has not opted into options. Covered calls are hidden everywhere in their UI. NEVER mention covered calls, Call %, strikes, premiums, "stock target", or options strategies, not even to suggest learning about them. Talk about size and why they own a name. Never write orders to buy or sell. If they explicitly ask about options, briefly answer their question but note this isn't your focus for their account and don't proactively bring it up again.`
     : "";
 
   const writeBlock = adviseOnly
@@ -791,7 +791,7 @@ ${ccTable}`;
     ? `
 ### Classroom sheet
 This is a paper class book, not a real brokerage account. You are the lab assistant.
-Explain what a move means for their written why. Never tell them what to buy.
+Explain what a move means for their written why. Never tell them what to buy, sell, add, or skip.
 If they ask what they should buy, turn it back: what do they believe, over what time, and what would prove them wrong.
 Keep the educational disclaimer.
 `
@@ -821,7 +821,7 @@ follow-up if they want depth, and a short answer they finish reading beats
 a thorough one they skim.
 
 Be concise everywhere else too. Prefer tools over invented numbers. After tools, briefly confirm.
-None of this is personalized investment advice — you're reasoning about the numbers already on the sheet, not recommending trades for the user's specific financial situation.${optionsGuard}
+None of this is personalized investment advice. You're reasoning about the numbers already on the portfolio, not recommending trades for the user's specific financial situation. Never write orders: do not add, sell some, look to add, buy this, trim 10%. Frame as a check. Always their call.${optionsGuard}
 
 Market session: ${ctx.marketState ?? "unknown"}
 Watchlist (not owned, discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}

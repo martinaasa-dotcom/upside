@@ -1076,6 +1076,23 @@ run("humanize kills leftover market slang", () => {
     humanizeMargusText("Paste from a spreadsheet."),
     "Paste from a spreadsheet."
   );
+  assert.doesNotMatch(humanizeMargusText("Do not add today."), /do not add/i);
+  assert.match(
+    humanizeMargusText("If it runs, sell some. Don't chase."),
+    /selling some is one way not to chase/i
+  );
+  assert.doesNotMatch(
+    humanizeMargusText("Look to add if it dips."),
+    /look to add/i
+  );
+  assert.match(
+    humanizeMargusText("Trim about 15% into this strength."),
+    /One check: selling about 15%/
+  );
+  assert.match(
+    humanizeMargusText("Add now ~$80"),
+    /A level to think about: around \$80/
+  );
 });
 
 run("Sunday note never ships the writing brief", () => {
@@ -4118,6 +4135,55 @@ run("Fund page shows one latest report then View more in sevens", () => {
   assert.match(src, /weeklyRecaps\.slice\(0, weeklyVisible\)/);
   assert.match(src, /reports\.slice\(0, dailyVisible\)/);
   assert.doesNotMatch(src, /weeklyRecaps\.map\(/);
+});
+
+run("Margus never writes trade orders to a person", () => {
+  const notes = readFileSync(join(process.cwd(), "src/lib/note-report.ts"), "utf8");
+  const pulseUi = readFileSync(
+    join(process.cwd(), "src/components/PulsePage.tsx"),
+    "utf8"
+  );
+  const pulseLib = readFileSync(
+    join(process.cwd(), "src/lib/thesis-pulse.ts"),
+    "utf8"
+  );
+  const insights = readFileSync(
+    join(process.cwd(), "src/lib/book-insights.ts"),
+    "utf8"
+  );
+  const forecastUi = readFileSync(
+    join(process.cwd(), "src/components/ForecastPanel.tsx"),
+    "utf8"
+  );
+  const drawer = readFileSync(
+    join(process.cwd(), "src/components/TickerDrawer.tsx"),
+    "utf8"
+  );
+  const persona = readFileSync(
+    join(process.cwd(), "src/lib/ai/margus-persona.ts"),
+    "utf8"
+  );
+  const humanize = readFileSync(
+    join(process.cwd(), "src/lib/ai/humanize-copy.ts"),
+    "utf8"
+  );
+  const chat = readFileSync(
+    join(process.cwd(), "src/lib/ai/cc-advisor.ts"),
+    "utf8"
+  );
+  for (const src of [notes, pulseUi, pulseLib, insights, forecastUi, drawer]) {
+    assert.doesNotMatch(src, /Do not add today/);
+    assert.doesNotMatch(src, /Look to add if it dips/);
+    assert.doesNotMatch(src, /Don't chase/);
+    assert.doesNotMatch(src, /Add now ~/);
+  }
+  assert.doesNotMatch(pulseUi, /Trim about \{/);
+  assert.doesNotMatch(notes, /If it runs, sell some/);
+  assert.doesNotMatch(insights, /Own it on purpose or cut it/);
+  assert.match(persona, /Never write trade orders/);
+  assert.match(humanize, /function scrubTradeOrders/);
+  assert.match(chat, /Never write orders/);
+  assert.match(forecastUi, /Modeled checks for this stretch/);
 });
 
 run("prompts do not teach the model trader words as working vocab", () => {
