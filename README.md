@@ -47,4 +47,9 @@ See `.env.example` for the full list. Market data uses Yahoo first, then optiona
 npm run lint
 npm run typecheck
 npm run test:invariants
+npm run dr:export
+npm run dr:restore
+npm run migrate:online -- --lint supabase/migrations/054_example.sql
 ```
+
+Ops: `docs/DISASTER_RECOVERY.md`, `docs/ZERO_DOWNTIME_MIGRATIONS.md`.

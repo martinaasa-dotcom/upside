@@ -47,7 +47,7 @@ export const serverEnvSchema = z.object({
   SUPABASE_PROJECT_REF: z
     .string()
     .trim()
-    .regex(/^[a-z0-9]{20}$/i, "must be a 20-char Supabase project ref")
+    .regex(/^[a-z0-9]{8,}$/i, "must be a Supabase project ref")
     .optional(),
   SNAPSHOT_ENCRYPTION_KEY: z.string().trim().min(32).optional(),
   DR_S3_ENDPOINT: httpsOrigin.optional(),

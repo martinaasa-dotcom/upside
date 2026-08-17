@@ -43,3 +43,6 @@ next-env.d.ts
 
 # supabase CLI
 supabase/.temp/
+
+# local disaster-recovery dry runs
+.dr-local/
