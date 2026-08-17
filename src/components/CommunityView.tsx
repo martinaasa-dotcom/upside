@@ -2596,13 +2596,16 @@ export function CommunityView({ communityId }: Props) {
               <h3 className="text-base font-semibold text-foreground">
                 Community settings
               </h3>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setSettingsOpen(false)}
-                className="shrink-0 rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
+                aria-label="Close"
+                className="touch-target shrink-0 sm:size-7"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X />
+              </Button>
             </div>
 
             <label className="block text-xs font-medium text-muted-foreground">
@@ -2785,13 +2788,16 @@ export function CommunityView({ communityId }: Props) {
                   gets the animal that fits. A fun lens, not a grade.
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setBestiaryOpen(false)}
-                className="shrink-0 rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
+                aria-label="Close"
+                className="touch-target shrink-0 sm:size-7"
               >
-                <X className="h-4 w-4" />
-              </button>
+                <X />
+              </Button>
             </div>
             <div className="flex flex-col mt-4 gap-3">
               {ANIMAL_BESTIARY.map((a) => {

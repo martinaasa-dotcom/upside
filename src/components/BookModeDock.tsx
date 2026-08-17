@@ -120,7 +120,7 @@ export function BookModeDock({
           ITEM,
           active
             ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:text-primary"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         );
         if (onSelectMode) {
           return (

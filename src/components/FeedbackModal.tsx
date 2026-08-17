@@ -117,16 +117,18 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
           >
             {mode === "weekly" ? "How was this week?" : "Tell Upside"}
           </h3>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             disabled={busy}
             aria-label="Close"
             title="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 sm:p-1.5"
+            className="touch-target sm:size-7"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X />
+          </Button>
         </div>
 
         {sent ? (

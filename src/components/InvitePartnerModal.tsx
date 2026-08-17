@@ -149,14 +149,16 @@ export function InvitePartnerModal({
               peek.
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="touch-target sm:size-7"
             aria-label="Close"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X />
+          </Button>
         </div>
 
         <label className="mt-4 flex flex-col gap-1">

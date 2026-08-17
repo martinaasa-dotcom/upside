@@ -164,7 +164,7 @@ export function MobileTabBar({
                   "flex h-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium transition",
                   on
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
                 <span className="relative">

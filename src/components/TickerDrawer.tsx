@@ -1,6 +1,7 @@
 "use client";
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
+import { Button } from "@/components/ui/button";
 import { currency, percent, signedPercent, cn, cashtag } from "@/lib/format";
 import { Card, MicroLabel, Pill, Segmented, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { Textarea } from "@/components/ui/textarea";
@@ -164,14 +165,16 @@ export function TickerDrawer({
               {roi != null ? ` · ${percent(roi)} vs cost` : ""}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
+            variant="ghost"
+            size="icon"
             aria-label="Close"
-            className="touch-target shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            className="touch-target shrink-0"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X />
+          </Button>
         </div>
 
         <div className="flex-1 gap-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">

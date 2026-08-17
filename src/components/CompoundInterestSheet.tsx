@@ -69,6 +69,7 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
+import { Button } from "@/components/ui/button";
 
 type CurrencyCode = DisplayCurrency;
 
@@ -962,18 +963,19 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             hero
             title={`Where ${durationLabel} of this gets you`}
             actions={
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => void copyPostcard()}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition hover:border-foreground/20 hover:text-foreground sm:w-auto"
+                className="w-full sm:w-auto"
               >
                 {copied ? (
-                  <Copy className="h-3.5 w-3.5 text-gain" />
+                  <Copy className="text-gain" data-icon="inline-start" />
                 ) : (
-                  <Share2 className="h-3.5 w-3.5" />
+                  <Share2 data-icon="inline-start" />
                 )}
                 {copied ? "Copied" : "Copy summary"}
-              </button>
+              </Button>
             }
           />
 

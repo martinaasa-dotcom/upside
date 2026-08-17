@@ -22,6 +22,7 @@ import {
   SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -639,15 +640,15 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 ))}
               </NativeSelect>
             </label>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => void load(ticker, true)}
               disabled={loading}
-              className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-foreground/80 hover:border-foreground/20 disabled:opacity-50 md:min-h-0 md:py-1.5"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               <span className="hidden sm:inline">Refresh</span>
-            </button>
+            </Button>
           </div>
         </div>
       </Panel>
@@ -704,14 +705,14 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
             <PanelHeader title="Daily rhythm within the month" />
             <div className="mt-4">
               <div className="mb-4 flex items-center justify-between gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => shiftViewMonth(-1)}
-                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft data-icon="inline-start" />
                   <span className="hidden sm:inline">Prev</span>
-                </button>
+                </Button>
                 <div className="min-h-10 text-center">
                   <p className="text-sm font-semibold text-foreground">
                     {viewMonthName} {selectedDay}
@@ -729,14 +730,14 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                     </button>
                   )}
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => shiftViewMonth(1)}
-                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
                 >
                   <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                  <ChevronRight data-icon="inline-end" />
+                </Button>
               </div>
               <div className="mb-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-12">
                 {MONTH_SHORT.map((label, idx) => {

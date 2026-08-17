@@ -104,14 +104,16 @@ export function YtdAnchorModal({
               number sets how big the year actually was.
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
+            className="touch-target sm:size-7"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X />
+          </Button>
         </div>
 
         <label className="grid gap-1 text-sm text-muted-foreground">

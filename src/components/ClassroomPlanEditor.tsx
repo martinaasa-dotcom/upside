@@ -11,6 +11,7 @@ import {
 } from "@/lib/classroom";
 import { cn } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   NativeSelect,
@@ -199,15 +200,15 @@ export function ClassroomPlanEditor({
         {draftError ? (
           <p className="text-sm text-loss">{draftError}</p>
         ) : null}
-        <button
+        <Button
           type="button"
+          variant="outline"
           disabled={busy || !draftStart}
           onClick={addStretch}
-          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-foreground hover:text-foreground disabled:opacity-40"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus data-icon="inline-start" />
           Add stretch
-        </button>
+        </Button>
       </div>
     </div>
   );

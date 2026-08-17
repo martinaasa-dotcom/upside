@@ -599,15 +599,15 @@ export function AccountPage() {
                   One JSON file: profile, sheets, holdings, Lab state.
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => void exportData()}
                 disabled={exporting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-foreground/20 disabled:opacity-60"
               >
-                <Download className="h-3.5 w-3.5" />
+                <Download data-icon="inline-start" />
                 {exporting ? "Preparing …" : "Export my data"}
-              </button>
+              </Button>
             </div>
             {exportErr && <p className="text-sm text-loss">{exportErr}</p>}
 
