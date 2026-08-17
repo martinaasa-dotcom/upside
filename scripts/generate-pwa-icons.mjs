@@ -17,35 +17,11 @@ function radiusFor(size) {
   return size * 0.225;
 }
 
-function strokeFor(size) {
-  if (size <= 48) return 2;
-  return Math.max(3, Math.round((size * 2.4) / 128));
-}
-
 function maskSvg(size) {
   const r = radiusFor(size).toFixed(2);
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
       <rect width="${size}" height="${size}" rx="${r}" ry="${r}" fill="white"/>
-    </svg>`
-  );
-}
-
-function rimSvg(size) {
-  const r = radiusFor(size);
-  const sw = strokeFor(size);
-  const m = sw / 2;
-  const inner = size - sw;
-  return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#F0D7A4"/>
-          <stop offset="0.5" stop-color="#D6AD69"/>
-          <stop offset="1" stop-color="#9C723F"/>
-        </linearGradient>
-      </defs>
-      <rect x="${m}" y="${m}" width="${inner}" height="${inner}" rx="${Math.max(1, r - m)}" ry="${Math.max(1, r - m)}" fill="none" stroke="url(#g)" stroke-width="${sw}"/>
     </svg>`
   );
 }
@@ -57,12 +33,8 @@ async function framedPngBuffer(size) {
     .ensureAlpha()
     .png()
     .toBuffer();
-  const rounded = await sharp(base)
+  return sharp(base)
     .composite([{ input: maskSvg(size), blend: "dest-in" }])
-    .png()
-    .toBuffer();
-  return sharp(rounded)
-    .composite([{ input: rimSvg(size), blend: "over" }])
     .png()
     .toBuffer();
 }
