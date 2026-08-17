@@ -1,7 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { FluidRow, FluidTable, cellBase, equalCols } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import {
   Card,
@@ -17,6 +17,7 @@ import {
   SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
+import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { PALETTE } from "@/lib/palette";
 import { isAbortError } from "@/lib/abort";
 import {
@@ -554,9 +555,13 @@ export const ForecastPanel = memo(function ForecastPanel({
 }: Props) {
   const yearCols = model.years;
   const mobileYears = yearCols.filter((y) => y !== 2030);
+  const mixedListings = listingCurrenciesAreMixed(
+    model.rows.map((r) => ({ ticker: r.ticker }))
+  );
+  const tickerCell = mixedListings ? cellTicker : cellBase;
   // Ticker | Price now | End-year cols | Change. Numbers only in the grid.
   // Rationale lives under the table so a sentence cannot blow a row open.
-  const template = equalCols(yearCols.length + 3);
+  const template = tableCols(yearCols.length + 3, mixedListings);
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -983,7 +988,10 @@ export const ForecastPanel = memo(function ForecastPanel({
                 <div className="flex items-baseline justify-between gap-2">
                   <div>
                     <p className="text-base font-semibold text-foreground">
-                      <TickerSymbol ticker={r.ticker} />
+                      <TickerSymbol
+                        ticker={r.ticker}
+                        showCurrency={mixedListings}
+                      />
                     </p>
                     <p className="mt-1 text-sm text-muted">
                       {r.shares.toLocaleString("en-US")} shares
@@ -1067,7 +1075,7 @@ export const ForecastPanel = memo(function ForecastPanel({
           <div className="hidden md:block">
             <FluidTable template={template}>
               <FluidRow className="text-xs font-medium text-muted">
-                <div className={cellBase}>Ticker</div>
+                <div className={tickerCell}>Ticker</div>
                 <div className={cn(cellBase, "tabular-nums")}>Price now</div>
                 {yearCols.map((y) => (
                   <div
@@ -1087,13 +1095,17 @@ export const ForecastPanel = memo(function ForecastPanel({
 
               {model.rows.map((r) => (
                 <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-well/50">
-                  <div className={cn(cellBase, "flex-col font-semibold tracking-wide text-foreground")}>
-                    <TickerSymbol ticker={r.ticker} />
-                    {!r.hasTargets && (
-                      <span className="mt-0.5 text-xs font-normal tracking-normal text-muted">
-                        working on it
-                      </span>
+                  <div
+                    className={cn(
+                      tickerCell,
+                      "font-semibold tracking-wide text-foreground"
                     )}
+                    title={!r.hasTargets ? "Margus is still working out this path" : undefined}
+                  >
+                    <TickerSymbol
+                      ticker={r.ticker}
+                      showCurrency={mixedListings}
+                    />
                   </div>
                   <div className={cn(cellBase, "tabular-nums text-foreground")}>
                     {currency(r.currentPrice)}
@@ -1122,7 +1134,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               ))}
 
               <FluidRow footer className="border-t border-border font-semibold">
-                <div className={cn(cellBase, "py-2.5 text-foreground")}>
+                <div className={cn(tickerCell, "py-2.5 text-foreground")}>
                   Portfolio
                 </div>
                 <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
@@ -1215,8 +1227,16 @@ export const ForecastPanel = memo(function ForecastPanel({
                       key={d.ticker}
                       className="flex gap-3 border-t border-border px-panel py-3.5 first:border-t-0"
                     >
-                      <span className="flex w-[7.5rem] shrink-0 justify-end font-semibold text-foreground">
-                        <TickerSymbol ticker={d.ticker} />
+                      <span
+                        className={cn(
+                          "flex shrink-0 whitespace-nowrap font-semibold text-foreground",
+                          mixedListings ? "w-max justify-start" : "w-[7.5rem] justify-end"
+                        )}
+                      >
+                        <TickerSymbol
+                          ticker={d.ticker}
+                          showCurrency={mixedListings}
+                        />
                       </span>
                       <span className="min-w-0 text-sm text-muted">
                         {`End ${yearCols[yearCols.length - 1]}: ${currency(d.from, 0)} to ${currency(d.to, 0)}`}

@@ -112,6 +112,19 @@ export function listingCurrency(
   );
 }
 
+/** True when a book has more than one listing currency. USD-only and
+ *  EUR-only books hide the ticker chip. Mixed books show it. */
+export function listingCurrenciesAreMixed(
+  rows: Iterable<{ ticker: string; currency?: string | null }>
+): boolean {
+  const codes = new Set<string>();
+  for (const row of rows) {
+    codes.add(listingCurrency(row.ticker, row.currency));
+    if (codes.size > 1) return true;
+  }
+  return false;
+}
+
 export function listingCurrencyName(code: string): string | null {
   return CURRENCY_NAME[code.toUpperCase()] ?? null;
 }

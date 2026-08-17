@@ -1,6 +1,6 @@
 "use client";
 
-import { FluidRow, FluidTable, cellBase, equalCols } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Card, EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cn, signedTone, currency, percent } from "@/lib/format";
@@ -11,6 +11,7 @@ import {
   parseDecimal,
 } from "@/lib/number-input";
 import type { CoveredCallRow } from "@/lib/types";
+import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { format, parseISO } from "date-fns";
 import { memo, useEffect, useRef, useState } from "react";
 
@@ -123,8 +124,6 @@ function InlineStockTarget({
   );
 }
 
-const TEMPLATE = equalCols(11);
-
 const HEADERS = [
   "Ticker",
   "Spot",
@@ -181,6 +180,11 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
   onPatchStockTarget,
   onAddHolding,
 }: Props) {
+  const mixedListings = listingCurrenciesAreMixed(
+    rows.map((r) => ({ ticker: r.holding.ticker }))
+  );
+  const tickerCell = mixedListings ? cellTicker : cellBase;
+  const template = tableCols(11, mixedListings);
   return (
     <Panel
       padded={false}
@@ -214,7 +218,10 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
             <Card key={r.holding.id} tone="raised">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-base font-semibold text-foreground">
-                  <TickerSymbol ticker={r.holding.ticker} />
+                  <TickerSymbol
+                    ticker={r.holding.ticker}
+                    showCurrency={mixedListings}
+                  />
                 </p>
                 <p className="text-sm tabular-nums text-muted">
                   Spot {currency(r.spot)}
@@ -308,12 +315,12 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
 
       {/* Desktop table */}
       <div className="hidden md:block">
-        <FluidTable template={TEMPLATE}>
+        <FluidTable template={template}>
           <FluidRow className="border-border text-xs font-medium text-muted">
-            {HEADERS.map((label) => (
+            {HEADERS.map((label, i) => (
               <div
                 key={label}
-                className={cellBase}
+                className={i === 0 ? tickerCell : cellBase}
                 title={HEADER_HINTS[label]}
               >
                 {label}
@@ -345,11 +352,14 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
             <FluidRow key={r.holding.id} className="min-h-10 hover:bg-well/50">
               <div
                 className={cn(
-                  cellBase,
+                  tickerCell,
                   "font-semibold tracking-wide text-foreground"
                 )}
               >
-                <TickerSymbol ticker={r.holding.ticker} />
+                <TickerSymbol
+                  ticker={r.holding.ticker}
+                  showCurrency={mixedListings}
+                />
               </div>
               <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {currency(r.spot)}
@@ -415,7 +425,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
 
           {rows.length > 0 && (
             <FluidRow footer className="border-t border-border font-semibold">
-              <div className={cn(cellBase, "py-2.5")} />
+              <div className={cn(tickerCell, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />

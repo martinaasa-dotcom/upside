@@ -255,7 +255,10 @@ export function HoldingModal({
                         }}
                       >
                         <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                          <TickerSymbol ticker={row.symbol} />
+                          <TickerSymbol
+                            ticker={row.symbol}
+                            showCurrency={listingCurrency(row.symbol) !== "USD"}
+                          />
                         </span>
                         {row.name && (
                           <span className="truncate text-muted">{row.name}</span>

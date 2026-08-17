@@ -8,6 +8,7 @@ import {
 } from "@/lib/display-currency";
 import {
   listingAmountToUsd,
+  listingCurrenciesAreMixed,
   listingCurrency,
   listingPriceDigits,
   usdToListingAmount,
@@ -26,7 +27,7 @@ import { todayDollarFor } from "@/lib/overview";
 import { ArrowDown, ArrowUp, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
-import { FluidRow, FluidTable, cellBase, equalCols } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 
 export type HoldingPatch = {
   id: string;
@@ -262,8 +263,6 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   }
 }
 
-const TEMPLATE = equalCols(12);
-
 export const PortfolioTable = memo(function PortfolioTable({
   portfolio,
   holdings,
@@ -282,6 +281,11 @@ export const PortfolioTable = memo(function PortfolioTable({
   onDisplayCurrencyChange,
   tradeLock,
 }: Props) {
+  const mixedListings = listingCurrenciesAreMixed(
+    holdings.map((h) => ({ ticker: h.ticker, currency: h.quote?.currency }))
+  );
+  const tickerCell = mixedListings ? cellTicker : cellBase;
+  const template = tableCols(12, mixedListings);
   const money = (usd: number, digits = 2) =>
     currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
 
@@ -503,6 +507,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                       ticker={h.ticker}
                       currency={listed.code}
                       onOpen={onOpenTicker}
+                      showCurrency={mixedListings}
                     />
                   </div>
                   <p className="mt-1 text-sm text-muted">
@@ -643,10 +648,10 @@ export const PortfolioTable = memo(function PortfolioTable({
             {emptyCta}
           </div>
         ) : (
-          <FluidTable template={TEMPLATE}>
+          <FluidTable template={template}>
             <FluidRow className="border-border text-xs font-medium text-muted">
-              {COLUMNS.map((col) => (
-                <div key={col.label} className={cellBase}>
+              {COLUMNS.map((col, i) => (
+                <div key={col.label} className={i === 0 ? tickerCell : cellBase}>
                   {col.key ? (
                     <button
                       type="button"
@@ -685,7 +690,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               <FluidRow key={h.id} className="group hover:bg-well/50">
                 <div
                   className={cn(
-                    cellBase,
+                    tickerCell,
                     "font-semibold tracking-wide text-foreground"
                   )}
                 >
@@ -693,6 +698,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     ticker={h.ticker}
                     currency={listed.code}
                     onOpen={onOpenTicker}
+                    showCurrency={mixedListings}
                   />
                 </div>
                 <div className={cn(cellBase, "tabular-nums text-muted")}>
@@ -788,7 +794,7 @@ export const PortfolioTable = memo(function PortfolioTable({
             })}
 
             <FluidRow footer className="border-t border-border font-semibold">
-              <div className={cn(cellBase, "py-2.5 text-foreground")}>PORTFOLIO</div>
+              <div className={cn(tickerCell, "py-2.5 text-foreground")}>PORTFOLIO</div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-muted")}>
                 100%
               </div>

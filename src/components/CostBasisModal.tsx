@@ -3,6 +3,7 @@
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { X } from "lucide-react";
 
 export type CostBasisRow = {
@@ -30,6 +31,10 @@ export function CostBasisModal({
   onApply,
 }: Props) {
   if (!open) return null;
+
+  const mixedListings = listingCurrenciesAreMixed(
+    rows.map((row) => ({ ticker: row.ticker }))
+  );
 
   return (
     <ViewportOverlay className="z-[85] flex items-center justify-center p-4">
@@ -68,7 +73,10 @@ export function CostBasisModal({
             >
               <span>
                 <span className="inline-flex font-semibold text-foreground">
-                  <TickerSymbol ticker={r.ticker} />
+                  <TickerSymbol
+                    ticker={r.ticker}
+                    showCurrency={mixedListings}
+                  />
                 </span>
                 <span className="ml-2 text-muted">
                   {r.shares.toLocaleString("en-US")} sh · mark≈$

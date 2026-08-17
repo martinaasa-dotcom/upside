@@ -37,11 +37,14 @@ export function TickerSymbol({
   currency,
   onOpen,
   className,
+  showCurrency = false,
 }: {
   ticker: string;
   currency?: string | null;
   onOpen?: (ticker: string) => void;
   className?: string;
+  /** Only pass true when the book mixes listing currencies. */
+  showCurrency?: boolean;
 }) {
   const label = cashtag(ticker);
   const code = listingCurrency(ticker, currency);
@@ -60,12 +63,12 @@ export function TickerSymbol({
   return (
     <span
       className={cn(
-        "inline-flex max-w-full flex-wrap items-center justify-center gap-1",
+        "inline-flex items-center gap-1 whitespace-nowrap",
         className
       )}
     >
       {name}
-      <ListingCurrencyChip code={code} />
+      {showCurrency ? <ListingCurrencyChip code={code} /> : null}
     </span>
   );
 }

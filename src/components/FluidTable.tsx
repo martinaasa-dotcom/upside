@@ -6,6 +6,12 @@ export function equalCols(count: number): string {
   return `repeat(${count}, minmax(0, 1fr))`;
 }
 
+/** Ticker column sizes to the cashtag (and chip, when mixed). The rest share leftover equally. */
+export function tableCols(count: number, tickerFit: boolean): string {
+  if (!tickerFit) return equalCols(count);
+  return `max-content repeat(${Math.max(0, count - 1)}, minmax(0, 1fr))`;
+}
+
 /**
  * Full-width CSS grid. `px-1.5` plus each cell's `px-1.5` makes the side
  * gutter match the gap between columns. Rows break out of that pad so
@@ -62,12 +68,16 @@ export function FluidRow({
 export const cellBase =
   "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-1.5 py-2 text-center";
 
-/** Same metrics as cellBase. First/last columns stay centered like the rest. */
-export const cellTicker = cellBase;
+/** Left-aligned ticker + chip. Pair with `tableCols(n, true)` so leftover does not sit after the chip. */
+export const cellTicker =
+  "flex w-max max-w-full items-center justify-start whitespace-nowrap px-1.5 py-2 text-left";
 export const cellLast = cellBase;
 
 export const htmlTable = "w-full table-fixed border-collapse text-sm";
 export const htmlCell =
-  "px-1.5 py-2 text-center align-middle first:pl-3 last:pr-3";
+  "whitespace-nowrap px-1.5 py-2 text-center align-middle first:pl-3 last:pr-3";
+/** Shrink-wrap the ticker column when a listing chip is showing. */
+export const htmlCellTicker =
+  "w-[1%] whitespace-nowrap py-2 pl-3 pr-1.5 text-left align-middle";
 export const htmlCellFirst = htmlCell;
 export const htmlCellLast = htmlCell;

@@ -1,0 +1,10 @@
+---
+description: Listing-currency chips only on mixed books; native share/buy prices
+alwaysApply: true
+---
+
+# Listing money vs book money
+
+- Show a ticker currency chip (`TickerSymbol showCurrency`) only when `listingCurrenciesAreMixed` is true. USD-only and EUR-only books get no chip.
+- Share price and average buy stay in the listing's own money (kronor, euros, dollars). Cost, value, and gain follow the sheet USD/EUR toggle.
+- Table rows never wrap to two lines. Mixed books: left-align tickers and size that column to the cashtag+chip (`tableCols(n, true)` + `cellTicker`). Single-currency books: centered equal columns.

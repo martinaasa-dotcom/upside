@@ -169,6 +169,7 @@ import {
 } from "../src/lib/market/ticker-search";
 import {
   listingAmountToUsd,
+  listingCurrenciesAreMixed,
   listingCurrency,
   listingCurrencyFromTicker,
   normalizeListedPrice,
@@ -3603,6 +3604,18 @@ run("listing currency chips and FX convert kronor", () => {
   assert.equal(listingAmountToUsd(100, "EUR", fx), 110);
   assert.equal(usdToListingAmount(110, "EUR", fx), 100);
   assert.equal(listingAmountToUsd(142.5, "SEK", fx), 14.25);
+  assert.equal(
+    listingCurrenciesAreMixed([{ ticker: "NVDA" }, { ticker: "AAPL" }]),
+    false
+  );
+  assert.equal(
+    listingCurrenciesAreMixed([{ ticker: "LHV1T" }, { ticker: "VWCE.DE" }]),
+    false
+  );
+  assert.equal(
+    listingCurrenciesAreMixed([{ ticker: "NVDA" }, { ticker: "VWCE.DE" }]),
+    true
+  );
   const table = readFileSync(
     join(process.cwd(), "src/components/PortfolioTable.tsx"),
     "utf8"
@@ -3613,6 +3626,7 @@ run("listing currency chips and FX convert kronor", () => {
     "utf8"
   );
   assert.match(chip, /ListingCurrencyChip/);
+  assert.match(chip, /showCurrency/);
   assert.match(chip, /rounded-md/);
   assert.match(chip, /text-xs font-semibold/);
 });

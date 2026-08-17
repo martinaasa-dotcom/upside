@@ -1,6 +1,7 @@
 "use client";
 
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
 import { cn, splitMoveTint } from "@/lib/format";
 import { Info } from "lucide-react";
@@ -378,6 +379,7 @@ export function ScanList({
   onOpen?: (ticker: string) => void;
   className?: string;
 }) {
+  const mixedListings = listingCurrenciesAreMixed(rows);
   return (
     <div
       className={cn(
@@ -394,8 +396,16 @@ export function ScanList({
         {rows.map((row) => {
           const body = (
             <>
-              <span className="flex w-[7.5rem] shrink-0 justify-end font-semibold tabular-nums text-foreground">
-                <TickerSymbol ticker={row.ticker} />
+              <span
+                className={cn(
+                  "flex shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground",
+                  mixedListings ? "w-max justify-start" : "w-[7.5rem] justify-center"
+                )}
+              >
+                <TickerSymbol
+                  ticker={row.ticker}
+                  showCurrency={mixedListings}
+                />
               </span>
               <span className="min-w-0 text-sm leading-snug text-foreground/80">
                 {row.text}

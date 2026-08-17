@@ -5,8 +5,9 @@ import {
   analyzePortfolioShock,
   type ShockId,
 } from "@/lib/book-shock";
-import { htmlCell, htmlTable } from "@/components/FluidTable";
+import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { cashtag, cn, currency, percent, signedCurrency, signedPercent, signedTone } from "@/lib/format";
 import { Card, EmptyState, HairlineGrid, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
@@ -71,6 +72,11 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
     });
     return list;
   }, [analysis.rows, sortField, sortAsc]);
+
+  const mixedListings = listingCurrenciesAreMixed(
+    holdings.map((h) => ({ ticker: h.ticker }))
+  );
+  const tickerTd = mixedListings ? htmlCellTicker : htmlCell;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -306,7 +312,10 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               <Card key={r.ticker}>
                 <div className="flex items-baseline justify-between gap-2">
                   <p className="text-base font-semibold text-foreground">
-                    <TickerSymbol ticker={r.ticker} />
+                    <TickerSymbol
+                      ticker={r.ticker}
+                      showCurrency={mixedListings}
+                    />
                   </p>
                   <p
                     className={cn(
@@ -376,9 +385,9 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               <tr className="border-b border-border text-xs text-muted">
                   <th
                     onClick={() => handleSort("ticker")}
-                    className={cn(htmlCell, "cursor-pointer font-medium hover:text-foreground")}
+                    className={cn(tickerTd, "cursor-pointer font-medium hover:text-foreground")}
                   >
-                    <span className="inline-flex items-center justify-center gap-1">
+                    <span className={cn("inline-flex items-center gap-1", mixedListings ? "justify-start" : "justify-center")}>
                       Ticker
                       {sortField === "ticker" && (
                         <ChevronDown className="h-3 w-3" aria-hidden />
@@ -430,8 +439,11 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   key={r.ticker}
                   className="border-b border-border transition hover:bg-hover/30"
                 >
-                  <td className={cn(htmlCell, "font-semibold text-foreground")}>
-                    <TickerSymbol ticker={r.ticker} />
+                  <td className={cn(tickerTd, "font-semibold text-foreground")}>
+                    <TickerSymbol
+                      ticker={r.ticker}
+                      showCurrency={mixedListings}
+                    />
                   </td>
                   <td className={cn(htmlCell, "truncate text-muted")}>
                     {r.label}

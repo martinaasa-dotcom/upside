@@ -7,12 +7,58 @@ import {
   type CsvHoldingRow,
   type CsvSkippedRow,
 } from "@/lib/csv-import";
-import { htmlCell, htmlTable } from "@/components/FluidTable";
+import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
-import { cn } from "@/lib/format";
+import { cn, currency } from "@/lib/format";
+import {
+  listingAmountToUsd,
+  listingCurrenciesAreMixed,
+  listingCurrency,
+  listingPriceDigits,
+  usdPerMapFromFx,
+} from "@/lib/listing-currency";
 import { AlertTriangle, Download, FileUp, X } from "lucide-react";
 import { useRef, useState } from "react";
+
+async function nativeCsvBuysToUsd(
+  rows: CsvHoldingRow[]
+): Promise<{ rows: CsvHoldingRow[] } | { error: string }> {
+  const foreign = rows.filter((r) => listingCurrency(r.ticker) !== "USD");
+  if (foreign.length === 0) return { rows };
+  try {
+    const tickers = [...new Set(foreign.map((r) => r.ticker))].join(",");
+    const fxRes = await fetch(`/api/quotes?tickers=${encodeURIComponent(tickers)}`, {
+      cache: "no-store",
+    });
+    if (!fxRes.ok) {
+      return { error: "Couldn't convert those buy prices. Try again in a second." };
+    }
+    const fxJson = (await fxRes.json()) as {
+      fx?: {
+        eurUsd?: number | null;
+        gbpUsd?: number | null;
+        usdPer?: Record<string, number | null | undefined>;
+      };
+    };
+    const rates = usdPerMapFromFx(fxJson.fx);
+    const next: CsvHoldingRow[] = [];
+    for (const row of rows) {
+      const code = listingCurrency(row.ticker);
+      if (code === "USD") {
+        next.push(row);
+        continue;
+      }
+      if (!(rates[code] > 0)) {
+        return { error: "Couldn't convert those buy prices. Try again in a second." };
+      }
+      next.push({ ...row, buyPrice: listingAmountToUsd(row.buyPrice, code, rates) });
+    }
+    return { rows: next };
+  } catch {
+    return { error: "Couldn't convert those buy prices. Try again in a second." };
+  }
+}
 
 type Props = {
   open: boolean;
@@ -84,15 +130,29 @@ export function CsvImportModal({
     onClose();
   }
 
-  function confirm() {
+  async function confirm() {
     if (busy) return;
     if (rows.length === 0 && cash == null) return;
     setBusy(true);
-    onImport({ rows, cash, replace });
-    reset();
-    setBusy(false);
-    onClose();
+    setError(null);
+    try {
+      const converted = await nativeCsvBuysToUsd(rows);
+      if ("error" in converted) {
+        setError(converted.error);
+        return;
+      }
+      onImport({ rows: converted.rows, cash, replace });
+      reset();
+      onClose();
+    } finally {
+      setBusy(false);
+    }
   }
+
+  const mixedListings = listingCurrenciesAreMixed(
+    rows.map((r) => ({ ticker: r.ticker }))
+  );
+  const tickerTd = mixedListings ? htmlCellTicker : htmlCell;
 
   return (
     <ViewportOverlay className="z-[70] flex items-center justify-center p-4">
@@ -124,7 +184,7 @@ export function CsvImportModal({
           <p className="text-sm text-muted">
             Replace this portfolio, or paste lines like{" "}
             <span className="text-foreground">NBIS 500 85.10</span>. CSV columns:
-            Ticker, Shares, Buy Price.
+            Ticker, Shares, Buy Price. Buy price is in that listing&apos;s own money.
           </p>
 
           <textarea
@@ -202,7 +262,7 @@ export function CsvImportModal({
                 <table className={htmlTable}>
                   <thead className="sticky top-0 bg-well text-sm text-muted">
                     <tr>
-                      <th className={cn(htmlCell, "py-1.5 font-medium")}>Ticker</th>
+                      <th className={cn(tickerTd, "py-1.5 font-medium")}>Ticker</th>
                       <th className={cn(htmlCell, "py-1.5 font-medium")}>Shares</th>
                       <th className={cn(htmlCell, "py-1.5 font-medium")}>Buy price</th>
                       {!hideCallPct && (
@@ -213,14 +273,21 @@ export function CsvImportModal({
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.ticker} className="border-t border-border">
-                        <td className={cn(htmlCell, "py-1.5 font-medium text-foreground")}>
-                          <TickerSymbol ticker={r.ticker} />
+                        <td className={cn(tickerTd, "py-1.5 font-medium text-foreground")}>
+                          <TickerSymbol
+                            ticker={r.ticker}
+                            showCurrency={mixedListings}
+                          />
                         </td>
                         <td className={cn(htmlCell, "py-1.5 tabular-nums text-foreground/80")}>
                           {r.shares}
                         </td>
                         <td className={cn(htmlCell, "py-1.5 tabular-nums text-foreground/80")}>
-                          ${r.buyPrice.toFixed(2)}
+                          {currency(
+                            r.buyPrice,
+                            listingPriceDigits(listingCurrency(r.ticker)),
+                            listingCurrency(r.ticker)
+                          )}
                         </td>
                         {!hideCallPct && (
                           <td className={cn(htmlCell, "py-1.5 tabular-nums text-muted")}>
@@ -277,7 +344,7 @@ export function CsvImportModal({
           <button
             type="button"
             disabled={busy || (rows.length === 0 && cash == null)}
-            onClick={confirm}
+            onClick={() => void confirm()}
             className={cn(
               "btn-primary",
               (busy || (rows.length === 0 && cash == null)) &&

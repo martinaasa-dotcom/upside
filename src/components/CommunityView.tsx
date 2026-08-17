@@ -26,8 +26,8 @@ import {
   type ThesisCoverage,
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
-import { listingCurrency } from "@/lib/listing-currency";
-import { htmlCell, htmlTable } from "@/components/FluidTable";
+import { listingCurrenciesAreMixed, listingCurrency, listingPriceDigits } from "@/lib/listing-currency";
+import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
@@ -3078,6 +3078,13 @@ function ReadOnlyHoldings({
     ) + cash;
   const todayDollar = totalValue - previousCloseValue;
   const todayPct = previousCloseValue > 0 ? todayDollar / previousCloseValue : null;
+  const mixedListings = listingCurrenciesAreMixed(
+    holdings.map((h) => ({
+      ticker: h.ticker,
+      currency: quotes[h.ticker]?.currency,
+    }))
+  );
+  const tickerTd = mixedListings ? htmlCellTicker : htmlCell;
 
   // Biggest position first by default — matches the default sort in My
   // book, and is far more useful at a glance than raw creation order.
@@ -3101,8 +3108,15 @@ function ReadOnlyHoldings({
       </Scoreboard>
       <div className="space-y-3 md:hidden">
         {sortedHoldings.map((h) => {
-          const price = quotes[h.ticker]?.price ?? 0;
-          const value = price * h.shares;
+          const listed = listingCurrency(h.ticker, quotes[h.ticker]?.currency);
+          const digits = listingPriceDigits(listed);
+          const native =
+            quotes[h.ticker]?.nativePrice != null &&
+            quotes[h.ticker]!.nativePrice! > 0
+              ? quotes[h.ticker]!.nativePrice!
+              : quotes[h.ticker]?.price ?? 0;
+          const priceUsd = quotes[h.ticker]?.price ?? 0;
+          const value = priceUsd * h.shares;
           const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
           const pctBook = totalValue > 0 ? value / totalValue : 0;
           return (
@@ -3111,10 +3125,8 @@ function ReadOnlyHoldings({
                 <p className="text-base font-semibold text-foreground">
                   <TickerSymbol
                     ticker={h.ticker}
-                    currency={listingCurrency(
-                      h.ticker,
-                      quotes[h.ticker]?.currency
-                    )}
+                    currency={listed}
+                    showCurrency={mixedListings}
                   />
                 </p>
                 <p
@@ -3127,7 +3139,7 @@ function ReadOnlyHoldings({
                 </p>
               </div>
               <p className="mt-1 text-sm text-muted">
-                {percent(pctBook)} of portfolio · {h.shares} sh · {currency(price)} · {currency(value)}
+                {percent(pctBook)} of portfolio · {h.shares} sh · {currency(native, digits, listed)} · {currency(value)}
               </p>
             </Card>
           );
@@ -3148,7 +3160,7 @@ function ReadOnlyHoldings({
         <table className={cn(htmlTable, "min-w-[36rem]")}>
           <thead className="border-b border-border text-xs text-muted">
             <tr>
-              <th className={cn(htmlCell, "font-medium")}>Ticker</th>
+              <th className={cn(tickerTd, "font-medium")}>Ticker</th>
               <th className={cn(htmlCell, "font-medium")}>Today</th>
               <th className={cn(htmlCell, "font-medium")}>%</th>
               <th className={cn(htmlCell, "font-medium")}>Shares</th>
@@ -3158,19 +3170,24 @@ function ReadOnlyHoldings({
           </thead>
           <tbody>
             {sortedHoldings.map((h) => {
-              const price = quotes[h.ticker]?.price ?? 0;
-              const value = price * h.shares;
+              const listed = listingCurrency(h.ticker, quotes[h.ticker]?.currency);
+              const digits = listingPriceDigits(listed);
+              const native =
+                quotes[h.ticker]?.nativePrice != null &&
+                quotes[h.ticker]!.nativePrice! > 0
+                  ? quotes[h.ticker]!.nativePrice!
+                  : quotes[h.ticker]?.price ?? 0;
+              const priceUsd = quotes[h.ticker]?.price ?? 0;
+              const value = priceUsd * h.shares;
               const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-border">
-                  <td className={cn(htmlCell, "font-medium")}>
+                  <td className={cn(tickerTd, "font-medium")}>
                     <TickerSymbol
                       ticker={h.ticker}
-                      currency={listingCurrency(
-                        h.ticker,
-                        quotes[h.ticker]?.currency
-                      )}
+                      currency={listed}
+                      showCurrency={mixedListings}
                     />
                   </td>
                   <td
@@ -3189,7 +3206,7 @@ function ReadOnlyHoldings({
                     {h.shares}
                   </td>
                   <td className={cn(htmlCell, "tabular-nums text-muted")}>
-                    {currency(price)}
+                    {currency(native, digits, listed)}
                   </td>
                   <td className={cn(htmlCell, "tabular-nums text-muted")}>
                     {currency(value)}
