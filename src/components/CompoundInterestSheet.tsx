@@ -45,6 +45,7 @@ import {
   ArrowUpRight,
   Calculator,
   CheckCircle2,
+  ChevronRight,
   Copy,
   Share2,
   Target,
@@ -53,7 +54,6 @@ import {
 import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { useTimeout } from "@/lib/use-timeout";
 import {
-  Card,
   MicroLabel,
   Panel,
   PanelHeader,
@@ -63,6 +63,7 @@ import {
   Segmented,
 } from "@/components/ui/Panel";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Item,
   ItemContent,
@@ -1229,45 +1230,55 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           <PanelHeader
             title="Any single year, in words"
           />
-          <Segmented
-            ariaLabel="Year to read"
-            className="mt-3"
-            columns={storyOpts.length}
-            look="buttons"
-            options={storyOpts.map((y) => ({
-              id: String(y),
-              label: `Year ${y}`,
-              title:
-                tipping === y
-                  ? `Year ${y}, growth takes over`
-                  : `Year ${y}`,
-            }))}
+          <Tabs
             value={String(storyYear)}
-            onChange={(id) => {
+            onValueChange={(id) => {
               const i = storyOpts.indexOf(Number(id));
               if (i >= 0) setStoryIdx(i);
             }}
-          />
-          {storyRow && (
-            <Card tone="raised" className="mt-4">
-              <MicroLabel>After year {storyRow.index}</MicroLabel>
-              <p className="mt-1 text-base font-semibold tabular-nums text-foreground sm:text-lg">
-                {show(storyRow.balance)}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                {yearStories.get(storyRow.index) ??
-                  `Growth added ${show(storyRow.interest)} this year, ${show(storyRow.accruedInterest)} in total so far.`}
-              </p>
-            </Card>
-          )}
+            className="w-full min-w-0"
+          >
+            <TabsList
+              variant="line"
+              aria-label="Year to read"
+              className="h-auto w-full max-w-full justify-start overflow-x-auto pb-1.5"
+            >
+              {storyOpts.map((y) => (
+                <TabsTrigger
+                  key={y}
+                  value={String(y)}
+                  title={
+                    tipping === y
+                      ? `Year ${y}, growth takes over`
+                      : `Year ${y}`
+                  }
+                >
+                  Year {y}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {storyRow ? (
+              <TabsContent value={String(storyYear)} className="mt-4">
+                <MicroLabel>After year {storyRow.index}</MicroLabel>
+                <p className="mt-2 font-heading text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+                  {show(storyRow.balance)}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {yearStories.get(storyRow.index) ??
+                    `Growth added ${show(storyRow.interest)} this year, ${show(storyRow.accruedInterest)} in total so far.`}
+                </p>
+              </TabsContent>
+            ) : null}
+          </Tabs>
 
           {/* The full grid used to be its own panel below. Same numbers, so it
             * lives here folded up instead of as a seventh thing to scroll past. */}
-          <details className="mt-4 rounded-lg bg-muted">
-            <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md py-1 text-sm text-muted-foreground transition hover:text-foreground hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-4 shrink-0 transition-transform group-open:rotate-90" />
               Show every year as a table
             </summary>
-            <div className="flex flex-col gap-3 border-t border-border p-3 md:hidden">
+            <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 md:hidden">
               {result.yearly.map((row, i) => {
                 const isLast = i === result.yearly.length - 1;
                 const principalShown = row.balance - row.accruedInterest;
@@ -1312,7 +1323,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 );
               })}
             </div>
-            <div className="hidden min-w-0 max-w-full overflow-x-auto border-t border-border md:block">
+            <div className="mt-3 hidden min-w-0 max-w-full overflow-x-auto border-t border-border pt-3 md:block">
               <table className={cn(htmlTable, "min-w-[32rem]")}>
                 <thead>
                   <tr className="border-b border-border text-sm text-muted-foreground">
