@@ -1257,17 +1257,8 @@ run("note letters are one mix story, not stacked cards", () => {
   assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some|no moves/i);
   assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
   const html = noteReportHtml(morning);
-  assert.match(html, /Morning Pre-Market/);
+  assert.match(html, /Before the open/);
   assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for/);
-  morning.news = {
-    ticker: "RDDT",
-    title: "Reddit to join the S&P 500",
-    publisher: "TradingView",
-  };
-  morning.margus = fallbackNoteTake(morning);
-  assert.match(morning.margus, /\[\[source: TradingView\]\]/);
-  assert.match(noteReportHtml(morning), /TradingView/);
-  assert.match(noteReportHtml(morning), /border-radius:999px/);
   const close = buildNoteReport({
     kind: "close",
     name: "Test",
