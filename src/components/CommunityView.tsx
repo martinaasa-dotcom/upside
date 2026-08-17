@@ -2311,7 +2311,7 @@ export function CommunityView({ communityId }: Props) {
                   {isAdmin && joinRequests.length > 0 && (
                     <section className="flex flex-col gap-3 rounded-lg bg-muted p-6">
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <UserCheck className="h-4 w-4 text-foreground/80" />
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
                         Join requests
                         <span className="rounded-full bg-primary px-1.5 py-0.5 text-sm font-semibold text-primary-foreground">
                           {joinRequests.length}
@@ -2548,7 +2548,7 @@ export function CommunityView({ communityId }: Props) {
                 <ArrowLeft data-icon="inline-start" />
                 Back to community
               </Button>
-              <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl bg-card/95 p-6 shadow-sm ring-1 ring-foreground/10 backdrop-blur-sm">
+              <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl bg-card p-6 shadow-sm ring-1 ring-foreground/10 backdrop-blur-sm">
                 <p className="text-sm font-semibold text-foreground">
                   Read-only - owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
@@ -3030,7 +3030,7 @@ function PowerAnimalCard({
 
       {personality ? (
         <>
-          <p className="text-sm leading-relaxed text-foreground/80">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {personality.whyThisAnimal}
           </p>
           <div className="flex flex-col gap-2 text-sm leading-relaxed">
@@ -3094,7 +3094,7 @@ function PowerAnimalCard({
                 <div className="flex items-baseline justify-between gap-2 text-sm text-muted-foreground">
                   <span>
                     Next{" "}
-                    <span className="font-medium text-foreground/80">
+                    <span className="font-medium text-muted-foreground">
                       {currency(milestone.next, 0)}
                     </span>
                   </span>
@@ -3102,7 +3102,7 @@ function PowerAnimalCard({
                     {Math.round(milestone.progress * 100)}%
                   </span>
                 </div>
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-black/30">
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
                   <div
                     className={cn("h-full rounded-full", tone.milestone)}
                     style={{

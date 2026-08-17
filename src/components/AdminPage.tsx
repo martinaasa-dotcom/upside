@@ -10,6 +10,7 @@ import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -271,26 +272,28 @@ export function AdminPage() {
                       {errorLog.length >= 150 ? "150+" : errorLog.length} recent
                     </span>
                     {errorLog.length > 0 && (
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="icon-sm"
                         onClick={() => setConfirmClearErrors(true)}
                         title="Clear log"
-                        className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-loss/40 hover:text-loss"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                        <Trash2 />
+                      </Button>
                     )}
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="icon-sm"
                       onClick={() => void loadErrorLog()}
                       disabled={errorLogLoading}
                       title="Refresh"
-                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
-                        className={`h-3.5 w-3.5 ${errorLogLoading ? "animate-spin" : ""}`}
+                        className={errorLogLoading ? "animate-spin" : undefined}
                       />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {errorLogLoading && errorLog.length === 0 ? (
@@ -363,17 +366,18 @@ export function AdminPage() {
                       {search ? ` of ${users.length}` : ""} profile
                       {users.length === 1 ? "" : "s"}
                     </span>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="icon-sm"
                       onClick={() => void load(true)}
                       disabled={refreshing}
                       title="Refresh"
-                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
-                        className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                        className={refreshing ? "animate-spin" : undefined}
                       />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {users.length > 3 && (
@@ -427,7 +431,7 @@ export function AdminPage() {
                                 u.portfolios!.map((p) => (
                                   <span
                                     key={p.id}
-                                    className="rounded-md bg-accent/90 px-1.5 py-0.5 text-sm text-foreground/80"
+                                    className="rounded-md bg-accent/90 px-1.5 py-0.5 text-sm text-muted-foreground"
                                   >
                                     {p.name}
                                   </span>

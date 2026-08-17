@@ -217,10 +217,10 @@ export function PanelHeader({
   className?: string;
 }) {
   const iconTones = {
-    brand: "bg-muted text-foreground/80",
+    brand: "bg-muted text-muted-foreground",
     violet: "bg-muted text-foreground",
     emerald: "bg-gain/15 text-gain",
-    zinc: "bg-muted text-foreground/80",
+    zinc: "bg-muted text-muted-foreground",
   } as const;
 
   return (

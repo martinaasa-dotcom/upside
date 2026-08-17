@@ -385,12 +385,12 @@ export function HoldingModal({
                       showCurrency={mixedListings}
                     />
                   </span>
-                  <span className="justify-self-center tabular-nums text-foreground/80">
+                  <span className="justify-self-center tabular-nums text-muted-foreground">
                     {row.shares.toLocaleString("en-US", {
                       maximumFractionDigits: 4,
                     })}
                   </span>
-                  <span className="justify-self-center tabular-nums text-foreground/80">
+                  <span className="justify-self-center tabular-nums text-muted-foreground">
                     {currency(row.buyPrice, listingPriceDigits(code), code)}
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 justify-self-end text-muted-foreground" />

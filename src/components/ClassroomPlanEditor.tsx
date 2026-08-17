@@ -113,7 +113,7 @@ export function ClassroomPlanEditor({
               "rounded-lg border px-3 py-2.5 text-sm font-medium transition disabled:opacity-50",
               trade?.kind === k.id
                 ? "border-border bg-muted text-primary"
-                : "border-border text-foreground/80 hover:border-border hover:text-foreground"
+                : "border-border text-muted-foreground hover:border-border hover:text-foreground"
             )}
           >
             {k.label}
@@ -133,7 +133,7 @@ export function ClassroomPlanEditor({
               key={p.id}
               className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2.5"
             >
-              <span className="min-w-0 text-sm text-foreground/80">
+              <span className="min-w-0 text-sm text-muted-foreground">
                 {classPeriodLabel(p.kind)}
                 <span className="block text-muted-foreground">
                   {new Date(p.startsAt).toLocaleString(undefined, {

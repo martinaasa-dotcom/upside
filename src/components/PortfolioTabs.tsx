@@ -287,7 +287,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 onClick={() => setAdding(true)}
-                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted-foreground hover:text-foreground/80"
+                className="touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted-foreground hover:text-foreground"
                 aria-label="Add portfolio"
               >
                 <Plus className="h-3.5 w-3.5" />

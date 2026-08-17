@@ -237,7 +237,7 @@ function PulseCard({
               {cashtag(c.ticker)}
             </span>
             {pinned && (
-              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-foreground/80">
+              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-muted-foreground">
                 Your check
               </span>
             )}
@@ -247,7 +247,7 @@ function PulseCard({
               </span>
             )}
             {leftHold && (
-              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-foreground/80">
+              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-muted-foreground">
                 Was Hold
               </span>
             )}

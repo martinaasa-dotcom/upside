@@ -1,9 +1,16 @@
 "use client";
 
-import { cn } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, type LucideIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 
 export type HeaderMenuItem = {
   id: string;
@@ -31,137 +38,70 @@ export function HeaderOverflowMenu({
   icon: Icon = MoreHorizontal,
   avatar,
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      const t = e.target as HTMLElement | null;
-      if (t?.closest(`[data-header-more="${menuId}"]`)) return;
-      setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, menuId]);
-
   if (items.length === 0) return null;
 
   return (
-    // `flex` matters: the trigger below is inline-flex, so in a plain block
-    // wrapper it sits in an inline formatting context and the div grows to a
-    // line box (button height plus the strut's descender space). The header
-    // row then centres that taller wrapper, leaving the button visibly high
-    // next to View, which is a direct flex child with no wrapper. Making
-    // the wrapper a flex container collapses it to exactly the button's 32px.
-    <div className="relative flex" data-header-more={menuId}>
-      <button
-        ref={btnRef}
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={label}
-        title={label}
-        onClick={() => {
-          const rect = btnRef.current?.getBoundingClientRect();
-          if (rect) {
-            setPos({
-              top: rect.bottom + 6,
-              right: window.innerWidth - rect.right,
-            });
-          }
-          setOpen((o) => !o);
-        }}
-        className={cn(
-          "inline-flex h-9 items-center justify-center gap-1 rounded-md border border-border text-sm font-medium text-muted-foreground hover:border-foreground/20 hover:text-foreground",
-          // A fixed height (rather than relying on padding to add up to the
-          // same total as the icon+text buttons next to it) guarantees this
-          // lines up with View exactly, however the avatar image or
-          // its padding renders — the previous padding-only sizing left the
-          // avatar visibly taller and nudged out of alignment.
-          avatar ? "w-8 p-0" : "px-2"
-        )}
-      >
-        {avatar ? (
-          avatar.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatar.url}
-              alt=""
-              className="h-6 w-6 rounded-md object-cover"
-            />
-          ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-xs font-semibold text-foreground">
-              {avatar.initial ?? "?"}
-            </span>
-          )
-        ) : (
-          <Icon className="h-3.5 w-3.5" />
-        )}
-        {showLabel && !avatar && (
-          <span className="hidden lg:inline">{label}</span>
-        )}
-      </button>
-      {open &&
-        pos &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            data-header-more={menuId}
-            role="menu"
-            className="fixed z-[80] min-w-[11rem] overflow-hidden rounded-lg border border-border bg-card py-1 shadow-sm"
-            style={{ top: pos.top, right: pos.right }}
+    <div className="relative flex">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size={avatar ? "icon" : "default"}
+            aria-label={label}
+            title={label}
+            className={avatar ? "size-8" : undefined}
           >
-            {avatar && (
-              <div className="truncate border-b border-border px-3 py-2.5 text-sm font-medium text-foreground/80">
-                {label}
-              </div>
+            {avatar ? (
+              avatar.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatar.url}
+                  alt=""
+                  className="h-6 w-6 rounded-md object-cover"
+                />
+              ) : (
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-xs font-semibold text-foreground">
+                  {avatar.initial ?? "?"}
+                </span>
+              )
+            ) : (
+              <Icon data-icon="inline-start" />
             )}
-            {items.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="menuitem"
-                disabled={item.disabled}
-                onClick={() => {
-                  if (item.disabled) return;
-                  setOpen(false);
-                  item.onSelect();
-                }}
-                className={cn(
-                  "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm sm:py-2.5",
-                  item.disabled
-                    ? // Dimmed via opacity rather than a darker grey: WCAG
-                      // exempts disabled controls from the contrast floor,
-                      // and this keeps "unavailable" visually distinct from
-                      // the normal muted text now that both greys resolved
-                      // to the same olive.
-                      "cursor-not-allowed text-muted-foreground opacity-50"
-                    : item.danger
-                      ? "text-loss hover:bg-loss/10"
-                      : "text-foreground hover:bg-accent"
-                )}
-              >
-                <span>{item.label}</span>
-                {item.hint && (
-                  <span className="tabular-nums text-sm text-muted-foreground">
-                    {item.hint}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>,
-          document.body
-        )}
+            {showLabel && !avatar ? (
+              <span className="hidden lg:inline">{label}</span>
+            ) : null}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-44">
+          {avatar ? (
+            <>
+              <DropdownMenuLabel className="text-sm text-foreground">
+                {label}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+            </>
+          ) : null}
+          {items.map((item) => (
+            <DropdownMenuItem
+              key={item.id}
+              disabled={item.disabled}
+              variant={item.danger ? "destructive" : "default"}
+              onSelect={() => {
+                if (item.disabled) return;
+                item.onSelect();
+              }}
+            >
+              <span>{item.label}</span>
+              {item.hint ? (
+                <DropdownMenuShortcut className="text-sm tabular-nums">
+                  {item.hint}
+                </DropdownMenuShortcut>
+              ) : null}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

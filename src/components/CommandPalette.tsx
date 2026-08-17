@@ -1,6 +1,7 @@
 "use client";
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/format";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -64,7 +65,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
         onClick={onClose}
       />
       <div className="relative max-h-[min(100%,32rem)] w-full max-w-lg overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 sm:max-h-[min(70dvh,32rem)]">
-        <input
+        <Input
           ref={inputRef}
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -84,7 +85,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
             }
           }}
           placeholder="Jump to portfolio, ticker, unlock, Lab …"
-          className="w-full border-b border-border bg-transparent px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          className="h-auto rounded-none border-0 border-b border-border bg-transparent px-4 py-3 shadow-none dark:bg-transparent"
         />
         <ul className="max-h-80 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
@@ -102,7 +103,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
                   "flex w-full items-baseline justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm sm:py-2",
                   i === active
                     ? "bg-primary text-primary-foreground"
-                    : "text-foreground/80 hover:bg-muted"
+                    : "text-muted-foreground hover:bg-muted"
                 )}
               >
                 <span>

@@ -67,7 +67,7 @@ const TONE_TEXT: Record<Tone, string> = {
   gain: "text-gain",
   loss: "text-loss",
   warn: "text-caution",
-  neutral: "text-foreground/80",
+  neutral: "text-muted-foreground",
 };
 
 const TONE_BADGE: Record<Tone, string> = {

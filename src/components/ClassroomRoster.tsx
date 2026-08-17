@@ -127,11 +127,11 @@ export function ClassroomRoster({
                   </div>
                   <div>
                     <p className="text-muted-foreground">Why</p>
-                    <p className="text-foreground/80">{why}</p>
+                    <p className="text-muted-foreground">{why}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Biggest</p>
-                    <p className="text-foreground/80">
+                    <p className="text-muted-foreground">
                       {biggest?.ticker
                         ? `${cashtag(biggest.ticker)}${
                             biggest.weight != null
@@ -217,7 +217,7 @@ export function ClassroomRoster({
                           ) : null}
                         </button>
                       ) : (
-                        <span className="font-medium text-foreground/80">
+                        <span className="font-medium text-muted-foreground">
                           {m.name}
                           {m.isYou ? (
                             <span className="ml-1.5 font-normal text-muted-foreground">
@@ -250,7 +250,7 @@ export function ClassroomRoster({
                         ? signedPercent(m.todayPct)
                         : "—"}
                     </td>
-                    <td className={cn(htmlCell, "text-foreground/80")}>
+                    <td className={cn(htmlCell, "text-muted-foreground")}>
                       {!m.sheetCount
                         ? "—"
                         : !thesis || thesis.names === 0
@@ -259,7 +259,7 @@ export function ClassroomRoster({
                             ? "No why yet"
                             : `${thesis.withWhy} of ${thesis.names}`}
                     </td>
-                    <td className={cn(htmlCell, "text-foreground/80")}>
+                    <td className={cn(htmlCell, "text-muted-foreground")}>
                       {biggest?.ticker
                         ? `${biggest.ticker}${
                             biggest.weight != null

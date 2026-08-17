@@ -372,7 +372,7 @@ function RecapBody({
     <ul
       className={cn(
         "flex flex-col gap-1.5 text-sm leading-relaxed",
-        muted ? "text-muted-foreground" : "text-foreground/80"
+        muted ? "text-muted-foreground" : "text-muted-foreground"
       )}
     >
       {bullets.map((b) => (
@@ -1311,7 +1311,7 @@ export function UpsidePortfolioPage() {
                   href={FUND_X_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
+                  className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                 >
                   Daily notes on X
                 </a>
@@ -1373,7 +1373,7 @@ export function UpsidePortfolioPage() {
                   {fund?.cash_purpose?.trim() ? (
                     <div className="mt-4 border-t border-border pt-4">
                       <MicroLabel>Cash is sitting for</MicroLabel>
-                      <p className="mt-1.5 text-base leading-relaxed text-foreground/80">
+                      <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">
                         {fund.cash_purpose.trim()}
                       </p>
                     </div>
@@ -1461,7 +1461,7 @@ export function UpsidePortfolioPage() {
                             aria-hidden
                             className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
                           />
-                          <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
+                          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                             {title}
                           </span>
                           <span className="flex shrink-0 items-center gap-2">
@@ -1525,7 +1525,7 @@ export function UpsidePortfolioPage() {
                             aria-hidden
                             className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
                           />
-                          <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">
+                          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                             {title}
                           </span>
                           <span className="flex shrink-0 items-center gap-2">

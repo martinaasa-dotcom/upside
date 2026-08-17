@@ -469,7 +469,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     {r.movePct > 0 ? "+" : ""}
                     {percent(r.movePct)}
                   </div>
-                  <div className={cn(cellBase, "tabular-nums text-foreground/80")}>
+                  <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                     {currency(r.shockVal, 0)}
                   </div>
                   <div

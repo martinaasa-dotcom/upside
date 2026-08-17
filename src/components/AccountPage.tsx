@@ -8,6 +8,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
@@ -328,15 +329,15 @@ export function AccountPage() {
                 },
               ] as const
             ).map((row) => (
-              <label
+              <div
                 key={row.id}
                 className="flex items-center gap-2 text-sm text-foreground"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
+                  id={`note-${row.id}`}
                   checked={row.checked}
-                  onChange={(e) => {
-                    const next = e.target.checked;
+                  onCheckedChange={(v) => {
+                    const next = v === true;
                     const prev = row.checked;
                     row.set(next);
                     void postJsonOrQueue(
@@ -357,10 +358,9 @@ export function AccountPage() {
                         row.set(prev);
                       });
                   }}
-                  className="h-4 w-4 rounded border-input bg-muted text-primary focus:ring-ring/50"
                 />
-                {row.label}
-              </label>
+                <label htmlFor={`note-${row.id}`}>{row.label}</label>
+              </div>
             ))}
             {morningSaved && (
               <p className="text-sm text-gain">Saved.</p>

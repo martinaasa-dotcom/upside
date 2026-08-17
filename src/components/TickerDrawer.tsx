@@ -195,7 +195,7 @@ export function TickerDrawer({
               <ul className="flex flex-col mt-3 gap-1.5 border-t border-border pt-3">
                 {conviction.stamps.slice(0, 3).map((s) => (
                   <li key={s.at} className="text-sm text-muted-foreground">
-                    <span className="text-foreground/80">{s.verdict}</span>
+                    <span className="text-muted-foreground">{s.verdict}</span>
                     {" · "}
                     {s.line}
                     <span className="ml-1 text-muted-foreground">
@@ -420,7 +420,7 @@ export function TickerDrawer({
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-sm text-foreground/80">
+            <p className="mt-2 text-sm text-muted-foreground">
               {CONVICTION_LABELS[level]}
             </p>
           </Card>

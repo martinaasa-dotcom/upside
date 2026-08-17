@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldDescription,
@@ -776,35 +777,35 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   in Account.
                 </p>
               </div>
-              <label className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
-                <input
-                  type="checkbox"
+              <div className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
+                <Checkbox
+                  id="note-morning"
                   checked={noteMorning}
-                  onChange={(e) => setNoteMorning(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-input bg-muted text-foreground focus:ring-white/40"
+                  onCheckedChange={(v) => setNoteMorning(v === true)}
+                  className="mt-0.5"
                 />
-                <span>
+                <label htmlFor="note-morning" className="min-w-0">
                   <span className="font-medium text-foreground">Weekdays</span>
                   <span className="mt-0.5 block text-sm text-muted-foreground">
                     What to watch before the open, then a recap after the US
                     close.
                   </span>
-                </span>
-              </label>
-              <label className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
-                <input
-                  type="checkbox"
+                </label>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
+                <Checkbox
+                  id="note-sunday"
                   checked={noteSunday}
-                  onChange={(e) => setNoteSunday(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-input bg-muted text-foreground focus:ring-white/40"
+                  onCheckedChange={(v) => setNoteSunday(v === true)}
+                  className="mt-0.5"
                 />
-                <span>
+                <label htmlFor="note-sunday" className="min-w-0">
                   <span className="font-medium text-foreground">Sundays</span>
                   <span className="mt-0.5 block text-sm text-muted-foreground">
                     The week that just finished, plus a look at the next ones.
                   </span>
-                </span>
-              </label>
+                </label>
+              </div>
               <Button
                 type="button"
                 className="w-full"

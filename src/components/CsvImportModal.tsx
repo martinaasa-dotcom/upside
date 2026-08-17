@@ -10,6 +10,7 @@ import {
 import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn, currency } from "@/lib/format";
@@ -282,10 +283,10 @@ export function CsvImportModal({
                             showCurrency={mixedListings}
                           />
                         </td>
-                        <td className={cn(htmlCell, "py-1.5 tabular-nums text-foreground/80")}>
+                        <td className={cn(htmlCell, "py-1.5 tabular-nums text-muted-foreground")}>
                           {r.shares}
                         </td>
-                        <td className={cn(htmlCell, "py-1.5 tabular-nums text-foreground/80")}>
+                        <td className={cn(htmlCell, "py-1.5 tabular-nums text-muted-foreground")}>
                           {currency(
                             r.buyPrice,
                             listingPriceDigits(listingCurrency(r.ticker)),
@@ -323,16 +324,17 @@ export function CsvImportModal({
           )}
 
           {rows.length > 0 && (
-            <label className="flex items-center gap-2 text-sm text-foreground/80">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox
+                id="csv-replace"
                 checked={replace}
-                onChange={(e) => setReplace(e.target.checked)}
-                className="h-4 w-4 rounded border-input bg-muted text-primary focus:ring-ring/50"
+                onCheckedChange={(v) => setReplace(v === true)}
               />
-              Replace this portfolio&apos;s holdings (uncheck to only add/update)
-              the tickers above, keeping everything else)
-            </label>
+              <label htmlFor="csv-replace">
+                Replace this portfolio&apos;s holdings (uncheck to only add/update
+                the tickers above, keeping everything else)
+              </label>
+            </div>
           )}
         </div>
 

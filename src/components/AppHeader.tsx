@@ -96,7 +96,7 @@ export function AppHeader({
                   <span
                     className={cn(
                       "min-w-0 truncate font-medium leading-none",
-                      "text-foreground/80"
+                      "text-muted-foreground"
                     )}
                   >
                     {title}

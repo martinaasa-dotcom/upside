@@ -618,7 +618,7 @@ export const LabSheet = memo(function LabSheet({
                         key={`${c.a}-${c.b}`}
                         className="flex flex-1 items-center justify-between gap-3 rounded-md border border-border px-2.5 text-sm"
                       >
-                        <span className="truncate text-foreground/80">
+                        <span className="truncate text-muted-foreground">
                           {cashtag(c.a)} ↔ {cashtag(c.b)}
                         </span>
                         <span

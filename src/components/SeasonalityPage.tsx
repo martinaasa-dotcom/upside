@@ -419,7 +419,7 @@ function DayOfMonthChart({
                   "text-sm tabular-nums",
                   isSelected || isToday
                     ? "font-bold text-foreground"
-                    : "text-foreground/80"
+                    : "text-muted-foreground"
                 )}
               >
                 {row.day}

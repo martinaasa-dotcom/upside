@@ -2000,7 +2000,7 @@ run("product UI stays on shadcn tokens, not palette leftovers", () => {
     `use destructive/loss tokens, not Tailwind red-N. Offenders: ${red.join(", ")}`
   );
   const leftover = offendersOf(
-    /ring-offset-app|hover:border-foreground\/20\/50|hover:border-foreground\/20-mid|border-white\//
+    /ring-offset-app|hover:border-foreground\/20|text-foreground\/80|focus:ring-white|bg-card\/95|stroke="#2b2b2b"/
   );
   assert.deepEqual(
     leftover,

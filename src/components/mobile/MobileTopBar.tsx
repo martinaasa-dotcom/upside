@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useFeedback } from "@/components/FeedbackHost";
 import { HeaderBrand } from "@/components/HeaderBrand";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/format";
 import Link from "next/link";
 import { Bell, MessageSquare } from "lucide-react";
@@ -23,29 +24,27 @@ type Props = {
   className?: string;
 };
 
-const ICON_BTN =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-accent hover:text-foreground";
-
-function hasVisibleTitle(title: ReactNode) {
-  if (title == null || title === false) return false;
-  if (typeof title === "string") return title.trim().length > 0;
-  return true;
-}
-
 function FeedbackIconButton() {
   const { user } = useAuth();
   const { openManual } = useFeedback();
   if (!user) return null;
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={openManual}
       aria-label="Feedback"
-      className={ICON_BTN}
     >
-      <MessageSquare className="h-4 w-4" />
-    </button>
+      <MessageSquare />
+    </Button>
   );
+}
+
+function hasVisibleTitle(title: ReactNode) {
+  if (title == null || title === false) return false;
+  if (typeof title === "string") return title.trim().length > 0;
+  return true;
 }
 
 export function MobileTopBar({
@@ -59,10 +58,10 @@ export function MobileTopBar({
   className,
 }: Props) {
   const bell = (
-    <span className={cn(ICON_BTN, "relative")}>
-      <Bell className="h-4 w-4" />
+    <span className="relative">
+      <Bell />
       {alertCount > 0 && (
-        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+        <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
       )}
     </span>
   );
@@ -81,7 +80,7 @@ export function MobileTopBar({
             <>
               <span className="h-3.5 w-px shrink-0 bg-border" aria-hidden />
               {typeof title === "string" ? (
-                <h1 className="min-w-0 truncate text-sm font-medium leading-none text-foreground/80">
+                <h1 className="min-w-0 truncate text-sm font-medium leading-none text-muted-foreground">
                   {title}
                 </h1>
               ) : (
@@ -96,24 +95,28 @@ export function MobileTopBar({
           {end}
           <FeedbackIconButton />
           {onAlerts ? (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onAlerts}
               aria-label={
                 alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
               }
             >
               {bell}
-            </button>
+            </Button>
           ) : alertsHref && !avatar ? (
-            <Link
-              href={alertsHref}
-              aria-label={
-                alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
-              }
-            >
-              {bell}
-            </Link>
+            <Button asChild variant="ghost" size="icon-sm">
+              <Link
+                href={alertsHref}
+                aria-label={
+                  alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
+                }
+              >
+                {bell}
+              </Link>
+            </Button>
           ) : null}
           {avatar ? (
             <Link
@@ -132,7 +135,7 @@ export function MobileTopBar({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-sm font-semibold text-foreground/80">
+                <span className="text-sm font-semibold text-muted-foreground">
                   {avatar.initial ?? "?"}
                 </span>
               )}

@@ -150,7 +150,7 @@ export function MacroStrip() {
       <span className="text-muted-foreground">{i.label}</span>{" "}
       <span
         className={cn(
-          "text-foreground/80",
+          "text-muted-foreground",
           i.tone === "fear" && "text-primary",
           i.tone === "greed" && "text-caution"
         )}

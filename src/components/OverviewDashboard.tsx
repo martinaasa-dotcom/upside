@@ -55,7 +55,7 @@ export type LabDeepLink = "seasonality";
 
 /** Signed numbers use gain/loss. Neutral figures stay on the cream. */
 const tone = (value: number | null | undefined) =>
-  signedTone(value, "text-foreground/80");
+  signedTone(value, "text-muted-foreground");
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;

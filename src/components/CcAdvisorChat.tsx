@@ -365,7 +365,7 @@ function ChatMarkdown({ children }: { children: string }) {
             <strong className="font-semibold text-foreground">{c}</strong>
           ),
           em: ({ children: c }) => (
-            <em className="italic text-foreground/80">{c}</em>
+            <em className="italic text-muted-foreground">{c}</em>
           ),
           a: ({ href, children: c }) => (
             <a
@@ -387,7 +387,7 @@ function ChatMarkdown({ children }: { children: string }) {
               );
             }
             return (
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm text-foreground/80">
+              <code className="rounded bg-muted px-1 py-0.5 font-mono text-sm text-muted-foreground">
                 {c}
               </code>
             );
@@ -959,7 +959,7 @@ export function CcAdvisorChat({
                             ? "text-caution"
                             : silentSummary.kind === "empty"
                               ? "text-muted-foreground"
-                              : "text-foreground/80"
+                              : "text-muted-foreground"
                       }`}
                     >
                       {line}
@@ -1041,7 +1041,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={toggleWide}
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground/80"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
               title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >
@@ -1064,7 +1064,7 @@ export function CcAdvisorChat({
                     className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                       rulesOpen
                         ? "bg-muted text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground/80"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                     aria-label="Strategy rules"
                     aria-expanded={rulesOpen}
@@ -1340,18 +1340,20 @@ export function CcAdvisorChat({
                       alt={img.filename ?? "Pending"}
                       className="h-full w-full object-cover"
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="absolute right-0.5 top-0.5"
                       onClick={() =>
                         setPendingImages((prev) =>
                           prev.filter((_, j) => j !== i)
                         )
                       }
-                      className="absolute right-0.5 top-0.5 rounded bg-black/10 p-0.5 text-foreground hover:text-foreground"
                       aria-label="Remove image"
                     >
-                      <X className="h-3 w-3" />
-                    </button>
+                      <X />
+                    </Button>
                   </div>
                 ))}
               </div>

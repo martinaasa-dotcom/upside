@@ -447,7 +447,7 @@ export function CommunitiesList() {
                                 "flex w-full flex-col gap-1 py-4 text-left transition first:pt-1 last:pb-1",
                                 on
                                   ? "text-foreground"
-                                  : "text-foreground/80 hover:text-foreground"
+                                  : "text-muted-foreground hover:text-foreground"
                               )}
                             >
                               <span
@@ -559,7 +559,7 @@ export function CommunitiesList() {
                         "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm",
                         on
                           ? "border-border bg-accent text-foreground"
-                          : "border-border bg-muted/60 text-foreground/80"
+                          : "border-border bg-muted/60 text-muted-foreground"
                       )}
                     >
                       <span className="min-w-0 truncate">{s.name}</span>

@@ -303,7 +303,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                 {percent(yield2wAvg)} over 2 weeks
               </span>
             </div>
-            <p className="mt-1 tabular-nums text-foreground/80">
+            <p className="mt-1 tabular-nums text-muted-foreground">
               {currency(premiumTotal)} in premium
             </p>
           </Card>
@@ -402,7 +402,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                   ? format(parseISO(r.expiration), "MMM d, yyyy")
                   : "—"}
               </div>
-              <div className={cn(cellBase, "tabular-nums text-foreground/80")}>
+              <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                 {Math.round(r.contracts)}
               </div>
               <div

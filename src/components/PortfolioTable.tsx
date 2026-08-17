@@ -452,7 +452,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 type="button"
                 onClick={onImportCsv}
                 title="Import / update holdings from a CSV file"
-                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground/80"
+                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                 aria-label="Import CSV"
               >
                 <FileUp className="h-3.5 w-3.5" />
@@ -654,7 +654,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                       type="button"
                       onClick={() => toggleSort(col.key!)}
                       className={cn(
-                        "inline-flex items-center gap-1 transition hover:text-foreground/80",
+                        "inline-flex items-center gap-1 transition hover:text-foreground",
                         sortKey === col.key && "text-primary"
                       )}
                       title={
@@ -810,7 +810,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               >
                 {percent(totals.roiPct)}
               </div>
-              <div className={cn(cellBase, "tabular-nums text-foreground/80")}>
+              <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                 {money(totals.buyValue, 0)}
               </div>
               <div className={cn(cellBase, "tabular-nums text-foreground")}>

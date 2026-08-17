@@ -194,7 +194,7 @@ export const ComparisonChart = memo(function ComparisonChart({
               {usable.map((s) => {
                 const v = s.points[active] ?? 0;
                 return (
-                  <span key={s.label} className="tabular-nums text-foreground/80">
+                  <span key={s.label} className="tabular-nums text-muted-foreground">
                     <span style={{ color: s.color }}>{s.label}</span>{" "}
                     <span className={v >= 0 ? "text-gain" : "text-loss"}>
                       {percent(v)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { YtdAnchorModal } from "@/components/YtdAnchorModal";
+import { Button } from "@/components/ui/button";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 import { currency, percent, signedCurrency, signedTone } from "@/lib/format";
 import { PALETTE } from "@/lib/palette";
@@ -777,68 +778,68 @@ export function BookNavChart({
           {readError && <p className="text-sm text-loss">{readError}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {onApplyAnchor && !anchored && (
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => {
                   setReadError(null);
                   setFixOpen((open) => !open);
                 }}
-                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
               >
                 {fixOpen ? "Hide" : "Fix the year"}
-              </button>
+              </Button>
             )}
             {fixOpen && onApplyAnchor && !anchored && (
               <>
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   disabled={reading}
                   onClick={() => fileRef.current?.click()}
-                  className="text-sm font-medium text-primary underline-offset-2 hover:underline disabled:opacity-50"
                 >
                   {reading ? "Reading screenshot…" : "Upload screenshot"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => {
                     setReadError(null);
                     setManualOpen(true);
                   }}
-                  className="text-sm font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
                 >
                   Type the number
-                </button>
+                </Button>
               </>
             )}
             {anchored && onApplyAnchor && (
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => {
                   setReadError(null);
                   setManualOpen(true);
                 }}
-                className="text-sm font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
               >
                 Change the number
-              </button>
+              </Button>
             )}
             {anchored && onClearAnchor && (
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={onClearAnchor}
-                className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
                 Back to assumed names
-              </button>
+              </Button>
             )}
             {onDiscardAssumed && (
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={onDiscardAssumed}
-                className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground/80 hover:underline"
               >
                 {recorded ? `Start from ${recorded}` : "Only recorded nights"}
-              </button>
+              </Button>
             )}
           </div>
           <input

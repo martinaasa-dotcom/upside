@@ -1185,7 +1185,7 @@ export const ForecastPanel = memo(function ForecastPanel({
         )}
 
         {busy && !plan && (
-          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-border bg-accent px-4 py-6 text-sm text-foreground/80">
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-border bg-accent px-4 py-6 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Working through every holding in this portfolio …
           </div>
