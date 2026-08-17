@@ -466,8 +466,8 @@ export function HoldingModal({
               {exchangeHint && <> · {exchangeHint}</>}
             </FieldDescription>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field>
+          <div className="flex gap-6">
+            <Field className="min-w-0 flex-1">
               <FieldLabel htmlFor="holding-shares">Shares</FieldLabel>
               <Input
                 id="holding-shares"
@@ -484,7 +484,7 @@ export function HoldingModal({
                 className="tabular-nums"
               />
             </Field>
-            <Field>
+            <Field className="min-w-0 flex-1">
               <FieldLabel htmlFor="holding-buy">
                 Average buy{buyCode !== "USD" ? ` (${buyCode})` : ""}
               </FieldLabel>

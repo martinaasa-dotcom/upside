@@ -5567,6 +5567,7 @@ run("holding and cash saves cannot double-fire", () => {
     join(process.cwd(), "src/components/CashModal.tsx"),
     "utf8"
   );
+  assert.match(holding, /flex gap-6/);
   assert.ok(/if \(busy\) return/.test(holding));
   assert.ok(/disabled=\{busy\}/.test(holding));
   assert.ok(/if \(busy\) return/.test(cash));
