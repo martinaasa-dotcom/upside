@@ -36,7 +36,6 @@ import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/co
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
-import { circleWeekBoard, recordCircleSession } from "@/lib/circle-board";
 import { overlapRows } from "@/lib/circle-overlap";
 import { sheetCashBalance } from "@/lib/cash-balance";
 import { buildOverview } from "@/lib/overview";
@@ -812,20 +811,6 @@ export function CommunityView({ communityId }: Props) {
       }),
     [overview.tickers, ownership, profileName]
   );
-
-  const [leaguePrize, setLeaguePrize] = useState(() =>
-    circleWeekBoard(communityId)
-  );
-
-  useEffect(() => {
-    if (membersWithBooks.length < 2) return;
-    const winner = [...membersWithBooks].sort(
-      (a, b) => (b.todayPct ?? -1) - (a.todayPct ?? -1)
-    )[0];
-    if (!winner || winner.todayPct == null) return;
-    recordCircleSession(communityId, winner.name);
-    setLeaguePrize(circleWeekBoard(communityId));
-  }, [communityId, membersWithBooks]);
 
   // Fun superlative badges — deliberately don't repeat what the leaderboard
   // already shows (today's move, lifetime return); these highlight the
@@ -1661,13 +1646,6 @@ export function CommunityView({ communityId }: Props) {
                       }))}
                     />
                     </WidgetErrorBoundary>
-                  )}
-                  {effectiveView === "play" && leaguePrize && leaguePrize.wins >= 1 && (
-                    <p className="text-sm text-foreground/80">
-                      {leaguePrize.name} took {leaguePrize.wins}{" "}
-                      {leaguePrize.wins === 1 ? "session" : "sessions"} this
-                      week.
-                    </p>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
                     <section className="overview-fade order-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
