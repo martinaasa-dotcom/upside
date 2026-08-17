@@ -54,6 +54,7 @@ async function framedPngBuffer(size) {
   const base = await sharp(src)
     .resize(size, size, { fit: "cover" })
     .flatten({ background: BG })
+    .ensureAlpha()
     .png()
     .toBuffer();
   const rounded = await sharp(base)
@@ -154,9 +155,10 @@ const png16 = await framedPngBuffer(16);
 const png32 = await framedPng(32, join(root, "public", "icons", "icon-32.png"));
 await framedPng(192, join(root, "public", "icons", "icon-192.png"));
 await framedPng(512, join(root, "public", "icons", "icon-512.png"));
+await framedPng(512, join(root, "src", "app", "icon.png"));
+await framedPng(128, join(root, "public", "upside-icon.png"));
+// Maskable must stay full-bleed square. The OS clips it.
 await squarePng(512, join(root, "public", "icons", "icon-512-maskable.png"));
-await squarePng(512, join(root, "src", "app", "icon.png"));
-await squarePng(128, join(root, "public", "upside-icon.png"));
 await writeOg();
 await writeEmailLockup();
 await writeTransparentMark();
