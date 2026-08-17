@@ -1604,175 +1604,196 @@ export function Dashboard() {
     return typeof p === "number" && p > 0 ? p : fallback;
   }
 
-  function handleSave(
-    values: HoldingFormValues,
-    opts?: { addAnother?: boolean }
-  ) {
-    if (!activePortfolio) return;
+  function handleSave(batch: HoldingFormValues[]) {
+    if (!activePortfolio || batch.length === 0) return;
 
-    const ticker = normalizeYahooTicker(values.ticker);
-    const liveHoldings = bookRef.current.holdings;
-    const sortOrder =
-      liveHoldings.filter((h) => h.portfolio_id === activePortfolio.id).length + 1;
-    const existing = liveHoldings.find(
-      (h) =>
-        h.portfolio_id === activePortfolio.id &&
-        h.ticker.toUpperCase() === ticker
-    );
-    const optimistic: Holding = existing
-      ? {
-          ...existing,
-          shares: values.shares,
-          buy_price: values.buy_price,
-          target_call_pct: values.target_call_pct,
-        }
-      : {
-          id: `tmp-${crypto.randomUUID()}`,
-          portfolio_id: activePortfolio.id,
-          ticker,
-          shares: values.shares,
-          buy_price: values.buy_price,
-          eoy_target: null,
-          target_call_pct: values.target_call_pct,
-          stock_target_override: null,
-          sort_order: sortOrder,
-        };
+    let working = bookRef.current.holdings.slice();
+    const applied: {
+      values: HoldingFormValues;
+      ticker: string;
+      existing: Holding | undefined;
+      optimistic: Holding;
+      cashDelta: number;
+      sortOrder: number;
+    }[] = [];
 
-    setHoldings((prev) => {
-      const current = prev.find(
+    for (const values of batch) {
+      const ticker = normalizeYahooTicker(values.ticker);
+      const sortOrder =
+        working.filter((h) => h.portfolio_id === activePortfolio.id).length +
+        1;
+      const existing = working.find(
         (h) =>
           h.portfolio_id === activePortfolio.id &&
           h.ticker.toUpperCase() === ticker
       );
-      if (current) {
-        return prev.map((h) =>
-          h.id === current.id ? { ...optimistic, id: current.id } : h
-        );
+      const optimistic: Holding = existing
+        ? {
+            ...existing,
+            shares: values.shares,
+            buy_price: values.buy_price,
+            target_call_pct: values.target_call_pct,
+          }
+        : {
+            id: `tmp-${crypto.randomUUID()}`,
+            portfolio_id: activePortfolio.id,
+            ticker,
+            shares: values.shares,
+            buy_price: values.buy_price,
+            eoy_target: null,
+            target_call_pct: values.target_call_pct,
+            stock_target_override: null,
+            sort_order: sortOrder,
+          };
+
+      working = existing
+        ? working.map((h) =>
+            h.id === existing.id ? { ...optimistic, id: existing.id } : h
+          )
+        : [...working, optimistic];
+
+      let cashDelta = 0;
+      if (!existing) {
+        cashDelta = tradeCashDelta({
+          buyShares: values.shares,
+          buyPrice: values.buy_price,
+        });
+      } else if (values.shares > existing.shares) {
+        cashDelta = tradeCashDelta({
+          buyShares: values.shares - existing.shares,
+          buyPrice: values.buy_price,
+        });
+      } else if (values.shares < existing.shares) {
+        cashDelta = tradeCashDelta({
+          sellShares: existing.shares - values.shares,
+          sellPrice: salePx(ticker, existing.buy_price),
+        });
       }
-      return [...prev, optimistic];
-    });
-    let cashDelta = 0;
-    if (!existing) {
-      cashDelta = tradeCashDelta({
-        buyShares: values.shares,
-        buyPrice: values.buy_price,
-      });
-    } else if (values.shares > existing.shares) {
-      cashDelta = tradeCashDelta({
-        buyShares: values.shares - existing.shares,
-        buyPrice: values.buy_price,
-      });
-    } else if (values.shares < existing.shares) {
-      cashDelta = tradeCashDelta({
-        sellShares: existing.shares - values.shares,
-        sellPrice: salePx(ticker, existing.buy_price),
+      applyCashDelta(activePortfolio.id, cashDelta);
+      applied.push({
+        values,
+        ticker,
+        existing,
+        optimistic,
+        cashDelta,
+        sortOrder,
       });
     }
-    applyCashDelta(activePortfolio.id, cashDelta);
-    if (!opts?.addAnother) {
-      setModalOpen(false);
-      toast("Holding saved", "success");
+
+    setHoldings(working);
+    setModalOpen(false);
+    toast(batch.length === 1 ? "Holding saved" : "Holdings saved", "success");
+    for (const row of applied) {
+      track("holding_added", { ticker: row.ticker });
     }
-    track("holding_added", { ticker });
     void refreshMarkets(
-      [ticker],
-      liveHoldings
-        .filter((h) => h.portfolio_id === activePortfolio.id)
-        .concat(optimistic)
+      applied.map((row) => row.ticker),
+      working.filter((h) => h.portfolio_id === activePortfolio.id)
     );
 
     if (source === "supabase") {
-      const writeKey = existing?.id ?? optimistic.id;
-      const writeSeq = (holdingPatchSeqRef.current.get(writeKey) ?? 0) + 1;
-      holdingPatchSeqRef.current.set(writeKey, writeSeq);
-      beginBookWrite();
-      enqueueBookWrite(async () => {
-        try {
-          const res = await apiFetch("/api/holdings", {
-            method: "POST",
-            body: JSON.stringify({
-              ...values,
-              ticker,
-              portfolio_id: activePortfolio.id,
-              sort_order: sortOrder,
-            }),
-          });
-          const raw: unknown = await res.json().catch(() => ({}));
-          const data = isRecord(raw) ? raw : {};
-          if (!res.ok) {
-            applyCashDelta(activePortfolio.id, -cashDelta);
+      for (const row of applied) {
+        const writeKey = row.existing?.id ?? row.optimistic.id;
+        const writeSeq = (holdingPatchSeqRef.current.get(writeKey) ?? 0) + 1;
+        holdingPatchSeqRef.current.set(writeKey, writeSeq);
+        beginBookWrite();
+        enqueueBookWrite(async () => {
+          try {
+            const res = await apiFetch("/api/holdings", {
+              method: "POST",
+              body: JSON.stringify({
+                ...row.values,
+                ticker: row.ticker,
+                portfolio_id: activePortfolio.id,
+                sort_order: row.sortOrder,
+              }),
+            });
+            const raw: unknown = await res.json().catch(() => ({}));
+            const data = isRecord(raw) ? raw : {};
+            if (!res.ok) {
+              applyCashDelta(activePortfolio.id, -row.cashDelta);
+              if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
+                setHoldings((prev) => {
+                  if (row.existing) {
+                    return prev.map((h) =>
+                      h.id === row.existing!.id ? row.existing! : h
+                    );
+                  }
+                  return prev.filter((h) => h.id !== row.optimistic.id);
+                });
+              } else {
+                reloadAfterWritesRef.current = true;
+              }
+              toast(
+                plainError(
+                  data.error,
+                  "Couldn't save that holding. We put it back how it was."
+                ),
+                "error"
+              );
+              return;
+            }
+            if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
+              applyCashBalance(
+                activePortfolio.id,
+                readFiniteNumber(data.cash_balance)
+              );
+            }
+            const saved = parseHolding(data.holding);
+            if (saved) {
+              holdingPatchSeqRef.current.set(saved.id, writeSeq);
+              setHoldings((prev) => {
+                const withoutTemp = prev.filter(
+                  (h) => h.id !== row.optimistic.id
+                );
+                const exists = withoutTemp.some((h) => h.id === saved.id);
+                return exists
+                  ? withoutTemp.map((h) => (h.id === saved.id ? saved : h))
+                  : [...withoutTemp, saved];
+              });
+            }
+          } catch (err) {
+            applyCashDelta(activePortfolio.id, -row.cashDelta);
             if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
               setHoldings((prev) => {
-                if (existing) {
-                  return prev.map((h) => (h.id === existing.id ? existing : h));
+                if (row.existing) {
+                  return prev.map((h) =>
+                    h.id === row.existing!.id ? row.existing! : h
+                  );
                 }
-                return prev.filter((h) => h.id !== optimistic.id);
+                return prev.filter((h) => h.id !== row.optimistic.id);
               });
             } else {
               reloadAfterWritesRef.current = true;
             }
             toast(
               plainError(
-                data.error,
+                err instanceof Error ? err.message : null,
                 "Couldn't save that holding. We put it back how it was."
               ),
               "error"
             );
-            return;
+          } finally {
+            endBookWrite();
           }
-          if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
-            applyCashBalance(
-              activePortfolio.id,
-              readFiniteNumber(data.cash_balance)
-            );
-          }
-          const saved = parseHolding(data.holding);
-          if (saved) {
-            holdingPatchSeqRef.current.set(saved.id, writeSeq);
-            setHoldings((prev) => {
-              const withoutTemp = prev.filter((h) => h.id !== optimistic.id);
-              const exists = withoutTemp.some((h) => h.id === saved.id);
-              return exists
-                ? withoutTemp.map((h) => (h.id === saved.id ? saved : h))
-                : [...withoutTemp, saved];
-            });
-          }
-        } catch (err) {
-          applyCashDelta(activePortfolio.id, -cashDelta);
-          if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
-            setHoldings((prev) => {
-              if (existing) {
-                return prev.map((h) => (h.id === existing.id ? existing : h));
-              }
-              return prev.filter((h) => h.id !== optimistic.id);
-            });
-          } else {
-            reloadAfterWritesRef.current = true;
-          }
-          toast(
-            plainError(
-              err instanceof Error ? err.message : null,
-              "Couldn't save that holding. We put it back how it was."
-            ),
-            "error"
-          );
-        } finally {
-          endBookWrite();
-        }
-      });
+        });
+      }
       return;
     }
 
-    const store = loadDemoStore();
-    const next = upsertHolding(store, {
-      ...values,
-      eoy_target: null,
-      stock_target_override: null,
-      portfolio_id: activePortfolio.id,
-      sort_order: sortOrder,
-    });
-    setPortfolios(next.portfolios);
-    setHoldings(next.holdings);
+    let store = loadDemoStore();
+    for (const row of applied) {
+      store = upsertHolding(store, {
+        ...row.values,
+        ticker: row.ticker,
+        eoy_target: null,
+        stock_target_override: null,
+        portfolio_id: activePortfolio.id,
+        sort_order: row.sortOrder,
+      });
+    }
+    setPortfolios(store.portfolios);
+    setHoldings(store.holdings);
   }
 
   function handlePatch(patch: HoldingPatch): boolean {

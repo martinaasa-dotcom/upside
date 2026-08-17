@@ -2,7 +2,7 @@
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   isSafePositiveMoney,
@@ -25,9 +25,12 @@ import {
 } from "@/lib/ticker";
 import {
   listingAmountToUsd,
+  listingCurrenciesAreMixed,
   listingCurrency,
+  listingPriceDigits,
   usdPerMapFromFx,
 } from "@/lib/listing-currency";
+import { cashtag, cn, currency } from "@/lib/format";
 
 export type HoldingFormValues = {
   ticker: string;
@@ -36,16 +39,41 @@ export type HoldingFormValues = {
   target_call_pct: number;
 };
 
+type Draft = {
+  id: string;
+  ticker: string;
+  shares: number;
+  buyPrice: number;
+  buyUsd: number;
+  targetCall: number;
+};
+
 type Props = {
   open: boolean;
   portfolioName: string;
   onClose: () => void;
-  onSave: (values: HoldingFormValues, opts?: { addAnother?: boolean }) => void;
+  onSave: (rows: HoldingFormValues[]) => void;
   /** Hide the Target call % field for viewers with no options experience
    * — still submits with the same default, they just never see or think
    * about it. */
   hideCallPct?: boolean;
 };
+
+function upsertDraft(list: Draft[], row: Draft): Draft[] {
+  const byId = list.findIndex((r) => r.id === row.id);
+  if (byId >= 0) {
+    const next = list.slice();
+    next[byId] = row;
+    return next;
+  }
+  const byTicker = list.findIndex((r) => r.ticker === row.ticker);
+  if (byTicker >= 0) {
+    const next = list.slice();
+    next[byTicker] = { ...row, id: list[byTicker]!.id };
+    return next;
+  }
+  return [...list, row];
+}
 
 export function HoldingModal({
   open,
@@ -61,7 +89,8 @@ export function HoldingModal({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [listOpen, setListOpen] = useState(false);
-  const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Draft[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const tickerRef = useRef<HTMLInputElement>(null);
   const remote = useTickerSearch(open ? ticker : "");
   const suggestions = useMemo(
@@ -83,15 +112,19 @@ export function HoldingModal({
     setError(null);
     setBusy(false);
     setListOpen(false);
+    setEditingId(null);
   }
 
   useEffect(() => {
     if (!open) return;
     resetForm();
-    setSavedNotice(null);
+    setCollapsed([]);
   }, [open]);
 
   if (!open) return null;
+
+  const formIsBlank =
+    !ticker.trim() && !shares.trim() && !buyPrice.trim();
 
   async function resolveHoldingTicker(raw: string): Promise<string> {
     const picked = pickTickerSuggestion(raw, suggestions);
@@ -113,35 +146,32 @@ export function HoldingModal({
     }
   }
 
-  async function submit(addAnother: boolean) {
-    if (busy) return;
-    try {
+  async function readCurrentDraft(): Promise<Draft | null> {
     const sharesN = parseDecimal(shares);
     const buyN = parseDecimal(buyPrice);
     const callN = Math.round(parseDecimal(targetCall));
     const normalizedTicker = await resolveHoldingTicker(ticker.trim());
     if (!normalizedTicker) {
       setError("Type a ticker or a company name.");
-      return;
+      return null;
     }
     if (!isPlausibleTicker(normalizedTicker)) {
       setError("That ticker doesn't look like a real symbol.");
-      return;
+      return null;
     }
     if (!isSafeShares(sharesN)) {
       setError("Share count has to be bigger than 0 and not enormous.");
-      return;
+      return null;
     }
     if (!isSafePositiveMoney(buyN)) {
       setError("Buy price has to be bigger than 0 and not enormous.");
-      return;
+      return null;
     }
     if (!Number.isFinite(callN) || callN < 0 || callN > 100) {
       setError("That has to be a number between 0 and 100.");
-      return;
+      return null;
     }
 
-    setBusy(true);
     let buyUsd = roundMoney(buyN);
     const buyCode = listingCurrency(normalizedTicker);
     if (buyCode !== "USD") {
@@ -151,9 +181,8 @@ export function HoldingModal({
           { cache: "no-store" }
         );
         if (!fxRes.ok) {
-          setBusy(false);
           setError("Couldn't convert that buy price. Try again in a second.");
-          return;
+          return null;
         }
         const fxJson = (await fxRes.json()) as {
           fx?: {
@@ -164,33 +193,102 @@ export function HoldingModal({
         };
         const rates = usdPerMapFromFx(fxJson.fx);
         if (!(rates[buyCode] > 0)) {
-          setBusy(false);
           setError("Couldn't convert that buy price. Try again in a second.");
-          return;
+          return null;
         }
         buyUsd = listingAmountToUsd(buyN, buyCode, rates);
       } catch {
-        setBusy(false);
         setError("Couldn't convert that buy price. Try again in a second.");
-        return;
+        return null;
       }
     }
-    onSave(
-      {
-        ticker: normalizedTicker,
-        shares: roundShares(sharesN),
-        buy_price: buyUsd,
-        target_call_pct: callN / 100,
-      },
-      { addAnother }
-    );
-    if (!addAnother) return;
-    resetForm();
-    setSavedNotice(normalizedTicker);
-    requestAnimationFrame(() => tickerRef.current?.focus());
+
+    return {
+      id: editingId ?? crypto.randomUUID(),
+      ticker: normalizedTicker,
+      shares: roundShares(sharesN),
+      buyPrice: roundMoney(buyN, listingPriceDigits(buyCode)),
+      buyUsd,
+      targetCall: callN,
+    };
+  }
+
+  async function collapseCurrent(): Promise<boolean> {
+    const draft = await readCurrentDraft();
+    if (!draft) return false;
+    setCollapsed((prev) => upsertDraft(prev, draft));
+    return true;
+  }
+
+  async function addAnother() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const ok = await collapseCurrent();
+      if (!ok) return;
+      resetForm();
+      requestAnimationFrame(() => tickerRef.current?.focus());
     } catch {
+      setError("Couldn't add that holding. Try again.");
+    } finally {
       setBusy(false);
+    }
+  }
+
+  async function expandRow(row: Draft) {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (!formIsBlank) {
+        const ok = await collapseCurrent();
+        if (!ok) return;
+      }
+      setCollapsed((prev) =>
+        prev.filter((r) => r.id !== row.id && r.ticker !== row.ticker)
+      );
+      setTicker(row.ticker);
+      setShares(String(row.shares));
+      setBuyPrice(String(row.buyPrice));
+      setTargetCall(String(row.targetCall));
+      setEditingId(row.id);
+      setListOpen(false);
+      requestAnimationFrame(() => tickerRef.current?.focus());
+    } catch {
+      setError("Couldn't open that holding. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submit() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      let rows = collapsed;
+      if (!formIsBlank) {
+        const draft = await readCurrentDraft();
+        if (!draft) return;
+        rows = upsertDraft(rows, draft);
+      }
+      if (rows.length === 0) {
+        setError("Type a ticker or a company name.");
+        return;
+      }
+      onSave(
+        rows.map((row) => ({
+          ticker: row.ticker,
+          shares: row.shares,
+          buy_price: row.buyUsd,
+          target_call_pct: row.targetCall / 100,
+        }))
+      );
+    } catch {
       setError("Couldn't save that holding. Try again.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -199,6 +297,16 @@ export function HoldingModal({
     : pickTickerSuggestion(ticker, suggestions)?.symbol ?? "";
   const exchangeHint = normalized ? tickerExchangeHint(normalized) : null;
   const buyCode = normalized ? listingCurrency(normalized) : "USD";
+  const mixedListings = listingCurrenciesAreMixed(
+    collapsed
+      .map((row) => ({ ticker: row.ticker }))
+      .concat(normalized ? [{ ticker: normalized }] : [])
+  );
+  const rowStyle = {
+    gridTemplateColumns: mixedListings
+      ? "max-content minmax(0,1fr) minmax(0,1.2fr) 1.25rem"
+      : "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 1.25rem",
+  };
 
   return (
     <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
@@ -211,7 +319,7 @@ export function HoldingModal({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void submit(false);
+          void submit();
         }}
         className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
       >
@@ -230,6 +338,57 @@ export function HoldingModal({
           </button>
         </div>
 
+        {collapsed.length > 0 && (
+          <div className="mb-4 max-h-48 overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-raised">
+            <div
+              className="grid h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted"
+              style={rowStyle}
+            >
+              <span className={mixedListings ? "justify-self-start" : "justify-self-center"}>
+                Ticker
+              </span>
+              <span className="justify-self-center">Shares</span>
+              <span className="justify-self-center">Avg buy</span>
+              <span />
+            </div>
+            {collapsed.map((row) => {
+              const code = listingCurrency(row.ticker);
+              return (
+                <button
+                  key={row.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void expandRow(row)}
+                  aria-label={`Edit ${cashtag(row.ticker)}`}
+                  className="grid h-10 w-full items-center whitespace-nowrap border-t border-border px-3 text-sm text-foreground hover:bg-hover disabled:opacity-50"
+                  style={rowStyle}
+                >
+                  <span
+                    className={cn(
+                      "min-w-0",
+                      mixedListings ? "justify-self-start" : "justify-self-center"
+                    )}
+                  >
+                    <TickerSymbol
+                      ticker={row.ticker}
+                      showCurrency={mixedListings}
+                    />
+                  </span>
+                  <span className="justify-self-center tabular-nums text-foreground/80">
+                    {row.shares.toLocaleString("en-US", {
+                      maximumFractionDigits: 4,
+                    })}
+                  </span>
+                  <span className="justify-self-center tabular-nums text-foreground/80">
+                    {currency(row.buyPrice, listingPriceDigits(code), code)}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 justify-self-end text-muted" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="grid gap-3">
           <label className="grid gap-1 text-sm text-muted">
             Ticker or company
@@ -242,7 +401,6 @@ export function HoldingModal({
                   setTicker(sanitizeTickerQuery(e.target.value));
                   setListOpen(true);
                   setError(null);
-                  setSavedNotice(null);
                 }}
                 onFocus={() => {
                   if (ticker.trim()) setListOpen(true);
@@ -256,7 +414,6 @@ export function HoldingModal({
                 }}
                 className="w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
                 placeholder="Apple, NVDA, or SPY5"
-                required
                 autoComplete="off"
               />
               {listOpen && suggestions.length > 0 && (
@@ -316,7 +473,6 @@ export function HoldingModal({
                 }}
                 onWheel={blockWheelChange}
                 className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-brand"
-                required
               />
             </label>
             <label className="grid gap-1 text-sm text-muted">
@@ -333,7 +489,6 @@ export function HoldingModal({
                 }}
                 onWheel={blockWheelChange}
                 className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-brand"
-                required
               />
             </label>
           </div>
@@ -356,11 +511,6 @@ export function HoldingModal({
         </div>
 
         {error && <p className="mt-3 text-sm text-loss">{error}</p>}
-        {savedNotice && !error && (
-          <p className="mt-3 text-sm text-muted">
-            <TickerSymbol ticker={savedNotice} /> saved. Add the next one.
-          </p>
-        )}
 
         <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
           <button
@@ -373,7 +523,7 @@ export function HoldingModal({
           <button
             type="button"
             disabled={busy}
-            onClick={() => void submit(true)}
+            onClick={() => void addAnother()}
             className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
           >
             Add another
