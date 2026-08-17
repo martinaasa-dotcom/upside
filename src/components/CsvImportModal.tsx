@@ -10,6 +10,7 @@ import {
 import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn, currency } from "@/lib/format";
 import {
@@ -188,7 +189,7 @@ export function CsvImportModal({
             Ticker, Shares, Buy Price. Buy price is in that listing&apos;s own money.
           </p>
 
-          <textarea
+          <Textarea
             value={paste}
             onChange={(e) => {
               setPaste(e.target.value);
@@ -203,7 +204,7 @@ export function CsvImportModal({
             }}
             rows={4}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-border bg-well px-3 py-2 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+            className="min-h-24 font-mono"
           />
 
           <div className="flex flex-wrap items-center gap-2">

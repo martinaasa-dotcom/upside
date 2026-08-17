@@ -172,7 +172,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           }}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-border bg-raised text-foreground hover:bg-accent hover:bg-hover"
+                            "border-border bg-raised text-foreground hover:bg-accent"
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0 text-foreground/80" />
@@ -188,7 +188,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent hover:bg-hover"
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent"
                       >
                         {opt.label}
                       </button>

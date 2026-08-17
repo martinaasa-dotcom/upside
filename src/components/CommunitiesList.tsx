@@ -19,6 +19,7 @@ import {
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { Panel, PanelHeader, Segmented } from "@/components/ui/Panel";
 import {
@@ -472,13 +473,13 @@ export function CommunitiesList() {
                       <span className="text-sm font-medium text-muted-foreground">
                         What we&apos;re learning
                       </span>
-                      <textarea
+                      <Textarea
                         value={assignment}
                         onChange={(e) => setAssignment(e.target.value)}
                         maxLength={800}
                         rows={4}
                         placeholder={DEFAULT_CLASS_ASSIGNMENT}
-                        className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+                        className="mt-2 min-h-24 leading-relaxed"
                       />
                     </label>
                   </>

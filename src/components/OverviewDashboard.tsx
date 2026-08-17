@@ -8,6 +8,7 @@ import {
   useBookNavHistory,
 } from "@/components/mobile/GoldNavChart";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   MicroLabel,
@@ -199,12 +200,12 @@ function EmptyBook({
 
       {!homework && onPasteHoldings && (
         <div className="flex flex-col mt-8 gap-3">
-          <textarea
+          <Textarea
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
             rows={5}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+            className="min-h-28 font-mono"
           />
           {pasteErr && <p className="text-sm text-loss">{pasteErr}</p>}
           <Button
@@ -425,7 +426,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-4 pr-3 text-left transition hover:bg-accent hover:bg-hover sm:gap-3 sm:pr-4"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-4 pr-3 text-left transition hover:bg-accent sm:gap-3 sm:pr-4"
     >
       <span
         className={cn(
@@ -476,7 +477,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 p-4 text-left transition hover:bg-accent hover:bg-hover"
+      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 p-4 text-left transition hover:bg-accent"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

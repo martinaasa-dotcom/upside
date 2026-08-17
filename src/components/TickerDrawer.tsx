@@ -3,6 +3,7 @@
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { currency, percent, signedPercent, cn, cashtag } from "@/lib/format";
 import { Card, MicroLabel, Pill, Segmented, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { Textarea } from "@/components/ui/textarea";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
 import { forecastThemeForTicker } from "@/lib/forecast-conviction";
@@ -176,13 +177,13 @@ export function TickerDrawer({
         <div className="flex-1 gap-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Card>
             <MicroLabel>Thesis</MicroLabel>
-            <textarea
+            <Textarea
               value={thesisDraft}
               rows={3}
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg border border-border bg-background p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-white/25"
+              className="mt-2 min-h-20 leading-relaxed"
             />
             <p className="mt-1.5 text-sm text-muted-foreground">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import {
@@ -263,13 +264,13 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">Say it</span>
-              <textarea
+              <Textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 maxLength={8000}
                 rows={8}
                 placeholder="Word vomit is fine. What happened, what you wanted, what would be better."
-                className="w-full resize-y rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
+                className="min-h-40 resize-y"
               />
             </label>
           </div>

@@ -5589,7 +5589,7 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
   assert.match(modal, /What is this about\?/);
   assert.match(modal, /mode === "weekly"/);
   assert.equal(
-    (modal.match(/<textarea/g) || []).length,
+    (modal.match(/<Textarea/g) || []).length,
     1,
     "only the manual form is a free box"
   );

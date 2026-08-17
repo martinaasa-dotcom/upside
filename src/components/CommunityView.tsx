@@ -16,6 +16,7 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { StartingCashField } from "@/components/StartingCashField";
 import {
@@ -1790,7 +1791,7 @@ export function CommunityView({ communityId }: Props) {
                                     setSelectedOwnerId(m.id);
                                     setSelectedPortfolioId(null);
                                   }}
-                                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-2.5 text-left transition hover:bg-accent hover:bg-hover"
+                                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-2.5 text-left transition hover:bg-accent"
                                 >
                                 <span className="w-6 shrink-0 text-center">
                                   {i === 0 ? (
@@ -2641,7 +2642,7 @@ export function CommunityView({ communityId }: Props) {
                 ? "Change this whenever the lesson changes. Students see it at the top."
                 : "One paragraph for the room. Public circles show this on Discover too."}
             </p>
-            <textarea
+            <Textarea
               value={settingsNote}
               onChange={(e) => setSettingsNote(e.target.value)}
               maxLength={isClassroom ? 800 : 400}
@@ -2652,7 +2653,7 @@ export function CommunityView({ communityId }: Props) {
                   ? "Week 2: only sell. Write why you sold."
                   : "Family portfolios, today's prices, no advice."
               }
-              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring disabled:opacity-50"
+              className="mt-1.5 min-h-20"
             />
             <div className="mt-2 flex justify-end">
               <Button

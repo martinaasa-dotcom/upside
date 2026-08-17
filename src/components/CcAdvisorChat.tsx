@@ -3,6 +3,7 @@
 import { track } from "@vercel/analytics";
 import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
 import {
@@ -1362,24 +1363,25 @@ export function CcAdvisorChat({
                   e.target.value = "";
                 }}
               />
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon"
                 disabled={busy}
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
                 aria-label="Attach image"
                 title="Attach screenshot"
               >
-                <ImagePlus className="h-4 w-4" />
-              </button>
-              <input
+                <ImagePlus />
+              </Button>
+              <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onPaste={(e) => void onPaste(e)}
                 placeholder="Ask Margus …"
                 aria-label="Paste a screenshot or ask Margus"
                 disabled={busy}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring disabled:opacity-50"
+                className="min-w-0 w-auto flex-1"
               />
               <Button
                 type="submit"

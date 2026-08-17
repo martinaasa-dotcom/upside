@@ -8,6 +8,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
@@ -427,7 +428,7 @@ export function AccountPage() {
                     {bio.length}/280
                   </span>
                 </span>
-                <textarea
+                <Textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   maxLength={280}
@@ -437,7 +438,7 @@ export function AccountPage() {
                       ? "e.g. Long-term tech · covered calls · Tallinn"
                       : "e.g. Long-term tech · growth investor · Tallinn"
                   }
-                  className="w-full resize-none rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
+                  className="resize-none"
                 />
               </label>
               <label className="flex flex-col gap-1">

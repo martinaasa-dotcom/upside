@@ -414,9 +414,14 @@ button:disabled,
     ):not([type="hidden"]):not([type="button"]):not([type="submit"]):not(
       [type="reset"]
     ):not(.inline-edit),
-  textarea,
   select {
     @apply h-8 min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base shadow-none outline-none transition-colors md:text-sm;
+    @apply placeholder:text-muted-foreground;
+    @apply focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  textarea {
+    @apply min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base shadow-none outline-none transition-colors md:text-sm;
     @apply placeholder:text-muted-foreground;
     @apply focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
