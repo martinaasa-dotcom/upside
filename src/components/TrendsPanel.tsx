@@ -146,7 +146,7 @@ function TickerStoryCard({
           </Badge>
         </CardAction>
       </CardHeader>
-      <CardContent className={cn("px-0", row.divergence && "-mb-(--card-spacing)")}>
+      <CardContent className="px-0">
         {trend ? <SignalCell signal={trend} /> : null}
         <div className="grid sm:grid-cols-2">
           {rest.map((s, i) => (
@@ -310,19 +310,8 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             </Button>
           }
         />
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Showing up to {MAX_TICKERS} names at once
-          {combined.length > MAX_TICKERS
-            ? ` (${MAX_TICKERS} of ${combined.length} queued).`
-            : combined.length > 0
-              ? ` (${Math.min(combined.length, MAX_TICKERS)} on the list).`
-              : "."}{" "}
-          Weekly bars, so this answers whether the story changed, not what
-          happened today. Each card shows the verdict and the numbers it
-          used.
-        </p>
 
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="mt-4">
           <h3 className="text-sm font-medium tracking-tight text-foreground">
             Watch anything, not just what you hold
           </h3>
