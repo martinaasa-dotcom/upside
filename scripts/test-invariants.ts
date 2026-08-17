@@ -3887,7 +3887,7 @@ run("class sheets stay out of the real book", () => {
     false
   );
   assert.equal(
-    isPaperClassOnly([], [{ id: "c1", kind: "classroom" }]),
+    isPaperClassOnly([], [{ kind: "classroom" }]),
     true
   );
 });

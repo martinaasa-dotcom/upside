@@ -12,6 +12,7 @@ import {
 } from "@/lib/classroom";
 import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { loadPaperClassGate, PAPER_CLASS_ONLY_MESSAGE } from "@/lib/paper-class-server";
+import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
