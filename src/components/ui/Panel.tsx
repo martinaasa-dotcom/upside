@@ -507,7 +507,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
         aria-expanded={open}
         className="relative inline-flex size-4 items-center justify-center text-muted-foreground transition hover:text-foreground"
       >
-        <span className="absolute -inset-3 md:-inset-1.5" aria-hidden />
+        <span className="absolute -inset-3.5 lg:-inset-2.5" aria-hidden />
         <Info className="relative h-3.5 w-3.5" />
       </button>
       {open && (
@@ -652,13 +652,13 @@ export function Score({
   return (
     <div className={cn(SCORE_CELL, className)}>
       {reading ? (
-        <p className="flex items-center gap-1 text-sm font-semibold tracking-tight text-foreground">
-          {label}
+        <p className="flex items-start gap-1.5 text-sm font-semibold tracking-tight text-foreground">
+          <span className="min-w-0">{label}</span>
           {explain && <InfoTip text={explain} />}
         </p>
       ) : (
-        <MicroLabel>
-          {label}
+        <MicroLabel className={explain ? "items-start" : undefined}>
+          <span className="min-w-0">{label}</span>
           {explain && <InfoTip text={explain} />}
         </MicroLabel>
       )}

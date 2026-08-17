@@ -1011,7 +1011,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             .
           </p>
 
-          <Scoreboard className="mt-4" cols={3}>
+          <Scoreboard className="mt-4" cols={2}>
             <Score
               label="Total return"
               value={
@@ -1031,14 +1031,20 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                   : "—"
               }
             />
+          </Scoreboard>
+          <Scoreboard className="mt-4" cols={1}>
             <Score
-              label="Growth overtakes you"
+              label="When growth takes over"
               value={
+                tipping != null ? `Year ${tipping}` : "Not on this plan"
+              }
+              sub={
                 tipping != null
-                  ? `Year ${tipping}`
-                  : "Not while you keep paying in"
+                  ? "From this year, growth adds more than you pay in."
+                  : "You still pay in more than growth adds."
               }
               explain="The year growth starts adding more than you pay in yourself. After this, time matters more than saving harder."
+              valueClassName="whitespace-normal leading-snug"
             />
           </Scoreboard>
         </Panel>
