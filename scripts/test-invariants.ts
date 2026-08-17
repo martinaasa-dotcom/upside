@@ -2165,7 +2165,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(css, /--background: oklch\(0 0 0\)/);
   assert.match(css, /--primary: oklch\(0\.922 0 0\)/);
-  assert.match(css, /--card: oklch\(0\.145 0 0\)/);
+  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
   assert.match(css, /--radius: 0\.625rem/);
   assert.match(css, /--gain:/);
   assert.match(css, /--loss:/);
@@ -2321,8 +2321,8 @@ run("boxes sit off the field, never the same color as the page", () => {
     "utf8"
   );
   assert.match(css, /--background: oklch\(0 0 0\)/);
-  assert.match(css, /--card: oklch\(0\.145 0 0\)/);
-  assert.notEqual("oklch(0 0 0)", "oklch(0.145 0 0)");
+  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
+  assert.notEqual("oklch(0 0 0)", "oklch(0.205 0 0)");
   assert.match(panel, /export const BOX/);
   assert.match(panel, /export const CARD/);
   assert.match(panel, /export const LIST/);
@@ -2397,8 +2397,8 @@ run("explainers portal and sit on a lifted popover", () => {
   assert.match(panel, /PopoverContent/);
   assert.doesNotMatch(panel, /left-1\/2 top-full/);
   assert.match(pop, /collisionPadding=\{12\}/);
-  assert.match(css, /--card: oklch\(0\.145 0 0\)/);
-  assert.match(css, /--popover: oklch\(0\.269 0 0\)/);
+  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
+  assert.match(css, /--popover: oklch\(0\.205 0 0\)/);
 });
 
 run("Geist headings and body, no third face", () => {
