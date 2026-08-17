@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { buildContentSecurityPolicy } from "@/lib/security-headers";
+import { limitMutationRequest } from "@/lib/rate-limit";
 import {
   isLegacyHost,
   isLocalHost,
@@ -10,7 +12,8 @@ import {
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
 /**
- * Legacy host redirects + Supabase session refresh.
+ * Legacy host redirects, mutation rate limits, CSP nonce, and Supabase
+ * session refresh.
  *
  * Document navigations to a known legacy host 301 to the canonical host,
  * path and query intact. `/api/*` stays on the incoming host so cron jobs
@@ -21,6 +24,8 @@ export async function proxy(request: NextRequest) {
   const target = redirectTarget();
   const path = request.nextUrl.pathname;
   const isApi = path.startsWith("/api/");
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = buildContentSecurityPolicy(nonce);
 
   if (
     target &&
@@ -33,10 +38,38 @@ export async function proxy(request: NextRequest) {
     url.host = target;
     url.protocol = "https";
     url.port = "";
-    return NextResponse.redirect(url, 301);
+    const redirect = NextResponse.redirect(url, 301);
+    redirect.headers.set("Content-Security-Policy", csp);
+    return redirect;
   }
 
-  let response = NextResponse.next({ request });
+  if (isApi) {
+    const limited = limitMutationRequest(request);
+    if (limited && !limited.ok) {
+      const blocked = NextResponse.json(
+        { error: "Too many requests. Try again in a minute." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(limited.retryAfterSec ?? 60) },
+        }
+      );
+      blocked.headers.set("Content-Security-Policy", csp);
+      return blocked;
+    }
+  }
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  const continueRequest = () => {
+    const next = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    next.headers.set("Content-Security-Policy", csp);
+    return next;
+  };
+
+  let response = continueRequest();
 
   const url = supabaseUrl();
   const key = supabaseAnonKey();
@@ -50,7 +83,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
-          response = NextResponse.next({ request });
+          response = continueRequest();
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
           });
