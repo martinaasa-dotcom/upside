@@ -62,7 +62,7 @@ export function AppStatusStrip({
           "flex min-h-10 flex-col gap-1 py-1.5 sm:h-10 sm:flex-row sm:items-center sm:gap-3 sm:py-0"
         )}
       >
-        <span className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+        <span className="text-sm tabular-nums text-muted-foreground sm:shrink-0 sm:whitespace-nowrap">
           {sec == null
             ? "Prices · —"
             : quotesDelayed && sec >= 60

@@ -2521,7 +2521,7 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.match(src, /minmax\(0,380px\)/);
   assert.match(src, /touch-pan-y/);
   assert.doesNotMatch(src, /touch-none/);
-  assert.match(controls, /divide-y divide-white\/10/);
+  assert.match(controls, /divide-y divide-border/);
   assert.doesNotMatch(controls, /Card tone="raised"/);
   assert.doesNotMatch(controls, /text-sky-400/);
   assert.doesNotMatch(controls, /type="range"/);
@@ -3555,7 +3555,7 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.match(src, /No public circles right now/);
   assert.doesNotMatch(src, /discover\.length > 0 &&/);
   assert.match(src, /<PanelHeader/);
-  assert.match(src, /flex flex-col mt-4 gap-4/);
+  assert.match(src, /flex flex-col gap-4/);
   assert.doesNotMatch(src, /sm:grid-cols-2/);
   assert.doesNotMatch(src, /HomeWorld/);
   assert.doesNotMatch(src, /fundOnly/);

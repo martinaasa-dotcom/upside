@@ -260,7 +260,7 @@ export function CommunitiesList() {
               icon={<Users className="h-4 w-4" />}
             />
             {communities.length === 0 && loading ? (
-              <div className="flex flex-col mt-4 gap-2" aria-hidden>
+              <div className="flex flex-col gap-2" aria-hidden>
                 {[0, 1].map((i) => (
                   <div
                     key={i}
@@ -269,7 +269,7 @@ export function CommunitiesList() {
                 ))}
               </div>
             ) : (
-              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg bg-muted">
+              <ul className="divide-y divide-border overflow-hidden rounded-lg bg-muted">
                 {communities.length === 0 && (
                   <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                     <Users className="h-6 w-6 text-muted-foreground" />
@@ -328,12 +328,12 @@ export function CommunitiesList() {
               icon={<Compass className="h-4 w-4" />}
             />
             {discover.length === 0 ? (
-              <p className="mt-4 rounded-lg bg-muted px-4 py-6 text-sm leading-relaxed text-muted-foreground">
+              <p className="rounded-lg bg-muted px-4 py-6 text-sm leading-relaxed text-muted-foreground">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg bg-muted">
+              <ul className="divide-y divide-border overflow-hidden rounded-lg bg-muted">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -402,7 +402,7 @@ export function CommunitiesList() {
                 }
               />
 
-              <div className="flex flex-col mt-4 gap-4">
+              <div className="flex flex-col gap-4">
                 <label className="block">
                   <span className="text-sm font-medium text-muted-foreground">
                     {kind === "classroom" ? "Class name" : "Name"}
@@ -429,7 +429,7 @@ export function CommunitiesList() {
                         Pick the closest match. You can change the cash, the
                         note, and the trading rules after you start.
                       </p>
-                      <div className="mt-4 divide-y divide-white/10">
+                      <div className="divide-y divide-border">
                         {CLASS_TEMPLATES.map((t) => {
                           const on = templateId === t.id;
                           return (
@@ -502,7 +502,7 @@ export function CommunitiesList() {
                   </div>
                 )}
 
-                <Button type="submit">
+                <Button type="submit" className="rounded-full">
                   {kind === "classroom" ? "Start a class" : "Start circle"}
                 </Button>
               </div>
@@ -524,7 +524,7 @@ export function CommunitiesList() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="join-share-title"
-            className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-4"
+            className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover p-6 ring-1 ring-foreground/10 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-6"
           >
             <h3
               id="join-share-title"

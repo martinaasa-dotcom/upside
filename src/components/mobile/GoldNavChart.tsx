@@ -610,7 +610,7 @@ export function GoldNavChart({
             <polyline
               fill="none"
               stroke={PALETTE.brand}
-              strokeWidth={2}
+              strokeWidth={1.5}
               strokeLinejoin="round"
               strokeLinecap="round"
               points={line}

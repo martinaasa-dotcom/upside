@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, HairlineGrid, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -276,15 +276,14 @@ export const LabSheet = memo(function LabSheet({
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel padded={false} className="px-4 py-3">
+      <Panel padded={false} className="px-6 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
             <h2 className="shrink-0 text-sm font-medium tracking-tight text-foreground">Lab</h2>
-            <HairlineGrid
+            <div
               role="tablist"
-              ariaLabel="Lab sections"
-              preferred={visibleTabs.length <= 3 ? visibleTabs.length : 2}
-              className="w-full min-w-0 sm:hidden"
+              aria-label="Lab sections"
+              className="scrollbar-none flex min-h-[2rem] gap-1 overflow-x-auto sm:hidden"
             >
               {visibleTabs.map((t) => (
                 <button
@@ -294,16 +293,16 @@ export const LabSheet = memo(function LabSheet({
                   aria-selected={tab === t.id}
                   onClick={() => selectTab(t.id)}
                   className={cn(
-                    "min-w-0 px-2 py-2.5 text-center text-sm font-medium transition",
+                    "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition touch-target",
                     tab === t.id
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                      : "text-muted-foreground hover:text-primary"
                   )}
                 >
-                  <span className="block truncate">{t.label}</span>
+                  {t.label}
                 </button>
               ))}
-            </HairlineGrid>
+            </div>
             <div className="relative hidden min-w-0 flex-1 sm:block">
               <div
                 ref={tabScrollRef}

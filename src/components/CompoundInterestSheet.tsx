@@ -769,7 +769,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           }
         />
 
-        <div className="mt-6 divide-y divide-white/10">
+        <div className="divide-y divide-border">
         <section className="flex flex-col gap-3 pb-4">
           <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
             Starting from

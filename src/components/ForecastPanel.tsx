@@ -201,13 +201,12 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
           sitting under the table.
         </p>
       </div>
-      <button
+      <Button
         type="button"
         onClick={onShow}
-        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
       >
         Show
-      </button>
+      </Button>
     </div>
   );
 }

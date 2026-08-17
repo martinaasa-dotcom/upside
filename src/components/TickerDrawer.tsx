@@ -177,7 +177,7 @@ export function TickerDrawer({
           </Button>
         </div>
 
-        <div className="flex-1 gap-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 gap-4 overflow-y-auto px-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Card>
             <MicroLabel>Thesis</MicroLabel>
             <Textarea
@@ -212,7 +212,7 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
             <div className={SPLIT_ROW}>
               <div className={SPLIT_COPY}>
                 <h3 className="text-base font-semibold text-foreground">

@@ -461,7 +461,7 @@ function PortfolioLane({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-heading text-base font-bold text-foreground">
+          <p className="truncate font-heading text-base font-semibold text-foreground">
             {sheet.portfolio.name}
           </p>
           <p className="mt-1.5 text-sm text-muted-foreground">
