@@ -5,7 +5,7 @@ import {
   analyzePortfolioShock,
   type ShockId,
 } from "@/lib/book-shock";
-import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { cashtag, cn, currency, percent, signedCurrency, signedPercent, signedTone } from "@/lib/format";
@@ -36,7 +36,7 @@ type Props = {
   scopeLabel: string;
 };
 
-type SortField = "delta" | "move" | "liveVal" | "ticker";
+type SortField = "delta" | "move" | "ticker";
 
 const DRIVER_ICONS: Record<string, typeof Activity> = {
   Baseline: Activity,
@@ -66,7 +66,6 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
       let diff = 0;
       if (sortField === "delta") diff = a.deltaVal - b.deltaVal;
       else if (sortField === "move") diff = a.movePct - b.movePct;
-      else if (sortField === "liveVal") diff = b.liveVal - a.liveVal;
       else if (sortField === "ticker") diff = a.ticker.localeCompare(b.ticker);
       return sortAsc ? diff : -diff;
     });
@@ -76,7 +75,8 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
   const mixedListings = listingCurrenciesAreMixed(
     holdings.map((h) => ({ ticker: h.ticker }))
   );
-  const tickerTd = mixedListings ? htmlCellTicker : htmlCell;
+  const tickerCell = mixedListings ? cellTicker : cellBase;
+  const template = tableCols(5, mixedListings);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -302,7 +302,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           </span>
         </div>
 
-        <div className="flex flex-col mt-3 gap-3 md:hidden">
+        <div className="mt-3 flex flex-col gap-3 md:hidden">
           {sortedRows.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
               Nothing held in this scope yet.
@@ -331,7 +331,9 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     {currency(r.deltaVal, 0)}
                   </p>
                 </div>
-                <p className="mt-1 truncate text-sm text-muted-foreground">{r.label}</p>
+                <p className="mt-1 truncate text-sm text-muted-foreground">
+                  {r.label}
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground">Move</p>
@@ -350,25 +352,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Price now</p>
-                    <p className="tabular-nums text-foreground">
-                      {currency(r.livePx, 2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Price after</p>
-                    <p className="tabular-nums text-foreground">
-                      {currency(r.shockPx, 2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Value now</p>
-                    <p className="tabular-nums text-muted-foreground">
-                      {currency(r.liveVal, 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Value after</p>
+                    <p className="text-muted-foreground">After</p>
                     <p className="tabular-nums text-foreground">
                       {currency(r.shockVal, 0)}
                     </p>
@@ -379,105 +363,103 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           )}
         </div>
 
-        <div className="mt-3 hidden overflow-x-auto md:block">
-          <table className={cn(htmlTable, "min-w-[40rem]")}>
-            <thead>
-              <tr className="border-b border-border text-xs text-muted-foreground">
-                  <th
-                    onClick={() => handleSort("ticker")}
-                    className={cn(tickerTd, "cursor-pointer font-medium hover:text-foreground")}
-                  >
-                    <span className={cn("inline-flex items-center gap-1", mixedListings ? "justify-start" : "justify-center")}>
-                      Ticker
-                      {sortField === "ticker" && (
-                        <ChevronDown className="h-3 w-3" aria-hidden />
-                      )}
-                    </span>
-                  </th>
-                <th className={cn(htmlCell, "font-medium")}>Bet</th>
-                <th
-                  onClick={() => handleSort("move")}
-                  className={cn(htmlCell, "cursor-pointer font-medium hover:text-foreground")}
+        <div className="mt-3 hidden md:block">
+          {sortedRows.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">
+              Nothing held in this scope yet.
+            </p>
+          ) : (
+            <FluidTable template={template}>
+              <FluidRow className="text-xs font-medium text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => handleSort("ticker")}
+                  className={cn(
+                    tickerCell,
+                    "hover:text-foreground",
+                    sortField === "ticker" && "text-foreground"
+                  )}
                 >
-                  <span className="inline-flex items-center justify-center gap-1">
+                  <span className="inline-flex items-center gap-1">
+                    Ticker
+                    {sortField === "ticker" && (
+                      <ChevronDown className="h-3 w-3" aria-hidden />
+                    )}
+                  </span>
+                </button>
+                <div className={cellBase}>Bet</div>
+                <button
+                  type="button"
+                  onClick={() => handleSort("move")}
+                  className={cn(
+                    cellBase,
+                    "hover:text-foreground",
+                    sortField === "move" && "text-foreground"
+                  )}
+                >
+                  <span className="inline-flex items-center gap-1">
                     Move
                     {sortField === "move" && (
                       <ChevronDown className="h-3 w-3" aria-hidden />
                     )}
                   </span>
-                </th>
-                <th className={cn(htmlCell, "font-medium")}>Price now</th>
-                <th className={cn(htmlCell, "font-medium")}>Price after</th>
-                <th
-                  onClick={() => handleSort("liveVal")}
-                  className={cn(htmlCell, "cursor-pointer font-medium hover:text-foreground")}
-                >
-                  <span className="inline-flex items-center justify-center gap-1">
-                    Value now
-                    {sortField === "liveVal" && (
-                      <ChevronDown className="h-3 w-3" aria-hidden />
-                    )}
-                  </span>
-                </th>
-                <th className={cn(htmlCell, "font-medium")}>Value after</th>
-                <th
+                </button>
+                <div className={cellBase}>After</div>
+                <button
+                  type="button"
                   onClick={() => handleSort("delta")}
-                  className={cn(htmlCell, "cursor-pointer font-medium hover:text-foreground")}
+                  className={cn(
+                    cellBase,
+                    "hover:text-foreground",
+                    sortField === "delta" && "text-foreground"
+                  )}
                 >
-                  <span className="inline-flex items-center justify-center gap-1">
+                  <span className="inline-flex items-center gap-1">
                     Change
                     {sortField === "delta" && (
                       <ChevronDown className="h-3 w-3" aria-hidden />
                     )}
                   </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </button>
+              </FluidRow>
               {sortedRows.map((r) => (
-                <tr
-                  key={r.ticker}
-                  className="border-b border-border transition hover:bg-accent/30"
-                >
-                  <td className={cn(tickerTd, "font-semibold text-foreground")}>
+                <FluidRow key={r.ticker}>
+                  <div
+                    className={cn(
+                      tickerCell,
+                      "font-semibold tracking-wide text-foreground"
+                    )}
+                  >
                     <TickerSymbol
                       ticker={r.ticker}
                       showCurrency={mixedListings}
                     />
-                  </td>
-                  <td className={cn(htmlCell, "truncate text-muted-foreground")}>
-                    {r.label}
-                  </td>
-                  <td className={htmlCell}>
-                    <span
-                      className={cn(
-                        "inline-block rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums",
-                        r.movePct === 0
-                          ? "bg-accent text-muted-foreground"
-                          : r.movePct > 0
-                            ? "bg-gain/15 text-gain ring-1 ring-gain/30"
-                            : "bg-loss/15 text-loss ring-1 ring-loss/30"
-                      )}
-                    >
-                      {r.movePct > 0 ? "+" : ""}
-                      {percent(r.movePct)}
+                  </div>
+                  <div className={cn(cellBase, "min-w-0")}>
+                    <span className="min-w-0 truncate text-muted-foreground">
+                      {r.label}
                     </span>
-                  </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                    {currency(r.livePx, 2)}
-                  </td>
-                  <td className={cn(htmlCell, "font-medium tabular-nums text-foreground")}>
-                    {currency(r.shockPx, 2)}
-                  </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                    {currency(r.liveVal, 0)}
-                  </td>
-                  <td className={cn(htmlCell, "tabular-nums text-foreground/80")}>
-                    {currency(r.shockVal, 0)}
-                  </td>
-                  <td
+                  </div>
+                  <div
                     className={cn(
-                      htmlCell,
+                      cellBase,
+                      "font-medium tabular-nums",
+                      r.movePct === 0
+                        ? "text-muted-foreground"
+                        : r.movePct > 0
+                          ? "text-gain"
+                          : "text-loss"
+                    )}
+                  >
+                    {r.movePct > 0 ? "+" : ""}
+                    {percent(r.movePct)}
+                  </div>
+                  <div className={cn(cellBase, "tabular-nums text-foreground/80")}>
+                    {currency(r.shockVal, 0)}
+                  </div>
+                  <div
+                    className={cn(
+                      cellBase,
                       "font-semibold tabular-nums",
                       r.deltaVal === 0
                         ? "text-muted-foreground"
@@ -488,21 +470,11 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   >
                     {r.deltaVal > 0 ? "+" : ""}
                     {currency(r.deltaVal, 0)}
-                  </td>
-                </tr>
+                  </div>
+                </FluidRow>
               ))}
-              {sortedRows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className={cn(htmlCell, "h-auto py-6 text-muted-foreground")}
-                  >
-                    Nothing held in this scope yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </FluidTable>
+          )}
         </div>
       </Panel>
     </div>

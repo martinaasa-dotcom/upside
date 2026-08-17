@@ -2900,6 +2900,12 @@ run("the recent Pulse and briefing bugs stay gone", () => {
     join(process.cwd(), "src/components/ScenarioSimulator.tsx"),
     "utf8"
   );
+  assert.match(sim, /FluidTable/);
+  assert.match(sim, /tableCols\(5,/);
+  assert.doesNotMatch(sim, /htmlTable/);
+  assert.doesNotMatch(sim, /min-w-\[40rem\]/);
+  assert.doesNotMatch(sim, /Price now/);
+  assert.doesNotMatch(sim, /Value now/);
   const drawer = readFileSync(
     join(process.cwd(), "src/components/TickerDrawer.tsx"),
     "utf8"
