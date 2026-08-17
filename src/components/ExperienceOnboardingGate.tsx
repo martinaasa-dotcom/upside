@@ -27,40 +27,46 @@ type BookRow = {
 };
 
 /**
- * Same first-run questions on Home, Circle, Fund, and Account.
+ * Same first-run walkthrough on Home, Circle, Fund, and Account.
  * Classroom-only accounts skip. Circle invite joins do not.
+ * Show the wizard as soon as they are signed in. Waiting on book/circle
+ * fetches used to leave an empty Home, so people hit Add holding first.
  */
 export function ExperienceOnboardingGate() {
   const { ready, user } = useAuth();
-  const [experienceTier, setExperienceTier] = useState<ExperienceTier | null>(
-    null
-  );
   const [readyToAsk, setReadyToAsk] = useState(false);
   const [skip, setSkip] = useState(true);
   const inheritedRef = useRef(false);
+  const askingRef = useRef(false);
 
   useEffect(() => {
-    const sync = () => setExperienceTier(loadStoredTier());
-    sync();
+    const sync = () => {
+      if (askingRef.current) return;
+      if (loadStoredTier()) setSkip(true);
+    };
     window.addEventListener(EXPERIENCE_TIER_EVENT, sync);
     return () => window.removeEventListener(EXPERIENCE_TIER_EVENT, sync);
   }, []);
 
   useEffect(() => {
     if (!supabaseIsConfigured() || !ready || !user) {
+      askingRef.current = false;
       setReadyToAsk(false);
       return;
     }
+
     const stored = loadStoredTier();
     if (stored) {
-      setExperienceTier(stored);
+      askingRef.current = false;
       setSkip(true);
       setReadyToAsk(true);
-      return;
+    } else {
+      askingRef.current = true;
+      setSkip(false);
+      setReadyToAsk(true);
     }
 
     const ctrl = new AbortController();
-    setReadyToAsk(false);
 
     void (async () => {
       try {
@@ -76,11 +82,15 @@ export function ExperienceOnboardingGate() {
         const commData = commRes.ok ? await commRes.json() : null;
 
         if (typeof tierData?.tier === "string") {
-          setExperienceTier(tierData.tier as ExperienceTier);
+          askingRef.current = false;
           saveStoredTier(tierData.tier as ExperienceTier);
           setSkip(true);
-          setReadyToAsk(true);
           return;
+        }
+
+        if (stored) {
+          askingRef.current = true;
+          setSkip(false);
         }
 
         const portfolios = (bookData?.portfolios ?? []) as BookRow[];
@@ -94,8 +104,8 @@ export function ExperienceOnboardingGate() {
 
         const paperOnly = isPaperClassOnly(portfolios, communities);
         if (paperOnly) {
+          askingRef.current = false;
           setSkip(true);
-          setReadyToAsk(true);
           return;
         }
 
@@ -106,7 +116,7 @@ export function ExperienceOnboardingGate() {
 
         if (skipOnboarding && !inheritedRef.current) {
           inheritedRef.current = true;
-          setExperienceTier("investor");
+          askingRef.current = false;
           saveStoredTier("investor");
           void postJsonOrQueue("/api/account/experience-tier", {
             tier: "investor",
@@ -114,29 +124,33 @@ export function ExperienceOnboardingGate() {
             /* localStorage already has the tier */
           });
           setSkip(true);
-          setReadyToAsk(true);
           return;
         }
 
-        setSkip(skipOnboarding);
-        setReadyToAsk(true);
+        if (!skipOnboarding) {
+          askingRef.current = true;
+          setSkip(false);
+        }
       } catch (err) {
         if (isAbortError(err) || ctrl.signal.aborted) return;
         const cached = loadCommunityListCache();
-        setSkip(isPaperClassOnly([], cached ?? []));
-        setReadyToAsk(true);
+        const paperOnly = isPaperClassOnly([], cached ?? []);
+        if (paperOnly) {
+          askingRef.current = false;
+          setSkip(true);
+        }
       }
     })();
 
     return () => ctrl.abort();
   }, [ready, user]);
 
-  if (!readyToAsk || skip || experienceTier || !user) return null;
+  if (!readyToAsk || skip || !user) return null;
 
   return (
     <ExperienceOnboardingModal
       onDone={(tier, knows) => {
-        setExperienceTier(tier);
+        askingRef.current = false;
         setSkip(true);
         track("experience_tier_set", { tier, knowsOptions: knows });
       }}

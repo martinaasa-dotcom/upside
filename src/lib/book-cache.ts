@@ -16,6 +16,14 @@ const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Skip a silent refetch (tab/room return) when we loaded this recently. */
 export const BOOK_SILENT_REFRESH_MS = 20_000;
 
+/** Dashboard reloads the book after onboarding writes a holding. */
+export const BOOK_REFRESH_EVENT = "upside:book-refresh";
+
+export function requestBookRefresh() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(BOOK_REFRESH_EVENT));
+}
+
 export function isBookFetchFresh(
   fetchedAt: number | null | undefined
 ): boolean {

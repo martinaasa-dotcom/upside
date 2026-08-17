@@ -502,6 +502,7 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
   assert.match(dash, /shouldSkipExperienceOnboarding/);
   assert.match(dash, /skipExperienceOnboarding/);
   assert.doesNotMatch(dash, /ExperienceOnboardingModal/);
+  assert.match(dash, /BOOK_REFRESH_EVENT/);
   const tierSrc = readFileSync(
     join(process.cwd(), "src/lib/experience-tier.ts"),
     "utf8"
@@ -546,6 +547,8 @@ run("circle invite joins still get the same onboarding as Home", () => {
   assert.match(gate, /Circle invite joins do not/);
   assert.match(shell, /<ExperienceOnboardingGate/);
   assert.match(gate, /isPaperClassOnly/);
+  assert.match(gate, /askingRef/);
+  assert.match(gate, /setSkip\(false\)/);
 });
 
 run("Home briefing never rotates a covered-call pep talk", () => {
@@ -3697,9 +3700,14 @@ run("onboarding asks for weekday and Sunday notes", () => {
   assert.match(onboarding, /noteSunday, setNoteSunday\] = useState\(true\)/);
   assert.match(onboarding, /Sunday is on/);
   assert.match(onboarding, /once there are names in your portfolio/);
-  assert.match(onboarding, /\{step\}\/3/);
+  assert.match(onboarding, /This is Upside Lab/);
   assert.match(onboarding, /Add what you own/);
-  assert.doesNotMatch(onboarding, /saveWatchlist/);
+  assert.match(onboarding, /Names you&apos;re watching/);
+  assert.match(onboarding, /saveWatchlist/);
+  assert.match(onboarding, /See your book/);
+  assert.match(onboarding, /label: "App"/);
+  assert.match(onboarding, /label: "Watchlist"/);
+  assert.match(onboarding, /label: "Welcome"/);
 });
 
 run("popular ticker snapshot is 30 names, one month at a time", () => {

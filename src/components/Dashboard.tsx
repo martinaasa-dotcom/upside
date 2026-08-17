@@ -100,6 +100,7 @@ import {
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { plainError } from "@/lib/plain-error";
 import {
+  BOOK_REFRESH_EVENT,
   clearBookCache,
   markSeedClaimed,
   readBookCache,
@@ -1477,11 +1478,16 @@ export function Dashboard() {
       setActiveId(OVERVIEW_TAB_ID);
       if (isWorkspaceRoomActive("book")) takeGoHomeRequest();
     };
+    const onBookRefresh = () => {
+      void loadPortfolios({ silent: true });
+    };
     window.addEventListener(WORKSPACE_SHOW_EVENT, onShow);
     window.addEventListener(GO_HOME_EVENT, onGoHome);
+    window.addEventListener(BOOK_REFRESH_EVENT, onBookRefresh);
     return () => {
       window.removeEventListener(WORKSPACE_SHOW_EVENT, onShow);
       window.removeEventListener(GO_HOME_EVENT, onGoHome);
+      window.removeEventListener(BOOK_REFRESH_EVENT, onBookRefresh);
     };
   }, [portfolios, loadPortfolios]);
 
