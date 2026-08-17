@@ -1,4 +1,5 @@
 import type { Holding, Portfolio } from "@/lib/types";
+import { persistBookSnapshot } from "@/lib/offline/snapshots";
 
 export type CachedBook = {
   userId: string;
@@ -61,6 +62,7 @@ function persist(next: CachedBook | null) {
   } catch {
     /* ignore quota / private mode */
   }
+  persistBookSnapshot(next);
 }
 
 export function readBookCache(userId: string | null | undefined): CachedBook | null {

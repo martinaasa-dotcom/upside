@@ -16,6 +16,7 @@
  */
 
 import type { Quote } from "@/lib/types";
+import { persistQuotesSnapshot } from "@/lib/offline/snapshots";
 
 const KEY = "upside-quotes-v1";
 /** Generous: a Friday close is a perfectly good Monday-morning opener. */
@@ -142,10 +143,9 @@ export function saveCachedQuotes(next: Record<string, Quote>) {
             keys.slice(keys.length - MAX_TICKERS).map((k) => [k, merged[k]!])
           )
         : merged;
-    window.localStorage.setItem(
-      KEY,
-      JSON.stringify({ savedAt: Date.now(), quotes: trimmed })
-    );
+    const snap = { savedAt: Date.now(), quotes: trimmed };
+    window.localStorage.setItem(KEY, JSON.stringify(snap));
+    persistQuotesSnapshot(snap);
   } catch {
     /* ignore quota / private mode */
   }

@@ -27,6 +27,7 @@ import {
 } from "@/lib/compound-play";
 import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
 import { cn, percent } from "@/lib/format";
+import { persistCompoundSnapshot } from "@/lib/offline/snapshots";
 import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
 import {
@@ -554,6 +555,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
     if (!hydrated) return;
     try {
       localStorage.setItem(COMPOUND_STORAGE_KEY, JSON.stringify(draft));
+      persistCompoundSnapshot(draft);
     } catch {
       /* ignore */
     }

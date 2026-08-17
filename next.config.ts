@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: STATIC_SECURITY_HEADERS,
       },
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
     ];
   },
 };

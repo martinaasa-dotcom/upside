@@ -8,6 +8,7 @@ import {
 } from "@/lib/experience-tier";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
+import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { Check, GraduationCap, Settings, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
 
@@ -67,15 +68,13 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
     saveStoredTier(tier);
     saveStoredKnowsOptions(knowsOptions);
     try {
-      await fetch("/api/account/experience-tier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, knowsOptions }),
+      await postJsonOrQueue("/api/account/experience-tier", {
+        tier,
+        knowsOptions,
       });
-      await fetch("/api/account/morning-note", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ morning: noteMorning, sunday: noteSunday }),
+      await postJsonOrQueue("/api/account/morning-note", {
+        morning: noteMorning,
+        sunday: noteSunday,
       });
     } catch {
       /* localStorage already has the tier; notes can be set in Account */

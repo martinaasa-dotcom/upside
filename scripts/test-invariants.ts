@@ -5887,6 +5887,61 @@ run("production telemetry covers crashes, slow routes, and vitals", () => {
   assert.deepEqual(missing, [], `unwrapped API routes: ${missing.join(", ")}`);
 });
 
+run("offline-first engine caches the book and queues safe writes", () => {
+  const sw = readFileSync(join(process.cwd(), "public/sw.js"), "utf8");
+  assert.match(sw, /upside-shell-v1/);
+  assert.match(sw, /skipWaiting/);
+  assert.match(sw, /clients\.claim/);
+  assert.match(sw, /path\.startsWith\("\/api\/"\)/);
+  assert.doesNotMatch(sw, /cache\.put\(.*\/api\//);
+
+  const nextCfg = readFileSync(join(process.cwd(), "next.config.ts"), "utf8");
+  assert.match(nextCfg, /source: "\/sw\.js"/);
+  assert.match(nextCfg, /Service-Worker-Allowed/);
+
+  const banner = readFileSync(
+    join(process.cwd(), "src/components/OfflineBanner.tsx"),
+    "utf8"
+  );
+  assert.match(banner, /Offline Mode/);
+  assert.match(banner, /useOnlineStatus/);
+  assert.match(banner, /pointer-events-none fixed/);
+  assert.doesNotMatch(banner, /PAGE_COLUMN_CLASS/);
+  assert.doesNotMatch(banner, /border-b/);
+
+  const providers = readFileSync(
+    join(process.cwd(), "src/components/Providers.tsx"),
+    "utf8"
+  );
+  assert.match(providers, /OfflineRuntime/);
+  assert.match(providers, /OfflineBanner/);
+
+  const header = readFileSync(
+    join(process.cwd(), "src/components/AppHeader.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(header, /Offline Mode/);
+  assert.doesNotMatch(header, /OfflineBanner/);
+
+  const queue = readFileSync(
+    join(process.cwd(), "src/lib/offline/sync-queue.ts"),
+    "utf8"
+  );
+  assert.match(queue, /\/api\/account\/experience-tier/);
+  assert.match(queue, /\/api\/lab/);
+  assert.match(queue, /\/api\/feedback/);
+  assert.doesNotMatch(queue, /\/api\/holdings/);
+  assert.doesNotMatch(queue, /\/api\/portfolios/);
+
+  const book = readFileSync(join(process.cwd(), "src/lib/book-cache.ts"), "utf8");
+  assert.match(book, /persistBookSnapshot/);
+  const quotes = readFileSync(
+    join(process.cwd(), "src/lib/quote-cache.ts"),
+    "utf8"
+  );
+  assert.match(quotes, /persistQuotesSnapshot/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

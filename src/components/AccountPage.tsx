@@ -27,6 +27,7 @@ import {
   type ExperienceTier,
 } from "@/lib/experience-tier";
 import { track } from "@vercel/analytics";
+import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import {
   AlertTriangle,
   Check,
@@ -161,11 +162,7 @@ export function AccountPage() {
     saveStoredTier(next);
     setTierSaved(false);
     try {
-      await fetch("/api/account/experience-tier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: next }),
-      });
+      await postJsonOrQueue("/api/account/experience-tier", { tier: next });
       setTierSaved(true);
       track("experience_tier_set", { tier: next, source: "account" });
       later(() => setTierSaved(false), 2000);
@@ -179,10 +176,8 @@ export function AccountPage() {
     saveStoredKnowsOptions(next);
     setKnowsOptionsSaved(false);
     try {
-      await fetch("/api/account/experience-tier", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ knowsOptions: next }),
+      await postJsonOrQueue("/api/account/experience-tier", {
+        knowsOptions: next,
       });
       setKnowsOptionsSaved(true);
       track("experience_tier_set", { knowsOptions: next, source: "account" });
@@ -345,15 +340,12 @@ export function AccountPage() {
                     const next = e.target.checked;
                     const prev = row.checked;
                     row.set(next);
-                    void fetch("/api/account/morning-note", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(
-                        row.id === "morning"
-                          ? { morning: next }
-                          : { sunday: next }
-                      ),
-                    })
+                    void postJsonOrQueue(
+                      "/api/account/morning-note",
+                      row.id === "morning"
+                        ? { morning: next }
+                        : { sunday: next }
+                    )
                       .then((r) => {
                         if (r.ok) {
                           setMorningSaved(true);

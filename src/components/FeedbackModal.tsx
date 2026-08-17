@@ -14,6 +14,7 @@ import {
   type WeeklyHelpedId,
 } from "@/lib/feedback";
 import { plainError } from "@/lib/plain-error";
+import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { useTimeout } from "@/lib/use-timeout";
 import { X } from "lucide-react";
 import { useState } from "react";
@@ -73,11 +74,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         mode === "weekly"
           ? { kind: "weekly" as const, ...weekly }
           : { kind: "manual" as const, topic, body };
-      const res = await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await postJsonOrQueue("/api/feedback", payload, "draft");
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(plainError(data.error, "Couldn't send that."));

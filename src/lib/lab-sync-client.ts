@@ -1,6 +1,7 @@
 import { isAbortError } from "@/lib/abort";
 import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { saveConvictionMap } from "@/lib/conviction";
+import { fetchOrQueue } from "@/lib/offline/queued-fetch";
 
 const LAB_SAVE_FAILED =
   "Couldn't save your Lab notes. They're still on this device.";
@@ -45,13 +46,17 @@ export async function pushLabBundle(
 ): Promise<{ ok: boolean; error?: string }> {
   mirrorLabLocal(bundle);
   try {
-    const res = await fetch("/api/lab", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        conviction: bundle.conviction,
-      }),
-    });
+    const res = await fetchOrQueue(
+      "/api/lab",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conviction: bundle.conviction,
+        }),
+      },
+      { kind: "preference" }
+    );
     if (res.status === 400) {
       return { ok: true };
     }

@@ -173,6 +173,8 @@ import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes, quotesUnchanged } from "@/lib/quote-cache";
+import { OFFLINE_CACHE_READY } from "@/lib/offline/snapshots";
+import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { markSheetImported } from "@/lib/sheet-import-stamp";
 import { addPulseStamp } from "@/lib/conviction";
 
@@ -474,6 +476,30 @@ export function Dashboard() {
     setKnowsOptions(loadStoredKnowsOptions());
   }, [user?.id]);
 
+  useEffect(() => {
+    const apply = () => {
+      const uid = user?.id ?? loadLastUser()?.id ?? null;
+      const cached = readBookCache(uid);
+      if (!cached || bookFetchedAtRef.current > 0) return;
+      setSource(cached.source);
+      setPortfolios(cached.portfolios);
+      setHoldings(cached.holdings);
+      setLocked(cached.locked);
+      setLoading(false);
+      bookFetchedAtRef.current = cached.fetchedAt;
+      const cachedQuotes = loadCachedQuotes();
+      if (
+        Object.keys(quotesRef.current).length === 0 &&
+        Object.keys(cachedQuotes.quotes).length > 0
+      ) {
+        setQuotes(cachedQuotes.quotes);
+        setQuotesUpdatedAt(cachedQuotes.savedAt);
+      }
+    };
+    window.addEventListener(OFFLINE_CACHE_READY, apply);
+    return () => window.removeEventListener(OFFLINE_CACHE_READY, apply);
+  }, [user?.id]);
+
   // Confirm/sync against the server once — localStorage is read
   // synchronously above for an instant first paint, but the DB value is
   // the source of truth across devices (e.g. answered on phone, opens on
@@ -538,13 +564,11 @@ export function Dashboard() {
     inheritedTierRef.current = true;
     setExperienceTier("investor");
     saveStoredTier("investor");
-    void fetch("/api/account/experience-tier", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tier: "investor" }),
-    }).catch(() => {
-      /* localStorage already has the tier */
-    });
+    void postJsonOrQueue("/api/account/experience-tier", { tier: "investor" }).catch(
+      () => {
+        /* localStorage already has the tier */
+      }
+    );
   }, [
     tierChecked,
     experienceTier,
@@ -852,6 +876,10 @@ export function Dashboard() {
   const loadPortfolios = useCallback(async (opts?: { silent?: boolean; retry?: boolean }) => {
     const userId = user?.id ?? null;
     const hasCache = Boolean(readBookCache(userId));
+    if (typeof navigator !== "undefined" && !navigator.onLine && hasCache) {
+      setLoading(false);
+      return;
+    }
     // Cold start only — remounts (My book from Communities/Account) use cache.
     const showSplash = !opts?.silent && !hasCache;
     if (showSplash) {
@@ -1081,6 +1109,9 @@ export function Dashboard() {
         setQuotes({});
         setOptions({});
         await refreshFx();
+        return;
+      }
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
         return;
       }
       quotesAbortRef.current?.abort();

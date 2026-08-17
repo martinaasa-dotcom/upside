@@ -1,11 +1,10 @@
 "use client";
 
-import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import { useOnlineStatus } from "@/lib/use-online-status";
 
 /**
- * Subtle status when the device has no network. The book still shows
- * whatever was last cached. Hidden while online so it never nags.
+ * Overlay chip when the device has no network. Does not sit in the header
+ * or push the page down; the last cached book stays on screen.
  */
 export function OfflineBanner() {
   const online = useOnlineStatus();
@@ -14,11 +13,13 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="border-b border-caution/35 bg-caution/15 py-2 text-sm text-caution"
+      aria-live="polite"
+      className="pointer-events-none fixed z-50 left-[max(0.75rem,env(safe-area-inset-left))] bottom-[max(0.75rem,calc(var(--dock-pad,5.5rem)+0.5rem))]"
     >
-      <div className={PAGE_COLUMN_CLASS}>
-        You&apos;re offline. Showing what we last had.
-      </div>
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-caution/40 bg-app/90 px-2.5 py-1 text-xs font-medium text-caution shadow-lg backdrop-blur">
+        <span className="h-1.5 w-1.5 rounded-full bg-caution" aria-hidden />
+        Offline Mode
+      </span>
     </div>
   );
 }

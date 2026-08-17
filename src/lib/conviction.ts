@@ -1,4 +1,5 @@
-/** Per-ticker conviction + thesis (localStorage). */
+/** Per-ticker conviction + thesis (localStorage, mirrored to IndexedDB). */
+import { persistLabSnapshot } from "@/lib/offline/snapshots";
 
 export type ConvictionLevel = 1 | 2 | 3 | 4 | 5;
 
@@ -36,6 +37,7 @@ export function saveConvictionMap(map: ConvictionMap) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(KEY, JSON.stringify(map));
+    persistLabSnapshot(map);
   } catch {
     /* ignore */
   }
