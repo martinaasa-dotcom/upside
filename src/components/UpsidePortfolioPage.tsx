@@ -1388,8 +1388,8 @@ export function UpsidePortfolioPage() {
 
             {openHoldings.length > 0 && (
               <WidgetErrorBoundary name="Fund positions">
-              <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-medium text-muted-foreground">
+              <section className="flex flex-col gap-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                   Open positions · {openHoldings.length}
                 </h2>
                 <div className="flex flex-col gap-3">
@@ -1406,8 +1406,8 @@ export function UpsidePortfolioPage() {
             )}
 
             {weeklyRecaps.length > 0 && (
-              <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">
+              <section className="flex flex-col gap-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                   Weekly recap
                 </h2>
                 <div className="flex flex-col gap-3">
@@ -1461,8 +1461,8 @@ export function UpsidePortfolioPage() {
               </section>
             )}
 
-            <section className="flex flex-col gap-3">
-              <h2 className="text-sm font-semibold text-muted-foreground">
+            <section className="flex flex-col gap-4">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                 Daily reports
               </h2>
               {reports.length === 0 ? (
@@ -1526,8 +1526,8 @@ export function UpsidePortfolioPage() {
             </section>
 
             {closedHoldings.length > 0 && (
-              <section className="flex flex-col gap-3">
-                <h2 className="text-sm font-semibold text-muted-foreground">
+              <section className="flex flex-col gap-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                   Closed positions · {closedHoldings.length}
                 </h2>
                 <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
