@@ -9,12 +9,14 @@ import {
   PRODUCT_NAME,
 } from "@/lib/product";
 import Link from "next/link";
-import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/site-metadata";
 import type { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: `Terms of Service: ${PRODUCT_NAME}`,
-};
+export const metadata = publicPageMetadata({
+  title: "Terms of Service",
+  description: "The rules for using Upside Lab.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

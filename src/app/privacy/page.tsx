@@ -9,12 +9,14 @@ import {
   PRODUCT_NAME,
 } from "@/lib/product";
 import Link from "next/link";
-import type { Metadata } from "next";
+import { publicPageMetadata } from "@/lib/site-metadata";
 import type { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: `Privacy Policy: ${PRODUCT_NAME}`,
-};
+export const metadata = publicPageMetadata({
+  title: "Privacy Policy",
+  description: "How Upside Lab handles your account and the names you hold.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

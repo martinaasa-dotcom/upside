@@ -4,11 +4,12 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
 import { WebVitals } from "@/components/WebVitals";
+import { PRODUCT_NAME } from "@/lib/product";
 import {
-  PRODUCT_BLURB,
-  PRODUCT_NAME,
-  PRODUCT_SENTENCE,
-} from "@/lib/product";
+  OG_IMAGE,
+  PUBLIC_ROBOTS,
+  SITE_DESCRIPTION,
+} from "@/lib/site-metadata";
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
@@ -32,17 +33,28 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-const SITE_DESCRIPTION = `${PRODUCT_SENTENCE} ${PRODUCT_BLURB}`;
-
 export const metadata: Metadata = {
-  title: PRODUCT_NAME,
+  metadataBase: new URL(siteUrl()),
+  title: {
+    default: PRODUCT_NAME,
+    template: `%s · ${PRODUCT_NAME}`,
+  },
   description: SITE_DESCRIPTION,
   applicationName: PRODUCT_NAME,
   manifest: "/manifest.webmanifest",
+  robots: PUBLIC_ROBOTS,
+  alternates: {
+    canonical: siteUrl(),
+  },
   appleWebApp: {
     capable: true,
     title: PRODUCT_NAME,
     statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
   },
   icons: {
     icon: [
@@ -51,22 +63,23 @@ export const metadata: Metadata = {
       { url: "/favicon.ico?v=2", sizes: "16x16 32x32" },
     ],
     shortcut: "/upside-icon.svg?v=2",
-    apple: "/icons/icon-192.png?v=2",
+    apple: [
+      {
+        url: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+      { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+    ],
   },
   openGraph: {
     title: PRODUCT_NAME,
     description: SITE_DESCRIPTION,
     siteName: PRODUCT_NAME,
+    locale: "en_US",
     type: "website",
     url: siteUrl(),
-    images: [
-      {
-        url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: PRODUCT_NAME,
-      },
-    ],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
@@ -74,7 +87,6 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: ["/og.png"],
   },
-  metadataBase: new URL(siteUrl()),
 };
 
 export default function RootLayout({

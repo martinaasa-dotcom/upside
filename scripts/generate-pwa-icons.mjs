@@ -108,6 +108,7 @@ async function squarePng(size, out) {
 }
 
 await framedPng(180, join(root, "src", "app", "apple-icon.png"));
+await framedPng(180, join(root, "public", "apple-touch-icon.png"));
 const png16 = await framedPngBuffer(16);
 const png32 = await framedPng(32, join(root, "public", "icons", "icon-32.png"));
 await framedPng(192, join(root, "public", "icons", "icon-192.png"));

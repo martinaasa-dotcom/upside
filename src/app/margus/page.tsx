@@ -2,6 +2,6 @@ import { privatePageMetadata } from "@/lib/site-metadata";
 
 export const metadata = privatePageMetadata();
 
-export default function AdminRoute() {
+export default function MargusRoute() {
   return null;
 }

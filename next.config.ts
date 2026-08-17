@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 import { STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
+import { PRIVATE_NOINDEX_PATHS } from "./src/lib/seo-routes";
+
+const ROBOTS_NOINDEX_HEADER = {
+  key: "X-Robots-Tag",
+  value: "noindex, nofollow",
+};
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -19,6 +25,25 @@ const nextConfig: NextConfig = {
           },
           { key: "Service-Worker-Allowed", value: "/" },
         ],
+      },
+      ...PRIVATE_NOINDEX_PATHS.flatMap((path) => [
+        {
+          source: path,
+          headers: [ROBOTS_NOINDEX_HEADER],
+        },
+        {
+          source: `${path}/:path*`,
+          headers: [ROBOTS_NOINDEX_HEADER],
+        },
+      ]),
+      {
+        source: "/communities/:path+",
+        headers: [ROBOTS_NOINDEX_HEADER],
+      },
+      {
+        source: "/",
+        has: [{ type: "query", key: "tab" }],
+        headers: [ROBOTS_NOINDEX_HEADER],
       },
     ];
   },

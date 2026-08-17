@@ -35,24 +35,7 @@ export function isWorkspaceRoomActive(id: string): boolean {
   return activeRoom === id;
 }
 
-/**
- * One id per keep-alive pane. Join flows and legal pages return null so
- * they are not cached.
- */
-export function workspaceRoomId(pathname: string): string | null {
-  if (pathname.startsWith("/communities/join")) return null;
-  if (pathname.startsWith("/account/join")) return null;
-  if (pathname === "/" || pathname === "") return "book";
-  if (pathname.startsWith("/upside-portfolio")) return "fund";
-  if (pathname === "/communities" || pathname === "/communities/") {
-    return "communities";
-  }
-  const community = /^\/communities\/([^/]+)\/?$/.exec(pathname);
-  if (community?.[1]) return `community:${community[1]}`;
-  if (pathname.startsWith("/account")) return "account";
-  if (pathname.startsWith("/admin")) return "admin";
-  return null;
-}
+export { workspaceRoomId } from "@/lib/workspace-paths";
 
 export function saveLastCircleId(communityId: string) {
   if (typeof window === "undefined") return;

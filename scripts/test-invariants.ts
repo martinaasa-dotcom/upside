@@ -1633,6 +1633,48 @@ run("product is Upside Lab on upsidelab.app", () => {
   assert.match(demoLock, /isProduction/);
 });
 
+run("public pages ship OG cards and private rooms are noindex", () => {
+  const layout = readFileSync("src/app/layout.tsx", "utf8");
+  const robots = readFileSync("src/app/robots.ts", "utf8");
+  const sitemap = readFileSync("src/app/sitemap.ts", "utf8");
+  const nextCfg = readFileSync("next.config.ts", "utf8");
+  const home = readFileSync("src/app/page.tsx", "utf8");
+  const login = readFileSync("src/app/login/page.tsx", "utf8");
+  const communities = readFileSync("src/app/communities/page.tsx", "utf8");
+  const lab = readFileSync("src/app/lab/page.tsx", "utf8");
+  const dashboard = readFileSync("src/app/dashboard/page.tsx", "utf8");
+  const forecast = readFileSync("src/app/forecast/page.tsx", "utf8");
+  const margus = readFileSync("src/app/margus/page.tsx", "utf8");
+  const seo = readFileSync("src/lib/seo-routes.ts", "utf8");
+  const meta = readFileSync("src/lib/site-metadata.ts", "utf8");
+  const manifest = readFileSync("src/app/manifest.ts", "utf8");
+
+  assert.match(layout, /metadataBase/);
+  assert.match(layout, /openGraph/);
+  assert.match(layout, /apple-touch-icon\.png/);
+  assert.match(home, /HOME_METADATA/);
+  assert.match(login, /LOGIN_METADATA/);
+  assert.match(communities, /COMMUNITIES_METADATA/);
+  assert.match(lab, /privatePageMetadata/);
+  assert.match(dashboard, /privatePageMetadata/);
+  assert.match(forecast, /privatePageMetadata/);
+  assert.match(margus, /privatePageMetadata/);
+  assert.match(meta, /index: false/);
+  assert.match(meta, /follow: false/);
+  assert.match(seo, /\/dashboard/);
+  assert.match(seo, /\/lab/);
+  assert.match(seo, /\/forecast/);
+  assert.match(seo, /\/margus/);
+  assert.match(robots, /PRIVATE_NOINDEX_PATHS/);
+  assert.match(robots, /\/communities\$/);
+  assert.match(sitemap, /\/login/);
+  assert.match(sitemap, /\/communities/);
+  assert.match(nextCfg, /X-Robots-Tag/);
+  assert.match(nextCfg, /PRIVATE_NOINDEX_PATHS/);
+  assert.match(manifest, /icon-192\.png/);
+  assert.match(manifest, /icon-512-maskable\.png/);
+});
+
 run("canonical host strips www and rejects off-site next paths", () => {
   assert.equal(normalizeHostname("https://www.upsidelab.app/"), "www.upsidelab.app");
   assert.ok(isLegacyHost("www.upsidelab.app"));

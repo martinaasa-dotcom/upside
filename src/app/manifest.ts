@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
-import { PRODUCT_BLURB, PRODUCT_NAME } from "@/lib/product";
+import { PRODUCT_BLURB, PRODUCT_NAME, PRODUCT_ORIGIN } from "@/lib/product";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: PRODUCT_ORIGIN,
     name: PRODUCT_NAME,
     short_name: PRODUCT_NAME,
     description: PRODUCT_BLURB,
     start_url: "/",
+    scope: "/",
+    lang: "en",
+    dir: "ltr",
     display: "standalone",
     background_color: "#08090c",
     theme_color: "#08090c",

@@ -1,6 +1,7 @@
 import { ACTIVE_SHEET_KEY } from "@/lib/active-sheet";
 import { loadLastUser } from "@/lib/last-session";
 import { supabaseIsConfigured } from "@/lib/supabase/env";
+import { workspaceRoomId } from "@/lib/workspace-paths";
 
 export type ClientErrorReport = {
   message: string;
@@ -31,22 +32,6 @@ function readStorage(key: string): string | null {
   }
 }
 
-/** Mirrors workspaceRoomId without importing that module (and its caches). */
-function roomFromPath(pathname: string): string | null {
-  if (pathname.startsWith("/communities/join")) return null;
-  if (pathname.startsWith("/account/join")) return null;
-  if (pathname === "/" || pathname === "") return "book";
-  if (pathname.startsWith("/upside-portfolio")) return "fund";
-  if (pathname === "/communities" || pathname === "/communities/") {
-    return "communities";
-  }
-  const community = /^\/communities\/([^/]+)\/?$/.exec(pathname);
-  if (community?.[1]) return `community:${community[1]}`;
-  if (pathname.startsWith("/account")) return "account";
-  if (pathname.startsWith("/admin")) return "admin";
-  return null;
-}
-
 /**
  * What was true in this tab when the crash happened. Reads caches already
  * on the device so a widget throw does not wait on auth.
@@ -64,7 +49,7 @@ export function readClientSessionSnapshot(): ClientSessionSnapshot {
     demoLocked: Boolean(readStorage("portfell-locked")),
     supabaseConfigured: supabaseIsConfigured(),
     sheetId: readStorage(ACTIVE_SHEET_KEY),
-    room: roomFromPath(path),
+    room: workspaceRoomId(path),
     path,
     online: typeof navigator !== "undefined" ? navigator.onLine : true,
     visibility:
