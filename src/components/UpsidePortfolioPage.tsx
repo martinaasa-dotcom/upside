@@ -7,6 +7,20 @@ import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonC
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { MicroLabel, Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
 import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
@@ -430,44 +444,63 @@ function FundFreshness({ quotesAt }: { quotesAt: number | null }) {
   );
 }
 
+function FundMetric({
+  label,
+  value,
+  hint,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <MicroLabel>{label}</MicroLabel>
+      <p
+        className={cn(
+          "mt-1 truncate text-sm font-semibold tabular-nums text-foreground",
+          valueClassName
+        )}
+      >
+        {value}
+      </p>
+      {hint ? (
+        <p className="truncate text-xs tabular-nums text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function FundNote({
   label,
   items,
-  accent,
 }: {
   label: string;
   items: string[];
-  accent: "brand" | "loss";
 }) {
-  const bar = accent === "brand" ? PALETTE.brand : PALETTE.loss;
-  const dot = accent === "brand" ? "bg-primary" : "bg-loss";
   return (
-    <div
-      className="flex min-h-min flex-1 flex-col bg-muted p-4"
-      style={{ boxShadow: `inset 3px 0 0 ${bar}` }}
-    >
-      <MicroLabel>{label}</MicroLabel>
-      {items.length > 0 ? (
-        <ul className="flex flex-col mt-2 gap-1.5">
-          {items.map((item) => (
-            <li key={item} className="flex gap-2">
-              <span
-                aria-hidden
-                className={cn(
-                  "mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full",
-                  dot
-                )}
-              />
-              <span className="text-base leading-snug text-foreground">
+    <Item variant="muted" size="sm" className="items-start">
+      <ItemContent>
+        <ItemTitle>{label}</ItemTitle>
+        {items.length > 0 ? (
+          <ul className="flex flex-col gap-1">
+            {items.map((item) => (
+              <li key={item} className="text-sm leading-relaxed text-foreground">
                 {item}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-2 text-sm text-muted-foreground">Not written yet.</p>
-      )}
-    </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ItemDescription className="line-clamp-none">
+            Not written yet.
+          </ItemDescription>
+        )}
+      </ItemContent>
+    </Item>
   );
 }
 
@@ -484,51 +517,48 @@ function FundPosition({
   const pnlDollar = (price - holding.cost_basis) * holding.shares;
   const thesis = fundCopyBullets(holding.thesis).slice(0, 2);
   const exit = fundCopyBullets(holding.exit_plan).slice(0, 2);
+  const shares = holding.shares.toLocaleString("en-US");
+  const holdFor = holding.target_timeframe?.trim();
   return (
-    <article className="rounded-xl bg-card ring-1 ring-foreground/10 p-6">
-      <h3 className="text-base font-semibold text-foreground">
-        {cashtag(holding.ticker)}
-      </h3>
-      <div className="mt-4 grid items-stretch gap-6 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)]">
-        <div className="h-full">
-          <Scoreboard
-            className="h-full auto-rows-[minmax(min-content,1fr)]"
-            cols={2}
+    <Card>
+      <CardHeader>
+        <CardTitle>{cashtag(holding.ticker)}</CardTitle>
+        <CardDescription>
+          {shares} sh · entered {fmtDate(holding.entry_date)}
+          {holdFor ? ` · Hold for ${holdFor}` : ""}
+        </CardDescription>
+        <CardAction>
+          <span
+            className={cn(
+              "text-sm font-semibold tabular-nums",
+              signedTone(pnlPct)
+            )}
           >
-            <Score label="Entered" value={fmtDate(holding.entry_date)} />
-            <Score label="Cost" value={currency(holding.cost_basis)} />
-            <Score
-              label="Now"
-              value={currency(price)}
-              valueClassName={signedTone(pnlPct, "text-foreground")}
-            />
-            <Score
-              label="Portfolio"
-              value={currency(marketValue, 0)}
-              sub={`${holding.shares.toLocaleString("en-US")} sh`}
-            />
-            <Score
-              label="Hold for"
-              value={holding.target_timeframe?.trim() || "—"}
-              valueClassName="leading-snug"
-            />
-            <Score
-              label="Since buy"
-              value={percent(pnlPct)}
-              sub={signedCurrency(pnlDollar, 0)}
-              valueClassName={signedTone(pnlPct)}
-              subClassName={signedTone(pnlDollar, "text-muted-foreground")}
-            />
-          </Scoreboard>
+            {percent(pnlPct)}
+          </span>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <FundMetric label="Cost" value={currency(holding.cost_basis)} />
+          <FundMetric
+            label="Now"
+            value={currency(price)}
+            valueClassName={signedTone(pnlPct, "text-foreground")}
+          />
+          <FundMetric label="Portfolio" value={currency(marketValue, 0)} />
+          <FundMetric
+            label="Since buy"
+            value={signedCurrency(pnlDollar, 0)}
+            valueClassName={signedTone(pnlDollar)}
+          />
         </div>
-        <div className="h-full">
-          <div className="flex h-full flex-col gap-px overflow-hidden rounded-xl border border-border bg-border">
-            <FundNote label="Thesis" items={thesis} accent="brand" />
-            <FundNote label="Sell if" items={exit} accent="loss" />
-          </div>
+        <div className="grid items-start gap-3 sm:grid-cols-2">
+          <FundNote label="Thesis" items={thesis} />
+          <FundNote label="Sell if" items={exit} />
         </div>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }
 

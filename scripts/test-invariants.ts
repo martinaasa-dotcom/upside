@@ -4806,15 +4806,19 @@ run("Fund page labels Margus's note Thesis", () => {
   );
   assert.match(src, /label="Thesis"/);
   assert.match(src, /function FundPosition/);
-  assert.match(src, /md:grid-cols-\[minmax/);
   const card = src.slice(
-    src.indexOf("function FundPosition"),
+    src.indexOf("function FundNote"),
     src.indexOf("export function UpsidePortfolioPage")
   );
-  assert.match(card, /label="Hold for"/);
+  assert.match(card, /Hold for/);
   assert.match(card, /label="Since buy"/);
   assert.match(card, /label="Sell if"/);
-  assert.match(card, /items-stretch/);
+  assert.match(card, /<Card/);
+  assert.match(card, /<Item /);
+  assert.match(card, /items-start/);
+  assert.doesNotMatch(card, /items-stretch/);
+  assert.doesNotMatch(card, /md:grid-cols-\[minmax/);
+  assert.doesNotMatch(card, /<Score /);
   assert.doesNotMatch(card, /md:border-l/);
   const positions = src.slice(
     src.indexOf("Open positions"),
@@ -4823,7 +4827,6 @@ run("Fund page labels Margus's note Thesis", () => {
   assert.match(positions, /<FundPosition/);
   assert.doesNotMatch(positions, /<Stat/);
   assert.doesNotMatch(card, /<Stat/);
-  assert.doesNotMatch(src, /grid gap-3 sm:grid-cols-2/);
 });
 
 run("Fund page shows one latest report then View more in sevens", () => {
