@@ -1152,7 +1152,8 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(letter, /padding:48px 28px 52px 28px/);
   assert.match(letter, /app: "#08090c"/);
   assert.match(letter, /gain: "#10b981"/);
-  assert.match(letter, /Georgia,'Times New Roman',Times,serif/);
+  assert.match(letter, /-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif/);
+  assert.doesNotMatch(letter, /Georgia/);
   assert.match(letter, /function emailPreheader/);
   assert.match(letter, /&#847;&zwnj;&nbsp;/);
   assert.match(email, /function noteTakeHtml/);
@@ -2253,7 +2254,8 @@ run("inbox letters share one letterhead", () => {
     classroom: false,
   });
   assert.equal(invite.subject, "Join Upside Circle");
-  assert.match(invite.html, /Georgia/);
+  assert.match(invite.html, /-apple-system/);
+  assert.doesNotMatch(invite.html, /Georgia/);
   assert.match(invite.html, /#08090c/);
   assert.match(invite.html, /Open the invite/);
   assert.doesNotMatch(invite.html, /\u2014/);

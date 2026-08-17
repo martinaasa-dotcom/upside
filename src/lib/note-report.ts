@@ -820,7 +820,6 @@ const GAIN = EMAIL.gain;
 const LOSS = EMAIL.loss;
 const LINE = EMAIL.line;
 const SANS = EMAIL.sans;
-const SERIF = EMAIL.serif;
 const BOOK_URL = EMAIL.origin;
 
 function toneColor(n: number): string {
@@ -857,7 +856,7 @@ function noteTakeHtml(text: string): string {
     if (prose.length === 0) return;
     const first = chunks.length === 0;
     chunks.push(
-      `<p style="margin:${first ? "12px 0 0 0" : "18px 0 0 0"};font-family:${SERIF};font-size:18px;line-height:1.6;font-weight:400;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
+      `<p style="margin:${first ? "12px 0 0 0" : "18px 0 0 0"};font-family:${SANS};font-size:18px;line-height:1.6;font-weight:400;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
     );
     prose = [];
   };
@@ -867,8 +866,8 @@ function noteTakeHtml(text: string): string {
       .map(
         (item) =>
           `<tr>
-  <td style="width:16px;padding:5px 0 5px 0;vertical-align:top;font-family:${SERIF};font-size:18px;line-height:1.5;color:${GOLD}">•</td>
-  <td style="padding:5px 0;font-family:${SERIF};font-size:17px;line-height:1.5;font-weight:400;color:${CREAM}">${escapeHtml(item)}</td>
+  <td style="width:16px;padding:5px 0 5px 0;vertical-align:top;font-family:${SANS};font-size:18px;line-height:1.5;color:${GOLD}">•</td>
+  <td style="padding:5px 0;font-family:${SANS};font-size:17px;line-height:1.5;font-weight:400;color:${CREAM}">${escapeHtml(item)}</td>
 </tr>`
       )
       .join("");
@@ -979,7 +978,7 @@ export function noteReportHtml(r: NoteReport): string {
       ? r.insights
           .map((line, i) =>
             emailCard(
-              `${kicker(i === 0 ? "Worth noticing" : "What's missing")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div><p style="margin:0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
+              `${kicker(i === 0 ? "Worth noticing" : "What's missing")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div><p style="margin:0;font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
             )
           )
           .join("")
@@ -998,7 +997,7 @@ export function noteReportHtml(r: NoteReport): string {
           r.perspective
             .map(
               (p, i) =>
-                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(p)}</p>`
+                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(p)}</p>`
             )
             .join("")
         )
@@ -1026,7 +1025,7 @@ export function noteReportHtml(r: NoteReport): string {
     }
     if (r.thesis.ownerThesis) {
       bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(r.thesis.ownerThesis)}</p>`
+        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(r.thesis.ownerThesis)}</p>`
       );
     }
     if (r.thesis.status) {
@@ -1036,7 +1035,7 @@ export function noteReportHtml(r: NoteReport): string {
     }
     if (r.thesis.pulseLine) {
       bits.push(
-        `<p style="margin:8px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
+        `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
       );
     }
     thesisInner = section(
@@ -1058,17 +1057,17 @@ export function noteReportHtml(r: NoteReport): string {
       }
       if (n.ownerThesis) {
         bits.push(
-          `<p style="margin:10px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(n.ownerThesis)}</p>`
+          `<p style="margin:10px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(n.ownerThesis)}</p>`
         );
       }
       if (n.pulseLine) {
         bits.push(
-          `<p style="margin:8px 0 0 0;font-family:${SERIF};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(n.pulseLine)}</p>`
+          `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(n.pulseLine)}</p>`
         );
       }
       if (n.actionLine) {
         bits.push(
-          `<p style="margin:12px 0 0 0;font-family:${SERIF};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
+          `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
         );
       }
       const pad = i === r.weekNotes.length - 1 ? "0" : "0 0 22px 0";
@@ -1086,7 +1085,7 @@ export function noteReportHtml(r: NoteReport): string {
 
   const heroInner =
     r.kind === "morning"
-      ? `<p style="margin:0;font-family:${SERIF};font-size:26px;line-height:1.35;font-weight:400;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
+      ? `<p style="margin:0;font-family:${SANS};font-size:26px;line-height:1.35;font-weight:400;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
 <p style="margin:18px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
       : `<p style="margin:0;font-family:${SANS};font-size:40px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:${CREAM}">${escapeHtml(signedMoney(r.todayDollar))}</p>
 ${

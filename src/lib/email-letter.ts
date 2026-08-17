@@ -1,6 +1,6 @@
 /**
  * One letterhead for every Upside Lab inbox note.
- * Dark field, brass rule, serif for the take, sans for the figures.
+ * Dark field, brass rule, system sans throughout (email clients strip web fonts).
  */
 
 export const EMAIL = {
@@ -12,7 +12,6 @@ export const EMAIL = {
   loss: "#f43f5e",
   line: "#1e2430",
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
-  serif: "Georgia,'Times New Roman',Times,serif",
   lockup: "https://upsidelab.app/icons/email-lockup.png?v=2",
   origin: "https://upsidelab.app",
 } as const;
@@ -80,7 +79,7 @@ export function wrapEmailLetter(input: {
   const opener =
     input.hideOpener || !input.preview
       ? ""
-      : `<p style="margin:20px 0 0 0;font-family:${EMAIL.serif};font-size:17px;line-height:1.45;color:${EMAIL.cream}">${escapeEmail(input.preview)}</p>`;
+      : `<p style="margin:20px 0 0 0;font-family:${EMAIL.sans};font-size:17px;line-height:1.45;color:${EMAIL.cream}">${escapeEmail(input.preview)}</p>`;
   const date = input.dateLine
     ? `<p style="margin:${opener ? "10px" : "14px"} 0 0 0;font-family:${EMAIL.sans};font-size:13px;line-height:1.4;letter-spacing:0.02em;color:${EMAIL.muted}">${escapeEmail(input.dateLine)}</p>`
     : "";
@@ -135,8 +134,8 @@ export function fallbackNoteHtml(text: string): string {
       const style = muted
         ? `margin:28px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}`
         : i === 0
-          ? `margin:36px 0 0 0;font-family:${EMAIL.serif};font-size:20px;line-height:1.45;font-weight:400;color:${EMAIL.cream}`
-          : `margin:16px 0 0 0;font-family:${EMAIL.serif};font-size:16px;line-height:1.55;color:${EMAIL.cream}`;
+          ? `margin:36px 0 0 0;font-family:${EMAIL.sans};font-size:20px;line-height:1.45;font-weight:400;color:${EMAIL.cream}`
+          : `margin:16px 0 0 0;font-family:${EMAIL.sans};font-size:16px;line-height:1.55;color:${EMAIL.cream}`;
       return `<p style="${style}">${escapeEmail(block).replace(/\n/g, "<br>")}</p>`;
     })
     .join("");
@@ -170,8 +169,8 @@ export function communityInviteCopy(input: {
     hideOpener: true,
     body: `${emailKicker("Invite")}
 <div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
-<p style="margin:0;font-family:${EMAIL.serif};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">Join ${escapeEmail(name)}</p>
-<p style="margin:22px 0 0 0;font-family:${EMAIL.serif};font-size:17px;line-height:1.55;color:${EMAIL.cream}">${escapeEmail(lead)}</p>
+<p style="margin:0;font-family:${EMAIL.sans};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">Join ${escapeEmail(name)}</p>
+<p style="margin:22px 0 0 0;font-family:${EMAIL.sans};font-size:17px;line-height:1.55;color:${EMAIL.cream}">${escapeEmail(lead)}</p>
 ${emailButton(input.url, "Open the invite")}
 <p style="margin:28px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}">If you didn't expect this, ignore it.</p>`,
   });
@@ -190,7 +189,7 @@ export function emptyBookNudgeHtml(text: string): string {
   const prose = bodyBlocks
     .map(
       (block, i) =>
-        `<p style="margin:${i === 0 ? "22px" : "16px"} 0 0 0;font-family:${EMAIL.serif};font-size:17px;line-height:1.55;color:${EMAIL.cream}">${escapeEmail(block)}</p>`
+        `<p style="margin:${i === 0 ? "22px" : "16px"} 0 0 0;font-family:${EMAIL.sans};font-size:17px;line-height:1.55;color:${EMAIL.cream}">${escapeEmail(block)}</p>`
     )
     .join("");
   return wrapEmailLetter({
@@ -199,7 +198,7 @@ export function emptyBookNudgeHtml(text: string): string {
     hideOpener: true,
     body: `${emailKicker("A note")}
 <div style="height:18px;font-size:0;line-height:0">&nbsp;</div>
-<p style="margin:0;font-family:${EMAIL.serif};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">${escapeEmail(preview)}</p>
+<p style="margin:0;font-family:${EMAIL.sans};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">${escapeEmail(preview)}</p>
 ${prose}
 ${emailButton(EMAIL.origin, "Open Upside Lab")}
 <p style="margin:28px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}">This is a one-time note. Weekday and Sunday emails start once there are names in your portfolio. Turn notes off in <a href="${EMAIL.origin}/account" style="color:${EMAIL.gold};text-decoration:underline">Account</a>.</p>`,
