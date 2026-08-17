@@ -1207,7 +1207,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /Open your portfolio/);
   const notes = readFileSync("src/lib/note-margus.ts", "utf8");
   assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
-  assert.match(notes, /maxOutputTokens: 720/);
+  assert.match(notes, /maxOutputTokens: 480/);
   assert.equal(
     looksLikePromptLeak(
       "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
@@ -1253,15 +1253,13 @@ run("note letters are one mix story, not stacked cards", () => {
   });
   morning.margus = fallbackNoteTake(morning);
   assert.equal(morning.margus.split(/\n\n/).length, 2);
-  assert.match(morning.margus, /\$RDDT is \+8\.0% overnight/);
-  assert.match(morning.margus, /ruins your cost basis/);
-  assert.match(morning.margus, /64% in AI computer companies/);
-  assert.match(morning.margus, /utilities that sell power/);
-  assert.match(morning.margus, /opening bell/);
-  assert.match(morning.margus, /let the shares run/);
-  assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight/);
-  assert.doesNotMatch(morning.margus, /Those names need cheap, reliable power/);
-  assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some|no moves/i);
+  assert.match(morning.margus, /\$RDDT jumped 8\.0% this morning/);
+  assert.match(morning.margus, /nothing you need to buy or sell/);
+  assert.match(morning.margus, /let your money do its work in the background/);
+  assert.doesNotMatch(morning.margus, /64%/);
+  assert.doesNotMatch(morning.margus, /cost basis|falling knife|\bgap\b|catalyst|pre-bell|read on the business/i);
+  assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight|utilities that sell power/);
+  assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some/i);
   assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
   const html = noteReportHtml(morning);
   assert.match(html, /Morning Pre-Market/);
@@ -1272,8 +1270,10 @@ run("note letters are one mix story, not stacked cards", () => {
     publisher: "TradingView",
   };
   morning.margus = fallbackNoteTake(morning);
-  assert.match(morning.margus, /Reddit to join the S&P 500/);
-  assert.match(morning.margus, /Funds that track that benchmark have to buy/);
+  assert.match(morning.margus, /\$RDDT jumped this morning because it was added to the S&P 500/);
+  assert.match(morning.margus, /big index funds have to buy it automatically/);
+  assert.doesNotMatch(morning.margus, /Reddit to join the S&P 500/);
+  assert.doesNotMatch(morning.margus, /is moving this morning/);
   assert.doesNotMatch(morning.margus, /\[\[source:/);
   assert.doesNotMatch(morning.margus, /TradingView|XTB\.com/i);
   assert.doesNotMatch(noteReportHtml(morning), /TradingView|XTB\.com|\[\[source:/i);
@@ -1297,10 +1297,12 @@ run("note letters are one mix story, not stacked cards", () => {
   });
   const closeTake = fallbackNoteTake(close);
   assert.equal(closeTake.split(/\n\n/).length, 2);
-  assert.match(closeTake, /\$RDDT did the work today/);
-  assert.match(closeTake, /64%/);
-  assert.match(closeTake, /the rest of the names lagged/);
-  assert.match(closeTake, /Log off and let the position sit/);
+  assert.match(closeTake, /ended the day up /);
+  assert.match(closeTake, /\$RDDT climbed/);
+  assert.match(closeTake, /quiet, normal day/);
+  assert.match(closeTake, /keep compounding/);
+  assert.doesNotMatch(closeTake, /64%/);
+  assert.doesNotMatch(closeTake, /cost basis|falling knife|\bgap\b|catalyst/i);
   const sunday = buildNoteReport({
     kind: "sunday",
     name: "Test",
@@ -1319,11 +1321,11 @@ run("note letters are one mix story, not stacked cards", () => {
   });
   const sundayTake = fallbackNoteTake(sunday);
   assert.equal(sundayTake.split(/\n\n/).length, 2);
-  assert.match(sundayTake, /Your portfolio was .* this week, /);
-  assert.match(sundayTake, /\$RDDT stole the show this week/);
+  assert.match(sundayTake, /Your portfolio gained /);
+  assert.match(sundayTake, /\$RDDT leading the way after jumping 20\.0%/);
   assert.doesNotMatch(sundayTake, /\n- \$/);
-  assert.match(sundayTake, /64%/);
-  assert.match(sundayTake, /The plan for next week stays unchanged/);
+  assert.doesNotMatch(sundayTake, /64%/);
+  assert.match(sundayTake, /Enjoy the rest of your weekend/);
 });
 
 run("manual note cron stays on Martin", () => {

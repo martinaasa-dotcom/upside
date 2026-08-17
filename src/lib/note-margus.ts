@@ -17,25 +17,24 @@ import { fetchTickerNews } from "@/lib/market/ticker-context";
 import type { NoteReport } from "@/lib/note-report";
 
 const JOB: Record<NoteReport["kind"], string> = {
-  morning: `This is the morning pre-market note. You/your. One connected letter in two paragraphs with a blank line between them. Full sentences with transitions. Never a stack of one-line blocks. Never we/us/our. Never name a website, publisher, or paste a link.
+  morning: `This is the morning note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Never we/us/our. Never name a website or paste a link.
 
-First paragraph: overnight catalyst, cashtag, the actual headline if facts give one, or the overnight number if they don't. Immediately say the mechanic when the headline supports it (index inclusion means funds that track the benchmark have to buy; earnings means the number is still being digested). Then why chasing pre-bell volume on that gap ruins cost basis. Let the shares you already have run.
-Second paragraph: the real concentration percent from facts, once, tied to today's gap. Standing down keeps cash free for the missing group (utilities that sell power, when facts say that's the gap). Close on a directive for the opening bell.
+Open with one flowing thought: the cashtag, that it jumped or dropped this morning, and why. If it was added to the S&P 500, say big index funds have to buy it automatically, which pushes the price up before regular trading opens. Do not paste a headline as its own sentence.
+Then: the rest of the investments are steady, there is nothing to buy or sell, and the best thing is to sit back, hold, and let the money work in the background.
 
-Never invent news or a mechanic the facts do not support. Overnight and today's calendar only. Do not recap yesterday's regular session.
-Never write "do not buy more", "no trades", "do not add", "sell some". Do not paste the insight lines.`,
-  close: `This is the after-the-close note. You/your. One connected letter in two paragraphs with a blank line between them. Full sentences with transitions. Never a stack of one-line blocks. Never we/us/our. Never name a website, publisher, or paste a link.
+Never invent news. Never name how much of the portfolio sits in one group. Overnight only.`,
+  close: `This is the after-the-close note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Never we/us/our. Never name a website or paste a link.
 
-First paragraph: session for this portfolio, percent and dollars. Who did the work versus the rest. Cashtag. The actual headline if facts give one, and the mechanic when facts support it. Then why standing down tonight is the discipline: buying more after a surge is chasing, buying a falling group is a falling knife.
-Second paragraph: re-anchor the long-term mix. The real concentration percent from facts, once, tied to today. Log off and let the position sit.
+Open with how the day ended, percent and dollars, and which cashtag did most of the work. The rest of the account had a quiet day.
+Then: no reason to make any moves tonight. Everything looks healthy. Enjoy the evening, and let the investments keep compounding.
 
-Never write "do not buy more", "no trades", "do not add", "sell some". Do not paste the insight lines.`,
-  sunday: `This is the Sunday weekly recap. You/your. One connected letter in two paragraphs with a blank line between them. The loud-mover numbers are already a table. Do not list those names again. Full sentences with transitions. Never we/us/our. Never name a website, publisher, or paste a link.
+Never invent news. Never name how much of the portfolio sits in one group.`,
+  sunday: `This is the Sunday weekly recap. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Never we/us/our. Never name a website or paste a link. The loud-mover numbers are already a table. Do not list those names again.
 
-First paragraph: the week's percent and dollar. Who led, cashtag, the actual headline if facts give one. Frame the split between groups as the mix you already chose, not a problem to patch this weekend.
-Second paragraph: concentration versus the missing group. Name the percent once. The plan for next week stays unchanged.
+Open with the week's percent and dollar, and which cashtag led. The rest of the holdings held steady.
+Then: everything is on track, no changes needed for the week ahead, enjoy the rest of the weekend.
 
-Never invent news. Never write "do not buy more", "no trades", "do not add", "sell some". Do not paste the insight lines.`,
+Never invent news. Never name how much of the portfolio sits in one group.`,
 };
 
 /** Phrases that only show up when the model dumps the prompt instead of the note. */
@@ -100,128 +99,94 @@ function clipHeadline(title: string): string {
   return at > 80 ? cut.slice(0, at) : cut;
 }
 
-function mixBits(r: NoteReport): { pct: string; group: string; power: boolean } | null {
-  const mix = r.insights[1] ?? r.insights[0];
-  if (!mix) return null;
-  const power = /utilit|electric|power/.test(mix);
-  const named =
-    mix.match(/(\d+%) of (?:this|your|our) portfolio is ([^.]+)/i) ??
-    mix.match(/Most of your portfolio is ([^(]+)\s*\((\d+%)\)/i);
-  if (named) {
-    if (named[1]?.includes("%")) {
-      return {
-        pct: named[1] ?? "",
-        group: (named[2] ?? "one group").trim(),
-        power,
-      };
-    }
-    return {
-      pct: named[2] ?? "",
-      group: (named[1] ?? "one group").trim(),
-      power,
-    };
-  }
-  const simple = mix.match(/(\d+%) is ([^.]+)/i);
-  if (simple) {
-    return {
-      pct: simple[1] ?? "",
-      group: (simple[2] ?? "one group").trim(),
-      power,
-    };
-  }
-  const pctOnly = mix.match(/(\d+%)/);
-  if (!pctOnly) return null;
-  return { pct: pctOnly[1] ?? "", group: "one group", power };
-}
-
-function mechanicFor(headline: string | null): string | null {
+function whyMoved(headline: string | null): string | null {
   if (!headline) return null;
-  if (/S\s*&\s*P|S and P|Russell|Nasdaq-100|index inclusion|to join the/i.test(headline)) {
-    return "Funds that track that benchmark have to buy, which is why the gap is there before anyone has a new read on the business.";
+  const h = clipHeadline(headline);
+  if (/join|added|includ/i.test(h) && /S\s*&\s*P\s*500/i.test(h)) {
+    return "it was added to the S&P 500";
   }
-  if (/earn/i.test(headline)) {
-    return "That earnings number is still being digested, which is why the price is moving faster than the story.";
+  if (/join|added|includ/i.test(h) && /S\s*&\s*P|Russell|Nasdaq-100/i.test(h)) {
+    return "it was added to a big index";
   }
+  if (/earn/i.test(h)) return "the company reported its results";
   return null;
 }
 
+function indexExplain(headline: string | null): string | null {
+  if (!headline) return null;
+  if (!/join|added|includ/i.test(headline)) return null;
+  if (!/S\s*&\s*P|Russell|Nasdaq-100|index/i.test(headline)) return null;
+  return "When a stock joins this list, big index funds have to buy it automatically, which pushes the price up before regular trading even opens.";
+}
+
+function unsignedPct(n: number): string {
+  return `${(Math.abs(n) * 100).toFixed(1)}%`;
+}
+
+function jumpedOrDropped(n: number): string {
+  if (n > 0) return "jumped";
+  if (n < 0) return "dropped";
+  return "moved";
+}
+
+function dayResult(pctMove: number | null, dollar: number): string {
+  if (pctMove == null) return `moved ${money(dollar)}`;
+  if (pctMove > 0) return `up ${unsignedPct(pctMove)} (${money(dollar)})`;
+  if (pctMove < 0) return `down ${unsignedPct(pctMove)} (${money(dollar)})`;
+  return `flat (${money(dollar)})`;
+}
+
 function letter(r: NoteReport): string {
-  const gap = r.movers[0];
-  const tag = gap ? cashtag(gap.ticker) : null;
+  const mover = r.movers[0];
+  const tag = mover ? cashtag(mover.ticker) : null;
   const headline = r.news?.title ? clipHeadline(r.news.title) : null;
-  const mechanic = mechanicFor(headline);
-  const bits = mixBits(r);
+  const why = whyMoved(headline);
+  const indexHow = indexExplain(headline);
 
   if (r.kind === "morning") {
-    let catalyst: string;
-    if (tag && headline) {
-      catalyst = `${tag} is moving this morning. ${headline}.`;
-      if (mechanic) catalyst = `${catalyst} ${mechanic}`;
-    } else if (tag && gap && Math.abs(gap.pct) >= 0.02) {
-      catalyst = `${tag} is ${pct(gap.pct)} overnight, and that is the name doing the work this morning.`;
+    let first: string;
+    if (tag && why && indexHow) {
+      first = `${tag} jumped this morning because ${why}. ${indexHow}`;
+    } else if (tag && why) {
+      first = `${tag} ${jumpedOrDropped(mover?.pct ?? 0)} this morning because ${why}.`;
+    } else if (tag && mover && Math.abs(mover.pct) >= 0.02) {
+      first = `${tag} ${jumpedOrDropped(mover.pct)} ${unsignedPct(mover.pct)} this morning.`;
     } else if (tag) {
-      catalyst = `${tag} is the name to watch this morning.`;
+      first = `${tag} is the name that moved this morning.`;
     } else {
-      catalyst = r.lead;
+      first = r.lead;
     }
-    const first = `${catalyst} Chasing pre-bell volume on a gap like this ruins your cost basis, so the discipline is to let the shares you already have run.`;
-    let second: string;
-    if (bits?.power) {
-      second = `Your portfolio is still ${bits.pct} in ${bits.group}, which is why you do not need to spend cash on a name that already ran. Standing down keeps that cash free for utilities that sell power when they get cheaper, and that is the gap next to this mix. Sit tight into the opening bell and let the shares run.`;
-    } else if (bits) {
-      second = `Your portfolio is still ${bits.pct} in ${bits.group}, which is why you do not need to chase a new name this morning. Standing down keeps cash free for later. Sit tight into the opening bell and let the shares run.`;
-    } else {
-      second =
-        "Standing down this morning keeps cash free for later. Sit tight into the opening bell and let the shares run.";
-    }
+    const second =
+      "The rest of your investments are steady today, so there is nothing you need to buy or sell. The best thing to do right now is sit back, hold, and let your money do its work in the background.";
     return `${first}\n\n${second}`;
   }
 
   if (r.kind === "close") {
-    const session =
-      r.todayPct != null
-        ? `Your portfolio was ${pct(r.todayPct)} today, ${money(r.todayDollar)}`
-        : `Your portfolio moved ${money(r.todayDollar)} today`;
+    const result = dayResult(r.todayPct, r.todayDollar);
+    const verb =
+      (mover?.pct ?? 0) < 0 ? "fell" : "climbed";
     let first: string;
-    if (tag && headline) {
-      first = `${session}, and ${tag} did the work today. ${headline}.`;
-      if (mechanic) first = `${first} ${mechanic}`;
-      first = `${first} The rest of the names lagged that move.`;
-    } else if (tag) {
-      first = `${session}, and ${tag} did the work today while the rest of the names lagged.`;
+    if (tag) {
+      first = `Your portfolio ended the day ${result}, mostly because ${tag} ${verb}. Everything else in your account had a quiet, normal day.`;
     } else {
-      first = `${session}.`;
+      first = `Your portfolio ended the day ${result}. Everything else in your account had a quiet, normal day.`;
     }
-    first = `${first} Buying more after a surge is chasing, and buying a falling group tonight is catching a falling knife, so standing down keeps you from trading the close on a feeling.`;
-    const mix = bits
-      ? `The ${bits.pct} in ${bits.group} is still the long-term mix${
-          bits.power
-            ? ", and utilities that sell power remain the gap next to it"
-            : ""
-        }.`
-      : "The mix you already chose is still the long-term mix.";
-    return `${first}\n\n${mix} Log off and let the position sit.`;
+    const second =
+      "There is no reason to make any moves tonight. Everything looks healthy. Enjoy your evening, and let your investments keep compounding.";
+    return `${first}\n\n${second}`;
   }
 
-  const week =
-    r.todayPct != null
-      ? `Your portfolio was ${pct(r.todayPct)} this week, ${money(r.todayDollar)}`
-      : `Your portfolio moved ${money(r.todayDollar)} this week`;
   let first: string;
-  if (tag && headline) {
-    first = `${week}, and ${tag} stole the show this week. ${headline}.`;
-  } else if (tag && gap && gap.pct > 0) {
-    first = `${week}, and ${tag} stole the show this week at ${pct(gap.pct)}.`;
+  if (tag && mover && r.todayPct != null && r.todayPct >= 0 && mover.pct > 0) {
+    first = `Your portfolio gained ${unsignedPct(r.todayPct)} this week (${money(r.todayDollar)}), with ${tag} leading the way after jumping ${unsignedPct(mover.pct)}. The rest of your holdings held steady.`;
+  } else if (tag && mover && mover.pct < 0) {
+    first = `Your portfolio was ${dayResult(r.todayPct, r.todayDollar)} this week, with ${tag} leading the way after dropping ${unsignedPct(mover.pct)}. The rest of your holdings held steady.`;
   } else {
-    first = `${week}.`;
+    first = `Your portfolio was ${dayResult(r.todayPct, r.todayDollar)} this week. The rest of your holdings held steady.`;
   }
-  first = `${first} The split between that run and the quieter names is the mix you already chose, not a problem to patch this weekend.`;
-  const mix = bits?.power
-    ? `Your ${bits.pct} in ${bits.group} held, and utilities that sell power barely showed up. That gap is structural, which is why it is still an opening later, not a rewrite tonight.`
-    : bits
-      ? `Your ${bits.pct} in ${bits.group} is still the week to sit with.`
-      : "The mix did not need a rewrite this week.";
-  return `${first}\n\n${mix} The plan for next week stays unchanged.`;
+  const second =
+    "Everything is on track, so there are no changes needed for the week ahead. Enjoy the rest of your weekend.";
+  return `${first}\n\n${second}`;
 }
 
 function fallbackSunday(r: NoteReport): string {
@@ -232,14 +197,35 @@ function fallbackWeekday(r: NoteReport): string {
   return letter(r);
 }
 
+function plainNote(text: string): string {
+  let s = text;
+  s = s.replace(/[^.!?\n]*\d+%\s+in\s+[^.!?\n]*[.!?]?/gi, "");
+  s = s.replace(/\bcost basis\b/gi, "what you paid");
+  s = s.replace(/\bfalling knife\b/gi, "buying something that is still dropping");
+  s = s.replace(/\bcatalysts?\b/gi, "news");
+  s = s.replace(/\bpre-bell\b/gi, "before the market opens");
+  s = s.replace(/\bread on the business\b/gi, "new information about the company");
+  s = s.replace(/\bstructural opening\b/gi, "something to look at later");
+  s = s.replace(/\bchasing\b/gi, "buying after a jump");
+  s = s.replace(/\bgaps?\b/gi, "jump");
+  s = s.replace(/[ \t]{2,}/g, " ");
+  s = s.replace(/\n{3,}/g, "\n\n");
+  s = s.replace(/^[ \t]+|[ \t]+$/gm, "");
+  return s.trim();
+}
+
+function finishNote(text: string): string {
+  return plainNote(humanizeMargusText(text));
+}
+
 /** Deterministic stand-in when the model is down or dumps the prompt. */
 export function fallbackNoteTake(r: NoteReport): string {
   if (r.kind === "sunday") {
-    return humanizeMargusText(fallbackSunday(r));
+    return finishNote(fallbackSunday(r));
   }
-  const text = humanizeMargusText(fallbackWeekday(r));
+  const text = finishNote(fallbackWeekday(r));
   if (text.length >= 20 && !looksLikePromptLeak(text)) return text;
-  return humanizeMargusText(r.lead);
+  return finishNote(r.lead);
 }
 
 function money(n: number): string {
@@ -252,67 +238,28 @@ function money(n: number): string {
   return `$${grouped}`;
 }
 
-function pct(n: number): string {
-  const v = `${(Math.abs(n) * 100).toFixed(1)}%`;
-  if (n > 0) return `+${v}`;
-  if (n < 0) return `-${v}`;
-  return v;
-}
-
 function facts(r: NoteReport): string {
   const lines = [
     `Kind: ${r.kind}`,
     `Lead: ${r.lead}`,
     `Portfolio: $${Math.round(r.book).toLocaleString("en-US")} across ${r.nameCount} names`,
-    `${r.todayLabel}: ${money(r.todayDollar)}${r.todayPct != null ? ` (${pct(r.todayPct)})` : ""}`,
+    `${r.todayLabel}: ${money(r.todayDollar)}${r.todayPct != null ? ` (${(r.todayPct * 100).toFixed(1)}%)` : ""}`,
   ];
   const loud = r.loudMovers.length > 0 ? r.loudMovers : r.movers;
   if (loud[0]) {
     lines.push(
-      "Loud movers (already a table in the email, do not list them again):",
+      "Names that moved (already a table in the email, do not list them again):",
       ...loud.map(
         (m) =>
-          `  ${cashtag(m.ticker)} ${pct(m.pct)} ${money(m.dollar)} at $${m.price.toFixed(2)}`
+          `  ${cashtag(m.ticker)} ${m.pct >= 0 ? "+" : "-"}${(Math.abs(m.pct) * 100).toFixed(1)}% ${money(m.dollar)} at $${m.price.toFixed(2)}`
       )
     );
-  }
-  if (r.weights[0]) {
-    lines.push(
-      "Weights:",
-      ...r.weights.map(
-        (w) => `  ${cashtag(w.ticker)} ${Math.round(Math.abs(w.weight) * 100)}%`
-      )
-    );
-  }
-  if (r.watches[0]) {
-    lines.push("Watch / action lines:", ...r.watches.map((w) => `  ${w.line}`));
-  }
-  if (r.thesis) {
-    lines.push(
-      ...[
-        `Focus: ${cashtag(r.thesis.ticker)}`,
-        r.thesis.ownerThesis ? `Thesis: ${r.thesis.ownerThesis}` : null,
-        r.thesis.status ? `Pulse: ${r.thesis.status}` : null,
-        r.thesis.pulseLine,
-      ].filter((x): x is string => Boolean(x))
-    );
-  }
-  if (r.perspective[0]) {
-    lines.push("Background only, do not paste:", ...r.perspective);
-  }
-  if (r.weekNotes[0]) {
-    lines.push(
-      "Background only, do not paste:",
-      ...r.weekNotes.map((n) => `  ${cashtag(n.ticker)} ${n.actionLine}`)
-    );
-  }
-  if (r.insights[0]) {
-    lines.push("Background only, do not paste:", ...r.insights.map((l) => `  ${l}`));
   }
   if (r.news) {
     lines.push(`Headline for ${cashtag(r.news.ticker)}: ${r.news.title}`);
+    lines.push("Turn that headline into a because-clause. Do not paste it as its own sentence.");
   } else {
-    lines.push("No headline. Describe the move from the numbers.");
+    lines.push("No headline. Describe the move from the numbers only.");
   }
   return lines.filter((x): x is string => Boolean(x)).join("\n");
 }
@@ -328,6 +275,12 @@ function stripCitations(text: string): string {
     .trim();
 }
 
+function stillJargon(text: string): boolean {
+  return /cost basis|falling knife|\bcatalyst\b|pre-bell|read on the business|structural|\bgap\b|\d+%\s+in\s+/i.test(
+    text
+  );
+}
+
 function acceptNote(text: string): string | null {
   const lined = stripCitations(
     text
@@ -338,9 +291,10 @@ function acceptNote(text: string): string | null {
       .join("\n")
       .trim()
   );
-  const clean = humanizeMargusText(lined);
+  const clean = finishNote(lined);
   if (clean.length < 40) return null;
   if (looksLikePromptLeak(clean)) return null;
+  if (stillJargon(clean)) return null;
   return clean.length > 1800 ? clean.slice(0, 1760).trim() : clean;
 }
 
@@ -389,7 +343,7 @@ ${JOB[report.kind]}
 Write the finished note only. First word is the first word of the note.
 Do not restate these rules. Do not list words to avoid. Do not plan out loud.`,
           prompt: facts(report),
-          maxOutputTokens: 720,
+          maxOutputTokens: 480,
           abortSignal: signal,
         }),
       { deadlineAt: Date.now() + 22_000 }
