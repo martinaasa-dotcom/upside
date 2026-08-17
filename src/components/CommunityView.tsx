@@ -1451,11 +1451,9 @@ export function CommunityView({ communityId }: Props) {
           {!loading && !selectedOwnerId && (
             <>
               <section className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                  {isClassroom
-                    ? "Paper class. Same starting cash. Ranked by percent vs start."
-                    : "Shared portfolios added together. Today's percent is the fair compare, because books are different sizes. Members do not see what you paid."}
-                </p>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                  {community?.name ?? "Community"}
+                </h1>
                 {isClassroom &&
                 community?.classTrade &&
                 (community.classTrade.kind !== "open" ||
@@ -1496,7 +1494,41 @@ export function CommunityView({ communityId }: Props) {
                     the weekly recap.
                   </p>
                 ) : null}
-                <WidgetErrorBoundary name="Community totals">
+              </section>
+
+              <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1 w-fit">
+                {(
+                  (isClassroom
+                    ? [
+                        ["overview", "Roster", LayoutGrid],
+                        ["members", "Members", Users],
+                      ]
+                    : [
+                        ["overview", "Overview", LayoutGrid],
+                        ["play", "League", Award],
+                        ["members", "Members", Users],
+                      ]) as ReadonlyArray<
+                    [typeof view, string, typeof LayoutGrid]
+                  >
+                ).map(([id, label, Icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setView(id)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition",
+                      view === id
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <WidgetErrorBoundary name="Community totals">
                 <Scoreboard cols={3}>
                   <Score
                     label="Today"
@@ -1543,40 +1575,7 @@ export function CommunityView({ communityId }: Props) {
                     />
                   )}
                 </Scoreboard>
-                </WidgetErrorBoundary>
-              </section>
-
-              <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1 w-fit">
-                {(
-                  (isClassroom
-                    ? [
-                        ["overview", "Roster", LayoutGrid],
-                        ["members", "Members", Users],
-                      ]
-                    : [
-                        ["overview", "Overview", LayoutGrid],
-                        ["play", "League", Award],
-                        ["members", "Members", Users],
-                      ]) as ReadonlyArray<
-                    [typeof view, string, typeof LayoutGrid]
-                  >
-                ).map(([id, label, Icon]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setView(id)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition",
-                      view === id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              </WidgetErrorBoundary>
 
               {(effectiveView === "overview" || effectiveView === "play") && (
                 <div className="flex flex-col gap-4">
