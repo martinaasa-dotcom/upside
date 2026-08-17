@@ -1,6 +1,7 @@
 "use client";
 
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { Button } from "@/components/ui/button";
 import { reportClientError } from "@/lib/telemetry-client";
 import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
@@ -22,10 +23,10 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_52%)] px-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
       <UpsideLogo variant="icon" />
-      <div className="flex flex-col max-w-sm gap-2">
-        <h1 className="text-lg font-semibold text-foreground">
+      <div className="flex max-w-sm flex-col gap-2">
+        <h1 className="text-base font-medium tracking-tight text-foreground">
           Something broke on this screen
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -37,21 +38,17 @@ export default function Error({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => retry()}
-          className="inline-flex items-center gap-1.5 btn-primary"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
+        <Button type="button" onClick={() => retry()}>
+          <RotateCcw data-icon="inline-start" />
           Try again
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
           onClick={() => window.location.reload()}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground/80 hover:border-brand hover:text-foreground"
         >
           Reload page
-        </button>
+        </Button>
       </div>
     </div>
   );

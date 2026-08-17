@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Montserrat } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
@@ -14,14 +14,14 @@ import { siteUrl } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const inter = Inter({
+const geist = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+const geistMono = Geist_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
 });
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#08090c",
+  themeColor: "#171717",
   colorScheme: "dark",
 };
 
@@ -98,7 +98,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("dark font-sans", inter.variable, montserrat.variable)}
+      className={cn("dark font-sans", geist.variable, geistMono.variable)}
       data-timezone="Europe/Tallinn"
     >
       <body className="antialiased">

@@ -121,11 +121,11 @@ export function MobileTabBar({
       ref={dockRef}
       aria-label="App"
       className={cn(
-        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-app/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden",
+        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden",
         className
       )}
     >
-      <div className="px-panel py-2">
+      <div className="px-4 py-2">
         <div
           role="tablist"
           className={cn(
@@ -163,8 +163,8 @@ export function MobileTabBar({
                 className={cn(
                   "flex h-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium transition",
                   on
-                    ? "bg-select text-select-ink"
-                    : "text-muted-foreground hover:text-brand-bright"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-primary"
                 )}
               >
                 <span className="relative">
@@ -174,7 +174,7 @@ export function MobileTabBar({
                     aria-hidden
                   />
                   {id === "home" && alertCount > 0 && (
-                    <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-mustard" />
+                    <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
                   )}
                 </span>
                 <span className="max-w-full leading-none">

@@ -18,6 +18,7 @@ import {
   type CommunityListRow,
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { Panel, PanelHeader, Segmented } from "@/components/ui/Panel";
 import {
@@ -242,7 +243,7 @@ export function CommunitiesList() {
         <AppHeader className="hidden md:block" title="Circle" />
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-lg font-bold text-foreground">
+            <h1 className="text-lg font-medium tracking-tight text-foreground">
               Circle
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -257,7 +258,7 @@ export function CommunitiesList() {
               icon={<Users className="h-4 w-4" />}
             />
             {communities.length === 0 && loading ? (
-              <div className="flex flex-col mt-5 gap-2" aria-hidden>
+              <div className="flex flex-col mt-4 gap-2" aria-hidden>
                 {[0, 1].map((i) => (
                   <div
                     key={i}
@@ -266,7 +267,7 @@ export function CommunitiesList() {
                 ))}
               </div>
             ) : (
-              <ul className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
                 {communities.length === 0 && (
                   <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                     <Users className="h-6 w-6 text-muted-foreground" />
@@ -286,13 +287,13 @@ export function CommunitiesList() {
                       href={`/communities/${c.id}`}
                       onPointerEnter={() => void prefetchCommunity(c.id)}
                       onFocus={() => void prefetchCommunity(c.id)}
-                      className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-brand/5"
+                      className="flex items-center justify-between gap-3 px-4 py-4 transition hover:bg-muted"
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         {c.kind === "classroom" ? (
-                          <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
+                          <GraduationCap className="h-3.5 w-3.5 shrink-0 text-primary/80" />
                         ) : c.visibility === "public" ? (
-                          <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
+                          <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                         ) : (
                           <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         )}
@@ -325,12 +326,12 @@ export function CommunitiesList() {
               icon={<Compass className="h-4 w-4" />}
             />
             {discover.length === 0 ? (
-              <p className="mt-5 rounded-xl border border-border bg-raised px-4 py-6 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-4 rounded-xl border border-border bg-raised px-4 py-6 text-sm leading-relaxed text-muted-foreground">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -338,7 +339,7 @@ export function CommunitiesList() {
                   >
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="flex min-w-0 items-center gap-2">
-                        <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
+                        <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                         <span className="min-w-0 truncate text-base font-medium text-foreground">
                           {c.name}
                         </span>
@@ -348,7 +349,7 @@ export function CommunitiesList() {
                         </span>
                       </span>
                       {c.houseNote?.trim() ? (
-                        <span className="pl-5 text-sm leading-relaxed text-muted-foreground">
+                        <span className="pl-4 text-sm leading-relaxed text-muted-foreground">
                           {c.houseNote.trim()}
                         </span>
                       ) : null}
@@ -362,7 +363,7 @@ export function CommunitiesList() {
                         type="button"
                         onClick={() => void beginJoinRequest(c.id, c.name)}
                         disabled={requestBusyId === c.id}
-                        className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
+                        className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground hover:border-foreground/20/50 hover:text-foreground disabled:opacity-50"
                       >
                         {requestBusyId === c.id
                           ? "Requesting …"
@@ -399,7 +400,7 @@ export function CommunitiesList() {
                 }
               />
 
-              <div className="flex flex-col mt-5 gap-5">
+              <div className="flex flex-col mt-4 gap-4">
                 <label className="block">
                   <span className="text-sm font-medium text-muted-foreground">
                     {kind === "classroom" ? "Class name" : "Name"}
@@ -412,7 +413,7 @@ export function CommunitiesList() {
                         ? "Econ 201"
                         : "Circle name"
                     }
-                    className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
+                    className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
                   />
                 </label>
 
@@ -477,7 +478,7 @@ export function CommunitiesList() {
                         maxLength={800}
                         rows={4}
                         placeholder={DEFAULT_CLASS_ASSIGNMENT}
-                        className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
+                        className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
                       />
                     </label>
                   </>
@@ -499,9 +500,9 @@ export function CommunitiesList() {
                   </div>
                 )}
 
-                <button type="submit" className="btn-primary">
+                <Button type="submit">
                   {kind === "classroom" ? "Start a class" : "Start circle"}
-                </button>
+                </Button>
               </div>
             </Panel>
           </form>
@@ -521,7 +522,7 @@ export function CommunitiesList() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="join-share-title"
-            className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+            className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-xl sm:pb-4"
           >
             <h3
               id="join-share-title"
@@ -568,26 +569,25 @@ export function CommunitiesList() {
                 );
               })}
             </ul>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setJoinPick(null)}
-                className="touch-target rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-hover hover:text-foreground"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={requestBusyId === joinPick.communityId}
                 onClick={() =>
                   void sendJoinRequest(joinPick.communityId, joinPick.selected)
                 }
-                className="btn-primary disabled:opacity-50"
               >
                 {requestBusyId === joinPick.communityId
                   ? "Requesting …"
                   : "Send request"}
-              </button>
+              </Button>
             </div>
           </div>
         </ViewportOverlay>

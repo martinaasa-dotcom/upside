@@ -20,13 +20,13 @@ export const metadata = publicPageMetadata({
 
 export default function TermsPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_55%)] text-foreground">
-      <header className="border-b border-border bg-app/90 backdrop-blur">
+    <div className="min-h-dvh bg-background text-foreground">
+      <header className="border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-brand hover:text-foreground"
+            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
           >
             Back
           </Link>
@@ -35,7 +35,7 @@ export default function TermsPage() {
 
       <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Terms of Service</h1>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Terms of Service</h1>
           <p className="mt-1 text-sm text-muted-foreground">Last updated {LAST_UPDATED}</p>
         </div>
 

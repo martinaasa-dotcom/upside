@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Panel, PanelHeader, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
@@ -87,7 +88,7 @@ function TickerStoryCard({
   const story = useMemo(() => buildTrendStory(row), [row]);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
       <div className={cn(SPLIT_ROW, "sm:items-center")}>
         <div className={cn(SPLIT_COPY, "flex items-center gap-2")}>
           <span className="text-base font-semibold text-foreground">
@@ -271,15 +272,18 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
         <PanelHeader
           title="Is the trend changing?"
           actions={
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => void load(true)}
               disabled={busy}
-              className="btn-secondary"
             >
-              <RefreshCw className={cn("h-3.5 w-3.5", busy && "animate-spin")} />
+              <RefreshCw
+                data-icon="inline-start"
+                className={cn(busy && "animate-spin")}
+              />
               {busy ? "Reading …" : "Recheck"}
-            </button>
+            </Button>
           }
         />
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -294,8 +298,8 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
           used.
         </p>
 
-        <div className="mt-5 border-t border-border pt-5">
-          <h3 className="text-base font-bold text-foreground">
+        <div className="mt-4 border-t border-border pt-4">
+          <h3 className="text-sm font-medium tracking-tight text-foreground">
             Watch anything, not just what you hold
           </h3>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
@@ -313,17 +317,17 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 if (e.key === "Enter") addToWatchlist();
               }}
               placeholder="BTC-USD, XLK, SPY …"
-              className="h-9 w-40 rounded-lg border border-border bg-well px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand focus:outline-none"
+              className="h-9 w-40 rounded-lg border border-border bg-well px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={addToWatchlist}
               disabled={!draft.trim()}
-              className="btn-secondary disabled:opacity-40"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus data-icon="inline-start" />
               Add
-            </button>
+            </Button>
             {watchlist.map((t) => (
               <span
                 key={t}
@@ -354,13 +358,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       )}
 
       {rows == null && !error && (
-        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl bg-card px-4 py-10 text-center text-sm text-muted-foreground">
           Reading four years of weekly bars …
         </div>
       )}
 
       {rows != null && rows.length === 0 && !error && (
-        <div className="rounded-xl border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl bg-card px-4 py-10 text-center text-sm text-muted-foreground">
           Add a holding, or watch a ticker above, and its trend read shows up
           here.
         </div>

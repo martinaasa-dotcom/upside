@@ -4,68 +4,63 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  /* Brand board from 15 Aug: cool near-black, cream type, gold mark.
-     Green and red stay the bright up/down colors, never a wash on the room.
-     Stack: field (--app) → inset (--well) → box (--card) → nested (--raised).
-     A box on the field is never the field color.
-     Semantic tokens follow shadcn (background/foreground pairs). The app
-     is dark-only, so :root and .dark share these values. */
-  --background: #08090c;
-  --foreground: #f4f1ea;
-  --card: #161b25;
-  --card-foreground: #f4f1ea;
-  --popover: #161b25;
-  --popover-foreground: #f4f1ea;
-  --primary: #dcad55;
-  --primary-foreground: #08090c;
-  --secondary: #1e2430;
-  --secondary-foreground: #f4f1ea;
-  --muted: #10141c;
-  --muted-foreground: #9aa3ad;
-  --accent: #272e3c;
-  --accent-foreground: #f4f1ea;
-  --destructive: #f43f5e;
-  --border: rgb(214 173 105 / 0.22);
-  --input: rgb(214 173 105 / 0.28);
-  --ring: #d6ad69;
-  --chart-1: #d6ad69;
-  --chart-2: #10b981;
-  --chart-3: #9aa3ad;
-  --chart-4: #dcad55;
-  --chart-5: #f43f5e;
+:root,
+.dark {
+  /* shadcn nova dark. One density (compact: 1rem). One accent (primary).
+     Gain/loss are money-only, never a wash on the room. */
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
   --radius: 0.625rem;
-  --sidebar: #10141c;
-  --sidebar-foreground: #f4f1ea;
-  --sidebar-primary: #dcad55;
-  --sidebar-primary-foreground: #08090c;
-  --sidebar-accent: #272e3c;
-  --sidebar-accent-foreground: #f4f1ea;
-  --sidebar-border: rgb(214 173 105 / 0.22);
-  --sidebar-ring: #d6ad69;
-  --paper: #f4f1ea;
-  --ink: #08090c;
-  --app: #08090c;
-  --well: #10141c;
-  --raised: #1e2430;
-  --hover: #272e3c;
-  --brand: #d6ad69;
-  --brand-bright: #eed7b5;
-  --brand-mid: #dcad55;
-  --brand-deep: #9c723f;
-  --brand-dark: #7a5a32;
-  --select: #dcad55;
-  --select-ink: #08090c;
-  --mustard: #dcad55;
-  --caution: #dcad55;
-  --gain: #10b981;
-  --loss: #f43f5e;
-  --surface: #161b25;
-  --panel: #161b25;
-  /* One inset scale. Phone and desktop use the same numbers.
-     Panel pad matches the page gutter. Nested cards and score
-     cells step in once. Do not invent a tighter mobile pad. */
-  --inset-panel: 1.25rem;
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  --warning: oklch(0.769 0.188 70.08);
+  --gain: oklch(0.696 0.17 162.48);
+  --loss: oklch(0.645 0.246 16.439);
+  --paper: var(--foreground);
+  --ink: var(--background);
+  --app: var(--background);
+  --well: var(--muted);
+  --raised: var(--secondary);
+  --hover: var(--accent);
+  --brand: var(--primary);
+  --brand-bright: var(--primary);
+  --brand-mid: var(--primary);
+  --brand-deep: var(--muted-foreground);
+  --brand-dark: var(--secondary);
+  --select: var(--primary);
+  --select-ink: var(--primary-foreground);
+  --mustard: var(--primary);
+  --caution: var(--warning);
+  --surface: var(--card);
+  --panel: var(--card);
+  --inset-panel: 1rem;
   --inset-nested: 1rem;
 }
 
@@ -95,10 +90,11 @@
   --color-surface: var(--surface);
   --color-panel: var(--panel);
   --color-border: var(--border);
-  --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Montserrat", "Montserrat Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-logo: "Montserrat", "Montserrat Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --color-warning: var(--warning);
   --spacing-panel: var(--inset-panel);
   --spacing-nested: var(--inset-nested);
   /* Tailwind ships no xs breakpoint, and WorkspaceSwitcher was already
@@ -164,9 +160,9 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.02em;
-  font-weight: 700;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  font-weight: 500;
 }
 
 /* Hide scrollbars in horizontal tab rails (still scrollable). */
@@ -210,9 +206,7 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
  * sits in a hole that no other metric uses. Expand the hit area
  * with an absolute inset instead. */
 @media (max-width: 1023px) {
-  .touch-target,
-  .btn-primary,
-  .btn-secondary {
+  .touch-target {
     min-height: 2.75rem;
     min-width: 2.75rem;
   }
@@ -259,15 +253,15 @@ input[type="range"] {
  * a full-cell dashed rule (that reads as a weird table separator).
  */
 .inline-edit {
-  border-bottom: 1px dashed rgba(214, 173, 105, 0.45);
+  border-bottom: 1px dashed color-mix(in oklch, var(--foreground) 35%, transparent);
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 .inline-edit:hover {
-  border-bottom-color: rgba(238, 215, 181, 0.65);
+  border-bottom-color: color-mix(in oklch, var(--foreground) 55%, transparent);
 }
 .inline-edit:focus {
   border-bottom-style: solid;
-  border-bottom-color: rgb(214 173 105 / 0.8);
+  border-bottom-color: var(--ring);
 }
 
 * {
@@ -295,75 +289,18 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* One focus ring for every control. btn-primary already sets the same
- * outline, so this only fills the gaps (tabs, icon buttons, raw links). */
+/* One focus ring for leftover chrome (tabs, icon buttons, raw links). */
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: rgba(214, 173, 105, 0.38);
+  background: color-mix(in oklch, var(--primary) 28%, transparent);
 }
 
-/* Financial figures stay on the body face, with lining tabular digits. */
 .tabular-nums {
   font-variant-numeric: tabular-nums lining-nums;
-}
-
-/* Primary CTA and selected chrome share one gold. Hover is the same gold, lighter. */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  border-radius: var(--radius);
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.25rem;
-  padding: 0.5rem 1rem;
-  transition: background-color 120ms ease, transform 120ms ease;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--brand-bright);
-}
-.btn-primary:active:not(:disabled) {
-  transform: scale(0.985);
-}
-.btn-primary:disabled {
-  opacity: 0.6;
-}
-.btn-primary:focus-visible,
-.btn-secondary:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--primary);
-  background: transparent;
-  color: var(--brand-bright);
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.25rem;
-  padding: 0.5rem 1rem;
-  transition: background-color 120ms ease, border-color 120ms ease,
-    color 120ms ease;
-}
-.btn-secondary:hover:not(:disabled) {
-  background: var(--select);
-  border-color: var(--select);
-  color: var(--select-ink);
-}
-.btn-secondary:disabled {
-  opacity: 0.6;
 }
 
 /* hide number input spinners for cleaner finance cells */
@@ -462,40 +399,6 @@ button:disabled,
   }
 }
 
-.dark {
-  --background: #08090c;
-  --foreground: #f4f1ea;
-  --card: #161b25;
-  --card-foreground: #f4f1ea;
-  --popover: #161b25;
-  --popover-foreground: #f4f1ea;
-  --primary: #dcad55;
-  --primary-foreground: #08090c;
-  --secondary: #1e2430;
-  --secondary-foreground: #f4f1ea;
-  --muted: #10141c;
-  --muted-foreground: #9aa3ad;
-  --accent: #272e3c;
-  --accent-foreground: #f4f1ea;
-  --destructive: #f43f5e;
-  --border: rgb(214 173 105 / 0.22);
-  --input: rgb(214 173 105 / 0.28);
-  --ring: #d6ad69;
-  --chart-1: #d6ad69;
-  --chart-2: #10b981;
-  --chart-3: #9aa3ad;
-  --chart-4: #dcad55;
-  --chart-5: #f43f5e;
-  --sidebar: #10141c;
-  --sidebar-foreground: #f4f1ea;
-  --sidebar-primary: #dcad55;
-  --sidebar-primary-foreground: #08090c;
-  --sidebar-accent: #272e3c;
-  --sidebar-accent-foreground: #f4f1ea;
-  --sidebar-border: rgb(214 173 105 / 0.22);
-  --sidebar-ring: #d6ad69;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -505,5 +408,17 @@ button:disabled,
   }
   html {
     @apply font-sans;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ):not([type="hidden"]):not([type="button"]):not([type="submit"]):not(
+      [type="reset"]
+    ):not(.inline-edit),
+  textarea,
+  select {
+    @apply h-8 min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base shadow-none outline-none transition-colors md:text-sm;
+    @apply placeholder:text-muted-foreground;
+    @apply focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
   }
 }

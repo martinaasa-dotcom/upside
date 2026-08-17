@@ -7,6 +7,7 @@ import { useFeedback } from "@/components/FeedbackHost";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
@@ -52,8 +53,8 @@ function VisitStreakCard() {
   );
   if (!streak || streak.totalVisits <= 0) return null;
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-      <h2 className="text-base font-bold text-foreground">Showing up</h2>
+    <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+      <h2 className="text-base font-medium tracking-tight text-foreground">Showing up</h2>
       <p className="text-sm text-muted-foreground">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
         {last7DaysStrip(streak).map((visited, i) => (
@@ -61,7 +62,7 @@ function VisitStreakCard() {
             key={i}
             className={cn(
               "h-1.5 w-6 rounded-full",
-              visited ? "bg-select" : "bg-hover"
+              visited ? "bg-primary" : "bg-hover"
             )}
           />
         ))}
@@ -265,7 +266,7 @@ export function AccountPage() {
                 router.push("/");
               })
             }
-            className="touch-target inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm text-muted-foreground hover:border-brand hover:text-foreground"
+            className="touch-target inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Sign out</span>
@@ -274,38 +275,34 @@ export function AccountPage() {
 
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-lg font-bold">My account</h1>
+            <h1 className="text-lg font-medium tracking-tight">My account</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               How you appear, your data, and the danger zone.
             </p>
           </div>
 
           <WidgetErrorBoundary name="Account">
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <MessageSquare className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">Feedback</h2>
+                <h2 className="text-base font-medium tracking-tight text-foreground">Feedback</h2>
                 <p className="text-sm text-muted-foreground">
                   A bug, a missing thing, or a rant. Upside reads these.
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={openManual}
-              className="btn-primary"
-            >
+            <Button type="button" onClick={openManual}>
               Tell Upside
-            </button>
+            </Button>
           </section>
 
           <VisitStreakCard />
 
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-            <h2 className="text-base font-bold text-foreground">Email notes</h2>
+          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+            <h2 className="text-base font-medium tracking-tight text-foreground">Email notes</h2>
             <p className="text-sm text-muted-foreground">
               {morningCanSend
                 ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
@@ -358,7 +355,7 @@ export function AccountPage() {
                         row.set(prev);
                       });
                   }}
-                  className="h-4 w-4 rounded border-brand-mid bg-well text-brand focus:ring-brand/50"
+                  className="h-4 w-4 rounded border-input bg-well text-primary focus:ring-ring/50"
                 />
                 {row.label}
               </label>
@@ -369,13 +366,13 @@ export function AccountPage() {
           </section>
 
           {/* Profile / community appearance */}
-          <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+          <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">
+                <h2 className="text-base font-medium tracking-tight text-foreground">
                   Community profile
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -468,24 +465,20 @@ export function AccountPage() {
               {profileMsg && (
                 <p className="text-sm text-gain">{profileMsg}</p>
               )}
-              <button
-                type="submit"
-                disabled={savingProfile}
-                className="btn-primary disabled:opacity-60"
-              >
+              <Button type="submit" disabled={savingProfile}>
                 {savingProfile ? "Saving …" : "Save profile"}
-              </button>
+              </Button>
             </form>
           </section>
 
           {/* Experience level */}
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <Gauge className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">Experience level</h2>
+                <h2 className="text-base font-medium tracking-tight text-foreground">Experience level</h2>
                 <p className="text-sm text-muted-foreground">
                   Simplifies what&apos;s shown. Nothing is locked, change it anytime.
                 </p>
@@ -501,7 +494,7 @@ export function AccountPage() {
                     "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
                     tier === t.id
                       ? "border-white/25 bg-hover text-foreground"
-                      : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
+                      : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
                   )}
                 >
                   <span>
@@ -528,7 +521,7 @@ export function AccountPage() {
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === true
                       ? "border-white/25 bg-hover text-foreground"
-                      : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
+                      : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
                   )}
                 >
                   <span className="font-medium">Yes</span>
@@ -543,7 +536,7 @@ export function AccountPage() {
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === false
                       ? "border-white/25 bg-hover text-foreground"
-                      : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
+                      : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
                   )}
                 >
                   <span className="font-medium">No</span>
@@ -557,13 +550,13 @@ export function AccountPage() {
           </section>
 
           {/* Sheet invites live next to the sheet, not here. */}
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <Link2 className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">
+                <h2 className="text-base font-medium tracking-tight text-foreground">
                   Invite a partner
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -582,13 +575,13 @@ export function AccountPage() {
           </section>
 
           {/* Data & privacy */}
-          <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+          <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">
+                <h2 className="text-base font-medium tracking-tight text-foreground">
                   Data &amp; privacy
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -610,7 +603,7 @@ export function AccountPage() {
                 type="button"
                 onClick={() => void exportData()}
                 disabled={exporting}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-brand disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:border-foreground/20 disabled:opacity-60"
               >
                 <Download className="h-3.5 w-3.5" />
                 {exporting ? "Preparing …" : "Export my data"}
@@ -665,7 +658,7 @@ export function AccountPage() {
             aria-label="Close"
             onClick={() => !deleting && setDeleteOpen(false)}
           />
-          <div className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-loss/50 bg-well p-5 shadow-2xl sm:max-w-md sm:rounded-2xl">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl border border-loss/50 bg-well p-4 shadow-2xl sm:max-w-md sm:rounded-xl">
             <h3 className="text-base font-semibold text-loss">
               Delete your account?
             </h3>
@@ -692,7 +685,7 @@ export function AccountPage() {
             {deleteErr && (
               <p className="mt-3 text-sm text-loss">{deleteErr}</p>
             )}
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setDeleteOpen(false)}

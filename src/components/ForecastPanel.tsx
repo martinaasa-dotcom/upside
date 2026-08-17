@@ -203,7 +203,7 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
       <button
         type="button"
         onClick={onShow}
-        className="shrink-0 rounded-lg bg-mustard px-3 py-1.5 text-sm font-semibold text-select-ink hover:bg-brand-bright"
+        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/80"
       >
         Show
       </button>
@@ -271,7 +271,7 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50",
+        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50",
         targeted ? "text-foreground" : "text-muted-foreground"
       )}
     />
@@ -415,7 +415,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="none"
-            className="h-44 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50 sm:h-48"
+            className="h-44 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/50 sm:h-48"
             role="slider"
             tabIndex={0}
             aria-label="Drag across to read a year. Modeled portfolio value through the last forecast year."
@@ -917,8 +917,8 @@ export const ForecastPanel = memo(function ForecastPanel({
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <header className="border-b border-border p-panel">
+    <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+      <header className="border-b border-border p-4">
         <PanelHeader
           title="Forecast"
           subtitle="A yearly price for each holding, to 2030."
@@ -928,7 +928,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                 <button
                   type="button"
                   onClick={onClearOverrides}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:border-brand hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:border-foreground/20 hover:text-foreground"
                   title="Throw away every price you or Margus changed on this portfolio"
                 >
                   <RotateCcw className="h-3 w-3" aria-hidden />
@@ -939,7 +939,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                 type="button"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-hover px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-brand hover:bg-select hover:text-select-ink disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-foreground/20 hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
                 title="Work the whole forecast out again from scratch"
               >
                 {busy ? (
@@ -1161,7 +1161,7 @@ export const ForecastPanel = memo(function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-border p-panel">
+      <div className="border-t border-border p-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
             What Margus makes of it
@@ -1195,7 +1195,7 @@ export const ForecastPanel = memo(function ForecastPanel({
           </div>
         )}
         {plan && (
-          <div className="flex flex-col mt-5 gap-5">
+          <div className="flex flex-col mt-4 gap-4">
             {(plan.generalAdvice || plan.sectorRotation) && (
               <Reading>
                 {plan.generalAdvice && (
@@ -1217,14 +1217,14 @@ export const ForecastPanel = memo(function ForecastPanel({
 
             {lastPlanDiffs.length > 0 && (
               <div className="overflow-hidden rounded-xl border border-border bg-raised">
-                <div className="border-b border-border px-panel py-3">
+                <div className="border-b border-border px-4 py-3">
                   <p className="text-sm font-medium text-muted-foreground">Vs last plan</p>
                 </div>
                 <ul>
                   {lastPlanDiffs.map((d) => (
                     <li
                       key={d.ticker}
-                      className="flex gap-3 border-t border-border px-panel py-3.5 first:border-t-0"
+                      className="flex gap-3 border-t border-border px-4 py-3.5 first:border-t-0"
                     >
                       <span
                         className={cn(
@@ -1250,7 +1250,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               <div
                 className={cn(
                   SPLIT_ROW,
-                  "sm:items-center rounded-xl border border-border bg-raised px-panel py-4 text-sm text-foreground"
+                  "sm:items-center rounded-xl border border-border bg-raised px-4 py-4 text-sm text-foreground"
                 )}
               >
                 <span className={SPLIT_COPY}>
@@ -1262,7 +1262,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   <button
                     type="button"
                     onClick={() => void askMargus()}
-                    className="shrink-0 rounded-lg border border-brand/40 px-2.5 py-1 font-semibold text-foreground transition hover:bg-hover"
+                    className="shrink-0 rounded-lg border border-border px-2.5 py-1 font-semibold text-foreground transition hover:bg-hover"
                   >
                     Update it
                   </button>

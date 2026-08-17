@@ -360,7 +360,7 @@ function RecapBody({
         <li key={b} className="flex gap-2">
           <span
             aria-hidden
-            className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"
+            className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
           />
           <span>{b}</span>
         </li>
@@ -434,10 +434,10 @@ function FundNote({
   accent: "brand" | "loss";
 }) {
   const bar = accent === "brand" ? PALETTE.brand : PALETTE.loss;
-  const dot = accent === "brand" ? "bg-brand" : "bg-loss";
+  const dot = accent === "brand" ? "bg-primary" : "bg-loss";
   return (
     <div
-      className="flex min-h-min flex-1 flex-col bg-raised p-nested"
+      className="flex min-h-min flex-1 flex-col bg-raised p-4"
       style={{ boxShadow: `inset 3px 0 0 ${bar}` }}
     >
       <MicroLabel>{label}</MicroLabel>
@@ -479,11 +479,11 @@ function FundPosition({
   const thesis = fundCopyBullets(holding.thesis).slice(0, 2);
   const exit = fundCopyBullets(holding.exit_plan).slice(0, 2);
   return (
-    <article className="rounded-2xl border border-border bg-card p-5">
+    <article className="rounded-xl bg-card ring-1 ring-foreground/10 p-4">
       <h3 className="text-base font-semibold text-foreground">
         {cashtag(holding.ticker)}
       </h3>
-      <div className="mt-5 grid items-stretch gap-5 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-0">
+      <div className="mt-4 grid items-stretch gap-4 md:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] md:gap-0">
         <div className="h-full md:pr-6">
           <Scoreboard
             className="h-full auto-rows-[minmax(min-content,1fr)]"
@@ -515,7 +515,7 @@ function FundPosition({
             />
           </Scoreboard>
         </div>
-        <div className="h-full border-t border-border pt-5 md:border-l md:border-t-0 md:pl-6 md:pt-0">
+        <div className="h-full border-t border-border pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
           <div className="flex h-full flex-col gap-px overflow-hidden rounded-xl border border-border bg-border">
             <FundNote label="Thesis" items={thesis} accent="brand" />
             <FundNote label="Sell if" items={exit} accent="loss" />
@@ -1177,14 +1177,14 @@ export function UpsidePortfolioPage() {
                     <button
                       type="button"
                       onClick={() => void handleOpenPicker()}
-                      className="shrink-0 text-sm font-medium text-brand-bright hover:text-brand"
+                      className="shrink-0 text-sm font-medium text-primary hover:text-primary"
                     >
                       Compare my portfolio
                     </button>
                   ) : null
                 }
               />
-              <Scoreboard className="mt-5">
+              <Scoreboard className="mt-4">
                 <Score
                   label="Total value"
                   value={currency(totalValue, 0)}
@@ -1228,7 +1228,7 @@ export function UpsidePortfolioPage() {
                         <select
                           value={pickerSelection}
                           onChange={(e) => setPickerSelection(e.target.value)}
-                          className="touch-target appearance-none rounded-md border border-border bg-well px-3 py-1.5 pr-8 text-sm text-foreground focus:border-brand-mid focus:outline-none"
+                          className="touch-target appearance-none rounded-md border border-border bg-well px-3 py-1.5 pr-8 text-sm text-foreground focus:border-ring focus:outline-none"
                         >
                           <option value="">Choose a portfolio …</option>
                           {myPortfolios.map((p) => (
@@ -1243,7 +1243,7 @@ export function UpsidePortfolioPage() {
                         type="button"
                         onClick={() => void handleSetBenchmark()}
                         disabled={!pickerSelection || benchmarkBusy}
-                        className="touch-target rounded-md bg-brand/20 px-3 py-1.5 text-sm font-semibold text-brand-bright hover:bg-brand/30 disabled:opacity-50"
+                        className="touch-target rounded-md bg-muted px-3 py-1.5 text-sm font-semibold text-primary hover:bg-muted disabled:opacity-50"
                       >
                         {benchmarkBusy ? "Adding …" : "Add"}
                       </button>
@@ -1264,7 +1264,7 @@ export function UpsidePortfolioPage() {
 
               <WidgetErrorBoundary name="Fund chart">
               <ComparisonChart
-                className="mt-5"
+                className="mt-4"
                 series={comparisonSeries}
                 labels={comparisonLabels}
               />
@@ -1277,7 +1277,7 @@ export function UpsidePortfolioPage() {
             {bettingSlices.length > 0 && (
               <Panel>
                 <PanelHeader title="What he's betting on" />
-                <div className="mt-5">
+                <div className="mt-4">
                   <div className="flex h-3 overflow-hidden rounded-full bg-well">
                     {bettingSlices.map((t) => (
                       <div
@@ -1406,7 +1406,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-5"
+                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <RecapMeta r={r} />
@@ -1419,7 +1419,7 @@ export function UpsidePortfolioPage() {
                     ) : (
                       <details
                         key={r.id}
-                        className="group overflow-hidden rounded-2xl border border-border bg-card"
+                        className="group overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
                       >
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
@@ -1452,7 +1452,7 @@ export function UpsidePortfolioPage() {
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+                <p className="rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-6 text-center text-sm text-muted-foreground">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1470,7 +1470,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4"
+                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1483,7 +1483,7 @@ export function UpsidePortfolioPage() {
                     ) : (
                       <details
                         key={r.id}
-                        className="group overflow-hidden rounded-2xl border border-border bg-card"
+                        className="group overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
                       >
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
@@ -1516,7 +1516,7 @@ export function UpsidePortfolioPage() {
                 <h2 className="text-sm font-semibold text-muted-foreground">
                   Closed positions · {closedHoldings.length}
                 </h2>
-                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+                <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
                   {closedHoldings.map((h) => (
                     <li key={h.id} className="px-4 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-2">

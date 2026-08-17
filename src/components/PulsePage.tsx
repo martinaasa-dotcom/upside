@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { track } from "@vercel/analytics";
 import {
   currency,
@@ -157,7 +158,7 @@ function pulseCardChrome({
   downDay: boolean;
   status: ThesisStatus | null;
 }): string {
-  if (pinned) return "border-white/20 bg-hover ring-1 ring-brand/30";
+  if (pinned) return "border-white/20 bg-hover ring-1 ring-ring/30";
   if (needsLook) {
     if (downDay || status === "broken") {
       return "border-l-[3px] border-loss/50 border-l-loss bg-loss/[0.12]";
@@ -300,7 +301,7 @@ function PulseCard({
                   : "Re-check just this ticker now"
               }
               aria-label={`Re-check ${c.ticker}`}
-              className="relative rounded-lg border border-border/80 bg-well/70 p-1.5 text-muted-foreground transition after:absolute after:-inset-2 after:content-[''] hover:border-brand hover:text-foreground disabled:opacity-40"
+              className="relative rounded-lg border border-border/80 bg-well/70 p-1.5 text-muted-foreground transition after:absolute after:-inset-2 after:content-[''] hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
             >
               <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
             </button>
@@ -309,7 +310,7 @@ function PulseCard({
       </div>
 
       {c.inBook ? (
-        <Scoreboard className="mt-5">
+        <Scoreboard className="mt-4">
           <Score
             label="Price"
             value={currency(c.price)}
@@ -340,7 +341,7 @@ function PulseCard({
       <PulseHistory ticker={c.ticker} />
 
       {hasBody ? (
-        <div className="flex flex-col mt-6 gap-4 border-t border-border pt-5">
+        <div className="flex flex-col mt-6 gap-4 border-t border-border pt-4">
           {thesisBullets.length > 0 && (
             <Reading
               label={
@@ -363,7 +364,7 @@ function PulseCard({
                   <li key={i} className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
+                      className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
                     />
                     <span className="leading-snug">{point}</span>
                   </li>
@@ -372,7 +373,7 @@ function PulseCard({
             </Reading>
           )}
           {trimLine ? (
-            <p className="font-medium text-brand-bright">
+            <p className="font-medium text-primary">
               One check: selling about {shown?.trimPct}% into this strength.
             </p>
           ) : null}
@@ -397,7 +398,7 @@ function PulseCard({
       ) : null}
 
       {headlines.length > 0 && (
-        <div className="mt-5 border-t border-border pt-4">
+        <div className="mt-4 border-t border-border pt-4">
           <MicroLabel>In the news</MicroLabel>
           <ul className="flex flex-col mt-2 gap-2">
             {headlines.slice(0, 2).map((h) => (
@@ -966,7 +967,7 @@ export const PulsePage = memo(function PulsePage({
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Panel>
         <PanelHeader
           hero
@@ -975,7 +976,7 @@ export const PulsePage = memo(function PulsePage({
         />
         <p className="mt-3 text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
 
-        <form onSubmit={(e) => void submitSearch(e)} className="mt-5 flex flex-col gap-2 sm:flex-row">
+        <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -989,7 +990,7 @@ export const PulsePage = memo(function PulsePage({
               }}
               placeholder="NVDA, Apple, or SPY5"
               aria-label="Ticker or company name to check"
-              className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
+              className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
               autoComplete="off"
             />
             {suggestions.length > 0 && searchInput.trim().length > 0 && (
@@ -1011,13 +1012,13 @@ export const PulsePage = memo(function PulsePage({
               </ul>
             )}
           </div>
-          <button
+          <Button
             type="submit"
             disabled={!searchInput.trim() || pinnedLoading}
-              className="btn-primary w-full shrink-0 px-4 disabled:opacity-40 sm:w-auto"
+            className="w-full shrink-0 sm:w-auto"
           >
             {pinnedLoading ? "Checking …" : "Check"}
-          </button>
+          </Button>
         </form>
 
         {pinnedTicker && (
@@ -1115,7 +1116,7 @@ export const PulsePage = memo(function PulsePage({
           detail="Add a holding and Pulse starts watching it automatically. You can also type any ticker above for a one-off look."
         />
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           {attention.length > 0 && (
             <section>
               <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">

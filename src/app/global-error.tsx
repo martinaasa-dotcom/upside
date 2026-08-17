@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { Inter, Montserrat } from "next/font/google";
+import { Geist } from "next/font/google";
 import { reportClientError } from "@/lib/telemetry-client";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
-const montserrat = Montserrat({ subsets: ["latin"], display: "swap" });
+const geist = Geist({ subsets: ["latin"], display: "swap" });
 
 // global-error replaces the root layout when the layout itself throws, so
 // it can't rely on globals.css/Tailwind or the app's providers — it must
@@ -29,7 +28,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body
-        className={inter.className}
+        className={geist.className}
         style={{
           margin: 0,
           minHeight: "100dvh",
@@ -37,17 +36,21 @@ export default function GlobalError({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          gap: "1.5rem",
-          padding: "1.5rem",
+          gap: "1rem",
+          padding: "1rem",
           textAlign: "center",
-          background: "#08090c",
-          color: "#f4f1ea",
+          background: "#171717",
+          color: "#fafafa",
         }}
       >
         <div>
           <h1
-            className={montserrat.className}
-            style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}
+            style={{
+              fontSize: "1rem",
+              fontWeight: 500,
+              letterSpacing: "-0.025em",
+              margin: 0,
+            }}
           >
             Upside Lab hit a snag
           </h1>
@@ -57,7 +60,7 @@ export default function GlobalError({
               maxWidth: "22rem",
               fontSize: "0.875rem",
               lineHeight: 1.6,
-              color: "#9aa3ad",
+              color: "#a1a1a1",
             }}
           >
             Your book is safe. This was a rendering error in the app shell,
@@ -69,13 +72,14 @@ export default function GlobalError({
             type="button"
             onClick={() => retry()}
             style={{
-              borderRadius: "0.5rem",
+              height: "2rem",
+              borderRadius: "0.625rem",
               border: "none",
-              background: "#dcad55",
-              color: "#0c0c0c",
-              fontWeight: 600,
+              background: "#e5e5e5",
+              color: "#262626",
+              fontWeight: 500,
               fontSize: "0.875rem",
-              padding: "0.5rem 1rem",
+              padding: "0 0.625rem",
               cursor: "pointer",
             }}
           >
@@ -85,12 +89,13 @@ export default function GlobalError({
             type="button"
             onClick={() => window.location.reload()}
             style={{
-              borderRadius: "0.5rem",
-              border: "1px solid #d6ad69",
+              height: "2rem",
+              borderRadius: "0.625rem",
+              border: "1px solid rgba(255,255,255,0.1)",
               background: "transparent",
-              color: "#eed7b5",
+              color: "#fafafa",
               fontSize: "0.875rem",
-              padding: "0.5rem 1rem",
+              padding: "0 0.625rem",
               cursor: "pointer",
             }}
           >

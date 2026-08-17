@@ -112,7 +112,7 @@ function CycleMonthlyChart({
               isSelected
                 ? "bg-hover ring-2 ring-select"
                 : isCurrent
-                  ? "ring-1 ring-brand/40 hover:bg-hover"
+                  ? "ring-1 ring-ring/40 hover:bg-hover"
                   : "hover:bg-hover"
             )}
             title={`${row.label}: avg ${fmtPct(v)} (${row.samples} prior ${row.label}s)`}
@@ -178,7 +178,7 @@ function CycleMonthlyTiles({
               isSelected
                 ? "ring-2 ring-select"
                 : isCurrent
-                  ? "ring-1 ring-brand/40"
+                  ? "ring-1 ring-ring/40"
                   : "hover:brightness-110"
             )}
           >
@@ -299,7 +299,7 @@ function SelectedHistory({
   const wins = history.filter((h) => h.returnPct > 0).length;
 
   return (
-    <div className="flex flex-col mt-5 gap-4">
+    <div className="flex flex-col mt-4 gap-4">
       <div>
         <p className="text-sm font-medium text-muted-foreground">{heading}</p>
         <p className={cn("mt-1 text-lg font-semibold tabular-nums", retText(avgPct))}>
@@ -405,7 +405,7 @@ function DayOfMonthChart({
                 isSelected
                   ? "ring-2 ring-select"
                   : isToday
-                    ? "ring-1 ring-brand/50 hover:brightness-110"
+                    ? "ring-1 ring-ring/50 hover:brightness-110"
                     : "hover:brightness-110"
               )}
             >
@@ -600,7 +600,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <Panel>
         <div className={SPLIT_ROW}>
           <div className={SPLIT_COPY}>
@@ -626,7 +626,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               <select
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-brand sm:flex-none"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-ring sm:flex-none"
               >
                 {tickers.map((t) => (
                   <option key={t} value={t}>
@@ -639,7 +639,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
               type="button"
               onClick={() => void load(ticker, true)}
               disabled={loading}
-              className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-foreground/80 hover:border-brand disabled:opacity-50 md:min-h-0 md:py-1.5"
+              className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-foreground/80 hover:border-foreground/20 disabled:opacity-50 md:min-h-0 md:py-1.5"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               <span className="hidden sm:inline">Refresh</span>
@@ -703,7 +703,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 <button
                   type="button"
                   onClick={() => shiftViewMonth(-1)}
-                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
+                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">Prev</span>
@@ -728,7 +728,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                 <button
                   type="button"
                   onClick={() => shiftViewMonth(1)}
-                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-brand hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
+                  className="touch-target inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground md:min-h-0 md:px-2.5 md:py-1.5"
                 >
                   <span className="hidden sm:inline">Next</span>
                   <ChevronRight className="h-4 w-4" />
@@ -745,9 +745,9 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                       className={cn(
                         "touch-target rounded-lg px-1 text-center text-sm font-medium transition md:min-h-0 md:py-1.5",
                         viewMonth === m
-                          ? "bg-select text-select-ink"
+                          ? "bg-primary text-primary-foreground"
                           : m === marketToday.month
-                            ? "text-foreground ring-1 ring-brand/40 hover:bg-hover"
+                            ? "text-foreground ring-1 ring-ring/40 hover:bg-hover"
                             : "text-muted-foreground hover:bg-hover hover:text-foreground"
                       )}
                     >

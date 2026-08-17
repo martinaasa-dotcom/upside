@@ -16,6 +16,8 @@ import {
   SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { cn } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { CheckCircle2 } from "lucide-react";
 import {
   inviteFromLocation,
@@ -110,27 +112,10 @@ export function SignInGate({ children }: Props) {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-app text-foreground">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 50% at 20% 0%, #161b25 0%, transparent 58%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.035]"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-        }}
-      />
-
+    <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-background text-foreground">
       <main
         id="main"
-        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center md:px-10"
+        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-4 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
       >
         <div className="signin-rise grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_26rem] md:gap-16 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
@@ -150,7 +135,7 @@ export function SignInGate({ children }: Props) {
                   Invite
                 </p>
               )}
-              <h1 className="font-heading text-lg font-bold leading-snug text-foreground">
+              <h1 className="font-heading text-lg font-medium tracking-tight leading-snug text-foreground">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
               <p className="text-sm leading-relaxed text-muted-foreground">
@@ -162,7 +147,7 @@ export function SignInGate({ children }: Props) {
               {SIGNIN_POINTS.map((line) => (
                 <li key={line} className="flex gap-3">
                   <span
-                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
                     aria-hidden
                   />
                   <span>{line}</span>
@@ -170,15 +155,16 @@ export function SignInGate({ children }: Props) {
               ))}
             </ul>
 
-            <button
+            <Button
               type="button"
+              size="lg"
               disabled={busy}
               onClick={() => void onSignIn()}
-              className="btn-primary signin-rise-3 mt-10 h-12 w-full max-w-sm rounded-xl gap-2.5 md:w-auto md:min-w-[17rem]"
+              className="signin-rise-3 mt-10 h-10 w-full max-w-sm gap-2.5 md:w-auto md:min-w-[17rem]"
             >
-              <GoogleMark />
+              {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
               {busy ? "Redirecting …" : "Continue with Google"}
-            </button>
+            </Button>
 
             {err && (
               <p className="mt-4 text-sm text-loss" role="alert">
@@ -223,7 +209,7 @@ function BookStill() {
         <Pill tone="neutral">Sample</Pill>
       </div>
 
-      <Scoreboard className="mt-5" cols={3}>
+      <Scoreboard className="mt-4" cols={3}>
         <Score label="Portfolio" value="$91,400" />
         <Score label="Today" value="+$4,180" valueClassName="text-gain" />
         <Score label="All time" value="+18%" valueClassName="text-gain" />
@@ -233,7 +219,7 @@ function BookStill() {
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
-            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3 pl-5 pr-4"
+            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3 pl-4 pr-4"
           >
             <span
               className={cn(
@@ -267,7 +253,7 @@ function BookStill() {
         ))}
       </div>
 
-      <Reading className="mt-5" label="Worth noticing">
+      <Reading className="mt-4" label="Worth noticing">
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 

@@ -187,21 +187,21 @@ export function DailyDuelCard({
     return (
       <section
         className={cn(
-          "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-5"
+          "min-h-[13.5rem] rounded-xl bg-card p-4 ring-1 ring-foreground/10"
         )}
       >
         <div className="mb-3 flex items-center gap-2.5">
-          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+          <div className="rounded-xl bg-muted p-2 text-primary">
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
+            <h3 className="text-sm font-medium tracking-tight text-foreground">Daily Duel</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">{sessionLine}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div className="h-[5.5rem] rounded-2xl border border-border bg-raised" />
-          <div className="h-[5.5rem] rounded-2xl border border-border bg-raised" />
+          <div className="h-[5.5rem] rounded-lg bg-muted" />
+          <div className="h-[5.5rem] rounded-lg bg-muted" />
         </div>
       </section>
     );
@@ -281,16 +281,16 @@ export function DailyDuelCard({
   return (
     <section
       className={cn(
-        "min-h-[13.5rem] rounded-2xl border border-brand/25 bg-brand/[0.06] p-5"
+        "min-h-[13.5rem] rounded-xl bg-card p-4 ring-1 ring-foreground/10"
       )}
     >
       <div className={cn("mb-3", SPLIT_ROW, "sm:items-center")}>
         <div className={cn(SPLIT_COPY, "flex items-center gap-2.5")}>
-          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+          <div className="rounded-xl bg-muted p-2 text-primary">
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-foreground">Daily Duel</h3>
+            <h3 className="text-sm font-medium tracking-tight text-foreground">Daily Duel</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">{sessionLine}</p>
           </div>
         </div>
@@ -357,22 +357,22 @@ export function DailyDuelCard({
               disabled={myPick != null}
               onClick={() => pick(side)}
               className={cn(
-                "touch-target flex h-full flex-col items-center justify-center rounded-2xl border px-4 py-5 text-center transition",
+                "touch-target flex h-full flex-col items-center justify-center rounded-xl border px-4 py-4 text-center transition",
                 myPick == null
-                  ? "border-border bg-raised hover:border-brand hover:bg-brand/10 active:scale-[0.98]"
+                  ? "border-border bg-raised hover:border-foreground/20 hover:bg-muted active:scale-[0.98]"
                   : win
                     ? "border-gain/50 bg-gain/10"
                     : waitingOnClose && isPick
-                      ? "border-brand/40 bg-brand/10"
+                      ? "border-border bg-muted"
                       : "border-border bg-raised opacity-70",
-                isPick && "ring-2 ring-brand/60"
+                isPick && "ring-2 ring-ring/60"
               )}
             >
               <p className="text-lg font-semibold text-foreground">
                 {cashtag(ticker)}
               </p>
               {isPick && (
-                <p className="mt-1 text-sm font-medium text-brand-bright">
+                <p className="mt-1 text-sm font-medium text-primary">
                   Your pick
                 </p>
               )}

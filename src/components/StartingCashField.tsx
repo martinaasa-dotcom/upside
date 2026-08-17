@@ -38,7 +38,7 @@ export function StartingCashField({
             className={cn(
               "bg-well px-2 py-2.5 text-sm tabular-nums transition disabled:opacity-50",
               value === n
-                ? "bg-select text-select-ink"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-hover hover:text-foreground"
             )}
           >
@@ -64,7 +64,7 @@ export function StartingCashField({
             setText(`$${formatCashDigits(next)}`);
             if (next >= MIN_STARTING_CASH) onChange(next);
           }}
-          className="mt-2 w-full max-w-xs rounded-lg border border-border bg-well px-3 py-2.5 text-sm tabular-nums text-foreground outline-none focus:border-brand disabled:opacity-50"
+          className="mt-2 w-full max-w-xs rounded-lg border border-border bg-well px-3 py-2.5 text-sm tabular-nums text-foreground outline-none focus:border-ring disabled:opacity-50"
         />
       </label>
     </div>

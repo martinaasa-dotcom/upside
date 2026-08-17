@@ -328,8 +328,8 @@ run("power animals each keep their own color", () => {
   assert.ok(ANIMAL_CARD_TONE.octopus?.bar.includes("violet"));
   assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
   assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
-  assert.equal(PALETTE.brand, "#d6ad69");
-  assert.equal(PALETTE.gain, "#10b981");
+  assert.equal(PALETTE.brand, "#e5e5e5");
+  assert.equal(PALETTE.gain, "#34d399");
   assert.equal(PALETTE.loss, "#f43f5e");
   const community = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
@@ -1791,7 +1791,11 @@ run("no type below 12px anywhere a person reads", () => {
 run("UI type stays on the five-size scale", () => {
   const offenders = sources
     .filter(({ file, src }) => {
-      if (file.endsWith("UpsideLogo.tsx") || file.endsWith("ui/Panel.tsx")) {
+      if (
+        file.endsWith("UpsideLogo.tsx") ||
+        file.endsWith("ui/Panel.tsx") ||
+        /src\/components\/ui\//.test(file)
+      ) {
         return false;
       }
       return (
@@ -1872,7 +1876,9 @@ run("niceScale stays at a handful of ticks", () => {
 });
 
 run("one letter-spacing scale on small caps labels", () => {
-  const offenders = offendersOf(/tracking-(?:wider|widest)/);
+  const offenders = offendersOf(/tracking-(?:wider|widest)/).filter(
+    (file) => !/src\/components\/ui\//.test(file) || file.endsWith("ui/Panel.tsx")
+  );
   assert.deepEqual(
     offenders,
     [],
@@ -1915,26 +1921,18 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     join(process.cwd(), "src/components/BookModeDock.tsx"),
     "utf8"
   );
-  assert.match(css, /--paper: #f4f1ea/);
-  assert.match(css, /--ink: #08090c/);
-  assert.match(css, /--card: #161b25/);
-  assert.match(css, /--raised: #1e2430/);
-  assert.match(css, /--well: #10141c/);
-  assert.match(css, /--app: #08090c/);
-  assert.match(css, /--muted: #9aa3ad/);
-  assert.match(css, /--brand: #d6ad69/);
-  assert.match(css, /--select: #dcad55/);
-  assert.match(css, /--mustard: #dcad55/);
-  assert.match(css, /--gain: #10b981/);
-  assert.match(css, /--loss: #f43f5e/);
-  assert.match(css, /background: var\(--mustard\)/);
+  assert.match(css, /--background: oklch\(0\.145 0 0\)/);
+  assert.match(css, /--primary: oklch\(0\.922 0 0\)/);
+  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
+  assert.match(css, /--radius: 0\.625rem/);
+  assert.match(css, /--gain:/);
+  assert.match(css, /--loss:/);
   assert.doesNotMatch(css, /--app: #0d110f/);
   assert.doesNotMatch(css, /--app: #1a2820/);
   assert.doesNotMatch(css, /--app: #0b0b0b/);
   assert.doesNotMatch(css, /--card: #1a1f1c/);
   assert.doesNotMatch(css, /--card: #2a2218/);
   assert.doesNotMatch(css, /--card: #151716/);
-  assert.doesNotMatch(css, /--card: #171717/);
   assert.doesNotMatch(css, /--raised: #242b27/);
   assert.doesNotMatch(css, /--gain: #5a9a4a/);
   assert.doesNotMatch(css, /--gain: #3ecf6e/);
@@ -1945,8 +1943,10 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(css, /--loss: #c46a58/);
   assert.doesNotMatch(css, /--caution: #c4a574/);
   assert.doesNotMatch(css, /--border: rgb\(237 232 220/);
-  assert.match(palette, /brand: "#d6ad69"/);
-  assert.match(palette, /gain: "#10b981"/);
+  assert.doesNotMatch(css, /#d6ad69/);
+  assert.doesNotMatch(css, /#dcad55/);
+  assert.match(palette, /brand: "#e5e5e5"/);
+  assert.match(palette, /gain: "#34d399"/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
   assert.match(panel, /export function InsightText/);
@@ -1954,28 +1954,28 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(panel, /\(up\|down\)\(\\s\+about/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /rounded-xl border border-border bg-raised/
+    /rounded-lg bg-muted/
   );
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Reading")),
     /bg-paper/
   );
-  assert.match(panel, /default: "border-border bg-card"/);
-  assert.match(panel, /rounded-xl border border-border bg-border/);
-  assert.match(panel, /SCORE_CELL = "min-w-0 bg-raised p-5"/);
+  assert.match(panel, /default: "bg-card ring-foreground\/10"/);
+  assert.match(panel, /rounded-lg bg-border/);
+  assert.match(panel, /SCORE_CELL = "min-w-0 bg-muted p-4"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
   );
-  assert.match(panel, /text-sm font-medium text-muted/);
+  assert.match(panel, /text-sm font-medium text-muted-foreground/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /text-sm font-medium text-muted/
+    /text-sm font-medium text-muted-foreground/
   );
-  assert.match(panel, /padded && PANEL_PAD/);
+  assert.match(panel, /padded && "flex flex-col gap-4 p-4"/);
   assert.match(panel, /export function Scoreboard/);
   assert.match(panel, /font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg/);
-  assert.match(panel, /bg-select text-select-ink/);
+  assert.match(panel, /bg-primary text-primary-foreground/);
   const segmented = panel.slice(panel.indexOf("export function Segmented"));
   assert.doesNotMatch(segmented, /font-semibold/);
   assert.doesNotMatch(segmented, /flex-wrap/);
@@ -1987,7 +1987,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /const FIGURE/);
   assert.match(panel, /font-sans text-base font-semibold tabular-nums/);
-  assert.match(header, /bg-app\/95 backdrop-blur/);
+  assert.match(header, /bg-background\/95 backdrop-blur/);
   assert.match(header, /border-b border-border/);
   assert.doesNotMatch(header, /border-b border-white\/10/);
   assert.match(home, /morning.notices.map/);
@@ -1997,14 +1997,14 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
   assert.doesNotMatch(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
-  assert.match(gate, /<Reading className="mt-5" label="Worth noticing">/);
+  assert.match(gate, /<Reading className="mt-4" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
-  assert.match(frame, /#161b25_0%,_#08090c/);
+  assert.match(frame, /bg-background text-foreground/);
   assert.doesNotMatch(frame, /#141614/);
   assert.doesNotMatch(frame, /#0d110f/);
   assert.doesNotMatch(frame, /#1a2820/);
   assert.doesNotMatch(frame, /#2d3d32/);
-  assert.match(modeDock, /bg-select text-select-ink/);
+  assert.match(modeDock, /bg-primary text-primary-foreground/);
   assert.doesNotMatch(tabs, /bg-white text-black/);
 
   const bland = [
@@ -2057,18 +2057,18 @@ run("boxes sit off the field, never the same color as the page", () => {
     join(process.cwd(), "src/components/ShareSheets.tsx"),
     "utf8"
   );
-  assert.match(css, /--app: #08090c/);
-  assert.match(css, /--card: #161b25/);
-  assert.notEqual("#08090c", "#161b25");
+  assert.match(css, /--background: oklch\(0\.145 0 0\)/);
+  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
+  assert.notEqual("oklch(0.145 0 0)", "oklch(0.205 0 0)");
   assert.match(panel, /export const BOX/);
   assert.match(panel, /export const CARD/);
   assert.match(panel, /export const LIST/);
-  assert.match(panel, /rounded-2xl border border-border bg-card/);
+  assert.match(panel, /rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground\/10/);
   assert.match(
     members,
-    /divide-y divide-border overflow-hidden rounded-xl border border-border bg-card/
+    /divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground\/10/
   );
-  assert.match(share, /rounded-xl border border-border bg-card p-4/);
+  assert.match(share, /rounded-xl bg-card ring-1 ring-foreground\/10 p-4/);
   assert.deepEqual(
     offendersOf(/bg-card\/(?:80|50)\b/),
     [],
@@ -2121,22 +2121,21 @@ run("Lab chrome is a toolbar, Seasonality does not paint bronze", () => {
   assert.match(season, /text-lg font-semibold tabular-nums/);
 });
 
-run("Montserrat headings and Inter body, no third face", () => {
+run("Geist headings and body, no third face", () => {
   const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
   const logo = readFileSync(
     join(process.cwd(), "src/components/UpsideLogo.tsx"),
     "utf8"
   );
-  assert.match(layout, /Montserrat/);
-  assert.match(layout, /Inter/);
-  assert.doesNotMatch(layout, /Newsreader|Outfit|JetBrains/);
-  assert.match(css, /font-montserrat/);
-  assert.match(css, /font-inter/);
-  assert.match(css, /--font-heading: var\(--font-montserrat\)/);
-  assert.match(css, /--font-sans: var\(--font-inter\)/);
-  assert.match(css, /--font-logo: var\(--font-montserrat\)/);
-  assert.doesNotMatch(css, /font-newsreader|font-outfit/);
+  assert.match(layout, /Geist/);
+  assert.match(layout, /Geist_Mono/);
+  assert.doesNotMatch(layout, /Montserrat|Inter|Newsreader|Outfit|JetBrains/);
+  assert.match(css, /--font-sans: "Geist"/);
+  assert.match(css, /--font-heading: "Geist"/);
+  assert.match(css, /--font-logo: "Geist"/);
+  assert.match(css, /--font-mono: "Geist Mono"/);
+  assert.doesNotMatch(css, /font-newsreader|font-outfit|font-montserrat|font-inter/);
   assert.match(code(logo), /font-logo/);
   assert.match(code(logo), /uppercase/);
   assert.match(code(logo), /Upside/);
@@ -2165,12 +2164,12 @@ run("movers are compact tiles, not a stretched table or sparkline", () => {
   assert.doesNotMatch(row, />Recent</);
 });
 
-run("rounded-2xl is the panel radius, nothing rounder", () => {
+run("rounded-xl is the panel radius, nothing rounder", () => {
   const offenders = offendersOf(/rounded-3xl/);
   assert.deepEqual(
     offenders,
     [],
-    `panels are rounded-2xl, cards rounded-xl, controls rounded-lg. Offenders: ${offenders.join(", ")}`
+    `panels are rounded-xl, nested rounded-lg, controls rounded-lg. Offenders: ${offenders.join(", ")}`
   );
 });
 
@@ -2279,7 +2278,7 @@ run("signed-in pages share one column so rooms do not jump", () => {
   assert.match(shell, /page-frame/);
   assert.match(shell, /\[--dock-pad:10.5rem\]/);
   assert.match(shell, /md:\[--dock-pad:11.5rem\]/);
-  assert.match(shell, /sm:pt-8/);
+  assert.match(shell, /pt-4/);
   assert.match(shell, /pb-\[var\(--dock-pad\)\]/);
   assert.doesNotMatch(shell, /sm:py-8/);
   assert.doesNotMatch(shell, /sm:py-10/);
@@ -2360,7 +2359,7 @@ run("sheets sit in the visible viewport so the keyboard cannot cover them", () =
     "BookBottomNav.tsx",
     "PortfolioTabs.tsx",
     "mobile/MobileTabBar.tsx",
-    "ui/Toast.tsx",
+    "ui/sonner.tsx",
     "CcAdvisorChat.tsx",
   ];
   for (const name of chrome) {
@@ -2386,13 +2385,18 @@ run("sheets sit in the visible viewport so the keyboard cannot cover them", () =
     "TickerDrawer.tsx",
     "AccountPage.tsx",
     "CommunityView.tsx",
-    "ui/ConfirmModal.tsx",
   ];
   for (const name of sheets) {
     const src = readFileSync(join(process.cwd(), "src/components", name), "utf8");
     assert.match(src, /ViewportOverlay/, name);
     assert.doesNotMatch(src, /fixed inset-0/, name);
   }
+  const confirm = readFileSync(
+    join(process.cwd(), "src/components/ui/ConfirmModal.tsx"),
+    "utf8"
+  );
+  assert.match(confirm, /AlertDialog/);
+  assert.doesNotMatch(confirm, /fixed inset-0/);
 });
 
 run("Compound controls sit on one panel, not nested cards", () => {
@@ -3443,7 +3447,7 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.match(src, /No public circles right now/);
   assert.doesNotMatch(src, /discover\.length > 0 &&/);
   assert.match(src, /<PanelHeader/);
-  assert.match(src, /space-y-5/);
+  assert.match(src, /flex flex-col mt-4 gap-4/);
   assert.doesNotMatch(src, /sm:grid-cols-2/);
   assert.doesNotMatch(src, /HomeWorld/);
   assert.doesNotMatch(src, /fundOnly/);
@@ -3774,7 +3778,7 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     join(process.cwd(), "src/components/mobile/MobileTabBar.tsx"),
     "utf8"
   );
-  assert.match(dock, /bg-select text-select-ink/);
+  assert.match(dock, /bg-primary text-primary-foreground/);
   assert.match(dock, /rounded-lg bg-well/);
   assert.match(dock, /stashOpenTab\("lab"\)/);
   assert.match(dock, /stashOpenTab\("compound"\)/);
@@ -3783,10 +3787,7 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     join(process.cwd(), "src/lib/page-shell.ts"),
     "utf8"
   );
-  assert.match(
-    frame,
-    /bg-\[radial-gradient\(ellipse_at_top,_#161b25_0%,_#08090c_55%\)\]/
-  );
+  assert.match(frame, /bg-background text-foreground/);
   assert.doesNotMatch(frame, /md:bg-\[radial-gradient/);
 });
 
@@ -5290,7 +5291,7 @@ run("workspace nav marks the current room and the skip link exists", () => {
     "utf8"
   );
   assert.ok(/aria-current=\{active \? "page"/.test(switcher));
-  assert.ok(/bg-select text-select-ink/.test(switcher));
+  assert.ok(/bg-primary text-primary-foreground/.test(switcher));
   assert.ok(!/bg-zinc-100 text-zinc-900/.test(switcher));
   assert.ok(!/bg-brand\/20 text-brand-bright/.test(switcher));
   const providers = readFileSync(

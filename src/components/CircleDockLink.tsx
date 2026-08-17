@@ -42,8 +42,8 @@ export function CircleDockLink({
         hideOnPhone ? "hidden sm:flex" : "flex",
         "h-full w-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-sm font-medium transition sm:flex-row sm:gap-1.5 sm:px-2",
         on
-          ? "bg-select text-select-ink"
-          : "text-muted-foreground hover:text-brand-bright",
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:text-primary",
         className
       )}
     >

@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { htmlCell, htmlTable } from "@/components/FluidTable";
+import { Button } from "@/components/ui/button";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
 import {
@@ -917,11 +918,11 @@ export function CcAdvisorChat({
       {showSilentCard && (
         <div
           role="status"
-          className="pointer-events-auto w-[min(22rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/60"
+          className="pointer-events-auto w-[min(22rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 shadow-2xl shadow-black/60"
           onClick={() => setOpen(true)}
         >
           <div className="flex items-start gap-2.5 px-3.5 py-3">
-            <div className="mt-0.5 rounded-lg bg-brand/10 p-1.5 text-brand">
+            <div className="mt-0.5 rounded-lg bg-muted p-1.5 text-primary">
               {silentPhase === "sending" ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : silentSummary?.kind === "error" ||
@@ -977,7 +978,7 @@ export function CcAdvisorChat({
                       setSilentSummary(null);
                       onSuggestCsv();
                     }}
-                    className="mt-2.5 rounded-md border border-border px-2 py-1 text-sm font-medium text-foreground hover:border-brand/50"
+                    className="mt-2.5 rounded-md border border-border px-2 py-1 text-sm font-medium text-foreground hover:border-foreground/20/50"
                   >
                     Upload a CSV instead
                   </button>
@@ -1007,7 +1008,7 @@ export function CcAdvisorChat({
       {open && (
         <section
           ref={panelRef}
-          className={`pointer-events-auto flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
+          className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 shadow-2xl shadow-black/60 transition-[width,height] duration-200 ease-out ${
             wide
               ? "w-[min(56rem,calc(100vw-1.5rem))]"
               : "w-[min(26rem,calc(100vw-1.5rem))]"
@@ -1021,7 +1022,7 @@ export function CcAdvisorChat({
           aria-label="Assistant Margus"
         >
           <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5">
-            <div className="rounded-lg bg-brand/10 p-1.5 text-brand">
+            <div className="rounded-lg bg-muted p-1.5 text-primary">
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
@@ -1059,7 +1060,7 @@ export function CcAdvisorChat({
                     onClick={() => setRulesOpen((o) => !o)}
                     className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                       rulesOpen
-                        ? "bg-brand/15 text-brand"
+                        ? "bg-muted text-primary"
                         : "text-muted-foreground hover:bg-hover hover:text-foreground/80"
                     }`}
                     aria-label="Strategy rules"
@@ -1091,7 +1092,7 @@ export function CcAdvisorChat({
                             <p className="text-sm font-medium text-muted-foreground">
                               {r.title}
                             </p>
-                            <p className="mt-0.5 text-sm font-semibold text-brand">
+                            <p className="mt-0.5 text-sm font-semibold text-primary">
                               {r.rule}
                             </p>
                             <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
@@ -1140,7 +1141,7 @@ export function CcAdvisorChat({
                       type="button"
                       disabled={busy}
                       onClick={() => sendMessage({ text: s })}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-foreground/80 hover:border-brand/40 hover:text-brand-bright disabled:opacity-50"
+                      className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-foreground/80 hover:bg-accent hover:text-primary disabled:opacity-50"
                     >
                       {s}
                     </button>
@@ -1261,7 +1262,7 @@ export function CcAdvisorChat({
                   {toolNotes.map((note, i) => (
                     <p
                       key={i}
-                      className="mt-1.5 whitespace-pre-wrap break-words text-sm font-medium text-brand"
+                      className="mt-1.5 whitespace-pre-wrap break-words text-sm font-medium text-primary"
                     >
                       {note}
                     </p>
@@ -1365,7 +1366,7 @@ export function CcAdvisorChat({
                 type="button"
                 disabled={busy}
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-40"
+                className="inline-flex items-center justify-center rounded-lg border border-border px-2.5 text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
                 aria-label="Attach image"
                 title="Attach screenshot"
               >
@@ -1378,16 +1379,16 @@ export function CcAdvisorChat({
                 placeholder="Ask Margus …"
                 aria-label="Paste a screenshot or ask Margus"
                 disabled={busy}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring disabled:opacity-50"
               />
-              <button
+              <Button
                 type="submit"
+                size="icon"
                 disabled={!canSend}
-                className="btn-primary px-3 disabled:opacity-40"
                 aria-label="Send"
               >
-                <Send className="h-4 w-4" />
-              </button>
+                <Send />
+              </Button>
             </div>
           </form>
         </section>
@@ -1396,7 +1397,7 @@ export function CcAdvisorChat({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-mustard bg-mustard text-select-ink shadow-lg shadow-black/40 transition hover:bg-brand-bright hover:scale-[1.03] active:scale-[0.97]"
+        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-mustard bg-primary text-primary-foreground shadow-lg shadow-black/40 transition hover:bg-primary/80 hover:scale-[1.03] active:scale-[0.97]"
         aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
         aria-expanded={open}
         title="Assistant Margus"

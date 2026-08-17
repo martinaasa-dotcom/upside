@@ -199,11 +199,11 @@ export function AdminPage() {
 
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-mid/40 bg-brand/15 text-brand-bright">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-primary">
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">
+              <h1 className="text-lg font-medium tracking-tight text-foreground">
                 Superadmin
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -281,7 +281,7 @@ export function AdminPage() {
                       onClick={() => void loadErrorLog()}
                       disabled={errorLogLoading}
                       title="Refresh"
-                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
+                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${errorLogLoading ? "animate-spin" : ""}`}
@@ -292,11 +292,11 @@ export function AdminPage() {
                 {errorLogLoading && errorLog.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Loading …</p>
                 ) : errorLog.length === 0 ? (
-                  <p className="rounded-2xl border border-gain/40 bg-gain/10 px-4 py-4 text-center text-sm text-gain">
+                  <p className="rounded-xl border border-gain/40 bg-gain/10 px-4 py-4 text-center text-sm text-gain">
                     Nothing logged, all clear.
                   </p>
                 ) : (
-                  <ul className="max-h-[28rem] divide-y divide-border overflow-y-auto rounded-2xl border border-border bg-card">
+                  <ul className="max-h-[28rem] divide-y divide-border overflow-y-auto rounded-xl bg-card ring-1 ring-foreground/10">
                     {errorLog.map((e) => {
                       const open = expandedError === e.id;
                       return (
@@ -364,7 +364,7 @@ export function AdminPage() {
                       onClick={() => void load(true)}
                       disabled={refreshing}
                       title="Refresh"
-                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
+                      className="rounded-md border border-border p-1.5 text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                     >
                       <RefreshCw
                         className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
@@ -379,11 +379,11 @@ export function AdminPage() {
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search name, email, or sheet …"
-                      className="w-full rounded-lg border border-border bg-well py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
+                      className="w-full rounded-lg border border-border bg-well py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
                     />
                   </div>
                 )}
-                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+                <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
                   {filteredUsers.length === 0 ? (
                     <li className="px-4 py-6 text-center text-sm text-muted-foreground">
                       {users.length === 0
@@ -460,14 +460,14 @@ export function AdminPage() {
                 </div>
                 <div className="flex flex-col gap-3">
                   {communities.length === 0 ? (
-                    <p className="rounded-2xl border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+                    <p className="rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-6 text-center text-sm text-muted-foreground">
                       No communities yet.
                     </p>
                   ) : (
                     communities.map((c) => (
                       <article
                         key={c.id}
-                        className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4"
+                        className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>
@@ -482,7 +482,7 @@ export function AdminPage() {
                           </div>
                           <Link
                             href={`/communities/${c.id}`}
-                            className="text-xs font-medium text-brand-bright/90 hover:underline"
+                            className="text-xs font-medium text-primary/90 hover:underline"
                           >
                             Open
                           </Link>
@@ -506,7 +506,7 @@ export function AdminPage() {
                               <span
                                 className={
                                   m.role === "admin"
-                                    ? "shrink-0 rounded-md bg-brand/20 px-2 py-0.5 text-xs font-semibold text-brand-bright"
+                                    ? "shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-primary"
                                     : "shrink-0 text-xs text-muted-foreground"
                                 }
                               >

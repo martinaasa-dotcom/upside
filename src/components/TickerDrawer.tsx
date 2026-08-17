@@ -138,11 +138,11 @@ export function TickerDrawer({
         aria-label="Close drawer"
         onClick={onClose}
       />
-      <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-app shadow-2xl sm:max-w-md">
-        <div className="flex items-start justify-between gap-2 border-b border-border px-panel py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
+      <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-background shadow-2xl sm:max-w-md">
+        <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-foreground">
+              <h2 className="text-sm font-medium tracking-tight text-foreground">
                 {cashtag(ticker)}
               </h2>
               <Pill tone="neutral">{THEME_LABEL[theme] ?? "other businesses"}</Pill>
@@ -173,7 +173,7 @@ export function TickerDrawer({
           </button>
         </div>
 
-        <div className="flex-1 gap-4 overflow-y-auto px-panel py-nested pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 gap-4 overflow-y-auto px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <Card>
             <MicroLabel>Thesis</MicroLabel>
             <textarea
@@ -182,7 +182,7 @@ export function TickerDrawer({
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 w-full rounded-lg border border-border bg-app p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-white/25"
+              className="mt-2 w-full rounded-lg border border-border bg-background p-2.5 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus:border-white/25"
             />
             <p className="mt-1.5 text-sm text-muted-foreground">
               Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
@@ -208,7 +208,7 @@ export function TickerDrawer({
 
           {/* Price path — the same numbers as the Forecast table, never a
             * second opinion. */}
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-panel">
+          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className={SPLIT_ROW}>
               <div className={SPLIT_COPY}>
                 <h3 className="text-base font-semibold text-foreground">
@@ -274,9 +274,9 @@ export function TickerDrawer({
                     return (
                       <div
                         key={yr}
-                        className="rounded-lg border border-brand bg-well px-1 py-1.5 text-center"
+                        className="rounded-lg border border-input bg-well px-1 py-1.5 text-center"
                       >
-                        <p className="text-sm font-medium text-brand-bright">
+                        <p className="text-sm font-medium text-primary">
                           &apos;{String(yr).slice(2)}
                         </p>
                         <input
@@ -307,9 +307,9 @@ export function TickerDrawer({
                       }}
                       title={`Change the end-of-${yr} price`}
                       className={cn(
-                        "rounded-lg border px-1 py-2 text-center transition hover:border-brand-mid",
+                        "rounded-lg border px-1 py-2 text-center transition hover:border-foreground/20-mid",
                         isCurrentHorizon
-                          ? "border-brand/50 bg-brand/10"
+                          ? "border-border bg-muted"
                           : "border-border bg-raised"
                       )}
                     >
@@ -355,7 +355,7 @@ export function TickerDrawer({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <MicroLabel>Your call plan</MicroLabel>
                 {coveredCallRow.yield2w != null && (
-                  <span className="text-sm font-medium tabular-nums text-brand-bright">
+                  <span className="text-sm font-medium tabular-nums text-primary">
                     {percent(coveredCallRow.yield2w)} for two weeks
                   </span>
                 )}
@@ -408,7 +408,7 @@ export function TickerDrawer({
                   className={cn(
                     "touch-target h-10 flex-1 rounded-lg text-sm font-semibold tabular-nums transition",
                     level === n
-                      ? "bg-brand/25 text-brand-bright ring-1 ring-brand/50"
+                      ? "bg-muted text-primary ring-1 ring-ring/50"
                       : "border border-border bg-raised text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -430,7 +430,7 @@ export function TickerDrawer({
               }}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-well px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-hover"
             >
-              <Bot className="h-4 w-4 text-brand-bright" />
+              <Bot className="h-4 w-4 text-primary" />
               Ask Margus about {cashtag(ticker)}
             </button>
           )}

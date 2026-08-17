@@ -62,7 +62,7 @@ export function MobileTopBar({
     <span className={cn(ICON_BTN, "relative")}>
       <Bell className="h-4 w-4" />
       {alertCount > 0 && (
-        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-mustard" />
+        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
       )}
     </span>
   );
@@ -70,11 +70,11 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-app/95 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden",
+        "sticky top-0 z-40 bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur md:hidden",
         className
       )}
     >
-      <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-panel">
+      <div className="flex h-14 items-center justify-between gap-2 border-b border-border px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <HeaderBrand alwaysType />
           {hasVisibleTitle(title) ? (

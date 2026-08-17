@@ -15,6 +15,7 @@ import {
 } from "@/lib/listing-currency";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { quoteAsOfTitle } from "@/lib/market/quote-freshness";
+import { Button } from "@/components/ui/button";
 import { Card, MicroLabel } from "@/components/ui/Panel";
 import {
   blockWheelChange,
@@ -160,7 +161,7 @@ function InlineNumber({
         }
       }}
       className={cn(
-        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50",
+        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50",
         className ?? "mx-auto w-full max-w-[4.5rem]"
       )}
     />
@@ -379,34 +380,26 @@ export const PortfolioTable = memo(function PortfolioTable({
     <div className="mt-4 flex flex-col items-center gap-2">
       <div className="flex flex-wrap items-center justify-center gap-2">
         {(onImportScreenshot || onAskMargus) && (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onImportScreenshot ?? onAskMargus}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-mid px-3 py-2 text-sm font-medium text-foreground hover:border-brand hover:text-foreground"
           >
-            <ImagePlus className="h-4 w-4" />
+            <ImagePlus data-icon="inline-start" />
             Import screenshot
-          </button>
+          </Button>
         )}
         {onImportCsv && (
-          <button
-            type="button"
-            onClick={onImportCsv}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-mid px-3 py-2 text-sm font-medium text-foreground hover:border-brand hover:text-foreground"
-          >
-            <FileUp className="h-4 w-4" />
+          <Button type="button" variant="outline" onClick={onImportCsv}>
+            <FileUp data-icon="inline-start" />
             Import CSV
-          </button>
+          </Button>
         )}
         {onAddHolding && (
-          <button
-            type="button"
-            onClick={onAddHolding}
-            className="inline-flex items-center gap-1.5 btn-primary px-3"
-          >
-            <Plus className="h-4 w-4" />
+          <Button type="button" onClick={onAddHolding}>
+            <Plus data-icon="inline-start" />
             Add holding manually
-          </button>
+          </Button>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
@@ -421,8 +414,8 @@ export const PortfolioTable = memo(function PortfolioTable({
   );
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-panel py-4">
+    <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-4">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (
@@ -442,7 +435,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                   className={cn(
                     "rounded-md px-2.5 py-1 text-sm font-medium transition",
                     displayCurrency === code
-                      ? "bg-select text-select-ink"
+                      ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -662,7 +655,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                       onClick={() => toggleSort(col.key!)}
                       className={cn(
                         "inline-flex items-center gap-1 transition hover:text-foreground/80",
-                        sortKey === col.key && "text-brand-bright"
+                        sortKey === col.key && "text-primary"
                       )}
                       title={
                         col.explain

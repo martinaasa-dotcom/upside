@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -63,7 +64,7 @@ export function RenameSheetModal({
       />
       <form
         onSubmit={submit}
-        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-well p-5 shadow-2xl"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10 p-4 shadow-2xl"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
@@ -85,26 +86,18 @@ export function RenameSheetModal({
             onChange={(e) => setName(e.target.value.slice(0, 80))}
             maxLength={80}
             placeholder={placeholder}
-            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
             required
           />
         </label>
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
-          >
+        <div className="mt-4 flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy || !sanitizeSheetName(name)}
-            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={busy || !sanitizeSheetName(name)}>
             {busy ? "Saving…" : confirmLabel}
-          </button>
+          </Button>
         </div>
       </form>
     </ViewportOverlay>

@@ -104,7 +104,7 @@ export function ShareSheets({
   if (sheets && sheets.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
       <div>
         <h2 className="text-sm font-medium text-foreground">
           Portfolios this circle can see
@@ -128,7 +128,7 @@ export function ShareSheets({
               type="button"
               disabled={busyId === s.id}
               onClick={() => void toggle(s)}
-              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground hover:border-brand/50 hover:text-foreground disabled:opacity-50"
+              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground hover:border-foreground/20/50 hover:text-foreground disabled:opacity-50"
             >
               {busyId === s.id
                 ? "Saving …"

@@ -77,7 +77,7 @@ function UpsideMark({
  */
 const LOCKUP_MARK_NUDGE = "-translate-y-[0.1em]";
 
-/** Lockup type: UPSIDE bold, LAB regular. Same Montserrat as every heading. */
+/** Lockup type: UPSIDE bold, LAB regular. Same Geist as the rest of the UI. */
 function LogoType({ className }: { className?: string }) {
   return (
     <span

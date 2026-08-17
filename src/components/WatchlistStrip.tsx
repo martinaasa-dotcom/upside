@@ -243,7 +243,7 @@ export function WatchlistStrip({
                 ? `watchlist-suggest-${suggestions[active]!.symbol}`
                 : undefined
             }
-            className="w-40 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand sm:w-52"
+            className="w-40 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring sm:w-52"
           />
           <button
             type="submit"
@@ -291,13 +291,13 @@ export function WatchlistStrip({
         }
       />
       {names.length === 0 ? (
-        <p className="mt-5 text-sm text-muted-foreground">
+        <p className="mt-4 text-sm text-muted-foreground">
           Names you don&apos;t own. Add one to see the price, the recent
           range, and whether now looks quiet or rushed.
         </p>
       ) : (
         <>
-          <p className="mt-5 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-muted-foreground">
             Today&apos;s price and a plain read of the last few weeks. Not a
             buy order.
           </p>
@@ -366,7 +366,7 @@ export function WatchlistStrip({
                       </>
                     )}
                     {onOpenPulse && (
-                      <span className="mt-4 text-sm font-medium text-brand-bright">
+                      <span className="mt-4 text-sm font-medium text-primary">
                         Check in Pulse
                       </span>
                     )}

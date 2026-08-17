@@ -3,6 +3,8 @@
 import { track } from "@vercel/analytics";
 import { useAuth } from "@/components/AuthProvider";
 import { plainError } from "@/lib/plain-error";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SignInGate } from "@/components/SignInGate";
 import { UpsideLogo } from "@/components/UpsideLogo";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -57,10 +59,10 @@ function JoinInner() {
 
   return (
     <SignInGate>
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_55%)] px-4 text-foreground">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-4 text-foreground">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="flex flex-col w-full max-w-sm gap-4 text-center">
-          <h1 className="text-lg font-bold">Join a portfolio</h1>
+          <h1 className="text-lg font-medium tracking-tight">Join a portfolio</h1>
           <p className="text-sm text-muted-foreground">
             Your partner invited you to edit this portfolio together. Paste the
             code if the link did not fill it in.
@@ -73,18 +75,14 @@ function JoinInner() {
                 if (manual.trim()) void accept(manual.trim());
               }}
             >
-              <input
+              <Input
                 value={manual}
                 onChange={(e) => setManual(e.target.value)}
                 placeholder="Paste invite code"
-                className="rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
               />
-              <button
-                type="submit"
-                className="btn-primary py-2.5"
-              >
+              <Button type="submit" className="w-full">
                 Join portfolio
-              </button>
+              </Button>
             </form>
           )}
           {status && <p className="text-sm text-muted-foreground">{status}</p>}
@@ -99,7 +97,7 @@ export default function AccountJoinPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-app text-muted-foreground">
+        <div className="flex min-h-dvh items-center justify-center bg-background text-muted-foreground">
           Loading …
         </div>
       }

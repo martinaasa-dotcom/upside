@@ -120,14 +120,14 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 className={cn(
                   "flex min-w-0 items-center justify-center gap-1.5 bg-well px-2 py-2.5 text-sm font-medium transition",
                   isSelected
-                    ? "bg-select text-select-ink"
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-hover hover:text-foreground"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-3.5 w-3.5 shrink-0",
-                    isSelected ? "text-select-ink" : "text-muted-foreground"
+                    isSelected ? "text-primary-foreground" : "text-muted-foreground"
                   )}
                   aria-hidden
                 />
@@ -141,7 +141,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
               <div className="flex min-w-0 items-center gap-2">
                 <DriverIcon
-                  className="h-4 w-4 shrink-0 text-brand-bright"
+                  className="h-4 w-4 shrink-0 text-primary"
                   aria-hidden
                 />
                 <h3 className="text-sm font-semibold text-foreground">
@@ -162,7 +162,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             </p>
           </Card>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <MicroLabel>Portfolio after this</MicroLabel>
           <p className="mt-1 break-all text-2xl font-bold tabular-nums text-foreground">
             {currency(analysis.shockedTotalVal, 0)}
@@ -215,7 +215,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           )}
         </div>
 
-        <Scoreboard className="mt-5" cols={2}>
+        <Scoreboard className="mt-4" cols={2}>
           <Score
             label="Hurts most"
             value={

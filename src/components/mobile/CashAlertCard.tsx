@@ -36,7 +36,7 @@ export function CashAlertCard({
       type="button"
       onClick={() => (openCash ? onOpenCash?.() : onOpenAlerts?.())}
       className={cn(
-        "w-full rounded-2xl border border-loss/30 bg-loss/10 p-5 text-left",
+        "w-full rounded-xl border border-loss/30 bg-loss/10 p-4 text-left",
         className
       )}
     >

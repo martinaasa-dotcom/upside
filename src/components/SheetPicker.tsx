@@ -78,7 +78,7 @@ export function SheetPicker({ sheets, value, onChange, onAdd }: Props) {
           aria-label={`Sheet, ${current}`}
           title="Switch sheet"
           onClick={placeAndToggle}
-          className="inline-flex max-w-full items-center gap-1 rounded-md text-sm font-medium leading-none text-foreground/80 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+          className="inline-flex max-w-full items-center gap-1 rounded-md text-sm font-medium leading-none text-foreground/80 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
         >
           <span className="truncate">{current}</span>
           <ChevronDown
@@ -168,7 +168,7 @@ function PickerRow({
     >
       <span className="min-w-0 truncate">{label}</span>
       {selected && (
-        <Check className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden />
+        <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
       )}
     </button>
   );

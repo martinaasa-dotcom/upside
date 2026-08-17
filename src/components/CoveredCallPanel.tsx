@@ -2,6 +2,7 @@
 
 import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { Button } from "@/components/ui/button";
 import { Card, EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cn, signedTone, currency, percent } from "@/lib/format";
 import { isSafePositiveMoney } from "@/lib/input-guard";
@@ -66,7 +67,7 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
+        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50"
       />
       <span className="text-sm text-muted-foreground">%</span>
     </div>
@@ -118,7 +119,7 @@ function InlineStockTarget({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
+        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50"
       />
     </div>
   );
@@ -158,7 +159,7 @@ function writeProximity(distance: number | null): {
     return { label: "—", className: "text-muted-foreground" };
   }
   if (distance <= 0) {
-    return { label: "At write level", className: "text-brand-bright" };
+    return { label: "At write level", className: "text-primary" };
   }
   if (distance < 0.04) {
     return { label: "Close", className: "text-caution" };
@@ -191,7 +192,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
       id={COVERED_CALLS_ANCHOR}
       className="scroll-mt-28 overflow-hidden"
     >
-      <div className="border-b border-border p-panel">
+      <div className="border-b border-border p-4">
         <PanelHeader title="Covered calls" />
       </div>
 
@@ -203,13 +204,9 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
             detail="You need shares before you can write calls on them. Add a holding and this fills in."
             action={
               onAddHolding && (
-                <button
-                  type="button"
-                  onClick={onAddHolding}
-                  className="btn-primary px-3"
-                >
+                <Button type="button" onClick={onAddHolding}>
                   Add holding
-                </button>
+                </Button>
               )
             }
           />
@@ -272,13 +269,13 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                 </div>
                 <div>
                   <p className="text-muted-foreground">Strike</p>
-                  <p className="tabular-nums font-semibold text-brand">
+                  <p className="tabular-nums font-semibold text-primary">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">2-week %</p>
-                  <p className="tabular-nums font-medium text-brand-bright">
+                  <p className="tabular-nums font-medium text-primary">
                     {r.yield2w != null ? percent(r.yield2w) : "—"}
                   </p>
                 </div>
@@ -302,7 +299,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
           <Card tone="raised" className="text-sm">
             <div className="flex justify-between">
               <span className="font-semibold text-foreground">All together</span>
-              <span className="tabular-nums text-brand-bright">
+              <span className="tabular-nums text-primary">
                 {percent(yield2wAvg)} over 2 weeks
               </span>
             </div>
@@ -329,19 +326,15 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
           </FluidRow>
 
           {rows.length === 0 && (
-            <div className="col-span-full p-panel">
+            <div className="col-span-full p-4">
               <EmptyState
                 title="Nothing to write calls on yet"
                 detail="You need shares before you can write calls on them. Add a holding and this fills in."
                 action={
                   onAddHolding && (
-                    <button
-                      type="button"
-                      onClick={onAddHolding}
-                      className="btn-primary px-3"
-                    >
+                    <Button type="button" onClick={onAddHolding}>
                       Add holding
-                    </button>
+                    </Button>
                   )
                 }
               />
@@ -399,7 +392,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <div
                 className={cn(
                   cellBase,
-                  "tabular-nums font-semibold text-brand"
+                  "tabular-nums font-semibold text-primary"
                 )}
               >
                 {r.nextStrike != null ? currency(r.nextStrike) : "—"}
@@ -413,7 +406,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                 {Math.round(r.contracts)}
               </div>
               <div
-                className={cn(cellBase, "tabular-nums font-medium text-brand-bright")}
+                className={cn(cellBase, "tabular-nums font-medium text-primary")}
               >
                 {r.yield2w != null ? percent(r.yield2w) : "—"}
               </div>
@@ -434,7 +427,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <div className={cellBase} />
               <div className={cellBase} />
               <div className={cellBase} />
-              <div className={cn(cellBase, "tabular-nums text-brand-bright")}>
+              <div className={cn(cellBase, "tabular-nums text-primary")}>
                 {percent(yield2wAvg)}
               </div>
               <div className={cn(cellBase, "tabular-nums text-foreground")}>

@@ -7,6 +7,7 @@ import {
   BookNavChart,
   useBookNavHistory,
 } from "@/components/mobile/GoldNavChart";
+import { Button } from "@/components/ui/button";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   MicroLabel,
@@ -170,7 +171,7 @@ function EmptyBook({
 
   return (
     <Panel tone="brand" className="overview-fade">
-      <h2 className="text-lg font-bold text-foreground">
+      <h2 className="text-lg font-medium tracking-tight text-foreground">
         {homework ? "Your homework portfolio is empty." : "Your portfolio is empty."}
       </h2>
       {homework ? (
@@ -203,17 +204,16 @@ function EmptyBook({
             onChange={(e) => setPaste(e.target.value)}
             rows={5}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
+            className="w-full rounded-xl border border-border bg-well px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
           />
           {pasteErr && <p className="text-sm text-loss">{pasteErr}</p>}
-          <button
+          <Button
             type="button"
             onClick={submitPaste}
             disabled={!paste.trim()}
-            className="btn-primary disabled:opacity-40"
           >
             Add these names
-          </button>
+          </Button>
         </div>
       )}
 
@@ -228,7 +228,7 @@ function EmptyBook({
                 "group rounded-xl border text-left transition active:scale-[0.99]",
                 NESTED_PAD,
                 r.primary
-                  ? "border-brand/40 bg-hover hover:border-brand hover:bg-hover"
+                  ? "border-border bg-hover hover:border-foreground/20 hover:bg-hover"
                   : "border-border bg-raised hover:border-border hover:bg-well/70"
               )}
             >
@@ -271,7 +271,7 @@ function MorningStack({
 }) {
   const sunday = morning.sunday;
   return (
-    <div className={cn("flex flex-col gap-5", className)}>
+    <div className={cn("flex flex-col gap-4", className)}>
       {sunday ? (
         <div className="flex flex-col gap-4">
           <Reading label="Sunday">
@@ -425,7 +425,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-5 pr-3 text-left transition hover:border-brand/40 hover:bg-hover sm:gap-3 sm:pr-4"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-4 pr-3 text-left transition hover:bg-accent hover:bg-hover sm:gap-3 sm:pr-4"
     >
       <span
         className={cn(
@@ -476,7 +476,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 p-5 text-left transition hover:border-brand/40 hover:bg-hover"
+      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 p-4 text-left transition hover:bg-accent hover:bg-hover"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -690,7 +690,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
 
   if (bookIsEmpty) {
     return (
-      <div className="flex flex-col gap-5 md:gap-10">
+      <div className="flex flex-col gap-4">
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
@@ -704,7 +704,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
   }
 
   return (
-    <div className="flex flex-col gap-5 md:gap-10">
+    <div className="flex flex-col gap-4">
       {/* Desktop: one opening screen. Phone: same parts, one idea per card,
           so the stack matches Movers / portfolios / Watching. */}
       <Panel className="overview-fade">
@@ -723,7 +723,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
                     kind === "open"
                       ? "bg-gain"
                       : kind === "pre" || kind === "ah"
-                        ? "bg-mustard"
+                        ? "bg-primary"
                         : "bg-muted"
                   )}
                   aria-hidden
@@ -732,21 +732,17 @@ export const OverviewDashboard = memo(function OverviewDashboard({
               </span>
               {onAddHolding && (
                 <span className="hidden md:inline-flex">
-                  <button
-                    type="button"
-                    onClick={onAddHolding}
-                    className="btn-primary"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
+                  <Button type="button" onClick={onAddHolding}>
+                    <Plus data-icon="inline-start" />
                     Add a holding
-                  </button>
+                  </Button>
                 </span>
               )}
             </>
           }
         />
 
-        <Scoreboard className="mt-5">
+        <Scoreboard className="mt-4">
           <Score
             label="Portfolio"
             value={currency(totals.totalValue, 0)}
@@ -776,20 +772,16 @@ export const OverviewDashboard = memo(function OverviewDashboard({
         </Scoreboard>
 
         {onAddHolding && (
-          <div className="mt-5 md:hidden">
-            <button
-              type="button"
-              onClick={onAddHolding}
-              className="btn-primary w-full"
-            >
-              <Plus className="h-3.5 w-3.5" />
+          <div className="mt-4 md:hidden">
+            <Button type="button" className="w-full" onClick={onAddHolding}>
+              <Plus data-icon="inline-start" />
               Add a holding
-            </button>
+            </Button>
           </div>
         )}
 
         <MorningStack
-          className="mt-5 hidden md:block"
+          className="mt-4 hidden md:block"
           morning={morning}
           previousAt={visitDiff?.previousAt ?? null}
           onOpenPulse={onOpenPulse}
@@ -798,7 +790,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
         <OverviewYearChart
           nav={nav}
           liveNav={totals.totalValue}
-          className="mt-5 hidden md:block"
+          className="mt-4 hidden md:block"
         />
       </Panel>
 
@@ -825,7 +817,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
         <OverviewYearChart
           nav={nav}
           liveNav={totals.totalValue}
-          className="mt-5"
+          className="mt-4"
         />
       </Panel>
 
@@ -860,9 +852,9 @@ export const OverviewDashboard = memo(function OverviewDashboard({
             />
           }
         />
-        <div className="mt-5">
+        <div className="mt-4">
           {movers.length === 0 ? (
-            <p className="py-5 text-center text-sm text-muted-foreground">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               Waiting on prices.
             </p>
           ) : (

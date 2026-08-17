@@ -330,7 +330,7 @@ export function HoldingModal({
           e.preventDefault();
           void submit();
         }}
-        className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
+        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-xl sm:pb-4"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -525,7 +525,7 @@ export function HoldingModal({
 
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
-        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
           <Button
             type="button"
             variant="ghost"

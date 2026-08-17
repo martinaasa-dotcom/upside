@@ -272,10 +272,10 @@ export const LabSheet = memo(function LabSheet({
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel padded={false} className="px-panel py-3">
+      <Panel padded={false} className="px-4 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-            <h2 className="shrink-0 text-base font-bold text-foreground">Lab</h2>
+            <h2 className="shrink-0 text-sm font-medium tracking-tight text-foreground">Lab</h2>
             <HairlineGrid
               role="tablist"
               ariaLabel="Lab sections"
@@ -292,7 +292,7 @@ export const LabSheet = memo(function LabSheet({
                   className={cn(
                     "min-w-0 px-2 py-2.5 text-center text-sm font-medium transition",
                     tab === t.id
-                      ? "bg-select text-select-ink"
+                      ? "bg-primary text-primary-foreground"
                       : "bg-well text-muted-foreground hover:bg-hover hover:text-foreground"
                   )}
                 >
@@ -321,8 +321,8 @@ export const LabSheet = memo(function LabSheet({
                     className={cn(
                       "shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition touch-target",
                       tab === t.id
-                        ? "bg-select text-select-ink"
-                        : "text-muted-foreground hover:text-brand-bright"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-primary"
                     )}
                   >
                     {t.label}
@@ -379,7 +379,7 @@ export const LabSheet = memo(function LabSheet({
               <Panel tone="plain">
                 <div className={SPLIT_ROW}>
                   <div className={SPLIT_COPY}>
-                    <h3 className="text-base font-bold text-foreground">
+                    <h3 className="text-sm font-medium tracking-tight text-foreground">
                       How spread out you are
                     </h3>
                     <p className="mt-1.5 text-sm text-muted-foreground">
@@ -403,7 +403,7 @@ export const LabSheet = memo(function LabSheet({
                 <div className="mt-3">
                   <div className="h-1.5 overflow-hidden rounded-full bg-hover">
                     <div
-                      className="h-full rounded-full bg-select transition-all"
+                      className="h-full rounded-full bg-primary transition-all"
                       style={{
                         width: `${Math.max(2, Math.min(100, personality.diversificationScore))}%`,
                       }}
@@ -470,10 +470,10 @@ export const LabSheet = memo(function LabSheet({
 
               {themes.length > 0 && (
                 <Panel tone="plain">
-                  <h3 className="text-base font-bold text-foreground">
+                  <h3 className="text-sm font-medium tracking-tight text-foreground">
                     What you&apos;re actually betting on
                   </h3>
-                  <p className="mt-1.5 mb-5 text-sm text-muted-foreground">
+                  <p className="mt-1.5 mb-4 text-sm text-muted-foreground">
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
                   </p>
@@ -543,7 +543,7 @@ export const LabSheet = memo(function LabSheet({
         />
         <Panel tone="plain" className="flex flex-col gap-4">
           <div>
-            <h3 className="text-base font-bold text-foreground">
+            <h3 className="text-sm font-medium tracking-tight text-foreground">
               Do these move together?
             </h3>
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
@@ -564,7 +564,7 @@ export const LabSheet = memo(function LabSheet({
              * same tracks as the cells, Tightest pairs sits on that same
              * band. Pair list then fills the body height. */
             <div>
-              <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-stretch">
+              <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-stretch">
                 <div className="hidden min-w-0 overflow-x-auto lg:block">
                   <div
                     className="grid w-max gap-1"
@@ -681,7 +681,7 @@ function AllocCard({
 }) {
   return (
     <Panel tone="plain">
-      <h3 className="mb-3 text-base font-bold text-foreground">{title}</h3>
+      <h3 className="mb-3 text-sm font-medium tracking-tight text-foreground">{title}</h3>
       <div className="flex flex-col gap-2">
         {slices.map((s) => (
           <div key={s.label}>
@@ -695,7 +695,7 @@ function AllocCard({
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-well">
               <div
-                className="h-full rounded-full bg-select"
+                className="h-full rounded-full bg-primary"
                 style={{ width: `${Math.min(100, s.pct * 100)}%` }}
               />
             </div>

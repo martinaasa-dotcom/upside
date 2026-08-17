@@ -106,8 +106,8 @@ export function ClassroomPlanEditor({
             className={cn(
               "rounded-lg border px-3 py-2.5 text-sm font-medium transition disabled:opacity-50",
               trade?.kind === k.id
-                ? "border-brand/50 bg-brand/20 text-brand-bright"
-                : "border-border text-foreground/80 hover:border-brand-mid hover:text-foreground"
+                ? "border-border bg-muted text-primary"
+                : "border-border text-foreground/80 hover:border-foreground/20-mid hover:text-foreground"
             )}
           >
             {k.label}

@@ -173,11 +173,11 @@ export function PortfolioTabs({
     <nav
       ref={dockRef}
       className={cn(
-        "keyboard-chrome fixed inset-x-0 bottom-0 z-30 border-t border-border bg-app/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur",
+        "keyboard-chrome fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur",
         className
       )}
     >
-      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-5 sm:py-2.5")}>
+      <div className={cn(PAGE_COLUMN_CLASS, "flex flex-col-reverse gap-2 py-2 sm:flex-row sm:items-end sm:gap-4 sm:py-2.5")}>
         <div className="w-full shrink-0 sm:w-auto">
           <BookModeDock
             activeId={activeId}
@@ -252,7 +252,7 @@ export function PortfolioTabs({
                   {active && (
                     <span
                       aria-hidden
-                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-select"
+                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary"
                     />
                   )}
                 </button>
@@ -279,7 +279,7 @@ export function PortfolioTabs({
                     }
                   }}
                   placeholder="Name"
-                  className="h-7 w-28 rounded border border-brand-mid bg-well px-2 text-sm text-foreground outline-none focus:border-brand"
+                  className="h-7 w-28 rounded border border-input bg-well px-2 text-sm text-foreground outline-none focus:border-ring"
                 />
               </form>
             ) : !guest && !hideAdd ? (

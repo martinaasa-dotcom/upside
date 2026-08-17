@@ -52,7 +52,7 @@ export function TickerSymbol({
     <button
       type="button"
       onClick={() => onOpen(ticker)}
-      className="hover:text-brand-bright"
+      className="hover:text-primary"
     >
       {label}
     </button>

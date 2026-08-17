@@ -30,7 +30,7 @@ const BRAND_INTERACTION_CLASS = cn(
   "outline-none transition duration-200 ease-out",
   "hover:brightness-110 active:brightness-95",
   "motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0",
-  "focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+  "focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 );
 
 export function HeaderBrand({ className, alwaysType = false }: Props) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/AuthProvider";
 import { useFeedback } from "@/components/FeedbackHost";
 import { AppStatusStrip, type AppStatusProps } from "@/components/AppStatusStrip";
@@ -28,13 +30,9 @@ function FeedbackHeaderButton() {
   const { openManual } = useFeedback();
   if (!user) return null;
   return (
-    <button
-      type="button"
-      onClick={openManual}
-      className="inline-flex h-8 items-center rounded-md border border-border px-2.5 text-sm font-medium text-muted-foreground hover:border-brand hover:text-foreground"
-    >
+    <Button type="button" variant="outline" size="sm" onClick={openManual}>
       Feedback
-    </button>
+    </Button>
   );
 }
 
@@ -47,18 +45,13 @@ function DefaultAccountEnd() {
     .toUpperCase();
   const url = profile?.avatar_url;
   return (
-    <Link
-      href="/account"
-      title="Account"
-      aria-label="Account"
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
-    >
-      {url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span className="text-xs font-semibold text-foreground/80">{initial}</span>
-      )}
+    <Link href="/account" title="Account" aria-label="Account">
+      <Avatar className="size-8 rounded-md">
+        {url ? <AvatarImage src={url} alt="" /> : null}
+        <AvatarFallback className="rounded-md text-xs font-medium">
+          {initial}
+        </AvatarFallback>
+      </Avatar>
     </Link>
   );
 }
@@ -81,7 +74,7 @@ export function AppHeader({
     <>
       <header
         className={cn(
-          "fixed top-0 right-0 left-0 z-40 hidden bg-app/95 backdrop-blur md:block",
+          "fixed top-0 right-0 left-0 z-40 hidden bg-background/95 backdrop-blur md:block",
           className
         )}
       >
@@ -120,7 +113,7 @@ export function AppHeader({
           </div>
         </div>
       </header>
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-app/95 backdrop-blur md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/95 backdrop-blur md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
         <AppStatusStrip {...status} />
       </div>
       <div className={PAGE_CHROME_SPACER_CLASS} aria-hidden />

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import {
@@ -44,7 +45,7 @@ function Chip({
         "rounded-lg border px-3 py-2 text-left text-sm transition",
         selected
           ? "border-white/25 bg-hover text-foreground"
-          : "border-border bg-well/60 text-foreground/80 hover:border-brand-mid"
+          : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
       )}
     >
       {children}
@@ -105,7 +106,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="feedback-title"
-        className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5"
+        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-xl sm:pb-4"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3
@@ -131,7 +132,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             Got it. Upside reads these.
           </p>
         ) : mode === "weekly" ? (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             <p className="text-sm leading-relaxed text-muted-foreground">
               A few pointed questions about this week in Upside Lab. Skip any
               that don&apos;t fit.
@@ -277,23 +278,22 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         {error && <p className="mt-3 text-sm text-loss">{error}</p>}
 
         {!sent && (
-          <div className="mt-5 flex justify-end gap-2">
-            <button
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
               type="button"
+              variant="ghost"
               onClick={onClose}
               disabled={busy}
-              className="touch-target rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-40"
             >
               {mode === "weekly" ? "Not this week" : "Cancel"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => void submit()}
               disabled={busy || !canSend}
-              className="btn-primary disabled:opacity-40"
             >
               {busy ? "Sending…" : mode === "weekly" ? "Send this week" : "Send it"}
-            </button>
+            </Button>
           </div>
         )}
       </div>

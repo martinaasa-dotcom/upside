@@ -168,7 +168,7 @@ export function MacroStrip() {
       <span
         className={cn(
           "text-foreground/80",
-          i.tone === "fear" && "text-brand-bright",
+          i.tone === "fear" && "text-primary",
           i.tone === "greed" && "text-caution"
         )}
       >

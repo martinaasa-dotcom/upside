@@ -1,6 +1,7 @@
 "use client";
 
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
@@ -44,7 +45,7 @@ export function CostBasisModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
+      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-2xl">
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">
@@ -89,26 +90,18 @@ export function CostBasisModal({
                 digits={2}
                 value={r.buyPrice}
                 onChange={(n) => onChangeRow(r.ticker, n)}
-                className="rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-brand"
+                className="rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-ring"
               />
             </label>
           ))}
         </div>
         <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
-          >
+          <Button type="button" variant="ghost" onClick={onClose}>
             Skip
-          </button>
-          <button
-            type="button"
-            onClick={onApply}
-            className="btn-primary"
-          >
+          </Button>
+          <Button type="button" onClick={onApply}>
             Apply costs
-          </button>
+          </Button>
         </div>
       </div>
     </ViewportOverlay>

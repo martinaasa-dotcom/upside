@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { plainError } from "@/lib/plain-error";
@@ -154,10 +155,10 @@ export function SnapshotsModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative z-10 flex max-h-[min(100%,560px)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-xl">
+      <div className="relative z-10 flex max-h-[min(100%,560px)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-brand-bright" />
+            <History className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold text-foreground">Snapshots</h2>
           </div>
           <button
@@ -170,14 +171,13 @@ export function SnapshotsModal({
           </button>
         </div>
         <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-          <button
+          <Button
             type="button"
             onClick={() => void createManual()}
             disabled={loading}
-            className="btn-primary px-3 py-1.5 text-sm disabled:opacity-50"
           >
             Save snapshot now
-          </button>
+          </Button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {loading && snapshots.length === 0 ? (
@@ -211,7 +211,7 @@ export function SnapshotsModal({
                         onClick={() =>
                           setPendingRestore({ kind: "book", id: s.id, label: s.label })
                         }
-                        className="rounded border border-border px-2 py-0.5 text-sm text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
+                        className="rounded border border-border px-2 py-0.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                       >
                         {busyId === s.id ? "…" : "All portfolios"}
                       </button>
@@ -226,7 +226,7 @@ export function SnapshotsModal({
                               label: s.label,
                             })
                           }
-                          className="rounded border border-border px-2 py-0.5 text-sm text-muted-foreground hover:border-brand hover:text-foreground disabled:opacity-50"
+                          className="rounded border border-border px-2 py-0.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                         >
                           {busyId === `${s.id}:sheet` ? "…" : "This portfolio"}
                         </button>

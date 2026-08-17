@@ -82,7 +82,7 @@ export function HeaderOverflowMenu({
           setOpen((o) => !o);
         }}
         className={cn(
-          "inline-flex h-9 items-center justify-center gap-1 rounded-md border border-border text-sm font-medium text-muted-foreground hover:border-brand hover:text-foreground",
+          "inline-flex h-9 items-center justify-center gap-1 rounded-md border border-border text-sm font-medium text-muted-foreground hover:border-foreground/20 hover:text-foreground",
           // A fixed height (rather than relying on padding to add up to the
           // same total as the icon+text buttons next to it) guarantees this
           // lines up with View exactly, however the avatar image or

@@ -119,8 +119,8 @@ export function BookModeDock({
         const look = cn(
           ITEM,
           active
-            ? "bg-select text-select-ink"
-            : "text-muted-foreground hover:text-brand-bright"
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:text-primary"
         );
         if (onSelectMode) {
           return (

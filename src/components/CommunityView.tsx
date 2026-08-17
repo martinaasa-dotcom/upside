@@ -15,6 +15,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { StartingCashField } from "@/components/StartingCashField";
 import {
@@ -1419,9 +1420,9 @@ export function CommunityView({ communityId }: Props) {
                   }
                 >
                   {community.kind === "classroom" ? (
-                    <GraduationCap className="h-3.5 w-3.5 shrink-0 text-brand-bright/80" />
+                    <GraduationCap className="h-3.5 w-3.5 shrink-0 text-primary/80" />
                   ) : community.visibility === "public" ? (
-                    <Globe className="h-3.5 w-3.5 shrink-0 text-brand-bright" />
+                    <Globe className="h-3.5 w-3.5 shrink-0 text-primary" />
                   ) : (
                     <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   )}
@@ -1433,7 +1434,7 @@ export function CommunityView({ communityId }: Props) {
           {isAdmin && joinRequests.length > 0 && (
             <span
               title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-              className="shrink-0 rounded-lg bg-select px-2 py-0.5 text-sm font-semibold text-select-ink"
+              className="shrink-0 rounded-lg bg-primary px-2 py-0.5 text-sm font-semibold text-primary-foreground"
             >
               {joinRequests.length}
             </span>
@@ -1486,20 +1487,20 @@ export function CommunityView({ communityId }: Props) {
                   </p>
                 ) : null}
                 {isClassroom && !myClassSheet ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-3">
                     <p className="min-w-0 flex-1 text-sm text-foreground/80">
                       {isAdmin
                         ? "You are watching the class. Get a paper portfolio if you want to trade alongside them."
                         : "Your paper portfolio is not ready yet. Same starting cash as everyone else."}
                     </p>
-                    <button
+                    <Button
                       type="button"
+                      className="shrink-0"
                       disabled={claimBusy}
                       onClick={() => void claimClassSheet()}
-                      className="btn-primary shrink-0 disabled:opacity-50"
                     >
                       {claimBusy ? "Making portfolio …" : "Get paper portfolio"}
-                    </button>
+                    </Button>
                   </div>
                 ) : null}
                 {isClassroom && myClassSheet ? (
@@ -1580,7 +1581,7 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition",
                       view === id
-                        ? "bg-select text-select-ink"
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-hover hover:text-foreground"
                     )}
                   >
@@ -1591,7 +1592,7 @@ export function CommunityView({ communityId }: Props) {
               </div>
 
               {(effectiveView === "overview" || effectiveView === "play") && (
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-4">
                   {effectiveView === "overview" && isClassroom && (
                     <WidgetErrorBoundary name="Class roster" resetKey={communityId}>
                     <ClassroomRoster
@@ -1638,7 +1639,7 @@ export function CommunityView({ communityId }: Props) {
                       <button
                         type="button"
                         onClick={() => setView("members")}
-                        className="text-sm font-medium text-brand-bright hover:text-foreground"
+                        className="text-sm font-medium text-primary hover:text-foreground"
                       >
                         Invite students
                       </button>
@@ -1667,14 +1668,14 @@ export function CommunityView({ communityId }: Props) {
                     </p>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-2xl border border-border bg-card p-5">
-                      <div className="mb-5 flex items-start justify-between gap-3">
+                    <section className="overview-fade order-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                      <div className="mb-4 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+                          <div className="rounded-xl bg-muted p-2 text-primary">
                             <Sparkles className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-base font-bold text-foreground">
+                            <h3 className="text-sm font-medium tracking-tight text-foreground">
                               Power animals
                             </h3>
                             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1686,7 +1687,7 @@ export function CommunityView({ communityId }: Props) {
                         <button
                           type="button"
                           onClick={() => setBestiaryOpen(true)}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-well/60 px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:border-brand/40 hover:text-foreground"
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-well/60 px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:bg-accent hover:text-foreground"
                         >
                           <HelpCircle className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">Field guide</span>
@@ -1714,13 +1715,13 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-2xl border border-border bg-card p-5">
+                    <section className="overview-fade order-2 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
                           <Award className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-foreground">
+                          <h3 className="text-sm font-medium tracking-tight text-foreground">
                             Community superlatives
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1742,7 +1743,7 @@ export function CommunityView({ communityId }: Props) {
                                 {a.title}
                               </p>
                             </div>
-                            <p className="mt-1.5 truncate text-sm font-medium text-brand-bright">
+                            <p className="mt-1.5 truncate text-sm font-medium text-primary">
                               {a.winner}{" "}
                               <span className="font-normal text-muted-foreground">
                                 · {a.stat}
@@ -1758,14 +1759,14 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-2xl border border-border bg-card p-5">
+                    <section className="overview-fade order-1 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+                          <div className="rounded-xl bg-muted p-2 text-primary">
                             <Trophy className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-base font-bold text-foreground">
+                            <h3 className="text-sm font-medium tracking-tight text-foreground">
                               Today
                             </h3>
                             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1789,7 +1790,7 @@ export function CommunityView({ communityId }: Props) {
                                     setSelectedOwnerId(m.id);
                                     setSelectedPortfolioId(null);
                                   }}
-                                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-2.5 text-left transition hover:border-brand/40 hover:bg-hover"
+                                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-2.5 text-left transition hover:bg-accent hover:bg-hover"
                                 >
                                 <span className="w-6 shrink-0 text-center">
                                   {i === 0 ? (
@@ -1843,13 +1844,13 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
-                    <section className="overview-fade order-4 rounded-2xl border border-border bg-card p-5">
+                    <section className="overview-fade order-4 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-gain/15 p-2 text-gain">
                           <Layers className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-foreground">
+                          <h3 className="text-sm font-medium tracking-tight text-foreground">
                             Shared names
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1895,13 +1896,13 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-2xl border border-border bg-card p-5">
-                      <div className="mb-5 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+                    <section className="overview-fade order-5 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                      <div className="mb-4 flex items-center gap-2.5">
+                        <div className="rounded-xl bg-muted p-2 text-primary">
                           <PieChart className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-foreground">
+                          <h3 className="text-sm font-medium tracking-tight text-foreground">
                             What the circle owns
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1946,14 +1947,14 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && (
-                  <section className="overview-fade order-6 rounded-2xl border border-border bg-card p-5">
-                    <div className="mb-5 flex items-center justify-between gap-2.5">
+                  <section className="overview-fade order-6 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+                    <div className="mb-4 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="rounded-xl bg-brand/15 p-2 text-brand-bright">
+                        <div className="rounded-xl bg-muted p-2 text-primary">
                           <Lightbulb className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-base font-bold text-foreground">
+                          <h3 className="text-sm font-medium tracking-tight text-foreground">
                             Community fun facts
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1966,7 +1967,7 @@ export function CommunityView({ communityId }: Props) {
                       <button
                         type="button"
                         onClick={() => setFunFactsShuffle((n) => n + 1)}
-                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-brand/40 px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:border-brand hover:bg-hover active:scale-95"
+                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:border-foreground/20 hover:bg-hover active:scale-95"
                         title="Get a fresh random batch"
                       >
                         <Shuffle className="h-3.5 w-3.5" />
@@ -1982,7 +1983,7 @@ export function CommunityView({ communityId }: Props) {
                         communityFunFacts.map((fact, i) => (
                           <li
                             key={`${i}-${fact.slice(0, 24)}`}
-                            className="rounded-2xl border border-border/70 bg-raised p-nested text-sm leading-relaxed text-foreground"
+                            className="rounded-xl border border-border/70 bg-raised p-4 text-sm leading-relaxed text-foreground"
                           >
                             {fact}
                           </li>
@@ -2018,7 +2019,7 @@ export function CommunityView({ communityId }: Props) {
                       <Users className="h-4 w-4 text-muted-foreground" />
                       Members
                     </h2>
-                    <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                    <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
                       {members.map((m) => {
                         const sheetIds = new Set(
                           ownership
@@ -2253,7 +2254,7 @@ export function CommunityView({ communityId }: Props) {
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <UserCheck className="h-4 w-4 text-foreground/80" />
                         Join requests
-                        <span className="rounded-full bg-select px-1.5 py-0.5 text-xs font-semibold text-select-ink">
+                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
                           {joinRequests.length}
                         </span>
                       </h2>
@@ -2276,22 +2277,23 @@ export function CommunityView({ communityId }: Props) {
                               </p>
                             </div>
                             <div className="flex shrink-0 gap-1.5">
-                              <button
+                              <Button
                                 type="button"
+                                size="xs"
                                 disabled={joinDecisionBusyId === r.user_id}
                                 onClick={() => void decideJoinRequest(r.user_id, "approve")}
-                                className="btn-primary px-2.5 py-1.5 text-xs disabled:opacity-50"
                               >
                                 Approve
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 type="button"
+                                size="xs"
+                                variant="outline"
                                 disabled={joinDecisionBusyId === r.user_id}
                                 onClick={() => void decideJoinRequest(r.user_id, "reject")}
-                                className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:bg-hover disabled:opacity-50"
                               >
                                 Decline
-                              </button>
+                              </Button>
                             </div>
                           </li>
                         ))}
@@ -2300,7 +2302,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {isAdmin && (
-                    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+                    <section className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
                       <h2 className="text-sm font-medium text-foreground">
                         Admin · invite
                       </h2>
@@ -2329,15 +2331,14 @@ export function CommunityView({ communityId }: Props) {
                           placeholder="Days live (optional)"
                           className="w-[9.5rem] rounded-lg border border-border bg-well px-3 py-2 text-sm"
                         />
-                        <button
+                        <Button
                           type="button"
                           disabled={busy}
                           onClick={() => void createInvite()}
-                          className="btn-primary"
                         >
-                          <Link2 className="h-3.5 w-3.5" />
+                          <Link2 data-icon="inline-start" />
                           Create invite link
-                        </button>
+                        </Button>
                       </div>
                       {inviteUrl && (
                         <div className="flex flex-col gap-2 rounded-lg border border-border bg-raised px-3 py-2">
@@ -2352,8 +2353,10 @@ export function CommunityView({ communityId }: Props) {
                           <p className="min-w-0 flex-1 break-all text-xs text-foreground">
                             {inviteUrl}
                           </p>
-                          <button
+                          <Button
                             type="button"
+                            size="xs"
+                            variant="outline"
                             onClick={async () => {
                               await navigator.clipboard
                                 .writeText(inviteUrl)
@@ -2364,15 +2367,14 @@ export function CommunityView({ communityId }: Props) {
                                 1500
                               );
                             }}
-                            className="btn-secondary px-2 py-1 text-xs"
                           >
                             {inviteCopied ? (
-                              <Check className="h-3 w-3" />
+                              <Check data-icon="inline-start" />
                             ) : (
-                              <Copy className="h-3 w-3" />
+                              <Copy data-icon="inline-start" />
                             )}
                             {inviteCopied ? "Copied" : "Copy"}
-                          </button>
+                          </Button>
                           </div>
                         </div>
                       )}
@@ -2490,7 +2492,7 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                       selectedPortfolioId === null
-                        ? "bg-select text-select-ink border-transparent"
+                        ? "bg-primary text-primary-foreground border-transparent"
                         : "border-border text-muted-foreground hover:border-border hover:text-foreground"
                     )}
                   >
@@ -2507,7 +2509,7 @@ export function CommunityView({ communityId }: Props) {
                       className={cn(
                         "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                         selectedPortfolioId === p.id
-                          ? "bg-select text-select-ink border-transparent"
+                          ? "bg-primary text-primary-foreground border-transparent"
                           : "border-border text-muted-foreground hover:border-border hover:text-foreground"
                       )}
                     >
@@ -2587,7 +2589,7 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
           />
-          <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5">
+          <div className="relative max-h-full w-full max-w-sm overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-xl sm:pb-4">
             <div className="mb-4 flex items-start justify-between gap-3">
               <h3 className="text-base font-semibold text-foreground">
                 Community settings
@@ -2612,13 +2614,13 @@ export function CommunityView({ communityId }: Props) {
               }}
               maxLength={80}
               disabled={settingsBusy}
-              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand disabled:opacity-50"
+              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-ring disabled:opacity-50"
             />
             {settingsError && (
               <p className="mt-2 text-xs text-loss">{settingsError}</p>
             )}
             <div className="mt-3 flex justify-end">
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleRename()}
                 disabled={
@@ -2626,13 +2628,12 @@ export function CommunityView({ communityId }: Props) {
                   !settingsName.trim() ||
                   settingsName.trim() === community?.name
                 }
-                className="btn-primary disabled:opacity-40"
               >
                 {settingsBusy ? "Saving …" : "Save name"}
-              </button>
+              </Button>
             </div>
 
-            <label className="mt-5 block text-xs font-medium text-muted-foreground">
+            <label className="mt-4 block text-xs font-medium text-muted-foreground">
               {isClassroom ? "What we're learning" : "House note"}
             </label>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -2651,20 +2652,19 @@ export function CommunityView({ communityId }: Props) {
                   ? "Week 2: only sell. Write why you sold."
                   : "Family portfolios, today's prices, no advice."
               }
-              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand disabled:opacity-50"
+              className="mt-1.5 w-full rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring disabled:opacity-50"
             />
             <div className="mt-2 flex justify-end">
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleSaveHouseNote()}
                 disabled={
                   settingsBusy ||
                   settingsNote.trim() === (community?.house_note ?? "").trim()
                 }
-                className="btn-primary disabled:opacity-40"
               >
                 {settingsBusy ? "Saving …" : "Save note"}
-              </button>
+              </Button>
             </div>
 
             {isClassroom ? (
@@ -2676,7 +2676,7 @@ export function CommunityView({ communityId }: Props) {
                   onStart={(kind) => void handleStartPeriod(kind)}
                   onSavePlan={(plan) => void handleSaveClassPlan(plan)}
                 />
-                <div className="mt-5">
+                <div className="mt-4">
                   <StartingCashField
                     value={settingsStartingCash}
                     onChange={setSettingsStartingCash}
@@ -2688,21 +2688,20 @@ export function CommunityView({ communityId }: Props) {
                   difference from every paper portfolio already handed out.
                 </p>
                 <div className="mt-2 flex justify-end">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void handleSaveStartingCash()}
                     disabled={
                       settingsBusy ||
                       Number(settingsStartingCash) === startingCash
                     }
-                    className="btn-primary disabled:opacity-40"
                   >
                     {settingsBusy ? "Saving …" : "Save starting cash"}
-                  </button>
+                  </Button>
                 </div>
               </>
             ) : (
-            <div className="mt-5 border-t border-border pt-4">
+            <div className="mt-4 border-t border-border pt-4">
               <label className="block text-xs font-medium text-muted-foreground">
                 Visibility
               </label>
@@ -2726,7 +2725,7 @@ export function CommunityView({ communityId }: Props) {
                     className={cn(
                       "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
                       (community?.visibility ?? "private") === id
-                        ? "bg-select text-select-ink"
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-hover hover:text-foreground"
                     )}
                   >
@@ -2772,7 +2771,7 @@ export function CommunityView({ communityId }: Props) {
             aria-label="Close"
             onClick={() => setBestiaryOpen(false)}
           />
-          <div className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-2xl sm:pb-5">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-xl sm:pb-4">
             <div className="mb-1 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
@@ -2890,7 +2889,7 @@ function PowerAnimalCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "relative flex flex-col gap-5 overflow-hidden rounded-2xl border p-5 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
+        "relative flex flex-col gap-4 overflow-hidden rounded-xl border p-4 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
         tone.border,
         tone.wash
       )}

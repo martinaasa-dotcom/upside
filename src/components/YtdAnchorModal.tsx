@@ -5,6 +5,7 @@ import { isSafePositiveMoney } from "@/lib/input-guard";
 import { startNavFromYtdPct } from "@/lib/market/assumed-nav";
 import type { YtdAnchor } from "@/lib/market/ytd-anchor";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -90,7 +91,7 @@ export function YtdAnchorModal({
       />
       <form
         onSubmit={submit}
-        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-5"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-xl sm:pb-4"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -126,7 +127,7 @@ export function YtdAnchorModal({
             }
             onWheel={blockWheelChange}
             placeholder="120000"
-            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
           />
         </label>
 
@@ -145,7 +146,7 @@ export function YtdAnchorModal({
             }
             onWheel={blockWheelChange}
             placeholder="+18.4"
-            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
           />
         </label>
 
@@ -157,21 +158,13 @@ export function YtdAnchorModal({
           </p>
         )}
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
-          >
+        <div className="mt-4 flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy || startNav == null}
-            className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={busy || startNav == null}>
             {busy ? "Saving…" : "Use this number"}
-          </button>
+          </Button>
         </div>
       </form>
     </ViewportOverlay>

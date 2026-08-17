@@ -2,6 +2,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { reportClientError } from "@/lib/telemetry-client";
 
 type Props = {
@@ -48,7 +49,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           role="alert"
           className={
             this.props.className ??
-            "min-w-0 overflow-x-clip rounded-2xl border border-border bg-card px-panel py-6"
+            "min-w-0 overflow-x-clip rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-6"
           }
         >
           <p className="text-sm font-semibold text-foreground">
@@ -57,14 +58,14 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             Your book is fine. This panel failed to render.
           </p>
-          <button
+          <Button
             type="button"
+            className="mt-4"
             onClick={() => this.setState({ error: null })}
-            className="btn-primary mt-4 inline-flex items-center gap-1.5"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw data-icon="inline-start" />
             Retry
-          </button>
+          </Button>
         </div>
       );
     }

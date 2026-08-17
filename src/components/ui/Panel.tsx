@@ -33,14 +33,12 @@ import {
  *
  * The rules, so a new surface can't drift again:
  *
- *   Radius     shell rounded-2xl · card rounded-xl · control rounded-lg
- *   Shell      black field, graphite card. Selected is brass. Mustard is
- *              the main button. Paper is type, never a white pill.
+ *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
+ *   Shell      nova dark field. Primary is near-white. Nested is muted.
  *              Green is an up number, not a wash.
- *   Stack      field is --app. A box on the field is bg-card. Nested is
- *              bg-raised. Inputs sit in bg-well. Never paint a box with
- *              the field color, and never a transparent card on the field.
- *   Card       border-border on bg-raised. Nested boxes lift off the panel.
+ *   Stack      field is bg-background. A box on the field is bg-card.
+ *              Nested is bg-muted. Never a card inside a card.
+ *   Card       ring-1 ring-foreground/10. Nested boxes are muted, no second ring.
  *   Type scale, the only sizes a person should see:
  *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
  *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
@@ -51,9 +49,8 @@ import {
  *   text-2xl   24  one hero number per page (compound result). Not a row of tiles.
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-3xl or text-4xl. The logo lockup is the exception.
- *   Headings   text-base font-bold (hero: text-lg) · sentence case
- *   Type       Montserrat Bold for titles. Inter for body, labels, and
- *              every money figure. No third face. Lockup is Montserrat.
+ *   Headings   text-sm font-medium tracking-tight (hero: text-base) · sentence case
+ *   Type       Geist for titles, body, labels, and money. Lockup too.
  *   Micro      text-sm font-medium text-muted-foreground · sentence case
  *              Caps stay on the logo only.
  *   Metrics    A row of numbers is ONE box (Scoreboard) with hairline
@@ -75,10 +72,10 @@ import {
  *              SPLIT_ACTIONS. Never `flex-wrap` + `min-w-0 flex-1` next to
  *              shrink-0 chrome. On a phone that leftover strip is ~80px
  *              and the sentence wraps one word per line.
- *   Inset      page gutter and panel pad are p-panel (20px). Nested
- *              cards are p-nested (16px). Score cells use p-5 so the
- *              figures have air. Same on a phone. Do not override to
- *              p-4 on mobile. Label to figure is mt-2. InfoTip must
+ *   Inset      page gutter and panel pad are p-4. Nested
+ *              cards are p-4. Score cells use p-4 so the
+ *              figures have air. Same on a phone. Do not invent
+ *              a second pad. Label to figure is mt-2. InfoTip must
  *              not stretch that row.
  *              A row of numbers is Scoreboard, never a loose
  *              MicroLabel grid with its own padding.
@@ -92,26 +89,27 @@ import {
  * consultant's slide; "Price path" reads like a person wrote it.
  */
 
-/** Page-level box. Solid fill so it never matches the field. */
-export const BOX = "rounded-2xl border border-border bg-card";
-/** Nested card inside a box. */
-export const CARD = "rounded-xl border border-border bg-raised";
-/** Panel padding. Matches the page gutter. */
-export const PANEL_PAD = "p-panel";
-/** Nested card / score-cell padding. One step in from the panel. */
-export const NESTED_PAD = "p-nested";
+/** Page-level box. shadcn Card shell: ring, not a gold hairline. */
+export const BOX =
+  "rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10";
+/** Nested surface inside a box. Not a second card. */
+export const CARD = "rounded-lg bg-muted";
+/** Panel padding. Compact density, same on phone and desktop. */
+export const PANEL_PAD = "p-4";
+/** Nested card / score-cell padding. Same step as the panel. */
+export const NESTED_PAD = "p-4";
 /** A Scoreboard cell. Use this instead of hand-rolling px-4 py-3.5. */
-export const SCORE_CELL = "min-w-0 bg-raised p-5";
+export const SCORE_CELL = "min-w-0 bg-muted p-4";
 /** Member / row list on the field. */
 export const LIST =
-  "divide-y divide-border overflow-hidden rounded-xl border border-border bg-card";
+  "divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10";
 
 const SHELL_TONES = {
-  default: "border-border bg-card",
-  plain: "border-border bg-card",
-  brand: "border-brand/40 bg-hover",
-  warn: "border-caution/35 bg-caution/[0.08]",
-  danger: "border-loss/30 bg-loss/[0.08]",
+  default: "bg-card ring-foreground/10",
+  plain: "bg-card ring-foreground/10",
+  brand: "bg-card ring-primary/20",
+  warn: "bg-card ring-warning/35",
+  danger: "bg-card ring-destructive/30",
 } as const;
 
 const FIGURE =
@@ -150,9 +148,9 @@ export function Panel({
   return (
     <section
       className={cn(
-        "h-full min-w-0 max-w-full rounded-2xl border",
+        "h-full min-w-0 max-w-full rounded-xl text-sm text-card-foreground ring-1",
         SHELL_TONES[tone],
-        padded && PANEL_PAD,
+        padded && "flex flex-col gap-4 p-4",
         className
       )}
       {...rest}
@@ -185,10 +183,10 @@ export function PanelHeader({
   className?: string;
 }) {
   const iconTones = {
-    brand: "bg-hover text-foreground/80",
-    violet: "bg-brand/15 text-brand-bright",
+    brand: "bg-muted text-foreground/80",
+    violet: "bg-muted text-foreground",
     emerald: "bg-gain/15 text-gain",
-    zinc: "bg-hover text-foreground/80",
+    zinc: "bg-muted text-foreground/80",
   } as const;
 
   return (
@@ -209,7 +207,7 @@ export function PanelHeader({
         {icon && (
           <span
             className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+              "flex size-8 shrink-0 items-center justify-center rounded-lg",
               subtitle ? "mt-0.5" : undefined,
               iconTones[iconTone]
             )}
@@ -221,8 +219,8 @@ export function PanelHeader({
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
-              "font-heading font-bold text-foreground",
-              hero ? "text-lg" : "text-base"
+              "font-heading font-medium tracking-tight text-foreground",
+              hero ? "text-base" : "text-sm"
             )}
           >
             {title}
@@ -240,13 +238,13 @@ export function PanelHeader({
 }
 
 const CARD_TONES = {
-  default: "border-border bg-raised",
-  raised: "border-border bg-hover",
-  brand: "border-brand/40 bg-hover",
-  good: "border-gain/25 bg-gain/[0.08]",
-  warn: "border-caution/35 bg-caution/[0.08]",
-  bad: "border-loss/25 bg-loss/[0.08]",
-  info: "border-border bg-hover",
+  default: "bg-muted",
+  raised: "bg-accent",
+  brand: "bg-muted ring-1 ring-primary/20",
+  good: "bg-gain/10",
+  warn: "bg-warning/10",
+  bad: "bg-destructive/10",
+  info: "bg-accent",
 } as const;
 
 export type CardTone = keyof typeof CARD_TONES;
@@ -267,11 +265,11 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border",
+        "rounded-lg",
         NESTED_PAD,
         CARD_TONES[tone],
         interactive &&
-          "transition hover:border-brand/40 hover:bg-hover active:scale-[0.995]",
+          "transition hover:bg-accent active:scale-[0.995]",
         className
       )}
       {...rest}
@@ -318,7 +316,7 @@ export function Reading({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-raised text-foreground",
+        "rounded-lg bg-muted text-foreground",
         NESTED_PAD,
         className
       )}
@@ -392,12 +390,12 @@ export function ScanList({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-raised",
+        "overflow-hidden rounded-lg bg-muted",
         className
       )}
     >
       {label != null && label !== "" ? (
-        <div className="border-b border-border px-nested py-3">
+        <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
         </div>
       ) : null}
@@ -427,12 +425,12 @@ export function ScanList({
                 <button
                   type="button"
                   onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-nested py-3 text-left transition hover:bg-hover"
+                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-hover"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="flex gap-3 px-nested py-3">{body}</div>
+                <div className="flex gap-3 px-4 py-3">{body}</div>
               )}
             </li>
           );
@@ -554,7 +552,7 @@ export function HairlineGrid({
       role={role}
       aria-label={ariaLabel}
       className={cn(
-        "grid gap-px overflow-hidden rounded-lg border border-border bg-border",
+        "grid gap-px overflow-hidden rounded-lg bg-border",
         HAIRLINE_TRACKS,
         lg != null && "lg:grid-cols-[repeat(var(--sg-lg),minmax(0,1fr))]",
         className
@@ -583,7 +581,7 @@ export function Scoreboard({
   return (
     <div
       className={cn(
-        "grid gap-px overflow-hidden rounded-xl border border-border bg-border",
+        "grid gap-px overflow-hidden rounded-xl bg-border",
         HAIRLINE_TRACKS,
         className
       )}
@@ -729,7 +727,7 @@ export function Segmented<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "grid w-full min-w-0 max-w-full gap-px overflow-hidden rounded-lg border border-border bg-border",
+        "grid w-full min-w-0 max-w-full gap-px overflow-hidden rounded-lg bg-border",
         className
       )}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
@@ -760,12 +758,12 @@ export function Segmented<T extends string>({
 }
 
 const PILL_TONES = {
-  neutral: "border-border bg-raised text-foreground/80",
-  brand: "border-brand/40 bg-hover text-foreground",
-  good: "border-gain/30 bg-gain/10 text-gain",
-  warn: "border-caution/40 bg-caution/10 text-foreground",
-  bad: "border-loss/40 bg-loss/15 text-loss",
-  info: "border-border bg-hover text-foreground",
+  neutral: "border-border bg-muted text-foreground/80",
+  brand: "border-transparent bg-primary text-primary-foreground",
+  good: "border-transparent bg-gain/15 text-gain",
+  warn: "border-transparent bg-warning/15 text-warning",
+  bad: "border-transparent bg-destructive/15 text-destructive",
+  info: "border-border bg-muted text-foreground",
 } as const;
 
 export type PillTone = keyof typeof PILL_TONES;
@@ -814,7 +812,7 @@ export function EmptyState({
   return (
     <Empty
       className={cn(
-        "flex-none border border-dashed border-border bg-raised px-panel py-10",
+        "flex-none border border-dashed border-border bg-muted px-4 py-10",
         className
       )}
     >

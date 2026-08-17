@@ -63,7 +63,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
         aria-label="Close command palette"
         onClick={onClose}
       />
-      <div className="relative max-h-[min(100%,32rem)] w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-well shadow-2xl sm:max-h-[min(70dvh,32rem)]">
+      <div className="relative max-h-[min(100%,32rem)] w-full max-w-lg overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-2xl sm:max-h-[min(70dvh,32rem)]">
         <input
           ref={inputRef}
           value={q}
@@ -101,7 +101,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
                 className={cn(
                   "flex w-full items-baseline justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm sm:py-2",
                   i === active
-                    ? "bg-select text-select-ink"
+                    ? "bg-primary text-primary-foreground"
                     : "text-foreground/80 hover:bg-well"
                 )}
               >

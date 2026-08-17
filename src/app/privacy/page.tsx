@@ -20,13 +20,13 @@ export const metadata = publicPageMetadata({
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-dvh bg-[radial-gradient(ellipse_at_top,_#161b25_0%,_#08090c_55%)] text-foreground">
-      <header className="border-b border-border bg-app/90 backdrop-blur">
+    <div className="min-h-dvh bg-background text-foreground">
+      <header className="border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />
           <Link
             href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-brand hover:text-foreground"
+            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
           >
             Back
           </Link>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
 
       <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-4 py-10 text-sm leading-relaxed text-foreground/80">
         <div>
-          <h1 className="text-lg font-bold text-foreground">Privacy Policy</h1>
+          <h1 className="text-lg font-medium tracking-tight text-foreground">Privacy Policy</h1>
           <p className="mt-1 text-sm text-muted-foreground">Last updated {LAST_UPDATED}</p>
         </div>
 
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="2. What we collect">
-          <ul className="list-disc pl-5 [&>li+li]:mt-1.5">
+          <ul className="list-disc pl-4 [&>li+li]:mt-1.5">
             <li>
               <strong className="text-foreground">From Google sign-in:</strong>{" "}
               your email, name, and profile photo, used to create your
@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             A few processors see limited data, only as needed to run the
             feature:
           </p>
-          <ul className="list-disc pl-5 [&>li+li]:mt-1.5">
+          <ul className="list-disc pl-4 [&>li+li]:mt-1.5">
             <li>
               <strong className="text-foreground">Supabase</strong> (EU-hosted),
               our database and authentication provider. Everything you

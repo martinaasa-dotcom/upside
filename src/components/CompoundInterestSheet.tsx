@@ -73,7 +73,7 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
 ];
 
 const FIELD_CLASS =
-  "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold tabular-nums text-foreground outline-none focus:border-brand";
+  "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold tabular-nums text-foreground outline-none focus:border-ring";
 
 const SHEET_PANEL = "h-auto min-w-0 max-w-full lg:h-full";
 
@@ -120,7 +120,7 @@ function MilestoneLadderRow({
   const done = milestoneDone(row);
   const wait = milestoneWait(row);
   return (
-    <li className={cn(isNext && "bg-brand/[0.08]")}>
+    <li className={cn(isNext && "bg-primary/[0.08]")}>
       <button
         type="button"
         aria-expanded={logOpen}
@@ -131,7 +131,7 @@ function MilestoneLadderRow({
           <CheckCircle2 className="h-4 w-4 shrink-0 text-gain" aria-hidden />
         ) : (
           <span
-            className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-brand-mid bg-transparent"
+            className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-input bg-transparent"
             aria-hidden
           />
         )}
@@ -166,7 +166,7 @@ function MilestoneLadderRow({
             value={row.actualDate ?? ""}
             onChange={(e) => onSetActual(row.goal, e.target.value)}
             className={cn(
-              "mt-1 w-full rounded-lg border bg-well px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-brand",
+              "mt-1 w-full rounded-lg border bg-well px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-ring",
               done
                 ? "border-gain/40 text-gain"
                 : "border-border text-foreground/80"
@@ -744,7 +744,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
   }
 
   return (
-    <div className="grid w-full min-w-0 max-w-full items-start gap-5 overflow-x-clip lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+    <div className="grid w-full min-w-0 max-w-full items-start gap-4 overflow-x-clip lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
       {/* min-h-0 / min-w-0: grid items default to min-content, which lets
           wide tables below blow the calculator off a phone screen. */}
       <div className="min-h-0 min-w-0 w-full max-w-full lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
@@ -767,7 +767,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
         />
 
         <div className="mt-6 divide-y divide-white/10">
-        <section className="flex flex-col gap-3 pb-5">
+        <section className="flex flex-col gap-3 pb-4">
           <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
             Starting from
           </label>
@@ -786,7 +786,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
             aria-label="Where the starting amount comes from"
-            className="w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-brand"
+            className="w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-ring"
           >
             {bookValue > 0 && (
               <option value="book">
@@ -802,7 +802,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </select>
         </section>
 
-        <section className="flex flex-col gap-3 py-5">
+        <section className="flex flex-col gap-3 py-4">
           <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
             Growing at
           </label>
@@ -830,7 +830,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           />
         </section>
 
-        <section className="flex flex-col gap-3 py-5">
+        <section className="flex flex-col gap-3 py-4">
           <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
             For how long
           </label>
@@ -863,7 +863,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           />
         </section>
 
-        <section className="flex flex-col gap-3 py-5">
+        <section className="flex flex-col gap-3 py-4">
           <span className="text-sm font-semibold text-foreground">
             Adding along the way
           </span>
@@ -916,7 +916,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 kind="percent"
                 value={draft.annualIncrease}
                 onChange={(n) => patchDraft("annualIncrease", n)}
-                className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-brand"
+                className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-ring"
               />
             </label>
             <p className="min-h-5 text-sm text-muted-foreground">
@@ -953,7 +953,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
       </div>
 
       {/* Results & Projections Section */}
-      <section className="flex flex-col min-w-0 w-full max-w-full gap-5">
+      <section className="flex flex-col min-w-0 w-full max-w-full gap-4">
         {/* Hero KPI Summary */}
         <Panel className={SHEET_PANEL}>
           <PanelHeader
@@ -963,7 +963,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               <button
                 type="button"
                 onClick={() => void copyPostcard()}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition hover:border-brand hover:text-foreground sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground/80 transition hover:border-foreground/20 hover:text-foreground sm:w-auto"
               >
                 {copied ? (
                   <Copy className="h-3.5 w-3.5 text-gain" />
@@ -977,13 +977,13 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
 
           {/* Three numbers, and the sentence that ties them together. Anything
             * more here and the first thing a person sees is a wall. */}
-          <div className="mt-5">
+          <div className="mt-4">
             <MicroLabel>Ends up at</MicroLabel>
             <p className="mt-1 text-2xl font-bold tabular-nums text-gain">
               {show(result.futureValue)}
             </p>
           </div>
-          <Scoreboard className="mt-5" cols={2}>
+          <Scoreboard className="mt-4" cols={2}>
             <Score
               label="Of that, growth"
               value={show(result.totalInterest)}
@@ -993,11 +993,11 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             <Score
               label="You put in"
               value={show(result.principal + result.totalDeposited)}
-              valueClassName="text-brand-bright"
+              valueClassName="text-primary"
             />
           </Scoreboard>
 
-          <p className="mt-5 text-sm leading-relaxed text-foreground/80">
+          <p className="mt-4 text-sm leading-relaxed text-foreground/80">
             You put in {show(result.principal + result.totalDeposited)} and end
             with {show(result.futureValue)}, so growth did{" "}
             {show(result.totalInterest)} of the work
@@ -1007,7 +1007,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             .
           </p>
 
-          <Scoreboard className="mt-5" cols={3}>
+          <Scoreboard className="mt-4" cols={3}>
             <Score
               label="Total return"
               value={
@@ -1153,7 +1153,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                               />
                             ) : (
                               <span
-                                className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-brand-mid bg-transparent"
+                                className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-input bg-transparent"
                                 aria-hidden
                               />
                             )}
@@ -1187,7 +1187,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                               setMilestoneActual(row.goal, e.target.value)
                             }
                             className={cn(
-                              "max-w-[9.5rem] rounded border bg-well px-1.5 py-1 text-xs tabular-nums outline-none focus:border-brand",
+                              "max-w-[9.5rem] rounded border bg-well px-1.5 py-1 text-xs tabular-nums outline-none focus:border-ring",
                               done
                                 ? "border-gain/40 text-gain"
                                 : "border-border text-foreground/80"
@@ -1253,7 +1253,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                     key={row.index}
                     className={cn(
                       "rounded-lg border border-border bg-card px-3 py-3",
-                      isLast && "ring-1 ring-brand/30"
+                      isLast && "ring-1 ring-ring/30"
                     )}
                   >
                     <p className="text-sm font-medium text-foreground">
@@ -1348,12 +1348,12 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               {compareTakeaway}
             </p>
           )}
-          <Scoreboard cols={2} className="mt-5 max-sm:grid-cols-1">
+          <Scoreboard cols={2} className="mt-4 max-sm:grid-cols-1">
             {compare.map((s) => {
               const dashed = s.id === "mattress";
               const valueClass =
                 s.id === "upside"
-                  ? "text-brand"
+                  ? "text-primary"
                   : s.id === "mattress"
                     ? "text-muted-foreground"
                     : undefined;

@@ -568,7 +568,7 @@ export function GoldNavChart({
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="none"
-            className="h-56 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand/50 sm:h-64"
+            className="h-56 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/50 sm:h-64"
             role="slider"
             tabIndex={0}
             aria-label="Portfolio value over the year. Drag across to read a day."
@@ -768,7 +768,7 @@ export function BookNavChart({
         <GoldNavChart points={points} />
       )}
       {assumed && hasChart && (
-        <div className="flex flex-col mt-5 gap-3">
+        <div className="flex flex-col mt-4 gap-3">
           <p className="text-sm text-muted-foreground">
             {anchored
               ? "Using the year you gave us."
@@ -783,7 +783,7 @@ export function BookNavChart({
                   setReadError(null);
                   setFixOpen((open) => !open);
                 }}
-                className="text-sm font-medium text-brand-bright underline-offset-2 hover:underline"
+                className="text-sm font-medium text-primary underline-offset-2 hover:underline"
               >
                 {fixOpen ? "Hide" : "Fix the year"}
               </button>
@@ -794,7 +794,7 @@ export function BookNavChart({
                   type="button"
                   disabled={reading}
                   onClick={() => fileRef.current?.click()}
-                  className="text-sm font-medium text-brand-bright underline-offset-2 hover:underline disabled:opacity-50"
+                  className="text-sm font-medium text-primary underline-offset-2 hover:underline disabled:opacity-50"
                 >
                   {reading ? "Reading screenshot…" : "Upload screenshot"}
                 </button>
@@ -851,7 +851,7 @@ export function BookNavChart({
         </div>
       )}
       {!assumed && onRestoreAssumed && (
-        <div className="mt-5 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <button
             type="button"
             onClick={onRestoreAssumed}

@@ -6,6 +6,7 @@ import {
   saveStoredTier,
   type ExperienceTier,
 } from "@/lib/experience-tier";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
@@ -89,7 +90,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
   return (
     <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-2xl sm:max-w-lg sm:p-6">
+      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 p-4 shadow-2xl sm:max-w-lg sm:p-6">
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
@@ -117,7 +118,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     type="checkbox"
                     checked={noteMorning}
                     onChange={(e) => setNoteMorning(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-brand-mid bg-well text-foreground focus:ring-white/40"
+                    className="mt-0.5 h-4 w-4 rounded border-input bg-well text-foreground focus:ring-white/40"
                   />
                   <span>
                     <span className="font-medium text-foreground">Weekdays</span>
@@ -131,7 +132,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     type="checkbox"
                     checked={noteSunday}
                     onChange={(e) => setNoteSunday(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-brand-mid bg-well text-foreground focus:ring-white/40"
+                    className="mt-0.5 h-4 w-4 rounded border-input bg-well text-foreground focus:ring-white/40"
                   />
                   <span>
                     <span className="font-medium text-foreground">Sundays</span>
@@ -140,14 +141,14 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     </span>
                   </span>
                 </label>
-                <button
+                <Button
                   type="button"
+                  className="w-full"
                   disabled={saving}
                   onClick={() => void saveAccount()}
-                  className="w-full btn-primary disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Continue"}
-                </button>
+                </Button>
                 <button
                   type="button"
                   onClick={() => setStep(2)}
@@ -171,7 +172,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           }}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-border bg-raised text-foreground hover:border-brand/40 hover:bg-hover"
+                            "border-border bg-raised text-foreground hover:bg-accent hover:bg-hover"
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0 text-foreground/80" />
@@ -187,7 +188,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground transition hover:border-brand/40 hover:bg-hover"
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent hover:bg-hover"
                       >
                         {opt.label}
                       </button>
@@ -224,13 +225,13 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 <span className="font-semibold text-foreground">Account</span>.
               </span>
             </div>
-            <button
+            <Button
               type="button"
+              className="w-full"
               onClick={() => result && onDone(result, resultKnowsOptions)}
-              className="w-full btn-primary"
             >
               Add what you own
-            </button>
+            </Button>
           </div>
         )}
       </div>

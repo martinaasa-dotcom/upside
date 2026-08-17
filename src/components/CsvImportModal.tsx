@@ -9,6 +9,7 @@ import {
 } from "@/lib/csv-import";
 import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn, currency } from "@/lib/format";
 import {
@@ -162,10 +163,10 @@ export function CsvImportModal({
         aria-label="Close"
         onClick={handleClose}
       />
-      <div className="relative z-10 flex max-h-[min(100%,640px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-well shadow-2xl">
+      <div className="relative z-10 flex max-h-[min(100%,640px)] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <FileUp className="h-4 w-4 text-brand-bright" />
+            <FileUp className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold text-foreground">
               Import CSV · {portfolioName}
             </h2>
@@ -202,7 +203,7 @@ export function CsvImportModal({
             }}
             rows={4}
             placeholder={"NBIS 500 85.10\nCRWV 1100 64.45"}
-            className="w-full rounded-xl border border-border bg-well px-3 py-2 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-brand"
+            className="w-full rounded-xl border border-border bg-well px-3 py-2 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -217,22 +218,21 @@ export function CsvImportModal({
                 e.target.value = "";
               }}
             />
-            <button
+            <Button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 btn-primary px-3"
             >
-              <FileUp className="h-4 w-4" />
+              <FileUp data-icon="inline-start" />
               Choose CSV file
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               onClick={() => downloadHoldingsCsvTemplate()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground/80 hover:border-brand"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download data-icon="inline-start" />
               Download template
-            </button>
+            </Button>
             {fileName && (
               <span className="text-sm text-muted-foreground">{fileName}</span>
             )}
@@ -325,7 +325,7 @@ export function CsvImportModal({
                 type="checkbox"
                 checked={replace}
                 onChange={(e) => setReplace(e.target.checked)}
-                className="h-4 w-4 rounded border-brand-mid bg-well text-brand focus:ring-brand/50"
+                className="h-4 w-4 rounded border-input bg-well text-primary focus:ring-ring/50"
               />
               Replace this portfolio&apos;s holdings (uncheck to only add/update)
               the tickers above, keeping everything else)
@@ -334,25 +334,16 @@ export function CsvImportModal({
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground"
-          >
+          <Button type="button" variant="ghost" onClick={handleClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             disabled={busy || (rows.length === 0 && cash == null)}
             onClick={() => void confirm()}
-            className={cn(
-              "btn-primary",
-              (busy || (rows.length === 0 && cash == null)) &&
-                "cursor-not-allowed opacity-40"
-            )}
           >
             Import{rows.length > 0 ? ` ${rows.length} holding${rows.length === 1 ? "" : "s"}` : ""}
-          </button>
+          </Button>
         </div>
       </div>
     </ViewportOverlay>

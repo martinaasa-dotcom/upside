@@ -30,6 +30,7 @@ import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { useAuth } from "@/components/AuthProvider";
+import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
@@ -3326,14 +3327,14 @@ export function Dashboard() {
         end={
           <>
             {!isMetaTab && canClassBuy && (
-              <button
+              <Button
                 type="button"
+                size="icon"
                 onClick={() => setModalOpen(true)}
                 aria-label="Add holding"
-                className="btn-primary h-8 min-h-8 w-8 p-0"
               >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
+                <Plus />
+              </Button>
             )}
             <HeaderOverflowMenu
               items={viewMenuItems}
@@ -3364,25 +3365,27 @@ export function Dashboard() {
         status={headerStatus}
       >
             {!isMetaTab && canClassBuy && (
-              <button
+              <Button
                 type="button"
+                size="lg"
                 onClick={() => setModalOpen(true)}
-                className="btn-primary h-9 min-h-9 rounded-md px-3"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus data-icon="inline-start" />
                 <span className="hidden sm:inline">Add holding</span>
                 <span className="sm:hidden">Add</span>
-              </button>
+              </Button>
             )}
             {!isMetaTab && source === "supabase" && activePortfolio && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
                 onClick={() => setInviteOpen(true)}
-                className="hidden h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-foreground/80 hover:border-brand hover:text-foreground md:inline-flex"
+                className="hidden md:inline-flex"
               >
-                <UserPlus className="h-3.5 w-3.5" />
+                <UserPlus data-icon="inline-start" />
                 <span className="hidden sm:inline">Invite</span>
-              </button>
+              </Button>
             )}
             <HeaderOverflowMenu
               items={viewMenuItems}
@@ -3425,7 +3428,7 @@ export function Dashboard() {
                   key={a.id}
                   type="button"
                   onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-                  className="w-full rounded-2xl border border-border bg-card p-4 text-left"
+                  className="w-full rounded-xl bg-card ring-1 ring-foreground/10 p-4 text-left"
                 >
                   <p className="text-sm font-semibold text-foreground">{a.title}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">

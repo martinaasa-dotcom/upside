@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { track } from "@vercel/analytics";
 import { Check, Copy, UserMinus, X } from "lucide-react";
@@ -136,7 +137,7 @@ export function InvitePartnerModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5">
+      <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-xl sm:pb-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
@@ -169,21 +170,21 @@ export function InvitePartnerModal({
             className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
           />
         </label>
-        <button
+        <Button
           type="button"
+          className="mt-3"
           disabled={busy}
           onClick={() => void createInvite()}
-          className="mt-3 btn-primary disabled:opacity-60"
         >
           {busy ? "Working …" : "Create invite"}
-        </button>
+        </Button>
         {err && <p className="mt-2 text-sm text-loss">{err}</p>}
         {msg && <p className="mt-2 text-sm text-gain">{msg}</p>}
         {(link || code) && (
           <div className="flex flex-col mt-3 gap-2 rounded-xl border border-border bg-raised p-3">
             {code && (
               <div className="flex items-center justify-between gap-2">
-                <p className="font-mono text-sm text-brand-bright">{code}</p>
+                <p className="font-mono text-sm text-primary">{code}</p>
                 <button
                   type="button"
                   onClick={() => void copy(code, "code")}
@@ -221,7 +222,7 @@ export function InvitePartnerModal({
         )}
 
         {owners.length > 0 && (
-          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
             {owners.map((o) => (
               <li
                 key={o.user_id}

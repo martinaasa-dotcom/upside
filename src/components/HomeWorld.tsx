@@ -160,12 +160,12 @@ export function HomeWorld({
         title="Around Upside Lab"
         icon={<Users className="h-4 w-4" />}
       />
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Link href="/upside-portfolio" prefetch className="group block h-full">
           <Card
             tone="brand"
             interactive
-            className="h-full px-4 py-4 transition group-hover:border-brand/40"
+            className="h-full px-4 py-4 transition group-hover:bg-accent"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
@@ -212,7 +212,7 @@ export function HomeWorld({
         <Link href={communityHref} prefetch className="group block h-full">
           <Card
             interactive
-            className="h-full px-4 py-4 transition group-hover:border-brand/40"
+            className="h-full px-4 py-4 transition group-hover:bg-accent"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>

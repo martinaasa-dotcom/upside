@@ -1,37 +1,25 @@
 ---
-description: shadcn/ui composition, tokens, and overlay rules for Upside Lab
+description: shadcn nova look: tokens, density, primitives
 globs: src/**/*.{ts,tsx,css}
 alwaysApply: false
 ---
 
-# shadcn/ui (Upside Lab)
+# shadcn/ui look (Upside Lab)
 
-Compose with primitives in `src/components/ui`. Do not hand-roll a `div` when Button, Card, Field, Dialog, Sheet, Drawer, AlertDialog, Badge, Empty, Alert, Separator, Skeleton, ToggleGroup, or Table already cover it.
+Dark nova. Compact density. One accent (`primary` is near-white). Compose primitives. Do not restyle a component with extra colors.
 
 ## Tokens
 
-Use semantic pairs: `bg-background`, `text-foreground`, `bg-card`, `text-muted-foreground`, `bg-primary`, `text-primary-foreground`, `bg-destructive`, `border-border`, `ring-ring`. Never raw `bg-blue-500` / `dark:bg-gray-950`.
+`bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `border-border`, `ring-ring`. Cards use `rounded-xl ring-1 ring-foreground/10`, not gold borders. Nested surfaces are `bg-muted rounded-lg`, never a card in a card.
 
-Gold is `--primary`. Up/down money stays `--gain` / `--loss` (not a wash on the room). `text-muted` is a surface now; chrome copy is `text-muted-foreground`.
+Money up/down is `text-gain` / `text-destructive`. Not a wash.
 
-## Forms and options
+## Density
 
-- Forms: `FieldGroup` + `Field` + `FieldLabel`. Not `div` + `space-y-*`.
-- Prefix/suffix inside an input: `InputGroup` + `InputGroupInput`.
-- 2–7 choices: `ToggleGroup`. Exception: filled hairline `Segmented` (`columns`) so the last row never paints an empty box.
-- Invalid: `data-invalid` on `Field`, `aria-invalid` on the control.
+One scale: `p-4` / `gap-4` / `text-sm`. Controls are `h-8` / `rounded-lg`. Page gutter is `px-4`. Do not invent `p-5`, `p-panel`, or a tighter mobile pad.
 
-## Overlays
+## Primitives
 
-| Need | Use |
-| Focused form | `Dialog` |
-| Confirm / delete | `AlertDialog` (`ConfirmModal`) |
-| Side details | `Sheet` |
-| Mobile bottom sheet | `Drawer` |
-| iOS keyboard-aware sheet | `ViewportOverlay` (keep visual-viewport lock) |
+Button (variants, no `btn-primary`). Input / Field / FieldGroup. Card header/content/footer. AlertDialog for confirm. Empty for empty. ToggleGroup for 2–7 choices. Badge not custom chips. Avatar with Fallback. Sonner toasts.
 
-Every Dialog/Sheet/Drawer needs a Title. Do not add `z-50` on those overlays.
-
-## Markup
-
-`gap-*` not `space-y-*`. `size-10` not `h-10 w-10`. `cn()` for conditionals. `Button` has no `isLoading`; compose `Spinner` + `disabled`. Icons in buttons: `data-icon="inline-start"`, no extra size class. Empty states: `Empty`. Callouts: `Alert`. Toasts: `useToast().push` (Sonner).
+`gap-*` not `space-y-*`. `size-8` not `h-8 w-8`. `cn()` for conditionals. Icons in buttons: `data-icon`, no extra size class.
