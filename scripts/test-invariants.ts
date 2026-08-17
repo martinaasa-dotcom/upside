@@ -1202,7 +1202,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /Open your portfolio/);
   const notes = readFileSync("src/lib/note-margus.ts", "utf8");
   assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
-  assert.match(notes, /maxOutputTokens: 640/);
+  assert.match(notes, /maxOutputTokens: 720/);
   assert.equal(
     looksLikePromptLeak(
       "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
@@ -1247,11 +1247,13 @@ run("note letters are one mix story, not stacked cards", () => {
     },
   });
   morning.margus = fallbackNoteTake(morning);
+  assert.equal(morning.margus.split(/\n\n/).length, 2);
   assert.match(morning.margus, /\$RDDT is \+8\.0% overnight/);
   assert.match(morning.margus, /ruins your cost basis/);
-  assert.match(morning.margus, /Keeping 64% in AI computer companies/);
-  assert.match(morning.margus, /Standing down keeps cash free for utilities that sell power/);
-  assert.match(morning.margus, /Sit tight before the bell/);
+  assert.match(morning.margus, /64% in AI computer companies/);
+  assert.match(morning.margus, /utilities that sell power/);
+  assert.match(morning.margus, /opening bell/);
+  assert.match(morning.margus, /let the shares run/);
   assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight/);
   assert.doesNotMatch(morning.margus, /Those names need cheap, reliable power/);
   assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some|no moves/i);
@@ -1266,6 +1268,7 @@ run("note letters are one mix story, not stacked cards", () => {
   };
   morning.margus = fallbackNoteTake(morning);
   assert.match(morning.margus, /Reddit to join the S&P 500/);
+  assert.match(morning.margus, /Funds that track that benchmark have to buy/);
   assert.doesNotMatch(morning.margus, /\[\[source:/);
   assert.doesNotMatch(morning.margus, /TradingView|XTB\.com/i);
   assert.doesNotMatch(noteReportHtml(morning), /TradingView|XTB\.com|\[\[source:/i);
@@ -1288,10 +1291,11 @@ run("note letters are one mix story, not stacked cards", () => {
     },
   });
   const closeTake = fallbackNoteTake(close);
+  assert.equal(closeTake.split(/\n\n/).length, 2);
   assert.match(closeTake, /\$RDDT did the work today/);
   assert.match(closeTake, /64%/);
-  assert.match(closeTake, /Standing down tonight is the smart play/);
-  assert.match(closeTake, /Log off and let it sit/);
+  assert.match(closeTake, /the rest of the names lagged/);
+  assert.match(closeTake, /Log off and let the position sit/);
   const sunday = buildNoteReport({
     kind: "sunday",
     name: "Test",
@@ -1309,12 +1313,12 @@ run("note letters are one mix story, not stacked cards", () => {
     },
   });
   const sundayTake = fallbackNoteTake(sunday);
+  assert.equal(sundayTake.split(/\n\n/).length, 2);
   assert.match(sundayTake, /Your portfolio was .* this week, /);
   assert.match(sundayTake, /\$RDDT stole the show this week/);
   assert.doesNotMatch(sundayTake, /\n- \$/);
   assert.match(sundayTake, /64%/);
   assert.match(sundayTake, /The plan for next week stays unchanged/);
-  assert.match(sundayTake, /Enjoy the rest of your Sunday/);
 });
 
 run("manual note cron stays on Martin", () => {

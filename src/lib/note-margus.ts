@@ -19,7 +19,7 @@ import type { NoteReport } from "@/lib/note-report";
 const JOB: Record<NoteReport["kind"], string> = {
   morning: `This is the morning pre-market note. You/your. One connected letter in two paragraphs with a blank line between them. Full sentences with transitions. Never a stack of one-line blocks. Never we/us/our. Never name a website, publisher, or paste a link.
 
-First paragraph: overnight catalyst, cashtag, the actual headline if facts give one, or the overnight number if they don't. Immediately say the mechanic when the headline supports it (index inclusion means funds that track the benchmark have to buy; earnings means the print is still being digested). Then why chasing pre-bell volume on that gap ruins cost basis. Let the shares you already have run.
+First paragraph: overnight catalyst, cashtag, the actual headline if facts give one, or the overnight number if they don't. Immediately say the mechanic when the headline supports it (index inclusion means funds that track the benchmark have to buy; earnings means the number is still being digested). Then why chasing pre-bell volume on that gap ruins cost basis. Let the shares you already have run.
 Second paragraph: the real concentration percent from facts, once, tied to today's gap. Standing down keeps cash free for the missing group (utilities that sell power, when facts say that's the gap). Close on a directive for the opening bell.
 
 Never invent news or a mechanic the facts do not support. Overnight and today's calendar only. Do not recap yesterday's regular session.
@@ -140,7 +140,7 @@ function mechanicFor(headline: string | null): string | null {
     return "Funds that track that benchmark have to buy, which is why the gap is there before anyone has a new read on the business.";
   }
   if (/earn/i.test(headline)) {
-    return "That print is still being digested, which is why the price is moving faster than the story.";
+    return "That earnings number is still being digested, which is why the price is moving faster than the story.";
   }
   return null;
 }
