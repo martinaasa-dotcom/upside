@@ -1980,7 +1980,7 @@ export function CommunityView({ communityId }: Props) {
                         Shuffle
                       </Button>
                     </div>
-                    <ul className="flex flex-col gap-3">
+                    <ul className="divide-y divide-border">
                       {communityFunFacts.length === 0 ? (
                         <li className="text-sm text-muted-foreground">
                           Not enough data yet. Check back once portfolios load.
@@ -1989,9 +1989,17 @@ export function CommunityView({ communityId }: Props) {
                         communityFunFacts.map((fact, i) => (
                           <li
                             key={`${i}-${fact.slice(0, 24)}`}
-                            className="rounded-lg bg-muted p-4 text-sm leading-relaxed text-foreground"
+                            className="flex cursor-text gap-3 py-3.5 first:pt-0 last:pb-0"
                           >
-                            {fact}
+                            <span
+                              className="w-4 shrink-0 select-none text-sm tabular-nums text-muted-foreground"
+                              aria-hidden
+                            >
+                              {i + 1}
+                            </span>
+                            <p className="min-w-0 text-sm leading-relaxed text-foreground">
+                              {fact}
+                            </p>
                           </li>
                         ))
                       )}
