@@ -431,6 +431,14 @@ export function formatMovePct(pct: number | null): string {
   return `${pct >= 0 ? "+" : ""}${(pct * 100).toFixed(1)}%`;
 }
 
+/** Match model output like `$AAPL` or ` aapl ` to the candidate key. */
+export function pulseTickerKey(raw: string): string {
+  return String(raw ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/^\$+/, "");
+}
+
 const THESIS_STATUSES: ThesisStatus[] = ["intact", "watch", "broken"];
 const PULSE_ACTIONS: PulseAction[] = ["add", "hold", "trim", "sell", "watch"];
 
@@ -482,7 +490,7 @@ export function cleanThesisBreak(text: unknown): string {
 export function normalizePulseCheck(check: PulseCheck): PulseCheck {
   return {
     ...check,
-    ticker: String(check.ticker ?? "").toUpperCase(),
+    ticker: pulseTickerKey(check.ticker),
     thesisStatus: asEnum(check.thesisStatus, THESIS_STATUSES, "intact"),
     action: asEnum(check.action, PULSE_ACTIONS, "hold"),
     thesisBreak: cleanThesisBreak(check.thesisBreak),

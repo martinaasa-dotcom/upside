@@ -45,9 +45,8 @@ export const pulseReportSchema = z.object({
         .min(5)
         .max(50)
         .nullable()
-        .optional()
         .describe(
-          "Only when action=trim: modeled percent of the position for a take-off check (e.g. 10, 15, 20). Null otherwise, including for sell. Never write 'trim 10%' as an order in verdict."
+          "Required on every check. Only when action=trim: modeled percent of the position for a take-off check (e.g. 10, 15, 20). Null otherwise, including for sell. Never write 'trim 10%' as an order in verdict."
         ),
       addLevel: z
         .string()

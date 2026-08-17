@@ -809,7 +809,8 @@ export const PulsePage = memo(function PulsePage({
         setChecksByTicker((prev) => {
           const next = { ...prev };
           for (const check of newReport.checks ?? []) {
-            next[check.ticker.toUpperCase()] = reconcilePulseCheck(check);
+            const reconciled = reconcilePulseCheck(check);
+            next[reconciled.ticker] = reconciled;
           }
           return next;
         });
@@ -818,14 +819,14 @@ export const PulsePage = memo(function PulsePage({
           setCheckedAtByTicker((prev) => {
             const next = { ...prev };
             for (const check of newReport.checks ?? []) {
-              const key = check.ticker.toUpperCase();
+              const key = reconcilePulseCheck(check).ticker;
               if (!next[key]) next[key] = now;
             }
             return next;
           });
           for (const check of newReport.checks ?? []) {
-            const key = check.ticker.toUpperCase();
             const reconciled = reconcilePulseCheck(check);
+            const key = reconciled.ticker;
             const cachedAt =
               checkedAtByTickerRef.current[key] ?? now;
             savePulseTickerCache(key, {
@@ -842,13 +843,13 @@ export const PulsePage = memo(function PulsePage({
         setCheckedAtByTicker((prev) => {
           const next = { ...prev };
           for (const check of newReport.checks ?? []) {
-            next[check.ticker.toUpperCase()] = now;
+            next[reconcilePulseCheck(check).ticker] = now;
           }
           return next;
         });
         for (const check of newReport.checks ?? []) {
-          const key = check.ticker.toUpperCase();
           const reconciled = reconcilePulseCheck(check);
+          const key = reconciled.ticker;
           savePulseTickerCache(key, {
             check: reconciled,
             headlines: newHeadlines[key] ?? [],
@@ -873,6 +874,11 @@ export const PulsePage = memo(function PulsePage({
         setLastGeneratedAt(now);
       } catch (err) {
         if (isAbortError(err)) return;
+        setError(
+          err instanceof Error && err.message.trim()
+            ? err.message
+            : "Pulse check failed"
+        );
       } finally {
         for (const key of staleKeys) inFlightRef.current.delete(key);
         setCheckingTickers((prev) => {

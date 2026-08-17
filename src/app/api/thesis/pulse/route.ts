@@ -15,8 +15,10 @@ import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
+  buildFallbackPulseCheck,
   formatMovePct,
   isBigPulseMove,
+  pulseTickerKey,
   reconcilePulseCheck,
   type PulseCheck,
   type PulseCandidate,
@@ -55,18 +57,28 @@ type Body = {
 
 type CachedPulse = { check: PulseCheck; headlines: PulseHeadline[] };
 
+function checksForCandidates(
+  candidates: PulseCandidate[],
+  cachedMap: Map<string, CachedPulse>,
+  headlines: Record<string, PulseHeadline[]>
+): PulseCheck[] {
+  return candidates.map((c) => {
+    const symbol = pulseTickerKey(c.ticker);
+    const cached = cachedMap.get(symbol);
+    if (cached) return reconcilePulseCheck(cached.check);
+    headlines[symbol] = headlines[symbol] ?? [];
+    return reconcilePulseCheck(buildFallbackPulseCheck(c));
+  });
+}
+
 function reuseCachedPulse(
   candidates: PulseCandidate[],
   cachedMap: Map<string, CachedPulse>,
   headlines: Record<string, PulseHeadline[]>
 ) {
-  const checks = candidates.flatMap((c) => {
-    const cached = cachedMap.get(c.ticker.toUpperCase());
-    return cached ? [reconcilePulseCheck(cached.check)] : [];
-  });
   const report: PulseReport = {
     summary: humanizeMargusText(getCachedPulseSummary() ?? ""),
-    checks,
+    checks: checksForCandidates(candidates, cachedMap, headlines),
     generatedAt: new Date().toISOString(),
   };
   return Response.json({ report, headlines, reused: true });
@@ -218,7 +230,7 @@ async function handlePOST(req: Request) {
   const uncachedCandidates: PulseCandidate[] = [];
 
   for (const c of candidates) {
-    const symbol = c.ticker.toUpperCase();
+    const symbol = pulseTickerKey(c.ticker);
     const conv = convictions[symbol];
     const cacheKey = getPulseCacheKey(symbol, c.effectivePct, conv?.thesis, conv?.level);
     const cachedEntry = getCachedPulseCheck(cacheKey);
@@ -257,10 +269,10 @@ async function handlePOST(req: Request) {
   }
   const heldSlot = true;
 
-  const uncachedTickers = uncachedCandidates.map((c) => c.ticker);
+  const uncachedTickers = uncachedCandidates.map((c) => pulseTickerKey(c.ticker));
   const contexts = await fetchPulseContexts(uncachedTickers, { force });
   for (const t of uncachedTickers) {
-    headlines[t.toUpperCase()] = contexts[t.toUpperCase()]?.news ?? [];
+    headlines[t] = contexts[t]?.news ?? [];
   }
 
   try {
@@ -288,11 +300,12 @@ async function handlePOST(req: Request) {
     const modelChecks = (object.checks ?? []) as PulseCheck[];
     const newlyGeneratedMap = new Map<string, PulseCheck>();
     for (const check of modelChecks) {
-      newlyGeneratedMap.set(check.ticker.toUpperCase(), check);
+      const key = pulseTickerKey(check.ticker);
+      if (key) newlyGeneratedMap.set(key, check);
     }
 
     for (const candidate of uncachedCandidates) {
-      const symbol = candidate.ticker.toUpperCase();
+      const symbol = pulseTickerKey(candidate.ticker);
       const fromModel = newlyGeneratedMap.get(symbol);
       if (!fromModel) continue;
       const check = reconcilePulseCheck({
@@ -322,10 +335,7 @@ async function handlePOST(req: Request) {
       setCachedPulseSummary(object.summary);
     }
 
-    const checks: PulseCheck[] = candidates.flatMap((candidate) => {
-      const entry = cachedMap.get(candidate.ticker.toUpperCase());
-      return entry ? [reconcilePulseCheck(entry.check)] : [];
-    });
+    const checks = checksForCandidates(candidates, cachedMap, headlines);
 
     const report: PulseReport = humanizeMargusTree({
       summary: object.summary || getCachedPulseSummary() || "",
