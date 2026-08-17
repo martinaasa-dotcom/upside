@@ -64,6 +64,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { combineHouseholdNames } from "@/lib/auth/identity";
+import { copyText } from "@/lib/copy-text";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { overlapRows } from "@/lib/circle-overlap";
@@ -1201,8 +1202,42 @@ export function CommunityView({ communityId }: Props) {
     }
   }
 
-  async function copyInviteLink(url: string, key: string) {
-    await navigator.clipboard.writeText(url).catch(() => undefined);
+  async function copyInviteLink(url: string | null, key: string) {
+    let resolved = url;
+    if (!resolved && key !== "fresh") {
+      try {
+        const res = await fetch(
+          `/api/communities/${communityId}/invites/${key}`
+        );
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          path?: string;
+        };
+        if (!res.ok) {
+          throw new Error(plainError(data.error, "Couldn't copy that link."));
+        }
+        const path = typeof data.path === "string" ? data.path : "";
+        if (!path) throw new Error("Couldn't copy that link.");
+        resolved = `${window.location.origin}${path}`;
+        setInvites((rows) =>
+          rows.map((inv) => (inv.id === key ? { ...inv, path } : inv))
+        );
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Couldn't copy that link.");
+        return;
+      }
+    }
+    if (!resolved) {
+      setError("Couldn't copy that link.");
+      return;
+    }
+    const ok = await copyText(resolved);
+    if (!ok) {
+      setError("Couldn't copy that link. Select it and copy by hand.");
+      setInviteUrl(resolved);
+      return;
+    }
+    setError(null);
     setCopiedInviteId(key);
     later(() => setCopiedInviteId((id) => (id === key ? null : id)), 1500);
   }
@@ -1489,11 +1524,12 @@ export function CommunityView({ communityId }: Props) {
             isAdmin && community ? (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={openSettings}
-                title="Community settings"
-                aria-label="Community settings"
+                aria-expanded={settingsOpen}
+                aria-label="Settings"
+                title="Settings"
               >
                 <Settings />
               </Button>
@@ -1537,13 +1573,14 @@ export function CommunityView({ communityId }: Props) {
           {isAdmin && community && (
             <Button
               type="button"
-              variant="ghost"
-              size="icon"
+              variant="outline"
+              size="sm"
               onClick={openSettings}
-              title="Community settings"
-              aria-label="Community settings"
+              aria-expanded={settingsOpen}
+              aria-label="Settings"
             >
-              <Settings />
+              <Settings data-icon="inline-start" />
+              Settings
             </Button>
           )}
         </AppHeader>
@@ -1794,8 +1831,8 @@ export function CommunityView({ communityId }: Props) {
                   {effectiveView === "play" && achievements.length > 0 && (
                     <section className="overview-fade order-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
-                        <div className="rounded-xl bg-pink-500/15 p-2 text-pink-300">
-                          <Award className="h-4 w-4" />
+                        <div className="rounded-lg bg-muted p-2 text-muted-foreground">
+                          <Award className="size-4" />
                         </div>
                         <div>
                           <h3 className="text-sm font-medium tracking-tight text-foreground">
@@ -1806,32 +1843,33 @@ export function CommunityView({ communityId }: Props) {
                           </p>
                         </div>
                       </div>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {achievements.map((a) => (
-                          <div
-                            key={a.id}
-                            className="flex h-full flex-col rounded-lg bg-muted p-3.5"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl" aria-hidden>
-                                {a.emoji}
-                              </span>
-                              <p className="text-sm font-semibold text-foreground">
-                                {a.title}
-                              </p>
-                            </div>
-                            <p className="mt-1.5 truncate text-sm font-medium text-primary">
-                              {a.winner}{" "}
-                              <span className="font-normal text-muted-foreground">
-                                · {a.stat}
-                              </span>
-                            </p>
-                            <p className="mt-auto pt-1 text-sm leading-relaxed text-muted-foreground">
-                              {a.description}
-                            </p>
-                          </div>
+                      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
+                        {achievements.map((a, i) => (
+                          <Fragment key={a.id}>
+                            {i > 0 ? <ItemSeparator className="my-0" /> : null}
+                            <Item className="items-start px-0">
+                              <ItemMedia aria-hidden>
+                                <span className="text-base leading-none">
+                                  {a.emoji}
+                                </span>
+                              </ItemMedia>
+                              <ItemContent>
+                                <ItemTitle>{a.title}</ItemTitle>
+                                <ItemDescription className="line-clamp-none">
+                                  <span className="font-medium text-foreground">
+                                    {a.winner}
+                                  </span>
+                                  {" · "}
+                                  {a.stat}
+                                </ItemDescription>
+                                <ItemDescription className="line-clamp-none leading-relaxed">
+                                  {a.description}
+                                </ItemDescription>
+                              </ItemContent>
+                            </Item>
+                          </Fragment>
                         ))}
-                      </div>
+                      </ItemGroup>
                     </section>
                   )}
 
@@ -1852,7 +1890,7 @@ export function CommunityView({ communityId }: Props) {
                           </div>
                         </div>
                       </div>
-                      <ul className="flex flex-col gap-2">
+                      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                         {[...membersWithBooks]
                           .sort(
                             (a, b) => (b.todayPct ?? -1) - (a.todayPct ?? -1)
@@ -1860,63 +1898,78 @@ export function CommunityView({ communityId }: Props) {
                           .map((m, i) => {
                             const pct = m.todayPct;
                             return (
-                              <li key={m.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedOwnerId(m.id);
-                                    setSelectedPortfolioId(null);
-                                  }}
-                                  className="flex w-full items-center gap-3 rounded-lg bg-muted px-3.5 py-2.5 text-left transition hover:bg-accent"
+                              <Fragment key={m.id}>
+                                {i > 0 ? (
+                                  <ItemSeparator className="my-0" />
+                                ) : null}
+                                <Item
+                                  asChild
+                                  size="sm"
+                                  className="px-0 hover:bg-muted"
                                 >
-                                <span className="w-6 shrink-0 text-center">
-                                  {i === 0 ? (
-                                    <Medal className="mx-auto h-4 w-4 text-caution" />
-                                  ) : i === 1 ? (
-                                    <Medal className="mx-auto h-4 w-4 text-muted-foreground" />
-                                  ) : i === 2 ? (
-                                    <Medal className="mx-auto h-4 w-4 text-caution" />
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">
-                                      {i + 1}
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                                  {m.name}
-                                  {m.isYou && (
-                                    <span className="ml-1.5 text-sm text-muted-foreground">
-                                      (you)
-                                    </span>
-                                  )}
-                                </span>
-                                {/* Both numeric columns are fixed-width and
-                                  * right-aligned. Without a width they only
-                                  * packed against the right edge, so a row
-                                  * showing -$5,114.99 pushed its percent
-                                  * left of a row showing +$0.81 and the
-                                  * column zig-zagged down the list. */}
-                                <span
-                                  className={cn(
-                                    "w-16 shrink-0 text-right text-sm font-semibold tabular-nums",
-                                    signedTone(pct, "text-muted-foreground")
-                                  )}
-                                >
-                                  {pct != null ? percent(pct) : "—"}
-                                </span>
-                                <span
-                                  className={cn(
-                                    "hidden w-24 shrink-0 text-right text-sm tabular-nums sm:inline-block",
-                                    signedTone(m.todayDollar, "text-muted-foreground")
-                                  )}
-                                >
-                                  {signedCurrency(m.todayDollar, 0)}
-                                </span>
-                                </button>
-                              </li>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedOwnerId(m.id);
+                                      setSelectedPortfolioId(null);
+                                    }}
+                                    className="cursor-pointer text-left"
+                                  >
+                                    <ItemMedia>
+                                      {i === 0 ? (
+                                        <Medal className="size-4 text-caution" />
+                                      ) : i === 1 ? (
+                                        <Medal className="size-4 text-muted-foreground" />
+                                      ) : i === 2 ? (
+                                        <Medal className="size-4 text-caution" />
+                                      ) : (
+                                        <span className="w-4 text-center text-sm tabular-nums text-muted-foreground">
+                                          {i + 1}
+                                        </span>
+                                      )}
+                                    </ItemMedia>
+                                    <ItemContent>
+                                      <ItemTitle>
+                                        {m.name}
+                                        {m.isYou ? (
+                                          <span className="font-normal text-muted-foreground">
+                                            (you)
+                                          </span>
+                                        ) : null}
+                                      </ItemTitle>
+                                    </ItemContent>
+                                    {/* Fixed-width so a wide dollar figure
+                                      * cannot shove the percent column. */}
+                                    <ItemActions className="shrink-0">
+                                      <span
+                                        className={cn(
+                                          "w-16 text-right text-sm font-semibold tabular-nums",
+                                          signedTone(
+                                            pct,
+                                            "text-muted-foreground"
+                                          )
+                                        )}
+                                      >
+                                        {pct != null ? percent(pct) : "—"}
+                                      </span>
+                                      <span
+                                        className={cn(
+                                          "hidden w-24 text-right text-sm tabular-nums sm:inline-block",
+                                          signedTone(
+                                            m.todayDollar,
+                                            "text-muted-foreground"
+                                          )
+                                        )}
+                                      >
+                                        {signedCurrency(m.todayDollar, 0)}
+                                      </span>
+                                    </ItemActions>
+                                  </button>
+                                </Item>
+                              </Fragment>
                             );
                           })}
-                      </ul>
+                      </ItemGroup>
                     </section>
                   )}
 
@@ -2022,30 +2075,34 @@ export function CommunityView({ communityId }: Props) {
                         Shuffle
                       </Button>
                     </div>
-                    <ul className="divide-y divide-border">
-                      {communityFunFacts.length === 0 ? (
-                        <li className="text-sm text-muted-foreground">
-                          Not enough data yet. Check back once portfolios load.
-                        </li>
-                      ) : (
-                        communityFunFacts.map((fact, i) => (
-                          <li
-                            key={`${i}-${fact.slice(0, 24)}`}
-                            className="flex cursor-text gap-3 py-3.5 first:pt-0 last:pb-0"
-                          >
-                            <span
-                              className="w-4 shrink-0 select-none text-sm tabular-nums text-muted-foreground"
-                              aria-hidden
-                            >
-                              {i + 1}
-                            </span>
-                            <p className="min-w-0 text-sm leading-relaxed text-foreground">
-                              {fact}
-                            </p>
-                          </li>
-                        ))
-                      )}
-                    </ul>
+                    {communityFunFacts.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Not enough data yet. Check back once portfolios load.
+                      </p>
+                    ) : (
+                      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
+                        {communityFunFacts.map((fact, i) => (
+                          <Fragment key={`${i}-${fact.slice(0, 24)}`}>
+                            {i > 0 ? (
+                              <ItemSeparator className="my-0" />
+                            ) : null}
+                            <Item className="items-start px-0">
+                              <ItemMedia
+                                className="w-4 justify-start text-sm tabular-nums text-muted-foreground"
+                                aria-hidden
+                              >
+                                {i + 1}
+                              </ItemMedia>
+                              <ItemContent>
+                                <ItemDescription className="line-clamp-none text-foreground leading-relaxed">
+                                  {fact}
+                                </ItemDescription>
+                              </ItemContent>
+                            </Item>
+                          </Fragment>
+                        ))}
+                      </ItemGroup>
+                    )}
                   </section>
                   )}
                 </div>
@@ -2309,38 +2366,37 @@ export function CommunityView({ communityId }: Props) {
                   </section>
 
                   {isAdmin && joinRequests.length > 0 && (
-                    <section className="flex flex-col gap-3 rounded-lg bg-muted p-6">
+                    <section className="flex flex-col gap-3 rounded-xl bg-card p-6 ring-1 ring-foreground/10">
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        <UserCheck className="size-4 text-muted-foreground" />
                         Join requests
-                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-sm font-semibold text-primary-foreground">
-                          {joinRequests.length}
-                        </span>
+                        <Badge variant="secondary">{joinRequests.length}</Badge>
                       </h2>
                       <p className="text-sm text-muted-foreground">
                         This community is public, so anyone can ask to join,
                         but nothing happens until you approve them here.
                       </p>
-                      <ul className="flex flex-col gap-2">
+                      <ItemGroup>
                         {joinRequests.map((r) => (
-                          <li
-                            key={r.id}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2.5"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate text-sm text-foreground">
-                                {r.profile?.display_name ?? r.profile?.email ?? "Unknown"}
-                              </p>
-                              <p className="truncate text-sm text-muted-foreground">
+                          <Item key={r.id} className="px-0">
+                            <ItemContent>
+                              <ItemTitle>
+                                {r.profile?.display_name ??
+                                  r.profile?.email ??
+                                  "Unknown"}
+                              </ItemTitle>
+                              <ItemDescription>
                                 {r.profile?.email}
-                              </p>
-                            </div>
-                            <div className="flex shrink-0 gap-1.5">
+                              </ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
                               <Button
                                 type="button"
                                 size="xs"
                                 disabled={joinDecisionBusyId === r.user_id}
-                                onClick={() => void decideJoinRequest(r.user_id, "approve")}
+                                onClick={() =>
+                                  void decideJoinRequest(r.user_id, "approve")
+                                }
                               >
                                 Approve
                               </Button>
@@ -2349,14 +2405,16 @@ export function CommunityView({ communityId }: Props) {
                                 size="xs"
                                 variant="outline"
                                 disabled={joinDecisionBusyId === r.user_id}
-                                onClick={() => void decideJoinRequest(r.user_id, "reject")}
+                                onClick={() =>
+                                  void decideJoinRequest(r.user_id, "reject")
+                                }
                               >
                                 Decline
                               </Button>
-                            </div>
-                          </li>
+                            </ItemActions>
+                          </Item>
                         ))}
-                      </ul>
+                      </ItemGroup>
                     </section>
                   )}
 
@@ -2388,7 +2446,7 @@ export function CommunityView({ communityId }: Props) {
                           value={inviteDays}
                           onChange={(e) => setInviteDays(e.target.value)}
                           placeholder="Days live (optional)"
-                          className="w-[9.5rem]"
+                          className="no-spinner w-[14rem] min-w-[14rem] shrink-0"
                         />
                         <Button
                           type="button"
@@ -2400,33 +2458,37 @@ export function CommunityView({ communityId }: Props) {
                         </Button>
                       </div>
                       {inviteUrl && (
-                        <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted px-3 py-2">
-                          {inviteEmailed > 0 && (
-                            <p className="text-sm text-foreground">
-                              {inviteEmailed === 1
-                                ? "Sent the link to 1 person."
-                                : `Sent the link to ${inviteEmailed} people.`}
-                            </p>
-                          )}
-                          <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 flex-1 break-all text-sm text-foreground">
-                            {inviteUrl}
-                          </p>
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="outline"
-                            onClick={() => void copyInviteLink(inviteUrl, "fresh")}
-                          >
-                            {copiedInviteId === "fresh" ? (
-                              <Check data-icon="inline-start" />
-                            ) : (
-                              <Copy data-icon="inline-start" />
-                            )}
-                            {copiedInviteId === "fresh" ? "Copied" : "Copy"}
-                          </Button>
-                          </div>
-                        </div>
+                        <Item className="items-start px-0">
+                          <ItemContent>
+                            {inviteEmailed > 0 ? (
+                              <ItemTitle>
+                                {inviteEmailed === 1
+                                  ? "Sent the link to 1 person."
+                                  : `Sent the link to ${inviteEmailed} people.`}
+                              </ItemTitle>
+                            ) : null}
+                            <ItemDescription className="line-clamp-none break-all text-foreground">
+                              {inviteUrl}
+                            </ItemDescription>
+                          </ItemContent>
+                          <ItemActions>
+                            <Button
+                              type="button"
+                              size="xs"
+                              variant="outline"
+                              onClick={() =>
+                                void copyInviteLink(inviteUrl, "fresh")
+                              }
+                            >
+                              {copiedInviteId === "fresh" ? (
+                                <Check data-icon="inline-start" />
+                              ) : (
+                                <Copy data-icon="inline-start" />
+                              )}
+                              {copiedInviteId === "fresh" ? "Copied" : "Copy"}
+                            </Button>
+                          </ItemActions>
+                        </Item>
                       )}
                       {invites.length > 0 && (
                         <ItemGroup className="gap-2">
@@ -2481,27 +2543,18 @@ export function CommunityView({ communityId }: Props) {
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    disabled={!live || !url}
-                                    title={
-                                      live && !url
-                                        ? "This one was made before we kept the URL. Make a new link."
-                                        : "Copy invite link"
+                                    disabled={!live}
+                                    title="Copy invite link"
+                                    onClick={() =>
+                                      void copyInviteLink(url, inv.id)
                                     }
-                                    onClick={() => {
-                                      if (!url) return;
-                                      void copyInviteLink(url, inv.id);
-                                    }}
                                   >
                                     {copied ? (
                                       <Check data-icon="inline-start" />
                                     ) : (
                                       <Copy data-icon="inline-start" />
                                     )}
-                                    {copied
-                                      ? "Copied"
-                                      : inv.hint
-                                        ? `···${inv.hint}`
-                                        : "Copy link"}
+                                    {copied ? "Copied" : "Copy link"}
                                   </Button>
                                   {live ? (
                                     <Button
@@ -2790,30 +2843,18 @@ export function CommunityView({ communityId }: Props) {
                   ? "Public: anyone signed in can find this community and ask to join. You still approve every request."
                   : "Private: invite-only. No one can find or join without a link."}
               </p>
-              <div className="mt-2 flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
-                {(
-                  [
-                    ["private", Lock, "Private"],
-                    ["public", Globe, "Public"],
-                  ] as const
-                ).map(([id, Icon, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    disabled={settingsBusy}
-                    onClick={() => void handleVisibilityChange(id)}
-                    className={cn(
-                      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition disabled:opacity-50",
-                      (community?.visibility ?? "private") === id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <Segmented
+                className="mt-2"
+                ariaLabel="Visibility"
+                columns={2}
+                disabled={settingsBusy}
+                value={community?.visibility ?? "private"}
+                onChange={(id) => void handleVisibilityChange(id)}
+                options={[
+                  { id: "private" as const, label: "Private" },
+                  { id: "public" as const, label: "Public" },
+                ]}
+              />
             </div>
             )}
 

@@ -16,7 +16,7 @@ import {
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { quoteAsOfTitle } from "@/lib/market/quote-freshness";
 import { Button } from "@/components/ui/button";
-import { Card, MicroLabel } from "@/components/ui/Panel";
+import { Card, MicroLabel, Segmented } from "@/components/ui/Panel";
 import {
   blockWheelChange,
   formatDecimal,
@@ -420,28 +420,21 @@ export const PortfolioTable = memo(function PortfolioTable({
           <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (
             <div
-              className="flex rounded-lg border border-border bg-muted/50 p-0.5"
               title={
                 eurUsd && eurUsd > 0
                   ? `Converted at ${formatEurUsdHint(eurUsd)}. Cost, value, and gain or loss follow this switch. Share prices stay in each listing's own money.`
                   : "Waiting on the euro rate"
               }
             >
-                  {(["USD", "EUR"] as const).map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => onDisplayCurrencyChange(code)}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-sm font-medium transition",
-                    displayCurrency === code
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {code}
-                </button>
-              ))}
+              <Segmented
+                ariaLabel="Show amounts in"
+                value={displayCurrency}
+                onChange={onDisplayCurrencyChange}
+                options={[
+                  { id: "USD", label: "USD" },
+                  { id: "EUR", label: "EUR" },
+                ]}
+              />
             </div>
           )}
         </div>
