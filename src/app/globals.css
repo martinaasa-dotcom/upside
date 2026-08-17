@@ -34,8 +34,8 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.205 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -162,7 +162,7 @@ h3,
 h4 {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.025em;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Hide scrollbars in horizontal tab rails (still scrollable). */

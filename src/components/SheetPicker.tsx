@@ -98,7 +98,7 @@ export function SheetPicker({ sheets, value, onChange, onAdd }: Props) {
             data-sheet-picker={menuId}
             role="menu"
             aria-label="Sheets"
-            className="fixed z-[80] max-h-[min(24rem,70vh)] min-w-[13.5rem] overflow-y-auto rounded-lg border border-border bg-card py-1 shadow-xl"
+            className="fixed z-[80] max-h-[min(24rem,70vh)] min-w-[13.5rem] overflow-y-auto rounded-lg border border-border bg-card py-1 shadow-sm"
             style={{ top: pos.top, left: pos.left }}
           >
             <PickerRow
@@ -130,7 +130,7 @@ export function SheetPicker({ sheets, value, onChange, onAdd }: Props) {
                     setOpen(false);
                     onAdd();
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm text-foreground hover:bg-hover sm:py-2.5"
+                  className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm text-foreground hover:bg-accent sm:py-2.5"
                 >
                   <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
                   New sheet
@@ -162,8 +162,8 @@ function PickerRow({
       className={cn(
         "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm sm:py-2.5",
         selected
-          ? "bg-hover text-foreground"
-          : "text-foreground hover:bg-hover"
+          ? "bg-accent text-foreground"
+          : "text-foreground hover:bg-accent"
       )}
     >
       <span className="min-w-0 truncate">{label}</span>

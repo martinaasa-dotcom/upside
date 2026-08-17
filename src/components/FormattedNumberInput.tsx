@@ -1,4 +1,5 @@
 import { cn } from "@/lib/format";
+import { Input } from "@/components/ui/input";
 import type { CurrencyCode } from "@/lib/format-live-input";
 import {
   caretIndexPreferDot,
@@ -102,7 +103,7 @@ export function FormattedNumberInput(props: FormattedNumberInputProps) {
   }
 
   return (
-    <input
+    <Input
       ref={inputRef}
       id={id}
       type="text"

@@ -59,11 +59,11 @@ export function CommandPalette({ open, onClose, items }: Props) {
     <ViewportOverlay className="z-[90] flex items-start justify-center px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-3 sm:pt-[12vh]">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close command palette"
         onClick={onClose}
       />
-      <div className="relative max-h-[min(100%,32rem)] w-full max-w-lg overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-2xl sm:max-h-[min(70dvh,32rem)]">
+      <div className="relative max-h-[min(100%,32rem)] w-full max-w-lg overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 sm:max-h-[min(70dvh,32rem)]">
         <input
           ref={inputRef}
           value={q}
@@ -102,7 +102,7 @@ export function CommandPalette({ open, onClose, items }: Props) {
                   "flex w-full items-baseline justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm sm:py-2",
                   i === active
                     ? "bg-primary text-primary-foreground"
-                    : "text-foreground/80 hover:bg-well"
+                    : "text-foreground/80 hover:bg-muted"
                 )}
               >
                 <span>

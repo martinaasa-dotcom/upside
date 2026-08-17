@@ -161,7 +161,7 @@ function InlineNumber({
         }
       }}
       className={cn(
-        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50",
+        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50",
         className ?? "mx-auto w-full max-w-[4.5rem]"
       )}
     />
@@ -420,7 +420,7 @@ export const PortfolioTable = memo(function PortfolioTable({
           <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (
             <div
-              className="flex rounded-lg border border-border bg-well/50 p-0.5"
+              className="flex rounded-lg border border-border bg-muted/50 p-0.5"
               title={
                 eurUsd && eurUsd > 0
                   ? `Converted at ${formatEurUsdHint(eurUsd)}. Cost, value, and gain or loss follow this switch. Share prices stay in each listing's own money.`
@@ -446,13 +446,13 @@ export const PortfolioTable = memo(function PortfolioTable({
           )}
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-well/50 py-1 pl-1 pr-1">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/50 py-1 pl-1 pr-1">
             {canAdd && onImportCsv && holdings.length > 0 && (
               <button
                 type="button"
                 onClick={onImportCsv}
                 title="Import / update holdings from a CSV file"
-                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground/80"
+                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground/80"
                 aria-label="Import CSV"
               >
                 <FileUp className="h-3.5 w-3.5" />
@@ -462,7 +462,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               type="button"
               onClick={canCash ? onEditCash : undefined}
               disabled={!canCash}
-              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-hover disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-accent disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
               <span className="text-sm font-medium text-muted-foreground">
@@ -484,7 +484,7 @@ export const PortfolioTable = memo(function PortfolioTable({
       {/* Mobile / tablet cards. The 13-col table needs the 1080px column. */}
       <div className="flex flex-col gap-3 p-4 lg:hidden">
         {holdings.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-raised px-4 py-8 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-muted px-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">No holdings in this portfolio yet.</p>
             {emptyCta}
           </div>
@@ -512,7 +512,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded-md p-2.5 text-muted-foreground hover:bg-hover hover:text-loss"
+                  className="rounded-md p-2.5 text-muted-foreground hover:bg-accent hover:text-loss"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -606,7 +606,7 @@ export const PortfolioTable = memo(function PortfolioTable({
         )}
 
         {holdings.length > 0 && (
-          <div className="rounded-xl border border-border bg-raised px-4 py-4 text-sm">
+          <div className="rounded-xl border border-border bg-muted px-4 py-4 text-sm">
             <div className="flex justify-between font-semibold">
               <span className="text-foreground">Portfolio</span>
               <span className={cn("tabular-nums", signedTone(totals.roiPct))}>
@@ -684,7 +684,7 @@ export const PortfolioTable = memo(function PortfolioTable({
             {sortedHoldings.map((h) => {
               const listed = rowMoney(h);
               return (
-              <FluidRow key={h.id} className="group hover:bg-well/50">
+              <FluidRow key={h.id} className="group hover:bg-muted/50">
                 <div
                   className={cn(
                     tickerCell,

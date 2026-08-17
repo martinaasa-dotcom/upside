@@ -40,18 +40,18 @@ import {
  *              Nested is bg-muted. Never a card inside a card.
  *   Card       ring-1 ring-foreground/10. Nested boxes are muted, no second ring.
  *   Type scale, the only sizes a person should see:
- *   text-xs    12  tables and chart ticks only. Not labels. Not chips.
+ *   text-xs    12  labels, captions, table ticks, badges
  *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
  *              which scales with the viewBox and blows up on a wide screen.
- *   text-sm    14  labels, meta, chips, chrome, inputs, buttons, nav
- *   text-base  16  titles, tickers, Metric figures, briefing / thesis prose
+ *   text-sm    14  body, chrome, inputs, buttons, nav, reading copy
+ *   text-base  16  titles, tickers, Metric figures
  *   text-lg    18  hero panel title, and every scoreboard figure
  *   text-2xl   24  one hero number per page (compound result). Not a row of tiles.
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-3xl or text-4xl. The logo lockup is the exception.
  *   Headings   text-sm font-medium tracking-tight (hero: text-base) · sentence case
  *   Type       Geist for titles, body, labels, and money. Lockup too.
- *   Micro      text-sm font-medium text-muted-foreground · sentence case
+ *   Micro      text-xs font-medium text-muted-foreground · sentence case
  *              Caps stay on the logo only.
  *   Metrics    A row of numbers is ONE box (Scoreboard) with hairline
  *              columns (Score). Do not nest four Stat tiles in a panel.
@@ -219,14 +219,14 @@ export function PanelHeader({
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
-              "font-heading font-medium tracking-tight text-foreground",
+              "font-heading font-semibold tracking-tight text-foreground",
               hero ? "text-base" : "text-sm"
             )}
           >
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
               {subtitle}
             </p>
           ) : null}
@@ -290,7 +290,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-1 text-sm font-medium text-muted-foreground",
+        "flex items-center gap-1 text-xs font-medium text-muted-foreground",
         className
       )}
     >
@@ -322,12 +322,12 @@ export function Reading({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-sm font-medium text-muted-foreground">{label}</div>
+        <div className="text-xs font-medium text-muted-foreground">{label}</div>
       ) : null}
       <div
         className={cn(
           label != null && label !== "" && "mt-2",
-          "text-base leading-relaxed"
+          "text-sm leading-relaxed"
         )}
       >
         {children}
@@ -396,7 +396,7 @@ export function ScanList({
     >
       {label != null && label !== "" ? (
         <div className="border-b border-border px-4 py-3">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
         </div>
       ) : null}
       <ul>
@@ -425,7 +425,7 @@ export function ScanList({
                 <button
                   type="button"
                   onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-hover"
+                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-accent"
                 >
                   {body}
                 </button>
@@ -494,7 +494,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
       {open && (
         <span
           role="tooltip"
-          className="absolute left-1/2 top-full z-30 mt-1 w-52 -translate-x-1/2 rounded-lg border border-border bg-raised px-3 py-2.5 text-sm font-normal normal-case leading-relaxed tracking-normal text-foreground shadow-xl"
+          className="absolute left-1/2 top-full z-30 mt-1 w-52 -translate-x-1/2 rounded-lg border border-border bg-popover px-3 py-2.5 text-xs font-normal normal-case leading-relaxed tracking-normal text-popover-foreground shadow-sm"
         >
           {text}
         </span>
@@ -704,7 +704,7 @@ export function Segmented<T extends string>({
         disabled={disabled}
         aria-label={ariaLabel}
         className={cn(
-          "max-w-full min-w-0 border border-border bg-well p-0.5",
+          "max-w-full min-w-0 border border-border bg-muted p-0.5",
           className
         )}
       >
@@ -742,10 +742,10 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "touch-target flex min-w-0 items-center justify-center bg-well px-2 py-2.5 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
+            "touch-target flex min-w-0 items-center justify-center bg-muted px-2 py-2.5 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
             value === o.id
               ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-hover hover:text-foreground"
+              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           )}
         >
           <span className="block max-w-full text-center leading-snug break-words">
@@ -787,7 +787,7 @@ export function Pill({
       title={title}
       variant={variant}
       className={cn(
-        "h-auto rounded-lg px-3 py-1.5 text-sm font-medium",
+        "h-auto rounded-lg px-2.5 py-0.5 text-xs font-medium",
         PILL_TONES[tone],
         className
       )}

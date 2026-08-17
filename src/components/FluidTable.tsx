@@ -58,7 +58,7 @@ export function FluidRow({
     <div
       className={cn(
         "col-span-full -mx-1.5 box-border grid h-10 w-full grid-cols-subgrid items-center justify-items-stretch px-1.5",
-        footer ? "bg-well/60" : "border-b border-border/50",
+        footer ? "bg-muted/60" : "border-b border-border/50 hover:bg-muted/50",
         className
       )}
     >

@@ -118,10 +118,10 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 aria-pressed={isSelected}
                 onClick={() => setSelectedShock(s.id)}
                 className={cn(
-                  "flex min-w-0 items-center justify-center gap-1.5 bg-well px-2 py-2.5 text-sm font-medium transition",
+                  "flex min-w-0 items-center justify-center gap-1.5 bg-muted px-2 py-2.5 text-sm font-medium transition",
                   isSelected
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-hover hover:text-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
                 <Icon
@@ -268,7 +268,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             {analysis.themeBreakdown.map((t) => (
               <div
                 key={t.theme}
-                className="flex h-full items-center justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2 text-sm"
+                className="flex h-full items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2 text-sm"
               >
                 <span className="truncate text-foreground/80">{t.theme}</span>
                 <span
@@ -437,7 +437,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               {sortedRows.map((r) => (
                 <tr
                   key={r.ticker}
-                  className="border-b border-border transition hover:bg-hover/30"
+                  className="border-b border-border transition hover:bg-accent/30"
                 >
                   <td className={cn(tickerTd, "font-semibold text-foreground")}>
                     <TickerSymbol
@@ -453,7 +453,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                       className={cn(
                         "inline-block rounded px-1.5 py-0.5 text-xs font-semibold tabular-nums",
                         r.movePct === 0
-                          ? "bg-hover text-muted-foreground"
+                          ? "bg-accent text-muted-foreground"
                           : r.movePct > 0
                             ? "bg-gain/15 text-gain ring-1 ring-gain/30"
                             : "bg-loss/15 text-loss ring-1 ring-loss/30"

@@ -67,7 +67,7 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50"
+        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50"
       />
       <span className="text-sm text-muted-foreground">%</span>
     </div>
@@ -119,7 +119,7 @@ function InlineStockTarget({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50"
+        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50"
       />
     </div>
   );
@@ -342,7 +342,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
           )}
 
           {rows.map((r) => (
-            <FluidRow key={r.holding.id} className="hover:bg-well/50">
+            <FluidRow key={r.holding.id} className="hover:bg-muted/50">
               <div
                 className={cn(
                   tickerCell,

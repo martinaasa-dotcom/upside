@@ -41,11 +41,11 @@ export function CostBasisModal({
     <ViewportOverlay className="z-[85] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-2xl">
+      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10">
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
           <div>
             <h3 className="text-base font-semibold text-foreground">
@@ -61,7 +61,7 @@ export function CostBasisModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -90,7 +90,7 @@ export function CostBasisModal({
                 digits={2}
                 value={r.buyPrice}
                 onChange={(n) => onChangeRow(r.ticker, n)}
-                className="rounded-lg border border-border bg-well px-2 py-1.5 text-sm text-foreground outline-none focus:border-ring"
+                className="w-[6.5rem]"
               />
             </label>
           ))}

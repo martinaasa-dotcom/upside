@@ -24,7 +24,7 @@ type Props = {
 };
 
 const ICON_BTN =
-  "inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-hover hover:text-foreground";
+  "inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-accent hover:text-foreground";
 
 function hasVisibleTitle(title: ReactNode) {
   if (title == null || title === false) return false;

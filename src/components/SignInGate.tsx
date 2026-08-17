@@ -219,7 +219,7 @@ function BookStill() {
         {SAMPLE_MOVERS.map((row) => (
           <div
             key={row.ticker}
-            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-raised py-3 pl-4 pr-4"
+            className="relative grid grid-cols-[1fr_auto] items-center gap-3 overflow-hidden rounded-xl border border-border bg-muted py-3 pl-4 pr-4"
           >
             <span
               className={cn(
@@ -257,7 +257,7 @@ function BookStill() {
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
-      <div className={cn("mt-3 rounded-xl border border-border bg-raised", NESTED_PAD)}>
+      <div className={cn("mt-3 rounded-xl border border-border bg-muted", NESTED_PAD)}>
         <div className={SPLIT_ROW}>
           <div className={SPLIT_COPY}>
             <div className="flex flex-wrap items-center gap-2">

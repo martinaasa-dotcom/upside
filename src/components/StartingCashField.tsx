@@ -1,5 +1,6 @@
 "use client";
 
+import { Input } from "@/components/ui/input";
 import { HairlineGrid } from "@/components/ui/Panel";
 import { CLASS_CASH_PRESETS, formatCashDigits, parseCashDigits } from "@/lib/class-templates";
 import { MAX_STARTING_CASH, MIN_STARTING_CASH } from "@/lib/classroom";
@@ -36,10 +37,10 @@ export function StartingCashField({
             disabled={disabled}
             onClick={() => onChange(n)}
             className={cn(
-              "bg-well px-2 py-2.5 text-sm tabular-nums transition disabled:opacity-50",
+              "bg-muted px-2 py-2.5 text-sm tabular-nums transition disabled:opacity-50",
               value === n
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-hover hover:text-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground"
             )}
           >
             ${formatCashDigits(n)}
@@ -48,7 +49,7 @@ export function StartingCashField({
       </HairlineGrid>
       <label className="mt-4 block">
         <span className="text-sm font-medium text-muted-foreground">Or type another amount</span>
-        <input
+        <Input
           inputMode="numeric"
           autoComplete="off"
           disabled={disabled}
@@ -64,7 +65,7 @@ export function StartingCashField({
             setText(`$${formatCashDigits(next)}`);
             if (next >= MIN_STARTING_CASH) onChange(next);
           }}
-          className="mt-2 w-full max-w-xs rounded-lg border border-border bg-well px-3 py-2.5 text-sm tabular-nums text-foreground outline-none focus:border-ring disabled:opacity-50"
+          className="mt-2 max-w-xs tabular-nums"
         />
       </label>
     </div>

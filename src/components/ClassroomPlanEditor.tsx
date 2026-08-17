@@ -11,6 +11,11 @@ import {
 } from "@/lib/classroom";
 import { cn } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { useState } from "react";
 
 function fromLocalInput(value: string): string | null {
@@ -125,7 +130,7 @@ export function ClassroomPlanEditor({
           {scheduled.map((p) => (
             <li
               key={p.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2.5"
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2.5"
             >
               <span className="min-w-0 text-sm text-foreground/80">
                 {classPeriodLabel(p.kind)}
@@ -160,35 +165,35 @@ export function ClassroomPlanEditor({
         </ul>
       )}
 
-      <div className="flex flex-col mt-6 gap-3 rounded-lg border border-border bg-raised p-4">
+      <div className="flex flex-col mt-6 gap-3 rounded-lg border border-border bg-muted p-4">
         <p className="text-sm font-medium text-muted-foreground">Add a stretch</p>
-        <select
+        <NativeSelect
           value={draftKind}
           onChange={(e) => setDraftKind(e.target.value as ClassPeriodKind)}
-          className="w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
+          className="w-full"
         >
           {KINDS.map((k) => (
-            <option key={k.id} value={k.id}>
+            <NativeSelectOption key={k.id} value={k.id}>
               {k.label}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
         <label className="block text-sm text-muted-foreground">
           Starts
-          <input
+          <Input
             type="datetime-local"
             value={draftStart}
             onChange={(e) => setDraftStart(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
+            className="mt-1"
           />
         </label>
         <label className="block text-sm text-muted-foreground">
           Ends (optional)
-          <input
+          <Input
             type="datetime-local"
             value={draftEnd}
             onChange={(e) => setDraftEnd(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-well px-2.5 py-1.5 text-sm text-foreground"
+            className="mt-1"
           />
         </label>
         {draftError ? (

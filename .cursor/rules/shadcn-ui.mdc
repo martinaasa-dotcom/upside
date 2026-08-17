@@ -16,7 +16,8 @@ Money up/down is `text-gain` / `text-destructive`. Not a wash.
 
 ## Density
 
-One scale: `p-4` / `gap-4` / `text-sm`. Controls are `h-8` / `rounded-lg`. Page gutter is `px-4`. Do not invent `p-5`, `p-panel`, or a tighter mobile pad.
+- Primary UI body text: `text-sm`. Captions, labels, and badges: `text-xs` `text-muted-foreground`.
+- Controls are `h-8` / `rounded-lg`. Page gutter is `px-4`. Do not invent `p-5`, `p-panel`, or a tighter mobile pad.
 
 ## Primitives
 

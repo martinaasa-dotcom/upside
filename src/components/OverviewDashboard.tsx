@@ -229,8 +229,8 @@ function EmptyBook({
                 "group rounded-xl border text-left transition active:scale-[0.99]",
                 NESTED_PAD,
                 r.primary
-                  ? "border-border bg-hover hover:border-foreground/20 hover:bg-hover"
-                  : "border-border bg-raised hover:border-border hover:bg-well/70"
+                  ? "border-border bg-accent hover:border-foreground/20 hover:bg-accent"
+                  : "border-border bg-muted hover:border-border hover:bg-muted/70"
               )}
             >
               <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">
@@ -390,7 +390,7 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl border border-border bg-raised px-3.5 py-3 text-left"
+              className="w-full rounded-xl border border-border bg-muted px-3.5 py-3 text-left"
             >
               <MicroLabel>
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
@@ -426,7 +426,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-raised py-3.5 pl-4 pr-3 text-left transition hover:bg-accent sm:gap-3 sm:pr-4"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-muted py-3.5 pl-4 pr-3 text-left transition hover:bg-accent sm:gap-3 sm:pr-4"
     >
       <span
         className={cn(
@@ -477,7 +477,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-border bg-hover/60 p-4 text-left transition hover:bg-accent"
+      className="group w-full min-h-11 rounded-xl border border-border bg-accent/60 p-4 text-left transition hover:bg-accent"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -496,7 +496,7 @@ function PortfolioLane({
         </p>
       </div>
 
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-hover">
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-accent">
         <div
           className={cn(
             "overview-bar h-full rounded-full",

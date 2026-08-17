@@ -63,6 +63,11 @@ import {
   Scoreboard,
   Segmented,
 } from "@/components/ui/Panel";
+import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 
 type CurrencyCode = DisplayCurrency;
@@ -72,8 +77,7 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
   { code: "EUR", label: "EUR" },
 ];
 
-const FIELD_CLASS =
-  "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold tabular-nums text-foreground outline-none focus:border-ring";
+const FIELD_CLASS = "w-full min-w-0 max-w-full font-semibold tabular-nums";
 
 const SHEET_PANEL = "h-auto min-w-0 max-w-full lg:h-full";
 
@@ -160,16 +164,14 @@ function MilestoneLadderRow({
       {logOpen ? (
         <label className="block px-3 pb-3">
           <span className="text-sm text-muted-foreground">Got there on</span>
-          <input
+          <Input
             type="date"
             aria-label={`Date you reached ${amount}`}
             value={row.actualDate ?? ""}
             onChange={(e) => onSetActual(row.goal, e.target.value)}
             className={cn(
-              "mt-1 w-full rounded-lg border bg-well px-2.5 py-1.5 text-sm tabular-nums outline-none focus:border-ring",
-              done
-                ? "border-gain/40 text-gain"
-                : "border-border text-foreground/80"
+              "mt-1 tabular-nums",
+              done ? "border-gain/40 text-gain" : "text-foreground/80"
             )}
           />
         </label>
@@ -782,24 +784,24 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             }}
             className={FIELD_CLASS}
           />
-          <select
+          <NativeSelect
             value={principalSource}
             onChange={(e) => applyPrincipal(e.target.value)}
             aria-label="Where the starting amount comes from"
-            className="w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-ring"
+            className="w-full min-w-0 max-w-full"
           >
             {bookValue > 0 && (
-              <option value="book">
+              <NativeSelectOption value="book">
                 This portfolio ({show(bookValue, 0)})
-              </option>
+              </NativeSelectOption>
             )}
             {sheets.map((s) => (
-              <option key={s.id} value={s.id}>
+              <NativeSelectOption key={s.id} value={s.id}>
                 {s.name} ({show(s.value, 0)})
-              </option>
+              </NativeSelectOption>
             ))}
-            <option value="custom">Type an amount</option>
-          </select>
+            <NativeSelectOption value="custom">Type an amount</NativeSelectOption>
+          </NativeSelect>
         </section>
 
         <section className="flex flex-col gap-3 py-4">
@@ -835,7 +837,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             For how long
           </label>
           <div className="relative">
-            <input
+            <Input
               id="compound-duration-input"
               type="number"
               min={1}
@@ -916,7 +918,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 kind="percent"
                 value={draft.annualIncrease}
                 onChange={(n) => patchDraft("annualIncrease", n)}
-                className="w-24 rounded-lg border border-border bg-well px-2 py-2 text-sm font-semibold text-foreground outline-none focus:border-ring"
+                className="w-24 font-semibold"
               />
             </label>
             <p className="min-h-5 text-sm text-muted-foreground">
@@ -1074,7 +1076,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           )}
           <div className="mt-4 lg:hidden">
             {upcomingMilestones.length > 0 ? (
-              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted">
                 {upcomingMilestones.map((row, i) => (
                   <MilestoneLadderRow
                     key={row.goal}
@@ -1089,7 +1091,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             {clearedMilestones.length > 0 ? (
               <details
                 className={cn(
-                  "rounded-xl border border-border bg-raised",
+                  "rounded-xl border border-border bg-muted",
                   upcomingMilestones.length > 0 && "mt-3"
                 )}
                 {...(upcomingMilestones.length === 0 ? { open: true } : {})}
@@ -1112,7 +1114,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </div>
           <div
             ref={milestoneScrollRef}
-            className="relative mt-4 hidden max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised lg:block"
+            className="relative mt-4 hidden max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-muted lg:block"
           >
             <table className={cn(htmlTable, "min-w-[30rem] text-xs")}>
               <thead className="sticky top-0 z-10 bg-card">
@@ -1135,7 +1137,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                         key={row.goal}
                         ref={isFirstPending ? firstPendingRowRef : undefined}
                         className={cn(
-                          "border-b border-border transition hover:bg-hover/30",
+                          "border-b border-border transition hover:bg-accent/30",
                           done && "bg-gain/[0.06]"
                         )}
                       >
@@ -1179,7 +1181,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                               : "—"}
                         </td>
                         <td className={htmlCell}>
-                          <input
+                          <Input
                             type="date"
                             aria-label={`Date you reached ${show(row.goal)}`}
                             value={row.actualDate ?? ""}
@@ -1187,10 +1189,10 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                               setMilestoneActual(row.goal, e.target.value)
                             }
                             className={cn(
-                              "max-w-[9.5rem] rounded border bg-well px-1.5 py-1 text-xs tabular-nums outline-none focus:border-ring",
+                              "h-7 max-w-[9.5rem] px-1.5 text-xs tabular-nums",
                               done
                                 ? "border-gain/40 text-gain"
-                                : "border-border text-foreground/80"
+                                : "text-foreground/80"
                             )}
                           />
                         </td>
@@ -1240,7 +1242,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
 
           {/* The full grid used to be its own panel below. Same numbers, so it
             * lives here folded up instead of as a seventh thing to scroll past. */}
-          <details className="mt-4 rounded-xl border border-border bg-raised">
+          <details className="mt-4 rounded-xl border border-border bg-muted">
             <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>
@@ -1312,8 +1314,8 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                       <tr
                         key={row.index}
                         className={cn(
-                          "border-b border-border transition hover:bg-hover/30",
-                          isLast && "bg-hover/20 font-semibold text-foreground"
+                          "border-b border-border transition hover:bg-accent/30",
+                          isLast && "bg-accent/20 font-semibold text-foreground"
                         )}
                       >
                         <td className={cn(htmlCell, "text-foreground/80")}>{row.label}</td>
@@ -1405,7 +1407,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             {narrative.map((line) => (
               <li
                 key={line}
-                className="rounded-lg border border-border bg-raised px-3 py-2 text-sm leading-relaxed text-foreground/80"
+                className="rounded-lg border border-border bg-muted px-3 py-2 text-sm leading-relaxed text-foreground/80"
               >
                 {line}
               </li>

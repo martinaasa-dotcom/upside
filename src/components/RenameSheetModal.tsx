@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -58,13 +59,13 @@ export function RenameSheetModal({
     <ViewportOverlay className="z-50 flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={onClose}
       />
       <form
         onSubmit={submit}
-        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10 p-4 shadow-2xl"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10 p-4"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-foreground">{title}</h3>
@@ -72,7 +73,7 @@ export function RenameSheetModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -80,13 +81,12 @@ export function RenameSheetModal({
 
         <label className="grid gap-1 text-sm text-muted-foreground">
           {label}
-          <input
+          <Input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 80))}
             maxLength={80}
             placeholder={placeholder}
-            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-ring"
             required
           />
         </label>

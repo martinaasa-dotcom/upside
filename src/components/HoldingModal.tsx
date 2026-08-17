@@ -321,7 +321,7 @@ export function HoldingModal({
     <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={onClose}
       />
@@ -330,7 +330,7 @@ export function HoldingModal({
           e.preventDefault();
           void submit();
         }}
-        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-xl sm:pb-4"
+        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-4"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -341,14 +341,14 @@ export function HoldingModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {collapsed.length > 0 && (
-          <div className="mb-4 max-h-48 overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-raised">
+          <div className="mb-4 max-h-48 overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-muted">
             <div
               className="grid h-10 items-center whitespace-nowrap px-3 text-sm font-medium text-muted-foreground"
               style={rowStyle}
@@ -369,7 +369,7 @@ export function HoldingModal({
                   disabled={busy}
                   onClick={() => void expandRow(row)}
                   aria-label={`Edit ${cashtag(row.ticker)}`}
-                  className="grid h-10 w-full items-center whitespace-nowrap border-t border-border px-3 text-sm text-foreground hover:bg-hover disabled:opacity-50"
+                  className="grid h-10 w-full items-center whitespace-nowrap border-t border-border px-3 text-sm text-foreground hover:bg-accent disabled:opacity-50"
                   style={rowStyle}
                 >
                   <span
@@ -427,7 +427,7 @@ export function HoldingModal({
                 aria-invalid={Boolean(error)}
               />
               {listOpen && suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-xl">
+                <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-sm">
                   {suggestions.map((row) => (
                     <li key={row.symbol}>
                       <button

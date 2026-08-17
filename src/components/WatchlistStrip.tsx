@@ -31,6 +31,7 @@ import {
 import { loadCachedQuotes } from "@/lib/quote-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { PanelHeader } from "@/components/ui/Panel";
+import { Input } from "@/components/ui/input";
 import { Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -209,7 +210,7 @@ export function WatchlistStrip({
               void add(suggestions[active]?.symbol);
             }}
           >
-          <input
+          <Input
             value={draft}
             onChange={(e) => {
               setDraft(sanitizeTickerQuery(e.target.value));
@@ -243,7 +244,7 @@ export function WatchlistStrip({
                 ? `watchlist-suggest-${suggestions[active]!.symbol}`
                 : undefined
             }
-            className="w-40 rounded-md border border-border bg-well px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring sm:w-52"
+            className="w-40 sm:w-52"
           />
           <button
             type="submit"
@@ -257,7 +258,7 @@ export function WatchlistStrip({
             <ul
               id="watchlist-suggest"
               role="listbox"
-              className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-well shadow-xl"
+              className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-muted shadow-sm"
             >
               {suggestions.map((row, i) => (
                 <li key={row.symbol} role="presentation">
@@ -268,7 +269,7 @@ export function WatchlistStrip({
                     aria-selected={i === active}
                     className={cn(
                       "flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left",
-                      i === active ? "bg-well" : "hover:bg-well"
+                      i === active ? "bg-muted" : "hover:bg-muted"
                     )}
                     onMouseDown={(e) => e.preventDefault()}
                     onMouseEnter={() => setActive(i)}
@@ -312,7 +313,7 @@ export function WatchlistStrip({
                 <li
                   key={ticker}
                   className={cn(
-                    "flex flex-col rounded-xl border bg-raised",
+                    "flex flex-col rounded-xl border bg-muted",
                     lookBorder(look?.kind)
                   )}
                 >

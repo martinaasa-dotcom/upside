@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { track } from "@vercel/analytics";
 import {
   currency,
@@ -158,14 +159,14 @@ function pulseCardChrome({
   downDay: boolean;
   status: ThesisStatus | null;
 }): string {
-  if (pinned) return "border-white/20 bg-hover ring-1 ring-ring/30";
+  if (pinned) return "border-white/20 bg-accent ring-1 ring-ring/30";
   if (needsLook) {
     if (downDay || status === "broken") {
       return "border-l-[3px] border-loss/50 border-l-loss bg-loss/[0.12]";
     }
     return "border-l-[3px] border-caution/50 border-l-caution bg-caution/[0.12]";
   }
-  return "border-border bg-raised";
+  return "border-border bg-muted";
 }
 
 function PulseCard({
@@ -236,17 +237,17 @@ function PulseCard({
               {cashtag(c.ticker)}
             </span>
             {pinned && (
-              <span className="rounded-md bg-hover px-2 py-0.5 text-sm font-medium text-foreground/80">
+              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-foreground/80">
                 Your check
               </span>
             )}
             {!c.inBook && (
-              <span className="rounded-md bg-hover px-2 py-0.5 text-sm text-muted-foreground">
+              <span className="rounded-md bg-accent px-2 py-0.5 text-sm text-muted-foreground">
                 Lookup
               </span>
             )}
             {leftHold && (
-              <span className="rounded-md bg-hover px-2 py-0.5 text-sm font-medium text-foreground/80">
+              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-foreground/80">
                 Was Hold
               </span>
             )}
@@ -301,7 +302,7 @@ function PulseCard({
                   : "Re-check just this ticker now"
               }
               aria-label={`Re-check ${c.ticker}`}
-              className="relative rounded-lg border border-border/80 bg-well/70 p-1.5 text-muted-foreground transition after:absolute after:-inset-2 after:content-[''] hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
+              className="relative rounded-lg border border-border/80 bg-muted/70 p-1.5 text-muted-foreground transition after:absolute after:-inset-2 after:content-[''] hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
             >
               <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
             </button>
@@ -979,7 +980,7 @@ export const PulsePage = memo(function PulsePage({
         <form onSubmit={(e) => void submitSearch(e)} className="mt-4 flex flex-col gap-2 sm:flex-row">
           <div ref={searchRef} className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <Input
               value={searchInput}
               onChange={(e) => setSearchInput(sanitizeTickerQuery(e.target.value))}
               onKeyDown={(e) => {
@@ -990,16 +991,16 @@ export const PulsePage = memo(function PulsePage({
               }}
               placeholder="NVDA, Apple, or SPY5"
               aria-label="Ticker or company name to check"
-              className="w-full rounded-lg border border-border bg-well/60 py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+              className="pl-8"
               autoComplete="off"
             />
             {suggestions.length > 0 && searchInput.trim().length > 0 && (
-              <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-well shadow-xl">
+              <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
                 {suggestions.map((row) => (
                   <li key={row.symbol}>
                     <button
                       type="button"
-                      className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-well"
+                      className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
                       onClick={() => void checkTicker(row.symbol)}
                     >
                       <span className="font-medium">{cashtag(row.symbol)}</span>

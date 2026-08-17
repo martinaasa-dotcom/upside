@@ -89,8 +89,8 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
   const resultLabel = result ? EXPERIENCE_TIERS.find((t) => t.id === result)?.label : null;
 
   return (
-    <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 p-4 shadow-2xl sm:max-w-lg sm:p-6">
+    <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/10 p-4">
+      <div className="flex max-h-[min(100%,40rem)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 p-4 sm:max-w-lg sm:p-6">
         {step !== 4 ? (
           <>
             <div className="mb-4 shrink-0">
@@ -113,12 +113,12 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
             {step === 3 ? (
               <div className="flex flex-col gap-3">
-                <label className="flex items-start gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground">
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteMorning}
                     onChange={(e) => setNoteMorning(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-input bg-well text-foreground focus:ring-white/40"
+                    className="mt-0.5 h-4 w-4 rounded border-input bg-muted text-foreground focus:ring-white/40"
                   />
                   <span>
                     <span className="font-medium text-foreground">Weekdays</span>
@@ -127,12 +127,12 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     </span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground">
+                <label className="flex items-start gap-3 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteSunday}
                     onChange={(e) => setNoteSunday(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-input bg-well text-foreground focus:ring-white/40"
+                    className="mt-0.5 h-4 w-4 rounded border-input bg-muted text-foreground focus:ring-white/40"
                   />
                   <span>
                     <span className="font-medium text-foreground">Sundays</span>
@@ -172,7 +172,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           }}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-border bg-raised text-foreground hover:bg-accent"
+                            "border-border bg-muted text-foreground hover:bg-accent"
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0 text-foreground/80" />
@@ -188,7 +188,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent"
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent"
                       >
                         {opt.label}
                       </button>
@@ -207,7 +207,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
           </>
         ) : (
           <div className="flex flex-col gap-4 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-hover text-foreground">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-foreground">
               <Check className="h-5 w-5" />
             </div>
             <div>
@@ -218,7 +218,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 Next, paste what you own. That is the whole start.
               </p>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-raised px-3.5 py-3 text-left text-sm text-foreground/80">
+            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground/80">
               <Settings className="h-4 w-4 shrink-0 text-foreground/80" />
               <span>
                 Change the view and the email notes anytime in{" "}

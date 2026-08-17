@@ -100,7 +100,7 @@ export function HeaderOverflowMenu({
               className="h-6 w-6 rounded-md object-cover"
             />
           ) : (
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-hover text-xs font-semibold text-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-xs font-semibold text-foreground">
               {avatar.initial ?? "?"}
             </span>
           )
@@ -118,7 +118,7 @@ export function HeaderOverflowMenu({
           <div
             data-header-more={menuId}
             role="menu"
-            className="fixed z-[80] min-w-[11rem] overflow-hidden rounded-lg border border-border bg-card py-1 shadow-xl"
+            className="fixed z-[80] min-w-[11rem] overflow-hidden rounded-lg border border-border bg-card py-1 shadow-sm"
             style={{ top: pos.top, right: pos.right }}
           >
             {avatar && (
@@ -148,7 +148,7 @@ export function HeaderOverflowMenu({
                       "cursor-not-allowed text-muted-foreground opacity-50"
                     : item.danger
                       ? "text-loss hover:bg-loss/10"
-                      : "text-foreground hover:bg-hover"
+                      : "text-foreground hover:bg-accent"
                 )}
               >
                 <span>{item.label}</span>

@@ -533,7 +533,7 @@ export function GoldNavChart({
       <div>
         <div className="flex min-h-9 items-end justify-center px-10 pb-1">
           {hoverPoint ? (
-            <p className="pointer-events-none max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
+            <p className="pointer-events-none max-w-full truncate rounded-lg border border-border bg-muted/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
               <span className="text-muted-foreground">{formatDay(hoverPoint.date)}</span>
               <span className="mx-1.5 font-semibold text-foreground">
                 {currency(hoverPoint.nav, 0)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Panel, PanelHeader, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
@@ -64,7 +65,7 @@ const TONE_BADGE: Record<Tone, string> = {
   gain: "bg-gain/15 text-gain border-gain/30",
   loss: "bg-loss/15 text-loss border-loss/30",
   warn: "bg-caution/15 text-caution border-caution/40",
-  neutral: "bg-hover text-foreground/80 border-border",
+  neutral: "bg-accent text-foreground/80 border-border",
 };
 
 function ToneIcon({ tone, className }: { tone: Tone; className?: string }) {
@@ -307,7 +308,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             same way, e.g. $XLK for tech, $SPY for the index, or BTC-USD.
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input
+            <Input
               value={draft}
               onChange={(e) => {
                 setDraft(e.target.value);
@@ -317,7 +318,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                 if (e.key === "Enter") addToWatchlist();
               }}
               placeholder="BTC-USD, XLK, SPY …"
-              className="h-9 w-40 rounded-lg border border-border bg-well px-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
+              className="w-40"
             />
             <Button
               type="button"
@@ -331,7 +332,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             {watchlist.map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-well/60 px-2.5 py-1.5 text-sm text-foreground"
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2.5 py-1.5 text-sm text-foreground"
               >
                 {cashtag(t)}
                 <button
@@ -405,7 +406,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                       <span className="w-16 shrink-0 truncate text-xs font-medium text-foreground">
                         {cashtag(r.ticker)}
                       </span>
-                      <div className="relative h-2 min-w-0 flex-1 rounded-full bg-well">
+                      <div className="relative h-2 min-w-0 flex-1 rounded-full bg-muted">
                         <div
                           className={cn(
                             "absolute top-0 h-full rounded-full",

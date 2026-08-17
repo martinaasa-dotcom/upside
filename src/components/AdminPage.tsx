@@ -10,6 +10,7 @@ import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Input } from "@/components/ui/input";
 import {
   AlertTriangle,
   Bug,
@@ -330,7 +331,7 @@ export function AdminPage() {
                             </span>
                           </button>
                           {open && (
-                            <div className="flex flex-col mt-2 gap-1 rounded-lg bg-well/80 p-2.5 text-xs text-muted-foreground">
+                            <div className="flex flex-col mt-2 gap-1 rounded-lg bg-muted/80 p-2.5 text-xs text-muted-foreground">
                               {e.user_email && <p>User: {e.user_email}</p>}
                               {e.route_type && <p>Route type: {e.route_type}</p>}
                               {e.digest && <p>Digest: {e.digest}</p>}
@@ -375,11 +376,11 @@ export function AdminPage() {
                 {users.length > 3 && (
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                    <input
+                    <Input
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search name, email, or sheet …"
-                      className="w-full rounded-lg border border-border bg-well py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+                      className="pl-8"
                     />
                   </div>
                 )}
@@ -423,7 +424,7 @@ export function AdminPage() {
                                 u.portfolios!.map((p) => (
                                   <span
                                     key={p.id}
-                                    className="rounded-md bg-hover/90 px-1.5 py-0.5 text-xs text-foreground/80"
+                                    className="rounded-md bg-accent/90 px-1.5 py-0.5 text-xs text-foreground/80"
                                   >
                                     {p.name}
                                   </span>

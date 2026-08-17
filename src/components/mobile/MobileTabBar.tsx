@@ -129,7 +129,7 @@ export function MobileTabBar({
         <div
           role="tablist"
           className={cn(
-            "grid h-12 w-full overflow-hidden rounded-lg bg-well ring-1 ring-inset ring-border",
+            "grid h-12 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-inset ring-border",
             cols === 3 && "grid-cols-3",
             cols === 4 && "grid-cols-4",
             cols === 5 && "grid-cols-5"

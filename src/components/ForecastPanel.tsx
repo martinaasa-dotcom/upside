@@ -192,7 +192,7 @@ function PlaybookItem({
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
   return (
-    <div className={cn(SPLIT_ROW, NESTED_PAD, "sm:items-center rounded-xl border border-border bg-raised")}>
+    <div className={cn(SPLIT_ROW, NESTED_PAD, "sm:items-center rounded-xl border border-border bg-muted")}>
       <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -271,7 +271,7 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-ring/50",
+        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50",
         targeted ? "text-foreground" : "text-muted-foreground"
       )}
     />
@@ -380,7 +380,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
       <div className="relative">
         {hoverPoint ? (
           <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center px-10">
-            <p className="max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
+            <p className="max-w-full truncate rounded-lg border border-border bg-muted/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
               <span className="text-muted-foreground">{hoverPoint.label}</span>
               <span className="mx-1.5 font-semibold text-foreground">
                 {currency(hoverPoint.value, 0)}
@@ -939,7 +939,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                 type="button"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-hover px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-foreground/20 hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-accent px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-foreground/20 hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
                 title="Work the whole forecast out again from scratch"
               >
                 {busy ? (
@@ -1034,7 +1034,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               </Card>
             ))}
 
-            <div className={cn("rounded-xl border border-border bg-raised", NESTED_PAD)}>
+            <div className={cn("rounded-xl border border-border bg-muted", NESTED_PAD)}>
               <p className="text-sm font-medium text-muted-foreground">
                 Whole portfolio
               </p>
@@ -1094,7 +1094,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               </FluidRow>
 
               {model.rows.map((r) => (
-                <FluidRow key={r.ticker} className="hover:bg-well/50">
+                <FluidRow key={r.ticker} className="hover:bg-muted/50">
                   <div
                     className={cn(
                       tickerCell,
@@ -1189,7 +1189,7 @@ export const ForecastPanel = memo(function ForecastPanel({
         )}
 
         {busy && !plan && (
-          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-border bg-hover px-4 py-6 text-sm text-foreground/80">
+          <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-border bg-accent px-4 py-6 text-sm text-foreground/80">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Working through every holding in this portfolio …
           </div>
@@ -1216,7 +1216,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             )}
 
             {lastPlanDiffs.length > 0 && (
-              <div className="overflow-hidden rounded-xl border border-border bg-raised">
+              <div className="overflow-hidden rounded-xl border border-border bg-muted">
                 <div className="border-b border-border px-4 py-3">
                   <p className="text-sm font-medium text-muted-foreground">Vs last plan</p>
                 </div>
@@ -1250,7 +1250,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               <div
                 className={cn(
                   SPLIT_ROW,
-                  "sm:items-center rounded-xl border border-border bg-raised px-4 py-4 text-sm text-foreground"
+                  "sm:items-center rounded-xl border border-border bg-muted px-4 py-4 text-sm text-foreground"
                 )}
               >
                 <span className={SPLIT_COPY}>
@@ -1262,7 +1262,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   <button
                     type="button"
                     onClick={() => void askMargus()}
-                    className="shrink-0 rounded-lg border border-border px-2.5 py-1 font-semibold text-foreground transition hover:bg-hover"
+                    className="shrink-0 rounded-lg border border-border px-2.5 py-1 font-semibold text-foreground transition hover:bg-accent"
                   >
                     Update it
                   </button>

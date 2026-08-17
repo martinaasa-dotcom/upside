@@ -1,6 +1,7 @@
 "use client";
 
 import { BookModeDock } from "@/components/BookModeDock";
+import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -267,7 +268,7 @@ export function PortfolioTabs({
                   submit();
                 }}
               >
-                <input
+                <Input
                   autoFocus
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -279,7 +280,7 @@ export function PortfolioTabs({
                     }
                   }}
                   placeholder="Name"
-                  className="h-7 w-28 rounded border border-input bg-well px-2 text-sm text-foreground outline-none focus:border-ring"
+                  className="h-7 w-28"
                 />
               </form>
             ) : !guest && !hideAdd ? (
@@ -304,13 +305,13 @@ export function PortfolioTabs({
           <div
             data-sheet-menu
             role="menu"
-            className="fixed z-[100] min-w-[9rem] rounded-lg border border-border bg-well py-1 shadow-xl"
+            className="fixed z-[100] min-w-[9rem] rounded-lg border border-border bg-muted py-1 shadow-sm"
             style={{ left: menu.x, top: menu.y }}
           >
             <button
               type="button"
               role="menuitem"
-              className="block w-full px-3 py-3 text-left text-sm text-foreground hover:bg-well sm:py-2"
+              className="block w-full px-3 py-3 text-left text-sm text-foreground hover:bg-muted sm:py-2"
               onClick={() => {
                 const id = menu.id;
                 const sheetName = menu.name;
@@ -324,7 +325,7 @@ export function PortfolioTabs({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-3 text-left text-sm text-loss hover:bg-well sm:py-2"
+                className="block w-full px-3 py-3 text-left text-sm text-loss hover:bg-muted sm:py-2"
                 onClick={() => {
                   const id = menu.id;
                   const sheetName = menu.name;

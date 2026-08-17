@@ -87,7 +87,7 @@ export function BookModeDock({
       role="tablist"
       aria-label="App"
       className={cn(
-        "grid h-12 w-full overflow-hidden rounded-lg bg-well ring-1 ring-inset ring-border",
+        "grid h-12 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-inset ring-border",
         phoneCols === 3 && deskCols === 3 && "grid-cols-3 sm:w-[26rem]",
         phoneCols === 3 && deskCols === 4 && "grid-cols-3 sm:grid-cols-4 sm:w-[34rem]",
         phoneCols === 4 && deskCols === 4 && "grid-cols-4 sm:w-[34rem]",

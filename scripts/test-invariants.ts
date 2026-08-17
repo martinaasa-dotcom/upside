@@ -340,7 +340,7 @@ run("power animals each keep their own color", () => {
     "utf8"
   );
   assert.doesNotMatch(community, /border-gain\/40 bg-gain\/10/);
-  assert.match(community, /border-border bg-raised/);
+  assert.match(community, /border-border bg-muted/);
 });
 
 run("options UI is hidden unless the viewer explicitly said yes", () => {
@@ -2052,10 +2052,10 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
   );
-  assert.match(panel, /text-sm font-medium text-muted-foreground/);
+  assert.match(panel, /text-xs font-medium text-muted-foreground/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /text-sm font-medium text-muted-foreground/
+    /text-xs font-medium text-muted-foreground/
   );
   assert.match(panel, /padded && "flex flex-col gap-4 p-4"/);
   assert.match(panel, /export function Scoreboard/);
@@ -2160,7 +2160,7 @@ run("boxes sit off the field, never the same color as the page", () => {
     "page boxes use solid bg-card, not a wash of the field"
   );
   assert.deepEqual(
-    offendersOf(/bg-app\/40\b/),
+    offendersOf(/bg-background\/40\b/),
     [],
     "a box painted with the field color disappears"
   );
@@ -3864,7 +3864,7 @@ run("Pulse can price a bare EU ETF like VUAA", () => {
     "utf8"
   );
   assert.match(dock, /bg-primary text-primary-foreground/);
-  assert.match(dock, /rounded-lg bg-well/);
+  assert.match(dock, /rounded-lg bg-muted/);
   assert.match(dock, /stashOpenTab\("lab"\)/);
   assert.match(dock, /stashOpenTab\("compound"\)/);
   assert.doesNotMatch(dock, /label: "Account"/);

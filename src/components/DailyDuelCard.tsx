@@ -304,7 +304,7 @@ export function DailyDuelCard({
         ) : (
           !communityId &&
           stats.totalPlayed > 0 && (
-            <div className="rounded-xl border border-border bg-raised px-3 py-2 text-right">
+            <div className="rounded-xl border border-border bg-muted px-3 py-2 text-right">
               <p className="text-sm text-muted-foreground">
                 Record
               </p>
@@ -359,12 +359,12 @@ export function DailyDuelCard({
               className={cn(
                 "touch-target flex h-full flex-col items-center justify-center rounded-xl border px-4 py-4 text-center transition",
                 myPick == null
-                  ? "border-border bg-raised hover:border-foreground/20 hover:bg-muted active:scale-[0.98]"
+                  ? "border-border bg-muted hover:border-foreground/20 hover:bg-muted active:scale-[0.98]"
                   : win
                     ? "border-gain/50 bg-gain/10"
                     : waitingOnClose && isPick
                       ? "border-border bg-muted"
-                      : "border-border bg-raised opacity-70",
+                      : "border-border bg-muted opacity-70",
                 isPick && "ring-2 ring-ring/60"
               )}
             >

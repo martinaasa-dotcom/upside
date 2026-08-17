@@ -8,6 +8,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
@@ -63,7 +64,7 @@ function VisitStreakCard() {
             key={i}
             className={cn(
               "h-1.5 w-6 rounded-full",
-              visited ? "bg-primary" : "bg-hover"
+              visited ? "bg-primary" : "bg-accent"
             )}
           />
         ))}
@@ -285,7 +286,7 @@ export function AccountPage() {
           <WidgetErrorBoundary name="Account">
           <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
                 <MessageSquare className="h-4 w-4" />
               </div>
               <div>
@@ -356,7 +357,7 @@ export function AccountPage() {
                         row.set(prev);
                       });
                   }}
-                  className="h-4 w-4 rounded border-input bg-well text-primary focus:ring-ring/50"
+                  className="h-4 w-4 rounded border-input bg-muted text-primary focus:ring-ring/50"
                 />
                 {row.label}
               </label>
@@ -369,7 +370,7 @@ export function AccountPage() {
           {/* Profile / community appearance */}
           <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
@@ -382,7 +383,7 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-raised px-3 py-3">
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-3">
               {avatarUrl && !avatarBroken ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -392,7 +393,7 @@ export function AccountPage() {
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-hover text-sm font-semibold text-foreground">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-sm font-semibold text-foreground">
                   {(displayName || "?").slice(0, 1).toUpperCase()}
                 </div>
               )}
@@ -411,11 +412,10 @@ export function AccountPage() {
                 <span className="text-sm text-muted-foreground">
                   Display name
                 </span>
-                <input
+                <Input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   maxLength={80}
-                  className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                   required
                 />
               </label>
@@ -445,14 +445,13 @@ export function AccountPage() {
                 <span className="text-sm text-muted-foreground">
                   Avatar URL (optional)
                 </span>
-                <input
+                <Input
                   value={avatarUrl}
                   onChange={(e) => {
                     setAvatarUrl(e.target.value);
                     setAvatarBroken(false);
                   }}
                   placeholder="https://…"
-                  className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                 />
                 {avatarBroken && (
                   <span className="text-sm text-loss">
@@ -475,7 +474,7 @@ export function AccountPage() {
           {/* Experience level */}
           <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
                 <Gauge className="h-4 w-4" />
               </div>
               <div>
@@ -494,8 +493,8 @@ export function AccountPage() {
                   className={cn(
                     "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
                     tier === t.id
-                      ? "border-white/25 bg-hover text-foreground"
-                      : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
+                      ? "border-white/25 bg-accent text-foreground"
+                      : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
                   )}
                 >
                   <span>
@@ -521,8 +520,8 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === true
-                      ? "border-white/25 bg-hover text-foreground"
-                      : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
+                      ? "border-white/25 bg-accent text-foreground"
+                      : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
                   )}
                 >
                   <span className="font-medium">Yes</span>
@@ -536,8 +535,8 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === false
-                      ? "border-white/25 bg-hover text-foreground"
-                      : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
+                      ? "border-white/25 bg-accent text-foreground"
+                      : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
                   )}
                 >
                   <span className="font-medium">No</span>
@@ -553,7 +552,7 @@ export function AccountPage() {
           {/* Sheet invites live next to the sheet, not here. */}
           <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
                 <Link2 className="h-4 w-4" />
               </div>
               <div>
@@ -578,7 +577,7 @@ export function AccountPage() {
           {/* Data & privacy */}
           <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-hover text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
@@ -591,7 +590,7 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-border bg-raised px-3 py-3")}>
+            <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-border bg-muted px-3 py-3")}>
               <div className={SPLIT_COPY}>
                 <p className="text-sm font-medium text-foreground">
                   Download everything
@@ -655,11 +654,11 @@ export function AccountPage() {
         <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/10 backdrop-blur-xs"
             aria-label="Close"
             onClick={() => !deleting && setDeleteOpen(false)}
           />
-          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl border border-loss/50 bg-well p-4 shadow-2xl sm:max-w-md sm:rounded-xl">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl border border-loss/50 bg-muted p-4 sm:max-w-md sm:rounded-xl">
             <h3 className="text-base font-semibold text-loss">
               Delete your account?
             </h3>
@@ -675,12 +674,13 @@ export function AccountPage() {
               <span className="text-sm text-muted-foreground">
                 Type DELETE to confirm
               </span>
-              <input
+              <Input
                 autoFocus
                 value={deleteText}
                 onChange={(e) => setDeleteText(e.target.value)}
                 placeholder="DELETE"
-                className="w-full rounded-lg border border-loss/60 bg-well px-3 py-2.5 text-sm text-foreground outline-none focus:border-loss"
+                aria-invalid
+                className="border-destructive"
               />
             </label>
             {deleteErr && (
@@ -691,7 +691,7 @@ export function AccountPage() {
                 type="button"
                 onClick={() => setDeleteOpen(false)}
                 disabled={deleting}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-well hover:text-foreground disabled:opacity-40"
+                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
               >
                 Cancel
               </button>

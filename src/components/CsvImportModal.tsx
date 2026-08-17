@@ -160,11 +160,11 @@ export function CsvImportModal({
     <ViewportOverlay className="z-[70] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={handleClose}
       />
-      <div className="relative z-10 flex max-h-[min(100%,640px)] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-2xl">
+      <div className="relative z-10 flex max-h-[min(100%,640px)] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <FileUp className="h-4 w-4 text-primary" />
@@ -176,7 +176,7 @@ export function CsvImportModal({
             type="button"
             onClick={handleClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -259,9 +259,9 @@ export function CsvImportModal({
               {/* overflow-x too: an imported file can carry long tickers and
                   wide numbers, and on a phone the preview needs to scroll
                   sideways instead of pushing the modal past the viewport. */}
-              <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised">
+              <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border bg-muted">
                 <table className={htmlTable}>
-                  <thead className="sticky top-0 bg-well text-sm text-muted-foreground">
+                  <thead className="sticky top-0 bg-muted text-sm text-muted-foreground">
                     <tr>
                       <th className={cn(tickerTd, "py-1.5 font-medium")}>Ticker</th>
                       <th className={cn(htmlCell, "py-1.5 font-medium")}>Shares</th>
@@ -326,7 +326,7 @@ export function CsvImportModal({
                 type="checkbox"
                 checked={replace}
                 onChange={(e) => setReplace(e.target.checked)}
-                className="h-4 w-4 rounded border-input bg-well text-primary focus:ring-ring/50"
+                className="h-4 w-4 rounded border-input bg-muted text-primary focus:ring-ring/50"
               />
               Replace this portfolio&apos;s holdings (uncheck to only add/update)
               the tickers above, keeping everything else)

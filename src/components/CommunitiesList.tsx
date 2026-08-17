@@ -19,6 +19,7 @@ import {
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { Panel, PanelHeader, Segmented } from "@/components/ui/Panel";
@@ -263,12 +264,12 @@ export function CommunitiesList() {
                 {[0, 1].map((i) => (
                   <div
                     key={i}
-                    className="h-[3.75rem] animate-pulse rounded-xl border border-border bg-raised"
+                    className="h-[3.75rem] animate-pulse rounded-xl border border-border bg-muted"
                   />
                 ))}
               </div>
             ) : (
-              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted">
                 {communities.length === 0 && (
                   <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                     <Users className="h-6 w-6 text-muted-foreground" />
@@ -327,12 +328,12 @@ export function CommunitiesList() {
               icon={<Compass className="h-4 w-4" />}
             />
             {discover.length === 0 ? (
-              <p className="mt-4 rounded-xl border border-border bg-raised px-4 py-6 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-4 rounded-xl border border-border bg-muted px-4 py-6 text-sm leading-relaxed text-muted-foreground">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-raised">
+              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -364,7 +365,7 @@ export function CommunitiesList() {
                         type="button"
                         onClick={() => void beginJoinRequest(c.id, c.name)}
                         disabled={requestBusyId === c.id}
-                        className="shrink-0 rounded-lg border border-border bg-well px-3 py-1.5 text-sm font-semibold text-foreground hover:border-foreground/20/50 hover:text-foreground disabled:opacity-50"
+                        className="shrink-0 rounded-lg border border-border bg-muted px-3 py-1.5 text-sm font-semibold text-foreground hover:border-foreground/20/50 hover:text-foreground disabled:opacity-50"
                       >
                         {requestBusyId === c.id
                           ? "Requesting …"
@@ -406,7 +407,7 @@ export function CommunitiesList() {
                   <span className="text-sm font-medium text-muted-foreground">
                     {kind === "classroom" ? "Class name" : "Name"}
                   </span>
-                  <input
+                  <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={
@@ -414,7 +415,7 @@ export function CommunitiesList() {
                         ? "Econ 201"
                         : "Circle name"
                     }
-                    className="mt-2 w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring"
+                    className="mt-2"
                   />
                 </label>
 
@@ -515,7 +516,7 @@ export function CommunitiesList() {
         <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/10 backdrop-blur-xs"
             aria-label="Close"
             onClick={() => setJoinPick(null)}
           />
@@ -523,7 +524,7 @@ export function CommunitiesList() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="join-share-title"
-            className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-xl sm:pb-4"
+            className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-4"
           >
             <h3
               id="join-share-title"
@@ -557,8 +558,8 @@ export function CommunitiesList() {
                       className={cn(
                         "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm",
                         on
-                          ? "border-white/25 bg-hover text-foreground"
-                          : "border-border bg-well/60 text-foreground/80"
+                          ? "border-white/25 bg-accent text-foreground"
+                          : "border-border bg-muted/60 text-foreground/80"
                       )}
                     >
                       <span className="min-w-0 truncate">{s.name}</span>

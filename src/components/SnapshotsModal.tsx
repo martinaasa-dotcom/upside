@@ -151,11 +151,11 @@ export function SnapshotsModal({
     <ViewportOverlay className="z-[60] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative z-10 flex max-h-[min(100%,560px)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-xl">
+      <div className="relative z-10 flex max-h-[min(100%,560px)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-sm">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-primary" />
@@ -165,7 +165,7 @@ export function SnapshotsModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -195,7 +195,7 @@ export function SnapshotsModal({
               {snapshots.map((s) => (
                 <li
                   key={s.id}
-                  className="rounded-lg border border-border bg-raised px-3 py-2"
+                  className="rounded-lg border border-border bg-muted px-3 py-2"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">

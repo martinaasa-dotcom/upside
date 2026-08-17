@@ -51,11 +51,14 @@ import {
   sheetReturnPathSince,
 } from "@/lib/sheet-mark";
 import {
-  ChevronDown,
   ChevronRight,
   Minus,
   Plus,
 } from "lucide-react";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
@@ -264,7 +267,7 @@ const ACTION_STYLE: Record<
   add: { label: "Added", cls: "bg-gain/15 text-gain" },
   trim: { label: "Trimmed", cls: "bg-caution/15 text-caution" },
   exit: { label: "Exited", cls: "bg-loss/15 text-loss" },
-  hold: { label: "Held", cls: "bg-hover text-muted-foreground" },
+  hold: { label: "Held", cls: "bg-accent text-muted-foreground" },
 };
 
 function ActionBadge({ action }: { action: FundActionRow }) {
@@ -382,7 +385,7 @@ function ViewMoreButton({
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-xl border border-border bg-raised px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+      className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground"
     >
       View more
       {remaining > 7 ? ` · ${remaining}` : ""}
@@ -438,7 +441,7 @@ function FundNote({
   const dot = accent === "brand" ? "bg-primary" : "bg-loss";
   return (
     <div
-      className="flex min-h-min flex-1 flex-col bg-raised p-4"
+      className="flex min-h-min flex-1 flex-col bg-muted p-4"
       style={{ boxShadow: `inset 3px 0 0 ${bar}` }}
     >
       <MicroLabel>{label}</MicroLabel>
@@ -1225,21 +1228,19 @@ export function UpsidePortfolioPage() {
                     </p>
                   ) : (
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="relative">
-                        <select
-                          value={pickerSelection}
-                          onChange={(e) => setPickerSelection(e.target.value)}
-                          className="touch-target appearance-none rounded-md border border-border bg-well px-3 py-1.5 pr-8 text-sm text-foreground focus:border-ring focus:outline-none"
-                        >
-                          <option value="">Choose a portfolio …</option>
-                          {myPortfolios.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                      </div>
+                      <NativeSelect
+                        value={pickerSelection}
+                        onChange={(e) => setPickerSelection(e.target.value)}
+                      >
+                        <NativeSelectOption value="">
+                          Choose a portfolio …
+                        </NativeSelectOption>
+                        {myPortfolios.map((p) => (
+                          <NativeSelectOption key={p.id} value={p.id}>
+                            {p.name}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
                       <button
                         type="button"
                         onClick={() => void handleSetBenchmark()}
@@ -1288,7 +1289,7 @@ export function UpsidePortfolioPage() {
               <Panel>
                 <PanelHeader title="What he's betting on" />
                 <div className="mt-4">
-                  <div className="flex h-3 overflow-hidden rounded-full bg-well">
+                  <div className="flex h-3 overflow-hidden rounded-full bg-muted">
                     {bettingSlices.map((t) => (
                       <div
                         key={t.key}
@@ -1304,7 +1305,7 @@ export function UpsidePortfolioPage() {
                     {bettingSlices.map((t) => (
                       <div
                         key={t.key}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2.5"
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted px-3 py-2.5"
                       >
                         <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
@@ -1360,7 +1361,7 @@ export function UpsidePortfolioPage() {
                         {fundWatchlist.map((w) => (
                           <li
                             key={w.ticker}
-                            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2"
+                            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2"
                           >
                             <span className="shrink-0 text-sm font-semibold text-foreground">
                               {cashtag(w.ticker)}
@@ -1431,7 +1432,7 @@ export function UpsidePortfolioPage() {
                         key={r.id}
                         className="group overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
                       >
-                        <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
+                        <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
                             aria-hidden
                             className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
@@ -1495,7 +1496,7 @@ export function UpsidePortfolioPage() {
                         key={r.id}
                         className="group overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
                       >
-                        <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-well/50 [&::-webkit-details-marker]:hidden">
+                        <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
                             aria-hidden
                             className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"

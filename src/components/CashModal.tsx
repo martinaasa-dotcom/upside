@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { isSafeSignedMoney } from "@/lib/input-guard";
 import { blockWheelChange, parseDecimal } from "@/lib/number-input";
@@ -59,13 +60,13 @@ export function CashModal({
     <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={onClose}
       />
       <form
         onSubmit={submit}
-        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:rounded-xl sm:pb-4"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-xl sm:pb-4"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
@@ -76,7 +77,7 @@ export function CashModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -86,7 +87,7 @@ export function CashModal({
           {allowNegative
             ? "Paper cash. Buys spend it, sells add it back."
             : "Money sitting ready, not yet in a stock."}
-          <input
+          <Input
             autoFocus
             type="text"
             inputMode="decimal"
@@ -100,7 +101,7 @@ export function CashModal({
               setError(null);
             }}
             onWheel={blockWheelChange}
-            className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-ring"
+            className="tabular-nums"
             required
           />
         </label>

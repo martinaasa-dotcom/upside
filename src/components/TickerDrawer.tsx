@@ -135,11 +135,11 @@ export function TickerDrawer({
     <ViewportOverlay className="z-[80] flex justify-end">
       <button
         type="button"
-        className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs transition-opacity"
         aria-label="Close drawer"
         onClick={onClose}
       />
-      <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-background shadow-2xl sm:max-w-md">
+      <div className="relative flex h-full w-full max-w-none flex-col border-l border-border/80 bg-background sm:max-w-md">
         <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5 pt-[max(0.875rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -168,7 +168,7 @@ export function TickerDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="touch-target shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-hover hover:text-foreground"
+            className="touch-target shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -275,7 +275,7 @@ export function TickerDrawer({
                     return (
                       <div
                         key={yr}
-                        className="rounded-lg border border-input bg-well px-1 py-1.5 text-center"
+                        className="rounded-lg border border-input bg-muted px-1 py-1.5 text-center"
                       >
                         <p className="text-sm font-medium text-primary">
                           &apos;{String(yr).slice(2)}
@@ -311,7 +311,7 @@ export function TickerDrawer({
                         "rounded-lg border px-1 py-2 text-center transition hover:border-foreground/20-mid",
                         isCurrentHorizon
                           ? "border-border bg-muted"
-                          : "border-border bg-raised"
+                          : "border-border bg-muted"
                       )}
                     >
                       <p className="text-sm text-muted-foreground">
@@ -410,7 +410,7 @@ export function TickerDrawer({
                     "touch-target h-10 flex-1 rounded-lg text-sm font-semibold tabular-nums transition",
                     level === n
                       ? "bg-muted text-primary ring-1 ring-ring/50"
-                      : "border border-border bg-raised text-muted-foreground hover:text-foreground"
+                      : "border border-border bg-muted text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {n}
@@ -429,7 +429,7 @@ export function TickerDrawer({
                 onClose();
                 onAskMargus();
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-well px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-hover"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
             >
               <Bot className="h-4 w-4 text-primary" />
               Ask Margus about {cashtag(ticker)}

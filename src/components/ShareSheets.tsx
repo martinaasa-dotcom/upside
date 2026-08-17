@@ -119,7 +119,7 @@ export function ShareSheets({
         {(sheets ?? []).map((s) => (
           <li
             key={s.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-raised px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2"
           >
             <span className="min-w-0 truncate text-sm text-foreground">
               {s.name}

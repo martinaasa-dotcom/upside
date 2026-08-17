@@ -22,6 +22,10 @@ import {
   SPLIT_ROW,
 } from "@/components/ui/Panel";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isAbortError } from "@/lib/abort";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
@@ -55,7 +59,7 @@ function retBarColor(v: number): string {
 function retWash(v: number): string {
   if (v > 0.05) return "bg-gain/15";
   if (v < -0.05) return "bg-loss/15";
-  return "bg-hover/60";
+  return "bg-accent/60";
 }
 
 function retTone(v: number): "up" | "down" | undefined {
@@ -110,10 +114,10 @@ function CycleMonthlyChart({
             className={cn(
               "group flex min-w-0 flex-1 flex-col items-center gap-1 rounded-md px-0.5 py-1 transition",
               isSelected
-                ? "bg-hover ring-2 ring-select"
+                ? "bg-accent ring-2 ring-primary"
                 : isCurrent
-                  ? "ring-1 ring-ring/40 hover:bg-hover"
-                  : "hover:bg-hover"
+                  ? "ring-1 ring-ring/40 hover:bg-accent"
+                  : "hover:bg-accent"
             )}
             title={`${row.label}: avg ${fmtPct(v)} (${row.samples} prior ${row.label}s)`}
           >
@@ -176,7 +180,7 @@ function CycleMonthlyTiles({
               "touch-target flex min-h-14 flex-col items-center justify-center rounded-xl px-1.5 py-2 transition",
               retWash(v),
               isSelected
-                ? "ring-2 ring-select"
+                ? "ring-2 ring-primary"
                 : isCurrent
                   ? "ring-1 ring-ring/40"
                   : "hover:brightness-110"
@@ -234,7 +238,7 @@ function CycleHistoryBars({
             key={h.year}
             className={cn(
               "grid grid-cols-[3.25rem_minmax(0,1fr)_4.25rem] items-center gap-2 rounded-lg px-1 py-1.5",
-              isHighlight && "bg-hover ring-1 ring-white/15"
+              isHighlight && "bg-accent ring-1 ring-white/15"
             )}
             title={`${h.year}: ${fmtPct(h.returnPct, 2)}`}
           >
@@ -246,7 +250,7 @@ function CycleHistoryBars({
             >
               {h.year}
             </span>
-            <div className="relative h-3 overflow-hidden rounded-sm bg-hover/70">
+            <div className="relative h-3 overflow-hidden rounded-sm bg-accent/70">
               <div className="absolute inset-y-0 left-1/2 w-px -translate-x-px bg-border" />
               <div
                 className={cn(
@@ -340,7 +344,7 @@ function SelectedHistory({
 }
 
 function dayCellBg(v: number, mag: number, empty: boolean): string {
-  if (empty) return "bg-hover/40";
+  if (empty) return "bg-accent/40";
   if (v > 0.05) {
     if (mag > 0.66) return "bg-gain/40";
     if (mag > 0.33) return "bg-gain/25";
@@ -351,7 +355,7 @@ function dayCellBg(v: number, mag: number, empty: boolean): string {
     if (mag > 0.33) return "bg-loss/25";
     return "bg-loss/15";
   }
-  return "bg-hover/50";
+  return "bg-accent/50";
 }
 
 function DayOfMonthChart({
@@ -383,7 +387,7 @@ function DayOfMonthChart({
               <div
                 key={day}
                 aria-hidden
-                className="min-h-11 rounded-lg bg-hover/30 md:min-h-11"
+                className="min-h-11 rounded-lg bg-accent/30 md:min-h-11"
               />
             );
           }
@@ -403,7 +407,7 @@ function DayOfMonthChart({
                 "flex min-h-11 w-full flex-col items-center justify-center rounded-lg px-0.5 py-1.5 transition",
                 dayCellBg(v, mag, empty),
                 isSelected
-                  ? "ring-2 ring-select"
+                  ? "ring-2 ring-primary"
                   : isToday
                     ? "ring-1 ring-ring/50 hover:brightness-110"
                     : "hover:brightness-110"
@@ -623,17 +627,17 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
           <div className={SPLIT_ACTIONS}>
             <label className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground sm:flex-none">
               <span className="shrink-0">Benchmark</span>
-              <select
+              <NativeSelect
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-border bg-well px-2.5 py-2 text-sm text-foreground outline-none focus:border-ring sm:flex-none"
+                className="min-w-0 flex-1 sm:flex-none"
               >
                 {tickers.map((t) => (
-                  <option key={t} value={t}>
+                  <NativeSelectOption key={t} value={t}>
                     {t}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <button
               type="button"
@@ -655,7 +659,7 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
       )}
 
       {loading && !model ? (
-        <div className="rounded-xl border border-border bg-raised px-4 py-12 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border border-border bg-muted px-4 py-12 text-center text-sm text-muted-foreground">
           Loading seasonality for {cashtag(ticker)}…
         </div>
       ) : null}
@@ -747,8 +751,8 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                         viewMonth === m
                           ? "bg-primary text-primary-foreground"
                           : m === marketToday.month
-                            ? "text-foreground ring-1 ring-ring/40 hover:bg-hover"
-                            : "text-muted-foreground hover:bg-hover hover:text-foreground"
+                            ? "text-foreground ring-1 ring-ring/40 hover:bg-accent"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       )}
                     >
                       {label}

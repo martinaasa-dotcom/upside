@@ -12,6 +12,10 @@ import {
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
 import { EmptyState, HairlineGrid, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -293,7 +297,7 @@ export const LabSheet = memo(function LabSheet({
                     "min-w-0 px-2 py-2.5 text-center text-sm font-medium transition",
                     tab === t.id
                       ? "bg-primary text-primary-foreground"
-                      : "bg-well text-muted-foreground hover:bg-hover hover:text-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
                   )}
                 >
                   <span className="block truncate">{t.label}</span>
@@ -341,27 +345,24 @@ export const LabSheet = memo(function LabSheet({
             <span className="shrink-0 text-sm font-medium text-muted-foreground">
               Looking at
             </span>
-            <select
+            <NativeSelect
               value={scopeId}
               onChange={(e) => setScopeId(e.target.value)}
               disabled={!scopeApplies}
-              className={cn(
-                "min-w-0 rounded-lg border border-border bg-well/50 px-2.5 py-1.5 text-sm text-foreground",
-                !scopeApplies && "cursor-not-allowed opacity-40"
-              )}
+              className={cn(!scopeApplies && "cursor-not-allowed opacity-40")}
               title={
                 scopeApplies
                   ? "Narrow these tools down to one portfolio"
                   : "This tool always uses your whole portfolio"
               }
             >
-              <option value="book">Everything</option>
+              <NativeSelectOption value="book">Everything</NativeSelectOption>
               {portfolios.map((p) => (
-                <option key={p.id} value={p.id}>
+                <NativeSelectOption key={p.id} value={p.id}>
                   {p.name}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
           </label>
         </div>
       </Panel>
@@ -401,7 +402,7 @@ export const LabSheet = memo(function LabSheet({
                 {/* A bare score gives no clue which end is which, so show the
                  * position on the scale and name both ends. */}
                 <div className="mt-3">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-hover">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-accent">
                     <div
                       className="h-full rounded-full bg-primary transition-all"
                       style={{
@@ -477,7 +478,7 @@ export const LabSheet = memo(function LabSheet({
                     Your holdings pooled by theme, which is usually a blunter
                     read than the ticker list.
                   </p>
-                  <div className="flex h-3 overflow-hidden rounded-full bg-well">
+                  <div className="flex h-3 overflow-hidden rounded-full bg-muted">
                     {themes.map((t) => (
                       <div
                         key={t.theme}
@@ -493,7 +494,7 @@ export const LabSheet = memo(function LabSheet({
                     {themes.map((t) => (
                       <div
                         key={t.theme}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-raised px-3 py-2.5"
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted px-3 py-2.5"
                       >
                         <span className="flex items-center gap-2 text-sm text-foreground/80">
                           <span
@@ -693,7 +694,7 @@ function AllocCard({
                   : currency(s.value, 0)}
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-well">
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary"
                 style={{ width: `${Math.min(100, s.pct * 100)}%` }}

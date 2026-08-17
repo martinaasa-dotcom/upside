@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
@@ -45,8 +46,8 @@ function Chip({
       className={cn(
         "rounded-lg border px-3 py-2 text-left text-sm transition",
         selected
-          ? "border-white/25 bg-hover text-foreground"
-          : "border-border bg-well/60 text-foreground/80 hover:border-foreground/20-mid"
+          ? "border-white/25 bg-accent text-foreground"
+          : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
       )}
     >
       {children}
@@ -98,7 +99,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
     <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
         aria-label="Close"
         onClick={onClose}
         disabled={busy}
@@ -107,7 +108,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="feedback-title"
-        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-lg sm:rounded-xl sm:pb-4"
+        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-4"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3
@@ -122,7 +123,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             disabled={busy}
             aria-label="Close"
             title="Close"
-            className="rounded-lg p-3.5 text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-40 sm:p-1.5"
+            className="rounded-lg p-3.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40 sm:p-1.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -233,14 +234,13 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
                   <span className="text-sm text-muted-foreground">
                     In one sentence, what should be different?
                   </span>
-                  <input
+                  <Input
                     value={weekly.changeNote}
                     onChange={(e) =>
                       setWeekly((w) => ({ ...w, changeNote: e.target.value }))
                     }
                     maxLength={400}
                     placeholder="Name the screen or the moment."
-                    className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
                   />
                 </label>
               )}
@@ -254,12 +254,11 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
             </p>
             <label className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">What is this about?</span>
-              <input
+              <Input
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 maxLength={120}
                 placeholder="A bug, a missing thing, a rant"
-                className="w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm"
               />
             </label>
             <label className="flex flex-col gap-1">
