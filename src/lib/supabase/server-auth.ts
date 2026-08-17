@@ -5,6 +5,7 @@ import type { AppSupabaseClient } from "@/lib/supabase/client-types";
 import type { Database } from "@/lib/supabase/database.types";
 import { NextResponse } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
+import { supabaseFetch } from "@/lib/supabase/http";
 
 /** Cookie-session Supabase client (RLS as the signed-in user). */
 export async function createSupabaseServerAuth(): Promise<AppSupabaseClient | null> {
@@ -15,6 +16,7 @@ export async function createSupabaseServerAuth(): Promise<AppSupabaseClient | nu
   const cookieStore = await cookies();
 
   return createServerClient<Database>(url, key, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();

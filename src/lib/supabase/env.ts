@@ -40,6 +40,60 @@ export function supabaseDatabaseUrl(): string | undefined {
   return process.env.DATABASE_URL?.trim() || undefined;
 }
 
+function parsePostgresUrl(raw: string): URL | null {
+  try {
+    return new URL(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Transaction-mode pooler (port 6543 / *.pooler.supabase.com). Session-mode
+ * and the direct host on 5432 hold a backend for the life of the client,
+ * which exhausts the 60-slot cap under Vercel Fluid.
+ */
+export function isSupabasePoolerUrl(raw: string | undefined): boolean {
+  if (!raw) return false;
+  const u = parsePostgresUrl(raw);
+  if (!u) return false;
+  if (u.hostname.includes("pooler.supabase.com")) return true;
+  if (u.port === "6543") return true;
+  return u.searchParams.has("pgbouncer");
+}
+
+/** Direct/session URI. Fine for psql dumps, never for serverless clients. */
+export function isDirectPostgresUrl(raw: string | undefined): boolean {
+  if (!raw) return false;
+  const u = parsePostgresUrl(raw);
+  if (!u) return false;
+  if (u.protocol !== "postgres:" && u.protocol !== "postgresql:") return false;
+  return !isSupabasePoolerUrl(raw);
+}
+
+export function supabasePoolerDatabaseUrl(): string | undefined {
+  const pooler = process.env.DATABASE_POOLER_URL?.trim();
+  if (pooler) return pooler;
+  const db = supabaseDatabaseUrl();
+  if (db && isSupabasePoolerUrl(db)) return db;
+  return undefined;
+}
+
+/** Project ref for Management API calls (`uzrnybyggznpvgxgrvgl`). */
+export function supabaseProjectRef(): string | undefined {
+  const explicit = process.env.SUPABASE_PROJECT_REF?.trim();
+  if (explicit) return explicit;
+  const url = supabaseUrl();
+  if (!url) return undefined;
+  try {
+    const host = new URL(url).hostname;
+    const m = host.match(/^([a-z0-9]+)\.supabase\.co$/i);
+    return m?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
 export function supabaseIsConfigured(): boolean {
   return Boolean(supabaseUrl() && supabaseAnonKey());
 }

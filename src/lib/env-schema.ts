@@ -35,6 +35,7 @@ export const serverEnvSchema = z.object({
   SUPABASE_ANON_KEY: z.string().trim().min(20).optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(20).optional(),
   DATABASE_URL: z.string().trim().min(10).optional(),
+  DATABASE_POOLER_URL: z.string().trim().min(10).optional(),
   UPSIDE_CANONICAL_HOST: hostnameOrUrl.optional(),
   NEXT_PUBLIC_SITE_URL: hostnameOrUrl.optional(),
   CRON_SECRET: z.string().trim().min(16).optional(),
@@ -42,6 +43,19 @@ export const serverEnvSchema = z.object({
   RESEND_FROM: z.string().trim().min(3).optional(),
   OPENROUTER_API_KEY: z.string().trim().min(8).optional(),
   OPENROUTER_HTTP_REFERER: httpsOrigin.optional(),
+  SUPABASE_ACCESS_TOKEN: z.string().trim().min(20).optional(),
+  SUPABASE_PROJECT_REF: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9]{20}$/i, "must be a 20-char Supabase project ref")
+    .optional(),
+  SNAPSHOT_ENCRYPTION_KEY: z.string().trim().min(32).optional(),
+  DR_S3_ENDPOINT: httpsOrigin.optional(),
+  DR_S3_BUCKET: z.string().trim().min(3).optional(),
+  DR_S3_ACCESS_KEY_ID: z.string().trim().min(8).optional(),
+  DR_S3_SECRET_ACCESS_KEY: z.string().trim().min(8).optional(),
+  DR_S3_REGION: z.string().trim().min(2).optional(),
+  DR_S3_PREFIX: z.string().trim().min(1).optional(),
 });
 
 export type ServerEnvIssue = { key: string; message: string };

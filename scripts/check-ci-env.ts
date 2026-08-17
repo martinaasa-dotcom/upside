@@ -6,7 +6,8 @@
 import { readFileSync } from "node:fs";
 import { validateServerEnv } from "../src/lib/env-schema";
 
-const SECRET_KEY = /(_SECRET|_KEY|PASSWORD|TOKEN)$|^DATABASE_URL$/;
+const SECRET_KEY =
+  /(_SECRET|_KEY|PASSWORD|TOKEN)$|^DATABASE_URL$|^DATABASE_POOLER_URL$/;
 
 function parseExampleKeys(src: string): { publicRequired: string[]; secrets: string[] } {
   const publicRequired: string[] = [];
