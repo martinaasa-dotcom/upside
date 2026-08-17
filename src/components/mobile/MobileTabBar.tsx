@@ -1,7 +1,6 @@
 "use client";
 
 import { useCircleHref } from "@/components/CircleDockLink";
-import { usePaperClass } from "@/components/PaperClassProvider";
 import { stashOpenTab } from "@/lib/active-sheet";
 import { cn } from "@/lib/format";
 import {
@@ -16,7 +15,6 @@ import {
   Calculator,
   Compass,
   FlaskConical,
-  GraduationCap,
   LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
@@ -112,13 +110,10 @@ export function MobileTabBar({
 }) {
   const dockRef = useRef<HTMLElement>(null);
   const circleHref = useCircleHref();
-  const paper = usePaperClass();
   useDockPad(dockRef);
-  const tabs = TABS.filter((t) => {
-    if (t.metaId && hiddenModeIds.includes(t.metaId)) return false;
-    if (paper.only && t.id !== "home" && t.id !== "circle") return false;
-    return true;
-  });
+  const tabs = TABS.filter(
+    (t) => !t.metaId || !hiddenModeIds.includes(t.metaId)
+  );
   const cols = tabs.length;
 
   return (
@@ -135,7 +130,6 @@ export function MobileTabBar({
           role="tablist"
           className={cn(
             "grid h-12 w-full overflow-hidden rounded-lg bg-well ring-1 ring-inset ring-border",
-            cols === 2 && "grid-cols-2",
             cols === 3 && "grid-cols-3",
             cols === 4 && "grid-cols-4",
             cols === 5 && "grid-cols-5"
@@ -149,25 +143,17 @@ export function MobileTabBar({
                 : id === "pulse" && pulseHref
                   ? pulseHref
                   : href;
-            const tabLabel =
-              paper.only && id === "circle"
-                ? "Class"
-                : paper.only && id === "home"
-                  ? "Sheet"
-                  : shortLabel;
-            const TabIcon =
-              paper.only && id === "circle" ? GraduationCap : Icon;
             return (
               <Link
                 key={id}
                 href={to}
                 prefetch
                 role="tab"
-                aria-label={tabLabel}
+                aria-label={label}
                 aria-current={on ? "page" : undefined}
                 aria-selected={on}
                 onClick={(e) => {
-                  if (id === "home" && !paper.only) stashOpenTab("overview");
+                  if (id === "home") stashOpenTab("overview");
                   if (id === "pulse") stashOpenTab("pulse");
                   if (id === "lab") stashOpenTab("lab");
                   if (id === "compound") stashOpenTab("compound");
@@ -182,7 +168,7 @@ export function MobileTabBar({
                 )}
               >
                 <span className="relative">
-                  <TabIcon
+                  <Icon
                     className={cn("h-4 w-4", id === "compound" && "scale-125")}
                     strokeWidth={2}
                     aria-hidden
@@ -191,7 +177,9 @@ export function MobileTabBar({
                     <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-mustard" />
                   )}
                 </span>
-                <span className="max-w-full leading-none">{tabLabel}</span>
+                <span className="max-w-full leading-none">
+                  {shortLabel}
+                </span>
               </Link>
             );
           })}

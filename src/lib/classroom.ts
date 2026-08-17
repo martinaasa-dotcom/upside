@@ -251,6 +251,18 @@ export function realBookPortfolios<
   return portfolios.filter((p) => !isClassroomSheet(p));
 }
 
+/**
+ * Book the dashboard, Pulse, Forecast, and weekday notes should use.
+ * A real sheet wins. If the account only has class homework, that paper
+ * sheet is the book. The site never moves real money either way.
+ */
+export function ownedBookPortfolios<
+  T extends { classroom_community_id?: string | null },
+>(portfolios: T[]): T[] {
+  const real = realBookPortfolios(portfolios);
+  return real.length ? real : portfolios.filter(isClassroomSheet);
+}
+
 /** True when this account has a class and no real book and no circle. */
 export function isPaperClassOnly(
   portfolios: { classroom_community_id?: string | null }[],
@@ -262,20 +274,6 @@ export function isPaperClassOnly(
     portfolios.some(isClassroomSheet) ||
     communities.some((c) => isClassroomKind(c.kind))
   );
-}
-
-export function paperClassIds(
-  portfolios: { classroom_community_id?: string | null }[],
-  communities: { id?: string; kind?: string | null }[] = []
-): string[] {
-  const ids = new Set<string>();
-  for (const p of portfolios) {
-    if (p.classroom_community_id) ids.add(p.classroom_community_id);
-  }
-  for (const c of communities) {
-    if (c.id && isClassroomKind(c.kind)) ids.add(c.id);
-  }
-  return [...ids];
 }
 
 export function parseStartingCash(raw: unknown): number | null {

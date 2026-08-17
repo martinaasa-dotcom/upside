@@ -25,16 +25,11 @@ import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
 import { sheetCashBalance, tracksTradeCash } from "@/lib/cash-balance";
-import { realBookPortfolios } from "@/lib/classroom";
-import {
-  paperClassStateFrom,
-  savePaperClassState,
-} from "@/lib/paper-class-cache";
+import { isPaperClassOnly, ownedBookPortfolios } from "@/lib/classroom";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { useAuth } from "@/components/AuthProvider";
-import { usePaperClass } from "@/components/PaperClassProvider";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
@@ -310,7 +305,6 @@ export function Dashboard() {
   const { push: toast } = useToast();
   const { profile, signOut, refresh, user } = useAuth();
   const { openManual } = useFeedback();
-  const paper = usePaperClass();
   const later = useTimeout();
   const router = useRouter();
   // Picked once per mount, not per render, so it doesn't shuffle mid-load.
@@ -493,7 +487,7 @@ export function Dashboard() {
   }, [source, user]);
 
   const skipExperienceOnboarding =
-    paper.only ||
+    isPaperClassOnly(portfolios) ||
     shouldSkipExperienceOnboarding({
       holdingsCount: holdings.length,
       portfolioSlugs: portfolios.map((p) => p.slug),
@@ -504,7 +498,7 @@ export function Dashboard() {
   // next device also skips. Leave options unanswered (hidden).
   const inheritedTierRef = useRef(false);
   useEffect(() => {
-    if (paper.only) return;
+    if (isPaperClassOnly(portfolios)) return;
     if (inheritedTierRef.current) return;
     if (!tierChecked || experienceTier) return;
     if (source !== "supabase" || !user || loading) return;
@@ -526,6 +520,7 @@ export function Dashboard() {
     user,
     loading,
     skipExperienceOnboarding,
+    portfolios,
   ]);
 
   // If the tier changes (questionnaire just answered, or changed later in
@@ -540,19 +535,8 @@ export function Dashboard() {
   }, [experienceTier]);
 
   const hiddenMetaTabIds = useMemo(() => {
-    const fromTier = experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : [];
-    if (!paper.only) return fromTier;
-    return [
-      ...new Set([
-        ...fromTier,
-        OVERVIEW_TAB_ID,
-        PULSE_TAB_ID,
-        LAB_TAB_ID,
-        COMPOUND_TAB_ID,
-        ALERTS_TAB_ID,
-      ]),
-    ];
-  }, [experienceTier, paper.only]);
+    return experienceTier ? TIER_HIDDEN_META_TABS[experienceTier] : [];
+  }, [experienceTier]);
   const labHiddenForTier = hiddenMetaTabIds.includes(LAB_TAB_ID);
   const pulseHiddenForTier = hiddenMetaTabIds.includes(PULSE_TAB_ID);
 
@@ -568,20 +552,9 @@ export function Dashboard() {
       ? "lab"
       : isCompound
         ? "compound"
-        : paper.only || isOverview || isAlerts
+        : isOverview || isAlerts
           ? "home"
           : null;
-
-  useEffect(() => {
-    savePaperClassState(paperClassStateFrom(portfolios));
-  }, [portfolios]);
-
-  useEffect(() => {
-    if (!paper.only) return;
-    const sheet = portfolios.find((p) => p.classroom_community_id);
-    if (!sheet) return;
-    if (isMetaTab) setActiveId(sheet.id);
-  }, [paper.only, portfolios, isMetaTab]);
 
   const activePortfolio =
     isMetaTab
@@ -693,7 +666,7 @@ export function Dashboard() {
   }, [activePortfolio, portfolioHoldings, quotes, options]);
 
   const realPortfolios = useMemo(
-    () => realBookPortfolios(portfolios),
+    () => ownedBookPortfolios(portfolios),
     [portfolios]
   );
   const realHoldings = useMemo(() => {
@@ -2333,7 +2306,6 @@ export function Dashboard() {
     name: string,
     opts?: { silent?: boolean }
   ): Promise<Portfolio | undefined> {
-    if (paper.only) return undefined;
     const isFirstSheet = portfolios.length === 0;
     const trimmed = sanitizeSheetName(name);
     if (!trimmed) return undefined;
@@ -2999,7 +2971,7 @@ export function Dashboard() {
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}
               marketState={marketState}
-              showCommunities={source === "supabase" && !paper.only}
+              showCommunities={source === "supabase"}
               hideOptions={hideOptionsUI}
               onAddHolding={() => startFirstRunAction("manual")}
               onImportScreenshot={() => startFirstRunAction("screenshot")}
@@ -3113,7 +3085,7 @@ export function Dashboard() {
               </WidgetErrorBoundary>
             )}
 
-            {forecastVisible && !paper.only ? (
+            {forecastVisible ? (
               forecast &&
               activePortfolio && (
                 <WidgetErrorBoundary name="Forecast">
@@ -3144,7 +3116,6 @@ export function Dashboard() {
         activeId={activeId}
         onChange={setActiveId}
         onAdd={handleAddSheet}
-        hideAdd={paper.only}
         sheetTodayTone={sheetTodayTone}
         hiddenModeIds={hiddenMetaTabIds}
         onRenameRequest={(id, name) => setRenameTarget({ id, name })}
@@ -3159,8 +3130,7 @@ export function Dashboard() {
         hiddenModeIds={hiddenMetaTabIds}
         onSelect={(id) => {
           if (id === "home") {
-            const sheet = portfolios.find((p) => p.classroom_community_id);
-            setActiveId(paper.only && sheet ? sheet.id : OVERVIEW_TAB_ID);
+            setActiveId(OVERVIEW_TAB_ID);
             return true;
           }
           if (id === "pulse") {

@@ -3,7 +3,6 @@
 import { AuthProvider } from "@/components/AuthProvider";
 import { FeedbackHost } from "@/components/FeedbackHost";
 import { OfflineBanner } from "@/components/OfflineBanner";
-import { PaperClassProvider } from "@/components/PaperClassProvider";
 import { WorkspaceShell } from "@/components/WorkspaceShell";
 import { useVisualViewportVars } from "@/lib/use-visual-viewport";
 import type { ReactNode } from "react";
@@ -37,9 +36,7 @@ export function Providers({ children }: { children: ReactNode }) {
       </a>
       <OfflineBanner />
       <FeedbackHost>
-        <PaperClassProvider>
-          <WorkspaceShell>{children}</WorkspaceShell>
-        </PaperClassProvider>
+        <WorkspaceShell>{children}</WorkspaceShell>
       </FeedbackHost>
     </AuthProvider>
   );

@@ -1,11 +1,9 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
-import { usePaperClass } from "@/components/PaperClassProvider";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { cn } from "@/lib/format";
-import { paperClassHomeHref } from "@/lib/paper-class-cache";
-import { BookOpen, Bot, GraduationCap, Shield, Users } from "lucide-react";
+import { BookOpen, Bot, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,14 +14,12 @@ import { usePathname } from "next/navigation";
 export function WorkspaceSwitcher({ className }: { className?: string }) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const paper = usePaperClass();
   const showAdmin = isSuperadminEmail(user?.email);
   const onCommunities = pathname.startsWith("/communities");
   const onFund = pathname.startsWith("/upside-portfolio");
   const onAccount = pathname.startsWith("/account");
   const onAdmin = pathname.startsWith("/admin");
   const onBook = !onCommunities && !onFund && !onAccount && !onAdmin;
-  const classHref = paperClassHomeHref(paper.classIds);
 
   const item = (
     active: boolean,
@@ -58,15 +54,9 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
         className
       )}
     >
-      {paper.only ? (
-        item(onCommunities, classHref, "Class", "Your paper class", GraduationCap)
-      ) : (
-        <>
-          {item(onBook, "/", "Portfolio", "Your portfolios and daily briefing", BookOpen)}
-          {item(onFund, "/upside-portfolio", "Fund", "Upside Fund, the paper portfolio Margus runs", Bot)}
-          {item(onCommunities, "/communities", "Circle", "Compare portfolios with people you know", Users)}
-        </>
-      )}
+      {item(onBook, "/", "Portfolio", "Your portfolios and daily briefing", BookOpen)}
+      {item(onFund, "/upside-portfolio", "Fund", "Upside Fund, the paper portfolio Margus runs", Bot)}
+      {item(onCommunities, "/communities", "Circle", "Compare portfolios with people you know", Users)}
       {showAdmin ? item(onAdmin, "/admin", "Admin", "Admin", Shield) : null}
     </nav>
   );

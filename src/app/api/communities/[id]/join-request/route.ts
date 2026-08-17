@@ -7,7 +7,6 @@ import {
   parseSharePortfolioIds,
   shareOwnedSheetsIntoCommunity,
 } from "@/lib/community-share";
-import { loadPaperClassGate, PAPER_CLASS_ONLY_MESSAGE } from "@/lib/paper-class-server";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -41,14 +40,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   if ((community as { visibility?: string }).visibility !== "public") {
     return NextResponse.json(
       { error: "This community is invite-only" },
-      { status: 403 }
-    );
-  }
-
-  const gate = await loadPaperClassGate(supabase, auth.user.id);
-  if (gate.only) {
-    return NextResponse.json(
-      { error: PAPER_CLASS_ONLY_MESSAGE },
       { status: 403 }
     );
   }

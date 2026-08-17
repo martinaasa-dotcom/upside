@@ -1,6 +1,6 @@
 import { SUPERADMIN_EMAILS } from "@/lib/auth/superadmin";
 import { sheetCashBalance } from "@/lib/cash-balance";
-import { realBookPortfolios, isClassroomSheet } from "@/lib/classroom";
+import { ownedBookPortfolios } from "@/lib/classroom";
 import { hasLiveHoldings } from "@/lib/empty-book-nudge";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchMarketEvents, fetchWeekReturns } from "@/lib/market/yahoo";
@@ -129,13 +129,7 @@ export async function dispatchOptedInNotes(
       cash_balance: number;
       classroom_community_id?: string | null;
     }[];
-    const real = realBookPortfolios(books);
-    const noteBooks =
-      real.length > 0
-        ? real
-        : kind === "sunday"
-          ? books.filter(isClassroomSheet)
-          : [];
+    const noteBooks = ownedBookPortfolios(books);
     const noteIds = new Set(
       (noteBooks as { id: string }[]).map((p) => p.id)
     );

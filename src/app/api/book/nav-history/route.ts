@@ -1,5 +1,5 @@
 import { listOwnedPortfolioIds } from "@/lib/auth/ownership";
-import { realBookPortfolios } from "@/lib/classroom";
+import { ownedBookPortfolios } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -37,7 +37,7 @@ async function snapshotPointsForUser(
     .from(PORTFELL_TABLES.portfolios)
     .select("id, classroom_community_id")
     .in("id", allowed);
-  const scoped = realBookPortfolios(
+  const scoped = ownedBookPortfolios(
     ((sheets ?? []) as {
       id: string;
       classroom_community_id?: string | null;
