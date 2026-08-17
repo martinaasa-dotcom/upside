@@ -1604,7 +1604,10 @@ export function Dashboard() {
     return typeof p === "number" && p > 0 ? p : fallback;
   }
 
-  function handleSave(values: HoldingFormValues) {
+  function handleSave(
+    values: HoldingFormValues,
+    opts?: { addAnother?: boolean }
+  ) {
     if (!activePortfolio) return;
 
     const ticker = normalizeYahooTicker(values.ticker);
@@ -1666,8 +1669,10 @@ export function Dashboard() {
       });
     }
     applyCashDelta(activePortfolio.id, cashDelta);
-    setModalOpen(false);
-    toast("Holding saved", "success");
+    if (!opts?.addAnother) {
+      setModalOpen(false);
+      toast("Holding saved", "success");
+    }
     track("holding_added", { ticker });
     void refreshMarkets(
       [ticker],

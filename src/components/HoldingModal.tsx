@@ -3,7 +3,7 @@
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   isSafePositiveMoney,
   isSafeShares,
@@ -40,7 +40,7 @@ type Props = {
   open: boolean;
   portfolioName: string;
   onClose: () => void;
-  onSave: (values: HoldingFormValues) => void;
+  onSave: (values: HoldingFormValues, opts?: { addAnother?: boolean }) => void;
   /** Hide the Target call % field for viewers with no options experience
    * — still submits with the same default, they just never see or think
    * about it. */
@@ -61,6 +61,8 @@ export function HoldingModal({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const tickerRef = useRef<HTMLInputElement>(null);
   const remote = useTickerSearch(open ? ticker : "");
   const suggestions = useMemo(
     () =>
@@ -73,8 +75,7 @@ export function HoldingModal({
     [ticker, remote]
   );
 
-  useEffect(() => {
-    if (!open) return;
+  function resetForm() {
     setTicker("");
     setShares("");
     setBuyPrice("");
@@ -82,6 +83,12 @@ export function HoldingModal({
     setError(null);
     setBusy(false);
     setListOpen(false);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    resetForm();
+    setSavedNotice(null);
   }, [open]);
 
   if (!open) return null;
@@ -106,8 +113,7 @@ export function HoldingModal({
     }
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(addAnother: boolean) {
     if (busy) return;
     try {
     const sharesN = parseDecimal(shares);
@@ -169,12 +175,19 @@ export function HoldingModal({
         return;
       }
     }
-    onSave({
-      ticker: normalizedTicker,
-      shares: roundShares(sharesN),
-      buy_price: buyUsd,
-      target_call_pct: callN / 100,
-    });
+    onSave(
+      {
+        ticker: normalizedTicker,
+        shares: roundShares(sharesN),
+        buy_price: buyUsd,
+        target_call_pct: callN / 100,
+      },
+      { addAnother }
+    );
+    if (!addAnother) return;
+    resetForm();
+    setSavedNotice(normalizedTicker);
+    requestAnimationFrame(() => tickerRef.current?.focus());
     } catch {
       setBusy(false);
       setError("Couldn't save that holding. Try again.");
@@ -196,7 +209,10 @@ export function HoldingModal({
         onClick={onClose}
       />
       <form
-        onSubmit={(e) => void submit(e)}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit(false);
+        }}
         className="relative max-h-full w-full overflow-y-auto rounded-t-2xl border border-border bg-well p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-w-md sm:rounded-2xl sm:pb-5"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -219,12 +235,14 @@ export function HoldingModal({
             Ticker or company
             <div className="relative">
               <input
+                ref={tickerRef}
                 autoFocus
                 value={ticker}
                 onChange={(e) => {
                   setTicker(sanitizeTickerQuery(e.target.value));
                   setListOpen(true);
                   setError(null);
+                  setSavedNotice(null);
                 }}
                 onFocus={() => {
                   if (ticker.trim()) setListOpen(true);
@@ -338,14 +356,27 @@ export function HoldingModal({
         </div>
 
         {error && <p className="mt-3 text-sm text-loss">{error}</p>}
+        {savedNotice && !error && (
+          <p className="mt-3 text-sm text-muted">
+            <TickerSymbol ticker={savedNotice} /> saved. Add the next one.
+          </p>
+        )}
 
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
+            className="mr-auto rounded-lg px-3 py-2 text-sm text-muted hover:bg-well hover:text-foreground"
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void submit(true)}
+            className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add another
           </button>
           <button
             type="submit"
