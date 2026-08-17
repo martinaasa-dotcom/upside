@@ -28,6 +28,7 @@ export const SIGNIN_POINTS = [
   "Margus can read your portfolio and talk it through with you.",
 ] as const;
 
+/** Live inbox. Named on /terms and /privacy. */
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";
 
 /** Named on /terms and /privacy. From the Estonian business register. */

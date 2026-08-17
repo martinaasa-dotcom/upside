@@ -48,5 +48,4 @@ Redirects stay off until you set `UPSIDE_CANONICAL_HOST=upsidelab.app` in Vercel
 ## What this repo does not do for you
 
 - Register extra Google Cloud OAuth redirect URIs (add the dedicated project's `/auth/v1/callback` if sign-in fails after cutover).
-- Provision `privacy@upsidelab.app` (legal pages now point there).
 - There is no Shopify app to reconfigure.
