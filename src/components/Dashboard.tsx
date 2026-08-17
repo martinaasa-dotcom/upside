@@ -3054,6 +3054,56 @@ export function Dashboard() {
       })();
     }
   );
+  const onPatchHolding = useStableCallback(handlePatch);
+  const onDeleteHolding = useStableCallback(requestDeleteHolding);
+  const onSetEoyPrice = useStableCallback(commitEoyPrice);
+  const onApplyMargusPaths = useStableCallback(applyMargusEoyPaths);
+  const onClearForecastOverrides = useStableCallback(() =>
+    setConfirmResetForecast(true)
+  );
+  const onAddHolding = useStableCallback(() => setModalOpen(true));
+  const onEditCash = useStableCallback(() => {
+    if (!canClassCash) return;
+    setCashModalOpen(true);
+  });
+  const onAskMargus = useStableCallback(() =>
+    setMargusExpandSignal((n) => n + 1)
+  );
+  const onImportScreenshot = useStableCallback(() =>
+    setMargusImagePickSignal((n) => n + 1)
+  );
+  const onImportCsv = useStableCallback(() => setCsvImportOpen(true));
+  const onOpenTicker = useStableCallback((t: string) => setDrawerTicker(t));
+  const onDisplayCurrencyChange = useStableCallback((code: DisplayCurrency) => {
+    if (!activePortfolio) return;
+    setDisplayCurrencyByPortfolio((prev) => {
+      const next = { ...prev, [activePortfolio.id]: code };
+      saveDisplayCurrencyMap(next);
+      return next;
+    });
+  });
+  const onPatchTargetCall = useStableCallback(
+    (id: string, target_call_pct: number) =>
+      handlePatch({ id, target_call_pct })
+  );
+  const onPatchStockTarget = useStableCallback(
+    (id: string, stockTarget: number) =>
+      handlePatch({ id, stock_target_override: stockTarget })
+  );
+  const onShowForecast = useStableCallback(() => toggleForecastVisible());
+
+  const tradeLock = useMemo(
+    () =>
+      classTrade
+        ? {
+            canBuy: classTrade.canBuy,
+            canSell: classTrade.canSell,
+            canCash: classTrade.canCash,
+            message: classTrade.message,
+          }
+        : null,
+    [classTrade]
+  );
 
   const headerAvatar = useMemo(
     () => ({
@@ -3344,48 +3394,24 @@ export function Dashboard() {
               portfolio={activePortfolio!}
               holdings={snapshot!.holdings}
               totals={snapshot!.totals}
-              onPatch={handlePatch}
-              onDelete={requestDeleteHolding}
-              onEditCash={() => {
-                if (!canClassCash) return;
-                setCashModalOpen(true);
-              }}
-              onAddHolding={canClassBuy ? () => setModalOpen(true) : undefined}
-              tradeLock={
-                classTrade
-                  ? {
-                      canBuy: classTrade.canBuy,
-                      canSell: classTrade.canSell,
-                      canCash: classTrade.canCash,
-                      message: classTrade.message,
-                    }
-                  : null
-              }
-              onAskMargus={() =>
-                setMargusExpandSignal((n) => n + 1)
-              }
+              onPatch={onPatchHolding}
+              onDelete={onDeleteHolding}
+              onEditCash={onEditCash}
+              onAddHolding={canClassBuy ? onAddHolding : undefined}
+              tradeLock={tradeLock}
+              onAskMargus={onAskMargus}
               onImportScreenshot={
-                canClassBuy
-                  ? () => setMargusImagePickSignal((n) => n + 1)
-                  : undefined
+                canClassBuy ? onImportScreenshot : undefined
               }
-              onImportCsv={
-                canClassBuy ? () => setCsvImportOpen(true) : undefined
-              }
-              onOpenTicker={(t) => setDrawerTicker(t)}
+              onImportCsv={canClassBuy ? onImportCsv : undefined}
+              onOpenTicker={onOpenTicker}
               displayCurrency={getDisplayCurrency(
                 displayCurrencyByPortfolio,
                 activePortfolio!.id
               )}
               eurUsd={eurUsd}
               usdPer={usdPer}
-              onDisplayCurrencyChange={(code: DisplayCurrency) => {
-                setDisplayCurrencyByPortfolio((prev) => {
-                  const next = { ...prev, [activePortfolio!.id]: code };
-                  saveDisplayCurrencyMap(next);
-                  return next;
-                });
-              }}
+              onDisplayCurrencyChange={onDisplayCurrencyChange}
             />
             </WidgetErrorBoundary>
 
@@ -3395,15 +3421,9 @@ export function Dashboard() {
                 rows={snapshot!.coveredCallRows}
                 yield2wAvg={snapshot!.totals.yield2wAvg}
                 premiumTotal={snapshot!.totals.premiumTotal}
-                onPatchTargetCall={(id, target_call_pct) =>
-                  handlePatch({ id, target_call_pct })
-                }
-                onPatchStockTarget={(id, stockTarget) =>
-                  handlePatch({ id, stock_target_override: stockTarget })
-                }
-                onAddHolding={
-                  canClassBuy ? () => setModalOpen(true) : undefined
-                }
+                onPatchTargetCall={onPatchTargetCall}
+                onPatchStockTarget={onPatchStockTarget}
+                onAddHolding={canClassBuy ? onAddHolding : undefined}
               />
               </WidgetErrorBoundary>
             )}
@@ -3418,16 +3438,16 @@ export function Dashboard() {
                   portfolioName={activePortfolio.name}
                   cashBalance={activePortfolio.cash_balance}
                   overrides={eoyOverrides}
-                  onSetEoyPrice={commitEoyPrice}
-                  onApplyMargusPaths={applyMargusEoyPaths}
-                  onClearOverrides={() => setConfirmResetForecast(true)}
+                  onSetEoyPrice={onSetEoyPrice}
+                  onApplyMargusPaths={onApplyMargusPaths}
+                  onClearOverrides={onClearForecastOverrides}
                   convictions={convictionMap}
                   labReady={labReady}
                 />
                 </WidgetErrorBoundary>
               )
             ) : (
-              <ForecastOffStub onShow={() => toggleForecastVisible()} />
+              <ForecastOffStub onShow={onShowForecast} />
             )}
           </>
         )}

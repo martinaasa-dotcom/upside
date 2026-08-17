@@ -15,7 +15,7 @@ import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { isWorkspaceRoomActive } from "@/lib/workspace-rooms";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { pickLoadingMessage } from "@/lib/loading-messages";
-import { quotePollMs, quotesUrl } from "@/lib/market/session";
+import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import { concentrationRead, themeBreakdown } from "@/lib/allocation";
 import {
   buildPortfolioPersonality,
@@ -396,6 +396,32 @@ function freshnessLabel(quotesAt: number | null, nowMs: number): string {
   if (secs < 90) return `Live · ${secs}s ago`;
   const mins = Math.round(secs / 60);
   return `Prices ${mins}m old`;
+}
+
+function FundFreshness({ quotesAt }: { quotesAt: number | null }) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (!document.hidden) setNowMs(Date.now());
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const label = freshnessLabel(quotesAt, nowMs);
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted"
+      title="Prices include pre-market and after hours, not just the regular close"
+      aria-label={label}
+    >
+      {quotesAt != null && (
+        <span
+          aria-hidden
+          className="h-1.5 w-1.5 shrink-0 rounded-full bg-gain"
+        />
+      )}
+      <span className="hidden tabular-nums xs:inline">{label}</span>
+    </span>
+  );
 }
 
 function FundNote({
@@ -1004,9 +1030,13 @@ export function UpsidePortfolioPage() {
   const pollRef = useRef({ load, refreshBenchmarkValue });
   pollRef.current = { load, refreshBenchmarkValue };
 
+  const quotesAtRef = useRef(quotesAt);
+  quotesAtRef.current = quotesAt;
+
   useEffect(() => {
     function tick() {
       if (document.hidden || !isWorkspaceRoomActive("fund")) return;
+      if (isQuotePollFresh(quotesAtRef.current)) return;
       void pollRef.current.load("background");
       void pollRef.current.refreshBenchmarkValue();
     }
@@ -1021,11 +1051,8 @@ export function UpsidePortfolioPage() {
         },
         quotePollMs()
       );
-    }
-    tick();
+    };
     schedule();
-    // Coming back to the tab shouldn't mean waiting out a full interval to
-    // see how far the market moved while you were away.
     function onVisible() {
       if (!document.hidden) tick();
     }
@@ -1034,16 +1061,6 @@ export function UpsidePortfolioPage() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
-
-  // Drives the "updated Ns ago" label. Only ticks while the tab is
-  // visible, so a backgrounded page isn't re-rendering once a second.
-  const [nowMs, setNowMs] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      if (!document.hidden) setNowMs(Date.now());
-    }, 1000);
-    return () => window.clearInterval(id);
   }, []);
 
   const handleOpenPicker = useCallback(async () => {
@@ -1123,21 +1140,7 @@ export function UpsidePortfolioPage() {
     <div className={PAGE_FRAME_CLASS}>
       <MobileChrome title="Fund" active={null} />
       <AppHeader className="hidden md:block" title="Upside Fund">
-        <span
-          className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted"
-          title="Prices include pre-market and after hours, not just the regular close"
-          aria-label={freshnessLabel(quotesAt, nowMs)}
-        >
-          {quotesAt != null && (
-            <span
-              aria-hidden
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-gain"
-            />
-          )}
-          <span className="hidden tabular-nums xs:inline">
-            {freshnessLabel(quotesAt, nowMs)}
-          </span>
-        </span>
+        <FundFreshness quotesAt={quotesAt} />
       </AppHeader>
 
       <main id="main" className={PAGE_MAIN_CLASS}>

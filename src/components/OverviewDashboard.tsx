@@ -47,7 +47,7 @@ import {
 } from "@/lib/visit-diff";
 import { finiteNumber } from "@/lib/money";
 import { ArrowRight, Plus } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 export type LabDeepLink = "seasonality";
 
@@ -57,6 +57,7 @@ const tone = (value: number | null | undefined) =>
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;
+const EMPTY_ALERTS: UpsideAlert[] = [];
 
 type Props = {
   model: OverviewModel;
@@ -545,10 +546,10 @@ function OverviewYearChart({
   );
 }
 
-export function OverviewDashboard({
+export const OverviewDashboard = memo(function OverviewDashboard({
   model,
   onOpenSheet,
-  activeAlerts = [],
+  activeAlerts = EMPTY_ALERTS,
   onOpenPulse,
   marketState = null,
   onAddHolding,
@@ -581,6 +582,14 @@ export function OverviewDashboard({
   const kind = sessionKind(marketState);
 
   const tickerKey = tickers.map((t) => t.ticker).join(",");
+  const heldTickers = useMemo(
+    () => tickers.map((t) => t.ticker),
+    [tickers]
+  );
+  const navPositions = useMemo(
+    () => tickers.map((t) => ({ ticker: t.ticker, shares: t.shares })),
+    [tickers]
+  );
 
   useEffect(() => {
     if (!model.tickers.length || model.totals.todayPct == null) return;
@@ -634,10 +643,7 @@ export function OverviewDashboard({
   const nav = useBookNavHistory({
     liveNav: totals.totalValue,
     cash: totals.cash,
-    positions: model.tickers.map((t) => ({
-      ticker: t.ticker,
-      shares: t.shares,
-    })),
+    positions: navPositions,
   });
 
   const movers = useMemo(() => {
@@ -888,7 +894,7 @@ export function OverviewDashboard({
       <WidgetErrorBoundary name="Watchlist">
       <Panel className="overview-fade">
         <WatchlistStrip
-          heldTickers={tickers.map((t) => t.ticker)}
+          heldTickers={heldTickers}
           onOpenPulse={onOpenPulse}
         />
       </Panel>
@@ -901,4 +907,4 @@ export function OverviewDashboard({
       ) : null}
     </div>
   );
-}
+});

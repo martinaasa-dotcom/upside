@@ -1,10 +1,10 @@
 import type { Instrumentation } from "next";
 import { validateServerEnv } from "@/lib/env-schema";
 import { logError } from "@/lib/error-log";
-import { installSlowRouteLogger } from "@/lib/slow-route";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "edge") return;
+  const { installSlowRouteLogger } = await import("@/lib/slow-route");
   await installSlowRouteLogger();
   const issues = validateServerEnv();
   for (const issue of issues) {

@@ -39,7 +39,7 @@ export function downsampleSparkline(
   points: number[],
   maxPoints = 32
 ): number[] {
-  if (points.length <= maxPoints) return points;
+  if (!points || points.length <= maxPoints) return points ?? [];
   const last = points.length - 1;
   const out: number[] = [];
   for (let i = 0; i < maxPoints; i++) {

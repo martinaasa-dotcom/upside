@@ -83,7 +83,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 
 type Props = {
   model: OverviewModel;
@@ -469,7 +469,7 @@ async function resolveListedTicker(
   }
 }
 
-export function PulsePage({
+export const PulsePage = memo(function PulsePage({
   model,
   quotes,
   convictions,
@@ -1192,4 +1192,4 @@ export function PulsePage({
       )}
     </div>
   );
-}
+});

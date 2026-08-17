@@ -5,7 +5,7 @@ import { isAbortError } from "@/lib/abort";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { cn } from "@/lib/format";
-import { quotePollMs } from "@/lib/market/session";
+import { quotePollMs, isQuotePollFresh } from "@/lib/market/session";
 import { loadCachedQuotes } from "@/lib/quote-cache";
 import {
   loadMacroPaint,
@@ -101,12 +101,17 @@ export function MacroStrip() {
         fearGreed: fg,
       });
     };
-    void fetchMacro(ctrl.signal).then(applyMacro).catch((err) => {
-      if (isAbortError(err)) return;
-    });
-    void fetchFearGreed(ctrl.signal).then(applyFear).catch((err) => {
-      if (isAbortError(err)) return;
-    });
+    const quotesFresh = isQuotePollFresh(loadCachedQuotes().savedAt);
+    if (!quotesFresh) {
+      void fetchMacro(ctrl.signal).then(applyMacro).catch((err) => {
+        if (isAbortError(err)) return;
+      });
+    }
+    if (!loadMacroPaint()?.fearGreed) {
+      void fetchFearGreed(ctrl.signal).then(applyFear).catch((err) => {
+        if (isAbortError(err)) return;
+      });
+    }
     let timer = 0;
     const schedule = () => {
       timer = window.setTimeout(

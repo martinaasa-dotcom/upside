@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/format";
 import { PALETTE } from "@/lib/palette";
+import { memo } from "react";
 
 type Props = {
   points: number[];
@@ -12,7 +13,7 @@ type Props = {
   fill?: boolean;
 };
 
-export function Sparkline({
+export const Sparkline = memo(function Sparkline({
   points,
   className,
   width = 96,
@@ -62,4 +63,4 @@ export function Sparkline({
       />
     </svg>
   );
-}
+});

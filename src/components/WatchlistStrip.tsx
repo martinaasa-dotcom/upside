@@ -10,7 +10,7 @@ import {
   signedTone,
 } from "@/lib/format";
 import { sanitizeTickerQuery } from "@/lib/input-guard";
-import { quotesUrl } from "@/lib/market/session";
+import { quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import {
   localTickerSuggestions,
   looksLikeTickerQuery,
@@ -27,6 +27,7 @@ import {
   loadWatchlist,
   removeWatchlistTicker,
 } from "@/lib/watchlist";
+import { loadCachedQuotes } from "@/lib/quote-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { PanelHeader } from "@/components/ui/Panel";
 import { Plus, X } from "lucide-react";
@@ -34,6 +35,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 /** Stable server-side value; a fresh [] each render would churn the memo. */
 const EMPTY_LIST: string[] = [];
+const EMPTY_QUOTES: Record<string, Quote> = {};
 const POPULAR_SEED = [...FALLBACK_POPULAR_TICKERS];
 
 function lookBorder(kind: WatchLookKind | undefined): string {
@@ -53,7 +55,10 @@ export function WatchlistStrip({
   // without the server and client trees disagreeing.
   const [list, setList] = useHydratedCache<string[]>(loadWatchlist, EMPTY_LIST);
   const [draft, setDraft] = useState("");
-  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+  const [quotes, setQuotes] = useHydratedCache<Record<string, Quote>>(
+    () => loadCachedQuotes().quotes,
+    EMPTY_QUOTES
+  );
   const [popular, setPopular] = useState<string[]>(POPULAR_SEED);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -88,8 +93,9 @@ export function WatchlistStrip({
 
   useEffect(() => {
     if (names.length === 0) return;
+    if (isQuotePollFresh(loadCachedQuotes().savedAt)) return;
     const ctrl = new AbortController();
-    void fetch(quotesUrl(names), { cache: "no-store", signal: ctrl.signal })
+    void fetch(quotesUrl(names), { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { quotes?: Record<string, Quote> } | null) => {
         if (!ctrl.signal.aborted && data?.quotes) setQuotes(data.quotes);
@@ -110,7 +116,6 @@ export function WatchlistStrip({
     }
     const ctrl = new AbortController();
     void fetch(`/api/market/events?tickers=${encodeURIComponent(names.join(","))}`, {
-      cache: "no-store",
       signal: ctrl.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -135,7 +140,7 @@ export function WatchlistStrip({
 
   useEffect(() => {
     const ctrl = new AbortController();
-    void fetch("/api/popular-tickers", { cache: "no-store", signal: ctrl.signal })
+    void fetch("/api/popular-tickers", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { tickers?: string[] } | null) => {
         if (ctrl.signal.aborted) return;

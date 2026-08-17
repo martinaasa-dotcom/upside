@@ -2,7 +2,7 @@
 
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 import { cn, percent, signedTone } from "@/lib/format";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 
 export type ComparisonSeries = {
   label: string;
@@ -45,28 +45,27 @@ function uniqueTicks(rawMin: number, rawMax: number): number[] {
  * Plots return, not dollars, so different starting capital can share an axis.
  * Axis copy is HTML text-xs so it does not scale with the SVG.
  */
-export function ComparisonChart({
+export const ComparisonChart = memo(function ComparisonChart({
   series,
   labels,
   width = 640,
   height = 132,
   className,
 }: Props) {
-  const usable = series.filter((s) => s.points.length >= 2);
   const [hover, setHover] = useState<number | null>(null);
 
-  const len = usable[0]?.points.length ?? 0;
   const padL = 8;
   const padR = 8;
   const padTop = 10;
   const padBottom = 8;
 
-  const xAt = (i: number) =>
-    len > 1
-      ? padL + (i / (len - 1)) * (width - padL - padR)
-      : width / 2;
-
   const geometry = useMemo(() => {
+    const usable = series.filter((s) => s.points.length >= 2);
+    const len = usable[0]?.points.length ?? 0;
+    const xAt = (i: number) =>
+      len > 1
+        ? padL + (i / (len - 1)) * (width - padL - padR)
+        : width / 2;
     if (usable.length === 0) return null;
     const allValues = usable.flatMap((s) => s.points);
     const rawMin = Math.min(...allValues, 0);
@@ -82,12 +81,10 @@ export function ComparisonChart({
       points
         .map((v, i) => `${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`)
         .join(" ");
-    return { min, max, range, toXY, yAt, rawMin, rawMax };
-    // xAt closes over len/width; those are the real deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usable, width, height, len]);
+    return { usable, len, xAt, min, max, range, toXY, yAt, rawMin, rawMax };
+  }, [series, width, height]);
 
-  if (usable.length === 0 || !geometry) {
+  if (!geometry) {
     return (
       <div
         className="flex items-center justify-center text-sm text-muted"
@@ -98,7 +95,7 @@ export function ComparisonChart({
     );
   }
 
-  const { toXY, yAt, rawMin, rawMax } = geometry;
+  const { usable, len, xAt, toXY, yAt, rawMin, rawMax } = geometry;
   const active = hover != null && hover >= 0 && hover < len ? hover : null;
   const dayLabel =
     active != null
@@ -243,4 +240,4 @@ export function ComparisonChart({
       </ul>
     </div>
   );
-}
+});

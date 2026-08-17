@@ -23,7 +23,7 @@ import { TrendsPanel } from "@/components/TrendsPanel";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
 type Props = {
@@ -38,6 +38,8 @@ type Props = {
   /** Specific tab ids to hide, driven by the viewer's experience tier. */
   hiddenTabs?: string[];
 };
+
+const EMPTY_HIDDEN_TABS: string[] = [];
 
 type LabTab = "alloc" | "risk" | "trends" | "seasonality";
 
@@ -76,14 +78,14 @@ function initialLabTab(): LabTab {
   return "alloc";
 }
 
-export function LabSheet({
+export const LabSheet = memo(function LabSheet({
   overview,
   portfolios,
   holdings,
   quotes,
   intentTab,
   onIntentConsumed,
-  hiddenTabs = [],
+  hiddenTabs = EMPTY_HIDDEN_TABS,
 }: Props) {
   const visibleTabs = TABS.filter((t) => !hiddenTabs.includes(t.id));
   const fallbackTab = visibleTabs[0]?.id ?? "alloc";
@@ -668,7 +670,7 @@ export function LabSheet({
       )}
     </div>
   );
-}
+});
 
 function AllocCard({
   title,

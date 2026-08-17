@@ -49,7 +49,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { useTimeout } from "@/lib/use-timeout";
 import {
   Card,
@@ -181,6 +181,8 @@ export type CompoundSheetOption = {
   name: string;
   value: number;
 };
+
+const EMPTY_TICKER_VALUES: Array<{ ticker: string; value: number }> = [];
 
 type Props = {
   /** Book value in USD */
@@ -464,10 +466,10 @@ function ComparePathsChart({
   );
 }
 
-export function CompoundInterestSheet({
+export const CompoundInterestSheet = memo(function CompoundInterestSheet({
   bookValue,
   sheets,
-  tickerValues = [],
+  tickerValues = EMPTY_TICKER_VALUES,
   bookCash = 0,
   eurUsd = null,
   eurUsdDetail = null,
@@ -1411,4 +1413,4 @@ export function CompoundInterestSheet({
       </section>
     </div>
   );
-}
+});

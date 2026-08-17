@@ -41,6 +41,8 @@ import {
   loadCommunityDuelCache,
   saveCommunityCache,
   clearCommunityCache,
+  isCommunityCacheFresh,
+  COMMUNITY_VISIBLE_REFRESH_MS,
   type CommunityDuelCache,
 } from "@/lib/community-cache";
 import { isWorkspaceRoomActive, saveLastCircleId } from "@/lib/workspace-rooms";
@@ -58,7 +60,7 @@ import {
   type ForecastTheme,
 } from "@/lib/forecast-conviction";
 import { buildCommunityFunFacts } from "@/lib/community-fun-facts";
-import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
+import { loadCachedQuotes, mergeQuotes, saveCachedQuotes, quotesUnchanged } from "@/lib/quote-cache";
 import { COMPOUND_MILESTONE_GOALS } from "@/lib/compound-play";
 import { todayKeyInTz } from "@/lib/timezone";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
@@ -99,7 +101,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { quotePollMs, quotesUrl } from "@/lib/market/session";
+import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import {
@@ -383,12 +385,22 @@ export function CommunityView({ communityId }: Props) {
   }, [communityId]);
 
   useEffect(() => {
+    const cached = loadCommunityCache(communityId);
+    if (
+      hasDataRef.current &&
+      isCommunityCacheFresh(cached, COMMUNITY_VISIBLE_REFRESH_MS)
+    ) {
+      return () => {
+        loadAbortRef.current?.abort();
+        loadCallIdRef.current += 1;
+      };
+    }
     void load();
     return () => {
       loadAbortRef.current?.abort();
       loadCallIdRef.current += 1;
     };
-  }, [load]);
+  }, [load, communityId]);
 
   useNetworkResume(() => {
     void load();
@@ -399,11 +411,14 @@ export function CommunityView({ communityId }: Props) {
   // refetch on return so "awaiting sign-in" / portfolio counts don't go stale.
   useEffect(() => {
     function onVisible() {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState !== "visible") return;
+      const cached = loadCommunityCache(communityId);
+      if (isCommunityCacheFresh(cached, COMMUNITY_VISIBLE_REFRESH_MS)) return;
+      void load();
     }
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [load]);
+  }, [load, communityId]);
 
   // Drill-down (member -> their portfolio) mirrors into ?member=&portfolio=
   // so a hard refresh lands back on the exact view, and Back/Forward step
@@ -487,17 +502,30 @@ export function CommunityView({ communityId }: Props) {
     }
   }, [loading, selectedPortfolioId, portfolios]);
 
+  const holdingsTickerKey = useMemo(
+    () =>
+      [...new Set(holdings.map((h) => h.ticker).filter(Boolean))]
+        .sort()
+        .join(","),
+    [holdings]
+  );
+  const quotesAtRef = useRef(0);
+
   useEffect(() => {
-    const tickers = [
-      ...new Set(holdings.map((h) => h.ticker).filter(Boolean)),
-    ];
+    const tickers = holdingsTickerKey
+      ? holdingsTickerKey.split(",")
+      : [];
     if (!tickers.length) return;
     let cancelled = false;
     let timer = 0;
     const ctrl = new AbortController();
+    if (quotesAtRef.current === 0) {
+      quotesAtRef.current = loadCachedQuotes().savedAt ?? 0;
+    }
     const tick = async () => {
       if (cancelled || document.hidden) return;
       if (!isWorkspaceRoomActive(`community:${communityId}`)) return;
+      if (isQuotePollFresh(quotesAtRef.current)) return;
       try {
         const res = await fetch(quotesUrl(tickers), { signal: ctrl.signal });
         if (!res.ok || cancelled) return;
@@ -507,8 +535,13 @@ export function CommunityView({ communityId }: Props) {
         let merged = fresh;
         setQuotes((prev) => {
           merged = mergeQuotes(prev, fresh);
+          if (quotesUnchanged(prev, merged)) {
+            merged = prev;
+            return prev;
+          }
           return merged;
         });
+        quotesAtRef.current = Date.now();
         saveCachedQuotes(merged);
       } catch {
         /* ignore */
@@ -533,7 +566,7 @@ export function CommunityView({ communityId }: Props) {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [holdings, communityId]);
+  }, [holdingsTickerKey, communityId]);
 
   const profileName = useCallback(
     (id: string) => {
@@ -3114,7 +3147,7 @@ function ReadOnlyHoldings({
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead className="border-b border-border text-xs text-muted">
             <tr>
-              <th className="px-3 py-2 font-medium">Ticker</th>
+              <th className="px-3 py-2 text-right font-medium">Ticker</th>
               <th className="px-3 py-2 font-medium">Today</th>
               <th className="px-3 py-2 font-medium">%</th>
               <th className="px-3 py-2 font-medium">Shares</th>
@@ -3130,7 +3163,7 @@ function ReadOnlyHoldings({
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-border">
-                  <td className="px-3 py-2 font-medium">
+                  <td className="px-3 py-2 text-right font-medium">
                     <TickerSymbol
                       ticker={h.ticker}
                       currency={listingCurrency(
