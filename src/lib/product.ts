@@ -30,7 +30,14 @@ export const SIGNIN_POINTS = [
 
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";
 
-/** Named on /terms and /privacy. Do not invent a company registry here. */
-export const LEGAL_OPERATOR = "Martin Aasa";
+/** Named on /terms and /privacy. From the Estonian business register. */
+export const LEGAL_OPERATOR = "Upthink Solutions OÜ";
 
 export const LEGAL_COUNTRY = "Estonia";
+
+export const LEGAL_REGISTRY_CODE = "16683946";
+
+export const LEGAL_ADDRESS =
+  "Aiandi tn 8/2-28, Mustamäe linnaosa, 12915 Tallinn, Harju maakond";
+
+export const LEGAL_VAT_ID = "EE102590654";

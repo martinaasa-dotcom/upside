@@ -5082,19 +5082,28 @@ run("legal pages name the operator and match the product", () => {
     "utf8"
   );
 
-  assert.match(product, /LEGAL_OPERATOR = "Martin Aasa"/);
+  assert.match(product, /LEGAL_OPERATOR = "Upthink Solutions OÜ"/);
   assert.match(product, /LEGAL_COUNTRY = "Estonia"/);
+  assert.match(product, /LEGAL_REGISTRY_CODE = "16683946"/);
+  assert.match(product, /LEGAL_VAT_ID = "EE102590654"/);
+  assert.match(product, /Aiandi tn 8\/2-28/);
   assert.match(product, /PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app"/);
 
   for (const src of [terms, privacy]) {
     assert.match(src, /LEGAL_OPERATOR/);
     assert.match(src, /LEGAL_COUNTRY/);
+    assert.match(src, /LEGAL_REGISTRY_CODE/);
+    assert.match(src, /LEGAL_ADDRESS/);
+    assert.match(src, /LEGAL_VAT_ID/);
     assert.match(src, /PRODUCT_CONTACT_EMAIL/);
     assert.match(src, /Under 13 is never allowed/);
     assert.match(src, /Classroom/);
     assert.match(src, /paper/);
+    assert.doesNotMatch(src, /Martin Aasa/);
     assert.doesNotMatch(src, /Amanda|Rasmus|Karoliine/);
     assert.doesNotMatch(src, /martin\.aasa@upthink\.ee/);
+    assert.doesNotMatch(src, /There is no separate company/);
+    assert.doesNotMatch(src, /That person is responsible/);
     assert.doesNotMatch(src, /below the age required to hold a brokerage/);
     assert.doesNotMatch(src, /\u2014/);
   }

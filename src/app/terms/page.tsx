@@ -1,7 +1,10 @@
 import { HeaderBrand } from "@/components/HeaderBrand";
 import {
+  LEGAL_ADDRESS,
   LEGAL_COUNTRY,
   LEGAL_OPERATOR,
+  LEGAL_REGISTRY_CODE,
+  LEGAL_VAT_ID,
   PRODUCT_CONTACT_EMAIL,
   PRODUCT_NAME,
 } from "@/lib/product";
@@ -41,16 +44,16 @@ export default function TermsPage() {
         </p>
 
         <Section title="1. Who we are">
-          {PRODUCT_NAME} is operated by {LEGAL_OPERATOR} in {LEGAL_COUNTRY}.
-          Questions:{" "}
+          {PRODUCT_NAME} is operated by {LEGAL_OPERATOR}, a private limited
+          company in {LEGAL_COUNTRY} (registry code {LEGAL_REGISTRY_CODE}).
+          Registered office: {LEGAL_ADDRESS}. VAT ID {LEGAL_VAT_ID}. Questions:{" "}
           <a
             href={`mailto:${PRODUCT_CONTACT_EMAIL}`}
             className="underline hover:text-foreground"
           >
             {PRODUCT_CONTACT_EMAIL}
           </a>
-          . There is no separate company listed here. If that changes, this
-          page will say so.
+          .
         </Section>
 
         <Section title="2. Not financial advice">
