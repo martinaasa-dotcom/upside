@@ -42,6 +42,13 @@ export function loadStoredTier(): ExperienceTier | null {
   }
 }
 
+export const EXPERIENCE_TIER_EVENT = "upside:experience-tier";
+
+function emitExperienceChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(EXPERIENCE_TIER_EVENT));
+}
+
 export function saveStoredTier(tier: ExperienceTier) {
   if (typeof window === "undefined") return;
   try {
@@ -49,6 +56,7 @@ export function saveStoredTier(tier: ExperienceTier) {
   } catch {
     /* ignore quota / private mode */
   }
+  emitExperienceChanged();
 }
 
 /**
@@ -97,8 +105,8 @@ export function shouldHideOptions(knowsOptions: boolean | null): boolean {
 /**
  * Household / already-filled books skip the first-run questionnaire.
  * Karoliine claiming Karud should land on the shared names, not "Add
- * what you own". Circle invite joins skip it too: they came to look at
- * someone else's book, not to paste their own.
+ * what you own". Classroom joins skip it in the gate via isPaperClassOnly.
+ * A circle invite does not skip: same questions as signing in on Home.
  */
 export const HOUSEHOLD_SEED_SLUGS = new Set([
   "karud",
@@ -111,9 +119,7 @@ export const HOUSEHOLD_SEED_SLUGS = new Set([
 export function shouldSkipExperienceOnboarding(input: {
   holdingsCount: number;
   portfolioSlugs: Array<string | null | undefined>;
-  inACircle?: boolean;
 }): boolean {
-  if (input.inACircle) return true;
   if (input.holdingsCount > 0) return true;
   return input.portfolioSlugs.some(
     (slug) => typeof slug === "string" && HOUSEHOLD_SEED_SLUGS.has(slug)
@@ -139,6 +145,7 @@ export function saveStoredKnowsOptions(value: boolean) {
   } catch {
     /* ignore quota / private mode */
   }
+  emitExperienceChanged();
 }
 
 /**

@@ -8,7 +8,6 @@ import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
 import { CoveredCallPanel, COVERED_CALLS_ANCHOR } from "@/components/CoveredCallPanel";
-import { ExperienceOnboardingModal } from "@/components/ExperienceOnboardingModal";
 import { ForecastPanel, ForecastOffStub } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
 import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
@@ -26,12 +25,6 @@ import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
 import { sheetCashBalance, tracksTradeCash } from "@/lib/cash-balance";
 import { isPaperClassOnly, ownedBookPortfolios } from "@/lib/classroom";
-import {
-  communityListHasCircle,
-  loadCommunityListCache,
-  saveCommunityListCache,
-  type CommunityListRow,
-} from "@/lib/community-cache";
 import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { TickerDrawer } from "@/components/TickerDrawer";
@@ -168,6 +161,7 @@ import {
 import {
   shouldHideOptions,
   shouldSkipExperienceOnboarding,
+  EXPERIENCE_TIER_EVENT,
   loadStoredKnowsOptions,
   loadStoredTier,
   saveStoredKnowsOptions,
@@ -452,8 +446,6 @@ export function Dashboard() {
   // Options UI only appears after an explicit yes.
   const [knowsOptions, setKnowsOptions] = useState<boolean | null>(null);
   const hideOptionsUI = shouldHideOptions(knowsOptions);
-  const [inACircle, setInACircle] = useState(false);
-  const [circlesChecked, setCirclesChecked] = useState(false);
 
   useLayoutEffect(() => {
     const uid = user?.id ?? loadLastUser()?.id ?? null;
@@ -503,10 +495,6 @@ export function Dashboard() {
     setForecastVisibleByPortfolio(loadVisibilityMap(FORECAST_VISIBLE_KEY));
     setExperienceTier(loadStoredTier());
     setKnowsOptions(loadStoredKnowsOptions());
-    const cachedCircles = loadCommunityListCache();
-    const fromCache = communityListHasCircle(cachedCircles);
-    setInACircle(fromCache);
-    setCirclesChecked(fromCache);
   }, [user?.id]);
 
   useEffect(() => {
@@ -584,37 +572,19 @@ export function Dashboard() {
   }, [source, user]);
 
   useEffect(() => {
-    if (source !== "supabase" || !user) {
-      setCirclesChecked(true);
-      return;
-    }
-    const ctrl = new AbortController();
-    void fetch("/api/communities", { cache: "no-store", signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { communities?: CommunityListRow[] } | null) => {
-        if (ctrl.signal.aborted || !data) return;
-        const rows = data.communities ?? [];
-        saveCommunityListCache(rows);
-        setInACircle(communityListHasCircle(rows));
-      })
-      .catch((err) => {
-        if (isAbortError(err)) return;
-        /* keep whatever the list cache already had */
-      })
-      .finally(() => {
-        if (!ctrl.signal.aborted) setCirclesChecked(true);
-      });
-    return () => {
-      ctrl.abort();
+    const sync = () => {
+      setExperienceTier(loadStoredTier());
+      setKnowsOptions(loadStoredKnowsOptions());
     };
-  }, [source, user]);
+    window.addEventListener(EXPERIENCE_TIER_EVENT, sync);
+    return () => window.removeEventListener(EXPERIENCE_TIER_EVENT, sync);
+  }, []);
 
   const skipExperienceOnboarding =
     isPaperClassOnly(portfolios) ||
     shouldSkipExperienceOnboarding({
       holdingsCount: holdings.length,
       portfolioSlugs: portfolios.map((p) => p.slug),
-      inACircle,
     });
 
   // Seed-claimed household (Karud, Lap, family books) already has names.
@@ -624,7 +594,7 @@ export function Dashboard() {
   useEffect(() => {
     if (isPaperClassOnly(portfolios)) return;
     if (inheritedTierRef.current) return;
-    if (!tierChecked || !circlesChecked || experienceTier) return;
+    if (!tierChecked || experienceTier) return;
     if (source !== "supabase" || !user || loading) return;
     if (!skipExperienceOnboarding) return;
     inheritedTierRef.current = true;
@@ -637,7 +607,6 @@ export function Dashboard() {
     );
   }, [
     tierChecked,
-    circlesChecked,
     experienceTier,
     source,
     user,
@@ -3758,22 +3727,6 @@ export function Dashboard() {
           void loadPortfolios({ silent: true });
         }}
       />
-
-      {tierChecked &&
-        circlesChecked &&
-        !experienceTier &&
-        source === "supabase" &&
-        user &&
-        !loading &&
-        !skipExperienceOnboarding && (
-        <ExperienceOnboardingModal
-          onDone={(tier, knows) => {
-            setExperienceTier(tier);
-            setKnowsOptions(knows);
-            track("experience_tier_set", { tier, knowsOptions: knows });
-          }}
-        />
-      )}
 
       <CommandPalette
         open={cmdOpen}

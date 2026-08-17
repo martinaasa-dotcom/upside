@@ -4,6 +4,7 @@ import {
   loadCommunityListCache,
   prefetchCommunityList,
 } from "@/lib/community-cache";
+import { ExperienceOnboardingGate } from "@/components/ExperienceOnboardingGate";
 import {
   WORKSPACE_SHOW_EVENT,
   setActiveWorkspaceRoom,
@@ -168,6 +169,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           <AdminPage />
         </Room>
       )}
+      <ExperienceOnboardingGate />
     </>
   );
 }

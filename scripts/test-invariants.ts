@@ -94,9 +94,6 @@ import {
 } from "../src/lib/feedback";
 import { parseSharePortfolioIds } from "../src/lib/community-share";
 import {
-  communityListHasCircle,
-} from "../src/lib/community-cache";
-import {
   inviteFromLocation,
   inviteLandingCopy,
 } from "../src/lib/invite-landing";
@@ -390,18 +387,6 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
     }),
     false
   );
-  assert.equal(
-    communityListHasCircle([
-      { id: "1", name: "Class", role: "member", kind: "classroom" },
-    ]),
-    false
-  );
-  assert.equal(
-    communityListHasCircle([
-      { id: "1", name: "Upside Circle", role: "member", kind: "circle" },
-    ]),
-    true
-  );
 
   const people = collapseMembersByAlias(
     [
@@ -513,14 +498,51 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
   );
   assert.match(dash, /shouldSkipExperienceOnboarding/);
   assert.match(dash, /skipExperienceOnboarding/);
-  assert.match(dash, /inACircle/);
-  assert.match(dash, /circlesChecked/);
+  assert.doesNotMatch(dash, /ExperienceOnboardingModal/);
+  const tierSrc = readFileSync(
+    join(process.cwd(), "src/lib/experience-tier.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(tierSrc, /inACircle/);
+  const shell = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceShell.tsx"),
+    "utf8"
+  );
+  const onboardGate = readFileSync(
+    join(process.cwd(), "src/components/ExperienceOnboardingGate.tsx"),
+    "utf8"
+  );
+  assert.match(shell, /ExperienceOnboardingGate/);
+  assert.match(onboardGate, /isPaperClassOnly/);
+  assert.doesNotMatch(onboardGate, /inACircle/);
+  assert.doesNotMatch(onboardGate, /communityListHasCircle/);
   const joinPage = readFileSync(
     join(process.cwd(), "src/app/communities/join/page.tsx"),
     "utf8"
   );
   assert.match(joinPage, /rememberJoinedCommunity/);
   assert.match(joinPage, /saveLastCircleId/);
+});
+
+run("circle invite joins still get the same onboarding as Home", () => {
+  assert.equal(
+    shouldSkipExperienceOnboarding({
+      holdingsCount: 0,
+      portfolioSlugs: ["my-portfolio"],
+    }),
+    false
+  );
+  const gate = readFileSync(
+    join(process.cwd(), "src/components/ExperienceOnboardingGate.tsx"),
+    "utf8"
+  );
+  const shell = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceShell.tsx"),
+    "utf8"
+  );
+  assert.match(gate, /Circle invite joins do not/);
+  assert.match(shell, /<ExperienceOnboardingGate/);
+  assert.match(gate, /isPaperClassOnly/);
 });
 
 run("Home briefing never rotates a covered-call pep talk", () => {

@@ -218,14 +218,7 @@ export function saveCommunityListCache(rows: CommunityListRow[]) {
   }
 }
 
-/** True when the list has a real circle, not only a classroom. */
-export function communityListHasCircle(
-  rows: CommunityListRow[] | null | undefined
-): boolean {
-  return Boolean(rows?.some((c) => c.kind !== "classroom"));
-}
-
-/** Stamp a just-redeemed invite into the list so Home can skip onboarding. */
+/** Stamp a just-redeemed invite into the list so Circle opens immediately. */
 export function rememberJoinedCommunity(row: CommunityListRow) {
   const existing = loadCommunityListCache() ?? [];
   saveCommunityListCache([
