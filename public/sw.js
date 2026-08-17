@@ -2,10 +2,11 @@
  * IndexedDB + localStorage; this file only keeps the JS/CSS/icons around
  * so a refresh while offline still hydrates the last painted page. */
 
-const CACHE = "upside-shell-v1";
+const CACHE = "upside-shell-v3";
 const PRECACHE = [
   "/manifest.webmanifest",
-  "/upside-icon.svg",
+  "/upside-icon.png",
+  "/upside-mark.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-512-maskable.png",

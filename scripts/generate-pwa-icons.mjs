@@ -1,16 +1,14 @@
-// Rasterizes Images/upside favicon.png (the metallic A) into the PNGs
-// Next.js file-convention icons and the web manifest need. Re-run this
-// only if the source mark changes. Outputs are committed, not built.
-//
-// SVG favicon (public/upside-icon.svg, src/app/icon.svg) is traced from
-// the same source and edited by hand when the geometry changes.
+// Rasterizes public/upside-fund-x-avatar.png (the metallic A) into the
+// PNGs Next.js file-convention icons, the web manifest, OG card, and
+// email lockup need. Re-run only if the source mark changes. Outputs
+// are committed, not built.
 import sharp from "sharp";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const src = join(root, "Images", "upside favicon.png");
+const src = join(root, "public", "upside-fund-x-avatar.png");
 const BG = "#08090C";
 
 mkdirSync(join(root, "public", "icons"), { recursive: true });
@@ -54,7 +52,7 @@ function rimSvg(size) {
 
 async function framedPngBuffer(size) {
   const base = await sharp(src)
-    .resize(size, size, { fit: "fill" })
+    .resize(size, size, { fit: "cover" })
     .flatten({ background: BG })
     .png()
     .toBuffer();
@@ -100,11 +98,54 @@ function packIco(pngs) {
 
 async function squarePng(size, out) {
   await sharp(src)
-    .resize(size, size, { fit: "fill" })
+    .resize(size, size, { fit: "cover" })
     .flatten({ background: BG })
     .png()
     .toFile(out);
   console.log(`wrote ${out} (${size}x${size} square)`);
+}
+
+async function writeOg() {
+  const logo = await sharp(src).resize(440, 440, { fit: "cover" }).png().toBuffer();
+  await sharp({
+    create: { width: 1200, height: 630, channels: 3, background: BG },
+  })
+    .composite([{ input: logo, gravity: "center" }])
+    .png()
+    .toFile(join(root, "public", "og.png"));
+  console.log("wrote public/og.png (1200x630)");
+}
+
+async function writeEmailLockup() {
+  const mark = await sharp(src).resize(80, 80, { fit: "cover" }).png().toBuffer();
+  const plate = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="540" height="100">
+      <rect width="540" height="100" fill="${BG}"/>
+      <text x="108" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="34" font-weight="700" fill="#f4f1ea">UPSIDE LAB</text>
+    </svg>`
+  );
+  await sharp(plate)
+    .composite([{ input: mark, left: 16, top: 10 }])
+    .png()
+    .toFile(join(root, "public", "icons", "email-lockup.png"));
+  console.log("wrote public/icons/email-lockup.png");
+}
+
+async function writeTransparentMark() {
+  const { data, info } = await sharp(src)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i] < 22 && data[i + 1] < 22 && data[i + 2] < 22) {
+      data[i + 3] = 0;
+    }
+  }
+  await sharp(data, { raw: info })
+    .trim({ threshold: 8 })
+    .png()
+    .toFile(join(root, "public", "upside-mark.png"));
+  console.log("wrote public/upside-mark.png (transparent)");
 }
 
 await framedPng(180, join(root, "src", "app", "apple-icon.png"));
@@ -114,6 +155,11 @@ const png32 = await framedPng(32, join(root, "public", "icons", "icon-32.png"));
 await framedPng(192, join(root, "public", "icons", "icon-192.png"));
 await framedPng(512, join(root, "public", "icons", "icon-512.png"));
 await squarePng(512, join(root, "public", "icons", "icon-512-maskable.png"));
+await squarePng(512, join(root, "src", "app", "icon.png"));
+await squarePng(128, join(root, "public", "upside-icon.png"));
+await writeOg();
+await writeEmailLockup();
+await writeTransparentMark();
 
 const ico = packIco([
   { width: 16, height: 16, data: png16 },

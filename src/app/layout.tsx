@@ -10,6 +10,7 @@ import {
   PUBLIC_ROBOTS,
   SITE_DESCRIPTION,
 } from "@/lib/site-metadata";
+import { OG_IMAGE_PATH } from "@/lib/seo-routes";
 import { siteUrl } from "@/lib/site-url";
 import { cn } from "@/lib/utils";
 import "./globals.css";
@@ -59,18 +60,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/upside-icon.svg?v=2", type: "image/svg+xml" },
-      { url: "/icons/icon-32.png?v=2", sizes: "32x32", type: "image/png" },
-      { url: "/favicon.ico?v=2", sizes: "16x16 32x32" },
+      { url: "/icons/icon-32.png?v=3", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png?v=3", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico?v=3", sizes: "16x16 32x32" },
     ],
-    shortcut: "/upside-icon.svg?v=2",
+    shortcut: "/icons/icon-32.png?v=3",
     apple: [
       {
-        url: "/apple-touch-icon.png",
+        url: "/apple-touch-icon.png?v=3",
         sizes: "180x180",
         type: "image/png",
       },
-      { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-192.png?v=3", sizes: "192x192", type: "image/png" },
     ],
   },
   openGraph: {
@@ -86,7 +87,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: PRODUCT_NAME,
     description: SITE_DESCRIPTION,
-    images: ["/og.png"],
+    images: [OG_IMAGE_PATH],
   },
 };
 

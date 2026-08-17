@@ -12,7 +12,7 @@ export const EMAIL = {
   loss: "#f43f5e",
   line: "#1e2430",
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
-  lockup: "https://upsidelab.app/icons/email-lockup.png?v=2",
+  lockup: "https://upsidelab.app/icons/email-lockup.png?v=3",
   origin: "https://upsidelab.app",
 } as const;
 
