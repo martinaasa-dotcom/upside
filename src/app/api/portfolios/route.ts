@@ -24,9 +24,10 @@ import {
   PORTFELL_TABLES,
   PORTFOLIO_COLUMNS,
 } from "@/lib/supabase/tables";
-import { readJsonBodyOr400 } from "@/lib/http";
-import { isRecord, readString } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { portfolioPatchSchema, portfolioPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ function mapPortfolio(p: Record<string, unknown>) {
   return p;
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -172,14 +173,13 @@ export async function GET(req: NextRequest) {
   });
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const parsedBody = await readJsonBodyOr400(req);
+  const parsedBody = await parseJsonBody(req, portfolioPostSchema);
   if (!parsedBody.ok) return parsedBody.response;
-  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
-  const name = sanitizeSheetName(String(body.name ?? ""));
+  const name = sanitizeSheetName(parsedBody.data.name);
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
@@ -233,14 +233,14 @@ export async function POST(req: NextRequest) {
   });
 }
 
-export async function PATCH(req: NextRequest) {
+async function handlePATCH(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const parsedBody = await readJsonBodyOr400(req);
+  const parsedBody = await parseJsonBody(req, portfolioPatchSchema);
   if (!parsedBody.ok) return parsedBody.response;
-  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
-  const id = readString(body.id)?.trim() ?? "";
+  const body = parsedBody.data;
+  const id = body.id;
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
@@ -316,7 +316,7 @@ export async function PATCH(req: NextRequest) {
   });
 }
 
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -378,3 +378,8 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+export const GET = observeRoute(handleGET, '/api/portfolios');
+export const POST = observeRoute(handlePOST, '/api/portfolios');
+export const PATCH = observeRoute(handlePATCH, '/api/portfolios');
+export const DELETE = observeRoute(handleDELETE, '/api/portfolios');

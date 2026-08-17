@@ -2,17 +2,14 @@ import { noteEmailConfigured } from "@/lib/send-note";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { readJsonBody } from "@/lib/http";
-import { isRecord } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { morningNotePostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
-function asBool(v: unknown): boolean | undefined {
-  return typeof v === "boolean" ? v : undefined;
-}
-
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
   const supabase = await getSupabaseDataClient();
@@ -40,14 +37,15 @@ export async function GET() {
   });
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
-  const raw = await readJsonBody(req);
-  const body = isRecord(raw) ? raw : {};
-  const enabled = asBool(body?.enabled);
-  let morning = asBool(body?.morning);
-  let sunday = asBool(body?.sunday);
+  const parsed = await parseJsonBody(req, morningNotePostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+  const enabled = body.enabled;
+  let morning = body.morning;
+  let sunday = body.sunday;
   if (enabled !== undefined && morning === undefined && sunday === undefined) {
     morning = enabled;
     sunday = enabled;
@@ -87,3 +85,6 @@ export async function POST(req: NextRequest) {
     canSend: noteEmailConfigured(),
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/account/morning-note');
+export const POST = observeRoute(handlePOST, '/api/account/morning-note');

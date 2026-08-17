@@ -7,13 +7,16 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { communitySheetsPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Sheets the caller owns, and which of them are shared into this circle. */
-export async function GET(_req: NextRequest, ctx: Ctx) {
+async function handleGET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -80,7 +83,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   });
 }
 
-export async function POST(req: NextRequest, ctx: Ctx) {
+async function handlePOST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -89,11 +92,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Not a member" }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    portfolioId?: string;
-    shared?: boolean;
-  };
-  const portfolioId = String(body.portfolioId ?? "").trim();
+  const parsed = await parseJsonBody(req, communitySheetsPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const portfolioId = parsed.data.portfolioId;
+  const body = parsed.data;
   if (!portfolioId) {
     return NextResponse.json({ error: "portfolioId required" }, { status: 400 });
   }
@@ -167,3 +169,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
   return NextResponse.json({ ok: true, portfolioId, shared: share });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/[id]/sheets');
+export const POST = observeRoute(handlePOST, '/api/communities/[id]/sheets');

@@ -9,6 +9,7 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -49,7 +50,7 @@ function asPercentFraction(raw: number | null): number | null {
   return raw;
 }
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const startedAt = Date.now();
   const auth = await requireAuthUser();
   const userKey = "error" in auth ? "anon" : auth.user.id;
@@ -167,3 +168,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status });
   }
 }
+
+export const POST = observeRoute(handlePOST, '/api/book/ytd-from-image');

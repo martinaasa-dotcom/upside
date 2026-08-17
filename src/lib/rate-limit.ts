@@ -62,3 +62,65 @@ export function checkRateLimit(
   bucket.count += 1;
   return { ok: true };
 }
+
+/** Client IP as Vercel sets it. First hop is the platform, so this is trustworthy on Vercel. */
+export function clientIp(req: Request): string {
+  const vercel = req.headers
+    .get("x-vercel-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
+  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const real = req.headers.get("x-real-ip")?.trim();
+  return vercel || forwarded || real || "unknown";
+}
+
+const MUTATION = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+const TIGHT_PATHS = [
+  "/api/auth",
+  "/api/account/delete",
+  "/api/account/export",
+  "/api/communities/join",
+  "/api/portfolios/join",
+  "/api/demo/lock",
+  "/api/internal/log-error",
+  "/api/internal/telemetry",
+];
+
+function normalizeApiPath(pathname: string): string {
+  return pathname.replace(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi,
+    ":id"
+  );
+}
+
+function isTightPath(pathname: string): boolean {
+  return TIGHT_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Route-level cap for auth and mutation APIs. Returns null when the
+ * request is not in scope (GET reads, cron). Callers still keep tighter
+ * per-user limits on LLM endpoints.
+ */
+export function limitMutationRequest(req: Request): RateLimitResult | null {
+  const method = req.method.toUpperCase();
+  let pathname = "/";
+  try {
+    pathname = new URL(req.url).pathname;
+  } catch {
+    return null;
+  }
+  if (pathname.startsWith("/api/cron/")) return null;
+
+  const joinPeek = method === "GET" && pathname === "/api/communities/join";
+  const exportGet = method === "GET" && pathname === "/api/account/export";
+  if (!MUTATION.has(method) && !joinPeek && !exportGet) return null;
+
+  const tight = joinPeek || exportGet || isTightPath(pathname);
+  return checkRateLimit(
+    `api:${method}:${normalizeApiPath(pathname)}:${clientIp(req)}`,
+    tight ? 20 : 120,
+    60_000
+  );
+}

@@ -2,7 +2,7 @@ import { createHash } from "crypto";
 import { provisionClassroomSheet } from "@/lib/classroom";
 import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { clipInviteName } from "@/lib/invite-landing";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import {
   getSupabaseDataClient,
   getSupabaseServer,
@@ -10,6 +10,9 @@ import {
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { communityJoinPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +26,13 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{12,128}$/;
  * Public peek for the sign-in page. Token possession is the only gate.
  * Returns the community name and kind, nothing else.
  */
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token")?.trim() ?? "";
   if (!TOKEN_RE.test(token)) {
     return NextResponse.json({ error: "token required" }, { status: 400 });
   }
 
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = clientIp(req);
   const limit = checkRateLimit(`invite-peek:${ip}`, 30, 5 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
@@ -88,15 +90,13 @@ export async function GET(req: NextRequest) {
  * community links stay reusable. An email list locks the link to those
  * people, and they can all use it.
  */
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = (await req.json().catch(() => ({}))) as { token?: string };
-  const token = body.token?.trim();
-  if (!token) {
-    return NextResponse.json({ error: "token required" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, communityJoinPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const token = parsed.data.token;
 
   // Cookie-session client, not getSupabaseDataClient() -- this RPC is
   // self-scoped to auth.uid(), which resolves to null (and the RPC just
@@ -155,3 +155,6 @@ export async function POST(req: NextRequest) {
     kind,
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/join');
+export const POST = observeRoute(handlePOST, '/api/communities/join');

@@ -24,12 +24,15 @@ import { getSupabaseDataClient } from "@/lib/supabase/server";
 import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { communityPatchSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: NextRequest, ctx: Ctx) {
+async function handleGET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -306,7 +309,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 }
 
 /** Admin: rename the community and/or flip public/private visibility. */
-export async function PATCH(req: NextRequest, ctx: Ctx) {
+async function handlePATCH(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -320,14 +323,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    name?: string;
-    visibility?: string;
-    houseNote?: string;
-    classPlan?: unknown;
-    startPeriod?: string;
-    startingCash?: unknown;
-  };
+  const parsed = await parseJsonBody(req, communityPatchSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const patch: TablesUpdate<"portfell_communities"> = {
     updated_at: new Date().toISOString(),
@@ -485,7 +483,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 /** Admin: delete the community outright. Members lose shared read access;
  * everyone's own portfolios are untouched (only community_members and
  * community_portfolios rows cascade-delete). */
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+async function handleDELETE(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -509,3 +507,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/[id]');
+export const PATCH = observeRoute(handlePATCH, '/api/communities/[id]');
+export const DELETE = observeRoute(handleDELETE, '/api/communities/[id]');

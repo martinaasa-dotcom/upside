@@ -12,8 +12,10 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker, resolveImportTicker } from "@/lib/ticker";
-import { readJsonBody } from "@/lib/http";
 import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
+import { observeRoute } from "@/lib/observe-route";
+import { holdingsImportSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,7 @@ type ImportRow = {
  * Atomic-ish sheet import: set cash (optional) + upsert all equity rows.
  * Optional replace removes holdings not present in the payload.
  */
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -41,10 +43,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const raw = await readJsonBody(req);
-  const body = isRecord(raw) ? raw : {};
+  const parsed = await parseJsonBody(req, holdingsImportSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
-  const portfolioId = readString(body.portfolio_id)?.trim();
+  const portfolioId = body.portfolio_id;
   if (!portfolioId) {
     return NextResponse.json({ error: "portfolio_id required" }, { status: 400 });
   }
@@ -304,3 +307,5 @@ export async function POST(req: NextRequest) {
     total: rows.length,
   });
 }
+
+export const POST = observeRoute(handlePOST, '/api/holdings/import');

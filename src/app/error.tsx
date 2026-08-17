@@ -1,6 +1,7 @@
 "use client";
 
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { reportClientError } from "@/lib/telemetry-client";
 import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 
@@ -12,18 +13,11 @@ export default function Error({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error("Unhandled Upside Lab render error", error);
-    void fetch("/api/internal/log-error", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: error.message,
-        stack: error.stack,
-        digest: error.digest,
-        path: window.location.pathname,
-      }),
-    }).catch(() => {
-      /* reporting is best-effort */
+    reportClientError({
+      message: error.message,
+      stack: error.stack,
+      digest: error.digest,
+      widget: "error-boundary",
     });
   }, [error]);
 

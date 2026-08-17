@@ -1422,11 +1422,25 @@ run("product is Upside Lab on upsidelab.app", () => {
   assert.doesNotMatch(envEx, /jwjezdgggrgdgfsovgtx/);
   const nextCfg = readFileSync("next.config.ts", "utf8");
   assert.match(nextCfg, /poweredByHeader: false/);
-  assert.match(nextCfg, /X-Frame-Options/);
+  assert.match(nextCfg, /STATIC_SECURITY_HEADERS/);
+  const securityHeaders = readFileSync("src/lib/security-headers.ts", "utf8");
+  assert.match(securityHeaders, /X-Frame-Options/);
+  assert.match(securityHeaders, /Strict-Transport-Security/);
+  assert.match(securityHeaders, /X-Content-Type-Options/);
+  assert.match(securityHeaders, /default-src 'self'/);
+  assert.match(securityHeaders, /buildContentSecurityPolicy/);
   const callback = readFileSync("src/app/auth/callback/route.ts", "utf8");
   assert.match(callback, /safeInternalPath/);
   const proxy = readFileSync("src/proxy.ts", "utf8");
   assert.match(proxy, /redirectTarget/);
+  assert.match(proxy, /Content-Security-Policy/);
+  assert.match(proxy, /limitMutationRequest/);
+  const rateLimit = readFileSync("src/lib/rate-limit.ts", "utf8");
+  assert.match(rateLimit, /limitMutationRequest/);
+  const parseBody = readFileSync("src/lib/parse-json-body.ts", "utf8");
+  assert.match(parseBody, /schema\.safeParse/);
+  const demoLock = readFileSync("src/app/api/demo/lock/route.ts", "utf8");
+  assert.match(demoLock, /isProduction/);
 });
 
 run("canonical host strips www and rejects off-site next paths", () => {
@@ -2380,7 +2394,7 @@ run("community invite landing names the circle", () => {
   );
   assert.match(
     readFileSync(join(process.cwd(), "src/app/api/communities/join/route.ts"), "utf8"),
-    /export async function GET/
+    /export const GET/
   );
 });
 
@@ -4656,6 +4670,10 @@ run("cash deltas are applied in one atomic statement", () => {
     "cash moves must go through the atomic RPC, not a read-modify-write"
   );
   assert.ok(
+    /cash_rpc_failed/.test(src),
+    "a failed cash RPC must emit structured telemetry"
+  );
+  assert.ok(
     !/falling back to read-modify-write/.test(src),
     "a failed RPC must fail closed, not fall back to a racy write"
   );
@@ -4702,7 +4720,7 @@ run("holdings writes retry when a concurrent update wins", () => {
     "utf8"
   );
   assert.ok(
-    /readJsonBodyOr400/.test(src),
+    /parseJsonBody/.test(src),
     "invalid JSON must 400, not throw into a 500"
   );
   assert.ok(
@@ -4724,6 +4742,14 @@ run("holdings writes retry when a concurrent update wins", () => {
   assert.ok(
     /if \(!deletedRaw\)/.test(src),
     "a second overlapping DELETE must not credit the sale twice"
+  );
+  assert.ok(
+    /holding_cas_retry/.test(src),
+    "compare-and-swap retries must be logged"
+  );
+  assert.ok(
+    /holding_cas_exhausted/.test(src),
+    "exhausted compare-and-swap retries must be logged"
   );
 });
 
@@ -4754,6 +4780,11 @@ run("request JSON is read as unknown", () => {
   const http = readFileSync(join(process.cwd(), "src/lib/http.ts"), "utf8");
   assert.ok(/readJsonBody/.test(http));
   assert.ok(/readJsonBodyOr400/.test(http));
+  const parseBody = readFileSync(
+    join(process.cwd(), "src/lib/parse-json-body.ts"),
+    "utf8"
+  );
+  assert.ok(/parseJsonBody/.test(parseBody));
   const holdings = readFileSync(
     join(process.cwd(), "src/app/api/holdings/route.ts"),
     "utf8"
@@ -4851,6 +4882,10 @@ run("dashboard modules sit behind an error boundary", () => {
   assert.ok(/getDerivedStateFromError/.test(boundary));
   assert.ok(/Retry/.test(boundary));
   assert.ok(/resetKey/.test(boundary));
+  assert.ok(
+    /reportClientError/.test(boundary),
+    "a widget crash must report with session context, not only console.error"
+  );
   const community = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
@@ -5083,7 +5118,7 @@ run("email and admin RPCs are not callable with a user JWT", () => {
     "utf8"
   );
   assert.match(retire, /revoked_at/);
-  assert.match(retire, /revoked !== true/);
+  assert.match(retire, /communityInvitePatchSchema/);
   const communityView = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
@@ -5522,6 +5557,35 @@ run("legal pages name the operator and match the product", () => {
   assert.doesNotMatch(privacy, /explicitly ask them to/);
   assert.doesNotMatch(privacy, /not your raw cash balance/);
   assert.doesNotMatch(privacy, /only when you explicitly ask/);
+});
+
+run("production telemetry covers crashes, slow routes, and vitals", () => {
+  const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
+  assert.ok(/<WebVitals \/>/.test(layout), "root layout must report web vitals");
+  const inst = readFileSync(
+    join(process.cwd(), "src/instrumentation.ts"),
+    "utf8"
+  );
+  assert.ok(/installSlowRouteLogger/.test(inst));
+  const logError = readFileSync(
+    join(process.cwd(), "src/app/api/internal/log-error/route.ts"),
+    "utf8"
+  );
+  assert.ok(/sanitizeContext\(body\.context\)/.test(logError));
+  const apiRoot = join(process.cwd(), "src/app/api");
+  const missing: string[] = [];
+  const walk = (dir: string) => {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, ent.name);
+      if (ent.isDirectory()) walk(full);
+      else if (ent.name === "route.ts") {
+        const src = readFileSync(full, "utf8");
+        if (!/observeRoute\(/.test(src)) missing.push(full);
+      }
+    }
+  };
+  walk(apiRoot);
+  assert.deepEqual(missing, [], `unwrapped API routes: ${missing.join(", ")}`);
 });
 
 if (failed > 0) {

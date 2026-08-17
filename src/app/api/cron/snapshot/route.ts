@@ -9,12 +9,13 @@ import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { todayKeyInTz } from "@/lib/timezone";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /** Vercel Cron — nightly full-book snapshot. */
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   const denied = requireCronAuth(req);
   if (denied) return denied;
 
@@ -83,3 +84,5 @@ export async function GET(req: Request) {
     );
   }
 }
+
+export const GET = observeRoute(handleGET, '/api/cron/snapshot');

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Inter, Montserrat } from "next/font/google";
+import { reportClientError } from "@/lib/telemetry-client";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 const montserrat = Montserrat({ subsets: ["latin"], display: "swap" });
@@ -17,18 +18,11 @@ export default function GlobalError({
   retry: () => void;
 }) {
   useEffect(() => {
-    console.error("Unhandled Upside Lab layout error", error);
-    void fetch("/api/internal/log-error", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: error.message,
-        stack: error.stack,
-        digest: error.digest,
-        path: window.location.pathname,
-      }),
-    }).catch(() => {
-      /* reporting is best-effort */
+    reportClientError({
+      message: error.message,
+      stack: error.stack,
+      digest: error.digest,
+      widget: "global-error",
     });
   }, [error]);
 

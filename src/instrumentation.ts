@@ -1,9 +1,11 @@
 import type { Instrumentation } from "next";
 import { validateServerEnv } from "@/lib/env-schema";
 import { logError } from "@/lib/error-log";
+import { installSlowRouteLogger } from "@/lib/slow-route";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "edge") return;
+  await installSlowRouteLogger();
   const issues = validateServerEnv();
   for (const issue of issues) {
     console.warn(`[env] ${issue.key}: ${issue.message}`);

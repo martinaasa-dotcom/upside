@@ -1,29 +1,37 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { demoLockPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
 const SNAPSHOT_PATH = path.join(process.cwd(), "data", "locked-demo.json");
 
+function isProduction() {
+  return (
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production"
+  );
+}
+
 /** Persist a locked demo snapshot to disk (dev) so seed bumps don't invent Aasad again. */
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
+  if (isProduction()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  const parsed = await parseJsonBody(req, demoLockPostSchema);
+  if (!parsed.ok) return parsed.response;
   try {
-    const body = await req.json();
-    if (!body?.portfolios || !body?.holdings) {
-      return NextResponse.json(
-        { error: "Expected { portfolios, holdings }" },
-        { status: 400 }
-      );
-    }
     await fs.mkdir(path.dirname(SNAPSHOT_PATH), { recursive: true });
     await fs.writeFile(
       SNAPSHOT_PATH,
       JSON.stringify(
         {
           savedAt: new Date().toISOString(),
-          portfolios: body.portfolios,
-          holdings: body.holdings,
+          portfolios: parsed.data.portfolios,
+          holdings: parsed.data.holdings,
         },
         null,
         2
@@ -40,7 +48,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+async function handleGET() {
+  if (isProduction()) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   try {
     const raw = await fs.readFile(SNAPSHOT_PATH, "utf8");
     return NextResponse.json(JSON.parse(raw));
@@ -48,3 +59,6 @@ export async function GET() {
     return NextResponse.json({ portfolios: null, holdings: null });
   }
 }
+
+export const GET = observeRoute(handleGET, "/api/demo/lock");
+export const POST = observeRoute(handlePOST, "/api/demo/lock");

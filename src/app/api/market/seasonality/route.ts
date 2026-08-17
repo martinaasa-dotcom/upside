@@ -1,12 +1,13 @@
 import { getSeasonalityModel } from "@/lib/market/seasonality-fetch";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
 
 const CDN =
   "public, max-age=0, s-maxage=3600, stale-while-revalidate=21600";
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const ticker = (req.nextUrl.searchParams.get("ticker") ?? "SPY")
     .trim()
     .toUpperCase();
@@ -38,3 +39,5 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export const GET = observeRoute(handleGET, '/api/market/seasonality');

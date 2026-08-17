@@ -15,7 +15,6 @@ import {
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { readJsonBody } from "@/lib/http";
 import { isRecord } from "@/lib/unknown";
 import {
   convertToModelMessages,
@@ -29,6 +28,9 @@ import {
   type UIMessage,
 } from "ai";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { chatPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const maxDuration = 120;
 
@@ -111,7 +113,7 @@ function replayParts(
   });
 }
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -125,8 +127,9 @@ export async function POST(req: Request) {
   markChatActive();
 
   try {
-    const raw = await readJsonBody(req);
-    const body = isRecord(raw) ? raw : {};
+    const parsed = await parseJsonBody(req, chatPostSchema);
+    if (!parsed.ok) return parsed.response;
+    const body = parsed.data;
     const messages = Array.isArray(body.messages)
       ? (body.messages as UIMessage[])
       : [];
@@ -264,3 +267,5 @@ export async function POST(req: Request) {
     return fallbackChatResponse();
   }
 }
+
+export const POST = observeRoute(handlePOST, '/api/chat');

@@ -2,12 +2,13 @@ import { requireCronAuth } from "@/lib/cron-auth";
 import { refreshPopularTickers } from "@/lib/popular-tickers-store";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /** Vercel Cron — first of the month. Refresh the onboarding watchlist picks. */
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   const denied = requireCronAuth(req);
   if (denied) return denied;
 
@@ -40,3 +41,5 @@ export async function GET(req: Request) {
     );
   }
 }
+
+export const GET = observeRoute(handleGET, '/api/cron/popular-tickers');

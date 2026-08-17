@@ -1,6 +1,7 @@
 import { TICKER_QUERY_MAX } from "@/lib/input-guard";
 import { searchYahooTickers } from "@/lib/market/ticker-search-yahoo";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 const CDN =
   "public, max-age=0, s-maxage=300, stale-while-revalidate=3600";
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 1 || q.length > TICKER_QUERY_MAX) {
     return NextResponse.json({ results: [] });
@@ -26,3 +27,5 @@ export async function GET(req: NextRequest) {
     }
   );
 }
+
+export const GET = observeRoute(handleGET, '/api/market/search');

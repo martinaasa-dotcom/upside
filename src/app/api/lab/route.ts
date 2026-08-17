@@ -3,6 +3,9 @@ import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { observeRoute } from "@/lib/observe-route";
+import { labPutSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +19,7 @@ function rowToBundle(row: Record<string, unknown> | null): LabBundle {
   };
 }
 
-export async function GET() {
+async function handleGET() {
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json({
@@ -44,7 +47,7 @@ export async function GET() {
   });
 }
 
-export async function PUT(req: NextRequest) {
+async function handlePUT(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -56,7 +59,9 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as Partial<LabBundle>;
+  const parsed = await parseJsonBody(req, labPutSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
   const now = new Date().toISOString();
 
   const { data: existing } = await supabase
@@ -72,7 +77,7 @@ export async function PUT(req: NextRequest) {
     const updated = await supabase
       .from(PORTFELL_TABLES.labState)
       .update({
-        conviction: body.conviction ?? {},
+        conviction: (body.conviction ?? {}) as LabBundle["conviction"],
         updated_at: now,
       })
       .eq("owner_id", auth.user.id)
@@ -86,7 +91,7 @@ export async function PUT(req: NextRequest) {
       .insert({
         id: auth.user.id,
         owner_id: auth.user.id,
-        conviction: body.conviction ?? {},
+        conviction: (body.conviction ?? {}) as LabBundle["conviction"],
         updated_at: now,
       })
       .select(LAB_COLS)
@@ -104,3 +109,6 @@ export async function PUT(req: NextRequest) {
     bundle: rowToBundle(data),
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/lab');
+export const PUT = observeRoute(handlePUT, '/api/lab');

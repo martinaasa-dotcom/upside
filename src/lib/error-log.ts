@@ -1,6 +1,7 @@
 import type { Json } from "@/lib/supabase/database.types";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { logEvent, sanitizeContext } from "@/lib/telemetry";
 
 export type ErrorLogEntry = {
   source: "client" | "server";
@@ -13,6 +14,8 @@ export type ErrorLogEntry = {
   userEmail?: string | null;
   userAgent?: string | null;
   context?: Record<string, unknown> | null;
+  /** Structured log event name. Defaults to "error". */
+  event?: string;
 };
 
 /**
@@ -23,6 +26,20 @@ export type ErrorLogEntry = {
  * which runs outside any per-request session context.
  */
 export async function logError(entry: ErrorLogEntry): Promise<void> {
+  const context = sanitizeContext(entry.context);
+  logEvent(
+    entry.event ?? "error",
+    {
+      source: entry.source,
+      message: entry.message,
+      path: entry.path ?? null,
+      routeType: entry.routeType ?? null,
+      digest: entry.digest ?? null,
+      userId: entry.userId ?? null,
+      context,
+    },
+    "error"
+  );
   try {
     const supabase = getSupabaseServer();
     if (!supabase) return;
@@ -36,7 +53,7 @@ export async function logError(entry: ErrorLogEntry): Promise<void> {
       user_id: entry.userId ?? null,
       user_email: entry.userEmail ?? null,
       user_agent: entry.userAgent?.slice(0, 500) ?? null,
-      context: (entry.context as Json | null) ?? null,
+      context: (context as Json | null) ?? null,
     });
   } catch {
     // Logging the error is best-effort only — swallow so a Supabase blip

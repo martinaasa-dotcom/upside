@@ -10,13 +10,14 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Full community book: portfolios shown here, opt-out (read-only). */
-export async function GET(req: NextRequest, ctx: Ctx) {
+async function handleGET(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -260,3 +261,5 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     ...(classroom ? { thesisCoverage } : {}),
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/[id]/book');

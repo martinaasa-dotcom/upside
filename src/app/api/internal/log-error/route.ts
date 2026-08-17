@@ -1,9 +1,11 @@
 import { logError } from "@/lib/error-log";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { getAuthUser } from "@/lib/supabase/server-auth";
-import { readJsonBody } from "@/lib/http";
-import { isRecord, readString } from "@/lib/unknown";
+import { sanitizeContext } from "@/lib/telemetry";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { logErrorPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -13,20 +15,17 @@ export const dynamic = "force-dynamic";
  * itself, before anyone's logged in, should still be reportable. Rate
  * limited per IP instead since this is an unauthenticated write endpoint.
  */
-export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+async function handlePOST(req: NextRequest) {
+  const ip = clientIp(req);
   const limit = checkRateLimit(`log-error:${ip}`, 20, 5 * 60_000);
   if (!limit.ok) {
     return NextResponse.json({ ok: false }, { status: 429 });
   }
 
-  const raw = await readJsonBody(req);
-  const body = isRecord(raw) ? raw : {};
-  const message = (readString(body.message) ?? "").trim();
-  if (!message) {
-    return NextResponse.json({ error: "message required" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, logErrorPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+  const message = body.message.trim();
 
   // Best-effort — an error report shouldn't itself require a valid session.
   const user = await getAuthUser().catch(() => null);
@@ -34,13 +33,16 @@ export async function POST(req: NextRequest) {
   await logError({
     source: "client",
     message,
-    stack: readString(body.stack) ?? null,
-    digest: readString(body.digest) ?? null,
-    path: readString(body.path) ?? null,
+    stack: body.stack ?? null,
+    digest: body.digest ?? null,
+    path: body.path ?? null,
     userId: user?.id ?? null,
     userEmail: user?.email ?? null,
     userAgent: req.headers.get("user-agent"),
+    context: sanitizeContext(body.context),
   });
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = observeRoute(handlePOST, '/api/internal/log-error');

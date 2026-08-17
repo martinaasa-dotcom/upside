@@ -2,6 +2,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
+import { reportClientError } from "@/lib/telemetry-client";
 
 type Props = {
   /** Short name shown in the fallback, e.g. "Pulse". */
@@ -32,17 +33,11 @@ export class WidgetErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error(`[${this.props.name}]`, error, info.componentStack);
-    void fetch("/api/internal/log-error", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: `${this.props.name}: ${error.message}`,
-        stack: error.stack,
-        path: typeof window !== "undefined" ? window.location.pathname : "",
-      }),
-    }).catch(() => {
-      /* reporting is best-effort */
+    reportClientError({
+      message: `${this.props.name}: ${error.message}`,
+      stack: error.stack,
+      widget: this.props.name,
+      componentStack: info.componentStack,
     });
   }
 

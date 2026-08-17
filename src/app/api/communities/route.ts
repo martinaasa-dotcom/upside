@@ -14,13 +14,14 @@ import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { readJsonBody } from "@/lib/http";
-import { isRecord } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { communityPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -69,7 +70,7 @@ export async function GET() {
   });
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -81,9 +82,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const raw = await readJsonBody(req);
-  const body = isRecord(raw) ? raw : {};
-  const name = String(body.name ?? "").trim();
+  const parsed = await parseJsonBody(req, communityPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
+  const name = body.name.trim();
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
@@ -155,3 +157,6 @@ export async function POST(req: NextRequest) {
     community: { ...(community as object), role: "admin" },
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities');
+export const POST = observeRoute(handlePOST, '/api/communities');

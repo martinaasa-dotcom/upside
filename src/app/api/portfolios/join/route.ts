@@ -3,6 +3,9 @@ import { ensureProfileAndClaims } from "@/lib/auth/ensure-profile";
 import { createSupabaseServerAuth, requireAuthUser } from "@/lib/supabase/server-auth";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { portfolioJoinSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -18,17 +21,15 @@ function hashToken(token: string) {
  * this lookup directly — possessing the valid token is what should grant
  * access to that one invite row, not an existing relationship.
  */
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
   await ensureProfileAndClaims(auth.user);
 
-  const body = (await req.json().catch(() => ({}))) as {
-    code?: string;
-    token?: string;
-  };
-  const raw = (body.code ?? body.token ?? "").trim();
+  const parsed = await parseJsonBody(req, portfolioJoinSchema);
+  if (!parsed.ok) return parsed.response;
+  const raw = (parsed.data.code ?? parsed.data.token ?? "").trim();
   if (!raw || raw.length < 12) {
     return NextResponse.json({ error: "Invite code required" }, { status: 400 });
   }
@@ -79,3 +80,5 @@ export async function POST(req: NextRequest) {
     portfolio: sheet,
   });
 }
+
+export const POST = observeRoute(handlePOST, '/api/portfolios/join');

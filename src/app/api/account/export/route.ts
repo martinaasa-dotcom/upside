@@ -3,6 +3,7 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
  * (no service role needed): profile, the sheets they own/co-own plus
  * holdings, and their Lab state.
  */
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -73,3 +74,5 @@ export async function GET() {
     },
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/account/export');

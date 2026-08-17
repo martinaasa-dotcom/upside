@@ -4,6 +4,9 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { portfolioInvitePostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +17,7 @@ function hashToken(token: string) {
 }
 
 /** List open co-owner invites for a portfolio. */
-export async function GET(_req: NextRequest, ctx: Ctx) {
+async function handleGET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -42,7 +45,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
  * Mint a co-owner invite code/link for a sheet.
  * Optional email locks the invite to that address once they sign in.
  */
-export async function POST(req: NextRequest, ctx: Ctx) {
+async function handlePOST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -58,10 +61,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    email?: string;
-    daysValid?: number;
-  };
+  const parsed = await parseJsonBody(req, portfolioInvitePostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const token = randomBytes(18).toString("base64url");
   const days = Math.min(90, Math.max(1, Number(body.daysValid ?? 14)));
@@ -92,3 +94,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     invite: data,
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/portfolios/[id]/invites');
+export const POST = observeRoute(handlePOST, '/api/portfolios/[id]/invites');

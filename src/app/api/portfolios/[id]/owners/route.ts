@@ -6,13 +6,16 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { portfolioOwnerPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** List co-owners for a portfolio (caller must be a co-owner). */
-export async function GET(_req: NextRequest, ctx: Ctx) {
+async function handleGET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -58,7 +61,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 }
 
 /** Add a co-owner by email. */
-export async function POST(req: NextRequest, ctx: Ctx) {
+async function handlePOST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -66,8 +69,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   const notOwner = await requirePortfolioOwner(auth.user.id, id);
   if (notOwner) return notOwner;
 
-  const body = (await req.json().catch(() => ({}))) as { email?: string };
-  const email = String(body.email ?? "").trim();
+  const parsed = await parseJsonBody(req, portfolioOwnerPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const email = parsed.data.email;
   const result = await addCoOwnerToPortfolio(id, email);
   if ("error" in result) {
     return NextResponse.json(
@@ -79,7 +83,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 }
 
 /** Remove a co-owner (self or another owner). Refuses to orphan a portfolio. */
-export async function DELETE(req: NextRequest, ctx: Ctx) {
+async function handleDELETE(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -118,3 +122,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export const GET = observeRoute(handleGET, '/api/portfolios/[id]/owners');
+export const POST = observeRoute(handlePOST, '/api/portfolios/[id]/owners');
+export const DELETE = observeRoute(handleDELETE, '/api/portfolios/[id]/owners');

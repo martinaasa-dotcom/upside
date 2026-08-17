@@ -12,6 +12,9 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { memberPatchSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +74,7 @@ async function resolveTargetUserIds(
 }
 
 /** Admin: remove member or change role (applies to alias logins and household partners). */
-export async function PATCH(req: NextRequest, ctx: Ctx) {
+async function handlePATCH(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -85,13 +88,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    role?: "admin" | "member";
-  };
-
-  if (body.role !== "admin" && body.role !== "member") {
-    return NextResponse.json({ error: "role required" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, memberPatchSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const targetIds = await resolveTargetUserIds(id, userId, supabase);
   if (!targetIds.length) {
@@ -136,7 +135,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
  * evicting them. The last-admin guard below still applies either way, so
  * nobody can leave a community with no admin behind.
  */
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+async function handleDELETE(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -211,3 +210,6 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export const PATCH = observeRoute(handlePATCH, '/api/communities/[id]/members/[userId]');
+export const DELETE = observeRoute(handleDELETE, '/api/communities/[id]/members/[userId]');

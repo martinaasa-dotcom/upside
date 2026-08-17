@@ -9,6 +9,7 @@ import {
 } from "@/lib/margus-fund-mark";
 import { stripReportSerialPrefix } from "@/lib/fund-copy";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
  * Small card for Overview. Same live mark as the Fund page, without
  * dragging sixty reports across the wire.
  */
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -103,3 +104,5 @@ export async function GET() {
     }
   );
 }
+
+export const GET = observeRoute(handleGET, '/api/upside-portfolio/teaser');

@@ -17,11 +17,14 @@ import {
 } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { snapshotPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
 /** List recent snapshots (metadata only). */
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -68,7 +71,7 @@ export async function GET() {
 }
 
 /** Create a manual snapshot, or restore one. */
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -80,13 +83,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    action?: string;
-    snapshotId?: string;
-    id?: string;
-    portfolioId?: string;
-    label?: string;
-  };
+  const parsed = await parseJsonBody(req, snapshotPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const snapshotId = body.snapshotId ?? body.id;
 
@@ -201,3 +200,6 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export const GET = observeRoute(handleGET, '/api/snapshots');
+export const POST = observeRoute(handlePOST, '/api/snapshots');

@@ -32,6 +32,9 @@ import {
 } from "@/lib/thesis-pulse-server-cache";
 import { pulseReportSchema } from "@/lib/thesis-pulse-schema";
 import { generateObject } from "ai";
+import { observeRoute } from "@/lib/observe-route";
+import { pulsePostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const maxDuration = 90;
 export const runtime = "nodejs";
@@ -192,12 +195,14 @@ Keep fields short. Use the headlines, don't invent news.
 ${lines.join("\n\n")}`;
 }
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const startedAt = Date.now();
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = (await req.json().catch(() => ({}))) as Body;
+  const parsed = await parseJsonBody(req, pulsePostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data as Body;
   const candidates = body.candidates ?? [];
   if (candidates.length === 0) {
     return Response.json(
@@ -350,3 +355,5 @@ export async function POST(req: Request) {
     if (heldSlot) endBackgroundLlm();
   }
 }
+
+export const POST = observeRoute(handlePOST, '/api/thesis/pulse');

@@ -11,6 +11,9 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { joinRequestPatchSchema, joinRequestPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +22,7 @@ type Ctx = { params: Promise<{ id: string }> };
 /** Request to join a PUBLIC community — never auto-joins; an admin has to
  * approve. Re-requesting after a rejection resets the same row to pending
  * rather than erroring on the unique constraint. */
-export async function POST(req: NextRequest, ctx: Ctx) {
+async function handlePOST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -48,10 +51,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Already a member" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    portfolioIds?: unknown;
-  };
-  const shareIds = parseSharePortfolioIds(body.portfolioIds);
+  const parsed = await parseJsonBody(req, joinRequestPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const shareIds = parseSharePortfolioIds(parsed.data.portfolioIds);
 
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.communityJoinRequests)
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 }
 
 /** Cancel your own pending request. */
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+async function handleDELETE(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -100,7 +102,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
 }
 
 /** Admin: approve or reject a pending request. */
-export async function PATCH(req: NextRequest, ctx: Ctx) {
+async function handlePATCH(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -114,14 +116,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    userId?: string;
-    decision?: "approve" | "reject";
-  };
-  const targetUserId = String(body.userId ?? "");
-  if (!targetUserId || (body.decision !== "approve" && body.decision !== "reject")) {
-    return NextResponse.json({ error: "userId and decision required" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, joinRequestPatchSchema);
+  if (!parsed.ok) return parsed.response;
+  const targetUserId = parsed.data.userId;
+  const body = parsed.data;
 
   const { data: request } = await supabase
     .from(PORTFELL_TABLES.communityJoinRequests)
@@ -168,3 +166,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export const POST = observeRoute(handlePOST, '/api/communities/[id]/join-request');
+export const PATCH = observeRoute(handlePATCH, '/api/communities/[id]/join-request');
+export const DELETE = observeRoute(handleDELETE, '/api/communities/[id]/join-request');

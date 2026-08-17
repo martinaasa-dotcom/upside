@@ -1,11 +1,12 @@
 import { loadPopularTickers } from "@/lib/popular-tickers-store";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function handleGET() {
   const supabase = supabaseUsesServiceRole() ? getSupabaseServer() : null;
   const payload = await loadPopularTickers(supabase);
   return NextResponse.json(payload, {
@@ -15,3 +16,5 @@ export async function GET() {
     },
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/popular-tickers');

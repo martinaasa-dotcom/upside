@@ -2,13 +2,14 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { readJsonBody } from "@/lib/http";
-import { isRecord } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { experienceTierPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -30,30 +31,13 @@ export async function GET() {
   });
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const raw = await readJsonBody(req);
-  const body = isRecord(raw) ? raw : {};
-  const tierRaw = body.tier;
-  const knowsOptionsRaw = body.knowsOptions;
-  if (knowsOptionsRaw !== undefined && typeof knowsOptionsRaw !== "boolean") {
-    return NextResponse.json({ error: "Invalid knowsOptions" }, { status: 400 });
-  }
-  const knowsOptions = knowsOptionsRaw;
-  if (
-    tierRaw !== undefined &&
-    tierRaw !== "novice" &&
-    tierRaw !== "investor" &&
-    tierRaw !== "advanced"
-  ) {
-    return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
-  }
-  const tier =
-    tierRaw === "novice" || tierRaw === "investor" || tierRaw === "advanced"
-      ? tierRaw
-      : undefined;
+  const parsed = await parseJsonBody(req, experienceTierPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const { tier, knowsOptions } = parsed.data;
   if (tier === undefined && knowsOptions === undefined) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
@@ -77,3 +61,6 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, tier, knowsOptions });
 }
+
+export const GET = observeRoute(handleGET, '/api/account/experience-tier');
+export const POST = observeRoute(handlePOST, '/api/account/experience-tier');

@@ -3,13 +3,14 @@ import { provisionClassroomSheet } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Member: create (or re-pin) the paper class sheet for yourself. */
-export async function POST(_req: NextRequest, ctx: Ctx) {
+async function handlePOST(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -32,3 +33,5 @@ export async function POST(_req: NextRequest, ctx: Ctx) {
   }
   return NextResponse.json({ ok: true, portfolioId: result.portfolioId });
 }
+
+export const POST = observeRoute(handlePOST, '/api/communities/[id]/classroom-sheet');

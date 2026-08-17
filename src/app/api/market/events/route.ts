@@ -1,12 +1,13 @@
 import { attachEarningsBriefs } from "@/lib/earnings-brief";
 import { fetchMarketEvents } from "@/lib/market/yahoo";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const tickersParam = req.nextUrl.searchParams.get("tickers") ?? "";
   const tickers = tickersParam
     .split(",")
@@ -26,3 +27,5 @@ export async function GET(req: NextRequest) {
     headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=7200" },
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/market/events');

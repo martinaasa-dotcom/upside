@@ -17,6 +17,9 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { communityInvitePostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +31,7 @@ function hashToken(token: string) {
 
 /** Admin: create invite link. Optional emails lock it to those people
  * and get the link in their inbox. The link stays reusable. */
-export async function POST(req: NextRequest, ctx: Ctx) {
+async function handlePOST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -42,11 +45,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    email?: string;
-    role?: "admin" | "member";
-    daysValid?: number | string | null;
-  };
+  const parsed = await parseJsonBody(req, communityInvitePostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const allow = inviteEmailAllowlist(body.email);
   if (!allow.ok) {
@@ -147,7 +148,7 @@ type ProfileRow = {
 };
 
 /** Admin: list invites with who minted them and who used them. */
-export async function GET(_req: NextRequest, ctx: Ctx) {
+async function handleGET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -236,3 +237,6 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 
   return NextResponse.json({ invites });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/[id]/invites');
+export const POST = observeRoute(handlePOST, '/api/communities/[id]/invites');

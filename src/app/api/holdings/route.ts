@@ -6,7 +6,7 @@ import {
 } from "@/lib/cash-trade";
 import { holdingWriteActions } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
-import { readJsonBodyOr400 } from "@/lib/http";
+import { logError } from "@/lib/error-log";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { isSafePositiveMoney, isSafeShares } from "@/lib/input-guard";
@@ -14,9 +14,13 @@ import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { HOLDING_COLUMNS, PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { isPlausibleTicker, normalizeYahooTicker } from "@/lib/ticker";
 import { roundMoney, roundShares } from "@/lib/money";
+import { logEvent } from "@/lib/telemetry";
 import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { holdingPatchSchema, holdingPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +66,40 @@ function conflictResponse() {
     { error: "That holding changed under you. Try again." },
     { status: 409 }
   );
+}
+
+function logHoldingRetry(fields: {
+  method: string;
+  attempt: number;
+  reason: "unique_violation" | "cas_miss";
+  portfolioId: string;
+  ticker?: string;
+  holdingId?: string;
+}) {
+  logEvent("holding_cas_retry", fields, "warn");
+}
+
+function logHoldingWriteFailed(fields: {
+  method: string;
+  event: "holding_write_failed" | "holding_cas_exhausted";
+  portfolioId?: string;
+  ticker?: string;
+  holdingId?: string;
+  attempts?: number;
+  message?: string;
+  code?: string | null;
+}) {
+  const { event, ...rest } = fields;
+  void logError({
+    source: "server",
+    event,
+    message:
+      event === "holding_cas_exhausted"
+        ? `holdings ${fields.method} compare-and-swap exhausted`
+        : `holdings ${fields.method} failed: ${fields.message ?? "unknown"}`,
+    path: "/api/holdings",
+    context: { event, ...rest },
+  });
 }
 
 /**
@@ -112,15 +150,15 @@ async function loadWritableHolding(
   return { row, portfolioId: row.portfolio_id };
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const parsedBody = await readJsonBodyOr400(req);
+  const parsedBody = await parseJsonBody(req, holdingPostSchema);
   if (!parsedBody.ok) return parsedBody.response;
-  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
-  const portfolioId = readString(body.portfolio_id)?.trim() ?? "";
-  const ticker = normalizeYahooTicker(String(body.ticker ?? ""));
+  const body = parsedBody.data;
+  const portfolioId = body.portfolio_id;
+  const ticker = normalizeYahooTicker(body.ticker);
   if (!portfolioId || !ticker) {
     return NextResponse.json(
       { error: "portfolio_id and ticker required" },
@@ -178,6 +216,14 @@ export async function POST(req: NextRequest) {
       .eq("ticker", ticker)
       .maybeSingle();
     if (existingErr) {
+      logHoldingWriteFailed({
+        method: "POST",
+        event: "holding_write_failed",
+        portfolioId,
+        ticker,
+        message: existingErr.message,
+        code: existingErr.code ?? null,
+      });
       return NextResponse.json(
         { error: "Couldn't check that holding. Try again." },
         { status: 503 }
@@ -204,7 +250,24 @@ export async function POST(req: NextRequest) {
         .select(HOLDING_COLUMNS)
         .single();
       if (error) {
-        if (isUniqueViolation(error)) continue;
+        if (isUniqueViolation(error)) {
+          logHoldingRetry({
+            method: "POST",
+            attempt: attempt + 1,
+            reason: "unique_violation",
+            portfolioId,
+            ticker,
+          });
+          continue;
+        }
+        logHoldingWriteFailed({
+          method: "POST",
+          event: "holding_write_failed",
+          portfolioId,
+          ticker,
+          message: error.message,
+          code: error.code ?? null,
+        });
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
       const cash = await applyTradeCashDelta(
@@ -224,9 +287,26 @@ export async function POST(req: NextRequest) {
       .select(HOLDING_COLUMNS)
       .maybeSingle();
     if (error) {
+      logHoldingWriteFailed({
+        method: "POST",
+        event: "holding_write_failed",
+        portfolioId,
+        ticker,
+        message: error.message,
+        code: error.code ?? null,
+      });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    if (!data) continue;
+    if (!data) {
+      logHoldingRetry({
+        method: "POST",
+        attempt: attempt + 1,
+        reason: "cas_miss",
+        portfolioId,
+        ticker,
+      });
+      continue;
+    }
 
     const prevShares = existingRow.shares;
     const prevBuy = existingRow.buy_price;
@@ -247,17 +327,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ holding: data, cash_balance: cash });
   }
 
+  logHoldingWriteFailed({
+    method: "POST",
+    event: "holding_cas_exhausted",
+    portfolioId,
+    ticker,
+    attempts: HOLDING_WRITE_ATTEMPTS,
+  });
   return conflictResponse();
 }
 
-export async function PATCH(req: NextRequest) {
+async function handlePATCH(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const parsedBody = await readJsonBodyOr400(req);
+  const parsedBody = await parseJsonBody(req, holdingPatchSchema);
   if (!parsedBody.ok) return parsedBody.response;
-  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
-  const id = readString(body.id)?.trim() ?? "";
+  const body = parsedBody.data;
+  const id = body.id;
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
@@ -373,10 +460,29 @@ export async function PATCH(req: NextRequest) {
     const { data, error } = await query.select(HOLDING_COLUMNS).maybeSingle();
 
     if (error) {
+      logHoldingWriteFailed({
+        method: "PATCH",
+        event: "holding_write_failed",
+        portfolioId,
+        ticker: nextTicker,
+        holdingId: id,
+        message: error.message,
+        code: error.code ?? null,
+      });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     if (!data) {
-      if (casOnShares) continue;
+      if (casOnShares) {
+        logHoldingRetry({
+          method: "PATCH",
+          attempt: attempt + 1,
+          reason: "cas_miss",
+          portfolioId,
+          ticker: nextTicker,
+          holdingId: id,
+        });
+        continue;
+      }
       return NextResponse.json({ error: "Holding not found" }, { status: 404 });
     }
 
@@ -404,10 +510,16 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ holding: data, cash_balance: cash });
   }
 
+  logHoldingWriteFailed({
+    method: "PATCH",
+    event: "holding_cas_exhausted",
+    holdingId: id,
+    attempts: HOLDING_WRITE_ATTEMPTS,
+  });
   return conflictResponse();
 }
 
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -443,11 +555,28 @@ export async function DELETE(req: NextRequest) {
     .select("shares, buy_price, ticker")
     .maybeSingle();
   if (error) {
+    logHoldingWriteFailed({
+      method: "DELETE",
+      event: "holding_write_failed",
+      portfolioId,
+      ticker: existing.ticker,
+      holdingId: id,
+      message: error.message,
+      code: error.code ?? null,
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   // Only the delete that actually removed the row may move cash. A second
   // overlapping DELETE would otherwise credit the sale twice.
   if (!deletedRaw) {
+    logHoldingRetry({
+      method: "DELETE",
+      attempt: 1,
+      reason: "cas_miss",
+      portfolioId,
+      ticker: existing.ticker,
+      holdingId: id,
+    });
     const cash = await applyTradeCashDelta(supabase, portfolioId, 0);
     return NextResponse.json({ ok: true, cash_balance: cash });
   }
@@ -466,3 +595,7 @@ export async function DELETE(req: NextRequest) {
   );
   return NextResponse.json({ ok: true, cash_balance: cash });
 }
+
+export const POST = observeRoute(handlePOST, '/api/holdings');
+export const PATCH = observeRoute(handlePATCH, '/api/holdings');
+export const DELETE = observeRoute(handleDELETE, '/api/holdings');

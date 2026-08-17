@@ -1,6 +1,7 @@
 import { fetchFxOnly, fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { marketSession } from "@/lib/market/session";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,7 @@ function cacheHeaders(seconds: number) {
   };
 }
 
-export async function GET(req: NextRequest) {
+async function handleGET(req: NextRequest) {
   const tickersParam = req.nextUrl.searchParams.get("tickers") ?? "";
   const tickers = tickersParam
     .split(",")
@@ -68,3 +69,5 @@ export async function GET(req: NextRequest) {
     { headers: cacheHeaders(cacheSeconds()) }
   );
 }
+
+export const GET = observeRoute(handleGET, '/api/quotes');

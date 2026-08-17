@@ -2,13 +2,14 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
 /** Public communities the caller hasn't joined yet, for a "discover" list —
  * plus their own pending/rejected request state on each, if any. Private
  * communities never appear here; they stay invite-only. */
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -80,3 +81,5 @@ export async function GET() {
     })),
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/discover');

@@ -4,6 +4,7 @@ import {
   supabaseUsesServiceRole,
 } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export const dynamic = "force-dynamic";
  *    client signs the session out, and signing back in with the same
  *    Google account just creates a brand-new user with none of this data.
  */
-export async function POST() {
+async function handlePOST() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -69,3 +70,5 @@ export async function POST() {
     ...(authDeleteError ? { authDeleteError } : {}),
   });
 }
+
+export const POST = observeRoute(handlePOST, '/api/account/delete');

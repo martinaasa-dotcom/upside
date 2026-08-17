@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
@@ -248,7 +249,7 @@ function funnelFromUsers(users: OverviewUser[]): AdminFunnel {
   return { signedIn, hasSheet, hasHoldings, returned7d, activated };
 }
 
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -292,3 +293,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = observeRoute(handleGET, '/api/admin/overview');

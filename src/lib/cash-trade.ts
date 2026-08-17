@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tracksTradeCash } from "@/lib/cash-balance";
+import { logError } from "@/lib/error-log";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { roundMoney } from "@/lib/money";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -90,7 +91,20 @@ export async function applyPortfolioCashDelta(
   });
 
   if (error) {
-    console.error("[cash] portfell_apply_cash_delta failed", error.message);
+    const code =
+      typeof error.code === "string" && error.code ? error.code : null;
+    void logError({
+      source: "server",
+      event: "cash_rpc_failed",
+      message: `portfell_apply_cash_delta failed: ${error.message}`,
+      path: "rpc:portfell_apply_cash_delta",
+      context: {
+        rpc: "portfell_apply_cash_delta",
+        portfolioId,
+        delta: roundMoney(delta),
+        code,
+      },
+    });
     return null;
   }
   const n = Number(data);

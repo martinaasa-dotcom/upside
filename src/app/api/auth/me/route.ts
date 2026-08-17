@@ -4,13 +4,16 @@ import { getSupabaseDataClient } from "@/lib/supabase/server";
 import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { authMePatchSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
 const PROFILE_SELECT =
   "id, email, display_name, avatar_url, bio, created_at, updated_at";
 
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -37,7 +40,7 @@ export async function GET() {
 }
 
 /** Update how you appear in communities (display name, bio, avatar). */
-export async function PATCH(req: NextRequest) {
+async function handlePATCH(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -49,11 +52,9 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    display_name?: string;
-    bio?: string | null;
-    avatar_url?: string | null;
-  };
+  const parsed = await parseJsonBody(req, authMePatchSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const patch: TablesUpdate<"portfell_profiles"> = {
     updated_at: new Date().toISOString(),
@@ -110,3 +111,6 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true, profile: data });
 }
+
+export const GET = observeRoute(handleGET, '/api/auth/me');
+export const PATCH = observeRoute(handlePATCH, '/api/auth/me');

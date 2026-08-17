@@ -15,6 +15,9 @@ import type { ForecastModel } from "@/lib/forecast";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { generateObject } from "ai";
+import { observeRoute } from "@/lib/observe-route";
+import { forecastPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -27,23 +30,14 @@ export const runtime = "nodejs";
  */
 const LLM_BUDGET_MS = 95_000;
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   const startedAt = Date.now();
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  let body: {
-    portfolioId?: string;
-    portfolioName?: string;
-    cashBalance?: number;
-    forecast?: ForecastModel;
-    convictions?: Record<string, { level: number; thesis: string }>;
-  };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Couldn't read that request." }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, forecastPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const limit = checkRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
@@ -56,8 +50,10 @@ export async function POST(req: Request) {
   const portfolioId = String(body.portfolioId ?? "");
   const portfolioName = String(body.portfolioName ?? "Portfolio");
   const cashBalance = Number(body.cashBalance ?? 0);
-  const forecast = body.forecast;
-  const convictions = body.convictions;
+  const forecast = body.forecast as ForecastModel;
+  const convictions = body.convictions as
+    | Record<string, { level: number; thesis: string }>
+    | undefined;
 
   if (!portfolioId || !forecast?.rows) {
     return Response.json(
@@ -125,3 +121,5 @@ export async function POST(req: Request) {
     return Response.json({ plan: fallbackPlan(), fallback: true });
   }
 }
+
+export const POST = observeRoute(handlePOST, '/api/forecast/plan');

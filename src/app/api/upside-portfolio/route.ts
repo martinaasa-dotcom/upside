@@ -9,11 +9,12 @@ import {
 } from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
 /** Read-only for any signed-in user — the whole point is a watchable feed. */
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -70,3 +71,5 @@ export async function GET() {
     quotes,
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/upside-portfolio');

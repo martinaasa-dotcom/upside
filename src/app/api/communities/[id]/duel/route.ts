@@ -9,6 +9,9 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { duelPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +80,7 @@ function tally(
   return { counts, names: settled ? names : undefined, myPick };
 }
 
-export async function GET(_req: NextRequest, ctx: Ctx) {
+async function handleGET(_req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -140,7 +143,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   });
 }
 
-export async function POST(req: NextRequest, ctx: Ctx) {
+async function handlePOST(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -154,11 +157,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { pick?: string };
-  const pick = body.pick === "b" ? "b" : body.pick === "a" ? "a" : null;
-  if (!pick) {
-    return NextResponse.json({ error: "Pick a or b" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, duelPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const pick = parsed.data.pick;
 
   const dayKey = currentDuelSessionKey();
   const { data: existing } = await supabase
@@ -205,3 +206,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 
   return NextResponse.json({ ok: true, pick, pair, dayKey });
 }
+
+export const GET = observeRoute(handleGET, '/api/communities/[id]/duel');
+export const POST = observeRoute(handlePOST, '/api/communities/[id]/duel');

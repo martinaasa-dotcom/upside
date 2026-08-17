@@ -9,10 +9,12 @@ import {
 } from "@/lib/book-snapshot";
 import {
   reconstructAssumedNav,
-  type AssumedPosition,
 } from "@/lib/market/assumed-nav";
 import { fetchYtdDailyCloses } from "@/lib/market/yahoo";
 import { NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { navHistoryPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -90,7 +92,7 @@ async function snapshotPointsForUser(
  * × each name's daily close since Jan 1, plus cash as it sits today.
  * Pass assumed=false to keep only nights we actually recorded.
  */
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
   const snaps = await snapshotPointsForUser(auth.user.id);
@@ -101,19 +103,10 @@ export async function GET() {
   });
 }
 
-export async function POST(req: Request) {
-  let body: {
-    assumed?: boolean;
-    cash?: number;
-    positions?: AssumedPosition[];
-    includeSpy?: boolean;
-    portfolioIds?: string[];
-  } = {};
-  try {
-    body = (await req.json()) as typeof body;
-  } catch {
-    body = {};
-  }
+async function handlePOST(req: Request) {
+  const parsed = await parseJsonBody(req, navHistoryPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const assumed = body.assumed !== false;
   const auth = await requireAuthUser();
@@ -196,3 +189,6 @@ export async function POST(req: Request) {
     spyPoints,
   });
 }
+
+export const GET = observeRoute(handleGET, '/api/book/nav-history');
+export const POST = observeRoute(handlePOST, '/api/book/nav-history');

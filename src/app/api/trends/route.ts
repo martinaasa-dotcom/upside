@@ -1,18 +1,20 @@
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { fetchTrendsBatch, MAX_TICKERS } from "@/lib/market/trends-cache";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { trendsPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = (await req.json().catch(() => ({}))) as {
-    tickers?: unknown;
-    force?: boolean;
-  };
+  const parsed = await parseJsonBody(req, trendsPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
   const requested = Array.isArray(body.tickers)
     ? body.tickers
         .filter((t): t is string => typeof t === "string" && !!t.trim())
@@ -45,3 +47,5 @@ export async function POST(req: NextRequest) {
     { headers }
   );
 }
+
+export const POST = observeRoute(handlePOST, '/api/trends');

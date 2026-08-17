@@ -3,10 +3,11 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { ERROR_LOG_COLUMNS, PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
   if (!isSuperadminEmail(auth.user.email)) {
@@ -31,7 +32,7 @@ export async function GET() {
 }
 
 /** Clear the log after triage — superadmin only, matches the RLS delete policy. */
-export async function DELETE(req: NextRequest) {
+async function handleDELETE(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
   if (!isSuperadminEmail(auth.user.email)) {
@@ -54,3 +55,6 @@ export async function DELETE(req: NextRequest) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export const GET = observeRoute(handleGET, '/api/admin/errors');
+export const DELETE = observeRoute(handleDELETE, '/api/admin/errors');

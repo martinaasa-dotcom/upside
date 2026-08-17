@@ -8,10 +8,13 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { observeRoute } from "@/lib/observe-route";
+import { feedbackPostSchema } from "@/lib/api-schemas";
+import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
@@ -30,16 +33,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    kind?: string;
-    feel?: unknown;
-    helped?: unknown;
-    blocked?: unknown;
-    change?: unknown;
-    changeNote?: unknown;
-    topic?: unknown;
-    body?: unknown;
-  };
+  const parsed = await parseJsonBody(req, feedbackPostSchema);
+  if (!parsed.ok) return parsed.response;
+  const body = parsed.data;
 
   const who = auth.user.email?.trim() || auth.user.id;
   const name =
@@ -102,3 +98,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ error: "kind required" }, { status: 400 });
 }
+
+export const POST = observeRoute(handlePOST, '/api/feedback');
