@@ -17,21 +17,21 @@ import { fetchTickerNews } from "@/lib/market/ticker-context";
 import type { NoteReport } from "@/lib/note-report";
 
 const JOB: Record<NoteReport["kind"], string> = {
-  morning: `This is the morning note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Never we/us/our. Never name a website or paste a link.
+  morning: `This is the morning note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Finish every sentence. Never we/us/our. Never name a website or paste a link.
 
-Open with one flowing thought: the cashtag, that it jumped or dropped this morning, and why. If it was added to the S&P 500, say big index funds have to buy it automatically, which pushes the price up before regular trading opens. Do not paste a headline as its own sentence.
-Then: the rest of the investments are steady, there is nothing to buy or sell, and the best thing is to sit back, hold, and let the money work in the background.
+Open with the names that moved overnight, cashtags, and why when facts give a headline. More than one name is fine. Then name the biggest holdings from facts and say each was steady, up, or down, with the percent. Do not paste a headline as its own sentence.
+Then: there is nothing to buy or sell. Sit back, hold, and let the money work in the background.
 
 Never invent news. Never name how much of the portfolio sits in one group. Overnight only.`,
-  close: `This is the after-the-close note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Never we/us/our. Never name a website or paste a link.
+  close: `This is the after-the-close note. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Finish every sentence. Never we/us/our. Never name a website or paste a link.
 
-Open with how the day ended, percent and dollars, and which cashtag did most of the work. The rest of the account had a quiet day.
-Then: no reason to make any moves tonight. Everything looks healthy. Enjoy the evening, and let the investments keep compounding.
+Open with how the day ended, percent and dollars. Name the names that did the work, more than one if facts show more than one. Then name the biggest holdings from facts and say each was steady, up, or down, with the percent.
+Then: no reason to make any moves tonight. Enjoy the evening, and let the investments keep compounding.
 
 Never invent news. Never name how much of the portfolio sits in one group.`,
-  sunday: `This is the Sunday weekly recap. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Never we/us/our. Never name a website or paste a link. The loud-mover numbers are already a table. Do not list those names again.
+  sunday: `This is the Sunday weekly recap. You/your. Two short paragraphs, one blank line between them. Kitchen-table words. Finish every sentence. Never we/us/our. Never name a website or paste a link.
 
-Open with the week's percent and dollar, and which cashtag led. The rest of the holdings held steady.
+Open with the week's percent and dollar. Name who led, more than one name if facts show more than one. Then name the biggest holdings from facts and say each was steady, up, or down, with the percent.
 Then: everything is on track, no changes needed for the week ahead, enjoy the rest of the weekend.
 
 Never invent news. Never name how much of the portfolio sits in one group.`,
@@ -136,12 +136,39 @@ function dayResult(pctMove: number | null, dollar: number): string {
   return `flat (${money(dollar)})`;
 }
 
+function holdingPct(r: NoteReport, ticker: string): number | undefined {
+  return r.movers.find((m) => m.ticker === ticker)?.pct;
+}
+
+function holdingCheck(ticker: string, pct: number | undefined): string {
+  const tag = cashtag(ticker);
+  if (pct == null || Math.abs(pct) < 0.005) return `${tag} was steady`;
+  if (pct > 0) return `${tag} was up ${unsignedPct(pct)}`;
+  return `${tag} was down ${unsignedPct(pct)}`;
+}
+
+function joinChecks(bits: string[]): string {
+  if (bits.length === 0) return "";
+  if (bits.length === 1) return bits[0] ?? "";
+  if (bits.length === 2) return `${bits[0]}, and ${bits[1]}`;
+  return `${bits.slice(0, -1).join(", ")}, and ${bits[bits.length - 1]}`;
+}
+
+function biggestLine(r: NoteReport): string {
+  const top = r.weights.slice(0, 4);
+  const bits = top.map((w) => holdingCheck(w.ticker, holdingPct(r, w.ticker)));
+  const joined = joinChecks(bits);
+  if (!joined) return "";
+  return `Among your biggest holdings, ${joined}.`;
+}
+
 function letter(r: NoteReport): string {
   const mover = r.movers[0];
   const tag = mover ? cashtag(mover.ticker) : null;
   const headline = r.news?.title ? clipHeadline(r.news.title) : null;
   const why = whyMoved(headline);
   const indexHow = indexExplain(headline);
+  const biggest = biggestLine(r);
 
   if (r.kind === "morning") {
     let first: string;
@@ -156,34 +183,36 @@ function letter(r: NoteReport): string {
     } else {
       first = r.lead;
     }
+    if (biggest) first = `${first} ${biggest}`;
     const second =
-      "The rest of your investments are steady today, so there is nothing you need to buy or sell. The best thing to do right now is sit back, hold, and let your money do its work in the background.";
+      "There is nothing you need to buy or sell. The best thing to do right now is sit back, hold, and let your money do its work in the background.";
     return `${first}\n\n${second}`;
   }
 
   if (r.kind === "close") {
     const result = dayResult(r.todayPct, r.todayDollar);
-    const verb =
-      (mover?.pct ?? 0) < 0 ? "fell" : "climbed";
-    let first: string;
-    if (tag) {
-      first = `Your portfolio ended the day ${result}, mostly because ${tag} ${verb}. Everything else in your account had a quiet, normal day.`;
-    } else {
-      first = `Your portfolio ended the day ${result}. Everything else in your account had a quiet, normal day.`;
+    let first = `Your portfolio ended the day ${result}.`;
+    if (tag && mover) {
+      first = `${first} ${cashtag(mover.ticker)} ${mover.pct < 0 ? "fell" : "climbed"}, ${mover.pct < 0 ? "down" : "up"} ${unsignedPct(mover.pct)}.`;
     }
+    if (biggest) first = `${first} ${biggest}`;
     const second =
-      "There is no reason to make any moves tonight. Everything looks healthy. Enjoy your evening, and let your investments keep compounding.";
+      "There is no reason to make any moves tonight. Enjoy your evening, and let your investments keep compounding.";
     return `${first}\n\n${second}`;
   }
 
   let first: string;
-  if (tag && mover && r.todayPct != null && r.todayPct >= 0 && mover.pct > 0) {
-    first = `Your portfolio gained ${unsignedPct(r.todayPct)} this week (${money(r.todayDollar)}), with ${tag} leading the way after jumping ${unsignedPct(mover.pct)}. The rest of your holdings held steady.`;
-  } else if (tag && mover && mover.pct < 0) {
-    first = `Your portfolio was ${dayResult(r.todayPct, r.todayDollar)} this week, with ${tag} leading the way after dropping ${unsignedPct(mover.pct)}. The rest of your holdings held steady.`;
+  if (r.todayPct != null && r.todayPct >= 0) {
+    first = `Your portfolio gained ${unsignedPct(r.todayPct)} this week (${money(r.todayDollar)}).`;
   } else {
-    first = `Your portfolio was ${dayResult(r.todayPct, r.todayDollar)} this week. The rest of your holdings held steady.`;
+    first = `Your portfolio was ${dayResult(r.todayPct, r.todayDollar)} this week.`;
   }
+  if (tag && mover && mover.pct > 0) {
+    first = `${first} ${tag} led, up ${unsignedPct(mover.pct)}.`;
+  } else if (tag && mover && mover.pct < 0) {
+    first = `${first} ${tag} led, down ${unsignedPct(mover.pct)}.`;
+  }
+  if (biggest) first = `${first} ${biggest}`;
   const second =
     "Everything is on track, so there are no changes needed for the week ahead. Enjoy the rest of your weekend.";
   return `${first}\n\n${second}`;
@@ -199,7 +228,6 @@ function fallbackWeekday(r: NoteReport): string {
 
 function plainNote(text: string): string {
   let s = text;
-  s = s.replace(/[^.!?\n]*\d+%\s+in\s+[^.!?\n]*[.!?]?/gi, "");
   s = s.replace(/\bcost basis\b/gi, "what you paid");
   s = s.replace(/\bfalling knife\b/gi, "buying something that is still dropping");
   s = s.replace(/\bcatalysts?\b/gi, "news");
@@ -248,11 +276,24 @@ function facts(r: NoteReport): string {
   const loud = r.loudMovers.length > 0 ? r.loudMovers : r.movers;
   if (loud[0]) {
     lines.push(
-      "Names that moved (already a table in the email, do not list them again):",
+      "Names that moved:",
       ...loud.map(
         (m) =>
           `  ${cashtag(m.ticker)} ${m.pct >= 0 ? "+" : "-"}${(Math.abs(m.pct) * 100).toFixed(1)}% ${money(m.dollar)} at $${m.price.toFixed(2)}`
       )
+    );
+  }
+  if (r.weights[0]) {
+    lines.push(
+      "Biggest holdings (name each one: steady, or up/down with the percent):",
+      ...r.weights.slice(0, 4).map((w) => {
+        const m = r.movers.find((row) => row.ticker === w.ticker);
+        const move =
+          m && Math.abs(m.pct) >= 0.005
+            ? `${m.pct >= 0 ? "+" : "-"}${(Math.abs(m.pct) * 100).toFixed(1)}%`
+            : "steady";
+        return `  ${cashtag(w.ticker)} ${move}`;
+      })
     );
   }
   if (r.news) {
@@ -276,9 +317,13 @@ function stripCitations(text: string): string {
 }
 
 function stillJargon(text: string): boolean {
-  return /cost basis|falling knife|\bcatalyst\b|pre-bell|read on the business|structural|\bgap\b|\d+%\s+in\s+/i.test(
+  return /cost basis|falling knife|\bcatalyst\b|pre-bell|read on the business|structural|\bgap\b|\d+%\s+of\s+(?:this|your|our)\s+portfolio/i.test(
     text
   );
+}
+
+function looksTruncated(text: string): boolean {
+  return !/[.!?]"?'?$/.test(text.trim());
 }
 
 function acceptNote(text: string): string | null {
@@ -295,6 +340,7 @@ function acceptNote(text: string): string | null {
   if (clean.length < 40) return null;
   if (looksLikePromptLeak(clean)) return null;
   if (stillJargon(clean)) return null;
+  if (looksTruncated(clean)) return null;
   return clean.length > 1800 ? clean.slice(0, 1760).trim() : clean;
 }
 
@@ -343,7 +389,7 @@ ${JOB[report.kind]}
 Write the finished note only. First word is the first word of the note.
 Do not restate these rules. Do not list words to avoid. Do not plan out loud.`,
           prompt: facts(report),
-          maxOutputTokens: 480,
+          maxOutputTokens: 640,
           abortSignal: signal,
         }),
       { deadlineAt: Date.now() + 22_000 }

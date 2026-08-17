@@ -1207,7 +1207,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /Open your portfolio/);
   const notes = readFileSync("src/lib/note-margus.ts", "utf8");
   assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
-  assert.match(notes, /maxOutputTokens: 480/);
+  assert.match(notes, /maxOutputTokens: 640/);
   assert.equal(
     looksLikePromptLeak(
       "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
@@ -1232,6 +1232,7 @@ run("note letters are one mix story, not stacked cards", () => {
   };
   const holdings = [
     { ticker: "CRWV", shares: 50, buy_price: 100 },
+    { ticker: "DRAM", shares: 40, buy_price: 100 },
     { ticker: "NBIS", shares: 14, buy_price: 100 },
     { ticker: "RDDT", shares: 36, buy_price: 100 },
   ];
@@ -1242,6 +1243,12 @@ run("note letters are one mix story, not stacked cards", () => {
     holdings,
     quotes: {
       CRWV: { ...blank, ticker: "CRWV", price: 100 },
+      DRAM: {
+        ...blank,
+        ticker: "DRAM",
+        price: 100,
+        preMarketChangePercent: 0.014,
+      },
       NBIS: { ...blank, ticker: "NBIS", price: 100 },
       RDDT: {
         ...blank,
@@ -1254,8 +1261,11 @@ run("note letters are one mix story, not stacked cards", () => {
   morning.margus = fallbackNoteTake(morning);
   assert.equal(morning.margus.split(/\n\n/).length, 2);
   assert.match(morning.margus, /\$RDDT jumped 8\.0% this morning/);
+  assert.match(morning.margus, /\$DRAM was up 1\.4%/);
+  assert.match(morning.margus, /\$CRWV was steady/);
   assert.match(morning.margus, /nothing you need to buy or sell/);
   assert.match(morning.margus, /let your money do its work in the background/);
+  assert.match(morning.margus, /[.!?]$/);
   assert.doesNotMatch(morning.margus, /64%/);
   assert.doesNotMatch(morning.margus, /cost basis|falling knife|\bgap\b|catalyst|pre-bell|read on the business/i);
   assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight|utilities that sell power/);
@@ -1272,6 +1282,7 @@ run("note letters are one mix story, not stacked cards", () => {
   morning.margus = fallbackNoteTake(morning);
   assert.match(morning.margus, /\$RDDT jumped this morning because it was added to the S&P 500/);
   assert.match(morning.margus, /big index funds have to buy it automatically/);
+  assert.match(morning.margus, /\$DRAM was up 1\.4%/);
   assert.doesNotMatch(morning.margus, /Reddit to join the S&P 500/);
   assert.doesNotMatch(morning.margus, /is moving this morning/);
   assert.doesNotMatch(morning.margus, /\[\[source:/);
@@ -1285,6 +1296,7 @@ run("note letters are one mix story, not stacked cards", () => {
     holdings,
     quotes: {
       CRWV: { ...blank, ticker: "CRWV", price: 100, changePercent: 0.01 },
+      DRAM: { ...blank, ticker: "DRAM", price: 100, changePercent: 0.014 },
       NBIS: { ...blank, ticker: "NBIS", price: 100, changePercent: -0.01 },
       RDDT: {
         ...blank,
@@ -1299,10 +1311,13 @@ run("note letters are one mix story, not stacked cards", () => {
   assert.equal(closeTake.split(/\n\n/).length, 2);
   assert.match(closeTake, /ended the day up /);
   assert.match(closeTake, /\$RDDT climbed/);
-  assert.match(closeTake, /quiet, normal day/);
+  assert.match(closeTake, /\$DRAM was up 1\.4%/);
+  assert.match(closeTake, /\$CRWV was up 1\.0%/);
   assert.match(closeTake, /keep compounding/);
+  assert.match(closeTake, /[.!?]$/);
   assert.doesNotMatch(closeTake, /64%/);
   assert.doesNotMatch(closeTake, /cost basis|falling knife|\bgap\b|catalyst/i);
+  assert.doesNotMatch(closeTake, /had a quiet$/);
   const sunday = buildNoteReport({
     kind: "sunday",
     name: "Test",
@@ -1310,11 +1325,13 @@ run("note letters are one mix story, not stacked cards", () => {
     holdings,
     quotes: {
       CRWV: { ...blank, ticker: "CRWV", price: 100 },
+      DRAM: { ...blank, ticker: "DRAM", price: 100 },
       NBIS: { ...blank, ticker: "NBIS", price: 100 },
       RDDT: { ...blank, ticker: "RDDT", price: 100 },
     },
     weekReturns: {
       CRWV: { start: 98, end: 100, pct: 0.02 },
+      DRAM: { start: 95, end: 100, pct: 0.05 },
       NBIS: { start: 110, end: 100, pct: -0.09 },
       RDDT: { start: 90, end: 108, pct: 0.2 },
     },
@@ -1322,10 +1339,14 @@ run("note letters are one mix story, not stacked cards", () => {
   const sundayTake = fallbackNoteTake(sunday);
   assert.equal(sundayTake.split(/\n\n/).length, 2);
   assert.match(sundayTake, /Your portfolio gained /);
-  assert.match(sundayTake, /\$RDDT leading the way after jumping 20\.0%/);
+  assert.match(sundayTake, /\$RDDT led, up 20\.0%/);
+  assert.match(sundayTake, /\$DRAM was up 5\.0%/);
+  assert.match(sundayTake, /\$CRWV was up 2\.0%/);
   assert.doesNotMatch(sundayTake, /\n- \$/);
   assert.doesNotMatch(sundayTake, /64%/);
+  assert.doesNotMatch(sundayTake, /up 19\.2$/);
   assert.match(sundayTake, /Enjoy the rest of your weekend/);
+  assert.match(sundayTake, /[.!?]$/);
 });
 
 run("manual note cron stays on Martin", () => {

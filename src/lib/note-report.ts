@@ -322,7 +322,7 @@ function sessionMoves(input: NoteReportInput) {
     .sort((a, b) => Math.abs(b.dollar) - Math.abs(a.dollar));
   const weights: NoteWeight[] = [...positions]
     .sort((a, b) => b.value - a.value)
-    .slice(0, 3)
+    .slice(0, 5)
     .map((p) => ({
       ticker: p.ticker,
       weight: book !== 0 ? p.value / book : 0,
