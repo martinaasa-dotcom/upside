@@ -3147,7 +3147,7 @@ function ReadOnlyHoldings({
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead className="border-b border-border text-xs text-muted">
             <tr>
-              <th className="px-3 py-2 text-right font-medium">Ticker</th>
+              <th className="px-3 py-2 text-left font-medium">Ticker</th>
               <th className="px-3 py-2 font-medium">Today</th>
               <th className="px-3 py-2 font-medium">%</th>
               <th className="px-3 py-2 font-medium">Shares</th>
@@ -3163,7 +3163,7 @@ function ReadOnlyHoldings({
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-border">
-                  <td className="px-3 py-2 text-right font-medium">
+                  <td className="px-3 py-2 text-left font-medium">
                     <TickerSymbol
                       ticker={h.ticker}
                       currency={listingCurrency(
