@@ -1231,6 +1231,7 @@ export function UpsidePortfolioPage() {
                       <NativeSelect
                         value={pickerSelection}
                         onChange={(e) => setPickerSelection(e.target.value)}
+                        className="touch-target min-w-0 max-w-full"
                       >
                         <NativeSelectOption value="">
                           Choose a portfolio …

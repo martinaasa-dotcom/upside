@@ -349,7 +349,10 @@ export const LabSheet = memo(function LabSheet({
               value={scopeId}
               onChange={(e) => setScopeId(e.target.value)}
               disabled={!scopeApplies}
-              className={cn(!scopeApplies && "cursor-not-allowed opacity-40")}
+              className={cn(
+                "min-w-0 max-w-[min(100%,16rem)]",
+                !scopeApplies && "cursor-not-allowed opacity-40"
+              )}
               title={
                 scopeApplies
                   ? "Narrow these tools down to one portfolio"
