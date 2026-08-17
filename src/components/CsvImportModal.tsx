@@ -7,6 +7,7 @@ import {
   type CsvHoldingRow,
   type CsvSkippedRow,
 } from "@/lib/csv-import";
+import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
@@ -198,31 +199,31 @@ export function CsvImportModal({
                   wide numbers, and on a phone the preview needs to scroll
                   sideways instead of pushing the modal past the viewport. */}
               <div className="max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised">
-                <table className="w-full text-left text-sm">
+                <table className={htmlTable}>
                   <thead className="sticky top-0 bg-well text-sm text-muted">
                     <tr>
-                      <th className="px-3 py-1.5 text-left font-medium">Ticker</th>
-                      <th className="px-3 py-1.5 font-medium">Shares</th>
-                      <th className="px-3 py-1.5 font-medium">Buy price</th>
+                      <th className={cn(htmlCell, "py-1.5 font-medium")}>Ticker</th>
+                      <th className={cn(htmlCell, "py-1.5 font-medium")}>Shares</th>
+                      <th className={cn(htmlCell, "py-1.5 font-medium")}>Buy price</th>
                       {!hideCallPct && (
-                        <th className="px-3 py-1.5 font-medium">Call %</th>
+                        <th className={cn(htmlCell, "py-1.5 font-medium")}>Call %</th>
                       )}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.ticker} className="border-t border-border">
-                        <td className="px-3 py-1.5 text-left font-medium text-foreground">
+                        <td className={cn(htmlCell, "py-1.5 font-medium text-foreground")}>
                           <TickerSymbol ticker={r.ticker} />
                         </td>
-                        <td className="px-3 py-1.5 tabular-nums text-foreground/80">
+                        <td className={cn(htmlCell, "py-1.5 tabular-nums text-foreground/80")}>
                           {r.shares}
                         </td>
-                        <td className="px-3 py-1.5 tabular-nums text-foreground/80">
+                        <td className={cn(htmlCell, "py-1.5 tabular-nums text-foreground/80")}>
                           ${r.buyPrice.toFixed(2)}
                         </td>
                         {!hideCallPct && (
-                          <td className="px-3 py-1.5 tabular-nums text-muted">
+                          <td className={cn(htmlCell, "py-1.5 tabular-nums text-muted")}>
                             {r.callPct != null
                               ? `${Math.round(r.callPct * 100)}%`
                               : "default"}

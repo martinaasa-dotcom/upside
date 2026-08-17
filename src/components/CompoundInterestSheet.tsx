@@ -38,6 +38,7 @@ import {
   type DisplayCurrency,
   type EurUsdQuote,
 } from "@/lib/display-currency";
+import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import {
   ArrowUpRight,
@@ -1111,13 +1112,13 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             ref={milestoneScrollRef}
             className="relative mt-4 hidden max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-raised lg:block"
           >
-            <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
+            <table className={cn(htmlTable, "min-w-[30rem] text-xs")}>
               <thead className="sticky top-0 z-10 bg-card">
                 <tr className="border-b border-border text-xs text-muted">
-                  <th className="py-2.5 px-3 font-medium">Milestone</th>
-                  <th className="py-2.5 px-3 font-medium">On this plan</th>
-                  <th className="py-2.5 px-3 font-medium">How far off</th>
-                  <th className="py-2.5 px-3 font-medium">Got there on</th>
+                  <th className={cn(htmlCell, "py-2.5 font-medium")}>Milestone</th>
+                  <th className={cn(htmlCell, "py-2.5 font-medium")}>On this plan</th>
+                  <th className={cn(htmlCell, "py-2.5 font-medium")}>How far off</th>
+                  <th className={cn(htmlCell, "py-2.5 font-medium")}>Got there on</th>
                 </tr>
               </thead>
               <tbody>
@@ -1136,10 +1137,10 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                           done && "bg-gain/[0.06]"
                         )}
                       >
-                        <td className="py-2.5 px-3">
+                        <td className={cn(htmlCell, "py-2.5")}>
                           <span
                             className={cn(
-                              "inline-flex items-center gap-2 tabular-nums font-medium",
+                              "inline-flex items-center justify-center gap-2 tabular-nums font-medium",
                               done ? "font-semibold text-gain" : "text-foreground"
                             )}
                           >
@@ -1157,7 +1158,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                             {show(row.goal)}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 tabular-nums text-foreground/80">
+                        <td className={cn(htmlCell, "py-2.5 tabular-nums text-foreground/80")}>
                           {row.hit ? (
                             <span className="font-semibold text-gain">
                               Already past it
@@ -1168,14 +1169,14 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                             "More than 50 years out"
                           )}
                         </td>
-                        <td className="py-2.5 px-3 tabular-nums text-foreground/80">
+                        <td className={cn(htmlCell, "py-2.5 tabular-nums text-foreground/80")}>
                           {row.hit
                             ? "—"
                             : row.yearsUntil != null && Number.isFinite(row.yearsUntil)
                               ? `${row.yearsUntil.toFixed(1)} years`
                               : "—"}
                         </td>
-                        <td className="py-2.5 px-3">
+                        <td className={cn(htmlCell, "py-2.5")}>
                           <input
                             type="date"
                             aria-label={`Date you reached ${show(row.goal)}`}
@@ -1287,16 +1288,16 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               })}
             </div>
             <div className="hidden min-w-0 max-w-full overflow-x-auto border-t border-border md:block">
-              <table className="w-full min-w-[32rem] text-left text-xs">
+              <table className={cn(htmlTable, "min-w-[32rem] text-xs")}>
                 <thead>
                   <tr className="border-b border-border text-xs text-muted">
-                    <th className="px-4 py-2.5 font-medium">Year</th>
-                    <th className="px-4 py-2.5 font-medium">Your money in</th>
-                    <th className="px-4 py-2.5 font-medium">Growth that year</th>
-                    <th className="bg-caution/15 px-4 py-2.5 font-medium text-caution">
+                    <th className={cn(htmlCell, "py-2.5 font-medium")}>Year</th>
+                    <th className={cn(htmlCell, "py-2.5 font-medium")}>Your money in</th>
+                    <th className={cn(htmlCell, "py-2.5 font-medium")}>Growth that year</th>
+                    <th className={cn(htmlCell, "bg-caution/15 py-2.5 font-medium text-caution")}>
                       Growth so far
                     </th>
-                    <th className="bg-gain/10 px-4 py-2.5 font-medium text-gain">
+                    <th className={cn(htmlCell, "bg-gain/10 py-2.5 font-medium text-gain")}>
                       Pot at year end
                     </th>
                   </tr>
@@ -1313,17 +1314,17 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                           isLast && "bg-hover/20 font-semibold text-foreground"
                         )}
                       >
-                        <td className="px-4 py-2 text-foreground/80">{row.label}</td>
-                        <td className="px-4 py-2 tabular-nums text-foreground/80">
+                        <td className={cn(htmlCell, "text-foreground/80")}>{row.label}</td>
+                        <td className={cn(htmlCell, "tabular-nums text-foreground/80")}>
                           {show(principalShown)}
                         </td>
-                        <td className="px-4 py-2 tabular-nums text-caution">
+                        <td className={cn(htmlCell, "tabular-nums text-caution")}>
                           {show(row.interest)}
                         </td>
-                        <td className="bg-caution/10 px-4 py-2 tabular-nums text-caution">
+                        <td className={cn(htmlCell, "bg-caution/10 tabular-nums text-caution")}>
                           {show(row.accruedInterest)}
                         </td>
-                        <td className="bg-gain/5 px-4 py-2 tabular-nums font-semibold text-gain">
+                        <td className={cn(htmlCell, "bg-gain/5 tabular-nums font-semibold text-gain")}>
                           {show(row.balance)}
                         </td>
                       </tr>

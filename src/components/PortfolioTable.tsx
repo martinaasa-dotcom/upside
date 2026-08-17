@@ -26,7 +26,7 @@ import { todayDollarFor } from "@/lib/overview";
 import { ArrowDown, ArrowUp, FileUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
-import { FluidRow, FluidTable, cellBase, cellLast, cellTicker } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, equalCols } from "@/components/FluidTable";
 
 export type HoldingPatch = {
   id: string;
@@ -262,9 +262,7 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   }
 }
 
-/** Ticker keeps room for cashtag + chip. The rest share leftover width equally. */
-const TEMPLATE =
-  "minmax(9rem, 1.2fr) repeat(10, minmax(0, 1fr)) minmax(4.75rem, 1fr)";
+const TEMPLATE = equalCols(12);
 
 export const PortfolioTable = memo(function PortfolioTable({
   portfolio,
@@ -647,17 +645,8 @@ export const PortfolioTable = memo(function PortfolioTable({
         ) : (
           <FluidTable template={TEMPLATE}>
             <FluidRow className="border-border text-xs font-medium text-muted">
-              {COLUMNS.map((col, i) => (
-                <div
-                  key={col.label}
-                  className={
-                    i === 0
-                      ? cellTicker
-                      : i === COLUMNS.length - 1
-                        ? cellLast
-                        : cellBase
-                  }
-                >
+              {COLUMNS.map((col) => (
+                <div key={col.label} className={cellBase}>
                   {col.key ? (
                     <button
                       type="button"
@@ -696,7 +685,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               <FluidRow key={h.id} className="group hover:bg-well/50">
                 <div
                   className={cn(
-                    cellTicker,
+                    cellBase,
                     "font-semibold tracking-wide text-foreground"
                   )}
                 >
@@ -751,7 +740,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 >
                   {money(h.roiDollar, 0)}
                 </div>
-                <div className={cn(cellBase, "px-0.5")}>
+                <div className={cellBase}>
                   <Sparkline
                     points={h.quote?.sparkline ?? []}
                     width={56}
@@ -773,7 +762,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 </div>
                 <div
                   className={cn(
-                    cellLast,
+                    cellBase,
                     "relative tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).dollar)
@@ -798,8 +787,8 @@ export const PortfolioTable = memo(function PortfolioTable({
               );
             })}
 
-            <FluidRow className="border-t border-border bg-well/60 font-semibold">
-              <div className={cn(cellTicker, "py-2.5 text-foreground")}>PORTFOLIO</div>
+            <FluidRow footer className="border-t border-border font-semibold">
+              <div className={cn(cellBase, "py-2.5 text-foreground")}>PORTFOLIO</div>
               <div className={cn(cellBase, "py-2.5 tabular-nums text-muted")}>
                 100%
               </div>
@@ -842,7 +831,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               </div>
               <div
                 className={cn(
-                  cellLast,
+                  cellBase,
                   "py-2.5 tabular-nums font-medium",
                   today.pct != null ? signedTone(today.dollar) : "text-muted"
                 )}

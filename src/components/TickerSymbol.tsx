@@ -58,7 +58,12 @@ export function TickerSymbol({
   );
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5", className)}>
+    <span
+      className={cn(
+        "inline-flex max-w-full flex-wrap items-center justify-center gap-1",
+        className
+      )}
+    >
       {name}
       <ListingCurrencyChip code={code} />
     </span>

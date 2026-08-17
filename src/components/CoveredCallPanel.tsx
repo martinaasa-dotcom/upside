@@ -1,6 +1,6 @@
 "use client";
 
-import { FluidRow, FluidTable, cellBase, cellLast, cellTicker } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, equalCols } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Card, EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cn, signedTone, currency, percent } from "@/lib/format";
@@ -65,7 +65,7 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-12 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
+        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-well focus:ring-1 focus:ring-brand/50"
       />
       <span className="text-sm text-muted">%</span>
     </div>
@@ -123,8 +123,7 @@ function InlineStockTarget({
   );
 }
 
-const TEMPLATE =
-  "minmax(9rem, 1.2fr) repeat(9, minmax(0, 1fr)) minmax(5.5rem, 1fr)";
+const TEMPLATE = equalCols(11);
 
 const HEADERS = [
   "Ticker",
@@ -311,16 +310,10 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
       <div className="hidden md:block">
         <FluidTable template={TEMPLATE}>
           <FluidRow className="border-border text-xs font-medium text-muted">
-            {HEADERS.map((label, i) => (
+            {HEADERS.map((label) => (
               <div
                 key={label}
-                className={
-                  i === 0
-                    ? cellTicker
-                    : i === HEADERS.length - 1
-                      ? cellLast
-                      : cellBase
-                }
+                className={cellBase}
                 title={HEADER_HINTS[label]}
               >
                 {label}
@@ -352,7 +345,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
             <FluidRow key={r.holding.id} className="min-h-10 hover:bg-well/50">
               <div
                 className={cn(
-                  cellTicker,
+                  cellBase,
                   "font-semibold tracking-wide text-foreground"
                 )}
               >
@@ -414,15 +407,15 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               >
                 {r.yield2w != null ? percent(r.yield2w) : "—"}
               </div>
-              <div className={cn(cellLast, "tabular-nums text-foreground")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {r.premium != null ? currency(r.premium) : "—"}
               </div>
             </FluidRow>
           ))}
 
           {rows.length > 0 && (
-            <FluidRow className="border-t border-border bg-well/60 font-semibold">
-              <div className={cn(cellTicker, "py-2.5")} />
+            <FluidRow footer className="border-t border-border font-semibold">
+              <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
@@ -434,7 +427,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <div className={cn(cellBase, "py-2.5 tabular-nums text-brand-bright")}>
                 {percent(yield2wAvg)}
               </div>
-              <div className={cn(cellLast, "py-2.5 tabular-nums text-foreground")}>
+              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
                 {currency(premiumTotal)}
               </div>
             </FluidRow>

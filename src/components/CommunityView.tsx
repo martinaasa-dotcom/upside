@@ -27,6 +27,7 @@ import {
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
 import { listingCurrency } from "@/lib/listing-currency";
+import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { combineHouseholdNames } from "@/lib/auth/identity";
@@ -3144,15 +3145,15 @@ function ReadOnlyHoldings({
         </Card>
       </div>
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
-        <table className="w-full min-w-[36rem] text-left text-sm">
+        <table className={cn(htmlTable, "min-w-[36rem]")}>
           <thead className="border-b border-border text-xs text-muted">
             <tr>
-              <th className="px-3 py-2 text-left font-medium">Ticker</th>
-              <th className="px-3 py-2 font-medium">Today</th>
-              <th className="px-3 py-2 font-medium">%</th>
-              <th className="px-3 py-2 font-medium">Shares</th>
-              <th className="px-3 py-2 font-medium">Price</th>
-              <th className="px-3 py-2 font-medium">Value</th>
+              <th className={cn(htmlCell, "font-medium")}>Ticker</th>
+              <th className={cn(htmlCell, "font-medium")}>Today</th>
+              <th className={cn(htmlCell, "font-medium")}>%</th>
+              <th className={cn(htmlCell, "font-medium")}>Shares</th>
+              <th className={cn(htmlCell, "font-medium")}>Price</th>
+              <th className={cn(htmlCell, "font-medium")}>Value</th>
             </tr>
           </thead>
           <tbody>
@@ -3163,7 +3164,7 @@ function ReadOnlyHoldings({
               const pctBook = totalValue > 0 ? value / totalValue : 0;
               return (
                 <tr key={h.id} className="border-b border-border">
-                  <td className="px-3 py-2 text-left font-medium">
+                  <td className={cn(htmlCell, "font-medium")}>
                     <TickerSymbol
                       ticker={h.ticker}
                       currency={listingCurrency(
@@ -3174,22 +3175,23 @@ function ReadOnlyHoldings({
                   </td>
                   <td
                     className={cn(
-                      "px-3 py-2 font-semibold tabular-nums",
+                      htmlCell,
+                      "font-semibold tabular-nums",
                       signedTone(rowTodayPct, "text-muted")
                     )}
                   >
                     {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
                   </td>
-                  <td className="px-3 py-2 tabular-nums text-muted">
+                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
                     {percent(pctBook)}
                   </td>
-                  <td className="px-3 py-2 tabular-nums text-muted">
+                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
                     {h.shares}
                   </td>
-                  <td className="px-3 py-2 tabular-nums text-muted">
+                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
                     {currency(price)}
                   </td>
-                  <td className="px-3 py-2 tabular-nums text-muted">
+                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
                     {currency(value)}
                   </td>
                 </tr>
@@ -3197,16 +3199,16 @@ function ReadOnlyHoldings({
             })}
             {holdings.length === 0 && (
               <tr>
-                <td className="px-3 py-6 text-center text-muted" colSpan={6}>
+                <td className={cn(htmlCell, "py-6 text-muted")} colSpan={6}>
                   No holdings in this portfolio.
                 </td>
               </tr>
             )}
             <tr>
-              <td className="px-3 py-2 text-muted" colSpan={5}>
+              <td className={cn(htmlCell, "text-muted")} colSpan={5}>
                 Cash
               </td>
-              <td className="px-3 py-2 tabular-nums">{currency(cash)}</td>
+              <td className={cn(htmlCell, "tabular-nums")}>{currency(cash)}</td>
             </tr>
           </tbody>
         </table>

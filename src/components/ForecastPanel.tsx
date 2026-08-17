@@ -1,7 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { FluidRow, FluidTable, cellBase, cellLast, cellTicker } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, equalCols } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import {
   Card,
@@ -556,7 +556,7 @@ export const ForecastPanel = memo(function ForecastPanel({
   const mobileYears = yearCols.filter((y) => y !== 2030);
   // Ticker | Price now | End-year cols | Change. Numbers only in the grid.
   // Rationale lives under the table so a sentence cannot blow a row open.
-  const template = `minmax(9rem, 1.2fr) repeat(${yearCols.length + 2}, minmax(0, 1fr))`;
+  const template = equalCols(yearCols.length + 3);
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -1064,10 +1064,10 @@ export const ForecastPanel = memo(function ForecastPanel({
           </div>
 
           {/* Desktop */}
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden md:block">
             <FluidTable template={template}>
               <FluidRow className="text-xs font-medium text-muted">
-                <div className={cellTicker}>Ticker</div>
+                <div className={cellBase}>Ticker</div>
                 <div className={cn(cellBase, "tabular-nums")}>Price now</div>
                 {yearCols.map((y) => (
                   <div
@@ -1082,12 +1082,12 @@ export const ForecastPanel = memo(function ForecastPanel({
                     <YearColHeader year={y} />
                   </div>
                 ))}
-                <div className={cellLast}>Change</div>
+                <div className={cn(cellBase, "tabular-nums")}>Change</div>
               </FluidRow>
 
               {model.rows.map((r) => (
                 <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-well/50">
-                  <div className={cn(cellTicker, "flex-col items-start font-semibold tracking-wide text-foreground")}>
+                  <div className={cn(cellBase, "flex-col font-semibold tracking-wide text-foreground")}>
                     <TickerSymbol ticker={r.ticker} />
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-xs font-normal tracking-normal text-muted">
@@ -1109,7 +1109,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   ))}
                   <div
                     className={cn(
-                      cellLast,
+                      cellBase,
                       "font-medium",
                       r.gainPct != null
                         ? signedTone(r.gainPct)
@@ -1121,8 +1121,8 @@ export const ForecastPanel = memo(function ForecastPanel({
                 </FluidRow>
               ))}
 
-              <FluidRow className="border-t border-border bg-well/60 font-semibold">
-                <div className={cn(cellTicker, "py-2.5 text-foreground")}>
+              <FluidRow footer className="border-t border-border font-semibold">
+                <div className={cn(cellBase, "py-2.5 text-foreground")}>
                   Portfolio
                 </div>
                 <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
@@ -1135,7 +1135,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                 ))}
                 <div
                   className={cn(
-                    cellLast,
+                    cellBase,
                     "py-2.5",
                     model.gainPct != null
                       ? signedTone(model.gainPct)

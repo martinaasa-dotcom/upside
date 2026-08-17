@@ -1,6 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
+import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
 import { STRATEGY } from "@/lib/calculations";
@@ -343,7 +344,7 @@ function ChatMarkdown({ children }: { children: string }) {
           ),
           table: ({ children: c }) => (
             <div className="mb-3 w-full min-w-0 overflow-x-auto last:mb-0">
-              <table className="w-full border-collapse text-left text-sm">
+              <table className={htmlTable}>
                 {c}
               </table>
             </div>
@@ -360,12 +361,12 @@ function ChatMarkdown({ children }: { children: string }) {
             <tr className="border-t border-border first:border-t-0">{c}</tr>
           ),
           th: ({ children: c }) => (
-            <th className="whitespace-nowrap py-2 pr-3 text-left font-medium first:pl-0">
+            <th className={`${htmlCell} whitespace-nowrap font-medium`}>
               {c}
             </th>
           ),
           td: ({ children: c }) => (
-            <td className="break-words py-2 pr-3 align-top tabular-nums text-foreground first:pl-0">
+            <td className={`${htmlCell} break-words tabular-nums text-foreground`}>
               {c}
             </td>
           ),

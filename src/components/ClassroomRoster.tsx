@@ -1,6 +1,7 @@
 "use client";
 
-import { cashtag, currency, signedPercent, signedTone } from "@/lib/format";
+import { htmlCell, htmlTable } from "@/components/FluidTable";
+import { cashtag, cn, currency, signedPercent, signedTone } from "@/lib/format";
 import { Card } from "@/components/ui/Panel";
 import type { ThesisCoverage } from "@/lib/classroom";
 import type { Holding, Quote } from "@/lib/types";
@@ -159,21 +160,21 @@ export function ClassroomRoster({
         )}
       </div>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[36rem] text-left text-xs">
+        <table className={cn(htmlTable, "min-w-[36rem] text-xs")}>
           <thead>
             <tr className="border-b border-border text-muted">
-              <th className="px-4 py-2 font-medium">Student</th>
-              <th className="px-3 py-2 font-medium">Now</th>
-              <th className="px-3 py-2 font-medium">vs start</th>
-              <th className="px-3 py-2 font-medium">Today</th>
-              <th className="px-3 py-2 font-medium">Why</th>
-              <th className="px-3 py-2 font-medium">Biggest</th>
+              <th className={cn(htmlCell, "font-medium")}>Student</th>
+              <th className={cn(htmlCell, "font-medium")}>Now</th>
+              <th className={cn(htmlCell, "font-medium")}>vs start</th>
+              <th className={cn(htmlCell, "font-medium")}>Today</th>
+              <th className={cn(htmlCell, "font-medium")}>Why</th>
+              <th className={cn(htmlCell, "font-medium")}>Biggest</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={6} className={cn(htmlCell, "py-8 text-muted")}>
                   Nobody in the class yet.
                 </td>
               </tr>
@@ -201,12 +202,12 @@ export function ClassroomRoster({
                     key={m.id}
                     className="border-b border-border last:border-0"
                   >
-                    <td className="px-4 py-2.5">
+                    <td className={htmlCell}>
                       {m.sheetCount > 0 ? (
                         <button
                           type="button"
                           onClick={() => onOpen(m.id)}
-                          className="text-left font-medium text-foreground hover:text-foreground"
+                          className="font-medium text-foreground hover:text-foreground"
                         >
                           {m.name}
                           {m.isYou ? (
@@ -226,28 +227,30 @@ export function ClassroomRoster({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2.5 tabular-nums text-foreground">
+                    <td className={cn(htmlCell, "tabular-nums text-foreground")}>
                       {m.sheetCount ? currency(m.totalValue) : "—"}
                     </td>
                     <td
-                      className={`px-3 py-2.5 font-semibold tabular-nums ${
-                        vsStart == null
-                          ? "text-muted"
-                          : signedTone(vsStart)
-                      }`}
+                      className={cn(
+                        htmlCell,
+                        "font-semibold tabular-nums",
+                        vsStart == null ? "text-muted" : signedTone(vsStart)
+                      )}
                     >
                       {vsStartPct == null ? "—" : signedPercent(vsStartPct)}
                     </td>
                     <td
-                      className={`px-3 py-2.5 font-semibold tabular-nums ${
+                      className={cn(
+                        htmlCell,
+                        "font-semibold tabular-nums",
                         m.sheetCount ? signedTone(m.todayPct) : "text-muted"
-                      }`}
+                      )}
                     >
                       {m.sheetCount && m.todayPct != null
                         ? signedPercent(m.todayPct)
                         : "—"}
                     </td>
-                    <td className="px-3 py-2.5 text-foreground/80">
+                    <td className={cn(htmlCell, "text-foreground/80")}>
                       {!m.sheetCount
                         ? "—"
                         : !thesis || thesis.names === 0
@@ -256,7 +259,7 @@ export function ClassroomRoster({
                             ? "No why yet"
                             : `${thesis.withWhy} of ${thesis.names}`}
                     </td>
-                    <td className="px-3 py-2.5 text-foreground/80">
+                    <td className={cn(htmlCell, "text-foreground/80")}>
                       {biggest?.ticker
                         ? `${biggest.ticker}${
                             biggest.weight != null
