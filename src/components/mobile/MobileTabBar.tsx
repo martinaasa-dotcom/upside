@@ -161,10 +161,10 @@ export function MobileTabBar({
                   if (onSelect(id)) e.preventDefault();
                 }}
                 className={cn(
-                  "flex h-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-xs font-medium transition",
+                  "flex h-full min-h-0 min-w-0 appearance-none flex-col items-center justify-center gap-0.5 rounded-none px-0.5 text-xs font-medium transition-colors",
                   on
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <span className="relative">

@@ -5579,6 +5579,8 @@ run("workspace nav marks the current room and the skip link exists", () => {
   assert.match(dock, /stashOpenTab/);
   assert.match(dock, /\/\?tab=overview/);
   assert.match(dock, /CircleDockLink/);
+  assert.match(dock, /hover:text-foreground/);
+  assert.doesNotMatch(dock, /hover:bg-accent/);
   const bookNav = readFileSync(
     join(process.cwd(), "src/components/BookBottomNav.tsx"),
     "utf8"

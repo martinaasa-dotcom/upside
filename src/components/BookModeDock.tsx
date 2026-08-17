@@ -52,7 +52,7 @@ const MODES = [
 ] as const;
 
 const ITEM =
-  "flex h-full w-full min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1.5 text-sm font-medium transition sm:flex-row sm:gap-1.5 sm:px-2";
+  "flex h-full w-full min-h-0 min-w-0 appearance-none flex-col items-center justify-center gap-0.5 rounded-none px-1.5 text-sm font-medium transition-colors sm:flex-row sm:gap-1.5 sm:px-2";
 
 type Props = {
   /** Book tab that is on. Empty on Circle pages so only Circle lights up. */
@@ -120,7 +120,7 @@ export function BookModeDock({
           ITEM,
           active
             ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            : "text-muted-foreground hover:text-foreground"
         );
         if (onSelectMode) {
           return (
