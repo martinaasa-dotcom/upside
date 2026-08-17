@@ -12,7 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { EmptyState, InfoTip, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
@@ -292,55 +297,58 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel>
+      <Panel className="gap-3">
         <PanelHeader
           title="Is the trend changing?"
           actions={
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void load(true)}
-              disabled={busy}
-            >
-              <RefreshCw
-                data-icon="inline-start"
-                className={cn(busy && "animate-spin")}
-              />
-              {busy ? "Reading …" : "Recheck"}
-            </Button>
+            <>
+              <form
+                className="w-full sm:w-56"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addToWatchlist();
+                }}
+              >
+                <InputGroup>
+                  <InputGroupInput
+                    value={draft}
+                    onChange={(e) => {
+                      setDraft(e.target.value);
+                      setAddError(null);
+                    }}
+                    placeholder="BTC-USD, XLK, SPY …"
+                    aria-label="Ticker to watch"
+                    autoComplete="off"
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="submit"
+                      size="icon-xs"
+                      disabled={!draft.trim()}
+                      aria-label="Add to watchlist"
+                    >
+                      <Plus />
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </form>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void load(true)}
+                disabled={busy}
+              >
+                <RefreshCw
+                  data-icon="inline-start"
+                  className={cn(busy && "animate-spin")}
+                />
+                {busy ? "Reading …" : "Recheck"}
+              </Button>
+            </>
           }
         />
-
-        <div className="mt-4">
-          <h3 className="text-sm font-medium tracking-tight text-foreground">
-            Watch anything, not just what you hold
-          </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            Add a sector ETF, an index, or a crypto pair to read its trend the
-            same way, e.g. $XLK for tech, $SPY for the index, or BTC-USD.
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Input
-              value={draft}
-              onChange={(e) => {
-                setDraft(e.target.value);
-                setAddError(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") addToWatchlist();
-              }}
-              placeholder="BTC-USD, XLK, SPY …"
-              className="w-40"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addToWatchlist}
-              disabled={!draft.trim()}
-            >
-              <Plus data-icon="inline-start" />
-              Add
-            </Button>
+        {watchlist.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
             {watchlist.map((t) => (
               <Badge key={t} variant="secondary" className="h-8 gap-1.5 pr-1">
                 {cashtag(t)}
@@ -355,10 +363,10 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               </Badge>
             ))}
           </div>
-          {addError && (
-            <p className="mt-2 text-sm text-loss">{addError}</p>
-          )}
-        </div>
+        ) : null}
+        {addError ? (
+          <p className="text-sm text-loss">{addError}</p>
+        ) : null}
       </Panel>
 
       {error && (
