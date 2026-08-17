@@ -138,8 +138,7 @@ export async function runDisasterRecoveryJob(opts: {
     fetchImpl: opts.fetchImpl,
     now: capturedAt,
   });
-  if (wal.skipped) warnings.push(wal.reason);
-  else if (!wal.ok) warnings.push(wal.reason);
+  if (!wal.skipped && !wal.ok) warnings.push(wal.reason);
 
   const payload = await captureBookPayload(opts.supabase);
   const checksum = bookChecksum(payload);

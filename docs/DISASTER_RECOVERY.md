@@ -12,27 +12,24 @@ Nothing here changes the app UI.
 **Already on Vercel production:** `SNAPSHOT_ENCRYPTION_KEY`,
 `SUPABASE_PROJECT_REF`, `DR_S3_PREFIX`, `DR_S3_REGION`.
 
-**You still need to create and paste:** `SUPABASE_ACCESS_TOKEN`, then the four
-R2 values. Follow parts A, B, and C in order. Do not skip the test curls.
+**Still required:** the four R2 values in Part B, then the redeploy in
+Part C.
+
+**Skip the Supabase access token.** It only lists whether Supabase still
+has a platform backup. New tokens cannot be set to never expire (max one
+year), so we do not use it. Close that Generate New Token dialog. Cold
+copies on R2 are the copy that survives a deleted project.
 
 ---
 
-## Part A. Supabase access token
+## Part A. Supabase access token (optional, skip)
 
-This token lets the 03:00 UTC cron *list* backups. It cannot download your
-database. Treat it like a password anyway.
+Skip this unless you later want the cron to fail when Supabase's own
+backups go stale. Close the token dialog and go to Part B.
 
-1. Open [https://supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
-   while signed in as the owner of project `uzrnybyggznpvgxgrvgl`.
-2. If that URL 404s: click your avatar (top right) → **Account** →
-   **Access Tokens**.
-3. Click **Generate new token**.
-4. Name it `Upside Lab DR cron`. Leave the expiry empty / "no expiry" if the
-   form offers it.
-5. Click **Generate token**.
-6. Copy the whole string immediately. Supabase will not show it again. Paste
-   it into your password manager.
-7. Test it in Terminal (replace the token, keep the quotes):
+If you do want it later: [Account tokens](https://supabase.com/dashboard/account/tokens)
+→ **Generate new token** → name `Upside Lab DR cron` → **Expires in:
+Custom** (latest date, at most one year) → copy once → test:
 
 ```bash
 curl -sS -o /tmp/sb-backups.json -w "%{http_code}\n" \
@@ -40,24 +37,10 @@ curl -sS -o /tmp/sb-backups.json -w "%{http_code}\n" \
   "https://api.supabase.com/v1/projects/uzrnybyggznpvgxgrvgl/database/backups"
 ```
 
-You want `200` printed, and `/tmp/sb-backups.json` to contain `"backups"` or
-`"walg_enabled"`. `401` means a bad token. `403` means this login cannot see
-that project.
-
-8. Put it on Vercel production:
-
-   - Open [Environment Variables](https://vercel.com/upthink-solutions/upside/settings/environment-variables)
-   - Key: `SUPABASE_ACCESS_TOKEN`
-   - Value: the token
-   - Environment: **Production** only
-   - Sensitive: on
-   - Save
-
-   Or from this repo:
-
-```bash
-printf '%s' 'PASTE_TOKEN_HERE' | npx vercel env add SUPABASE_ACCESS_TOKEN production --sensitive --yes
-```
+You want `200`. Then add `SUPABASE_ACCESS_TOKEN` on
+[Vercel env](https://vercel.com/upthink-solutions/upside/settings/environment-variables)
+(Production, Sensitive). Without this variable the cron skips the listing
+and still uploads to R2.
 
 ---
 
@@ -183,9 +166,8 @@ need to click anything daily.
 `GET /api/cron/disaster-recovery` (03:00 UTC, same `CRON_SECRET` as the
 other crons):
 
-1. Ask Supabase for the backup list. Pass if WAL-G / PITR is current, or if
-   the latest completed daily backup is younger than 36 hours
-   (`DR_BACKUP_MAX_AGE_HOURS`).
+1. Ask Supabase for the backup list **if** `SUPABASE_ACCESS_TOKEN` is set.
+   Otherwise skip that check.
 2. Read every `portfell_portfolios` and `portfell_holdings` row (service
    role).
 3. Checksum: `SUM(cash) + SUM(shares × buy price)`, rounded to the cent.

@@ -142,7 +142,7 @@ export async function verifyWalBackups(opts: {
     return {
       ok: false,
       skipped: true,
-      reason: "SUPABASE_ACCESS_TOKEN is not set, so WAL backup listing was skipped.",
+      reason: "WAL backup listing skipped (no SUPABASE_ACCESS_TOKEN). That check is optional.",
       walgEnabled: false,
       pitrEnabled: false,
       latestBackupAt: null,
