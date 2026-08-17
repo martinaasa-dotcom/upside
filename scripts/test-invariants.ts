@@ -2734,9 +2734,10 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.doesNotMatch(src, /Crash first|Slow start|Even years/);
   assert.doesNotMatch(src, /drawdown30|flat2y|calculateWithShock|ShockKind/);
   const yearWords = src.slice(src.indexOf("Any single year, in words"));
-  assert.match(yearWords, /<Tabs[\s\S]*TabsTrigger/);
-  assert.match(yearWords, /variant="line"/);
-  assert.doesNotMatch(yearWords, /look="buttons"/);
+  assert.match(yearWords, /look="buttons"/);
+  assert.match(yearWords, /columns=\{storyOpts\.length\}/);
+  assert.doesNotMatch(yearWords, /<Tabs/);
+  assert.doesNotMatch(yearWords, /variant="line"/);
   assert.doesNotMatch(yearWords, /Card tone="raised"/);
   assert.doesNotMatch(yearWords, /rounded-lg bg-muted/);
   assert.doesNotMatch(yearWords, /columns=\{3\}/);

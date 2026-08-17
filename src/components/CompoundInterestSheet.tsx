@@ -63,7 +63,6 @@ import {
   Segmented,
 } from "@/components/ui/Panel";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Item,
   ItemContent,
@@ -1230,46 +1229,36 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           <PanelHeader
             title="Any single year, in words"
           />
-          <Tabs
+          <Segmented
+            ariaLabel="Year to read"
+            columns={storyOpts.length}
+            look="buttons"
+            options={storyOpts.map((y) => ({
+              id: String(y),
+              label: `Year ${y}`,
+              title:
+                tipping === y
+                  ? `Year ${y}, growth takes over`
+                  : `Year ${y}`,
+            }))}
             value={String(storyYear)}
-            onValueChange={(id) => {
+            onChange={(id) => {
               const i = storyOpts.indexOf(Number(id));
               if (i >= 0) setStoryIdx(i);
             }}
-            className="w-full min-w-0"
-          >
-            <TabsList
-              variant="line"
-              aria-label="Year to read"
-              className="h-auto w-full max-w-full justify-start overflow-x-auto pb-1.5"
-            >
-              {storyOpts.map((y) => (
-                <TabsTrigger
-                  key={y}
-                  value={String(y)}
-                  title={
-                    tipping === y
-                      ? `Year ${y}, growth takes over`
-                      : `Year ${y}`
-                  }
-                >
-                  Year {y}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {storyRow ? (
-              <TabsContent value={String(storyYear)} className="mt-4">
-                <MicroLabel>After year {storyRow.index}</MicroLabel>
-                <p className="mt-2 font-heading text-2xl font-semibold tracking-tight tabular-nums text-foreground">
-                  {show(storyRow.balance)}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {yearStories.get(storyRow.index) ??
-                    `Growth added ${show(storyRow.interest)} this year, ${show(storyRow.accruedInterest)} in total so far.`}
-                </p>
-              </TabsContent>
-            ) : null}
-          </Tabs>
+          />
+          {storyRow ? (
+            <div>
+              <MicroLabel>After year {storyRow.index}</MicroLabel>
+              <p className="mt-2 font-heading text-2xl font-semibold tracking-tight tabular-nums text-foreground">
+                {show(storyRow.balance)}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {yearStories.get(storyRow.index) ??
+                  `Growth added ${show(storyRow.interest)} this year, ${show(storyRow.accruedInterest)} in total so far.`}
+              </p>
+            </div>
+          ) : null}
 
           {/* The full grid used to be its own panel below. Same numbers, so it
             * lives here folded up instead of as a seventh thing to scroll past. */}
