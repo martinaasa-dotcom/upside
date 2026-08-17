@@ -1004,8 +1004,8 @@ export function noteReportHtml(r: NoteReport): string {
       const n = String(i + 1).padStart(2, "0");
       const pad = i === r.comingUp.length - 1 ? "0" : "0 0 16px 0";
       return `<tr>
-  <td style="padding:${pad};width:28px;vertical-align:top;font-family:${SANS};font-size:12px;letter-spacing:0.08em;color:${GOLD}">${n}</td>
-  <td style="padding:${pad};font-family:${SANS};font-size:15px;line-height:1.5;color:${CREAM}">${escapeHtml(w.line)}</td>
+  <td style="padding:${pad};width:28px;vertical-align:middle;font-family:${SANS};font-size:12px;line-height:22px;letter-spacing:0.08em;color:${GOLD}">${n}</td>
+  <td style="padding:${pad};vertical-align:middle;font-family:${SANS};font-size:15px;line-height:22px;color:${CREAM}">${escapeHtml(w.line)}</td>
 </tr>`;
     })
     .join("");
