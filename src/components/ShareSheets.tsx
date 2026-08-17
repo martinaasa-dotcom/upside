@@ -1,5 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { plainError } from "@/lib/plain-error";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import {
@@ -115,30 +123,30 @@ export function ShareSheets({
         </p>
       </div>
       {error && <p className="text-sm text-loss">{error}</p>}
-      <ul className="flex flex-col gap-2">
+      <ItemGroup className="gap-2">
         {(sheets ?? []).map((s) => (
-          <li
-            key={s.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2"
-          >
-            <span className="min-w-0 truncate text-sm text-foreground">
-              {s.name}
-            </span>
-            <button
-              type="button"
-              disabled={busyId === s.id}
-              onClick={() => void toggle(s)}
-              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-foreground hover:border-foreground/20/50 hover:text-foreground disabled:opacity-50"
-            >
-              {busyId === s.id
-                ? "Saving …"
-                : s.shared
-                  ? "Stop sharing"
-                  : "Share"}
-            </button>
-          </li>
+          <Item key={s.id} variant="outline" size="sm">
+            <ItemContent>
+              <ItemTitle className="truncate">{s.name}</ItemTitle>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busyId === s.id}
+                onClick={() => void toggle(s)}
+              >
+                {busyId === s.id
+                  ? "Saving …"
+                  : s.shared
+                    ? "Stop sharing"
+                    : "Share"}
+              </Button>
+            </ItemActions>
+          </Item>
         ))}
-      </ul>
+      </ItemGroup>
     </section>
   );
 }

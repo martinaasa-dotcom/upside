@@ -1,4 +1,5 @@
 import { HeaderBrand } from "@/components/HeaderBrand";
+import { Button } from "@/components/ui/button";
 import {
   LEGAL_ADDRESS,
   LEGAL_COUNTRY,
@@ -24,16 +25,13 @@ export default function PrivacyPage() {
       <header className="border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
           <HeaderBrand />
-          <Link
-            href="/"
-            className="rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
-          >
-            Back
-          </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/">Back</Link>
+          </Button>
         </div>
       </header>
 
-      <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-6 py-10 text-sm leading-relaxed text-foreground/80">
+      <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-6 py-10 text-sm leading-relaxed text-foreground">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Privacy Policy</h1>
           <p className="mt-1 text-sm text-muted-foreground">Last updated {LAST_UPDATED}</p>

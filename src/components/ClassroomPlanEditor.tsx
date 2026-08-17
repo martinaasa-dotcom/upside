@@ -113,7 +113,7 @@ export function ClassroomPlanEditor({
               "rounded-lg border px-3 py-2.5 text-sm font-medium transition disabled:opacity-50",
               trade?.kind === k.id
                 ? "border-border bg-muted text-primary"
-                : "border-border text-foreground/80 hover:border-foreground/20-mid hover:text-foreground"
+                : "border-border text-foreground/80 hover:border-border hover:text-foreground"
             )}
           >
             {k.label}
@@ -152,15 +152,16 @@ export function ClassroomPlanEditor({
                     : ""}
                 </span>
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 disabled={busy}
                 onClick={() => remove(p.id)}
-                className="rounded-md p-1 text-muted-foreground hover:text-loss disabled:opacity-50"
                 title="Remove"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+                <Trash2 />
+              </Button>
             </li>
           ))}
         </ul>

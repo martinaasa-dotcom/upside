@@ -3415,16 +3415,17 @@ export function Dashboard() {
         ) : null}
 
         {loadError && (
-          <div className="flex flex-col gap-2 rounded-xl border border-loss/30 bg-loss/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-loss">{loadError}</p>
-            <button
+          <div className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-destructive">{loadError}</p>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => void loadPortfolios()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-1.5 text-sm font-medium text-loss hover:bg-loss/15"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw data-icon="inline-start" />
               Retry
-            </button>
+            </Button>
           </div>
         )}
 

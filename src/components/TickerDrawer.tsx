@@ -311,7 +311,7 @@ export function TickerDrawer({
                       }}
                       title={`Change the end-of-${yr} price`}
                       className={cn(
-                        "rounded-lg border px-1 py-2 text-center transition hover:border-foreground/20-mid",
+                        "rounded-lg border px-1 py-2 text-center transition hover:border-border",
                         isCurrentHorizon
                           ? "border-border bg-muted"
                           : "border-border bg-muted"

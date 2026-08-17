@@ -187,18 +187,19 @@ export function InvitePartnerModal({
             {code && (
               <div className="flex items-center justify-between gap-2">
                 <p className="font-mono text-sm text-primary">{code}</p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => void copy(code, "code")}
-                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-foreground/80"
                 >
                   {copied === "code" ? (
-                    <Check className="h-3.5 w-3.5 text-gain" />
+                    <Check data-icon="inline-start" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy data-icon="inline-start" />
                   )}
                   Copy code
-                </button>
+                </Button>
               </div>
             )}
             {link && (
@@ -206,18 +207,19 @@ export function InvitePartnerModal({
                 <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                   {link}
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => void copy(link, "link")}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-foreground/80"
                 >
                   {copied === "link" ? (
-                    <Check className="h-3.5 w-3.5 text-gain" />
+                    <Check data-icon="inline-start" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy data-icon="inline-start" />
                   )}
                   Copy link
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -237,14 +239,15 @@ export function InvitePartnerModal({
                   ) : null}
                 </span>
                 {owners.length > 1 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setRemoveTarget(o)}
-                    className="rounded-md p-1.5 text-muted-foreground hover:text-loss"
                     aria-label="Remove"
                   >
-                    <UserMinus className="h-3.5 w-3.5" />
-                  </button>
+                    <UserMinus />
+                  </Button>
                 )}
               </li>
             ))}

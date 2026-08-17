@@ -160,7 +160,7 @@ function pulseCardChrome({
   downDay: boolean;
   status: ThesisStatus | null;
 }): string {
-  if (pinned) return "border-white/20 bg-accent ring-1 ring-ring/30";
+  if (pinned) return "border-border bg-accent ring-1 ring-ring/30";
   if (needsLook) {
     if (downDay || status === "broken") {
       return "border-l-[3px] border-loss/50 border-l-loss bg-loss/[0.12]";

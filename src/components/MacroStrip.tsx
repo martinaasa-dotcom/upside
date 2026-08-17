@@ -13,6 +13,7 @@ import {
   type MacroNumbers,
 } from "@/lib/paint-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { Button } from "@/components/ui/button";
 
 type Macro = MacroNumbers;
 type MacroPayload = Parameters<typeof macroFromQuotesPayload>[0];
@@ -162,14 +163,15 @@ export function MacroStrip() {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-3">
       <div className="flex min-w-0 items-center justify-start gap-2 sm:justify-end">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setOpen((v) => !v)}
-          className="shrink-0 rounded-md px-2 py-1 font-medium text-muted-foreground hover:text-foreground"
           aria-expanded={open}
         >
           Markets
-        </button>
+        </Button>
         {open && (
           <div className="relative hidden min-w-0 flex-1 overflow-hidden sm:block">
             <div className="flex items-center justify-end gap-3 tabular-nums">

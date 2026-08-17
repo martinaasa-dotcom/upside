@@ -261,18 +261,18 @@ export function AccountPage() {
       <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="Account" active={null} />
         <AppHeader className="hidden md:block" title="Account">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() =>
               void signOut().then(() => {
                 router.push("/");
               })
             }
-            className="touch-target inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut data-icon="inline-start" />
             <span className="hidden sm:inline">Sign out</span>
-          </button>
+          </Button>
         </AppHeader>
 
         <main id="main" className={PAGE_MAIN_CLASS}>
@@ -286,7 +286,7 @@ export function AccountPage() {
           <WidgetErrorBoundary name="Account">
           <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <MessageSquare className="h-4 w-4" />
               </div>
               <div>
@@ -370,7 +370,7 @@ export function AccountPage() {
           {/* Profile / community appearance */}
           <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <UserRound className="h-4 w-4" />
               </div>
               <div>
@@ -474,7 +474,7 @@ export function AccountPage() {
           {/* Experience level */}
           <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <Gauge className="h-4 w-4" />
               </div>
               <div>
@@ -493,8 +493,8 @@ export function AccountPage() {
                   className={cn(
                     "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
                     tier === t.id
-                      ? "border-white/25 bg-accent text-foreground"
-                      : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
+                      ? "border-border bg-accent text-foreground"
+                      : "border-border bg-muted/60 text-foreground hover:border-border"
                   )}
                 >
                   <span>
@@ -520,8 +520,8 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === true
-                      ? "border-white/25 bg-accent text-foreground"
-                      : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
+                      ? "border-border bg-accent text-foreground"
+                      : "border-border bg-muted/60 text-foreground hover:border-border"
                   )}
                 >
                   <span className="font-medium">Yes</span>
@@ -535,8 +535,8 @@ export function AccountPage() {
                   className={cn(
                     "rounded-xl border px-3 py-2.5 text-left text-sm transition",
                     knowsOptions === false
-                      ? "border-white/25 bg-accent text-foreground"
-                      : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
+                      ? "border-border bg-accent text-foreground"
+                      : "border-border bg-muted/60 text-foreground hover:border-border"
                   )}
                 >
                   <span className="font-medium">No</span>
@@ -552,7 +552,7 @@ export function AccountPage() {
           {/* Sheet invites live next to the sheet, not here. */}
           <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <Link2 className="h-4 w-4" />
               </div>
               <div>
@@ -577,7 +577,7 @@ export function AccountPage() {
           {/* Data & privacy */}
           <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
@@ -621,18 +621,18 @@ export function AccountPage() {
                   you off any shared ones. Cannot be undone.
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="destructive"
                 onClick={() => {
                   setDeleteErr(null);
                   setDeleteText("");
                   setDeleteOpen(true);
                 }}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-loss/40 px-3 py-2 text-sm font-medium text-loss hover:bg-loss/10"
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle data-icon="inline-start" />
                 Delete account
-              </button>
+              </Button>
             </div>
 
             <p className="text-center text-sm text-muted-foreground">
@@ -687,22 +687,22 @@ export function AccountPage() {
               <p className="mt-3 text-sm text-loss">{deleteErr}</p>
             )}
             <div className="mt-4 flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setDeleteOpen(false)}
                 disabled={deleting}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="destructive"
                 onClick={() => void deleteAccount()}
                 disabled={deleting || deleteText.trim() !== "DELETE"}
-                className="rounded-lg bg-loss px-4 py-2 text-sm font-semibold text-paper hover:bg-loss/80 disabled:opacity-40"
               >
                 {deleting ? "Deleting …" : "Permanently delete"}
-              </button>
+              </Button>
             </div>
           </div>
         </ViewportOverlay>

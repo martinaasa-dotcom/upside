@@ -78,7 +78,7 @@ export function SheetPicker({ sheets, value, onChange, onAdd }: Props) {
           aria-label={`Sheet, ${current}`}
           title="Switch sheet"
           onClick={placeAndToggle}
-          className="inline-flex max-w-full items-center gap-1 rounded-md text-sm font-medium leading-none text-foreground/80 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app"
+          className="inline-flex max-w-full items-center gap-1 rounded-md text-sm font-medium leading-none text-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <span className="truncate">{current}</span>
           <ChevronDown

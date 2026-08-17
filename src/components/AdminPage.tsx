@@ -11,6 +11,7 @@ import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertTriangle,
   Bug,
@@ -214,9 +215,11 @@ export function AdminPage() {
           </div>
 
           {!allowed ? (
-            <p className="rounded-xl border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
-              This account is not a superadmin.
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>
+                This account is not a superadmin.
+              </AlertDescription>
+            </Alert>
           ) : loading ? (
             <p className="text-sm text-muted-foreground">Loading overview …</p>
           ) : error ? (

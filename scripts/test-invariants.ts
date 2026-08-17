@@ -1992,6 +1992,29 @@ run("no type below 12px anywhere a person reads", () => {
   );
 });
 
+run("product UI stays on shadcn tokens, not palette leftovers", () => {
+  const red = offendersOf(/\b(?:text|bg|border)-red-(?:[0-9]{2,3})\b/);
+  assert.deepEqual(
+    red,
+    [],
+    `use destructive/loss tokens, not Tailwind red-N. Offenders: ${red.join(", ")}`
+  );
+  const leftover = offendersOf(
+    /ring-offset-app|hover:border-foreground\/20\/50|hover:border-foreground\/20-mid|border-white\//
+  );
+  assert.deepEqual(
+    leftover,
+    [],
+    `broken or leftover classes. Offenders: ${leftover.join(", ")}`
+  );
+  const table = readFileSync(
+    join(process.cwd(), "src/components/FluidTable.tsx"),
+    "utf8"
+  );
+  assert.match(table, /text-sm tabular-nums/);
+  assert.match(table, /font-sans tabular-nums/);
+});
+
 run("UI type stays on the five-size scale", () => {
   const offenders = sources
     .filter(({ file, src }) => {

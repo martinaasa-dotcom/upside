@@ -46,8 +46,8 @@ function Chip({
       className={cn(
         "rounded-lg border px-3 py-2 text-left text-sm transition",
         selected
-          ? "border-white/25 bg-accent text-foreground"
-          : "border-border bg-muted/60 text-foreground/80 hover:border-foreground/20-mid"
+          ? "border-border bg-accent text-foreground"
+          : "border-border bg-muted/60 text-foreground hover:border-border"
       )}
     >
       {children}

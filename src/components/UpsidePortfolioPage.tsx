@@ -1274,21 +1274,22 @@ export function UpsidePortfolioPage() {
                           </NativeSelectOption>
                         ))}
                       </NativeSelect>
-                      <button
+                      <Button
                         type="button"
+                        size="sm"
                         onClick={() => void handleSetBenchmark()}
                         disabled={!pickerSelection || benchmarkBusy}
-                        className="touch-target rounded-md bg-muted px-3 py-1.5 text-sm font-semibold text-primary hover:bg-muted disabled:opacity-50"
                       >
                         {benchmarkBusy ? "Adding …" : "Add"}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setPickerOpen(false)}
-                        className="touch-target rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground/80"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   )}
                   {benchmarkError && (

@@ -207,19 +207,22 @@ export function SnapshotsModal({
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col gap-1">
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         disabled={busyId !== null}
                         onClick={() =>
                           setPendingRestore({ kind: "book", id: s.id, label: s.label })
                         }
-                        className="rounded border border-border px-2 py-0.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                       >
                         {busyId === s.id ? "…" : "All portfolios"}
-                      </button>
+                      </Button>
                       {activePortfolioId && (
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           disabled={busyId !== null}
                           onClick={() =>
                             setPendingRestore({
@@ -228,10 +231,9 @@ export function SnapshotsModal({
                               label: s.label,
                             })
                           }
-                          className="rounded border border-border px-2 py-0.5 text-sm text-muted-foreground hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
                         >
                           {busyId === `${s.id}:sheet` ? "…" : "This portfolio"}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>

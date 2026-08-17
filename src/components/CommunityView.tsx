@@ -38,7 +38,15 @@ import {
   tableCols,
 } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { SCORE_CELL, Score, Scoreboard, SwatchLegend } from "@/components/ui/Panel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import {
+  SCORE_CELL,
+  Score,
+  Scoreboard,
+  Segmented,
+  SwatchLegend,
+} from "@/components/ui/Panel";
 import {
   Avatar,
   AvatarFallback,
@@ -98,7 +106,6 @@ import {
   Globe,
   GraduationCap,
   HelpCircle,
-  LayoutGrid,
   Lightbulb,
   Link2,
   Lock,
@@ -1480,14 +1487,16 @@ export function CommunityView({ communityId }: Props) {
           active="circle"
           end={
             isAdmin && community ? (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={openSettings}
                 title="Community settings"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-foreground/80 hover:bg-accent hover:text-foreground"
+                aria-label="Community settings"
               >
-                <Settings className="h-5 w-5" />
-              </button>
+                <Settings />
+              </Button>
             ) : undefined
           }
         />
@@ -1519,22 +1528,23 @@ export function CommunityView({ communityId }: Props) {
           }
         >
           {isAdmin && joinRequests.length > 0 && (
-            <span
+            <Badge
               title={`${joinRequests.length} pending join request${joinRequests.length === 1 ? "" : "s"}`}
-              className="shrink-0 rounded-lg bg-primary px-2 py-0.5 text-sm font-semibold text-primary-foreground"
             >
               {joinRequests.length}
-            </span>
+            </Badge>
           )}
           {isAdmin && community && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={openSettings}
               title="Community settings"
-              className="touch-target inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="Community settings"
             >
-              <Settings className="h-4 w-4" />
-            </button>
+              <Settings />
+            </Button>
           )}
         </AppHeader>
 
@@ -1543,9 +1553,9 @@ export function CommunityView({ communityId }: Props) {
             <p className="text-sm text-muted-foreground">Loading community …</p>
           )}
           {error && (
-            <p className="rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-300">
-              {error}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {!loading && !selectedOwnerId && (
@@ -1573,7 +1583,7 @@ export function CommunityView({ communityId }: Props) {
                 ) : null}
                 {isClassroom && !myClassSheet ? (
                   <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card ring-1 ring-foreground/10 px-6 py-4">
-                    <p className="min-w-0 flex-1 text-sm text-foreground/80">
+                    <p className="min-w-0 flex-1 text-sm text-foreground">
                       {isAdmin
                         ? "You are watching the class. Get a paper portfolio if you want to trade alongside them."
                         : "Your paper portfolio is not ready yet. Same starting cash as everyone else."}
@@ -1596,37 +1606,23 @@ export function CommunityView({ communityId }: Props) {
                 ) : null}
               </section>
 
-              <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1 w-fit">
-                {(
-                  (isClassroom
+              <Segmented
+                ariaLabel="Community view"
+                value={view}
+                onChange={setView}
+                options={
+                  isClassroom
                     ? [
-                        ["overview", "Roster", LayoutGrid],
-                        ["members", "Members", Users],
+                        { id: "overview" as const, label: "Roster" },
+                        { id: "members" as const, label: "Members" },
                       ]
                     : [
-                        ["overview", "Overview", LayoutGrid],
-                        ["play", "League", Award],
-                        ["members", "Members", Users],
-                      ]) as ReadonlyArray<
-                    [typeof view, string, typeof LayoutGrid]
-                  >
-                ).map(([id, label, Icon]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setView(id)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition",
-                      view === id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+                        { id: "overview" as const, label: "Overview" },
+                        { id: "play" as const, label: "League" },
+                        { id: "members" as const, label: "Members" },
+                      ]
+                }
+              />
 
               <WidgetErrorBoundary name="Community totals">
                 <Scoreboard cols={3}>
@@ -1722,13 +1718,13 @@ export function CommunityView({ communityId }: Props) {
                         Send the invite. Each student gets the same starting
                         cash and an empty portfolio.
                       </p>
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
                         onClick={() => setView("members")}
-                        className="text-sm font-medium text-primary hover:text-foreground"
                       >
                         Invite students
-                      </button>
+                      </Button>
                     </div>
                   )}
                   {effectiveView === "overview" &&
@@ -2195,8 +2191,10 @@ export function CommunityView({ communityId }: Props) {
                             </button>
                             {isAdmin && !m.is_you && (
                               <div className="flex items-center gap-2">
-                                <button
+                                <Button
                                   type="button"
+                                  variant="outline"
+                                  size="sm"
                                   disabled={busy}
                                   onClick={() =>
                                     void setRole(
@@ -2204,13 +2202,14 @@ export function CommunityView({ communityId }: Props) {
                                       m.role === "admin" ? "member" : "admin"
                                     )
                                   }
-                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
                                 >
-                                  <Shield className="h-3 w-3" />
+                                  <Shield data-icon="inline-start" />
                                   {m.role === "admin" ? "Demote" : "Make admin"}
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   type="button"
+                                  variant="destructive"
+                                  size="sm"
                                   disabled={busy}
                                   onClick={() =>
                                     setRemoveTarget({
@@ -2218,23 +2217,23 @@ export function CommunityView({ communityId }: Props) {
                                       name: profileName(m.user_id),
                                     })
                                   }
-                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-muted-foreground hover:text-red-300"
                                 >
-                                  <UserMinus className="h-3 w-3" />
+                                  <UserMinus data-icon="inline-start" />
                                   Remove
-                                </button>
+                                </Button>
                               </div>
                             )}
                             {m.is_you && (
-                              <button
+                              <Button
                                 type="button"
+                                variant="outline"
+                                size="sm"
                                 disabled={busy}
                                 onClick={() => setLeaveOpen(true)}
-                                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-muted-foreground hover:border-loss/40 hover:text-loss"
                               >
-                                <LogOut className="h-3 w-3" />
+                                <LogOut data-icon="inline-start" />
                                 Leave
-                              </button>
+                              </Button>
                             )}
                           </li>
                         );
@@ -2472,7 +2471,7 @@ export function CommunityView({ communityId }: Props) {
                                     {statusLabel}
                                   </ItemDescription>
                                   {usedLine ? (
-                                    <ItemDescription className="text-foreground/80">
+                                    <ItemDescription>
                                       {usedLine}
                                     </ItemDescription>
                                   ) : null}
@@ -2481,6 +2480,7 @@ export function CommunityView({ communityId }: Props) {
                                   <Button
                                     type="button"
                                     variant="outline"
+                                    size="sm"
                                     disabled={!live || !url}
                                     title={
                                       live && !url
@@ -2507,6 +2507,7 @@ export function CommunityView({ communityId }: Props) {
                                     <Button
                                       type="button"
                                       variant="outline"
+                                      size="sm"
                                       disabled={busy}
                                       onClick={() => setRetireTarget(inv)}
                                     >
@@ -2534,17 +2535,19 @@ export function CommunityView({ communityId }: Props) {
             * to pick from. */}
           {!loading && selectedOwnerId && (
             <section className="flex flex-col gap-4">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
+                className="self-start"
                 onClick={() => {
                   setSelectedPortfolioId(null);
                   setSelectedOwnerId(null);
                 }}
-                className="touch-target inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
+                <ArrowLeft data-icon="inline-start" />
                 Back to community
-              </button>
+              </Button>
               <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl bg-card/95 p-6 shadow-sm ring-1 ring-foreground/10 backdrop-blur-sm">
                 <p className="text-sm font-semibold text-foreground">
                   Read-only - owned by{" "}

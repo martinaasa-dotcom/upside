@@ -558,7 +558,7 @@ export function CommunitiesList() {
                       className={cn(
                         "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left text-sm",
                         on
-                          ? "border-white/25 bg-accent text-foreground"
+                          ? "border-border bg-accent text-foreground"
                           : "border-border bg-muted/60 text-foreground/80"
                       )}
                     >

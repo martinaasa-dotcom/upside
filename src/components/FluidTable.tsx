@@ -36,7 +36,7 @@ export function FluidTable({
       )}
     >
       <div
-        className="grid w-full min-w-0 px-1.5 text-sm"
+        className="grid w-full min-w-0 px-1.5 text-sm tabular-nums"
         style={{ gridTemplateColumns: template }}
       >
         {children}
@@ -68,16 +68,16 @@ export function FluidRow({
 }
 
 export const cellBase =
-  "flex h-full min-w-0 w-full items-center justify-center whitespace-nowrap px-1.5 py-1.5 text-center";
+  "flex h-full min-w-0 w-full items-center justify-center whitespace-nowrap px-1.5 py-1.5 text-center font-sans tabular-nums";
 
 /** Left-aligned ticker + chip. Pair with `tableCols(n, true)` so leftover does not sit after the chip. */
 export const cellTicker =
   "flex h-full w-max max-w-full items-center justify-start whitespace-nowrap px-1.5 py-1.5 text-left";
 export const cellLast = cellBase;
 
-export const htmlTable = "w-full table-fixed border-collapse text-sm";
+export const htmlTable = "w-full table-fixed border-collapse text-sm tabular-nums";
 export const htmlCell =
-  "h-10 whitespace-nowrap px-1.5 py-1.5 text-center align-middle first:pl-3 last:pr-3";
+  "h-10 whitespace-nowrap px-1.5 py-1.5 text-center align-middle font-sans tabular-nums first:pl-3 last:pr-3";
 /** Shrink-wrap the ticker column when a listing chip is showing.
  * `min-w-max` keeps table-fixed from crushing the cashtag into the next cell. */
 export const htmlCellTicker =

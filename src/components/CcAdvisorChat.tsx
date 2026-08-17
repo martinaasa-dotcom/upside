@@ -427,7 +427,7 @@ function ChatMarkdown({ children }: { children: string }) {
           ),
           hr: () => <hr className="my-3 border-border" />,
           blockquote: ({ children: c }) => (
-            <blockquote className="mb-2.5 break-words border-l-2 border-white/20 pl-3 text-base text-muted-foreground last:mb-0">
+            <blockquote className="mb-2.5 break-words border-l-2 border-border pl-3 text-base text-muted-foreground last:mb-0">
               {c}
             </blockquote>
           ),
@@ -971,18 +971,20 @@ export function CcAdvisorChat({
                 onSuggestCsv &&
                 (silentSummary?.kind === "error" ||
                   silentSummary?.kind === "empty") && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2.5"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSilentPhase("idle");
                       setSilentSummary(null);
                       onSuggestCsv();
                     }}
-                    className="mt-2.5 rounded-md border border-border px-2 py-1 text-sm font-medium text-foreground hover:border-foreground/20/50"
                   >
                     Upload a CSV instead
-                  </button>
+                  </Button>
                 )}
               {silentPhase === "result" && (
                 <p className="mt-1.5 text-sm text-muted-foreground">
@@ -1278,14 +1280,15 @@ export function CcAdvisorChat({
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Thinking …
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
                   onClick={() => stop()}
-                  className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-sm text-muted-foreground hover:border-loss/40 hover:text-loss"
                 >
-                  <Square className="h-2.5 w-2.5 fill-current" />
+                  <Square data-icon="inline-start" className="fill-current" />
                   Stop
-                </button>
+                </Button>
               </div>
             )}
 
