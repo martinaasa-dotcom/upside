@@ -167,12 +167,12 @@ export function leftoverWatches(r: NoteReport): NoteWatch[] {
  * repeats the dollar, the percent, or the date. */
 export function notePreview(r: NoteReport): string {
   if (r.kind === "morning") {
-    const extra = leftoverWatches(r)[0];
+    const extra = r.comingUp[0];
     if (extra?.line) return clipPreview(extra.line);
     return "Nothing else you have to do before the open.";
   }
 
-  const earn = r.watches.find((w) => /reports/i.test(w.line));
+  const earn = r.comingUp[0];
   const best = [...r.movers].sort((a, b) => b.pct - a.pct)[0];
   const worst = [...r.movers].sort((a, b) => a.pct - b.pct)[0];
   const bits: string[] = [];
@@ -183,7 +183,7 @@ export function notePreview(r: NoteReport): string {
   } else if (r.movers[0]) {
     bits.push(`${cashtag(r.movers[0].ticker)} moved the most.`);
   }
-  if (r.kind === "sunday" && earn?.line) bits.push(earn.line);
+  if (earn?.line) bits.push(earn.line);
   if (bits.length === 0) {
     return r.kind === "sunday" ? "A quiet week." : "A quiet day.";
   }
@@ -502,16 +502,19 @@ function comingUpLine(e: EarningsEvent): string {
 
 function comingUpFor(
   kind: NoteKind,
-  earnings: EarningsEvent[]
+  earnings: EarningsEvent[],
+  skipTicker?: string
 ): NoteWatch[] {
-  if (kind !== "sunday") return [];
+  const horizon = kind === "sunday" ? 14 : 5;
+  const skip = (skipTicker ?? "").toUpperCase();
   const seen = new Set<string>();
   const out: NoteWatch[] = [];
   const upcoming = [...earnings].sort((a, b) => a.days - b.days);
   for (const e of upcoming) {
-    if (e.days < 0 || e.days > 7) continue;
+    if (e.days < 0 || e.days > horizon) continue;
     const t = e.ticker.toUpperCase();
     if (seen.has(t)) continue;
+    if (kind === "morning" && skip && t === skip && e.days === 0) continue;
     seen.add(t);
     out.push({ ticker: e.ticker, line: comingUpLine(e) });
     if (out.length >= 5) break;
@@ -793,7 +796,11 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
       input.kind === "sunday"
         ? weekNotesFor(t.positions, input.conviction)
         : [],
-    comingUp: comingUpFor(input.kind, earnings),
+    comingUp: comingUpFor(
+      input.kind,
+      earnings,
+      input.kind === "morning" ? t.overnight[0]?.ticker : undefined
+    ),
     margus: null,
     insights: buildBookInsights(
       t.positions.map((p) => ({
@@ -810,7 +817,6 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
 export function noteReportText(r: NoteReport): string {
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
-  const extra = leftoverWatches(r);
   const lines = [notePreview(r), "", r.title, r.dateLine];
   if (r.kind === "morning") {
     lines.push("", `Your portfolio ${money(r.book)}. ${names}.`);
@@ -837,7 +843,7 @@ export function noteReportText(r: NoteReport): string {
       );
     }
   }
-  if (r.kind === "sunday" && r.comingUp.length > 0) {
+  if (r.comingUp.length > 0) {
     lines.push("", "Coming up");
     for (const w of r.comingUp) lines.push(w.line);
   }
@@ -846,10 +852,6 @@ export function noteReportText(r: NoteReport): string {
     for (const w of r.weights) {
       lines.push(`${cashtag(w.ticker)}  ${weightPct(w.weight)} of your portfolio`);
     }
-  }
-  if (extra.length > 0) {
-    lines.push("", "Look out for");
-    for (const w of extra) lines.push(w.line);
   }
   lines.push("", "Turn these notes off in Account: https://upsidelab.app/account");
   return lines.join("\n");
@@ -997,25 +999,6 @@ export function noteReportHtml(r: NoteReport): string {
         )
       : "";
 
-  const extraWatches = leftoverWatches(r);
-  const watchRows = extraWatches
-    .map((w, i) => {
-      const n = String(i + 1).padStart(2, "0");
-      const pad = i === extraWatches.length - 1 ? "0" : "0 0 16px 0";
-      return `<tr>
-  <td style="padding:${pad};width:28px;vertical-align:top;font-family:${SANS};font-size:12px;letter-spacing:0.08em;color:${GOLD}">${n}</td>
-  <td style="padding:${pad};font-family:${SANS};font-size:15px;line-height:1.5;color:${CREAM}">${escapeHtml(w.line)}</td>
-</tr>`;
-    })
-    .join("");
-  const watchesInner =
-    extraWatches.length > 0
-      ? section(
-          "Look out for",
-          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${watchRows}</table>`
-        )
-      : "";
-
   const comingRows = r.comingUp
     .map((w, i) => {
       const n = String(i + 1).padStart(2, "0");
@@ -1027,10 +1010,9 @@ export function noteReportHtml(r: NoteReport): string {
     })
     .join("");
   const comingUpInner =
-    r.kind === "sunday" && r.comingUp.length > 0
-      ? section(
-          "Coming up",
-          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${comingRows}</table>`
+    r.comingUp.length > 0
+      ? emailCard(
+          `${kicker("Coming up")}<div style="height:14px;font-size:0;line-height:0">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${comingRows}</table>`
         )
       : "";
 
@@ -1054,10 +1036,10 @@ ${
 
   const bodyOrder =
     r.kind === "morning"
-      ? `${margusInner}${watchesInner}${moversInner}`
+      ? `${margusInner}${comingUpInner}${moversInner}`
       : r.kind === "sunday"
         ? `${margusInner}${comingUpInner}${moversInner}${weightsInner}`
-        : `${margusInner}${moversInner}`;
+        : `${margusInner}${comingUpInner}${moversInner}`;
 
   return wrapEmailLetter({
     title: r.title,

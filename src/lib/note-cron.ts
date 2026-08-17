@@ -166,7 +166,7 @@ export async function dispatchOptedInNotes(
         ? await fetchWeekReturns(tickers)
         : undefined;
     const earnings =
-      (kind === "morning" || kind === "sunday") && tickers.length > 0
+      tickers.length > 0
         ? (await fetchMarketEvents(tickers)).earnings
         : undefined;
     const cash = (

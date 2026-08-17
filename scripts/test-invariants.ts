@@ -131,6 +131,10 @@ import {
   safeInternalPath,
 } from "../src/lib/site-url";
 import { validateServerEnv } from "../src/lib/env-schema";
+import {
+  isDirectPostgresUrl,
+  isSupabasePoolerUrl,
+} from "../src/lib/supabase/env";
 import { mergeQuotes } from "../src/lib/quote-cache";
 import {
   currentDuelSessionKey,
@@ -1364,6 +1368,81 @@ run("note letters are one mix story, not stacked cards", () => {
   assert.match(sundayHtml, /Coming up/);
   assert.match(sundayHtml, /\$NBIS reports results on Tuesday/);
   assert.doesNotMatch(sundayHtml, /Worth noticing/);
+  const nvdaWeek = buildNoteReport({
+    kind: "sunday",
+    name: "Test",
+    cash: 0,
+    holdings: [...holdings, { ticker: "NVDA", shares: 8, buy_price: 100 }],
+    quotes: {
+      CRWV: { ...blank, ticker: "CRWV", price: 100 },
+      DRAM: { ...blank, ticker: "DRAM", price: 100 },
+      NBIS: { ...blank, ticker: "NBIS", price: 100 },
+      RDDT: { ...blank, ticker: "RDDT", price: 100 },
+      NVDA: { ...blank, ticker: "NVDA", price: 100 },
+    },
+    weekReturns: {
+      CRWV: { start: 98, end: 100, pct: 0.02 },
+      DRAM: { start: 95, end: 100, pct: 0.05 },
+      NBIS: { start: 110, end: 100, pct: -0.09 },
+      RDDT: { start: 90, end: 108, pct: 0.2 },
+      NVDA: { start: 100, end: 100, pct: 0 },
+    },
+    earnings: [{ ticker: "NVDA", date: "2026-08-27", days: 10 }],
+  });
+  const nvdaPreview = notePreview(nvdaWeek);
+  const nvdaHtml = noteReportHtml({
+    ...nvdaWeek,
+    margus: fallbackNoteTake(nvdaWeek),
+  });
+  assert.match(nvdaPreview, /\$NVDA reports results/);
+  assert.match(nvdaHtml, /Coming up/);
+  assert.match(nvdaHtml, /\$NVDA reports results/);
+  assert.ok(nvdaHtml.indexOf("Coming up") > nvdaHtml.indexOf("display:none"));
+  const closeEarn = buildNoteReport({
+    kind: "close",
+    name: "Test",
+    cash: 0,
+    holdings,
+    quotes: closeQuotes,
+    earnings: [{ ticker: "DRAM", date: "2026-08-19", days: 2 }],
+  });
+  const closeEarnHtml = noteReportHtml({
+    ...closeEarn,
+    margus: fallbackNoteTake(closeEarn),
+  });
+  assert.match(closeEarnHtml, /Coming up/);
+  assert.match(closeEarnHtml, /\$DRAM reports results/);
+  assert.match(notePreview(closeEarn), /\$DRAM reports results/);
+  const morningEarn = buildNoteReport({
+    kind: "morning",
+    name: "Test",
+    cash: 0,
+    holdings,
+    quotes: {
+      CRWV: { ...blank, ticker: "CRWV", price: 100 },
+      DRAM: {
+        ...blank,
+        ticker: "DRAM",
+        price: 100,
+        preMarketChangePercent: 0.014,
+      },
+      NBIS: { ...blank, ticker: "NBIS", price: 100 },
+      RDDT: {
+        ...blank,
+        ticker: "RDDT",
+        price: 100,
+        preMarketChangePercent: 0.08,
+      },
+    },
+    earnings: [{ ticker: "DRAM", date: "2026-08-18", days: 1 }],
+  });
+  const morningEarnHtml = noteReportHtml({
+    ...morningEarn,
+    margus: fallbackNoteTake(morningEarn),
+  });
+  assert.match(morningEarnHtml, /Coming up/);
+  assert.match(morningEarnHtml, /\$DRAM reports results/);
+  assert.match(notePreview(morningEarn), /\$DRAM reports results/);
   const holds = new Set<string>();
   for (const day of [10, 11, 12, 13, 14, 15, 16, 17]) {
     const stamped = buildNoteReport({
@@ -4867,6 +4946,71 @@ run("cash deltas are applied in one atomic statement", () => {
     /portfell_is_portfolio_co_owner\(p_portfolio_id\)/.test(migration),
     "the cash RPC must verify co-ownership itself, not trust its callers"
   );
+});
+
+run("cash RPC cannot pin a pooler slot on a waited lock", () => {
+  const src = readFileSync(
+    join(process.cwd(), "supabase/migrations/054_pool_indexes_lock_timeouts.sql"),
+    "utf8"
+  );
+  assert.match(src, /set lock_timeout = '3s'/);
+  assert.match(src, /set statement_timeout = '8s'/);
+  assert.match(src, /set idle_in_transaction_session_timeout = '5s'/);
+  assert.match(src, /from anon, public, authenticated/);
+  assert.doesNotMatch(src, /grant execute[^;]*to authenticated/i);
+  assert.match(src, /portfell_community_invite_uses_user_idx/);
+  assert.match(src, /portfell_profiles_email_lower_idx/);
+  assert.match(src, /portfell_book_snapshots_kind_created_idx/);
+  assert.match(src, /portfell_holdings_portfolio_sort_idx/);
+});
+
+run("server supabase client is reused and every fetch has a timeout", () => {
+  const server = readFileSync(
+    join(process.cwd(), "src/lib/supabase/server.ts"),
+    "utf8"
+  );
+  assert.match(server, /cached && cached.url === url && cached.key === key/);
+  assert.match(server, /supabaseFetch/);
+  assert.match(server, /persistSession: false/);
+  const auth = readFileSync(
+    join(process.cwd(), "src/lib/supabase/server-auth.ts"),
+    "utf8"
+  );
+  assert.match(auth, /supabaseFetch/);
+  const http = readFileSync(
+    join(process.cwd(), "src/lib/supabase/http.ts"),
+    "utf8"
+  );
+  assert.match(http, /AbortSignal\.timeout/);
+  assert.match(http, /SUPABASE_FETCH_TIMEOUT_MS/);
+});
+
+run("direct Postgres is not the serverless pooler", () => {
+  assert.equal(
+    isDirectPostgresUrl(
+      "postgresql://postgres:x@db.uzrnybyggznpvgxgrvgl.supabase.co:5432/postgres"
+    ),
+    true
+  );
+  assert.equal(
+    isSupabasePoolerUrl(
+      "postgresql://postgres.foo:x@aws-0-eu-north-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    ),
+    true
+  );
+  assert.equal(
+    isDirectPostgresUrl(
+      "postgresql://postgres.foo:x@aws-0-eu-north-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    ),
+    false
+  );
+  const envExample = readFileSync(
+    join(process.cwd(), ".env.example"),
+    "utf8"
+  );
+  assert.match(envExample, /DATABASE_POOLER_URL/);
+  assert.match(envExample, /6543/);
+  assert.match(envExample, /transaction-mode pooler/i);
 });
 
 run("holdings writes retry when a concurrent update wins", () => {
