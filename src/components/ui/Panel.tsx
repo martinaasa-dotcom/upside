@@ -3,12 +3,26 @@
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { Badge } from "@/components/ui/badge";
 import {
+  Card as SurfaceCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Popover,
@@ -18,7 +32,7 @@ import {
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
 import { cn, splitMoveTint } from "@/lib/format";
-import { Info } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 import {
   Children,
   type CSSProperties,
@@ -397,69 +411,111 @@ function MoveTint({ text }: { text: string }) {
   );
 }
 
-/** A boxed list of ticker + line. Used for Today's scan. */
+/** Ticker + line on the field. Card + Item, not a muted slab. */
 export function ScanList({
   label,
   rows,
   onOpen,
+  nested = false,
   className,
 }: {
   label?: ReactNode;
   rows: { ticker: string; text: string }[];
   onOpen?: (ticker: string) => void;
+  /** Inside a Panel. No second card ring. */
+  nested?: boolean;
   className?: string;
 }) {
   const mixedListings = listingCurrenciesAreMixed(rows);
+  const list = (
+    <ItemGroup>
+      {rows.map((row) => (
+        <ScanRow
+          key={row.ticker}
+          ticker={row.ticker}
+          text={row.text}
+          mixedListings={mixedListings}
+          onOpen={onOpen}
+        />
+      ))}
+    </ItemGroup>
+  );
+
+  if (nested) {
+    return (
+      <div className={cn("flex flex-col gap-3", className)}>
+        {label != null && label !== "" ? (
+          <p className="text-sm font-semibold tracking-tight text-foreground">
+            {label}
+          </p>
+        ) : null}
+        {list}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-lg bg-muted",
-        className
-      )}
-    >
+    <SurfaceCard className={className}>
       {label != null && label !== "" ? (
-        <div className="border-b border-border px-6 py-4">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        </div>
+        <CardHeader>
+          <CardTitle>{label}</CardTitle>
+        </CardHeader>
       ) : null}
-      <ul>
-        {rows.map((row) => {
-          const body = (
-            <>
-              <span
-                className={cn(
-                  "flex shrink-0 whitespace-nowrap font-semibold tabular-nums text-foreground",
-                  mixedListings ? "w-max justify-start" : "w-[7.5rem] justify-center"
-                )}
-              >
-                <TickerSymbol
-                  ticker={row.ticker}
-                  showCurrency={mixedListings}
-                />
-              </span>
-              <span className="min-w-0 text-sm leading-snug text-foreground/80">
-                {row.text}
-              </span>
-            </>
-          );
-          return (
-            <li key={row.ticker} className="border-t border-border first:border-t-0">
-              {onOpen ? (
-                <button
-                  type="button"
-                  onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-6 py-3 text-left transition hover:bg-accent"
-                >
-                  {body}
-                </button>
-              ) : (
-                <div className="flex gap-3 px-6 py-3">{body}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+      <CardContent>{list}</CardContent>
+    </SurfaceCard>
+  );
+}
+
+function ScanRow({
+  ticker,
+  text,
+  mixedListings,
+  onOpen,
+}: {
+  ticker: string;
+  text: string;
+  mixedListings: boolean;
+  onOpen?: (ticker: string) => void;
+}) {
+  const body = (
+    <>
+      <ItemContent>
+        <ItemTitle className="font-semibold">
+          <TickerSymbol ticker={ticker} showCurrency={mixedListings} />
+        </ItemTitle>
+        <ItemDescription className="line-clamp-none">{text}</ItemDescription>
+      </ItemContent>
+      {onOpen ? (
+        <ItemActions className="self-start">
+          <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+        </ItemActions>
+      ) : null}
+    </>
+  );
+
+  if (onOpen) {
+    return (
+      <Item
+        variant="outline"
+        size="sm"
+        asChild
+        className="items-start hover:bg-muted"
+      >
+        <button
+          type="button"
+          onClick={() => onOpen(ticker)}
+          className="cursor-pointer text-left"
+        >
+          {body}
+        </button>
+      </Item>
+    );
+  }
+
+  return (
+    <Item variant="outline" size="sm" className="items-start">
+      {body}
+    </Item>
   );
 }
 

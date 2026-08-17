@@ -1208,7 +1208,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             )}
 
             {whyRows.length > 0 && (
-              <ScanList label="Why each number" rows={whyRows} />
+              <ScanList nested label="Why each number" rows={whyRows} />
             )}
 
             {lastPlanDiffs.length > 0 && (
