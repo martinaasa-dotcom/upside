@@ -1144,7 +1144,8 @@ run("Sunday note never ships the writing brief", () => {
   assert.ok(fallback.length >= 20);
   assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
   assert.match(fallback, /our portfolio/i);
-  assert.match(fallback, /\n- \$NBIS /);
+  assert.match(fallback, /\$NBIS/);
+  assert.doesNotMatch(fallback, /\n- \$NBIS /);
   assert.doesNotMatch(fallback, /not the same bet|Thesis intact|of the book/i);
   assert.doesNotMatch(report.lead, /this week/);
   assert.match(report.lead, /\$NBIS was the gainer/);
@@ -1183,7 +1184,11 @@ run("Sunday note never ships the writing brief", () => {
   assert.doesNotMatch(letter, /Georgia/);
   assert.match(letter, /function emailPreheader/);
   assert.match(letter, /&#847;&zwnj;&nbsp;/);
-  assert.match(email, /function noteTakeHtml/);
+  assert.match(email, /leftoverWatches/);
+  assert.match(email, /hideOpener: true/);
+  assert.doesNotMatch(email, /Worth noticing/);
+  assert.doesNotMatch(email, /What's missing/);
+  assert.doesNotMatch(email, /Ideas for next/);
   assert.match(email, /function loudNoteMoves/);
   assert.match(email, /wrapEmailLetter/);
   assert.doesNotMatch(email, /border-radius:14px/);
@@ -1200,6 +1205,94 @@ run("Sunday note never ships the writing brief", () => {
     ),
     true
   );
+});
+
+run("note letters are one mix story, not stacked cards", () => {
+  const blank = {
+    change: 0,
+    changePercent: 0,
+    previousClose: 100,
+    sparkline: [] as number[],
+    marketState: null,
+    preMarketPrice: null,
+    preMarketChange: null,
+    preMarketChangePercent: null,
+    postMarketPrice: null,
+    postMarketChange: null,
+    postMarketChangePercent: null,
+  };
+  const holdings = [
+    { ticker: "CRWV", shares: 50, buy_price: 100 },
+    { ticker: "NBIS", shares: 14, buy_price: 100 },
+    { ticker: "RDDT", shares: 36, buy_price: 100 },
+  ];
+  const morning = buildNoteReport({
+    kind: "morning",
+    name: "Test",
+    cash: 0,
+    holdings,
+    quotes: {
+      CRWV: { ...blank, ticker: "CRWV", price: 100 },
+      NBIS: { ...blank, ticker: "NBIS", price: 100 },
+      RDDT: {
+        ...blank,
+        ticker: "RDDT",
+        price: 100,
+        preMarketChangePercent: 0.08,
+      },
+    },
+  });
+  morning.margus = fallbackNoteTake(morning);
+  assert.match(morning.margus, /\$RDDT is the only name doing any real work/);
+  assert.match(morning.margus, /64% of our portfolio is AI computer companies/);
+  assert.match(morning.margus, /we barely own the utilities that sell it/);
+  assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight/);
+  assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some/i);
+  const html = noteReportHtml(morning);
+  assert.match(html, /Margus/);
+  assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for/);
+  const close = buildNoteReport({
+    kind: "close",
+    name: "Test",
+    cash: 0,
+    holdings,
+    quotes: {
+      CRWV: { ...blank, ticker: "CRWV", price: 100, changePercent: 0.01 },
+      NBIS: { ...blank, ticker: "NBIS", price: 100, changePercent: -0.01 },
+      RDDT: {
+        ...blank,
+        ticker: "RDDT",
+        price: 100,
+        changePercent: 0.08,
+        change: 8,
+      },
+    },
+  });
+  const closeTake = fallbackNoteTake(close);
+  assert.match(closeTake, /\$RDDT did the work today/);
+  assert.match(closeTake, /64%/);
+  assert.match(closeTake, /tonight/);
+  const sunday = buildNoteReport({
+    kind: "sunday",
+    name: "Test",
+    cash: 0,
+    holdings,
+    quotes: {
+      CRWV: { ...blank, ticker: "CRWV", price: 100 },
+      NBIS: { ...blank, ticker: "NBIS", price: 100 },
+      RDDT: { ...blank, ticker: "RDDT", price: 100 },
+    },
+    weekReturns: {
+      CRWV: { start: 98, end: 100, pct: 0.02 },
+      NBIS: { start: 110, end: 100, pct: -0.09 },
+      RDDT: { start: 90, end: 108, pct: 0.2 },
+    },
+  });
+  const sundayTake = fallbackNoteTake(sunday);
+  assert.match(sundayTake, /\$RDDT/);
+  assert.doesNotMatch(sundayTake, /\n- \$/);
+  assert.match(sundayTake, /64%/);
+  assert.match(sundayTake, /this weekend/);
 });
 
 run("manual note cron stays on Martin", () => {

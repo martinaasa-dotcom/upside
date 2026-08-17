@@ -137,15 +137,30 @@ function clipPreview(text: string, max = 88): string {
   return `${(at > 40 ? cut.slice(0, at) : cut).replace(/[.,;:]+$/, "")}.`;
 }
 
+/** Calendar leftovers for the morning email. The letter already covers the
+ * headline name, so this is only reports that are not that story. */
+export function leftoverWatches(r: NoteReport): NoteWatch[] {
+  if (r.kind !== "morning") return [];
+  const lead = r.lead.trim();
+  const work = r.movers[0]?.ticker?.toUpperCase() ?? "";
+  return r.watches.filter((w) => {
+    if (!/reports /i.test(w.line)) return false;
+    if (w.line === lead) return false;
+    const t = (w.ticker ?? "").toUpperCase();
+    if (t && work && t === work) return false;
+    const tag = t ? cashtag(t) : "";
+    if (tag && lead.startsWith(tag)) return false;
+    if (t && lead.startsWith(t)) return false;
+    return true;
+  });
+}
+
 /** First line on a lock screen or watch. Complements the subject. Never
  * repeats the dollar, the percent, or the date. */
 export function notePreview(r: NoteReport): string {
   if (r.kind === "morning") {
-    const extra = r.watches.find((w) => w.line !== r.lead);
+    const extra = leftoverWatches(r)[0];
     if (extra?.line) return clipPreview(extra.line);
-    if (r.lead && !r.subjectHook.startsWith(r.lead.slice(0, 18))) {
-      return clipPreview(r.lead);
-    }
     return "Nothing else you have to do before the open.";
   }
 
@@ -744,11 +759,11 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
 export function noteReportText(r: NoteReport): string {
   const names =
     r.nameCount === 1 ? "1 name" : `${r.nameCount} names`;
-  const lines = [notePreview(r), "", r.title, r.dateLine, "", r.lead];
-  if (r.margus) {
-    lines.push("", "Margus", r.margus, ADVICE_DISCLAIMER_SHORT);
-  }
-  if (r.kind !== "morning") {
+  const extra = leftoverWatches(r);
+  const lines = [notePreview(r), "", r.title, r.dateLine];
+  if (r.kind === "morning") {
+    lines.push("", `Your portfolio ${money(r.book)}. ${names}.`);
+  } else {
     lines.push(
       "",
       `Your portfolio  ${money(r.book)}`,
@@ -757,8 +772,11 @@ export function noteReportText(r: NoteReport): string {
         r.todayPct != null ? `  ${signedPct(r.todayPct)}` : ""
       }`
     );
-  } else {
-    lines.push("", `Your portfolio ${money(r.book)}. ${names}.`);
+  }
+  if (r.margus) {
+    lines.push("", "Margus", r.margus, ADVICE_DISCLAIMER_SHORT);
+  } else if (r.kind === "morning") {
+    lines.push("", r.lead);
   }
   if (r.movers.length > 0) {
     lines.push("", r.moversHeading);
@@ -774,46 +792,9 @@ export function noteReportText(r: NoteReport): string {
       lines.push(`${cashtag(w.ticker)}  ${weightPct(w.weight)} of your portfolio`);
     }
   }
-  if (r.kind === "morning" && r.watches.length > 0) {
+  if (extra.length > 0) {
     lines.push("", "Look out for");
-    for (const w of r.watches) lines.push(w.line);
-  }
-  if (r.insights.length > 0) {
-    lines.push("", "Worth noticing");
-    for (const line of r.insights) lines.push(line);
-  }
-  if (r.thesis) {
-    const heading = r.thesis.ownerThesis
-      ? `Thesis  ${cashtag(r.thesis.ticker)}`
-      : `Focus  ${cashtag(r.thesis.ticker)}`;
-    lines.push("", heading);
-    const facts = [
-      `${Math.round(r.thesis.shares).toLocaleString("en-US")} shares at ${priceMoney(r.thesis.price)}`,
-      r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of your portfolio` : null,
-      r.thesis.todayPct != null
-        ? `${r.todayLabel} ${signedPct(r.thesis.todayPct)}  ${signedMoney(r.thesis.todayDollar)}`
-        : null,
-    ].filter((x): x is string => Boolean(x));
-    lines.push(facts.join(". ") + ".");
-    if (r.thesis.ownerThesis) lines.push(r.thesis.ownerThesis);
-    if (r.thesis.status) lines.push(`Pulse: ${r.thesis.status}.`);
-    if (r.thesis.pulseLine) lines.push(r.thesis.pulseLine);
-  }
-  if (r.kind === "sunday") {
-    if (r.perspective.length > 0) {
-      lines.push("", "The next couple of weeks");
-      for (const p of r.perspective) lines.push(p);
-    }
-    if (r.weekNotes.length > 0) {
-      lines.push("", "Ideas for next week");
-      for (const n of r.weekNotes) {
-        lines.push(cashtag(n.ticker));
-        if (n.status) lines.push(n.status);
-        if (n.ownerThesis) lines.push(n.ownerThesis);
-        if (n.pulseLine) lines.push(n.pulseLine);
-        if (n.actionLine) lines.push(n.actionLine);
-      }
-    }
+    for (const w of extra) lines.push(w.line);
   }
   lines.push("", "Turn these notes off in Account: https://upsidelab.app/account");
   return lines.join("\n");
@@ -961,10 +942,11 @@ export function noteReportHtml(r: NoteReport): string {
         )
       : "";
 
-  const watchRows = r.watches
+  const extraWatches = leftoverWatches(r);
+  const watchRows = extraWatches
     .map((w, i) => {
       const n = String(i + 1).padStart(2, "0");
-      const pad = i === r.watches.length - 1 ? "0" : "0 0 16px 0";
+      const pad = i === extraWatches.length - 1 ? "0" : "0 0 16px 0";
       return `<tr>
   <td style="padding:${pad};width:28px;vertical-align:top;font-family:${SANS};font-size:12px;letter-spacing:0.08em;color:${GOLD}">${n}</td>
   <td style="padding:${pad};font-family:${SANS};font-size:15px;line-height:1.5;color:${CREAM}">${escapeHtml(w.line)}</td>
@@ -972,22 +954,11 @@ export function noteReportHtml(r: NoteReport): string {
     })
     .join("");
   const watchesInner =
-    r.kind === "morning" && r.watches.length > 0
+    extraWatches.length > 0
       ? section(
           "Look out for",
           `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${watchRows}</table>`
         )
-      : "";
-
-  const insightsInner =
-    r.insights.length > 0
-      ? r.insights
-          .map((line, i) =>
-            emailCard(
-              `${kicker(i === 0 ? "Worth noticing" : "What's missing")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div><p style="margin:0;font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(line)}</p>`
-            )
-          )
-          .join("")
       : "";
 
   const margusInner = r.margus
@@ -996,103 +967,9 @@ export function noteReportHtml(r: NoteReport): string {
       )
     : "";
 
-  const perspectiveInner =
-    r.kind === "sunday" && r.perspective.length > 0
-      ? section(
-          "The next couple of weeks",
-          r.perspective
-            .map(
-              (p, i) =>
-                `<p style="margin:${i === 0 ? "0" : "14px 0 0 0"};font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(p)}</p>`
-            )
-            .join("")
-        )
-      : "";
-
-  let thesisInner = "";
-  if (r.thesis) {
-    const bits: string[] = [];
-    bits.push(
-      `<p style="margin:0;font-family:${SANS};font-size:18px;font-weight:700;color:${CREAM}">${escapeHtml(cashtag(r.thesis.ticker))}</p>`
-    );
-    const factBits = [
-      `${Math.round(r.thesis.shares).toLocaleString("en-US")} shares at ${priceMoney(r.thesis.price)}`,
-      r.thesis.weight != null ? `${weightPct(r.thesis.weight)} of your portfolio` : null,
-    ]
-      .filter((x): x is string => Boolean(x))
-      .join(", ");
-    bits.push(
-      `<p style="margin:6px 0 0 0;font-family:${SANS};font-size:13px;color:${MUTED}">${escapeHtml(factBits)}</p>`
-    );
-    if (r.thesis.todayPct != null) {
-      bits.push(
-        `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:16px;font-weight:600;color:${toneColor(r.thesis.todayDollar)}">${escapeHtml(r.todayLabel)} ${escapeHtml(signedPct(r.thesis.todayPct))}&nbsp;&nbsp;${escapeHtml(signedMoney(r.thesis.todayDollar))}</p>`
-      );
-    }
-    if (r.thesis.ownerThesis) {
-      bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(r.thesis.ownerThesis)}</p>`
-      );
-    }
-    if (r.thesis.status) {
-      bits.push(
-        `<p style="margin:14px 0 0 0;font-family:${SANS};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD}">Pulse: ${escapeHtml(r.thesis.status)}</p>`
-      );
-    }
-    if (r.thesis.pulseLine) {
-      bits.push(
-        `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(r.thesis.pulseLine)}</p>`
-      );
-    }
-    thesisInner = section(
-      r.thesis.ownerThesis ? "The name that did it" : "Focus",
-      bits.join("")
-    );
-  }
-
-  const weekNoteCards = r.weekNotes
-    .map((n, i) => {
-      const bits: string[] = [];
-      bits.push(
-        `<p style="margin:0;font-family:${SANS};font-size:18px;font-weight:700;color:${CREAM}">${escapeHtml(cashtag(n.ticker))}</p>`
-      );
-      if (n.status) {
-        bits.push(
-          `<p style="margin:6px 0 0 0;font-family:${SANS};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD}">${escapeHtml(n.status)}</p>`
-        );
-      }
-      if (n.ownerThesis) {
-        bits.push(
-          `<p style="margin:10px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${CREAM}">${escapeHtml(n.ownerThesis)}</p>`
-        );
-      }
-      if (n.pulseLine) {
-        bits.push(
-          `<p style="margin:8px 0 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${MUTED}">${escapeHtml(n.pulseLine)}</p>`
-        );
-      }
-      if (n.actionLine) {
-        bits.push(
-          `<p style="margin:12px 0 0 0;font-family:${SANS};font-size:17px;line-height:1.5;color:${CREAM}">${escapeHtml(n.actionLine)}</p>`
-        );
-      }
-      const pad = i === r.weekNotes.length - 1 ? "0" : "0 0 22px 0";
-      return `<tr><td style="padding:${pad}">${bits.join("")}</td></tr>`;
-    })
-    .join("");
-
-  const weekNotesInner =
-    r.weekNotes.length > 0
-      ? section(
-          "Ideas for next week",
-          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%">${weekNoteCards}</table>`
-        )
-      : "";
-
   const heroInner =
     r.kind === "morning"
-      ? `<p style="margin:0;font-family:${SANS};font-size:26px;line-height:1.35;font-weight:400;letter-spacing:-0.02em;color:${CREAM}">${escapeHtml(r.lead)}</p>
-<p style="margin:18px 0 0 0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
+      ? `<p style="margin:0;font-family:${SANS};font-size:13px;letter-spacing:0.02em;color:${MUTED}">Your portfolio ${escapeHtml(money(r.book))}, ${escapeHtml(names)}</p>`
       : `<p style="margin:0;font-family:${SANS};font-size:40px;line-height:1.1;font-weight:700;letter-spacing:-0.03em;color:${CREAM}">${escapeHtml(signedMoney(r.todayDollar))}</p>
 ${
   r.todayPct != null
@@ -1104,15 +981,16 @@ ${
 
   const bodyOrder =
     r.kind === "morning"
-      ? `${margusInner}${watchesInner}${insightsInner}${moversInner}`
+      ? `${margusInner}${watchesInner}${moversInner}`
       : r.kind === "sunday"
-        ? `${margusInner}${moversInner}${weightsInner}${insightsInner}${perspectiveInner}${weekNotesInner}`
-        : `${margusInner}${moversInner}${insightsInner}${thesisInner}`;
+        ? `${margusInner}${moversInner}${weightsInner}`
+        : `${margusInner}${moversInner}`;
 
   return wrapEmailLetter({
     title: r.title,
     preview,
     dateLine: r.dateLine,
+    hideOpener: true,
     body: `<!-- ${escapeHtml(r.kind)} ${escapeHtml(r.shortDate)} ${escapeHtml(signedMoney(r.todayDollar))} -->
 <div style="height:28px;font-size:0;line-height:0">&nbsp;</div>
 ${hero}
