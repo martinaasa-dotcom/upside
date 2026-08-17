@@ -117,7 +117,7 @@ function PulseHistory({ ticker }: { ticker: string }) {
   const prior = loadPulseHistory(ticker).slice(0, -1).at(-1);
   if (!prior) return null;
   return (
-    <p className="mt-2 text-sm text-muted-foreground">
+    <p className="text-sm text-muted-foreground">
       Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus)}
     </p>
   );
@@ -234,13 +234,14 @@ function PulseCard({
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
           {onWriteThesis ? (
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={onWriteThesis}
-              className="rounded-md text-left hover:underline"
+              className="h-auto p-0 text-base font-semibold text-foreground"
             >
               {cashtag(c.ticker)}
-            </button>
+            </Button>
           ) : (
             cashtag(c.ticker)
           )}
@@ -314,7 +315,7 @@ function PulseCard({
           )}
         </CardAction>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-6">
       {c.inBook ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Metric label="Price" hint={currency(c.currentValue)}>

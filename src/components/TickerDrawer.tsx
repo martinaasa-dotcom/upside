@@ -2,8 +2,25 @@
 
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { currency, percent, signedPercent, cn, cashtag } from "@/lib/format";
-import { Card, MicroLabel, Pill, Segmented, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import {
+  Metric,
+  MicroLabel,
+  Pill,
+  Score,
+  Scoreboard,
+  Segmented,
+  SPLIT_COPY,
+  SPLIT_ROW,
+} from "@/components/ui/Panel";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ConvictionEntry, ConvictionLevel } from "@/lib/conviction";
 import { estimateGreenStreak } from "@/lib/streaks";
@@ -144,7 +161,7 @@ export function TickerDrawer({
         <div className="flex items-start justify-between gap-2 border-b border-border px-6 py-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-sm font-medium tracking-tight text-foreground">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 {cashtag(ticker)}
               </h2>
               <Pill tone="neutral">{THEME_LABEL[theme] ?? "other businesses"}</Pill>
@@ -177,28 +194,29 @@ export function TickerDrawer({
           </Button>
         </div>
 
-        <div className="flex-1 gap-4 overflow-y-auto px-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <Card>
-            <MicroLabel>Thesis</MicroLabel>
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <Field>
+            <FieldLabel htmlFor="ticker-thesis">Thesis</FieldLabel>
             <Textarea
+              id="ticker-thesis"
               value={thesisDraft}
-              rows={3}
+              rows={2}
               onChange={(e) => setThesisDraft(e.target.value)}
               onBlur={() => onConviction(level, thesisDraft)}
               placeholder="Two sentences. What has to stay true for you to keep holding?"
-              className="mt-2 min-h-20 leading-relaxed"
+              className="min-h-16 leading-relaxed"
             />
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Pulse reads this first. Leave it blank and it still works from headlines and today’s prices.
-            </p>
-            {conviction?.stamps && conviction.stamps.length > 0 && (
-              <ul className="flex flex-col mt-3 gap-1.5 border-t border-border pt-3">
+            <FieldDescription>
+              Pulse reads this first. Leave it blank and it still works from headlines and today&apos;s prices.
+            </FieldDescription>
+            {conviction?.stamps && conviction.stamps.length > 0 ? (
+              <ul className="flex flex-col gap-1.5 border-t border-border pt-3">
                 {conviction.stamps.slice(0, 3).map((s) => (
                   <li key={s.at} className="text-sm text-muted-foreground">
-                    <span className="text-muted-foreground">{s.verdict}</span>
+                    <span className="text-foreground">{s.verdict}</span>
                     {" · "}
                     {s.line}
-                    <span className="ml-1 text-muted-foreground">
+                    <span className="ml-1">
                       {new Date(s.at).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
@@ -207,18 +225,16 @@ export function TickerDrawer({
                   </li>
                 ))}
               </ul>
-            )}
-          </Card>
+            ) : null}
+          </Field>
 
-          {/* Price path — the same numbers as the Forecast table, never a
-            * second opinion. */}
-          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-4">
             <div className={SPLIT_ROW}>
               <div className={SPLIT_COPY}>
-                <h3 className="text-base font-semibold text-foreground">
+                <h3 className="text-base font-medium text-foreground">
                   Price path
                 </h3>
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   A modeled scenario, not a target. Same numbers as Forecast.
                 </p>
               </div>
@@ -230,45 +246,39 @@ export function TickerDrawer({
               />
             </div>
 
-            <Card tone="good">
-              <div className={cn(SPLIT_ROW, "sm:items-end")}>
-                <div className={SPLIT_COPY}>
-                  <MicroLabel>If it plays out by {targetYear}</MicroLabel>
-                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                    {currency(targetPrice, 2)}
-                  </p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
+            <Scoreboard cols={1}>
+              <Score
+                label={`If it plays out by ${targetYear}`}
+                value={currency(targetPrice, 2)}
+                sub={
+                  <>
                     Works out to about{" "}
                     <span className="font-medium tabular-nums text-gain">
                       {Number.isFinite(targetCagrPct)
                         ? `${targetCagrPct >= 0 ? "+" : ""}${targetCagrPct.toFixed(1)}%`
                         : "—"}
                     </span>{" "}
-                    a year
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p
-                    className={cn(
-                      "text-lg font-semibold tabular-nums",
-                      targetGainPct >= 0 ? "text-gain" : "text-loss"
-                    )}
-                  >
-                    {targetGainPct >= 0 ? "+" : ""}
-                    {percent(targetGainPct)}
-                  </p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    from today&apos;s price
-                  </p>
-                </div>
-              </div>
-            </Card>
+                    a year.{" "}
+                    <span
+                      className={cn(
+                        "font-semibold tabular-nums",
+                        targetGainPct >= 0 ? "text-gain" : "text-loss"
+                      )}
+                    >
+                      {targetGainPct >= 0 ? "+" : ""}
+                      {percent(targetGainPct)}
+                    </span>{" "}
+                    from today&apos;s price.
+                  </>
+                }
+              />
+            </Scoreboard>
 
             <div>
               <MicroLabel className="mb-2">
-                Year by year - tap to change
+                Year by year. Tap to change.
               </MicroLabel>
-              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+              <div className="grid grid-cols-5 gap-2">
                 {FORECAST_YEARS.map((yr) => {
                   const p = forecastSummary.eoyPrices[yr];
                   const g = forecastSummary.eoyGains[yr];
@@ -278,12 +288,12 @@ export function TickerDrawer({
                     return (
                       <div
                         key={yr}
-                        className="rounded-lg border border-input bg-muted px-1 py-1.5 text-center"
+                        className="flex flex-col items-stretch gap-0.5 rounded-lg border border-input bg-background px-2 py-2"
                       >
-                        <p className="text-sm font-medium text-primary">
+                        <p className="text-xs font-medium text-muted-foreground">
                           &apos;{String(yr).slice(2)}
                         </p>
-                        <input
+                        <Input
                           type="text"
                           inputMode="decimal"
                           autoFocus
@@ -295,141 +305,115 @@ export function TickerDrawer({
                             if (e.key === "Escape") setEditingYear(null);
                           }}
                           aria-label={`Price at end of ${yr}`}
-                          className="mt-0.5 w-full bg-transparent text-center text-sm font-semibold tabular-nums text-foreground outline-none"
+                          className="h-7 px-1 text-center text-sm font-semibold tabular-nums"
                         />
                       </div>
                     );
                   }
 
                   return (
-                    <button
+                    <Button
                       key={yr}
                       type="button"
+                      variant={isCurrentHorizon ? "secondary" : "outline"}
                       onClick={() => {
                         setEditingYear(yr);
                         setYearDraftPrice(p.toFixed(2));
                       }}
                       title={`Change the end-of-${yr} price`}
-                      className={cn(
-                        "rounded-lg border px-1 py-2 text-center transition hover:border-border",
-                        isCurrentHorizon
-                          ? "border-border bg-muted"
-                          : "border-border bg-muted"
-                      )}
+                      className="h-auto flex-col items-stretch gap-0.5 px-2 py-2"
                     >
-                      <p className="text-sm text-muted-foreground">
+                      <span className="text-xs font-medium text-muted-foreground">
                         &apos;{String(yr).slice(2)}
-                      </p>
-                      <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums text-foreground">
                         ${Math.round(p)}
-                      </p>
-                      <p
+                      </span>
+                      <span
                         className={cn(
-                          "text-sm tabular-nums",
+                          "text-xs tabular-nums",
                           g >= 0 ? "text-gain" : "text-loss"
                         )}
                       >
                         {g >= 0 ? "+" : ""}
                         {(g * 100).toFixed(0)}%
-                      </p>
-                    </button>
+                      </span>
+                    </Button>
                   );
                 })}
               </div>
             </div>
           </section>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Card>
-              <MicroLabel>Recent run</MicroLabel>
-              <p className="mt-1 text-sm font-medium text-foreground">
-                {streak.label}
-              </p>
-            </Card>
-            <Card>
-              <MicroLabel>Moves with</MicroLabel>
-              <p className="mt-1 truncate text-sm font-medium text-foreground">
-                {shockProfile.label}
-              </p>
-            </Card>
+          <div className="grid grid-cols-2 gap-4">
+            <Metric label="Recent run">{streak.label}</Metric>
+            <Metric label="Moves with">{shockProfile.label}</Metric>
           </div>
 
-          {coveredCallRow && coveredCallRow.nextStrike != null && (
-            <Card>
+          {coveredCallRow && coveredCallRow.nextStrike != null ? (
+            <FieldGroup>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <MicroLabel>Your call plan</MicroLabel>
-                {coveredCallRow.yield2w != null && (
-                  <span className="text-sm font-medium tabular-nums text-primary">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Your call plan
+                </p>
+                {coveredCallRow.yield2w != null ? (
+                  <span className="text-sm font-medium tabular-nums text-foreground">
                     {percent(coveredCallRow.yield2w)} for two weeks
                   </span>
-                )}
+                ) : null}
               </div>
-              <div className="mt-2.5 grid grid-cols-3 gap-2">
-                <div>
-                  <p className="text-sm text-muted-foreground">Strike</p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                    {currency(coveredCallRow.nextStrike)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Room above</p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                    {coveredCallRow.targetDistance != null
-                      ? percent(coveredCallRow.targetDistance)
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Contracts</p>
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                    {coveredCallRow.contracts}
-                  </p>
-                </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Metric label="Strike">
+                  {currency(coveredCallRow.nextStrike)}
+                </Metric>
+                <Metric label="Room above">
+                  {coveredCallRow.targetDistance != null
+                    ? percent(coveredCallRow.targetDistance)
+                    : "—"}
+                </Metric>
+                <Metric label="Contracts">{coveredCallRow.contracts}</Metric>
               </div>
-            </Card>
-          )}
+            </FieldGroup>
+          ) : null}
 
-          <Card>
+          <Field>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <MicroLabel>How sure are you?</MicroLabel>
-              <span className="text-sm font-medium text-caution">
+              <FieldLabel>How sure are you?</FieldLabel>
+              <span className="text-sm font-medium text-muted-foreground">
                 {level} of 5
               </span>
             </div>
-            <div
-              role="radiogroup"
+            <ToggleGroup
+              type="single"
+              variant="outline"
+              spacing={0}
+              value={String(level)}
+              onValueChange={(v) => {
+                if (!v) return;
+                onConviction(Number(v) as ConvictionLevel, thesisDraft);
+              }}
+              className="w-full"
               aria-label="How sure are you"
-              className="mt-2.5 flex gap-1.5"
             >
               {([1, 2, 3, 4, 5] as ConvictionLevel[]).map((n) => (
-                <button
+                <ToggleGroupItem
                   key={n}
-                  type="button"
-                  role="radio"
-                  aria-checked={level === n}
-                  onClick={() => onConviction(n, thesisDraft)}
+                  value={String(n)}
                   title={CONVICTION_LABELS[n]}
-                  className={cn(
-                    "touch-target h-10 flex-1 rounded-lg text-sm font-semibold tabular-nums transition",
-                    level === n
-                      ? "bg-muted text-primary ring-1 ring-ring/50"
-                      : "border border-border bg-muted text-muted-foreground hover:text-foreground"
-                  )}
+                  className="h-10 flex-1"
                 >
                   {n}
-                </button>
+                </ToggleGroupItem>
               ))}
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {CONVICTION_LABELS[level]}
-            </p>
-          </Card>
+            </ToggleGroup>
+            <FieldDescription>{CONVICTION_LABELS[level]}</FieldDescription>
+          </Field>
 
-          {onAskMargus && (
+          {onAskMargus ? (
             <Button
               type="button"
               variant="outline"
-              className="h-auto w-full py-3"
+              className="w-full"
               onClick={() => {
                 onClose();
                 onAskMargus();
@@ -438,7 +422,7 @@ export function TickerDrawer({
               <Bot data-icon="inline-start" />
               Ask Margus about {cashtag(ticker)}
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </ViewportOverlay>

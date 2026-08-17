@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CARD, Card, EmptyState, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { CARD, Card, EmptyState, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, Stat } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -169,28 +169,27 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             </p>
           </div>
         </div>
+      </Panel>
 
-        <Scoreboard cols={1}>
-          <Score
-            label="Portfolio after this"
-            value={currency(analysis.shockedTotalVal, 0)}
-            sub={
-              <>
-                <span
-                  className={cn(
-                    "font-semibold tabular-nums",
-                    signedTone(analysis.deltaVal)
-                  )}
-                >
-                  {signedPercent(analysis.deltaPct)}
-                </span>
-                {` · ${signedCurrency(analysis.deltaVal, 0)} from today's ${currency(analysis.liveTotalVal, 0)}`}
-              </>
-            }
-          />
-        </Scoreboard>
-        {analysis.margin.isUsingMargin ? (
-          <div className="flex flex-wrap items-center gap-2">
+      <Stat
+        label="Portfolio after this"
+        value={currency(analysis.shockedTotalVal, 0)}
+        sub={
+          <>
+            <span
+              className={cn(
+                "font-semibold tabular-nums",
+                signedTone(analysis.deltaVal)
+              )}
+            >
+              {signedPercent(analysis.deltaPct)}
+            </span>
+            {` · ${signedCurrency(analysis.deltaVal, 0)} from today's ${currency(analysis.liveTotalVal, 0)}`}
+          </>
+        }
+      />
+      {analysis.margin.isUsingMargin ? (
+        <div className="flex flex-wrap items-center gap-2">
             {analysis.margin.marginCallRisk === "critical" ? (
               <Pill tone="bad">Broker could force a sale</Pill>
             ) : analysis.margin.marginCallRisk === "caution" ? (
@@ -221,7 +220,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           </p>
         )}
 
-        <Scoreboard cols={2}>
+      <Scoreboard cols={2}>
           <Score
             label="Hurts most"
             value={
@@ -260,7 +259,6 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             }
           />
         </Scoreboard>
-      </Panel>
 
       {analysis.themeBreakdown.length > 1 && selectedShock !== "none" && (
         <Panel tone="plain">

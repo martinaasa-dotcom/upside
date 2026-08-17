@@ -25,6 +25,7 @@ import {
 } from "@/lib/watchlist";
 import {
   AlertTriangle,
+  Info,
   Minus,
   Plus,
   RefreshCw,
@@ -392,6 +393,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       {rows != null && rows.length > 0 && (
         <>
           <Alert>
+            <Info />
             <AlertDescription>
               {attentionCount === 0
                 ? "Nothing below is diverging or rolling over right now. Sorted by who is beating the S&P."

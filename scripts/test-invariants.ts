@@ -2539,6 +2539,8 @@ run("trend story board is Trend full-width then a 2-col grid, not a 5-wide row",
   assert.match(src, /story\.signals\.find\(\(s\) => s\.key === "trend"\)/);
   assert.doesNotMatch(src, /cols=\{5\}/);
   assert.doesNotMatch(src, /bullets=\{s\.detail\}/);
+  assert.match(src, /<Alert>/);
+  assert.match(src, /Those come first/);
 });
 
 run("signed-in pages share one column so rooms do not jump", () => {
@@ -3035,6 +3037,8 @@ run("the recent Pulse and briefing bugs stay gone", () => {
   assert.doesNotMatch(sim, /min-w-\[40rem\]/);
   assert.doesNotMatch(sim, /Price now/);
   assert.doesNotMatch(sim, /Value now/);
+  assert.match(sim, /<Stat/);
+  assert.match(sim, /label="Portfolio after this"/);
   const drawer = readFileSync(
     join(process.cwd(), "src/components/TickerDrawer.tsx"),
     "utf8"
@@ -3045,6 +3049,10 @@ run("the recent Pulse and briefing bugs stay gone", () => {
   assert.doesNotMatch(shock, /driver: "AI computers"/);
   assert.doesNotMatch(sim, /"AI computers":/);
   assert.match(drawer, /THEME_LABEL\[theme\]/);
+  assert.match(drawer, /<FieldLabel htmlFor="ticker-thesis">/);
+  assert.match(drawer, /<ToggleGroup/);
+  assert.doesNotMatch(drawer, /tone="raised"/);
+  assert.doesNotMatch(drawer, /bg-gain\/10/);
   assert.match(notes, /if \(action === "trim"\)/);
   const trimAt = notes.indexOf('if (action === "trim")');
   const watchAt = notes.indexOf("if (watch || action === \"watch\")");
@@ -3472,6 +3480,8 @@ run("Pulse scan sits in its own card, not under the lookup bar", () => {
   assert.match(page, /Today's scan/);
   assert.match(page, /<ScanList/);
   assert.match(page, /scanRows\.map/);
+  assert.doesNotMatch(page, /Add yours/);
+  assert.doesNotMatch(page, /<Reading/);
   assert.doesNotMatch(page, /Market mood/);
   assert.doesNotMatch(page, /ADVICE_DISCLAIMER/);
   assert.match(page, /actions=\{/);
