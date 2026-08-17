@@ -1808,6 +1808,10 @@ run("public pages ship OG cards and private rooms are noindex", () => {
   assert.match(layout, /metadataBase/);
   assert.match(layout, /openGraph/);
   assert.match(layout, /apple-touch-icon\.png/);
+  const icons = readFileSync("scripts/generate-pwa-icons.mjs", "utf8");
+  assert.match(icons, /dest-in/);
+  assert.doesNotMatch(icons, /rimSvg/);
+  assert.doesNotMatch(icons, /stroke="url\(#g\)"/);
   assert.match(home, /HOME_METADATA/);
   assert.match(login, /LOGIN_METADATA/);
   assert.match(communities, /COMMUNITIES_METADATA/);
@@ -2417,26 +2421,31 @@ run("weakening trend names the 40-week average and the slope", () => {
   assert.equal(trend!.value, "Weakening");
   assert.ok(trend!.detail.length >= 2);
   const blob = trend!.detail.join(" ");
-  assert.match(blob, /40-week average/);
-  assert.match(blob, /falling/);
+  assert.match(blob, /40-week/);
+  assert.match(blob, /↓/);
   assert.match(blob, /8 weeks/);
   assert.match(blob, /45\.20|\$45/);
   for (const s of story.signals) {
     assert.ok(Array.isArray(s.detail) && s.detail.length > 0, s.key);
+    for (const line of s.detail) {
+      assert.ok(line.length < 80, `${s.key} chip is a sentence: ${line}`);
+    }
   }
   const momentum = story.signals.find((s) => s.key === "momentum");
-  assert.ok(momentum!.detail.some((line) => /Building:/.test(line)));
-  assert.ok(!momentum!.detail.some((line) => /Fading:/.test(line)));
+  assert.equal(momentum!.value, "Building");
+  assert.ok(momentum!.detail.some((line) => /0\.18/.test(line)));
+  assert.ok(momentum!.detail.some((line) => /0\.24/.test(line)));
 });
 
-run("trend story board is a 2-col grid with Trend spanning, not a 5-wide row", () => {
+run("trend story board is Trend full-width then a 2-col grid, not a 5-wide row", () => {
   const src = readFileSync(
     join(process.cwd(), "src/components/TrendsPanel.tsx"),
     "utf8"
   );
-  assert.match(src, /cols=\{2\}/);
-  assert.match(src, /s\.key === "trend" \? "col-span-2"/);
+  assert.match(src, /sm:grid-cols-2/);
+  assert.match(src, /wide=\{s\.key === "trend"\}/);
   assert.doesNotMatch(src, /cols=\{5\}/);
+  assert.doesNotMatch(src, /bullets=\{s\.detail\}/);
 });
 
 run("signed-in pages share one column so rooms do not jump", () => {

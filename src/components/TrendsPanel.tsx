@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Panel, PanelHeader, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { CARD, InfoTip, NESTED_PAD, Panel, PanelHeader, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
-import { buildTrendStory, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
+import { buildTrendStory, type Signal, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
 import {
   addWatchlistTicker,
   loadWatchlist,
@@ -76,10 +76,46 @@ function ToneIcon({ tone, className }: { tone: Tone; className?: string }) {
   return <Minus className={className} />;
 }
 
-/** One holding's whole trend story, laid out so a novice can read it top
- * to bottom without cross-referencing a table: the slow 40-week read across
- * the top, then the four faster signals in a 2×2 so the board never ends
- * on a blank cell. */
+function SignalTile({
+  signal,
+  wide = false,
+}: {
+  signal: Signal;
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        CARD,
+        NESTED_PAD,
+        "text-center",
+        wide && "sm:col-span-2"
+      )}
+    >
+      <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <span>{signal.label}</span>
+        <InfoTip text={signal.help} />
+      </p>
+      <p
+        className={cn(
+          "mt-1.5 inline-flex items-center justify-center gap-1.5 font-heading text-lg font-semibold tracking-tight",
+          TONE_TEXT[signal.tone]
+        )}
+      >
+        <ToneIcon tone={signal.tone} className="h-4 w-4" />
+        {signal.value}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm tabular-nums text-muted-foreground">
+        {signal.detail.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** One holding's whole trend story: verdict on top, then the slow 40-week
+ * read full-width and the four faster signals in a 2×2. */
 function TickerStoryCard({
   row,
   isHolding,
@@ -115,24 +151,11 @@ function TickerStoryCard({
         {story.sentence}
       </p>
 
-      <Scoreboard className="mt-3" cols={2}>
+      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {story.signals.map((s) => (
-          <Score
-            key={s.key}
-            label={s.label}
-            value={s.value}
-            bullets={s.detail}
-            explain={s.help}
-            valueClassName={TONE_TEXT[s.tone]}
-            className={s.key === "trend" ? "col-span-2" : undefined}
-            bulletsClassName={
-              s.key === "trend"
-                ? "sm:grid sm:grid-cols-3 sm:gap-x-6 sm:gap-0"
-                : undefined
-            }
-          />
+          <SignalTile key={s.key} signal={s} wide={s.key === "trend"} />
         ))}
-      </Scoreboard>
+      </div>
 
       {row.divergence && (
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
