@@ -79,6 +79,7 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
 ];
 
 const FIELD_CLASS = "w-full min-w-0 max-w-full font-semibold tabular-nums";
+const FIELD_STACK = "flex flex-col gap-5";
 
 const SHEET_PANEL = "h-auto min-w-0 max-w-full lg:h-full";
 
@@ -693,7 +694,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
       `Interest ${show(result.totalInterest)} · RoR ${(result.allTimeRoR * 100).toFixed(0)}%`,
       liveInputs.depositAmount > 0
         ? `+${show(liveInputs.depositAmount)}/mo deposits @ ${liveInputs.annualIncrease}% YoY`
-        : `No deposits · pure compound`,
+        : `No deposits - pure compound`,
     ]
       .filter(Boolean)
       .join("\n");
@@ -770,7 +771,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
         />
 
         <div className="divide-y divide-border">
-        <section className="flex flex-col gap-3 pb-4">
+        <section className={cn(FIELD_STACK, "pb-4")}>
           <label htmlFor="compound-principal-input" className="text-sm font-semibold text-foreground">
             Starting from
           </label>
@@ -805,7 +806,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </NativeSelect>
         </section>
 
-        <section className="flex flex-col gap-3 py-4">
+        <section className={cn(FIELD_STACK, "py-4")}>
           <label htmlFor="compound-rate-input" className="text-sm font-semibold text-foreground">
             Growing at
           </label>
@@ -833,7 +834,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           />
         </section>
 
-        <section className="flex flex-col gap-3 py-4">
+        <section className={cn(FIELD_STACK, "py-4")}>
           <label htmlFor="compound-duration-input" className="text-sm font-semibold text-foreground">
             For how long
           </label>
@@ -866,7 +867,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           />
         </section>
 
-        <section className="flex flex-col gap-3 py-4">
+        <section className={cn(FIELD_STACK, "py-4")}>
           <span className="text-sm font-semibold text-foreground">
             Adding along the way
           </span>
@@ -887,7 +888,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
 
           <fieldset
             disabled={!payIn}
-            className={cn("flex flex-col gap-3", !payIn && "opacity-40")}
+            className={cn(FIELD_STACK, !payIn && "opacity-40")}
           >
             <legend className="sr-only">Paying in</legend>
             <FormattedNumberInput
@@ -934,7 +935,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             disabled={!takeOut}
             className={cn(!takeOut && "opacity-40")}
           >
-            <legend className="mb-1.5 block text-sm text-muted-foreground">
+            <legend className="mb-5 block text-sm text-muted-foreground">
               Taking out each month
             </legend>
             <FormattedNumberInput
