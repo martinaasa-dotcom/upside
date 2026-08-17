@@ -31,10 +31,12 @@ import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 import { chatPostSchema } from "@/lib/api-schemas";
 import { parseJsonBody } from "@/lib/parse-json-body";
+import { screenshotImportFallbackCopy } from "@/lib/screenshot-import-copy";
 
 export const maxDuration = 120;
 
 const FALLBACK_CHAT_TEXT = "Didn't land. Send it again.";
+const FALLBACK_SCREENSHOT_TEXT = screenshotImportFallbackCopy().lines.join("\n");
 
 type StreamPart = { type: string };
 
@@ -50,12 +52,13 @@ function messagesHaveImages(messages: UIMessage[]): boolean {
   );
 }
 
-function fallbackChatResponse(): Response {
+function fallbackChatResponse(vision = false): Response {
   const id = "text-fallback";
+  const delta = vision ? FALLBACK_SCREENSHOT_TEXT : FALLBACK_CHAT_TEXT;
   const stream = createUIMessageStream({
     execute({ writer }) {
       writer.write({ type: "text-start", id });
-      writer.write({ type: "text-delta", id, delta: FALLBACK_CHAT_TEXT });
+      writer.write({ type: "text-delta", id, delta });
       writer.write({ type: "text-end", id });
     },
   });
@@ -195,7 +198,7 @@ async function handlePOST(req: Request) {
       speaking: true,
     });
     if (providerChain.length === 0) {
-      return fallbackChatResponse();
+      return fallbackChatResponse(vision);
     }
     const cacheKey = vision ? "chat:vision" : "chat:text";
     const modelMessages = await convertToModelMessages(messages, { tools });
@@ -250,7 +253,8 @@ async function handlePOST(req: Request) {
           stream: toUIMessageStream({
             stream: replayParts(peeked.prefix, peeked.iterator),
             tools,
-            onError: () => FALLBACK_CHAT_TEXT,
+            onError: () =>
+              vision ? FALLBACK_SCREENSHOT_TEXT : FALLBACK_CHAT_TEXT,
           }),
         });
       } catch (err) {
@@ -261,7 +265,7 @@ async function handlePOST(req: Request) {
       }
     }
 
-    return fallbackChatResponse();
+    return fallbackChatResponse(vision);
   } catch (err) {
     console.error("[chat]", err);
     return fallbackChatResponse();

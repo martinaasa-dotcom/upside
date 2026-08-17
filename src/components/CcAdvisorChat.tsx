@@ -4,6 +4,13 @@ import { track } from "@vercel/analytics";
 import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
+import {
+  isGenericScreenshotFail,
+  isScreenshotIssueReason,
+  screenshotImportFallbackCopy,
+  screenshotIssueCopy,
+  type ScreenshotIssueCopy,
+} from "@/lib/screenshot-import-copy";
 import { STRATEGY } from "@/lib/calculations";
 import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import {
@@ -104,7 +111,7 @@ type Props = {
  * so the prompt itself has to make "call the tool, don't just narrate"
  * unambiguous. */
 const DEFAULT_SCREENSHOT_PROMPT =
-  "Read this broker screenshot carefully, then take action. Do not just describe it. If it is a single ticker (Shares + Avg buy), call the addHolding tool with those exact numbers and the correct currency (€=EUR). If it is a multi-row portfolio table, call the importSheet tool for every row. You must call one of these tools before replying; only after that, briefly confirm what you saved.";
+  "Read this screenshot carefully, then take action. Do not just describe it. If it is a broker holdings page or spreadsheet with ticker plus how many shares plus what they paid (avg buy) or the position value: call addHolding for a single ticker, or importSheet for every row. If it is NOT that (Apple Stocks, a watchlist, prices and daily change only, news, a chart, cropped, or no share counts), do not guess numbers. Call reportScreenshotIssue with the closest reason and stop. You must call one of these tools before replying.";
 
 type ToolPart = {
   type: string;
@@ -134,6 +141,52 @@ function extractImages(
         p.mediaType.startsWith("image/")
     )
     .map((p) => ({ url: p.url!, mediaType: p.mediaType! }));
+}
+
+function partsHaveImages(
+  parts: Array<{ type: string; mediaType?: string }> | undefined
+): boolean {
+  return (parts ?? []).some(
+    (p) =>
+      p.type === "file" &&
+      typeof p.mediaType === "string" &&
+      p.mediaType.startsWith("image/")
+  );
+}
+
+function screenshotIssueFromParts(
+  parts: ToolPart[]
+): ScreenshotIssueCopy | null {
+  for (const part of parts) {
+    if (part.state !== "output-available") continue;
+    const out = part.output as
+      | {
+          action?: string;
+          reason?: string;
+          title?: string;
+          lines?: string[];
+          message?: string;
+        }
+      | undefined;
+    if (out?.action !== "report_screenshot_issue") continue;
+    if (out.reason && isScreenshotIssueReason(out.reason)) {
+      return screenshotIssueCopy(out.reason);
+    }
+    if (Array.isArray(out.lines) && out.lines.length > 0) {
+      return {
+        title: out.title || screenshotImportFallbackCopy().title,
+        lines: out.lines,
+      };
+    }
+    if (typeof out.message === "string" && out.message.trim()) {
+      return {
+        title: out.title || screenshotImportFallbackCopy().title,
+        lines: out.message.split("\n").filter(Boolean),
+      };
+    }
+    return screenshotImportFallbackCopy();
+  }
+  return null;
 }
 
 /**
@@ -487,6 +540,7 @@ export function CcAdvisorChat({
   );
   const [silentSummary, setSilentSummary] = useState<{
     kind: "ok" | "info" | "empty" | "error";
+    title?: string;
     lines: string[];
   } | null>(null);
   const silentFileInputRef = useRef<HTMLInputElement>(null);
@@ -587,6 +641,11 @@ export function CcAdvisorChat({
         p.state === "output-available" &&
         typeof (p.output as { message?: string })?.message === "string"
     );
+  const lastUser = [...messages].reverse().find((m) => m.role === "user");
+  const screenshotTurn = partsHaveImages(
+    lastUser?.parts as Array<{ type: string; mediaType?: string }> | undefined
+  );
+  const screenshotFailCopy = screenshotImportFallbackCopy();
 
   // Capture the result of a silent screenshot import for the status card
   // once the request settles — one-shot per send via the ref guard.
@@ -594,8 +653,17 @@ export function CcAdvisorChat({
     if (!awaitingSilentSettleRef.current || busy) return;
     awaitingSilentSettleRef.current = false;
 
+    const fallback = screenshotImportFallbackCopy();
+
     if (error) {
-      setSilentSummary({ kind: "error", lines: [describeChatUiError(error.message)] });
+      const network = /network|fetch|Failed to fetch|Load failed|aborted/i.test(
+        error.message
+      );
+      setSilentSummary(
+        network
+          ? { kind: "error", lines: [describeChatUiError(error.message)] }
+          : { kind: "empty", title: fallback.title, lines: fallback.lines }
+      );
       setSilentPhase("result");
       return;
     }
@@ -603,13 +671,26 @@ export function CcAdvisorChat({
     if (!last || last.role !== "assistant") {
       setSilentSummary({
         kind: "empty",
-        lines: ["Margus didn't confirm. Open chat to check what happened."],
+        title: fallback.title,
+        lines: fallback.lines,
       });
       setSilentPhase("result");
       return;
     }
 
-    const toolNotes = (last.parts as ToolPart[])
+    const parts = last.parts as ToolPart[];
+    const issue = screenshotIssueFromParts(parts);
+    if (issue) {
+      setSilentSummary({
+        kind: "empty",
+        title: issue.title,
+        lines: issue.lines,
+      });
+      setSilentPhase("result");
+      return;
+    }
+
+    const toolNotes = parts
       .filter(
         (p) =>
           p.state === "output-available" &&
@@ -622,7 +703,7 @@ export function CcAdvisorChat({
 
     if (toolNotes.length > 0) {
       setSilentSummary({ kind: "ok", lines: toolNotes });
-    } else if (text) {
+    } else if (text && !isGenericScreenshotFail(text)) {
       // A screenshot import always asks for a forced tool call — text with
       // no tool call means nothing was actually saved, even though the
       // model answered normally (some providers in the fallback chain
@@ -630,30 +711,32 @@ export function CcAdvisorChat({
       // image instead). Flag it like "empty" so it reads as "this didn't
       // work" rather than a neutral update, while still showing what
       // Margus actually said.
-      setSilentSummary({ kind: "empty", lines: [text] });
+      setSilentSummary({
+        kind: "empty",
+        title: fallback.title,
+        lines: [text, ...fallback.lines.slice(1)],
+      });
     } else {
       setSilentSummary({
         kind: "empty",
-        lines: [
-          "Margus returned an empty reply. Often a free-model rate limit. Open chat and try again.",
-        ],
+        title: fallback.title,
+        lines: fallback.lines,
       });
     }
     setSilentPhase("result");
   }, [busy, error, last]);
 
-  // Auto-dismiss the status card — success/info clears quickly, errors and
-  // unclear reads stay up longer since the user may not be looking yet.
+  // Auto-dismiss success quickly. Failed imports stay until they tap away
+  // so they can actually read what was missing.
   useEffect(() => {
     if (silentPhase !== "result" || !silentSummary) return;
-    const delay =
-      silentSummary.kind === "error" || silentSummary.kind === "empty"
-        ? 20000
-        : 7000;
+    if (silentSummary.kind === "error" || silentSummary.kind === "empty") {
+      return;
+    }
     const t = window.setTimeout(() => {
       setSilentPhase("idle");
       setSilentSummary(null);
-    }, delay);
+    }, 7000);
     return () => window.clearTimeout(t);
   }, [silentPhase, silentSummary]);
 
@@ -834,15 +917,16 @@ export function CcAdvisorChat({
       {showSilentCard && (
         <div
           role="status"
-          className="pointer-events-auto w-[min(20rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/60"
+          className="pointer-events-auto w-[min(22rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/60"
           onClick={() => setOpen(true)}
         >
           <div className="flex items-start gap-2.5 px-3.5 py-3">
             <div className="mt-0.5 rounded-lg bg-brand/10 p-1.5 text-brand">
               {silentPhase === "sending" ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : silentSummary?.kind === "error" ? (
-                <ImagePlus className="h-3.5 w-3.5 text-loss" />
+              ) : silentSummary?.kind === "error" ||
+                silentSummary?.kind === "empty" ? (
+                <ImagePlus className="h-3.5 w-3.5 text-caution" />
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />
               )}
@@ -854,7 +938,7 @@ export function CcAdvisorChat({
                   : silentSummary?.kind === "error"
                     ? "Import failed"
                     : silentSummary?.kind === "empty"
-                      ? "Not sure that landed"
+                      ? (silentSummary.title ?? "Couldn't import that screenshot")
                       : "Margus"}
               </p>
               {silentPhase === "sending" ? (
@@ -862,16 +946,18 @@ export function CcAdvisorChat({
                   Usually takes a few seconds.
                 </p>
               ) : (
-                <div className="mt-0.5 space-y-0.5">
+                <div className="mt-0.5 space-y-1.5">
                   {silentSummary?.lines.map((line, i) => (
                     <p
                       key={i}
                       className={`text-sm leading-relaxed ${
                         silentSummary.kind === "error"
                           ? "text-loss"
-                          : silentSummary.kind === "empty"
+                          : silentSummary.kind === "empty" && i === 0
                             ? "text-caution"
-                            : "text-foreground/80"
+                            : silentSummary.kind === "empty"
+                              ? "text-muted"
+                              : "text-foreground/80"
                       }`}
                     >
                       {line}
@@ -883,27 +969,21 @@ export function CcAdvisorChat({
                 onSuggestCsv &&
                 (silentSummary?.kind === "error" ||
                   silentSummary?.kind === "empty") && (
-                  <>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                      If the screenshot didn&apos;t read cleanly, upload a CSV.
-                      Most brokers export one.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSilentPhase("idle");
-                        setSilentSummary(null);
-                        onSuggestCsv();
-                      }}
-                      className="mt-2 rounded-md border border-border px-2 py-1 text-sm font-medium text-foreground hover:border-brand/50"
-                    >
-                      Upload a CSV instead
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSilentPhase("idle");
+                      setSilentSummary(null);
+                      onSuggestCsv();
+                    }}
+                    className="mt-2.5 rounded-md border border-border px-2 py-1 text-sm font-medium text-foreground hover:border-brand/50"
+                  >
+                    Upload a CSV instead
+                  </button>
                 )}
               {silentPhase === "result" && (
-                <p className="mt-1 text-sm text-muted">
+                <p className="mt-1.5 text-sm text-muted">
                   Tap to open chat
                 </p>
               )}
@@ -1069,7 +1149,7 @@ export function CcAdvisorChat({
               </div>
             )}
 
-            {messages.map((message) => {
+            {messages.map((message, index) => {
               const text = extractText(
                 message.parts as Array<{ type: string; text?: string }>
               );
@@ -1081,14 +1161,28 @@ export function CcAdvisorChat({
                 }>
               );
               const toolParts = message.parts as ToolPart[];
-              const toolNotes = toolParts
-                .filter(
-                  (p) =>
-                    p.state === "output-available" &&
-                    typeof (p.output as { message?: string })?.message ===
-                      "string"
-                )
-                .map((p) => (p.output as { message: string }).message);
+              const prev = messages[index - 1];
+              const afterScreenshot =
+                message.role === "assistant" &&
+                prev?.role === "user" &&
+                partsHaveImages(
+                  prev.parts as Array<{ type: string; mediaType?: string }>
+                );
+              const screenshotIssue =
+                screenshotIssueFromParts(toolParts) ??
+                (afterScreenshot && text && isGenericScreenshotFail(text)
+                  ? screenshotImportFallbackCopy()
+                  : null);
+              const toolNotes = screenshotIssue
+                ? []
+                : toolParts
+                    .filter(
+                      (p) =>
+                        p.state === "output-available" &&
+                        typeof (p.output as { message?: string })?.message ===
+                          "string"
+                    )
+                    .map((p) => (p.output as { message: string }).message);
               const toolPending = toolParts.some(
                 (p) =>
                   p.toolCallId &&
@@ -1100,6 +1194,7 @@ export function CcAdvisorChat({
                 !text &&
                 !images.length &&
                 toolNotes.length === 0 &&
+                !screenshotIssue &&
                 !toolPending
               )
                 return null;
@@ -1135,7 +1230,23 @@ export function CcAdvisorChat({
                       ))}
                     </div>
                   )}
-                  {text ? (
+                  {screenshotIssue ? (
+                    <div className="space-y-1.5">
+                      <p className="text-sm font-semibold text-foreground">
+                        {screenshotIssue.title}
+                      </p>
+                      {screenshotIssue.lines.map((line, i) => (
+                        <p
+                          key={i}
+                          className={`text-sm leading-relaxed ${
+                            i === 0 ? "text-caution" : "text-muted"
+                          }`}
+                        >
+                          {line}
+                        </p>
+                      ))}
+                    </div>
+                  ) : text ? (
                     <div className="w-full min-w-0 text-base leading-relaxed">
                       {message.role === "assistant" ? (
                         <ChatMarkdown>{text}</ChatMarkdown>
@@ -1177,6 +1288,22 @@ export function CcAdvisorChat({
             {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
               <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">
                 Didn&apos;t land that time. Send it again.
+              </div>
+            ) : screenshotTurn && !busy && (lastIsEmptyAssistant || error) ? (
+              <div className="space-y-1.5 rounded-lg border border-border bg-raised px-3 py-2">
+                <p className="text-sm font-semibold text-foreground">
+                  {screenshotFailCopy.title}
+                </p>
+                {screenshotFailCopy.lines.map((line, i) => (
+                  <p
+                    key={i}
+                    className={`text-sm leading-relaxed ${
+                      i === 0 ? "text-caution" : "text-muted"
+                    }`}
+                  >
+                    {line}
+                  </p>
+                ))}
               </div>
             ) : error && !isQuietChatFailure(error.message) ? (
               <div className="rounded-lg border border-border bg-raised px-3 py-2 text-sm text-muted">

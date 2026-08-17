@@ -2395,9 +2395,40 @@ run("first-run is import, not an empty named sheet", () => {
   );
   assert.match(overview, /Upload a CSV/);
   assert.match(overview, /Import a screenshot/);
+  assert.match(overview, /Not Apple Stocks or a watchlist/);
   assert.doesNotMatch(overview, /watch the Upside Fund or start a circle below/);
   assert.doesNotMatch(dash, /Invite someone onto this sheet/);
   assert.doesNotMatch(dash, /wasEmpty && !pulseHiddenForTier/);
+});
+
+run("screenshot import failure names what is missing", () => {
+  const copy = readFileSync(
+    join(process.cwd(), "src/lib/screenshot-import-copy.ts"),
+    "utf8"
+  );
+  const chat = readFileSync(
+    join(process.cwd(), "src/components/CcAdvisorChat.tsx"),
+    "utf8"
+  );
+  const advisor = readFileSync(
+    join(process.cwd(), "src/lib/ai/cc-advisor.ts"),
+    "utf8"
+  );
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/chat/route.ts"),
+    "utf8"
+  );
+  assert.match(copy, /Need a holdings screenshot/);
+  assert.match(copy, /price list, not what you own/);
+  assert.match(copy, /how many shares/);
+  assert.match(copy, /what you paid/);
+  assert.match(copy, /watchlist/);
+  assert.doesNotMatch(copy, /Didn't land/);
+  assert.match(chat, /reportScreenshotIssue/);
+  assert.match(chat, /screenshotIssueCopy/);
+  assert.match(advisor, /reportScreenshotIssue/);
+  assert.match(advisor, /Not a holdings screenshot/);
+  assert.match(route, /FALLBACK_SCREENSHOT_TEXT/);
 });
 
 run("sign-in reads as a product", () => {

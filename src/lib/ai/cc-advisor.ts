@@ -5,6 +5,10 @@ import {
   formatEarningsCalendarBlock,
   type EarningsCalendarRow,
 } from "@/lib/market/earnings-dates";
+import {
+  SCREENSHOT_ISSUE_REASONS,
+  screenshotIssueCopy,
+} from "@/lib/screenshot-import-copy";
 import { resolveImportTicker } from "@/lib/ticker";
 import { tool } from "ai";
 import { z } from "zod";
@@ -441,6 +445,28 @@ export function buildCcAdvisorTools(
     },
   }),
 
+  reportScreenshotIssue: tool({
+    description:
+      "Call this instead of addHolding/importSheet when the attached image is not a holdings screenshot you can import. Apple Stocks, a watchlist, prices + daily change only, news, a chart, a cropped/blurry shot, tickers with no share counts, or shares with no cost/value. Do not guess numbers. The tool writes the explanation the user will see.",
+    inputSchema: z.object({
+      reason: z
+        .enum(SCREENSHOT_ISSUE_REASONS)
+        .describe(
+          "not_holdings = Stocks app / watchlist / prices only. unreadable = cropped, dark, or blurry. missing_shares = tickers but no share counts. missing_cost = shares but no avg buy or position value."
+        ),
+    }),
+    execute: async ({ reason }) => {
+      const copy = screenshotIssueCopy(reason);
+      return {
+        action: "report_screenshot_issue" as const,
+        reason,
+        title: copy.title,
+        lines: copy.lines,
+        message: copy.lines.join("\n"),
+      };
+    },
+  }),
+
   removeHolding: tool({
     description: "Remove a ticker from the portfolio holdings.",
     inputSchema: z.object({
@@ -681,7 +707,7 @@ You can READ all portfolios below and discuss winners, losers, concentration${hi
 You MUST NOT claim to change any sheet. There are NO write tools in this mode.
 If the user asks to edit holdings, cash${hideOptions ? "" : ", Call %, or targets"}: tell them to open that portfolio tab and ask again there.`
     : `You can READ holdings${hideOptions ? "" : " + covered-call data"} below, and WRITE via tools:
-- Holdings: importSheet (preferred for screenshots / multi-ticker imports), updateHolding, addHolding, removeHolding, setCash${
+- Holdings: importSheet (preferred for screenshots / multi-ticker imports), updateHolding, addHolding, removeHolding, reportScreenshotIssue, setCash${
         hideOptions
           ? ""
           : `
@@ -715,7 +741,12 @@ When the user pastes or attaches a screenshot (spreadsheet, broker app, portfoli
 5. Skip headers/totals. replace=true for full books.
 6. Prefer importSheet over a chain of addHolding / setCash.
 
-After ANY import tool: reply in 2–4 sentences confirming ticker, shares, USD cost — never go silent.
+**C) Not a holdings screenshot** (Apple Stocks, a watchlist, prices + daily % only, news, a chart, cropped/blurry, tickers with no share counts):
+1. Do NOT guess shares or invent a buy price. Do NOT call addHolding or importSheet.
+2. Call reportScreenshotIssue once with the closest reason: not_holdings, unreadable, missing_shares, or missing_cost.
+3. Stop. The tool already wrote what is missing and what to send instead. Do not add a second explanation.
+
+After addHolding / importSheet: reply in 2–4 sentences confirming ticker, shares, USD cost — never go silent.
 
 FX for imports (USD per 1 unit): EURUSD=${ctx.eurUsd != null ? ctx.eurUsd.toFixed(4) : "unknown"} · GBPUSD=${ctx.gbpUsd != null ? ctx.gbpUsd.toFixed(4) : "unknown"}.`;
 

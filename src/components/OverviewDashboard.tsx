@@ -131,12 +131,14 @@ function EmptyBook({
           {
             key: "csv",
             label: "Upload a CSV",
+            hint: "Ticker, shares, buy price. Most brokers export one.",
             onClick: onImportCsv,
             primary: false,
           },
           {
             key: "screenshot",
             label: "Import a screenshot",
+            hint: "Your broker holdings page, with shares and cost. Not Apple Stocks or a watchlist.",
             onClick: onImportScreenshot,
             primary: false,
           },
@@ -237,6 +239,9 @@ function EmptyBook({
                   aria-hidden
                 />
               </p>
+              {"hint" in r && r.hint ? (
+                <p className="mt-1 text-sm text-muted">{r.hint}</p>
+              ) : null}
             </button>
           ))}
         </div>
