@@ -16,21 +16,27 @@ import { cashtag } from "@/lib/format";
 import type { NoteReport } from "@/lib/note-report";
 
 const JOB: Record<NoteReport["kind"], string> = {
-  morning: `This is the morning note. Look ahead, not back.
-What should this person watch today, what can they ignore, and is there one check worth sitting with or is the move to do nothing.
-Never write orders. No "do not add", "sell some", "look to add", "buy more". Frame as a check. Always their call.
-Do not recap yesterday's regular session. Overnight and today's calendar only.`,
-  close: `This is the after-close note. Recap the day for THIS portfolio.
-What actually happened, who did it, and whether the reason they own the loud name still holds.
-No new trade plan unless the day's facts changed the story. Never write orders. Frame as a check. Always their call.`,
-  sunday: `This is the Sunday note. Write a complete thought, not a pile of leftover lines.
+  morning: `This is the morning note. Look ahead, not back. Write like a partner Slack, we/us/our, three short paragraphs with a blank line between them.
 
-Part 1. A short story of the week for this portfolio. Two to four sentences that connect. What happened, which names did it, what that means from here. Read it out loud. If it sounds like three unrelated texts, rewrite it.
+Paragraph 1. What is doing the work this morning. Name the cashtag. Let the move play out. Buying more here is how people chase a run. Always their call.
+Paragraph 2. The rest can look fine and the mix still be the real issue. Name the percent once. Name the missing group in kitchen-table words. Do not paste the Worth noticing lines.
+Paragraph 3. We do not need a panic move before the open. Sit with the weight. Plan the mix when we are not in a rush.
+
+Never write orders. No "do not buy more", "no trades", "do not add", "sell some", "look to add". Overnight and today's calendar only. Do not recap yesterday's regular session.`,
+  close: `This is the after-close note. Recap the day for THIS portfolio in the same partner voice, we/us/our, three short paragraphs with a blank line between them.
+
+Paragraph 1. Who did the work today, and whether the reason we own the loud name still holds.
+Paragraph 2. The mix if it matters. Name the percent once.
+Paragraph 3. What we do not need to rush tonight.
+
+Never write orders. No new trade plan unless the day's facts changed the story.`,
+  sunday: `This is the Sunday note. Write a complete thought, not a pile of leftover lines. Partner voice: we, us, our.
+
+Part 1. A short story of the week for our portfolio. Two to four sentences that connect. What happened, which names did it, what that means from here. Read it out loud. If it sounds like three unrelated texts, rewrite it.
 
 Part 2. A blank line, then a bullet list. One bullet per name under Loud movers. Every one of them. Start each line with "- " then the cashtag, the week's move, and one short clause. If Loud movers is empty, skip the list.
 
-Do not copy the Worth noticing or next-weeks lines. Write your own story from the numbers. Say "your portfolio", never book or sheet.
-Never write orders. No "do not add", "sell some", "look to add". Frame as a check. Always their call.`,
+Do not copy the Worth noticing or next-weeks lines. Write your own story from the numbers. Never write orders.`,
 };
 
 /** Phrases that only show up when the model dumps the prompt instead of the note. */
@@ -68,6 +74,11 @@ const LEAK = [
   /restate these rules/i,
   /list words to avoid/i,
   /MARGUS_PERSONA/i,
+  /partner Slack/i,
+  /three short paragraphs/i,
+  /Paragraph 1\./i,
+  /Paragraph 2\./i,
+  /Paragraph 3\./i,
 ];
 
 export function looksLikePromptLeak(text: string): boolean {
@@ -82,8 +93,8 @@ function fallbackSunday(r: NoteReport): string {
   const worst = [...loud].sort((a, b) => a.pct - b.pct)[0];
   const week =
     r.todayPct != null
-      ? `Your portfolio was ${pct(r.todayPct)} this week, ${money(r.todayDollar)}.`
-      : `Your portfolio moved ${money(r.todayDollar)} this week.`;
+      ? `Our portfolio was ${pct(r.todayPct)} this week, ${money(r.todayDollar)}.`
+      : `Our portfolio moved ${money(r.todayDollar)} this week.`;
   const bits = [week];
   if (
     best &&
@@ -103,7 +114,7 @@ function fallbackSunday(r: NoteReport): string {
   const top = r.weights[0];
   if (top && top.weight >= 0.35) {
     bits.push(
-      `${cashtag(top.ticker)} is ${Math.round(Math.abs(top.weight) * 100)}% of your portfolio, so the next stretch mostly rides on it.`
+      `${cashtag(top.ticker)} is ${Math.round(Math.abs(top.weight) * 100)}% of our portfolio, so the next stretch mostly rides on it.`
     );
   }
   const story = bits.join(" ");
@@ -114,24 +125,54 @@ function fallbackSunday(r: NoteReport): string {
   return `${story}\n\n${bullets.join("\n")}`;
 }
 
+function weVoice(s: string): string {
+  return s
+    .replace(/\byour portfolio\b/gi, "our portfolio")
+    .replace(/\bthis portfolio\b/gi, "our portfolio")
+    .replace(/\byou barely\b/gi, "we barely")
+    .replace(/\byou hold\b/gi, "we hold")
+    .replace(/\bIf you did not mean\b/gi, "If we did not mean");
+}
+
+function fallbackWeekday(r: NoteReport): string {
+  const watch = r.watches[0];
+  const ticker = watch?.ticker ? cashtag(watch.ticker) : null;
+  let p1: string;
+  if (r.kind === "morning") {
+    if (ticker && watch?.line && /reports today/i.test(watch.line)) {
+      p1 = `${ticker} reports today. That's the thing to watch. Let the rest sit.`;
+    } else if (ticker) {
+      p1 = `${ticker} is the only name doing any real work for us this morning. Let the move play out. Buying more here is how people chase a run.`;
+    } else {
+      p1 = weVoice(r.lead);
+    }
+  } else if (r.thesis) {
+    const pulse = r.thesis.pulseLine
+      ? weVoice(r.thesis.pulseLine)
+      : "The reason we own it still looks like the same story.";
+    p1 = `${cashtag(r.thesis.ticker)} did the work today. ${pulse}`;
+  } else {
+    p1 = weVoice(r.lead);
+  }
+  const mix = r.insights[1] ?? r.insights[0];
+  const p2 = mix
+    ? `The rest of the portfolio looks fine right now, but the mix is the real issue. ${weVoice(mix)}`
+    : null;
+  const p3 =
+    r.kind === "morning"
+      ? "We don't need a panic move before the open. Sit with the weight. Plan the mix when we're not in a rush."
+      : "We don't need a panic move tonight. Sit with the weight. Plan the mix when we're not in a rush.";
+  return [p1, p2, p3].filter(Boolean).join("\n\n");
+}
+
 /** Deterministic stand-in when the model is down or dumps the prompt. */
 export function fallbackNoteTake(r: NoteReport): string {
   if (r.kind === "sunday") {
     return humanizeMargusText(fallbackSunday(r));
   }
-  const parts: string[] = [];
-  if (r.kind === "morning") {
-    if (r.watches[0]?.line) parts.push(r.watches[0].line);
-    if (r.insights[0] && r.insights[0] !== r.watches[0]?.line) {
-      parts.push(r.insights[0]);
-    }
-  } else {
-    if (r.thesis?.pulseLine) parts.push(r.thesis.pulseLine);
-    if (r.insights[0]) parts.push(r.insights[0]);
-  }
-  const text = humanizeMargusText(parts.filter(Boolean).join(" ").trim());
+  const text = humanizeMargusText(fallbackWeekday(r));
   if (text.length >= 20 && !looksLikePromptLeak(text)) return text;
-  return humanizeMargusText(r.lead);
+  return humanizeMargusText(weVoice(r.lead));
 }
 
 function money(n: number): string {
@@ -244,7 +285,7 @@ ${JOB[report.kind]}
 Write the finished note only. First word is the first word of the note.
 Do not restate these rules. Do not list words to avoid. Do not plan out loud.`,
           prompt: facts(report),
-          maxOutputTokens: report.kind === "sunday" ? 480 : 200,
+          maxOutputTokens: report.kind === "sunday" ? 560 : 420,
           abortSignal: signal,
         }),
       { deadlineAt: Date.now() + 22_000 }

@@ -182,7 +182,7 @@ For **each** ticker:
 8. **earningsNote**: if relevant; else empty string.
 9. **verdict**: one sentence tying **action + addLevel/trimPct** to why they own THIS name, as a check, never an order. Unique in this report. Name the company, the headline, or a concrete number. Never write do not add, sell some, look to add, or trim 10% as an instruction.
 
-**summary**: one short sentence on the portfolio as a whole. Name the 5% movers (up or down) and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with "the sharp drop".
+**summary**: one short sentence on our portfolio as a whole, we/us/our. Name the 5% movers (up or down) and whether any call left Hold. Do not recap one ticker's news. That belongs on the card. Do not start with "the sharp drop". Verdicts use the same partner voice. Never "the user" or "this person".
 
 If the owner didn't write why they own it, still pick action and thesisStatus from headlines and today's prices. Never ask them to write a note. Never say you are guessing. Never say "tape".
 

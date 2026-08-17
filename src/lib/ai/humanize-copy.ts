@@ -110,30 +110,39 @@ function scrubMarketJargon(text: string): string {
   s = s.replace(/\bbalance sheet\b/gi, "%%BALANCE_SHEET%%");
   s = s.replace(/\bspreadsheets\b/gi, "%%SPREADSHEETS%%");
   s = s.replace(/\bspreadsheet\b/gi, "%%SPREADSHEET%%");
-  s = s.replace(/\bthis book's\b/gi, "your portfolio's");
-  s = s.replace(/\bthe book's\b/gi, "your portfolio's");
-  s = s.replace(/\byour book\b/gi, "your portfolio");
-  s = s.replace(/\bof the book\b/gi, "of your portfolio");
-  s = s.replace(/\bon the book\b/gi, "on your portfolio");
-  s = s.replace(/\bin the book\b/gi, "in your portfolio");
-  s = s.replace(/\bacross the book\b/gi, "across your portfolio");
-  s = s.replace(/\bthe whole book\b/gi, "your whole portfolio");
-  s = s.replace(/\bthis book\b/gi, "your portfolio");
-  s = s.replace(/\bthe book\b/gi, "your portfolio");
+  s = s.replace(/\bthis book's\b/gi, "our portfolio's");
+  s = s.replace(/\bthe book's\b/gi, "our portfolio's");
+  s = s.replace(/\byour book\b/gi, "our portfolio");
+  s = s.replace(/\bof the book\b/gi, "of our portfolio");
+  s = s.replace(/\bon the book\b/gi, "on our portfolio");
+  s = s.replace(/\bin the book\b/gi, "in our portfolio");
+  s = s.replace(/\bacross the book\b/gi, "across our portfolio");
+  s = s.replace(/\bthe whole book\b/gi, "our whole portfolio");
+  s = s.replace(/\bthis book\b/gi, "our portfolio");
+  s = s.replace(/\bthe book\b/gi, "our portfolio");
   s = s.replace(/\ba book\b/gi, "a portfolio");
   s = s.replace(/\bbooks\b/gi, "portfolios");
   s = s.replace(/\bbook\b/gi, "portfolio");
-  s = s.replace(/\bthis sheet's\b/gi, "your portfolio's");
-  s = s.replace(/\bthe sheet's\b/gi, "your portfolio's");
-  s = s.replace(/\bof the sheet\b/gi, "of your portfolio");
-  s = s.replace(/\bon the sheet\b/gi, "on your portfolio");
-  s = s.replace(/\bin the sheet\b/gi, "in your portfolio");
-  s = s.replace(/\bthe whole sheet\b/gi, "your whole portfolio");
-  s = s.replace(/\bthis sheet\b/gi, "your portfolio");
-  s = s.replace(/\bthe sheet\b/gi, "your portfolio");
+  s = s.replace(/\bthis sheet's\b/gi, "our portfolio's");
+  s = s.replace(/\bthe sheet's\b/gi, "our portfolio's");
+  s = s.replace(/\bof the sheet\b/gi, "of our portfolio");
+  s = s.replace(/\bon the sheet\b/gi, "on our portfolio");
+  s = s.replace(/\bin the sheet\b/gi, "in our portfolio");
+  s = s.replace(/\bthe whole sheet\b/gi, "our whole portfolio");
+  s = s.replace(/\bthis sheet\b/gi, "our portfolio");
+  s = s.replace(/\bthe sheet\b/gi, "our portfolio");
   s = s.replace(/\ba sheet\b/gi, "a portfolio");
   s = s.replace(/\bsheets\b/gi, "portfolios");
   s = s.replace(/\bsheet\b/gi, "portfolio");
+  s = s.replace(/\byour portfolio's\b/gi, "our portfolio's");
+  s = s.replace(/\byour whole portfolio\b/gi, "our whole portfolio");
+  s = s.replace(/\byour portfolio\b/gi, "our portfolio");
+  s = s.replace(/\bthis portfolio\b/gi, "our portfolio");
+  s = s.replace(/\bbefore the bell\b/gi, "before the open");
+  s = s.replace(/\boverexposed\b/gi, "heavy in one group");
+  s = s.replace(/\bwe aren't hedged\b/gi, "that one group is the whole portfolio");
+  s = s.replace(/\baren't hedged\b/gi, "are all in that one group");
+  s = s.replace(/\bhedged\b/gi, "protected");
   s = s.replace(/%%BALANCE_SHEETS%%/g, "balance sheets");
   s = s.replace(/%%BALANCE_SHEET%%/g, "balance sheet");
   s = s.replace(/%%SPREADSHEETS%%/g, "spreadsheets");
@@ -189,6 +198,18 @@ function scrubTradeOrders(text: string): string {
     "One check: selling about $1%"
   );
   s = s.replace(/\bAdd now\s*~?\s*/gi, "A level to think about: around ");
+  s = s.replace(
+    /\bdo not buy more(?: here)?(?: or chase it)?\.?/gi,
+    "Buying more here is how people chase a run."
+  );
+  s = s.replace(
+    /\bdon'?t buy more(?: here)?(?: or chase it)?\.?/gi,
+    "Buying more here is how people chase a run."
+  );
+  s = s.replace(
+    /\bno trades before the (?:open|bell)(?: today)?\.?/gi,
+    "Nothing we need to do before the open."
+  );
   s = s.replace(/\bYou should not add\b/gi, "Adding is how a broken story gets bigger");
   s = s.replace(/\bYou should sell\b/gi, "Selling is one check");
   s = s.replace(/\bYou should buy\b/gi, "Buying is one check");

@@ -829,7 +829,7 @@ run("fund report headlines number with digits, not spelled-out days", () => {
   );
   assert.equal(
     numberedReportHeadline("Quiet week, held the book", "Week", 1),
-    "Week 1: Quiet week, held your portfolio"
+    "Week 1: Quiet week, held our portfolio"
   );
 });
 
@@ -1066,11 +1066,11 @@ run("humanize kills leftover market slang", () => {
   );
   assert.equal(
     humanizeMargusText("$NBIS is 35% of the book."),
-    "$NBIS is 35% of your portfolio."
+    "$NBIS is 35% of our portfolio."
   );
   assert.equal(
     humanizeMargusText("Most of this sheet is chip makers."),
-    "Most of your portfolio is chip makers."
+    "Most of our portfolio is chip makers."
   );
   assert.equal(
     humanizeMargusText("Paste from a spreadsheet."),
@@ -1092,6 +1092,14 @@ run("humanize kills leftover market slang", () => {
   assert.match(
     humanizeMargusText("Add now ~$80"),
     /A level to think about: around \$80/
+  );
+  assert.match(
+    humanizeMargusText("Let the move play out, but do not buy more here or chase it."),
+    /Buying more here is how people chase a run/i
+  );
+  assert.doesNotMatch(
+    humanizeMargusText("No trades before the open today."),
+    /no trades/i
   );
 });
 
@@ -1133,7 +1141,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.equal(looksLikePromptLeak(fallback), false);
   assert.ok(fallback.length >= 20);
   assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
-  assert.match(fallback, /your portfolio/i);
+  assert.match(fallback, /our portfolio/i);
   assert.match(fallback, /\n- \$NBIS /);
   assert.doesNotMatch(fallback, /not the same bet|Thesis intact|of the book/i);
   assert.doesNotMatch(report.lead, /this week/);
@@ -1183,7 +1191,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /Open your portfolio/);
   const notes = readFileSync("src/lib/note-margus.ts", "utf8");
   assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
-  assert.match(notes, /maxOutputTokens: report\.kind === "sunday" \? 480/);
+  assert.match(notes, /maxOutputTokens: report\.kind === "sunday" \? 560/);
   assert.equal(
     looksLikePromptLeak(
       "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
@@ -4181,8 +4189,10 @@ run("Margus never writes trade orders to a person", () => {
   assert.doesNotMatch(notes, /If it runs, sell some/);
   assert.doesNotMatch(insights, /Own it on purpose or cut it/);
   assert.match(persona, /Never write trade orders/);
+  assert.match(persona, /Say we, us, our/);
   assert.match(humanize, /function scrubTradeOrders/);
   assert.match(chat, /Never write orders/);
+  assert.match(chat, /Same voice as the inbox note/);
   assert.match(forecastUi, /Modeled checks for this stretch/);
 });
 
