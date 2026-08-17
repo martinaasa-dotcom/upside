@@ -150,7 +150,7 @@ export function MacroStrip() {
       <span className="text-muted-foreground">{i.label}</span>{" "}
       <span
         className={cn(
-          "text-muted-foreground",
+          "font-mono tabular-nums text-foreground",
           i.tone === "fear" && "text-primary",
           i.tone === "greed" && "text-caution"
         )}
@@ -161,7 +161,7 @@ export function MacroStrip() {
   ));
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-3">
       <div className="flex min-w-0 items-center justify-start gap-2 sm:justify-end">
         <Button
           type="button"
@@ -174,14 +174,14 @@ export function MacroStrip() {
         </Button>
         {open && (
           <div className="relative hidden min-w-0 flex-1 overflow-hidden sm:block">
-            <div className="flex items-center justify-end gap-3 tabular-nums">
+            <div className="ml-auto flex w-fit items-center gap-3 rounded-md border border-border bg-muted/50 px-3 py-1 font-mono text-xs tabular-nums">
               {itemNodes}
             </div>
           </div>
         )}
       </div>
       {open && (
-        <div className="grid grid-cols-3 gap-x-2 gap-y-1 pb-1.5 tabular-nums sm:hidden">
+        <div className="grid grid-cols-3 gap-x-2 gap-y-1 rounded-md border border-border bg-muted/50 px-3 py-1 pb-1.5 font-mono tabular-nums sm:hidden">
           {itemNodes}
         </div>
       )}

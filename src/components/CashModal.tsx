@@ -60,7 +60,7 @@ export function CashModal({
     <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/10 backdrop-blur-xs"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         aria-label="Close"
         onClick={onClose}
       />

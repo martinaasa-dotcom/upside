@@ -1,7 +1,6 @@
 "use client";
 
 import { AppHeader } from "@/components/AppHeader";
-import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
@@ -1588,7 +1587,6 @@ export function UpsidePortfolioPage() {
           </>
         )}
       </main>
-      <BookBottomNav />
     </div>
   );
 }

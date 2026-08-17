@@ -74,6 +74,7 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 type CurrencyCode = DisplayCurrency;
@@ -266,7 +267,7 @@ function ComparePathsChart({
   const lastIdx = Math.max(1, ...paths.map((p) => p.series.length - 1));
   const max = Math.max(1, ...paths.flatMap((p) => p.series));
   const w = 640;
-  const h = 240;
+  const h = 360;
   const padL = 8;
   const padR = 12;
   const padT = 16;
@@ -324,7 +325,7 @@ function ComparePathsChart({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${w} ${h}`}
-          className="h-auto w-full min-w-0 flex-1 touch-pan-y"
+          className="h-[350px] w-full min-w-0 flex-1 touch-pan-y"
           role="img"
           aria-label={`Same money four ways: ${labels}`}
           onMouseMove={(e) => updateHoverFromClientX(e.clientX)}
@@ -1156,7 +1157,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                         ref={isFirstPending ? firstPendingRowRef : undefined}
                         className={cn(
                           "border-b border-border transition hover:bg-accent/30",
-                          done && "bg-gain/[0.06]"
+                          isFirstPending && "bg-primary/[0.06]"
                         )}
                       >
                         <td className={htmlCell}>
@@ -1182,9 +1183,12 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                         </td>
                         <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
                           {row.hit ? (
-                            <span className="font-semibold text-gain">
+                            <Badge
+                              variant="secondary"
+                              className="bg-gain/10 text-gain"
+                            >
                               Already past it
-                            </span>
+                            </Badge>
                           ) : row.targetDate ? (
                             formatMilestoneDate(row.targetDate)
                           ) : (

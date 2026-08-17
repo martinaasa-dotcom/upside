@@ -54,7 +54,7 @@ import {
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
- *   Shell      black field, lifted cards. Primary is near-white. Nested is muted.
+ *   Shell      black field, lifted cards. Primary is Gold Delta. Nested is muted.
  *              Green is an up number, not a wash.
  *   Stack      field is bg-background. A box on the field is bg-card.
  *              Floating menus are bg-popover, never muted (muted is hover).
@@ -76,7 +76,7 @@ import {
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-4xl. The logo lockup is the exception.
  *   Headings   text-lg font-semibold tracking-tight (hero: text-2xl) · sentence case
- *   Type       Geist for titles, body, labels, and money. Lockup too.
+ *   Type       Geist for titles, body, and labels. Geist Mono for money.
  *   Micro      text-sm font-medium text-muted-foreground · sentence case
  *              Caps stay on the logo only. Micro sits above a figure,
  *              never above a paragraph.
@@ -148,9 +148,9 @@ const SHELL_TONES = {
 } as const;
 
 const FIGURE =
-  "mt-2 font-sans text-2xl font-semibold tabular-nums";
+  "mt-2 font-mono text-2xl font-bold tabular-nums";
 const DISPLAY =
-  "mt-2 min-w-0 font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums whitespace-nowrap";
+  "mt-2 min-w-0 font-mono text-2xl font-bold leading-none tracking-tight tabular-nums whitespace-nowrap";
 /** Status word on a reading tile. Not the 24px figure style. */
 const STATUS =
   "mt-1.5 min-w-0 font-heading text-lg font-semibold tracking-tight";
@@ -692,16 +692,20 @@ export function SwatchLegend({
   className?: string;
 }) {
   return (
-    <ul className={cn("flex flex-wrap gap-x-5 gap-y-2", className)}>
+    <ul className={cn("mt-3 flex flex-wrap items-center gap-4", className)}>
       {items.map((item) => (
-        <li key={item.key} className="flex items-center gap-1.5 text-sm">
-          <span
-            className="size-2 shrink-0 rounded-[2px]"
-            style={{ backgroundColor: item.color }}
-            aria-hidden
-          />
-          <span className="text-muted-foreground">{item.label}</span>
-          <span className="tabular-nums text-foreground">{item.value}</span>
+        <li key={item.key}>
+          <Badge variant="outline" className="gap-2 font-normal">
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: item.color }}
+              aria-hidden
+            />
+            <span className="text-muted-foreground">{item.label}</span>
+            <span className="font-mono text-xs tabular-nums text-foreground">
+              {item.value}
+            </span>
+          </Badge>
         </li>
       ))}
     </ul>
@@ -725,7 +729,7 @@ export function Scoreboard({
   return (
     <div
       className={cn(
-        "grid gap-6",
+        "grid gap-4",
         HAIRLINE_TRACKS,
         className
       )}
@@ -1002,7 +1006,7 @@ export function EmptyState({
   return (
     <Empty
       className={cn(
-        "flex-none border border-dashed border-border bg-muted px-4 py-10",
+        "flex-none border border-dashed border-border bg-card px-8 py-8",
         className
       )}
     >

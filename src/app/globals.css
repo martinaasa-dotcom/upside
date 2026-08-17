@@ -15,18 +15,20 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Gold Delta. Buttons, focus rings, and the main chart stroke. */
+  --primary: oklch(0.762 0.102 80);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+  --accent-amber: oklch(0.762 0.102 80);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 16%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.762 0.102 80);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -35,12 +37,12 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.985 0 0);
-  --sidebar-primary-foreground: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.762 0.102 80);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 16%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.762 0.102 80);
   --warning: oklch(0.769 0.188 70.08);
   --gain: oklch(0.696 0.17 162.48);
   --loss: oklch(0.645 0.246 16.439);
@@ -116,6 +118,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-accent-amber: var(--accent-amber);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-destructive: var(--destructive);

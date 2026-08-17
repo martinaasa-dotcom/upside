@@ -17,11 +17,12 @@ export function useDockPad(ref: RefObject<HTMLElement | null>) {
       const height = el.getBoundingClientRect().height;
       if (height < 16) return;
       const pad = `${Math.ceil(height + 32)}px`;
-      const frame = el.closest(".page-frame");
-      if (frame instanceof HTMLElement) {
-        frame.style.setProperty("--dock-pad", pad);
-      }
       document.documentElement.style.setProperty("--dock-pad", pad);
+      document.querySelectorAll(".page-frame").forEach((frame) => {
+        if (frame instanceof HTMLElement) {
+          frame.style.setProperty("--dock-pad", pad);
+        }
+      });
     };
 
     apply();

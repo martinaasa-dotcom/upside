@@ -40,6 +40,7 @@ import {
   planEoyPaths,
   saveForecastPlan,
   shouldAutoRefreshForecast,
+  isFallbackForecastPlan,
   forecastHoldingsKey,
   bookConvictionKey,
   cachedEoyPathsFor,
@@ -415,7 +416,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="none"
-            className="h-44 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/50 sm:h-48"
+            className="h-56 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/50 sm:h-72"
             role="slider"
             tabIndex={0}
             aria-label="Drag across to read a year. Modeled portfolio value through the last forecast year."
@@ -598,7 +599,7 @@ export const ForecastPanel = memo(function ForecastPanel({
   const planRef = useRef<ForecastPlan | null>(null);
   const [retryTick, setRetryTick] = useState(0);
   planRef.current = plan;
-  const MAX_AUTO_TRIES = 3;
+  const MAX_AUTO_TRIES = 6;
   useEffect(() => {
     return () => {
       askAbortRef.current?.abort();
@@ -693,6 +694,20 @@ export const ForecastPanel = memo(function ForecastPanel({
       if (askGenRef.current !== gen || ctrl.signal.aborted) return "abort";
       if (!data.plan) {
         throw new Error("Couldn't build a forecast. Try again.");
+      }
+      if (data.fallback || isFallbackForecastPlan(data.plan)) {
+        const shaped = calibratedPaths(
+          { ...data.plan, fallback: true, stance: DEFAULT_FORECAST_STANCE },
+          model
+        );
+        if (shaped.paths.length > 0) onApplyMargusPaths(shaped.paths);
+        pendingModelRef.current = true;
+        if (!opts?.silent) {
+          setError(
+            "Margus couldn't finish this run. Starting prices are on the grid. Tap Ask Margus to try again."
+          );
+        }
+        return "fail";
       }
       const convictionKey = bookConvictionKey(
         model.rows.map((r) => r.ticker),
@@ -828,7 +843,7 @@ export const ForecastPanel = memo(function ForecastPanel({
       retryCountRef.current += 1;
       if (retryCountRef.current >= MAX_AUTO_TRIES) {
         setError(
-          "Couldn't reach Margus. Starting prices are on your portfolio. Ask again when you want him to try."
+          "Couldn't reach Margus after several tries. Starting prices are on your portfolio. Tap Ask Margus when you want him to try again."
         );
         return;
       }
@@ -1179,8 +1194,18 @@ export const ForecastPanel = memo(function ForecastPanel({
         {!plan && !busy && !error && (
           <EmptyState
             className="mt-3"
-            title="Margus hasn't weighed in yet"
-            detail="He works out a price path for every holding on his own. Nothing for you to do."
+            title="Margus is still working on this one"
+            detail="Starting prices may already be on the grid above. He writes the why here as soon as a run lands."
+            action={
+              <Button
+                type="button"
+                disabled={busy || model.rows.length === 0}
+                onClick={() => void askMargus()}
+              >
+                <Sparkles data-icon="inline-start" aria-hidden />
+                Ask Margus
+              </Button>
+            }
           />
         )}
 
@@ -1190,7 +1215,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             Working through every holding in this portfolio …
           </div>
         )}
-        {plan && (
+        {plan && !isFallbackForecastPlan(plan) && (
           <div className="flex flex-col mt-4 gap-4">
             {(plan.generalAdvice || plan.sectorRotation) && (
               <Reading nested>

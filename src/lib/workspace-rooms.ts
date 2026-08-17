@@ -20,6 +20,10 @@ export function takeGoHomeRequest(): boolean {
   return hit;
 }
 
+/** Fixed slot for the book dock. PortfolioTabs portals here so Circle
+ * (and every other room) keeps the same bottom chrome, including sheets. */
+export const WORKSPACE_DOCK_SLOT_ID = "workspace-dock";
+
 const LAST_CIRCLE_KEY = "upside-last-circle-id";
 const LAST_CIRCLE_EVENT = "upside:last-circle";
 

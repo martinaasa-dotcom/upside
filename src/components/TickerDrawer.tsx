@@ -153,7 +153,7 @@ export function TickerDrawer({
     <ViewportOverlay className="z-[80] flex justify-end">
       <button
         type="button"
-        className="absolute inset-0 bg-black/10 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
         aria-label="Close drawer"
         onClick={onClose}
       />

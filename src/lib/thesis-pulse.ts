@@ -338,6 +338,7 @@ export function savePulseTickerCache(
   entry: PulseTickerCacheEntry
 ) {
   if (typeof window === "undefined") return;
+  if (isEmptyPulseCheck(entry.check)) return;
   try {
     localStorage.setItem(
       pulseTickerCacheKey(ticker),
@@ -397,10 +398,30 @@ export function isPulseCacheFresh(
  * or a name that moved 5% or more (up or down) whose last check is stale.
  * Quiet names keep the last read until the person hits Check again.
  */
+/** True when a cached Pulse row has no readable Margus body (bad save or
+ * partial provider response). Those must not block auto-refresh or chat. */
+export function isEmptyPulseCheck(check: PulseCheck | null | undefined): boolean {
+  if (!check) return true;
+  const situation = normalizePulseSituation(check.situation);
+  const verdict = check.verdict?.trim() ?? "";
+  const moveReason = check.moveReason?.trim() ?? "";
+  const thesisBreak = check.thesisBreak?.trim() ?? "";
+  const earningsNote = check.earningsNote?.trim() ?? "";
+  return (
+    situation.length === 0 &&
+    !verdict &&
+    !moveReason &&
+    !thesisBreak &&
+    !earningsNote
+  );
+}
+
 export function shouldAutoPulseTicker(input: {
   needsAttention: boolean;
   cachedAt?: string;
+  check?: PulseCheck | null;
 }): boolean {
+  if (isEmptyPulseCheck(input.check)) return true;
   if (!input.cachedAt) return true;
   if (!input.needsAttention) return false;
   return !isPulseCacheFresh({ cachedAt: input.cachedAt });

@@ -20,6 +20,7 @@ import {
   type HoldingPatch,
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
+import { hrefForDockTarget, stashDockTab } from "@/components/BookModeDock";
 import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
@@ -38,7 +39,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
 import { useToast } from "@/components/ui/Toast";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   buildDecisionAlerts,
   buildEarningsAlerts,
@@ -61,7 +62,8 @@ import {
   saveDismissedAlertIds,
 } from "@/lib/alert-dismiss";
 import { setConviction } from "@/lib/conviction";
-import { PULSE_REFRESH_MS, effectiveMove } from "@/lib/thesis-pulse";
+import { PULSE_REFRESH_MS, effectiveMove, isEmptyPulseCheck, loadPulseTickerCache, type PulseCheck } from "@/lib/thesis-pulse";
+import { loadForecastPlan } from "@/lib/forecast-plan";
 import {
   milestoneToast,
   recordVisitToday,
@@ -123,6 +125,7 @@ import {
   WORKSPACE_SHOW_EVENT,
   isWorkspaceRoomActive,
   takeGoHomeRequest,
+  workspaceRoomId,
 } from "@/lib/workspace-rooms";
 import {
   COMPOUND_TAB_ID,
@@ -344,6 +347,8 @@ export function Dashboard() {
   const { openManual } = useFeedback();
   const later = useTimeout();
   const router = useRouter();
+  const pathname = usePathname();
+  const onBook = workspaceRoomId(pathname) === "book";
   // Picked once per mount, not per render, so it doesn't shuffle mid-load.
   const [loadingMessage] = useState(pickLoadingMessage);
   const [source, setSource] = useState<DataSource>(
@@ -868,6 +873,58 @@ export function Dashboard() {
       eoyOverrides
     );
   }, [activePortfolio, portfolioHoldings, quotes, eoyOverrides]);
+
+  const margusSheetTickersKey = useMemo(() => {
+    if (!isMetaTab && activePortfolio && snapshot) {
+      return snapshot.holdings
+        .map((h) => h.ticker.toUpperCase())
+        .sort()
+        .join("|");
+    }
+    return overview.tickers
+      .map((t) => t.ticker.toUpperCase())
+      .sort()
+      .join("|");
+  }, [isMetaTab, activePortfolio, snapshot, overview.tickers]);
+
+  const margusPulseByTicker = useMemo(() => {
+    const out: Record<string, PulseCheck> = {};
+    for (const t of margusSheetTickersKey.split("|").filter(Boolean)) {
+      const cached = loadPulseTickerCache(t);
+      if (cached?.check && !isEmptyPulseCheck(cached.check)) {
+        out[t] = cached.check;
+      }
+    }
+    return out;
+  }, [margusSheetTickersKey]);
+
+  const margusForecastPlan = useMemo(() => {
+    if (isMetaTab || !activePortfolio) return null;
+    return loadForecastPlan(activePortfolio.id);
+    // id is the cache key; the portfolio object is a new reference every paint
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMetaTab, activePortfolio?.id]);
+
+  const margusConvictionsForChat = useMemo(() => {
+    const out: Record<
+      string,
+      {
+        level?: number;
+        thesis?: string;
+        stamps?: Array<{ at?: string; line?: string; verdict?: string }>;
+      }
+    > = {};
+    for (const t of margusSheetTickersKey.split("|").filter(Boolean)) {
+      const entry = convictionMap[t];
+      if (!entry) continue;
+      out[t] = {
+        level: entry.level,
+        thesis: entry.thesis,
+        stamps: entry.stamps,
+      };
+    }
+    return out;
+  }, [margusSheetTickersKey, convictionMap]);
 
   function commitEoyPrice(
     ticker: string,
@@ -3307,12 +3364,46 @@ export function Dashboard() {
 
   const missingQuoteTickers = missingTickers;
 
+  function selectDockTarget(id: string) {
+    setActiveId(id);
+    if (onBook) return;
+    stashDockTab(id);
+    router.push(hrefForDockTarget(id, portfolios));
+  }
+
+  const dock = (
+    <PortfolioTabs
+      className="hidden md:block"
+      portfolios={portfolios}
+      activeId={onBook ? activeId : null}
+      onChange={selectDockTarget}
+      onAdd={handleAddSheet}
+      sheetTodayTone={sheetTodayTone}
+      hiddenModeIds={hiddenMetaTabIds}
+      hideAdd={!onBook}
+      onRenameRequest={
+        onBook ? (id, name) => setRenameTarget({ id, name }) : undefined
+      }
+      onDeleteRequest={
+        onBook
+          ? (id, name) => setConfirmDelete({ kind: "sheet", id, label: name })
+          : undefined
+      }
+    />
+  );
+
   if (loading) {
-    return <DashboardLoading message={loadingMessage} />;
+    return (
+      <>
+        <DashboardLoading message={loadingMessage} />
+        {dock}
+      </>
+    );
   }
 
   if (!isMetaTab && (!activePortfolio || !snapshot)) {
     return (
+      <>
       <div className={PAGE_FRAME_CLASS}>
         <MobileTopBar
           title="Overview"
@@ -3326,6 +3417,8 @@ export function Dashboard() {
         />
         <MobileTabBar active="home" hiddenModeIds={hiddenMetaTabIds} />
       </div>
+      {dock}
+      </>
     );
   }
 
@@ -3347,6 +3440,7 @@ export function Dashboard() {
       : "";
 
   return (
+    <>
     <div className={PAGE_FRAME_CLASS}>
       <StaleQuotesBanner
         delayed={quotesDelayed}
@@ -3598,19 +3692,7 @@ export function Dashboard() {
         )}
       </main>
 
-      <PortfolioTabs
-        className="hidden md:block"
-        portfolios={portfolios}
-        activeId={activeId}
-        onChange={setActiveId}
-        onAdd={handleAddSheet}
-        sheetTodayTone={sheetTodayTone}
-        hiddenModeIds={hiddenMetaTabIds}
-        onRenameRequest={(id, name) => setRenameTarget({ id, name })}
-        onDeleteRequest={(id, name) =>
-          setConfirmDelete({ kind: "sheet", id, label: name })
-        }
-      />
+      {dock}
       <MobileTabBar
         active={mobileTab}
         alertCount={activeAlerts.length}
@@ -3882,6 +3964,9 @@ export function Dashboard() {
                 eurUsd,
                 gbpUsd,
                 watchlist: loadWatchlist(),
+                convictions: margusConvictionsForChat,
+                pulseByTicker: margusPulseByTicker,
+                forecastPlan: margusForecastPlan,
                 holdings: snapshot.holdings.map((h) => ({
                   ticker: h.ticker,
                   shares: h.shares,
@@ -3950,6 +4035,9 @@ export function Dashboard() {
                 eurUsd,
                 gbpUsd,
                 watchlist: loadWatchlist(),
+                convictions: margusConvictionsForChat,
+                pulseByTicker: margusPulseByTicker,
+                forecastPlan: null,
                 holdings: overview.tickers.map((t) => ({
                   ticker: t.ticker,
                   shares: t.shares,
@@ -3997,5 +4085,6 @@ export function Dashboard() {
       />
       </WidgetErrorBoundary>
     </div>
+    </>
   );
 }

@@ -73,7 +73,15 @@ export type ForecastPlan = z.infer<typeof forecastPlanSchema> & {
   holdingsKey?: string;
   /** Per-ticker conviction/thesis fingerprint when the plan was generated */
   convictionKey?: string;
+  /** Generic theme-shaped prices when Margus never finished a run. */
+  fallback?: boolean;
 };
+
+export function isFallbackForecastPlan(
+  plan: ForecastPlan | null | undefined
+): boolean {
+  return Boolean(plan?.fallback);
+}
 
 export type StoredForecastPlans = Record<string, ForecastPlan>;
 
@@ -250,6 +258,9 @@ export function shouldAutoRefreshForecast(input: {
 }): ForecastAutoRefresh {
   const tickers = input.tickers.map((t) => t.toUpperCase());
   if (tickers.length === 0) return { run: false, reason: "empty" };
+  if (input.plan && isFallbackForecastPlan(input.plan)) {
+    return { run: true, reason: "first-run" };
+  }
   if (input.fullyCovered) return { run: false, reason: "ok" };
 
   const cached = new Set(
@@ -273,6 +284,7 @@ export function loadForecastPlan(portfolioId: string): ForecastPlan | null {
     const parsed = JSON.parse(raw) as StoredForecastPlans;
     const plan = parsed?.[portfolioId];
     if (!plan?.periods?.length) return null;
+    if (plan.fallback) return null;
     return humanizeMargusTree({
       ...plan,
       stance: plan.stance ?? "base",
@@ -461,9 +473,9 @@ export function buildFallbackForecastPlan(input: {
   const eoyTargets = ensureCompleteEoyTargets(input.forecast, []);
   return humanizeMargusTree({
     generalAdvice:
-      "These prices are a starting shape from how each kind of company has tended to move, not a finished take. Ask Margus again when you want him to reason through the names.",
+      "Starting prices are on the grid from how each kind of company has tended to move. Margus still needs to write the why.",
     sectorRotation:
-      "Different groups of similar stocks will take turns leading. This first pass does not pick which group wins the next stretch.",
+      "Different groups of similar stocks will take turns leading. The finished writeup picks which group matters for this book.",
     periods: [
       {
         label: `Next quarter (Q${nextQuarter.q} ${nextQuarter.y})`,
@@ -483,6 +495,7 @@ export function buildFallbackForecastPlan(input: {
     portfolioId: input.portfolioId,
     portfolioName: input.portfolioName,
     stance: DEFAULT_FORECAST_STANCE,
+    fallback: true,
   });
 }
 

@@ -7,6 +7,7 @@ import {
 import { ExperienceOnboardingGate } from "@/components/ExperienceOnboardingGate";
 import {
   WORKSPACE_SHOW_EVENT,
+  WORKSPACE_DOCK_SLOT_ID,
   setActiveWorkspaceRoom,
   workspaceRoomId,
 } from "@/lib/workspace-rooms";
@@ -86,6 +87,9 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
 
   if (room) {
     mountedRef.current.add(room);
+    // Keep the book (and its dock) mounted so Circle does not swap the
+    // bottom chrome. Hidden rooms stay inert; the dock portals out.
+    mountedRef.current.add("book");
     pruneCommunityRooms(mountedRef.current, room);
   }
 
@@ -169,6 +173,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           <AdminPage />
         </Room>
       )}
+      <div id={WORKSPACE_DOCK_SLOT_ID} />
       <ExperienceOnboardingGate />
     </>
   );

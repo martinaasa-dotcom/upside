@@ -65,6 +65,7 @@ import {
   savePulseTickerCache,
   statusLabel,
   actionLabel,
+  isEmptyPulseCheck,
   normalizePulseSituation,
   verdictRepeatsSuggestion,
   type PulseAction,
@@ -167,11 +168,12 @@ function pulseCardChrome({
   needsLook: boolean;
   downDay: boolean;
   status: ThesisStatus | null;
-}): string | undefined {
-  if (pinned) return "bg-accent ring-ring/30";
-  if (!needsLook) return undefined;
-  if (downDay || status === "broken") return "ring-destructive/40";
-  return "ring-warning/40";
+}): string {
+  const base = "bg-card border-border";
+  if (pinned) return cn(base, "border-l-4 border-primary");
+  if (!needsLook) return base;
+  if (downDay || status === "broken") return cn(base, "border-l-4 border-destructive");
+  return cn(base, "border-l-4 border-warning");
 }
 
 function PulseCard({
@@ -205,7 +207,8 @@ function PulseCard({
   // an already-cached "broken" + "hold" contradiction from before this
   // guardrail existed, or from a stale server/localStorage entry, clears
   // immediately instead of waiting out the cache window.
-  const shown = check ? reconcilePulseCheck(check) : null;
+  const shown =
+    check && !isEmptyPulseCheck(check) ? reconcilePulseCheck(check) : null;
   const status = shown?.thesisStatus ?? "intact";
   const action = shown?.action ?? "hold";
   const writtenThesis = thesisDisplayBullets(convictionThesis);
@@ -220,6 +223,7 @@ function PulseCard({
     Boolean(extraVerdict) ||
     Boolean(shown?.earningsNote) ||
     Boolean(shown?.thesisBreak);
+  const needsMargusRun = !loading && !shown;
 
   return (
     <li id={`pulse-card-${c.ticker}`} className="scroll-mt-28">
@@ -317,25 +321,36 @@ function PulseCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
       {c.inBook ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Metric label="Price" hint={currency(c.currentValue)}>
+        <div className="grid grid-cols-2 gap-3 rounded-md border border-border/50 bg-muted/40 p-3 sm:grid-cols-4">
+          <Metric
+            label="Price"
+            hint={currency(c.currentValue)}
+            valueClassName="mt-1 font-mono text-sm font-semibold"
+          >
             {currency(c.price)}
           </Metric>
           <Metric
             label="Today"
-            valueClassName={signedTone(c.todayDollar, "text-foreground")}
+            valueClassName={cn(
+              "mt-1 font-mono text-sm font-semibold",
+              signedTone(c.todayDollar, "text-foreground")
+            )}
           >
             {signedCurrency(c.todayDollar)}
           </Metric>
           <Metric
             label="Lifetime"
-            valueClassName={signedTone(c.roiPct, "text-foreground")}
+            valueClassName={cn(
+              "mt-1 font-mono text-sm font-semibold",
+              signedTone(c.roiPct, "text-foreground")
+            )}
           >
             {percent(c.roiPct)}
           </Metric>
           <Metric
             label="Portfolio"
             hint={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
+            valueClassName="mt-1 font-mono text-sm font-semibold"
           >
             {percent(c.bookPct)}
           </Metric>
@@ -373,6 +388,24 @@ function PulseCard({
               Breaks if {shown.thesisBreak}
             </p>
           ) : null}
+        </div>
+      ) : null}
+
+      {needsMargusRun && onRefresh ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-muted px-4 py-4">
+          <p className="text-sm text-muted-foreground">
+            Margus has not finished a read on this one yet.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            className="w-fit touch-target lg:min-h-0"
+          >
+            <RefreshCw data-icon="inline-start" />
+            Check again
+          </Button>
         </div>
       ) : null}
 
@@ -522,7 +555,9 @@ export const PulsePage = memo(function PulsePage({
     const out: Record<string, PulseCheck> = {};
     for (const c of candidates) {
       const cached = loadPulseTickerCache(c.ticker);
-      if (cached) out[c.ticker.toUpperCase()] = cached.check;
+      if (cached && !isEmptyPulseCheck(cached.check)) {
+        out[c.ticker.toUpperCase()] = cached.check;
+      }
     }
     return out;
   });
@@ -532,7 +567,9 @@ export const PulsePage = memo(function PulsePage({
     const out: Record<string, PulseHeadline[]> = {};
     for (const c of candidates) {
       const cached = loadPulseTickerCache(c.ticker);
-      if (cached) out[c.ticker.toUpperCase()] = cached.headlines;
+      if (cached && !isEmptyPulseCheck(cached.check)) {
+        out[c.ticker.toUpperCase()] = cached.headlines;
+      }
     }
     return out;
   });
@@ -542,7 +579,9 @@ export const PulsePage = memo(function PulsePage({
     const out: Record<string, string> = {};
     for (const c of candidates) {
       const cached = loadPulseTickerCache(c.ticker);
-      if (cached) out[c.ticker.toUpperCase()] = cached.cachedAt;
+      if (cached && !isEmptyPulseCheck(cached.check)) {
+        out[c.ticker.toUpperCase()] = cached.cachedAt;
+      }
     }
     return out;
   });
@@ -563,11 +602,13 @@ export const PulsePage = memo(function PulsePage({
   // wouldn't.
   const checkedAtByTickerRef = useRef(checkedAtByTicker);
   checkedAtByTickerRef.current = checkedAtByTicker;
+  const checksByTickerRef = useRef(checksByTicker);
+  checksByTickerRef.current = checksByTicker;
 
   const hydrateTicker = useCallback((ticker: string) => {
     const key = ticker.trim().toUpperCase();
     const cached = loadPulseTickerCache(key);
-    if (!cached) return;
+    if (!cached || isEmptyPulseCheck(cached.check)) return;
     setChecksByTicker((prev) =>
       prev[key] ? prev : { ...prev, [key]: reconcilePulseCheck(cached.check) }
     );
@@ -729,13 +770,14 @@ export const PulsePage = memo(function PulsePage({
       );
       const stale = force
         ? notInFlight
-        : notInFlight.filter((c) =>
-            shouldAutoPulseTicker({
+        : notInFlight.filter((c) => {
+            const key = c.ticker.toUpperCase();
+            return shouldAutoPulseTicker({
               needsAttention: c.isBigMove,
-              cachedAt:
-                checkedAtByTickerRef.current[c.ticker.toUpperCase()] ?? "",
-            })
-          );
+              cachedAt: checkedAtByTickerRef.current[key] ?? "",
+              check: checksByTickerRef.current[key] ?? loadPulseTickerCache(key)?.check,
+            });
+          });
       if (stale.length === 0) return;
       if (force) track("thesis_pulse_refresh", { tickers: stale.length });
 
@@ -786,6 +828,7 @@ export const PulsePage = memo(function PulsePage({
           const next = { ...prev };
           for (const check of newReport.checks ?? []) {
             const reconciled = reconcilePulseCheck(check);
+            if (isEmptyPulseCheck(reconciled)) continue;
             next[reconciled.ticker] = reconciled;
           }
           return next;
@@ -795,13 +838,16 @@ export const PulsePage = memo(function PulsePage({
           setCheckedAtByTicker((prev) => {
             const next = { ...prev };
             for (const check of newReport.checks ?? []) {
-              const key = reconcilePulseCheck(check).ticker;
+              const reconciled = reconcilePulseCheck(check);
+              if (isEmptyPulseCheck(reconciled)) continue;
+              const key = reconciled.ticker;
               if (!next[key]) next[key] = now;
             }
             return next;
           });
           for (const check of newReport.checks ?? []) {
             const reconciled = reconcilePulseCheck(check);
+            if (isEmptyPulseCheck(reconciled)) continue;
             const key = reconciled.ticker;
             const cachedAt =
               checkedAtByTickerRef.current[key] ?? now;
@@ -819,12 +865,15 @@ export const PulsePage = memo(function PulsePage({
         setCheckedAtByTicker((prev) => {
           const next = { ...prev };
           for (const check of newReport.checks ?? []) {
-            next[reconcilePulseCheck(check).ticker] = now;
+            const reconciled = reconcilePulseCheck(check);
+            if (isEmptyPulseCheck(reconciled)) continue;
+            next[reconciled.ticker] = now;
           }
           return next;
         });
         for (const check of newReport.checks ?? []) {
           const reconciled = reconcilePulseCheck(check);
+          if (isEmptyPulseCheck(reconciled)) continue;
           const key = reconciled.ticker;
           savePulseTickerCache(key, {
             check: reconciled,

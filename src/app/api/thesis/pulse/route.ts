@@ -18,6 +18,7 @@ import {
   buildFallbackPulseCheck,
   formatMovePct,
   isBigPulseMove,
+  isEmptyPulseCheck,
   pulseTickerKey,
   reconcilePulseCheck,
   type PulseCheck,
@@ -65,7 +66,9 @@ function checksForCandidates(
   return candidates.map((c) => {
     const symbol = pulseTickerKey(c.ticker);
     const cached = cachedMap.get(symbol);
-    if (cached) return reconcilePulseCheck(cached.check);
+    if (cached && !isEmptyPulseCheck(cached.check)) {
+      return reconcilePulseCheck(cached.check);
+    }
     headlines[symbol] = headlines[symbol] ?? [];
     return reconcilePulseCheck(buildFallbackPulseCheck(c));
   });
@@ -234,13 +237,13 @@ async function handlePOST(req: Request) {
     const conv = convictions[symbol];
     const cacheKey = getPulseCacheKey(symbol, c.effectivePct, conv?.thesis, conv?.level);
     const cachedEntry = getCachedPulseCheck(cacheKey);
-    if (cachedEntry) {
+    if (cachedEntry && !isEmptyPulseCheck(cachedEntry.check)) {
       cachedMap.set(symbol, {
         check: cachedEntry.check,
         headlines: cachedEntry.headlines,
       });
     }
-    if (!cachedEntry || force) {
+    if (!cachedEntry || force || isEmptyPulseCheck(cachedEntry?.check)) {
       uncachedCandidates.push(c);
     }
   }

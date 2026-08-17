@@ -429,7 +429,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
     : "USD";
 
   return (
-    <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/10 p-4">
+    <ViewportOverlay className="z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="flex max-h-[min(100%,42rem)] w-full max-w-md flex-col overflow-hidden rounded-xl bg-card p-6 ring-1 ring-foreground/10 sm:max-w-lg">
         <Progress stage={stage} />
 

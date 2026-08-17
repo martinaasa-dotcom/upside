@@ -9,6 +9,7 @@ import {
   OVERVIEW_TAB_ID,
   PULSE_TAB_ID,
 } from "@/lib/overview";
+import type { Portfolio } from "@/lib/types";
 import { Activity, Calculator, FlaskConical, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 
@@ -50,6 +51,23 @@ const MODES = [
     Icon: Calculator,
   },
 ] as const;
+
+/** Book URL for a dock target. Used when the dock is showing on Circle. */
+export function hrefForDockTarget(
+  id: string,
+  portfolios: Pick<Portfolio, "id" | "slug">[]
+): string {
+  const mode = MODES.find((m) => m.id === id);
+  if (mode) return mode.href;
+  const sheet = portfolios.find((p) => p.id === id);
+  const token = sheet?.slug || id;
+  return `/?tab=book&portfolio=${encodeURIComponent(token)}`;
+}
+
+export function stashDockTab(id: string) {
+  const mode = MODES.find((m) => m.id === id);
+  if (mode) stashOpenTab(mode.tab);
+}
 
 const ITEM =
   "flex h-full w-full min-h-0 min-w-0 appearance-none flex-col items-center justify-center gap-0.5 rounded-none px-1.5 text-sm font-medium transition-colors sm:flex-row sm:gap-1.5 sm:px-2";

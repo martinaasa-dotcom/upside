@@ -1,6 +1,17 @@
 import { STRATEGY } from "@/lib/calculations";
 import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
+import { pulseSuggestion } from "@/lib/ai/humanize-copy";
 import { insightsPromptBlock } from "@/lib/book-insights";
+import {
+  isFallbackForecastPlan,
+  type ForecastPlan,
+} from "@/lib/forecast-plan";
+import {
+  actionLabel,
+  isEmptyPulseCheck,
+  statusLabel,
+  type PulseCheck,
+} from "@/lib/thesis-pulse";
 import {
   formatEarningsCalendarBlock,
   type EarningsCalendarRow,
@@ -88,6 +99,19 @@ export type CcChatContext = {
   classroom?: boolean;
   /** Live Yahoo calendar for the book + watchlist. Do not invent dates. */
   earnings?: EarningsCalendarRow[];
+  /** Per-ticker Lab notes + Pulse stamps already on this sheet. */
+  convictions?: Record<
+    string,
+    {
+      level?: number;
+      thesis?: string;
+      stamps?: Array<{ at?: string; line?: string; verdict?: string }>;
+    }
+  >;
+  /** Latest saved Pulse read per ticker (local + server cache). */
+  pulseByTicker?: Record<string, PulseCheck>;
+  /** Saved Forecast plan for this portfolio, when on a sheet tab. */
+  forecastPlan?: ForecastPlan | null;
 };
 
 type AdvisorFx = { eurUsd: number | null; gbpUsd: number | null };
@@ -644,6 +668,74 @@ function holdingExtendedHoursLine(h: CcChatContext["holdings"][number]): string 
   return bits.length ? `, ${bits.join(", ")}` : "";
 }
 
+function margusMemoryBlock(ctx: CcChatContext): string {
+  const conv = ctx.convictions ?? {};
+  const pulse = ctx.pulseByTicker ?? {};
+  const plan = ctx.forecastPlan;
+  const tickers = new Set<string>([
+    ...Object.keys(conv),
+    ...Object.keys(pulse),
+    ...(plan?.eoyTargets ?? []).map((t) => t.ticker.toUpperCase()),
+  ]);
+  if (tickers.size === 0 && !plan) return "";
+
+  const lines: string[] = [
+    "### Margus memory on this sheet (already saved in Upside Lab — answer from here; never say you have no take when this block has content)",
+  ];
+
+  for (const key of [...tickers].sort()) {
+    const entry = conv[key];
+    const check = pulse[key];
+    const bits: string[] = [`**$${key}**`];
+    if (entry?.thesis?.trim()) {
+      bits.push(`why they own it: "${entry.thesis.trim().slice(0, 400)}"`);
+    }
+    if (entry?.level != null) bits.push(`how sure: ${entry.level}/5`);
+    const stamp = entry?.stamps?.at(-1);
+    if (stamp?.line?.trim()) {
+      bits.push(
+        `last Pulse (${stamp.at?.slice(0, 10) ?? "?"}): ${stamp.line.trim()}`
+      );
+    }
+    if (check && !isEmptyPulseCheck(check)) {
+      const note =
+        pulseSuggestion(check) ||
+        check.verdict?.trim() ||
+        check.moveReason?.trim() ||
+        "";
+      bits.push(
+        `Pulse now: ${statusLabel(check.thesisStatus)}, ${actionLabel(check.action)}${note ? ` — ${note}` : ""}`
+      );
+    }
+    lines.push(`- ${bits.join(" · ")}`);
+  }
+
+  if (plan && !isFallbackForecastPlan(plan)) {
+    lines.push("");
+    lines.push(
+      `Forecast (${plan.portfolioName}, worked out ${plan.generatedAt.slice(0, 10)}):`
+    );
+    if (plan.generalAdvice?.trim()) lines.push(plan.generalAdvice.trim());
+    if (plan.sectorRotation?.trim()) lines.push(plan.sectorRotation.trim());
+    for (const row of plan.eoyTargets ?? []) {
+      const end = row.prices?.[2030];
+      const why = row.rationale?.trim();
+      if (end != null && why) {
+        lines.push(
+          `- $${row.ticker.toUpperCase()} end 2030 ~$${end.toFixed(0)}: ${why.slice(0, 220)}`
+        );
+      }
+    }
+  }
+
+  lines.push("");
+  lines.push(
+    "If they ask about Pulse or Forecast, use this block first. Never say you have not given thoughts when data is here. If a ticker is missing, say Upside Lab has not run it yet and they can open Pulse or Forecast (or tap refresh there) to run it."
+  );
+
+  return lines.join("\n");
+}
+
 export function buildCcSystemPrompt(ctx: CcChatContext): string {
   const holdingsTable =
     ctx.holdings.length === 0
@@ -855,6 +947,7 @@ None of this is personalized investment advice. You're reasoning about the numbe
 Market session: ${ctx.marketState ?? "unknown"}
 Watchlist (not owned, discuss freely, do not invent sheet positions): ${(ctx.watchlist ?? []).join(", ") || "(none)"}
 ${formatEarningsCalendarBlock(ctx.earnings ?? [])}
+${margusMemoryBlock(ctx)}
 ${insightsPromptBlock(
   ctx.holdings.map((h) => ({
     ticker: h.ticker,

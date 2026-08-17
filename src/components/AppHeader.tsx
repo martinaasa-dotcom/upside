@@ -30,7 +30,7 @@ function FeedbackHeaderButton() {
   const { openManual } = useFeedback();
   if (!user) return null;
   return (
-    <Button type="button" variant="outline" size="sm" onClick={openManual}>
+    <Button type="button" variant="ghost" size="sm" onClick={openManual}>
       Feedback
     </Button>
   );
@@ -104,7 +104,7 @@ export function AppHeader({
                 </>
               )}
             </div>
-            <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-1.5">
+            <div className="flex min-w-0 shrink items-center justify-end gap-2">
               {children}
               <FeedbackHeaderButton />
               {showWorkspaceNav && <WorkspaceSwitcher />}

@@ -10,7 +10,6 @@ import { DailyDuelCard } from "@/components/DailyDuelCard";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { ShareSheets } from "@/components/ShareSheets";
 import { SignInGate } from "@/components/SignInGate";
-import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
@@ -41,7 +40,6 @@ import { TickerSymbol } from "@/components/TickerSymbol";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
-  SCORE_CELL,
   Score,
   Scoreboard,
   Segmented,
@@ -2662,7 +2660,6 @@ export function CommunityView({ communityId }: Props) {
             </section>
           )}
         </main>
-        <BookBottomNav />
       </div>
 
       <ConfirmModal
@@ -2715,7 +2712,7 @@ export function CommunityView({ communityId }: Props) {
         <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
-            className="absolute inset-0 bg-black/10 backdrop-blur-xs"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
           />
@@ -2888,7 +2885,7 @@ export function CommunityView({ communityId }: Props) {
         <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <button
             type="button"
-            className="absolute inset-0 bg-black/10 backdrop-blur-xs"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             aria-label="Close"
             onClick={() => setBestiaryOpen(false)}
           />
@@ -2921,11 +2918,7 @@ export function CommunityView({ communityId }: Props) {
                 return (
                   <div
                     key={a.id}
-                    className={cn(
-                      "relative overflow-hidden rounded-xl border p-3.5 pl-4",
-                      tone.border,
-                      tone.wash
-                    )}
+                    className="relative overflow-hidden rounded-xl border border-border bg-card p-4 pl-5"
                   >
                     <span
                       className={cn("absolute inset-y-0 left-0 w-1", tone.bar)}
@@ -3012,11 +3005,7 @@ function PowerAnimalCard({
     <button
       type="button"
       onClick={onOpen}
-      className={cn(
-        "relative flex flex-col gap-4 overflow-hidden rounded-xl border p-6 pl-6 text-left transition hover:brightness-110 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6",
-        tone.border,
-        tone.wash
-      )}
+      className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-border bg-card p-6 pl-6 text-left transition hover:bg-accent lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6"
     >
       <span
         className={cn("absolute inset-y-0 left-0 w-1.5", tone.bar)}
@@ -3085,7 +3074,7 @@ function PowerAnimalCard({
             </p>
           </div>
 
-          <Scoreboard className="min-h-min shrink-0 lg:h-full" cols={3}>
+          <div className="grid grid-cols-3 gap-2 rounded-lg border border-border/40 bg-muted/30 p-3">
             <ScoreRead
               label="How spread out"
               value={`${Math.round(personality.diversificationScore)}/100`}
@@ -3108,7 +3097,7 @@ function PowerAnimalCard({
               band={personality.convictionBand.label}
               detail={personality.convictionBand.description}
             />
-          </Scoreboard>
+          </div>
 
           <Scoreboard className="min-h-min shrink-0 lg:h-full" cols={2}>
             <Score
@@ -3172,13 +3161,13 @@ function ScoreRead({
   detail: string;
 }) {
   return (
-    <div className={cn("h-full", SCORE_CELL)}>
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 font-sans text-lg font-semibold leading-none tabular-nums text-foreground">
+    <div className="min-w-0">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 font-mono text-sm font-semibold leading-none tabular-nums text-foreground">
         {value}
       </p>
-      <p className="mt-1.5 text-sm font-medium text-foreground">{band}</p>
-      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{detail}</p>
+      <p className="mt-1.5 text-xs font-medium text-foreground">{band}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{detail}</p>
     </div>
   );
 }

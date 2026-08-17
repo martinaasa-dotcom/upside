@@ -9,15 +9,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
 import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import { useDockPad } from "@/lib/use-dock-pad";
 import type { Portfolio } from "@/lib/types";
+import { WORKSPACE_DOCK_SLOT_ID } from "@/lib/workspace-rooms";
 
 type Props = {
   portfolios: Portfolio[];
-  activeId: string;
+  activeId: string | null;
   onChange: (id: string) => void;
   onAdd: (name: string) => void;
   onRenameRequest?: (id: string, name: string) => void;
@@ -56,7 +58,11 @@ export function PortfolioTabs({
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [menu, setMenu] = useState<OpenMenu | null>(null);
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
   const dockRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    setSlot(document.getElementById(WORKSPACE_DOCK_SLOT_ID));
+  }, []);
   const longPressRef = useRef<number | null>(null);
   useEffect(
     () => () => {
@@ -75,6 +81,7 @@ export function PortfolioTabs({
   // the active one visible. Switching sheets from the command palette or a
   // shared ?sheet= link otherwise left the highlight off-screen.
   useEffect(() => {
+    if (!activeId) return;
     sheetRefs.current[activeId]?.scrollIntoView({
       block: "nearest",
       inline: "nearest",
@@ -145,7 +152,7 @@ export function PortfolioTabs({
     }
   }
 
-  return (
+  const nav = (
     <nav
       ref={dockRef}
       className={cn(
@@ -316,4 +323,6 @@ export function PortfolioTabs({
       )}
     </nav>
   );
+
+  return slot ? createPortal(nav, slot) : nav;
 }

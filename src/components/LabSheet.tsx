@@ -12,6 +12,7 @@ import {
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
 import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
+import { Progress } from "@/components/ui/progress";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -391,9 +392,9 @@ export const LabSheet = memo(function LabSheet({
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold tabular-nums text-foreground">
+                    <p className="font-mono text-xl font-bold tabular-nums text-foreground">
                       {personality.diversificationScore}
-                      <span className="text-sm text-muted-foreground">/100</span>
+                      <span className="text-sm font-medium text-muted-foreground">/100</span>
                     </p>
                     <p className="text-sm font-medium text-muted-foreground">
                       Diversified
@@ -401,18 +402,12 @@ export const LabSheet = memo(function LabSheet({
                   </div>
                 </div>
 
-                {/* A bare score gives no clue which end is which, so show the
-                 * position on the scale and name both ends. */}
                 <div className="mt-3">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-accent">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{
-                        width: `${Math.max(2, Math.min(100, personality.diversificationScore))}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                  <Progress
+                    value={Math.max(2, Math.min(100, personality.diversificationScore))}
+                    className="h-3 bg-secondary"
+                  />
+                  <div className="mt-2 flex justify-between text-xs text-muted-foreground">
                     <span>0 - all in one name</span>
                     <span>100 - index-broad</span>
                   </div>
@@ -678,20 +673,18 @@ function AllocCard({
       <div className="flex flex-col gap-2">
         {slices.map((s) => (
           <div key={s.label}>
-            <div className="mb-0.5 flex justify-between text-sm text-muted-foreground">
-              <span>{s.label}</span>
-              <span className="tabular-nums">
+            <div className="mb-1 flex items-baseline justify-between gap-4 text-sm">
+              <span className="min-w-0 truncate text-muted-foreground">{s.label}</span>
+              <span className="shrink-0 font-mono text-xs tabular-nums text-foreground">
                 {Number.isFinite(s.pct)
                   ? `${(s.pct * 100).toFixed(1)}% · ${currency(s.value, 0)}`
                   : currency(s.value, 0)}
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${Math.min(100, s.pct * 100)}%` }}
-              />
-            </div>
+            <Progress
+              value={Math.min(100, s.pct * 100)}
+              className="h-2 bg-secondary"
+            />
           </div>
         ))}
         {slices.length === 0 && (

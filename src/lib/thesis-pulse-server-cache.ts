@@ -3,7 +3,11 @@
  * The model is not called again just because the read is a bit old.
  */
 
-import type { PulseCheck, PulseHeadline } from "@/lib/thesis-pulse";
+import {
+  isEmptyPulseCheck,
+  type PulseCheck,
+  type PulseHeadline,
+} from "@/lib/thesis-pulse";
 
 export type PulseServerCacheEntry = {
   check: PulseCheck;
@@ -59,6 +63,11 @@ export function getCachedPulseCheck(
     return null;
   }
 
+  if (isEmptyPulseCheck(entry.check)) {
+    PULSE_SERVER_CACHE.delete(key);
+    return null;
+  }
+
   return entry;
 }
 
@@ -72,6 +81,7 @@ export function setCachedPulseCheck(
   headlines: PulseHeadline[],
   effectivePct: number | null
 ) {
+  if (isEmptyPulseCheck(check)) return;
   prunePulseCacheIfNeeded();
   PULSE_SERVER_CACHE.set(key, {
     check,

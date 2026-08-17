@@ -569,7 +569,7 @@ export function GoldNavChart({
             ref={svgRef}
             viewBox={`0 0 ${width} ${height}`}
             preserveAspectRatio="none"
-            className="h-56 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/50 sm:h-64"
+            className="h-64 w-full min-w-0 cursor-crosshair touch-none select-none outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/50 sm:h-80"
             role="slider"
             tabIndex={0}
             aria-label="Portfolio value over the year. Drag across to read a day."

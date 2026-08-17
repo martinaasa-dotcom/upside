@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
+import { Button } from "@/components/ui/button";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { cn } from "@/lib/format";
 import { BookOpen, Bot, Shield, Users } from "lucide-react";
@@ -28,31 +29,29 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
     title: string,
     Icon: typeof BookOpen
   ) => (
-    <Link
-      href={href}
-      prefetch
-      title={title}
-      aria-label={label}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "touch-target inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-sm font-semibold transition md:h-auto md:min-h-0 md:min-w-0 md:px-3 md:py-1.5 md:justify-start",
-        active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:text-primary"
-      )}
+    <Button
+      asChild
+      variant={active ? "default" : "ghost"}
+      size="sm"
+      className={cn(active && "bg-primary text-primary-foreground")}
     >
-      <Icon className="h-4 w-4 md:h-3.5 md:w-3.5" />
-      <span className="hidden md:inline">{label}</span>
-    </Link>
+      <Link
+        href={href}
+        prefetch
+        title={title}
+        aria-label={label}
+        aria-current={active ? "page" : undefined}
+      >
+        <Icon className="h-4 w-4 md:h-3.5 md:w-3.5" />
+        <span className="hidden md:inline">{label}</span>
+      </Link>
+    </Button>
   );
 
   return (
     <nav
       aria-label="Upside Lab rooms"
-      className={cn(
-        "inline-flex max-w-full overflow-x-auto rounded-lg border border-border bg-card px-1 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        className
-      )}
+      className={cn("inline-flex max-w-full items-center gap-2", className)}
     >
       {item(onBook, "/", "Portfolio", "Your portfolios and daily briefing", BookOpen)}
       {item(onFund, "/upside-portfolio", "Fund", "Upside Fund, the paper portfolio Margus runs", Bot)}

@@ -9,6 +9,7 @@ import {
 } from "@/components/mobile/GoldNavChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Item,
@@ -412,7 +413,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg bg-muted p-6 text-left transition hover:bg-accent sm:gap-3"
+      className="relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg border border-border bg-card p-6 text-left transition hover:bg-accent sm:gap-3"
     >
       <span
         className={cn(
@@ -422,23 +423,23 @@ function MoverTile({
         aria-hidden
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-heading text-base font-semibold text-foreground">
+        <Badge variant="secondary" className="font-heading text-sm font-semibold">
           {cashtag(ticker.ticker)}
-        </span>
-        <span className="mt-0.5 block font-sans text-sm tabular-nums text-muted-foreground">
+        </Badge>
+        <span className="mt-1.5 block font-mono text-sm tabular-nums text-muted-foreground">
           {currency(ticker.price)}
         </span>
       </span>
       <span className="shrink-0 whitespace-nowrap text-right">
         <span
           className={cn(
-            "block font-sans text-base font-semibold tabular-nums",
+            "block font-mono text-base font-semibold tabular-nums",
             tone(pct)
           )}
         >
           {pct != null ? percent(pct, lifetime ? 1 : 2) : "—"}
         </span>
-        <span className={cn("mt-0.5 block text-sm tabular-nums", tone(dollars))}>
+        <span className={cn("mt-0.5 block font-mono text-sm tabular-nums", tone(dollars))}>
           {signedCurrency(dollars, 0)}
         </span>
       </span>
@@ -477,20 +478,20 @@ function PortfolioLane({
               : ""}
           </p>
         </div>
-        <p className="shrink-0 text-right font-sans text-lg font-semibold tabular-nums text-foreground">
+        <p className="shrink-0 text-right font-mono text-sm font-semibold tabular-nums text-foreground">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>
 
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-accent">
-        <div
-          className={cn(
-            "overview-bar h-full rounded-full",
-            hot ? "bg-gain" : "bg-loss"
-          )}
-          style={{ width: `${width}%` }}
-        />
-      </div>
+      <Progress
+        value={width}
+        className={cn(
+          "mt-4 h-2 bg-secondary [&_[data-slot=progress-indicator]]:bg-primary",
+          hot
+            ? "[&_[data-slot=progress-indicator]]:bg-gain"
+            : "[&_[data-slot=progress-indicator]]:bg-loss"
+        )}
+      />
 
       <p className="mt-3 text-sm tabular-nums text-muted-foreground">
         <span className={tone(sheet.roiPct)}>{percent(sheet.roiPct)}</span>
@@ -852,7 +853,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
             Waiting on prices.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {movers.map(({ t, mode }) => (
               <MoverTile
                 key={`${mode}-${t.ticker}`}

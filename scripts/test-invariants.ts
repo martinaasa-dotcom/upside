@@ -35,7 +35,9 @@ import { playbookBullets } from "../src/lib/forecast-playbook";
 import { niceScale } from "../src/components/mobile/GoldNavChart";
 import {
   buildFallbackForecastPlan,
+  isFallbackForecastPlan,
   shouldAutoRefreshForecast,
+  type ForecastPlan,
 } from "../src/lib/forecast-plan";
 import { FORECAST_YEARS, type ForecastModel } from "../src/lib/forecast";
 import {
@@ -50,6 +52,7 @@ import {
   statusLabel,
   verdictRepeatsTrim,
   stripTrailingScanStop,
+  buildFallbackPulseCheck,
   buildPulseScan,
   pulseNeedsExplainer,
   pulseScanLine,
@@ -335,7 +338,7 @@ run("power animals each keep their own color", () => {
   assert.ok(ANIMAL_CARD_TONE.octopus?.bar.includes("violet"));
   assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
   assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
-  assert.equal(PALETTE.brand, "#e5e5e5");
+  assert.equal(PALETTE.brand, "#d6ad69");
   assert.equal(PALETTE.bronze, "#d6ad69");
   assert.equal(PALETTE.teal, "#2dd4bf");
   assert.equal(PALETTE.steel, "#60a5fa");
@@ -2027,7 +2030,7 @@ run("product UI stays on shadcn tokens, not palette leftovers", () => {
     "utf8"
   );
   assert.match(table, /text-sm tabular-nums/);
-  assert.match(table, /font-sans tabular-nums/);
+  assert.match(table, /font-mono tabular-nums/);
 });
 
 run("UI type stays on the five-size scale", () => {
@@ -2088,7 +2091,7 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
   );
   assert.match(nav, /preserveAspectRatio="none"/);
   assert.doesNotMatch(nav, /min-h-\[4\.75rem\]/);
-  assert.match(nav, /h-56 w-full/);
+  assert.match(nav, /h-64 w-full/);
   assert.match(nav, /min-h-9/);
   assert.match(nav, /plotMax = scale.max \+ span \* 0\.18/);
   assert.match(nav, /Held these names all year/);
@@ -2164,7 +2167,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     "utf8"
   );
   assert.match(css, /--background: oklch\(0 0 0\)/);
-  assert.match(css, /--primary: oklch\(0\.922 0 0\)/);
+  assert.match(css, /--primary: oklch\(0\.762 0\.102 80\)/);
   assert.match(css, /--card: oklch\(0\.205 0 0\)/);
   assert.match(css, /--radius: 0\.625rem/);
   assert.match(css, /--gain:/);
@@ -2187,7 +2190,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(css, /--border: rgb\(237 232 220/);
   assert.doesNotMatch(css, /#d6ad69/);
   assert.doesNotMatch(css, /#dcad55/);
-  assert.match(palette, /brand: "#e5e5e5"/);
+  assert.match(palette, /brand: "#d6ad69"/);
   assert.match(palette, /gain: "#34d399"/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
@@ -2227,7 +2230,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /padded && "flex flex-col gap-6 p-6"/);
   assert.match(panel, /export function Scoreboard/);
-  assert.match(panel, /font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums whitespace-nowrap/);
+  assert.match(panel, /font-mono text-2xl font-bold leading-none tracking-tight tabular-nums whitespace-nowrap/);
   assert.match(panel, /const STATUS/);
   assert.match(panel, /font-heading text-lg font-semibold tracking-tight/);
   assert.match(
@@ -2249,7 +2252,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /uppercase tracking-wide/
   );
   assert.match(panel, /const FIGURE/);
-  assert.match(panel, /font-sans text-2xl font-semibold tabular-nums/);
+  assert.match(panel, /font-mono text-2xl font-bold tabular-nums/);
   assert.match(header, /bg-background\/95 backdrop-blur/);
   assert.match(header, /border-b border-border/);
   assert.doesNotMatch(header, /border-b border-white\/10/);
@@ -2552,7 +2555,6 @@ run("signed-in pages share one column so rooms do not jump", () => {
     "AccountPage.tsx",
     "AdminPage.tsx",
     "AppHeader.tsx",
-    "BookBottomNav.tsx",
     "PortfolioTabs.tsx",
   ];
   for (const name of pages) {
@@ -2607,15 +2609,14 @@ run("signed-in pages share one column so rooms do not jump", () => {
     join(process.cwd(), "src/components/mobile/MobileTabBar.tsx"),
     "utf8"
   );
-  const bookDock = readFileSync(
-    join(process.cwd(), "src/components/BookBottomNav.tsx"),
+  const workspaceShell = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceShell.tsx"),
     "utf8"
   );
   assert.match(tabs, /useDockPad/);
   assert.match(tabs, /fixed inset-x-0 bottom-0/);
   assert.match(mobileDock, /useDockPad/);
-  assert.match(bookDock, /useDockPad/);
-  assert.match(bookDock, /fixed inset-x-0 bottom-0/);
+  assert.match(workspaceShell, /WORKSPACE_DOCK_SLOT_ID/);
   assert.match(css, /input\[type="range"\]/);
   assert.match(css, /touch-action:\s*pan-y/);
 });
@@ -2647,7 +2648,6 @@ run("sheets sit in the visible viewport so the keyboard cannot cover them", () =
   assert.match(css, /html\[data-keyboard="open"\] \.keyboard-chrome/);
   assert.match(css, /--vv-keyboard/);
   const chrome = [
-    "BookBottomNav.tsx",
     "PortfolioTabs.tsx",
     "mobile/MobileTabBar.tsx",
     "ui/sonner.tsx",
@@ -3310,6 +3310,15 @@ run("Forecast does not call the model when a path is already saved", () => {
   } as Parameters<typeof shouldAutoRefreshForecast>[0]["plan"];
   assert.equal(
     shouldAutoRefreshForecast({
+      plan: { ...(saved as ForecastPlan), fallback: true },
+      tickers: ["NBIS"],
+      fullyCovered: false,
+      cachedTickers: ["NBIS"],
+    }).run,
+    true
+  );
+  assert.equal(
+    shouldAutoRefreshForecast({
       plan: saved,
       tickers: ["NBIS"],
       fullyCovered: false,
@@ -3365,6 +3374,26 @@ run("Forecast first-run always leaves a shaped path, never a skip", () => {
   );
   assert.doesNotMatch(panel, /auto:\s*true/);
   assert.doesNotMatch(panel, /auto:\s*Boolean\(opts/);
+  assert.ok(isFallbackForecastPlan(buildFallbackForecastPlan({
+    forecast: {
+      years: FORECAST_YEARS,
+      rows: [],
+      currentTotal: 0,
+      eoyTotals: {
+        2026: 0,
+        2027: 0,
+        2028: 0,
+        2029: 0,
+        2030: 0,
+      },
+      gainPct: 0,
+    },
+    portfolioId: "p1",
+    portfolioName: "Test",
+  })));
+  assert.match(panel, /Ask Margus/);
+  assert.doesNotMatch(panel, /hasn't weighed in yet/);
+  assert.doesNotMatch(panel, /Nothing for you to do/);
   assert.match(panel, /seedFallbackIfNeeded/);
   assert.match(panel, /buildFallbackForecastPlan/);
   assert.doesNotMatch(route, /beginBackgroundLlm/);
@@ -3707,9 +3736,35 @@ run("Pulse does not hourly-refresh the model", () => {
   );
   assert.doesNotMatch(page, /setInterval\(\(\) => \{[\s\S]*runPulse/);
   assert.match(page, /shouldAutoPulseTicker/);
+  assert.match(page, /Check again/);
   assert.equal(
-    shouldAutoPulseTicker({ needsAttention: false, cachedAt: "2026-08-15T00:00:00Z" }),
+    shouldAutoPulseTicker({
+      needsAttention: false,
+      cachedAt: "2026-08-15T00:00:00Z",
+      check: buildFallbackPulseCheck({
+        ticker: "NBIS",
+        effectivePct: 0,
+        moveLabel: "Today",
+      } as Parameters<typeof buildFallbackPulseCheck>[0]),
+    }),
     false
+  );
+  assert.equal(
+    shouldAutoPulseTicker({
+      needsAttention: false,
+      cachedAt: "2026-08-15T00:00:00Z",
+      check: {
+        ticker: "NBIS",
+        situation: [],
+        moveReason: "",
+        thesisStatus: "intact",
+        earningsNote: "",
+        action: "hold",
+        addLevel: "",
+        verdict: "",
+      },
+    }),
+    true
   );
   assert.equal(shouldAutoPulseTicker({ needsAttention: true }), true);
   assert.equal(shouldAutoPulseTicker({ needsAttention: false }), true);
@@ -3965,6 +4020,8 @@ run("watchlist look is a range read, not a made-up target", () => {
     join(process.cwd(), "src/components/WatchlistStrip.tsx"),
     "utf8"
   );
+  assert.match(strip, /Fetch price/);
+  assert.match(strip, /cache: "no-store"/);
   assert.match(strip, /watchLook/);
   assert.match(strip, /Check in Pulse/);
 });
@@ -4291,7 +4348,7 @@ run("Pulse never nags that it is guessing", () => {
   assert.doesNotMatch(pulseApi, /Couldn't get a full model/);
   assert.doesNotMatch(pulseApi, /The model was busy/);
   assert.doesNotMatch(pulseApi, /Couldn't reach the model/);
-  assert.match(pulseApi, /reuseCachedPulse/);
+  assert.match(pulseApi, /isEmptyPulseCheck/);
   assert.match(pulseApi, /buildFallbackPulseCheck/);
   assert.match(pulseApi, /checksForCandidates/);
   assert.match(pulse, /<ActionBadge action=\{action\} \/>/);
@@ -5070,7 +5127,8 @@ run("Margus never writes trade orders to a person", () => {
   assert.match(persona, /Never write trade orders/);
   assert.match(persona, /Say you, your/);
   assert.match(humanize, /function scrubTradeOrders/);
-  assert.match(chat, /Never write orders/);
+  assert.match(chat, /Margus memory on this sheet/);
+  assert.match(chat, /Never say you have not given thoughts/);
   assert.match(chat, /Same voice as the inbox note/);
   assert.match(forecastUi, /Modeled checks for this stretch/);
 });
@@ -5727,6 +5785,7 @@ run("workspace nav marks the current room and the skip link exists", () => {
   );
   assert.match(shell, /Keep visited rooms mounted/);
   assert.match(shell, /hidden=\{!on\}/);
+  assert.match(shell, /mountedRef\.current\.add\("book"\)/);
   const homePage = readFileSync(join(process.cwd(), "src/app/page.tsx"), "utf8");
   assert.match(homePage, /return null/);
   assert.doesNotMatch(homePage, /Dashboard/);
@@ -5740,16 +5799,13 @@ run("workspace nav marks the current room and the skip link exists", () => {
   assert.match(dock, /CircleDockLink/);
   assert.match(dock, /hover:text-foreground/);
   assert.doesNotMatch(dock, /hover:bg-accent/);
-  const bookNav = readFileSync(
-    join(process.cwd(), "src/components/BookBottomNav.tsx"),
-    "utf8"
-  );
-  assert.match(bookNav, /BookModeDock/);
   const tabs = readFileSync(
     join(process.cwd(), "src/components/PortfolioTabs.tsx"),
     "utf8"
   );
   assert.match(tabs, /BookModeDock/);
+  assert.match(tabs, /createPortal/);
+  assert.match(tabs, /WORKSPACE_DOCK_SLOT_ID/);
   assert.ok(
     tabs.indexOf("BookModeDock") < tabs.indexOf("Sheets —"),
     "Circle sits between the book modes and the sheets rail"

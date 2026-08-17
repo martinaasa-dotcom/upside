@@ -2,7 +2,6 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { AppHeader } from "@/components/AppHeader";
-import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { SignInGate } from "@/components/SignInGate";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
@@ -532,7 +531,6 @@ export function AdminPage() {
             </WidgetErrorBoundary>
           )}
         </main>
-        <BookBottomNav />
       </div>
 
       <ConfirmModal

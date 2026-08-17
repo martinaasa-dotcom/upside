@@ -28,16 +28,16 @@ import {
   loadWatchlist,
   removeWatchlistTicker,
 } from "@/lib/watchlist";
-import { loadCachedQuotes } from "@/lib/quote-cache";
+import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import {
-  Card,
   EmptyState,
   MicroLabel,
   PanelHeader,
   Pill,
 } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   InputGroup,
   InputGroupAddon,
@@ -50,9 +50,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, Plus, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, Plus, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** Stable server-side value; a fresh [] each render would churn the memo. */
 const EMPTY_LIST: string[] = [];
@@ -81,9 +80,13 @@ function RangeMeter({
   return (
     <div>
       <MicroLabel>Recent range</MicroLabel>
-      <div className="mt-2 px-1.5">
+      <div className="mt-2 flex items-center justify-between gap-3 text-xs tabular-nums text-muted-foreground">
+        <span className="font-mono">{currency(low)}</span>
+        <span className="font-mono">{currency(high)}</span>
+      </div>
+      <div className="mt-2 px-1">
         <div
-          className="relative h-1.5 rounded-full bg-border"
+          className="relative h-2 rounded-full bg-secondary"
           role="meter"
           aria-valuemin={low}
           aria-valuemax={high}
@@ -92,16 +95,12 @@ function RangeMeter({
         >
           <span
             className={cn(
-              "absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-muted",
+              "absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background",
               markerTone(kind)
             )}
             style={{ left: `${pos * 100}%` }}
           />
         </div>
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-3 text-sm tabular-nums text-muted-foreground">
-        <span>{currency(low)}</span>
-        <span>{currency(high)}</span>
       </div>
     </div>
   );
@@ -113,24 +112,61 @@ function WatchCard({
   look,
   onRemove,
   onOpenPulse,
+  onRetryQuote,
+  quoteRetrying,
 }: {
   ticker: string;
   quote: Quote | undefined;
   look: WatchLook | null;
   onRemove: () => void;
   onOpenPulse?: (ticker: string) => void;
+  onRetryQuote?: () => void;
+  quoteRetrying?: boolean;
 }) {
   const pct = quote?.changePercent ?? null;
-  const waiting = !quote;
+  const waiting = !quote || pct == null;
   const rangeLow = look?.low ?? null;
   const rangeHigh = look?.high ?? null;
 
+  if (waiting) {
+    return (
+      <div className="flex h-12 items-center justify-between gap-3 rounded-md border border-border bg-card px-4">
+        <Badge variant="secondary">{cashtag(ticker)}</Badge>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Waiting on today&apos;s price</span>
+          {onRetryQuote ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={onRetryQuote}
+              disabled={quoteRetrying}
+              aria-label={`Fetch price for ${ticker}`}
+              title="Fetch price"
+            >
+              <RefreshCw className={quoteRetrying ? "animate-spin" : undefined} />
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onRemove}
+            aria-label={`Remove ${ticker}`}
+          >
+            <X />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Card className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 font-heading text-base font-semibold tracking-tight text-foreground">
+        <Badge variant="secondary" className="font-heading text-sm font-semibold">
           {cashtag(ticker)}
-        </p>
+        </Badge>
         <Button
           type="button"
           variant="ghost"
@@ -143,39 +179,22 @@ function WatchCard({
         </Button>
       </div>
 
-      {waiting ? (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-8 w-24" />
-          <p className="text-sm text-muted-foreground">
-            Waiting on today&apos;s price
-          </p>
+      <div>
+        <p
+          className="font-mono text-2xl font-bold leading-none tracking-tight tabular-nums text-foreground"
+          title={quoteAsOfTitle(quote)}
+        >
+          {currency(quote.price)}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Pill tone={pct > 0 ? "good" : pct < 0 ? "bad" : "neutral"}>
+            {signedPercent(pct)}
+          </Pill>
+          <span className={cn("font-mono text-sm tabular-nums", signedTone(pct))}>
+            {signedCurrency(quote.change)} today
+          </span>
         </div>
-      ) : (
-        <div>
-          <p
-            className="font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums text-foreground"
-            title={quoteAsOfTitle(quote)}
-          >
-            {currency(quote.price)}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {pct == null ? (
-              <p className="text-sm text-muted-foreground">
-                Waiting on today&apos;s price
-              </p>
-            ) : (
-              <>
-                <Pill tone={pct > 0 ? "good" : pct < 0 ? "bad" : "neutral"}>
-                  {signedPercent(pct)}
-                </Pill>
-                <span className={cn("text-sm tabular-nums", signedTone(pct))}>
-                  {signedCurrency(quote.change)} today
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
 
       {look && rangeLow != null && rangeHigh != null && quote && (
         <RangeMeter
@@ -212,7 +231,7 @@ function WatchCard({
           <ChevronRight />
         </Button>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -235,6 +254,9 @@ export function WatchlistStrip({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [reportDays, setReportDays] = useState<Record<string, number>>({});
+  const [quoteRetrying, setQuoteRetrying] = useState<Record<string, boolean>>(
+    {}
+  );
   const remote = useTickerSearch(draft);
 
   const heldKey = heldTickers.join("|");
@@ -264,23 +286,48 @@ export function WatchlistStrip({
 
   const suggestOpen = open && suggestions.length > 0;
 
+  const fetchQuotes = useCallback(
+    (tickers: string[], opts?: { force?: boolean }) => {
+      if (tickers.length === 0) return;
+      if (!opts?.force && isQuotePollFresh(loadCachedQuotes().savedAt)) return;
+      for (const t of tickers) {
+        setQuoteRetrying((prev) => ({ ...prev, [t.toUpperCase()]: true }));
+      }
+      void fetch(quotesUrl(tickers), { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { quotes?: Record<string, Quote> } | null) => {
+          if (data?.quotes) {
+            setQuotes((prev) => {
+              const merged = mergeQuotes(
+                { ...loadCachedQuotes().quotes, ...prev },
+                data.quotes ?? {}
+              );
+              saveCachedQuotes(merged);
+              return merged;
+            });
+          }
+        })
+        .catch(() => {
+          /* keep last */
+        })
+        .finally(() => {
+          for (const t of tickers) {
+            setQuoteRetrying((prev) => {
+              const next = { ...prev };
+              delete next[t.toUpperCase()];
+              return next;
+            });
+          }
+        });
+    },
+    [setQuotes]
+  );
+
   useEffect(() => {
     if (names.length === 0) return;
-    if (isQuotePollFresh(loadCachedQuotes().savedAt)) return;
-    const ctrl = new AbortController();
-    void fetch(quotesUrl(names), { signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { quotes?: Record<string, Quote> } | null) => {
-        if (!ctrl.signal.aborted && data?.quotes) setQuotes(data.quotes);
-      })
-      .catch(() => {
-        /* keep last */
-      });
-    return () => {
-      ctrl.abort();
-    };
+    fetchQuotes(names);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- namesKey stands in for the array's contents
-  }, [namesKey]);
+  }, [namesKey, fetchQuotes]);
 
   useEffect(() => {
     if (names.length === 0) {
@@ -495,6 +542,8 @@ export function WatchlistStrip({
                     look={look}
                     onRemove={() => setList(removeWatchlistTicker(list, ticker))}
                     onOpenPulse={onOpenPulse}
+                    onRetryQuote={() => fetchQuotes([ticker], { force: true })}
+                    quoteRetrying={Boolean(quoteRetrying[ticker.toUpperCase()])}
                   />
                 </li>
               );
