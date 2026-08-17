@@ -7,16 +7,9 @@ import { InsightText, MicroLabel, Panel, Pill, Reading } from "@/components/ui/P
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemGroup,
-  ItemTitle,
-} from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/format";
-import { CheckCircle2 } from "lucide-react";
+import { BellRing, CheckCircle2, MessageCircle } from "lucide-react";
 import {
   inviteFromLocation,
   inviteLandingCopy,
@@ -111,11 +104,15 @@ export function SignInGate({ children }: Props) {
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute -left-40 -top-48 h-[34rem] w-[34rem] rounded-full bg-primary/20 blur-[130px]" />
+        <div className="absolute -right-32 top-1/4 h-[26rem] w-[26rem] rounded-full bg-gain/10 blur-[130px]" />
+      </div>
       <main
         id="main"
-        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
+        className="relative z-10 mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
       >
-        <div className="signin-rise grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:gap-12 lg:gap-16">
+        <div className="signin-rise grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:gap-14 lg:gap-20">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
@@ -129,30 +126,35 @@ export function SignInGate({ children }: Props) {
               </Alert>
             )}
 
-            <div className="flex flex-col signin-rise-2 mt-10 max-w-md gap-4">
+            <div className="flex flex-col signin-rise-2 mt-10 max-w-lg gap-5">
               {invite && (
                 <p className="text-sm font-medium text-muted-foreground">
                   Invite
                 </p>
               )}
-              <h1 className="font-heading text-2xl font-semibold tracking-tight leading-tight text-foreground">
+              <h1 className="text-balance bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-heading text-2xl font-semibold leading-tight tracking-tight text-transparent">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <p className="text-base leading-relaxed text-muted-foreground">
                 {invite ? inviteLandingCopy(invite).detail : SIGNIN_WHO}
               </p>
             </div>
 
-            <ul className="flex flex-col signin-rise-2 mt-8 max-w-md gap-3.5 text-left text-sm leading-relaxed text-muted-foreground">
-              {SIGNIN_POINTS.map((line) => (
-                <li key={line} className="flex gap-3">
-                  <span
-                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-                    aria-hidden
-                  />
-                  <span>{line}</span>
-                </li>
-              ))}
+            <ul className="flex flex-col signin-rise-2 mt-9 max-w-md gap-4 text-left text-sm leading-relaxed text-muted-foreground">
+              {SIGNIN_POINTS.map((line, i) => {
+                const Icon = SIGNIN_POINT_ICONS[i] ?? BellRing;
+                return (
+                  <li key={line} className="flex items-start gap-3.5">
+                    <span
+                      className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15"
+                      aria-hidden
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="pt-1.5">{line}</span>
+                  </li>
+                );
+              })}
             </ul>
 
             <Button
@@ -160,7 +162,7 @@ export function SignInGate({ children }: Props) {
               size="lg"
               disabled={busy}
               onClick={() => void onSignIn()}
-              className="signin-rise-3 mt-10 h-10 w-full max-w-sm gap-2.5 rounded-full md:w-auto md:min-w-[17rem]"
+              className="signin-rise-3 mt-10 h-11 w-full max-w-sm gap-2.5 rounded-full text-base shadow-[0_18px_40px_-16px_var(--primary)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-14px_var(--primary)] md:w-auto md:min-w-[17rem]"
             >
               {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
               {busy ? "Redirecting …" : "Continue with Google"}
@@ -192,6 +194,8 @@ export function SignInGate({ children }: Props) {
   );
 }
 
+const SIGNIN_POINT_ICONS = [BellRing, MessageCircle] as const;
+
 const SAMPLE_MOVERS = [
   { ticker: "RKLB", pct: "+6.8%", dollar: "+$3,640", up: true },
   { ticker: "AMZN", pct: "+1.4%", dollar: "+$720", up: true },
@@ -201,42 +205,53 @@ const SAMPLE_MOVERS = [
 /** Compact sample of a day that moved. Not a full-size Home panel. */
 function BookStill() {
   return (
-    <Panel className="signin-rise-3 h-auto gap-4 p-4" aria-hidden>
-      <div className="flex items-center justify-between gap-3">
-        <MicroLabel>
-          Today&apos;s briefing
-        </MicroLabel>
-        <Pill tone="neutral">Sample</Pill>
-      </div>
+    <div className="relative md:-rotate-1 md:transition-transform md:duration-700 md:hover:rotate-0">
+      <div
+        className="pointer-events-none absolute -inset-8 -z-10 rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-primary/5 to-gain/10 opacity-90 blur-3xl"
+        aria-hidden
+      />
+      <Panel
+        className="signin-rise-3 h-auto gap-4 p-4 relative overflow-hidden shadow-2xl shadow-black/60 ring-1 ring-primary/15"
+        aria-hidden
+      >
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-24 bg-gradient-to-b from-white/[0.06] to-transparent"
+          aria-hidden
+        />
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2">
+            <span className="signin-live-dot" aria-hidden />
+            <MicroLabel>
+              Today&apos;s briefing
+            </MicroLabel>
+          </span>
+          <Pill tone="neutral">Sample</Pill>
+        </div>
 
-      <div className="grid grid-cols-3 gap-3">
         <div>
           <MicroLabel>Portfolio</MicroLabel>
-          <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-foreground">
+          <p className="mt-1 font-sans text-2xl font-bold tabular-nums text-foreground">
             $91,400
           </p>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-gain/15 px-2 py-1 text-sm font-semibold tabular-nums text-gain">
+              Today +$4,180
+            </span>
+            <span className="rounded-md bg-muted px-2 py-1 text-sm font-semibold tabular-nums text-gain">
+              All time +18%
+            </span>
+          </div>
         </div>
-        <div>
-          <MicroLabel>Today</MicroLabel>
-          <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-gain">
-            +$4,180
-          </p>
-        </div>
-        <div>
-          <MicroLabel>All time</MicroLabel>
-          <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-gain">
-            +18%
-          </p>
-        </div>
-      </div>
 
-      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
-        {SAMPLE_MOVERS.map((row) => (
-          <Item key={row.ticker} size="sm" className="px-0">
-            <ItemContent>
-              <ItemTitle>${row.ticker}</ItemTitle>
-            </ItemContent>
-            <ItemActions>
+        <div className="divide-y divide-border/60 overflow-hidden rounded-lg bg-muted">
+          {SAMPLE_MOVERS.map((row) => (
+            <div
+              key={row.ticker}
+              className="flex items-center justify-between gap-3 px-3 py-2.5"
+            >
+              <span className="text-sm font-semibold text-foreground">
+                ${row.ticker}
+              </span>
               <span
                 className={cn(
                   "text-sm font-semibold tabular-nums",
@@ -246,31 +261,29 @@ function BookStill() {
                 {row.pct}{" "}
                 <span className="font-normal">{row.dollar}</span>
               </span>
-            </ItemActions>
-          </Item>
-        ))}
-      </ItemGroup>
+            </div>
+          ))}
+        </div>
 
-      <Reading nested label="Worth noticing">
-        <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
-      </Reading>
+        <Reading nested label="Worth noticing">
+          <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
+        </Reading>
 
-      <Item className="px-0">
-        <ItemContent>
-          <ItemTitle>
-            $RKLB
+        <div className="rounded-lg bg-muted p-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-foreground">$RKLB</span>
             <Badge variant="secondary">Up ≥5%</Badge>
-          </ItemTitle>
-        </ItemContent>
-        <ItemActions>
-          <Pill>Hold</Pill>
-          <Pill tone="good">
-            <CheckCircle2 className="size-3.5 text-gain" />
-            Thesis intact
-          </Pill>
-        </ItemActions>
-      </Item>
-    </Panel>
+          </div>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <Pill>Hold</Pill>
+            <Pill tone="good">
+              <CheckCircle2 className="size-3.5 text-gain" />
+              Thesis intact
+            </Pill>
+          </div>
+        </div>
+      </Panel>
+    </div>
   );
 }
 

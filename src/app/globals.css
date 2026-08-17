@@ -414,11 +414,34 @@ button:disabled,
   animation: signin-rise 0.65s ease-out 0.3s both;
 }
 
+@keyframes signin-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--gain) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px color-mix(in oklch, var(--gain) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--gain) 0%, transparent);
+  }
+}
+
+.signin-live-dot {
+  position: relative;
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 9999px;
+  background: var(--gain);
+  animation: signin-live-pulse 2.2s ease-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .signin-rise-1,
   .signin-rise-2,
   .signin-rise-3,
-  .signin-rise-4 {
+  .signin-rise-4,
+  .signin-live-dot {
     animation: none;
   }
 }
