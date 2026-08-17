@@ -22,7 +22,7 @@ import { normalizeYahooTicker } from "@/lib/ticker";
 import { useTickerSearch } from "@/lib/use-ticker-search";
 import { FALLBACK_POPULAR_TICKERS } from "@/lib/popular-tickers";
 import type { Quote } from "@/lib/types";
-import { watchLook, type WatchLookKind } from "@/lib/watch-look";
+import { watchLook, type WatchLook, type WatchLookKind } from "@/lib/watch-look";
 import {
   addWatchlistTicker,
   loadWatchlist,
@@ -30,20 +30,190 @@ import {
 } from "@/lib/watchlist";
 import { loadCachedQuotes } from "@/lib/quote-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
-import { PanelHeader } from "@/components/ui/Panel";
-import { Input } from "@/components/ui/input";
-import { Plus, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Card,
+  EmptyState,
+  MicroLabel,
+  PanelHeader,
+  Pill,
+} from "@/components/ui/Panel";
+import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronRight, Plus, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 /** Stable server-side value; a fresh [] each render would churn the memo. */
 const EMPTY_LIST: string[] = [];
 const EMPTY_QUOTES: Record<string, Quote> = {};
 const POPULAR_SEED = [...FALLBACK_POPULAR_TICKERS];
 
-function lookBorder(kind: WatchLookKind | undefined): string {
-  if (kind === "look") return "border-gain/25";
-  if (kind === "wait" || kind === "report") return "border-caution/35";
-  return "border-border";
+function markerTone(kind: WatchLookKind): string {
+  if (kind === "look") return "bg-gain";
+  if (kind === "wait" || kind === "report") return "bg-warning";
+  return "bg-foreground";
+}
+
+function RangeMeter({
+  low,
+  high,
+  price,
+  kind,
+}: {
+  low: number;
+  high: number;
+  price: number;
+  kind: WatchLookKind;
+}) {
+  const span = high - low;
+  const pos = span > 0 ? Math.min(1, Math.max(0, (price - low) / span)) : 0.5;
+  return (
+    <div>
+      <MicroLabel>Recent range</MicroLabel>
+      <div className="mt-2 px-1.5">
+        <div
+          className="relative h-1.5 rounded-full bg-border"
+          role="meter"
+          aria-valuemin={low}
+          aria-valuemax={high}
+          aria-valuenow={price}
+          aria-label="Where today's price sits in the recent range"
+        >
+          <span
+            className={cn(
+              "absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-muted",
+              markerTone(kind)
+            )}
+            style={{ left: `${pos * 100}%` }}
+          />
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-3 text-sm tabular-nums text-muted-foreground">
+        <span>{currency(low)}</span>
+        <span>{currency(high)}</span>
+      </div>
+    </div>
+  );
+}
+
+function WatchCard({
+  ticker,
+  quote,
+  look,
+  onRemove,
+  onOpenPulse,
+}: {
+  ticker: string;
+  quote: Quote | undefined;
+  look: WatchLook | null;
+  onRemove: () => void;
+  onOpenPulse?: (ticker: string) => void;
+}) {
+  const pct = quote?.changePercent ?? null;
+  const waiting = !quote;
+  const rangeLow = look?.low ?? null;
+  const rangeHigh = look?.high ?? null;
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 font-heading text-base font-semibold tracking-tight text-foreground">
+          {cashtag(ticker)}
+        </p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRemove}
+          className="touch-target -mr-1.5 -mt-1.5 shrink-0 text-muted-foreground lg:min-h-0 lg:min-w-0"
+          aria-label={`Remove ${ticker}`}
+        >
+          <X />
+        </Button>
+      </div>
+
+      {waiting ? (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-24" />
+          <p className="text-sm text-muted-foreground">
+            Waiting on today&apos;s price
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p
+            className="font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums text-foreground"
+            title={quoteAsOfTitle(quote)}
+          >
+            {currency(quote.price)}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {pct == null ? (
+              <p className="text-sm text-muted-foreground">
+                Waiting on today&apos;s price
+              </p>
+            ) : (
+              <>
+                <Pill tone={pct > 0 ? "good" : pct < 0 ? "bad" : "neutral"}>
+                  {signedPercent(pct)}
+                </Pill>
+                <span className={cn("text-sm tabular-nums", signedTone(pct))}>
+                  {signedCurrency(quote.change)} today
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {look && rangeLow != null && rangeHigh != null && quote && (
+        <RangeMeter
+          low={rangeLow}
+          high={rangeHigh}
+          price={quote.price}
+          kind={look.kind}
+        />
+      )}
+
+      {look && (
+        <>
+          <Separator />
+          <div>
+            <p className="font-heading text-lg font-semibold tracking-tight text-foreground">
+              {look.headline}
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              {look.detail}
+            </p>
+          </div>
+        </>
+      )}
+
+      {onOpenPulse && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenPulse(ticker)}
+          className="mt-auto w-full touch-target justify-between lg:min-h-0"
+        >
+          Check in Pulse
+          <ChevronRight />
+        </Button>
+      )}
+    </Card>
+  );
 }
 
 export function WatchlistStrip({
@@ -65,7 +235,6 @@ export function WatchlistStrip({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [reportDays, setReportDays] = useState<Record<string, number>>({});
-  const boxRef = useRef<HTMLFormElement>(null);
   const remote = useTickerSearch(draft);
 
   const heldKey = heldTickers.join("|");
@@ -92,6 +261,8 @@ export function WatchlistStrip({
       ),
     [draft, popular, remote, exclude]
   );
+
+  const suggestOpen = open && suggestions.length > 0;
 
   useEffect(() => {
     if (names.length === 0) return;
@@ -158,14 +329,6 @@ export function WatchlistStrip({
     setActive(0);
   }, [draft, suggestions.length]);
 
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-
   async function add(symbol?: string) {
     let t = (symbol ?? "").trim();
     if (t && !looksLikeTickerQuery(t)) t = "";
@@ -203,169 +366,136 @@ export function WatchlistStrip({
         title="Watching"
         subtitle={
           names.length === 0
-            ? "Names you don't own. Add one to see the price, the recent range, and whether now looks quiet or rushed."
+            ? undefined
             : "Today's price and a plain read of the last few weeks. Not a buy order."
         }
         actions={
-          <form
-            ref={boxRef}
-            className="relative flex items-center gap-1.5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void add(suggestions[active]?.symbol);
+          <Popover
+            open={suggestOpen}
+            onOpenChange={(next) => {
+              if (!next) setOpen(false);
             }}
           >
-          <Input
-            value={draft}
-            onChange={(e) => {
-              setDraft(sanitizeTickerQuery(e.target.value));
-              setOpen(true);
-            }}
-            onFocus={() => {
-              if (draft.trim()) setOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (!open || suggestions.length === 0) return;
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setActive((i) => (i + 1) % suggestions.length);
-              } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setActive((i) => (i - 1 + suggestions.length) % suggestions.length);
-              } else if (e.key === "Escape") {
-                e.preventDefault();
-                setOpen(false);
-              }
-            }}
-            placeholder="Apple or NVDA"
-            maxLength={48}
-            autoComplete="off"
-            role="combobox"
-            aria-expanded={open && suggestions.length > 0}
-            aria-controls="watchlist-suggest"
-            aria-autocomplete="list"
-            aria-activedescendant={
-              open && suggestions[active]
-                ? `watchlist-suggest-${suggestions[active]!.symbol}`
-                : undefined
-            }
-            className="w-40 sm:w-52"
-          />
-          <button
-            type="submit"
-            disabled={!draft.trim()}
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40 lg:size-9"
-            aria-label="Add to watchlist"
-          >
-            <Plus className="size-4" />
-          </button>
-          {open && suggestions.length > 0 && (
-            <ul
-              id="watchlist-suggest"
-              role="listbox"
-              className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-border bg-muted shadow-sm"
+            <PopoverAnchor asChild>
+              <form
+                className="relative"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void add(suggestions[active]?.symbol);
+                }}
+              >
+                <InputGroup className="w-44 sm:w-56">
+                  <InputGroupInput
+                    value={draft}
+                    onChange={(e) => {
+                      setDraft(sanitizeTickerQuery(e.target.value));
+                      setOpen(true);
+                    }}
+                    onFocus={() => {
+                      if (draft.trim()) setOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!suggestOpen) return;
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setActive((i) => (i + 1) % suggestions.length);
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setActive(
+                          (i) => (i - 1 + suggestions.length) % suggestions.length
+                        );
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setOpen(false);
+                      }
+                    }}
+                    placeholder="Apple or NVDA"
+                    maxLength={48}
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={suggestOpen}
+                    aria-controls="watchlist-suggest"
+                    aria-autocomplete="list"
+                    aria-activedescendant={
+                      suggestOpen && suggestions[active]
+                        ? `watchlist-suggest-${suggestions[active]!.symbol}`
+                        : undefined
+                    }
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="submit"
+                      size="icon-xs"
+                      disabled={!draft.trim()}
+                      aria-label="Add to watchlist"
+                      className="touch-target lg:min-h-0 lg:min-w-0"
+                    >
+                      <Plus />
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </form>
+            </PopoverAnchor>
+            <PopoverContent
+              align="end"
+              className="w-64 p-1"
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              onCloseAutoFocus={(e) => e.preventDefault()}
             >
-              {suggestions.map((row, i) => (
-                <li key={row.symbol} role="presentation">
-                  <button
-                    id={`watchlist-suggest-${row.symbol}`}
-                    type="button"
-                    role="option"
-                    aria-selected={i === active}
-                    className={cn(
-                      "flex min-h-11 w-full items-center justify-between gap-3 px-3 text-left lg:min-h-9",
-                      i === active ? "bg-muted" : "hover:bg-muted"
-                    )}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => add(row.symbol)}
-                  >
-                    <span className="text-sm font-medium text-foreground">
-                      {cashtag(row.symbol)}
-                    </span>
-                    {row.name && (
-                      <span className="truncate text-sm text-muted-foreground">
-                        {row.name}
+              <ul id="watchlist-suggest" role="listbox">
+                {suggestions.map((row, i) => (
+                  <li key={row.symbol} role="presentation">
+                    <button
+                      id={`watchlist-suggest-${row.symbol}`}
+                      type="button"
+                      role="option"
+                      aria-selected={i === active}
+                      className={cn(
+                        "flex min-h-11 w-full items-center justify-between gap-3 rounded-md px-2.5 text-left lg:min-h-8",
+                        i === active
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      )}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setActive(i)}
+                      onClick={() => add(row.symbol)}
+                    >
+                      <span className="text-sm font-medium text-foreground">
+                        {cashtag(row.symbol)}
                       </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </form>
+                      {row.name && (
+                        <span className="truncate text-sm text-muted-foreground">
+                          {row.name}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </PopoverContent>
+          </Popover>
         }
       />
-      {names.length === 0 ? null : (
+      {names.length === 0 ? (
+        <EmptyState
+          title="Nothing on the list yet"
+          detail="Add a name you don't own. You'll see today's price, the recent range, and whether now looks quiet or rushed."
+        />
+      ) : (
         <>
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
             {names.map((ticker) => {
               const q = quotes[ticker];
-              const look = q
-                ? watchLook(q, reportDays[ticker] ?? null)
-                : null;
-              const pct = q?.changePercent ?? null;
+              const look = q ? watchLook(q, reportDays[ticker] ?? null) : null;
               return (
-                <li
-                  key={ticker}
-                  className={cn(
-                    "relative flex flex-col rounded-lg border bg-muted p-6",
-                    lookBorder(look?.kind)
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setList(removeWatchlistTicker(list, ticker))}
-                    className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:size-9"
-                    aria-label={`Remove ${ticker}`}
-                  >
-                    <X className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onOpenPulse?.(ticker)}
-                    className="flex flex-1 flex-col pr-12 text-left lg:pr-10"
-                  >
-                    <p className="text-sm font-semibold text-foreground">
-                      {cashtag(ticker)}
-                    </p>
-                    <p
-                      className="mt-1 text-sm font-semibold tabular-nums text-foreground"
-                      title={quoteAsOfTitle(q)}
-                    >
-                      {q ? currency(q.price) : "—"}
-                    </p>
-                    <p
-                      className={cn(
-                        "text-sm tabular-nums",
-                        pct == null ? "text-muted-foreground" : signedTone(pct)
-                      )}
-                    >
-                      {pct == null
-                        ? "Waiting on today's price"
-                        : `${signedCurrency(q!.change)} today · ${signedPercent(pct)}`}
-                    </p>
-                    {look?.low != null && look.high != null && (
-                      <p className="mt-1.5 text-sm text-muted-foreground">
-                        Lately {currency(look.low)} to {currency(look.high)}
-                      </p>
-                    )}
-                    {look && (
-                      <>
-                        <p className="mt-3 text-sm font-semibold text-foreground">
-                          {look.headline}
-                        </p>
-                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                          {look.detail}
-                        </p>
-                      </>
-                    )}
-                    {onOpenPulse && (
-                      <span className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-primary lg:min-h-9">
-                        Check in Pulse
-                      </span>
-                    )}
-                  </button>
+                <li key={ticker}>
+                  <WatchCard
+                    ticker={ticker}
+                    quote={q}
+                    look={look}
+                    onRemove={() => setList(removeWatchlistTicker(list, ticker))}
+                    onOpenPulse={onOpenPulse}
+                  />
                 </li>
               );
             })}
