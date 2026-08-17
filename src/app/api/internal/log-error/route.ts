@@ -1,6 +1,8 @@
 import { logError } from "@/lib/error-log";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getAuthUser } from "@/lib/supabase/server-auth";
+import { readJsonBody } from "@/lib/http";
+import { isRecord, readString } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +21,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 429 });
   }
 
-  const body = await req.json().catch(() => ({}));
-  const message = String(body.message ?? "").trim();
+  const raw = await readJsonBody(req);
+  const body = isRecord(raw) ? raw : {};
+  const message = (readString(body.message) ?? "").trim();
   if (!message) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
   }
@@ -31,9 +34,9 @@ export async function POST(req: NextRequest) {
   await logError({
     source: "client",
     message,
-    stack: typeof body.stack === "string" ? body.stack : null,
-    digest: typeof body.digest === "string" ? body.digest : null,
-    path: typeof body.path === "string" ? body.path : null,
+    stack: readString(body.stack) ?? null,
+    digest: readString(body.digest) ?? null,
+    path: readString(body.path) ?? null,
     userId: user?.id ?? null,
     userEmail: user?.email ?? null,
     userAgent: req.headers.get("user-agent"),

@@ -6,17 +6,22 @@ import {
 } from "@/lib/cash-trade";
 import { holdingWriteActions } from "@/lib/classroom";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
+import { readJsonBodyOr400 } from "@/lib/http";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { isSafePositiveMoney, isSafeShares } from "@/lib/input-guard";
 import type { TablesUpdate } from "@/lib/supabase/database.types";
-import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { HOLDING_COLUMNS, PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { isPlausibleTicker, normalizeYahooTicker } from "@/lib/ticker";
 import { roundMoney, roundShares } from "@/lib/money";
+import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+const HOLDING_WRITE_ATTEMPTS = 3;
+const UNIQUE_VIOLATION = "23505";
 
 type HoldingRow = {
   portfolio_id: string;
@@ -24,6 +29,40 @@ type HoldingRow = {
   ticker: string;
   buy_price: number;
 };
+
+function parseHoldingRow(value: unknown): HoldingRow | null {
+  if (!isRecord(value)) return null;
+  const portfolioId = readString(value.portfolio_id);
+  const ticker = readString(value.ticker);
+  const shares = readFiniteNumber(value.shares);
+  const buyPrice = readFiniteNumber(value.buy_price);
+  if (!portfolioId || !ticker || shares == null || buyPrice == null) return null;
+  return {
+    portfolio_id: portfolioId,
+    ticker,
+    shares,
+    buy_price: buyPrice,
+  };
+}
+
+function parseShareCost(value: unknown): { shares: number; buy_price: number } | null {
+  if (!isRecord(value)) return null;
+  const shares = readFiniteNumber(value.shares);
+  const buyPrice = readFiniteNumber(value.buy_price);
+  if (shares == null || buyPrice == null) return null;
+  return { shares, buy_price: buyPrice };
+}
+
+function isUniqueViolation(error: { code?: string } | null): boolean {
+  return error?.code === UNIQUE_VIOLATION;
+}
+
+function conflictResponse() {
+  return NextResponse.json(
+    { error: "That holding changed under you. Try again." },
+    { status: 409 }
+  );
+}
 
 /**
  * Load the holding a write is aimed at, or the response explaining why not.
@@ -60,13 +99,13 @@ async function loadWritableHolding(
       ),
     };
   }
-  if (!data) {
+  const row = parseHoldingRow(data);
+  if (!row) {
     return {
       error: NextResponse.json({ error: "Holding not found" }, { status: 404 }),
     };
   }
 
-  const row = data as HoldingRow;
   const notOwner = await requirePortfolioOwner(userId, row.portfolio_id);
   if (notOwner) return { error: notOwner };
 
@@ -77,8 +116,10 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
-  const portfolioId = body.portfolio_id as string;
+  const parsedBody = await readJsonBodyOr400(req);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
+  const portfolioId = readString(body.portfolio_id)?.trim() ?? "";
   const ticker = normalizeYahooTicker(String(body.ticker ?? ""));
   if (!portfolioId || !ticker) {
     return NextResponse.json(
@@ -114,26 +155,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Buy price must be a positive number" }, { status: 400 });
   }
 
-  const { data: existingRow } = await supabase
-    .from(PORTFELL_TABLES.holdings)
-    .select("shares, buy_price")
-    .eq("portfolio_id", portfolioId)
-    .eq("ticker", ticker)
-    .maybeSingle();
-  const blocked = await denyClassroomWrite(supabase, {
-    portfolioId,
-    userId: auth.user.id,
-    action: holdingWriteActions({
-      isNew: !existingRow,
-      isDelete: false,
-      existingShares: existingRow
-        ? Number((existingRow as { shares: number }).shares)
-        : 0,
-      nextShares: shares,
-    }),
-  });
-  if (blocked) return blocked;
-
   const row = {
     portfolio_id: portfolioId,
     ticker,
@@ -149,47 +170,94 @@ export async function POST(req: NextRequest) {
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from(PORTFELL_TABLES.holdings)
-    .upsert(row, { onConflict: "portfolio_id,ticker" })
-    .select()
-    .single();
+  for (let attempt = 0; attempt < HOLDING_WRITE_ATTEMPTS; attempt++) {
+    const { data: existingRaw, error: existingErr } = await supabase
+      .from(PORTFELL_TABLES.holdings)
+      .select("shares, buy_price")
+      .eq("portfolio_id", portfolioId)
+      .eq("ticker", ticker)
+      .maybeSingle();
+    if (existingErr) {
+      return NextResponse.json(
+        { error: "Couldn't check that holding. Try again." },
+        { status: 503 }
+      );
+    }
+    const existingRow = parseShareCost(existingRaw);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const blocked = await denyClassroomWrite(supabase, {
+      portfolioId,
+      userId: auth.user.id,
+      action: holdingWriteActions({
+        isNew: !existingRow,
+        isDelete: false,
+        existingShares: existingRow ? existingRow.shares : 0,
+        nextShares: shares,
+      }),
+    });
+    if (blocked) return blocked;
+
+    if (!existingRow) {
+      const { data, error } = await supabase
+        .from(PORTFELL_TABLES.holdings)
+        .insert(row)
+        .select(HOLDING_COLUMNS)
+        .single();
+      if (error) {
+        if (isUniqueViolation(error)) continue;
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      const cash = await applyTradeCashDelta(
+        supabase,
+        portfolioId,
+        tradeCashDelta({ buyShares: shares, buyPrice })
+      );
+      return NextResponse.json({ holding: data, cash_balance: cash });
+    }
+
+    const { data, error } = await supabase
+      .from(PORTFELL_TABLES.holdings)
+      .update(row)
+      .eq("portfolio_id", portfolioId)
+      .eq("ticker", ticker)
+      .eq("shares", existingRow.shares)
+      .select(HOLDING_COLUMNS)
+      .maybeSingle();
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data) continue;
+
+    const prevShares = existingRow.shares;
+    const prevBuy = existingRow.buy_price;
+    let delta = 0;
+    if (shares > prevShares) {
+      delta = tradeCashDelta({
+        buyShares: shares - prevShares,
+        buyPrice,
+      });
+    } else if (shares < prevShares) {
+      const px = await salePriceFor(ticker, prevBuy || buyPrice);
+      delta = tradeCashDelta({
+        sellShares: prevShares - shares,
+        sellPrice: px,
+      });
+    }
+    const cash = await applyTradeCashDelta(supabase, portfolioId, delta);
+    return NextResponse.json({ holding: data, cash_balance: cash });
   }
 
-  const prevShares = existingRow
-    ? Number((existingRow as { shares: number }).shares)
-    : 0;
-  const prevBuy = existingRow
-    ? Number((existingRow as { buy_price: number }).buy_price)
-    : 0;
-  let delta = 0;
-  if (!existingRow) {
-    delta = tradeCashDelta({ buyShares: shares, buyPrice });
-  } else if (shares > prevShares) {
-    delta = tradeCashDelta({
-      buyShares: shares - prevShares,
-      buyPrice,
-    });
-  } else if (shares < prevShares) {
-    const px = await salePriceFor(ticker, prevBuy || buyPrice);
-    delta = tradeCashDelta({
-      sellShares: prevShares - shares,
-      sellPrice: px,
-    });
-  }
-  const cash = await applyTradeCashDelta(supabase, portfolioId, delta);
-  return NextResponse.json({ holding: data, cash_balance: cash });
+  return conflictResponse();
 }
 
 export async function PATCH(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
-  const id = body.id as string;
+  const parsedBody = await readJsonBodyOr400(req);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
+  const id = readString(body.id)?.trim() ?? "";
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
@@ -201,10 +269,6 @@ export async function PATCH(req: NextRequest) {
       { status: 400 }
     );
   }
-
-  const loaded = await loadWritableHolding(supabase, auth.user.id, id);
-  if ("error" in loaded) return loaded.error;
-  const { row: existing, portfolioId } = loaded;
 
   const patch: TablesUpdate<"portfell_holdings"> = {
     updated_at: new Date().toISOString(),
@@ -257,72 +321,90 @@ export async function PATCH(req: NextRequest) {
     patch.sort_order = Number(body.sort_order);
   }
 
-  const prevShares = Number(existing.shares) || 0;
-  const prevBuy = Number(existing.buy_price) || 0;
-  const prevTicker = String(existing.ticker ?? "");
-  const nextShares =
-    body.shares !== undefined ? roundShares(Number(body.shares)) : prevShares;
-  const nextBuy =
-    body.buy_price !== undefined ? roundMoney(Number(body.buy_price)) : prevBuy;
-  const nextTicker =
-    body.ticker !== undefined
-      ? normalizeYahooTicker(String(body.ticker))
-      : prevTicker;
-  const renamed =
-    Boolean(prevTicker) &&
-    Boolean(nextTicker) &&
-    prevTicker.toUpperCase() !== nextTicker.toUpperCase();
+  const casOnShares = body.shares !== undefined;
 
-  const blocked = await denyClassroomWrite(supabase, {
-    portfolioId,
-    userId: auth.user.id,
-    action: holdingWriteActions({
-      isNew: false,
-      isDelete: false,
-      existingShares: prevShares,
-      nextShares,
-      tickerChanged: renamed,
-    }),
-  });
-  if (blocked) return blocked;
+  for (let attempt = 0; attempt < HOLDING_WRITE_ATTEMPTS; attempt++) {
+    const loaded = await loadWritableHolding(supabase, auth.user.id, id);
+    if ("error" in loaded) return loaded.error;
+    const { row: existing, portfolioId } = loaded;
 
-  // Scoped to the portfolio the ownership check just cleared, not only to the
-  // row id. Authorization and mutation then describe the same rows, so the
-  // window between the two reads can't be used to retarget the write.
-  const { data, error } = await supabase
-    .from(PORTFELL_TABLES.holdings)
-    .update(patch)
-    .eq("id", id)
-    .eq("portfolio_id", portfolioId)
-    .select()
-    .single();
+    const prevShares = existing.shares;
+    const prevBuy = existing.buy_price;
+    const prevTicker = existing.ticker;
+    const nextShares =
+      body.shares !== undefined ? roundShares(Number(body.shares)) : prevShares;
+    const nextBuy =
+      body.buy_price !== undefined
+        ? roundMoney(Number(body.buy_price))
+        : prevBuy;
+    const nextTicker =
+      body.ticker !== undefined
+        ? normalizeYahooTicker(String(body.ticker))
+        : prevTicker;
+    const renamed =
+      Boolean(prevTicker) &&
+      Boolean(nextTicker) &&
+      prevTicker.toUpperCase() !== nextTicker.toUpperCase();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const blocked = await denyClassroomWrite(supabase, {
+      portfolioId,
+      userId: auth.user.id,
+      action: holdingWriteActions({
+        isNew: false,
+        isDelete: false,
+        existingShares: prevShares,
+        nextShares,
+        tickerChanged: renamed,
+      }),
+    });
+    if (blocked) return blocked;
+
+    // Scoped to the portfolio the ownership check just cleared, not only to the
+    // row id. Authorization and mutation then describe the same rows, so the
+    // window between the two reads can't be used to retarget the write.
+    // When shares change, also match the shares we just read so two overlapping
+    // edits cannot both compute a cash delta from the same starting count.
+    let query = supabase
+      .from(PORTFELL_TABLES.holdings)
+      .update(patch)
+      .eq("id", id)
+      .eq("portfolio_id", portfolioId);
+    if (casOnShares) query = query.eq("shares", prevShares);
+    const { data, error } = await query.select(HOLDING_COLUMNS).maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    if (!data) {
+      if (casOnShares) continue;
+      return NextResponse.json({ error: "Holding not found" }, { status: 404 });
+    }
+
+    let delta = 0;
+    if (renamed) {
+      const sellPx = await salePriceFor(prevTicker, prevBuy);
+      delta += tradeCashDelta({ sellShares: prevShares, sellPrice: sellPx });
+      delta += tradeCashDelta({
+        buyShares: nextShares,
+        buyPrice: nextBuy || prevBuy,
+      });
+    } else if (nextShares > prevShares) {
+      delta = tradeCashDelta({
+        buyShares: nextShares - prevShares,
+        buyPrice: nextBuy || prevBuy,
+      });
+    } else if (nextShares < prevShares) {
+      const px = await salePriceFor(prevTicker, prevBuy);
+      delta = tradeCashDelta({
+        sellShares: prevShares - nextShares,
+        sellPrice: px,
+      });
+    }
+    const cash = await applyTradeCashDelta(supabase, portfolioId, delta);
+    return NextResponse.json({ holding: data, cash_balance: cash });
   }
 
-  let delta = 0;
-  if (renamed) {
-    const sellPx = await salePriceFor(prevTicker, prevBuy);
-    delta += tradeCashDelta({ sellShares: prevShares, sellPrice: sellPx });
-    delta += tradeCashDelta({
-      buyShares: nextShares,
-      buyPrice: nextBuy || prevBuy,
-    });
-  } else if (nextShares > prevShares) {
-    delta = tradeCashDelta({
-      buyShares: nextShares - prevShares,
-      buyPrice: nextBuy || prevBuy,
-    });
-  } else if (nextShares < prevShares) {
-    const px = await salePriceFor(prevTicker, prevBuy);
-    delta = tradeCashDelta({
-      sellShares: prevShares - nextShares,
-      sellPrice: px,
-    });
-  }
-  const cash = await applyTradeCashDelta(supabase, portfolioId, delta);
-  return NextResponse.json({ holding: data, cash_balance: cash });
+  return conflictResponse();
 }
 
 export async function DELETE(req: NextRequest) {
@@ -353,18 +435,29 @@ export async function DELETE(req: NextRequest) {
   });
   if (blocked) return blocked;
 
-  const { error } = await supabase
+  const { data: deletedRaw, error } = await supabase
     .from(PORTFELL_TABLES.holdings)
     .delete()
     .eq("id", id)
-    .eq("portfolio_id", portfolioId);
+    .eq("portfolio_id", portfolioId)
+    .select("shares, buy_price, ticker")
+    .maybeSingle();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const shares = Number(existing.shares) || 0;
-  const buy = Number(existing.buy_price) || 0;
-  const ticker = String(existing.ticker ?? "");
+  // Only the delete that actually removed the row may move cash. A second
+  // overlapping DELETE would otherwise credit the sale twice.
+  if (!deletedRaw) {
+    const cash = await applyTradeCashDelta(supabase, portfolioId, 0);
+    return NextResponse.json({ ok: true, cash_balance: cash });
+  }
+  const deleted = parseHoldingRow({
+    ...(isRecord(deletedRaw) ? deletedRaw : {}),
+    portfolio_id: portfolioId,
+  });
+  const shares = deleted?.shares ?? existing.shares;
+  const buy = deleted?.buy_price ?? existing.buy_price;
+  const ticker = deleted?.ticker ?? existing.ticker;
   const px = ticker ? await salePriceFor(ticker, buy) : buy;
   const cash = await applyTradeCashDelta(
     supabase,

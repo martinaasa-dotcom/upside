@@ -1,5 +1,37 @@
 import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
+import { CLASS_PERIOD_KINDS, type ClassroomTrade } from "@/lib/classroom";
 import type { Holding, Portfolio } from "@/lib/types";
+
+function parseClassroomTrade(value: unknown): ClassroomTrade | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!isRecord(value)) return undefined;
+  const kind = CLASS_PERIOD_KINDS.find((k) => k === value.kind);
+  if (
+    !kind ||
+    typeof value.canBuy !== "boolean" ||
+    typeof value.canSell !== "boolean" ||
+    typeof value.canAdjust !== "boolean" ||
+    typeof value.canCash !== "boolean" ||
+    typeof value.label !== "string" ||
+    typeof value.message !== "string" ||
+    typeof value.studentLocked !== "boolean"
+  ) {
+    return undefined;
+  }
+  return {
+    kind,
+    canBuy: value.canBuy,
+    canSell: value.canSell,
+    canAdjust: value.canAdjust,
+    canCash: value.canCash,
+    purpose: typeof value.purpose === "string" ? value.purpose : null,
+    until: typeof value.until === "string" ? value.until : null,
+    label: value.label,
+    message: value.message,
+    studentLocked: value.studentLocked,
+  };
+}
 
 export function parseHolding(value: unknown): Holding | null {
   if (!isRecord(value)) return null;
@@ -60,6 +92,8 @@ export function parsePortfolio(value: unknown): Portfolio | null {
       (item): item is string => typeof item === "string"
     );
   }
+  const classTrade = parseClassroomTrade(value.classTrade);
+  if (classTrade !== undefined) portfolio.classTrade = classTrade;
   return portfolio;
 }
 

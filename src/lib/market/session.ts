@@ -50,6 +50,16 @@ export function quotePollMs(at: Date = new Date()): number {
   return 2 * 60_000;
 }
 
+/** True when a quote fetch this recent is still inside the current poll cadence. */
+export function isQuotePollFresh(
+  updatedAt: number | null | undefined,
+  at: Date = new Date()
+): boolean {
+  if (updatedAt == null || !Number.isFinite(updatedAt)) return false;
+  const age = Date.now() - updatedAt;
+  return age >= 0 && age < quotePollMs(at);
+}
+
 /**
  * Stable /api/quotes URL for a ticker set. Sorted and deduped so two tabs
  * asking for the same names in a different order share one cache entry

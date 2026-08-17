@@ -12,6 +12,8 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { normalizeYahooTicker, resolveImportTicker } from "@/lib/ticker";
+import { readJsonBody } from "@/lib/http";
+import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
 
 export const dynamic = "force-dynamic";
 
@@ -39,14 +41,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    portfolio_id?: string;
-    cash?: number | null;
-    replace?: boolean;
-    holdings?: ImportRow[];
-  };
+  const raw = await readJsonBody(req);
+  const body = isRecord(raw) ? raw : {};
 
-  const portfolioId = body.portfolio_id?.trim();
+  const portfolioId = readString(body.portfolio_id)?.trim();
   if (!portfolioId) {
     return NextResponse.json({ error: "portfolio_id required" }, { status: 400 });
   }
@@ -54,8 +52,27 @@ export async function POST(req: NextRequest) {
   const notOwner = await requirePortfolioOwner(auth.user.id, portfolioId);
   if (notOwner) return notOwner;
 
-  const rows = Array.isArray(body.holdings) ? body.holdings : [];
-  if (rows.length === 0 && body.cash == null) {
+  const rows: ImportRow[] = Array.isArray(body.holdings)
+    ? body.holdings.flatMap((row) => {
+        if (!isRecord(row)) return [];
+        const ticker = readString(row.ticker) ?? "";
+        const shares = readFiniteNumber(row.shares);
+        const buy = readFiniteNumber(row.buy_price);
+        if (!ticker || shares == null || buy == null) return [];
+        return [
+          {
+            ticker,
+            shares,
+            buy_price: buy,
+            target_call_pct: readFiniteNumber(row.target_call_pct),
+            isin: readString(row.isin),
+          },
+        ];
+      })
+    : [];
+  const cash =
+    body.cash === null ? null : readFiniteNumber(body.cash) ?? null;
+  if (rows.length === 0 && cash == null) {
     return NextResponse.json(
       { error: "cash or holdings required" },
       { status: 400 }
@@ -75,7 +92,7 @@ export async function POST(req: NextRequest) {
     portfolioId,
     userId: auth.user.id,
     action: classifyImportWrite({
-      cash: body.cash != null,
+      cash: cash != null,
       replace: replacing,
       rows: rows.map((row) => ({
         ticker:
@@ -83,19 +100,21 @@ export async function POST(req: NextRequest) {
           normalizeYahooTicker(String(row.ticker ?? "")),
         shares: Number(row.shares),
       })),
-      existing: ((existing ?? []) as { ticker: string; shares: number }[]).map(
-        (h) => ({ ticker: String(h.ticker), shares: Number(h.shares) })
-      ),
+      existing: (existing ?? []).flatMap((h) => {
+        if (!isRecord(h)) return [];
+        const ticker = readString(h.ticker);
+        const shares = readFiniteNumber(h.shares);
+        if (!ticker || shares == null) return [];
+        return [{ ticker, shares }];
+      }),
     }),
   });
   if (blocked) return blocked;
 
   const paperCash = await portfolioTracksTradeCash(supabase, portfolioId);
   let cashUpdated = false;
-  if (body.cash != null && Number.isFinite(Number(body.cash))) {
-    const nextCash = paperCash
-      ? Number(body.cash)
-      : Math.max(0, Number(body.cash));
+  if (cash != null && Number.isFinite(cash)) {
+    const nextCash = paperCash ? cash : Math.max(0, cash);
     const { error } = await supabase
       .from(PORTFELL_TABLES.portfolios)
       .update({

@@ -103,6 +103,32 @@ export function mergeQuotes(
   return merged;
 }
 
+/** True when live marks (not sparkline identity) match. Lets React bail out. */
+export function quotesUnchanged(
+  prev: Record<string, Quote>,
+  next: Record<string, Quote>
+): boolean {
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+  if (prevKeys.length !== nextKeys.length) return false;
+  for (const key of nextKeys) {
+    const a = prev[key];
+    const b = next[key];
+    if (!a || !b) return false;
+    if (
+      a.price !== b.price ||
+      a.change !== b.change ||
+      a.previousClose !== b.previousClose ||
+      a.marketState !== b.marketState ||
+      a.preMarketPrice !== b.preMarketPrice ||
+      a.postMarketPrice !== b.postMarketPrice
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /** Merge freshly fetched quotes over whatever's already cached. */
 export function saveCachedQuotes(next: Record<string, Quote>) {
   if (typeof window === "undefined") return;

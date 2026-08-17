@@ -20,6 +20,7 @@ export function useLabSync() {
   useEffect(() => {
     const ctrl = new AbortController();
     void (async () => {
+      try {
       const local: LabBundle = { conviction: loadConvictionMap() };
       const remote = await fetchLabBundle(ctrl.signal);
       if (ctrl.signal.aborted) return;
@@ -44,6 +45,10 @@ export function useLabSync() {
         setLabBundle(local);
       }
       setLabReady(true);
+      } catch {
+        if (ctrl.signal.aborted) return;
+        setLabReady(true);
+      }
     })();
     return () => {
       ctrl.abort();
@@ -60,6 +65,8 @@ export function useLabSync() {
       void pushLabBundle(labBundle).then((r) => {
         if (cancelled || gen !== pushGenRef.current) return;
         if (!r.ok && r.error) toast(r.error, "error");
+      }).catch(() => {
+        /* pushLabBundle already swallows network errors */
       });
     }, 900);
     return () => {

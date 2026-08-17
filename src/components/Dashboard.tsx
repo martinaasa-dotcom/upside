@@ -105,6 +105,7 @@ import {
   readBookCache,
   shouldClaimSeed,
   writeBookCache,
+  isBookFetchFresh,
 } from "@/lib/book-cache";
 import {
   GO_HOME_EVENT,
@@ -134,8 +135,9 @@ import {
   SlidersHorizontal,
   UserPlus,
 } from "lucide-react";
-import { quotePollMs, quotesUrl } from "@/lib/market/session";
+import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import { useTimeout } from "@/lib/use-timeout";
+import { useStableCallback } from "@/lib/use-stable-callback";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 
@@ -170,7 +172,7 @@ import { SheetPicker } from "@/components/SheetPicker";
 import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
 import { pickLoadingMessage } from "@/lib/loading-messages";
-import { loadCachedQuotes, mergeQuotes, saveCachedQuotes } from "@/lib/quote-cache";
+import { loadCachedQuotes, mergeQuotes, saveCachedQuotes, quotesUnchanged } from "@/lib/quote-cache";
 import { markSheetImported } from "@/lib/sheet-import-stamp";
 import { addPulseStamp } from "@/lib/conviction";
 
@@ -188,6 +190,22 @@ const CcAdvisorChat = dynamic(
 );
 
 type DataSource = "demo" | "supabase";
+
+const EMPTY_HIDDEN_TABS: string[] = [];
+
+function bookFingerprint(ps: Portfolio[], hs: Holding[]) {
+  return JSON.stringify([
+    ps.map((p) => [p.id, p.cash_balance, p.name]),
+    hs.map((h) => [
+      h.id,
+      h.ticker,
+      h.shares,
+      h.buy_price,
+      h.target_call_pct,
+      h.stock_target_override,
+    ]),
+  ]);
+}
 
 function extendedHoursFromQuote(q: Quote | null | undefined) {
   if (!q) {
@@ -353,7 +371,6 @@ export function Dashboard() {
     | null
   >(null);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
-  const [, setBookSyncedAt] = useState<number | null>(null);
   const [margusExpandSignal, setMargusExpandSignal] = useState(0);
   const [margusImagePickSignal, setMargusImagePickSignal] = useState(0);
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
@@ -392,15 +409,17 @@ export function Dashboard() {
   bookRef.current = { portfolios, holdings };
   const bookAbortRef = useRef<AbortController | null>(null);
   const quotesAbortRef = useRef<AbortController | null>(null);
+  const quotesRef = useRef(quotes);
+  quotesRef.current = quotes;
+  const quotesUpdatedAtRef = useRef(quotesUpdatedAt);
+  quotesUpdatedAtRef.current = quotesUpdatedAt;
+  const bookFetchedAtRef = useRef(0);
   const holdingPatchSeqRef = useRef(new Map<string, number>());
   const cashWriteSeqRef = useRef(new Map<string, number>());
   const pendingBookWritesRef = useRef(0);
   const reloadAfterWritesRef = useRef(false);
   const bookWriteChainRef = useRef(Promise.resolve());
   const addingSheetRef = useRef<Promise<Portfolio | undefined> | null>(null);
-  const loadPortfoliosRef = useRef<(opts?: { silent?: boolean; retry?: boolean }) => Promise<void>>(
-    async () => undefined
-  );
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] =
     useState<VisibilityMap>({});
   const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] =
@@ -427,6 +446,7 @@ export function Dashboard() {
       setHoldings(cached.holdings);
       setLocked(cached.locked);
       setLoading(false);
+      bookFetchedAtRef.current = cached.fetchedAt;
       const fromUrl = resolveSheetIdFromUrl(cached.portfolios, takeOpenTab());
       setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
     } else {
@@ -821,7 +841,7 @@ export function Dashboard() {
   }, [quotes]);
 
   const pickInitialSheet = useCallback(
-    (list: Portfolio[], _prev: string) => {
+    (list: Portfolio[]) => {
       const fromUrl = resolveSheetIdFromUrl(list);
       if (fromUrl) return fromUrl;
       return OVERVIEW_TAB_ID;
@@ -906,11 +926,17 @@ export function Dashboard() {
       if (sourceName === "supabase") {
         const nextPortfolios = parsePortfolioList(payload.portfolios);
         const nextHoldings = parseHoldingList(payload.holdings);
-        setSource("supabase");
-        setPortfolios(nextPortfolios);
-        setHoldings(nextHoldings);
-        setBookSyncedAt(Date.now());
-        setActiveId((prev) => pickInitialSheet(nextPortfolios, prev));
+        const fetchedAt = Date.now();
+        bookFetchedAtRef.current = fetchedAt;
+        const sameBook =
+          bookFingerprint(nextPortfolios, nextHoldings) ===
+          bookFingerprint(bookRef.current.portfolios, bookRef.current.holdings);
+        if (!sameBook) {
+          setSource("supabase");
+          setPortfolios(nextPortfolios);
+          setHoldings(nextHoldings);
+          setActiveId(() => pickInitialSheet(nextPortfolios));
+        }
         if (userId) {
           writeBookCache({
             userId,
@@ -918,7 +944,7 @@ export function Dashboard() {
             portfolios: nextPortfolios,
             holdings: nextHoldings,
             locked: false,
-            fetchedAt: Date.now(),
+            fetchedAt,
           });
         }
       } else {
@@ -926,7 +952,7 @@ export function Dashboard() {
         setSource("demo");
         setPortfolios(demo.portfolios);
         setHoldings(demo.holdings);
-        setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
+        setActiveId(() => pickInitialSheet(demo.portfolios));
         const isLocked = hasLockedSave();
         setLocked(isLocked);
         if (userId) {
@@ -957,7 +983,7 @@ export function Dashboard() {
           setSource("demo");
           setPortfolios(demo.portfolios);
           setHoldings(demo.holdings);
-          setActiveId((prev) => pickInitialSheet(demo.portfolios, prev));
+          setActiveId(() => pickInitialSheet(demo.portfolios));
           setLocked(hasLockedSave());
         } else if (!hasCache) {
           setSource("supabase");
@@ -970,7 +996,6 @@ export function Dashboard() {
       if (bookAbortRef.current === ctrl) setLoading(false);
     }
   }, [pickInitialSheet, refresh, user?.id]);
-  loadPortfoliosRef.current = loadPortfolios;
 
   function beginBookWrite() {
     pendingBookWritesRef.current += 1;
@@ -1073,15 +1098,29 @@ export function Dashboard() {
           const incoming = (quotesJson.quotes ?? {}) as Record<string, Quote>;
           const missing = (quotesJson.missing ?? []) as string[];
           let merged = incoming;
+          let unchanged = false;
           setQuotes((prev) => {
             merged = mergeQuotes(prev, incoming);
+            if (quotesUnchanged(prev, merged)) {
+              unchanged = true;
+              merged = prev;
+              nextQuotes = prev;
+              return prev;
+            }
             nextQuotes = merged;
             return merged;
           });
           saveCachedQuotes(merged);
           setQuotesUpdatedAt(Date.now());
-          setQuotesDelayed(Boolean(quotesJson.delayed) || missing.length > 0);
-          setMissingTickers(missing);
+          if (!unchanged) {
+            setQuotesDelayed(Boolean(quotesJson.delayed) || missing.length > 0);
+            setMissingTickers((prev) =>
+              prev.length === missing.length &&
+              prev.every((t, i) => t === missing[i])
+                ? prev
+                : missing
+            );
+          }
           applyFxPayload(quotesJson.fx);
         }
 
@@ -1136,6 +1175,7 @@ export function Dashboard() {
     const id = window.setInterval(() => {
       if (document.hidden) return;
       if (!isWorkspaceRoomActive("book")) return;
+      if (isQuotePollFresh(quotesUpdatedAtRef.current)) return;
       void refreshFx(ctrl.signal);
     }, 120_000);
     return () => {
@@ -1329,7 +1369,7 @@ export function Dashboard() {
         }
       }
 
-      setActiveId((prev) => pickInitialSheet(portfolios, prev));
+      setActiveId(() => pickInitialSheet(portfolios));
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -1343,7 +1383,9 @@ export function Dashboard() {
         const fromUrl = resolveSheetIdFromUrl(portfolios, takeOpenTab());
         return fromUrl ?? prev;
       });
-      void loadPortfolios({ silent: true });
+      if (!isBookFetchFresh(bookFetchedAtRef.current)) {
+        void loadPortfolios({ silent: true });
+      }
     };
     const onGoHome = () => {
       setActiveId(OVERVIEW_TAB_ID);
@@ -1359,18 +1401,6 @@ export function Dashboard() {
 
   useEffect(() => {
     if (source !== "supabase") return;
-    const fingerprint = (ps: Portfolio[], hs: Holding[]) =>
-      JSON.stringify([
-        ps.map((p) => [p.id, p.cash_balance, p.name]),
-        hs.map((h) => [
-          h.id,
-          h.ticker,
-          h.shares,
-          h.buy_price,
-          h.target_call_pct,
-          h.stock_target_override,
-        ]),
-      ]);
 
     let pollAbort: AbortController | null = null;
     const tick = async () => {
@@ -1389,16 +1419,13 @@ export function Dashboard() {
         if (data.source !== "supabase") return;
         const nextP = (data.portfolios ?? []) as Portfolio[];
         const nextH = (data.holdings ?? []) as Holding[];
-        const nextSig = fingerprint(nextP, nextH);
+        const nextSig = bookFingerprint(nextP, nextH);
         const local = bookRef.current;
-        const localSig = fingerprint(local.portfolios, local.holdings);
-        if (nextSig === localSig) {
-          setBookSyncedAt(Date.now());
-          return;
-        }
+        const localSig = bookFingerprint(local.portfolios, local.holdings);
+        bookFetchedAtRef.current = Date.now();
+        if (nextSig === localSig) return;
         setPortfolios(nextP);
         setHoldings(nextH);
-        setBookSyncedAt(Date.now());
         if (user?.id) {
           writeBookCache({
             userId: user.id,
@@ -1436,12 +1463,18 @@ export function Dashboard() {
   // background. There is no header Refresh.
   useEffect(() => {
     if (holdings.length === 0) return;
+    const fresh = isQuotePollFresh(quotesUpdatedAtRef.current);
+    const cachedQuotes =
+      fresh && Object.keys(quotesRef.current).length > 0
+        ? quotesRef.current
+        : undefined;
+
     if (isLab) {
-      // Full options scan so Lab CC calendar / income isn't stuck at $0
-      void refreshMarkets(allTickers, holdings, undefined, { silent: true });
+      void refreshMarkets(allTickers, holdings, cachedQuotes, { silent: true });
       return;
     }
     if (isMetaTab) {
+      if (cachedQuotes) return;
       void refreshMarkets(allTickers, holdings, undefined, {
         quotesOnly: true,
         silent: true,
@@ -1450,7 +1483,7 @@ export function Dashboard() {
     }
     if (!activePortfolio) return;
     const rows = holdings.filter((h) => h.portfolio_id === activePortfolio.id);
-    void refreshMarkets(allTickers, rows, undefined, { silent: true });
+    void refreshMarkets(allTickers, rows, cachedQuotes, { silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activePortfolio?.id,
@@ -1481,6 +1514,7 @@ export function Dashboard() {
     const tick = () => {
       if (cancelled || document.hidden) return;
       if (!isWorkspaceRoomActive("book")) return;
+      if (isQuotePollFresh(quotesUpdatedAtRef.current)) return;
       const { holdings: rowsAll, isMetaTab: meta, portfolioId } =
         pollRowsRef.current;
       const rows = meta
@@ -1500,7 +1534,6 @@ export function Dashboard() {
         schedule();
       }, quotePollMs());
     };
-    tick();
     schedule();
 
     const onVisibility = () => {
@@ -1575,9 +1608,10 @@ export function Dashboard() {
     if (!activePortfolio) return;
 
     const ticker = normalizeYahooTicker(values.ticker);
+    const liveHoldings = bookRef.current.holdings;
     const sortOrder =
-      holdings.filter((h) => h.portfolio_id === activePortfolio.id).length + 1;
-    const existing = holdings.find(
+      liveHoldings.filter((h) => h.portfolio_id === activePortfolio.id).length + 1;
+    const existing = liveHoldings.find(
       (h) =>
         h.portfolio_id === activePortfolio.id &&
         h.ticker.toUpperCase() === ticker
@@ -1602,88 +1636,125 @@ export function Dashboard() {
         };
 
     setHoldings((prev) => {
-      if (existing) {
-        return prev.map((h) => (h.id === existing.id ? optimistic : h));
+      const current = prev.find(
+        (h) =>
+          h.portfolio_id === activePortfolio.id &&
+          h.ticker.toUpperCase() === ticker
+      );
+      if (current) {
+        return prev.map((h) =>
+          h.id === current.id ? { ...optimistic, id: current.id } : h
+        );
       }
       return [...prev, optimistic];
     });
-    const prevCash = activePortfolio.cash_balance;
-    let nextCash = prevCash;
+    let cashDelta = 0;
     if (!existing) {
-      nextCash =
-        prevCash +
-        tradeCashDelta({
-          buyShares: values.shares,
-          buyPrice: values.buy_price,
-        });
+      cashDelta = tradeCashDelta({
+        buyShares: values.shares,
+        buyPrice: values.buy_price,
+      });
     } else if (values.shares > existing.shares) {
-      nextCash =
-        prevCash +
-        tradeCashDelta({
-          buyShares: values.shares - existing.shares,
-          buyPrice: values.buy_price,
-        });
+      cashDelta = tradeCashDelta({
+        buyShares: values.shares - existing.shares,
+        buyPrice: values.buy_price,
+      });
     } else if (values.shares < existing.shares) {
-      nextCash =
-        prevCash +
-        tradeCashDelta({
-          sellShares: existing.shares - values.shares,
-          sellPrice: salePx(ticker, existing.buy_price),
-        });
+      cashDelta = tradeCashDelta({
+        sellShares: existing.shares - values.shares,
+        sellPrice: salePx(ticker, existing.buy_price),
+      });
     }
-    applyCashBalance(activePortfolio.id, nextCash);
+    applyCashDelta(activePortfolio.id, cashDelta);
     setModalOpen(false);
     toast("Holding saved", "success");
     track("holding_added", { ticker });
     void refreshMarkets(
       [ticker],
-      holdings
+      liveHoldings
         .filter((h) => h.portfolio_id === activePortfolio.id)
         .concat(optimistic)
     );
 
     if (source === "supabase") {
-      void (async () => {
-        const res = await apiFetch("/api/holdings", {
-          method: "POST",
-          body: JSON.stringify({
-            ...values,
-            ticker,
-            portfolio_id: activePortfolio.id,
-            sort_order: sortOrder,
-          }),
-        });
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          holding?: Holding;
-          cash_balance?: number | null;
-        };
-        if (!res.ok) {
-          setHoldings((prev) => {
-            if (existing) {
-              return prev.map((h) => (h.id === existing.id ? existing : h));
-            }
-            return prev.filter((h) => h.id !== optimistic.id);
+      const writeKey = existing?.id ?? optimistic.id;
+      const writeSeq = (holdingPatchSeqRef.current.get(writeKey) ?? 0) + 1;
+      holdingPatchSeqRef.current.set(writeKey, writeSeq);
+      beginBookWrite();
+      enqueueBookWrite(async () => {
+        try {
+          const res = await apiFetch("/api/holdings", {
+            method: "POST",
+            body: JSON.stringify({
+              ...values,
+              ticker,
+              portfolio_id: activePortfolio.id,
+              sort_order: sortOrder,
+            }),
           });
-          applyCashBalance(activePortfolio.id, prevCash);
+          const raw: unknown = await res.json().catch(() => ({}));
+          const data = isRecord(raw) ? raw : {};
+          if (!res.ok) {
+            applyCashDelta(activePortfolio.id, -cashDelta);
+            if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
+              setHoldings((prev) => {
+                if (existing) {
+                  return prev.map((h) => (h.id === existing.id ? existing : h));
+                }
+                return prev.filter((h) => h.id !== optimistic.id);
+              });
+            } else {
+              reloadAfterWritesRef.current = true;
+            }
+            toast(
+              plainError(
+                data.error,
+                "Couldn't save that holding. We put it back how it was."
+              ),
+              "error"
+            );
+            return;
+          }
+          if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
+            applyCashBalance(
+              activePortfolio.id,
+              readFiniteNumber(data.cash_balance)
+            );
+          }
+          const saved = parseHolding(data.holding);
+          if (saved) {
+            holdingPatchSeqRef.current.set(saved.id, writeSeq);
+            setHoldings((prev) => {
+              const withoutTemp = prev.filter((h) => h.id !== optimistic.id);
+              const exists = withoutTemp.some((h) => h.id === saved.id);
+              return exists
+                ? withoutTemp.map((h) => (h.id === saved.id ? saved : h))
+                : [...withoutTemp, saved];
+            });
+          }
+        } catch (err) {
+          applyCashDelta(activePortfolio.id, -cashDelta);
+          if (holdingPatchSeqRef.current.get(writeKey) === writeSeq) {
+            setHoldings((prev) => {
+              if (existing) {
+                return prev.map((h) => (h.id === existing.id ? existing : h));
+              }
+              return prev.filter((h) => h.id !== optimistic.id);
+            });
+          } else {
+            reloadAfterWritesRef.current = true;
+          }
           toast(
-            plainError(data.error, "Couldn't save that holding. We put it back how it was."),
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't save that holding. We put it back how it was."
+            ),
             "error"
           );
-          return;
+        } finally {
+          endBookWrite();
         }
-        applyCashBalance(activePortfolio.id, data.cash_balance);
-        if (data.holding) {
-          const saved = data.holding;
-          setHoldings((prev) => {
-            const withoutTemp = prev.filter((h) => h.id !== optimistic.id);
-            const exists = withoutTemp.some((h) => h.id === saved.id);
-            return exists
-              ? withoutTemp.map((h) => (h.id === saved.id ? saved : h))
-              : [...withoutTemp, saved];
-          });
-        }
-      })();
+      });
       return;
     }
 
@@ -1717,7 +1788,7 @@ export function Dashboard() {
     }
     const patchSeq = (holdingPatchSeqRef.current.get(id) ?? 0) + 1;
     holdingPatchSeqRef.current.set(id, patchSeq);
-    const previous = holdings.find((h) => h.id === id);
+    const previous = bookRef.current.holdings.find((h) => h.id === id);
 
     // Clear stale option when strike-driving fields change
     if (
@@ -1737,52 +1808,78 @@ export function Dashboard() {
     setHoldings((prev) =>
       prev.map((h) => (h.id === id ? { ...h, ...fields } : h))
     );
-    const prevCash = previous
-      ? portfolios.find((p) => p.id === previous.portfolio_id)?.cash_balance
-      : undefined;
+    let cashDelta = 0;
     if (previous && fields.shares != null && fields.shares !== previous.shares) {
       const buyPrice = fields.buy_price ?? previous.buy_price;
-      let delta = 0;
       if (fields.shares > previous.shares) {
-        delta = tradeCashDelta({
+        cashDelta = tradeCashDelta({
           buyShares: fields.shares - previous.shares,
           buyPrice,
         });
       } else {
-        delta = tradeCashDelta({
+        cashDelta = tradeCashDelta({
           sellShares: previous.shares - fields.shares,
           sellPrice: salePx(previous.ticker, previous.buy_price),
         });
       }
-      if (prevCash != null) applyCashBalance(previous.portfolio_id, prevCash + delta);
+      applyCashDelta(previous.portfolio_id, cashDelta);
     }
 
     if (source === "supabase") {
-      void (async () => {
-        const res = await apiFetch("/api/holdings", {
-          method: "PATCH",
-          body: JSON.stringify({ id, ...fields }),
-        });
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          cash_balance?: number | null;
-        };
-        if (holdingPatchSeqRef.current.get(id) !== patchSeq) return;
-        if (!res.ok) {
+      beginBookWrite();
+      enqueueBookWrite(async () => {
+        try {
+          const res = await apiFetch("/api/holdings", {
+            method: "PATCH",
+            body: JSON.stringify({ id, ...fields }),
+          });
+          const raw: unknown = await res.json().catch(() => ({}));
+          const data = isRecord(raw) ? raw : {};
+          if (holdingPatchSeqRef.current.get(id) !== patchSeq) {
+            if (!res.ok) reloadAfterWritesRef.current = true;
+            return;
+          }
+          if (!res.ok) {
+            if (previous) {
+              setHoldings((prev) =>
+                prev.map((h) => (h.id === id ? previous : h))
+              );
+              applyCashDelta(previous.portfolio_id, -cashDelta);
+            }
+            toast(
+              plainError(data.error, "Couldn't update that holding. We put it back how it was."),
+              "error"
+            );
+            return;
+          }
+          if (previous) {
+            applyCashBalance(
+              previous.portfolio_id,
+              readFiniteNumber(data.cash_balance)
+            );
+          }
+        } catch (err) {
+          if (holdingPatchSeqRef.current.get(id) !== patchSeq) {
+            reloadAfterWritesRef.current = true;
+            return;
+          }
           if (previous) {
             setHoldings((prev) =>
               prev.map((h) => (h.id === id ? previous : h))
             );
-            if (prevCash != null) applyCashBalance(previous.portfolio_id, prevCash);
+            applyCashDelta(previous.portfolio_id, -cashDelta);
           }
           toast(
-            plainError(data.error, "Couldn't update that holding. We put it back how it was."),
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't update that holding. We put it back how it was."
+            ),
             "error"
           );
-          return;
+        } finally {
+          endBookWrite();
         }
-        if (previous) applyCashBalance(previous.portfolio_id, data.cash_balance);
-      })();
+      });
       return true;
     }
     const next = patchHolding(loadDemoStore(), id, fields);
@@ -1992,7 +2089,9 @@ export function Dashboard() {
       }
 
       // Supabase path — await mutations + dedicated import endpoint
-      void (async () => {
+      beginBookWrite();
+      enqueueBookWrite(async () => {
+        try {
         let working = [...holdings];
         const findH = (ticker: string) =>
           working.find(
@@ -2206,7 +2305,19 @@ export function Dashboard() {
           );
           await loadPortfolios({ silent: true });
         }
-      })();
+        } catch (err) {
+          toast(
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't save what Margus suggested. Try again."
+            ),
+            "error"
+          );
+          await loadPortfolios({ silent: true });
+        } finally {
+          endBookWrite();
+        }
+      });
     },
     // refreshMarkets / loadPortfolios are stable enough via closure for advisor tools
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2222,12 +2333,22 @@ export function Dashboard() {
   const startFirstRunAction = useCallback(
     (kind: "manual" | "csv" | "screenshot") => {
       void (async () => {
-        const target = await ensureFirstSheet();
-        if (!target) return;
-        if (activeId !== target.id) setActiveId(target.id);
-        if (kind === "manual") setModalOpen(true);
-        else if (kind === "csv") setCsvImportOpen(true);
-        else setMargusImagePickSignal((n) => n + 1);
+        try {
+          const target = await ensureFirstSheet();
+          if (!target) return;
+          if (activeId !== target.id) setActiveId(target.id);
+          if (kind === "manual") setModalOpen(true);
+          else if (kind === "csv") setCsvImportOpen(true);
+          else setMargusImagePickSignal((n) => n + 1);
+        } catch (err) {
+          toast(
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't create the first portfolio. Try again."
+            ),
+            "error"
+          );
+        }
       })();
     },
     // ensureFirstSheet is a function declaration in this component.
@@ -2303,45 +2424,67 @@ export function Dashboard() {
   }
 
   function deleteHoldingById(id: string): boolean {
-    const removed = holdings.find((h) => h.id === id);
-    const prevCash = removed
-      ? portfolios.find((p) => p.id === removed.portfolio_id)?.cash_balance
-      : undefined;
-    if (removed && prevCash != null) {
-      applyCashBalance(
-        removed.portfolio_id,
-        prevCash +
-          tradeCashDelta({
-            sellShares: removed.shares,
-            sellPrice: salePx(removed.ticker, removed.buy_price),
-          })
-      );
-    }
+    const removed = bookRef.current.holdings.find((h) => h.id === id);
+    const cashDelta = removed
+      ? tradeCashDelta({
+          sellShares: removed.shares,
+          sellPrice: salePx(removed.ticker, removed.buy_price),
+        })
+      : 0;
+    if (removed) applyCashDelta(removed.portfolio_id, cashDelta);
     if (source === "supabase") {
-      // Optimistic — gone from the table immediately; restored + toasted if
-      // the delete actually fails server-side.
+      const writeSeq = (holdingPatchSeqRef.current.get(id) ?? 0) + 1;
+      holdingPatchSeqRef.current.set(id, writeSeq);
       setHoldings((prev) => prev.filter((h) => h.id !== id));
-      void (async () => {
-        const res = await apiFetch(`/api/holdings?id=${id}`, {
-          method: "DELETE",
-        });
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          cash_balance?: number | null;
-        };
-        if (!res.ok) {
+      beginBookWrite();
+      enqueueBookWrite(async () => {
+        try {
+          const res = await apiFetch(`/api/holdings?id=${id}`, {
+            method: "DELETE",
+          });
+          const raw: unknown = await res.json().catch(() => ({}));
+          const data = isRecord(raw) ? raw : {};
+          if (holdingPatchSeqRef.current.get(id) !== writeSeq) {
+            if (!res.ok) reloadAfterWritesRef.current = true;
+            return;
+          }
+          if (!res.ok) {
+            if (removed) {
+              setHoldings((prev) => [...prev, removed]);
+              applyCashDelta(removed.portfolio_id, -cashDelta);
+            }
+            toast(
+              plainError(data.error, "Couldn't delete that holding. It's still there."),
+              "error"
+            );
+            return;
+          }
+          if (removed) {
+            applyCashBalance(
+              removed.portfolio_id,
+              readFiniteNumber(data.cash_balance)
+            );
+          }
+        } catch (err) {
+          if (holdingPatchSeqRef.current.get(id) !== writeSeq) {
+            reloadAfterWritesRef.current = true;
+            return;
+          }
           if (removed) {
             setHoldings((prev) => [...prev, removed]);
-            if (prevCash != null) applyCashBalance(removed.portfolio_id, prevCash);
+            applyCashDelta(removed.portfolio_id, -cashDelta);
           }
           toast(
-            plainError(data.error, "Couldn't delete that holding. It's still there."),
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't delete that holding. It's still there."
+            ),
             "error"
           );
-          return;
+        } finally {
+          endBookWrite();
         }
-        if (removed) applyCashBalance(removed.portfolio_id, data.cash_balance);
-      })();
+      });
     } else {
       const next = deleteHolding(loadDemoStore(), id);
       setHoldings(next.holdings);
@@ -2355,7 +2498,9 @@ export function Dashboard() {
     name: string,
     opts?: { silent?: boolean }
   ): Promise<Portfolio | undefined> {
-    const isFirstSheet = portfolios.length === 0;
+    if (addingSheetRef.current) return addingSheetRef.current;
+    const run = (async () => {
+    const isFirstSheet = bookRef.current.portfolios.length === 0;
     const trimmed = sanitizeSheetName(name);
     if (!trimmed) return undefined;
     if (source === "supabase") {
@@ -2363,7 +2508,8 @@ export function Dashboard() {
         method: "POST",
         body: JSON.stringify({ name: trimmed }),
       });
-      const data = await res.json().catch(() => ({}));
+      const raw: unknown = await res.json().catch(() => ({}));
+      const data = isRecord(raw) ? raw : {};
       if (!res.ok) {
         toast(
           plainError(data.error, "Couldn't add that portfolio. Try again."),
@@ -2371,8 +2517,14 @@ export function Dashboard() {
         );
         return undefined;
       }
-      const created = data.portfolio as Portfolio;
-      setPortfolios((prev) => [...prev, created]);
+      const created = parsePortfolio(data.portfolio);
+      if (!created) {
+        toast("Couldn't add that portfolio. Try again.", "error");
+        return undefined;
+      }
+      setPortfolios((prev) =>
+        prev.some((p) => p.id === created.id) ? prev : [...prev, created]
+      );
       seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
       track("sheet_created", { first_sheet: isFirstSheet });
@@ -2387,6 +2539,13 @@ export function Dashboard() {
     track("sheet_created", { first_sheet: isFirstSheet });
     if (!opts?.silent) toast("Portfolio added", "success");
     return created;
+    })();
+    addingSheetRef.current = run;
+    try {
+      return await run;
+    } finally {
+      addingSheetRef.current = null;
+    }
   }
 
   async function ensureFirstSheet(): Promise<Portfolio | undefined> {
@@ -2402,7 +2561,9 @@ export function Dashboard() {
   }
 
   function handleRenameSheet(id: string, name: string) {
-    const previousName = portfolios.find((p) => p.id === id)?.name;
+    const previousName = bookRef.current.portfolios.find((p) => p.id === id)?.name;
+    const renameSeq = (cashWriteSeqRef.current.get(`rename:${id}`) ?? 0) + 1;
+    cashWriteSeqRef.current.set(`rename:${id}`, renameSeq);
     setPortfolios((prev) =>
       prev.map((p) => (p.id === id ? { ...p, name } : p))
     );
@@ -2410,36 +2571,57 @@ export function Dashboard() {
     toast("Portfolio renamed", "success");
 
     if (source === "supabase") {
-      void (async () => {
-        const res = await apiFetch("/api/portfolios", {
-          method: "PATCH",
-          body: JSON.stringify({ id, name }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (previousName != null) {
+      beginBookWrite();
+      enqueueBookWrite(async () => {
+        try {
+          const res = await apiFetch("/api/portfolios", {
+            method: "PATCH",
+            body: JSON.stringify({ id, name }),
+          });
+          if (!res.ok) {
+            const raw: unknown = await res.json().catch(() => ({}));
+            const data = isRecord(raw) ? raw : {};
+            if (cashWriteSeqRef.current.get(`rename:${id}`) === renameSeq && previousName != null) {
+              setPortfolios((prev) =>
+                prev.map((p) => (p.id === id ? { ...p, name: previousName } : p))
+              );
+            }
+            toast(
+              plainError(data.error, "Couldn't rename that portfolio. We put the old name back."),
+              "error"
+            );
+          }
+        } catch (err) {
+          if (cashWriteSeqRef.current.get(`rename:${id}`) === renameSeq && previousName != null) {
             setPortfolios((prev) =>
               prev.map((p) => (p.id === id ? { ...p, name: previousName } : p))
             );
           }
           toast(
-            plainError(data.error, "Couldn't rename that portfolio. We put the old name back."),
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't rename that portfolio. We put the old name back."
+            ),
             "error"
           );
+        } finally {
+          endBookWrite();
         }
-      })();
+      });
     } else {
       renamePortfolio(loadDemoStore(), id, name);
     }
   }
 
   async function deleteSheetById(id: string): Promise<boolean> {
+    try {
     if (source === "supabase") {
       const res = await apiFetch(`/api/portfolios?id=${id}`, {
         method: "DELETE",
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const raw: unknown = await res.json().catch(() => ({}));
+        const data = isRecord(raw) ? raw : {};
         toast(
           plainError(data.error, "Couldn't delete that portfolio. Try again."),
           "error"
@@ -2447,8 +2629,6 @@ export function Dashboard() {
         return false;
       }
       clearChatHistory(id);
-      // Server already confirmed the delete — drop it locally instead of a
-      // full reload round-trip for data we already know is gone.
       setPortfolios((prev) => prev.filter((p) => p.id !== id));
       setHoldings((prev) => prev.filter((h) => h.portfolio_id !== id));
       setActiveId((prev) => (prev === id ? OVERVIEW_TAB_ID : prev));
@@ -2461,6 +2641,16 @@ export function Dashboard() {
     }
     toast("Portfolio deleted", "success");
     return true;
+    } catch (err) {
+      toast(
+        plainError(
+          err instanceof Error ? err.message : null,
+          "Couldn't delete that portfolio. Try again."
+        ),
+        "error"
+      );
+      return false;
+    }
   }
 
   function handleSaveCash(cash: number) {
@@ -2468,34 +2658,57 @@ export function Dashboard() {
     const portfolioId = activePortfolio.id;
     const previousCash = activePortfolio.cash_balance;
     if (!tracksTradeCash(activePortfolio) && cash < 0) cash = 0;
+    const cashSeq = (cashWriteSeqRef.current.get(portfolioId) ?? 0) + 1;
+    cashWriteSeqRef.current.set(portfolioId, cashSeq);
 
     if (source === "demo") {
       const next = updateCash(loadDemoStore(), portfolioId, cash);
       setPortfolios(next.portfolios);
     } else {
-      // Optimistic — close the modal and show the new number immediately;
-      // roll back + toast if the write actually fails in the background.
       setPortfolios((prev) =>
         prev.map((p) => (p.id === portfolioId ? { ...p, cash_balance: cash } : p))
       );
-      void (async () => {
-        const res = await apiFetch("/api/portfolios", {
-          method: "PATCH",
-          body: JSON.stringify({ id: portfolioId, cash_balance: cash }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          setPortfolios((prev) =>
-            prev.map((p) =>
-              p.id === portfolioId ? { ...p, cash_balance: previousCash } : p
-            )
-          );
+      beginBookWrite();
+      enqueueBookWrite(async () => {
+        try {
+          const res = await apiFetch("/api/portfolios", {
+            method: "PATCH",
+            body: JSON.stringify({ id: portfolioId, cash_balance: cash }),
+          });
+          if (!res.ok) {
+            const raw: unknown = await res.json().catch(() => ({}));
+            const data = isRecord(raw) ? raw : {};
+            if (cashWriteSeqRef.current.get(portfolioId) === cashSeq) {
+              setPortfolios((prev) =>
+                prev.map((p) =>
+                  p.id === portfolioId ? { ...p, cash_balance: previousCash } : p
+                )
+              );
+            }
+            toast(
+              plainError(data.error, "Couldn't update cash. We put the old number back."),
+              "error"
+            );
+          }
+        } catch (err) {
+          if (cashWriteSeqRef.current.get(portfolioId) === cashSeq) {
+            setPortfolios((prev) =>
+              prev.map((p) =>
+                p.id === portfolioId ? { ...p, cash_balance: previousCash } : p
+              )
+            );
+          }
           toast(
-            plainError(data.error, "Couldn't update cash. We put the old number back."),
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't update cash. We put the old number back."
+            ),
             "error"
           );
+        } finally {
+          endBookWrite();
         }
-      })();
+      });
     }
     setCashModalOpen(false);
     toast("Cash updated", "success");
@@ -2526,6 +2739,8 @@ export function Dashboard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(lockedStore),
+    }).catch((err) => {
+      console.warn("[demo] lock snapshot failed", err);
     });
   }
 
@@ -2768,18 +2983,133 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- menu chrome deps only
   }, [source]);
 
+  const onOpenSheet = useStableCallback(openSheet);
+  const onPulseIntentConsumed = useStableCallback(() => setPulseIntent(null));
+  const onLabIntentConsumed = useStableCallback(() => setLabIntent(null));
+  const onWriteThesis = useStableCallback((t: string) => setDrawerTicker(t));
+  const onStampPulse = useStableCallback(
+    (
+      ticker: string,
+      stamp: {
+        at: string;
+        verdict: string;
+        line: string;
+        action?: string;
+        thesisStatus?: string;
+      }
+    ) => {
+      patchLab({
+        conviction: addPulseStamp(convictionMap, ticker, stamp),
+      });
+    }
+  );
+  const onOpenCompound = useStableCallback(() => setActiveId(COMPOUND_TAB_ID));
+  const onOpenAlerts = useStableCallback(() => setActiveId(ALERTS_TAB_ID));
+  const onOpenCash = useStableCallback(() => {
+    const target = [...portfolios].sort(
+      (a, b) => a.cash_balance - b.cash_balance
+    )[0];
+    if (!target) return;
+    setActiveId(target.id);
+    setCashModalOpen(true);
+  });
+  const onOpenLab = useStableCallback((tab?: LabDeepLink) => {
+    if (tab) setLabIntent(tab);
+    setActiveId(LAB_TAB_ID);
+  });
+  const onOpenPulse = useStableCallback((ticker?: string) => {
+    if (ticker) setPulseIntent(ticker);
+    setActiveId(PULSE_TAB_ID);
+  });
+  const onOverviewAddHolding = useStableCallback(() =>
+    startFirstRunAction("manual")
+  );
+  const onOverviewImportScreenshot = useStableCallback(() =>
+    startFirstRunAction("screenshot")
+  );
+  const onOverviewImportCsv = useStableCallback(() =>
+    startFirstRunAction("csv")
+  );
+  const onPasteHoldings = useStableCallback(
+    (input: {
+      rows: CsvHoldingRow[];
+      cash: number | null;
+      replace: boolean;
+    }) => {
+      void (async () => {
+        try {
+          const target = await ensureFirstSheet();
+          if (!target) return;
+          handleCsvImport(input);
+          markSheetImported(target.id);
+        } catch (err) {
+          toast(
+            plainError(
+              err instanceof Error ? err.message : null,
+              "Couldn't import those holdings. Try again."
+            ),
+            "error"
+          );
+        }
+      })();
+    }
+  );
+
+  const headerAvatar = useMemo(
+    () => ({
+      url: profile?.avatar_url,
+      initial: (profile?.display_name || user?.email || "?")
+        .trim()
+        .charAt(0)
+        .toUpperCase(),
+    }),
+    [profile?.avatar_url, profile?.display_name, user?.email]
+  );
+
+  const headerStatus = useMemo(
+    () => ({
+      quotesUpdatedAt,
+      quotesDelayed,
+      quotedCount: Math.max(0, allTickers.length - missingTickers.length),
+      totalCount: allTickers.length,
+    }),
+    [quotesUpdatedAt, quotesDelayed, allTickers.length, missingTickers.length]
+  );
+
+  const sheetPickerSheets = useMemo(
+    () => portfolios.map((p) => ({ id: p.id, name: p.name })),
+    [portfolios]
+  );
+
+  const compoundSheets = useMemo(
+    () =>
+      overview.sheets.map((s) => ({
+        id: s.portfolio.id,
+        name: s.portfolio.name,
+        value: s.totalValue,
+      })),
+    [overview.sheets]
+  );
+
+  const compoundTickerValues = useMemo(
+    () =>
+      overview.tickers.map((t) => ({
+        ticker: t.ticker,
+        value: t.currentValue,
+      })),
+    [overview.tickers]
+  );
+
+  const labHiddenTabs = experienceTier
+    ? TIER_HIDDEN_LAB_TABS[experienceTier]
+    : EMPTY_HIDDEN_TABS;
+
   const accountEnd =
     source === "supabase" ? (
       <HeaderOverflowMenu
         items={accountMenuItems}
         label={profile?.display_name || user?.email || "Account"}
-        avatar={{
-          url: profile?.avatar_url,
-          initial: (profile?.display_name || user?.email || "?")
-            .trim()
-            .charAt(0)
-            .toUpperCase(),
-        }}
+        avatar={headerAvatar}
       />
     ) : null;
 
@@ -2794,13 +3124,7 @@ export function Dashboard() {
       <div className={PAGE_FRAME_CLASS}>
         <MobileTopBar
           title="Overview"
-          avatar={{
-            url: profile?.avatar_url,
-            initial: (profile?.display_name || user?.email || "?")
-              .trim()
-              .charAt(0)
-              .toUpperCase(),
-          }}
+          avatar={headerAvatar}
         />
           <AppHeader
           className="hidden md:block"
@@ -2820,7 +3144,7 @@ export function Dashboard() {
     : showSheetPicker
       ? (
           <SheetPicker
-            sheets={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+            sheets={sheetPickerSheets}
             value={isOverview ? "all" : activeId}
             onChange={(id) =>
               setActiveId(id === "all" ? OVERVIEW_TAB_ID : id)
@@ -2839,13 +3163,7 @@ export function Dashboard() {
       />
       <MobileTopBar
         title={mobileSheetTitle}
-        avatar={{
-          url: profile?.avatar_url,
-          initial: (profile?.display_name || user?.email || "?")
-            .trim()
-            .charAt(0)
-            .toUpperCase(),
-        }}
+        avatar={headerAvatar}
         alertCount={activeAlerts.length}
         end={
           <>
@@ -2885,12 +3203,7 @@ export function Dashboard() {
                   : activePortfolio!.name
         }
         end={accountEnd}
-        status={{
-          quotesUpdatedAt,
-          quotesDelayed,
-          quotedCount: Math.max(0, allTickers.length - missingTickers.length),
-          totalCount: allTickers.length,
-        }}
+        status={headerStatus}
       >
             {!isMetaTab && canClassBuy && (
               <button
@@ -2972,13 +3285,9 @@ export function Dashboard() {
             quotes={quotes}
             convictions={convictionMap}
             intentTicker={pulseIntent}
-            onIntentConsumed={() => setPulseIntent(null)}
-            onWriteThesis={(t) => setDrawerTicker(t)}
-            onStamp={(ticker, stamp) => {
-              patchLab({
-                conviction: addPulseStamp(convictionMap, ticker, stamp),
-              });
-            }}
+            onIntentConsumed={onPulseIntentConsumed}
+            onWriteThesis={onWriteThesis}
+            onStamp={onStampPulse}
           />
           </WidgetErrorBoundary>
         ) : isLab ? (
@@ -2989,25 +3298,16 @@ export function Dashboard() {
             holdings={holdings}
             quotes={quotes}
             intentTab={labIntent}
-            onIntentConsumed={() => setLabIntent(null)}
-            hiddenTabs={
-              experienceTier ? TIER_HIDDEN_LAB_TABS[experienceTier] : []
-            }
+            onIntentConsumed={onLabIntentConsumed}
+            hiddenTabs={labHiddenTabs}
           />
           </WidgetErrorBoundary>
         ) : isCompound ? (
           <WidgetErrorBoundary name="Compound">
           <CompoundInterestSheet
             bookValue={overview.totals.totalValue}
-            sheets={overview.sheets.map((s) => ({
-              id: s.portfolio.id,
-              name: s.portfolio.name,
-              value: s.totalValue,
-            }))}
-            tickerValues={overview.tickers.map((t) => ({
-              ticker: t.ticker,
-              value: t.currentValue,
-            }))}
+            sheets={compoundSheets}
+            tickerValues={compoundTickerValues}
             bookCash={overview.totals.cash}
             eurUsd={eurUsd}
             eurUsdDetail={eurUsdDetail}
@@ -3018,51 +3318,23 @@ export function Dashboard() {
           <WidgetErrorBoundary name="Overview">
             <OverviewDashboard
               model={overview}
-              onOpenSheet={openSheet}
+              onOpenSheet={onOpenSheet}
               coveredCallRows={bookCoveredCallRows}
               activeAlerts={activeAlerts}
               marketState={marketState}
               showCommunities={source === "supabase"}
               hideOptions={hideOptionsUI}
-              onAddHolding={() => startFirstRunAction("manual")}
-              onImportScreenshot={() => startFirstRunAction("screenshot")}
-              onImportCsv={() => startFirstRunAction("csv")}
-              onPasteHoldings={(input) => {
-                void (async () => {
-                  const target = await ensureFirstSheet();
-                  if (!target) return;
-                  handleCsvImport(input);
-                  markSheetImported(target.id);
-                })();
-              }}
+              onAddHolding={onOverviewAddHolding}
+              onImportScreenshot={onOverviewImportScreenshot}
+              onImportCsv={onOverviewImportCsv}
+              onPasteHoldings={onPasteHoldings}
               homework={homeworkEmpty}
               homeworkCash={homeworkCash}
-              onOpenLab={
-                labHiddenForTier
-                  ? undefined
-                  : (tab) => {
-                      if (tab) setLabIntent(tab);
-                      setActiveId(LAB_TAB_ID);
-                    }
-              }
-              onOpenPulse={
-                pulseHiddenForTier
-                  ? undefined
-                  : (ticker) => {
-                      if (ticker) setPulseIntent(ticker);
-                      setActiveId(PULSE_TAB_ID);
-                    }
-              }
-              onOpenCompound={() => setActiveId(COMPOUND_TAB_ID)}
-              onOpenCash={() => {
-                const target = [...portfolios].sort(
-                  (a, b) => a.cash_balance - b.cash_balance
-                )[0];
-                if (!target) return;
-                setActiveId(target.id);
-                setCashModalOpen(true);
-              }}
-              onOpenAlerts={() => setActiveId(ALERTS_TAB_ID)}
+              onOpenLab={labHiddenForTier ? undefined : onOpenLab}
+              onOpenPulse={pulseHiddenForTier ? undefined : onOpenPulse}
+              onOpenCompound={onOpenCompound}
+              onOpenCash={onOpenCash}
+              onOpenAlerts={onOpenAlerts}
             />
           </WidgetErrorBoundary>
         ) : (

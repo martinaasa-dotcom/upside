@@ -16,6 +16,8 @@ const DUEL_CACHE_PREFIX = "upside-community-duel-v1:";
 const DUEL_PICK_PREFIX = "upside-community-duel-pick-v1:";
 const SHEETS_CACHE_PREFIX = "upside-community-sheets-v1:";
 const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes — communities update slowly
+/** Alt-tab / room return: don't hit the API again inside this window. */
+export const COMMUNITY_VISIBLE_REFRESH_MS = 30_000;
 
 export type CommunityDuelCache = {
   dayKey: string;
@@ -297,10 +299,13 @@ export function saveCommunityCache(
   }
 }
 
-export function isCommunityCacheFresh(entry: CommunityCacheEntry | null): boolean {
+export function isCommunityCacheFresh(
+  entry: CommunityCacheEntry | null,
+  maxAgeMs: number = CACHE_MAX_AGE_MS
+): boolean {
   if (!entry?.cachedAt) return false;
   const ts = new Date(entry.cachedAt).getTime();
-  return Number.isFinite(ts) && Date.now() - ts < CACHE_MAX_AGE_MS;
+  return Number.isFinite(ts) && Date.now() - ts < maxAgeMs;
 }
 
 /** Drop a community's cached entry — call after deleting/leaving one so a

@@ -23,9 +23,24 @@ export function useTickerSearch(query: string): TickerSuggestion[] {
         signal: ctrl.signal,
       })
         .then((r) => (r.ok ? r.json() : null))
-        .then((data: { results?: TickerSuggestion[] } | null) => {
+        .then((data: unknown) => {
           if (gen.current !== id || ctrl.signal.aborted) return;
-          setRemote(Array.isArray(data?.results) ? data.results : []);
+          const results =
+            data &&
+            typeof data === "object" &&
+            "results" in data &&
+            Array.isArray(data.results)
+              ? data.results
+              : [];
+          setRemote(
+            results.filter(
+              (row): row is TickerSuggestion =>
+                Boolean(row) &&
+                typeof row === "object" &&
+                "symbol" in row &&
+                typeof (row as { symbol?: unknown }).symbol === "string"
+            )
+          );
         })
         .catch(() => {
           if (gen.current === id && !ctrl.signal.aborted) setRemote([]);

@@ -1026,14 +1026,19 @@ export function CommunityView({ communityId }: Props) {
     : ownerPortfolios.reduce((s, p) => s + sheetCashBalance(p), 0);
 
   const loadInvites = useCallback(async () => {
-    const res = await fetch(`/api/communities/${communityId}/invites`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return;
-    const data = (await res.json().catch(() => ({}))) as {
-      invites?: InviteAdminRow[];
-    };
-    setInvites(Array.isArray(data.invites) ? data.invites : []);
+    try {
+      const res = await fetch(`/api/communities/${communityId}/invites`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const raw: unknown = await res.json().catch(() => ({}));
+      const data = raw && typeof raw === "object" && !Array.isArray(raw)
+        ? (raw as { invites?: InviteAdminRow[] })
+        : {};
+      setInvites(Array.isArray(data.invites) ? data.invites : []);
+    } catch {
+      /* keep whatever was already loaded */
+    }
   }, [communityId]);
 
   useEffect(() => {

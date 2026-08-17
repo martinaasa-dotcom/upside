@@ -9,6 +9,7 @@
 import { fetchFxOnly, fetchQuotesYahoo, type QuotesResult } from "@/lib/market/yahoo";
 import { fetchQuotesTwelveData, twelveDataConfigured } from "@/lib/market/providers/twelvedata";
 import { fetchQuotesFinnhub, finnhubConfigured } from "@/lib/market/providers/finnhub";
+import { downsampleSparkline } from "@/lib/market/sparkline";
 import { yahooQuoteCandidates } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
 
@@ -106,6 +107,10 @@ export async function fetchQuotesWithFallback(
   const delayed =
     stillMissing.length > 0 ||
     Object.values(sources).some((s) => s !== "yahoo");
+
+  for (const q of Object.values(quotes)) {
+    q.sparkline = downsampleSparkline(q.sparkline);
+  }
 
   return {
     quotes,

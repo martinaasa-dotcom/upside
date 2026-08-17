@@ -12,6 +12,15 @@ export type CachedBook = {
 const STORAGE_KEY = "upside-book-cache-v1";
 /** A week-old book is still a better first paint than a spinner. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Skip a silent refetch (tab/room return) when we loaded this recently. */
+export const BOOK_SILENT_REFRESH_MS = 20_000;
+
+export function isBookFetchFresh(
+  fetchedAt: number | null | undefined
+): boolean {
+  if (fetchedAt == null || !Number.isFinite(fetchedAt)) return false;
+  return Date.now() - fetchedAt < BOOK_SILENT_REFRESH_MS;
+}
 
 let bookCache: CachedBook | null = null;
 let seedClaimedForUser: string | null = null;

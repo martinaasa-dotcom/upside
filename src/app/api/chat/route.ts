@@ -15,6 +15,8 @@ import {
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { readJsonBody } from "@/lib/http";
+import { isRecord } from "@/lib/unknown";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -123,23 +125,30 @@ export async function POST(req: Request) {
   markChatActive();
 
   try {
-    const body = await req.json();
-    const messages = body.messages as UIMessage[];
-    const ccContext = (body.ccContext ?? {
-      portfolioName: "Portfolio",
-      cashBalance: 0,
-      holdings: [],
-      rows: [],
-      totals: {
-        cost: 0,
-        value: 0,
-        roiPct: 0,
-        roiDollar: 0,
-        yield2wAvg: 0,
-        premiumTotal: 0,
-      },
-      otherPortfolios: [],
-    }) as CcChatContext;
+    const raw = await readJsonBody(req);
+    const body = isRecord(raw) ? raw : {};
+    const messages = Array.isArray(body.messages)
+      ? (body.messages as UIMessage[])
+      : [];
+    const ccContext = (
+      isRecord(body.ccContext)
+        ? body.ccContext
+        : {
+            portfolioName: "Portfolio",
+            cashBalance: 0,
+            holdings: [],
+            rows: [],
+            totals: {
+              cost: 0,
+              value: 0,
+              roiPct: 0,
+              roiDollar: 0,
+              yield2wAvg: 0,
+              premiumTotal: 0,
+            },
+            otherPortfolios: [],
+          }
+    ) as CcChatContext;
 
     const vision = messagesHaveImages(messages);
     const adviseOnly = Boolean(ccContext.adviseOnly);

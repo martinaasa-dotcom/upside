@@ -33,3 +33,22 @@ export function synthesizeSparkline(
   series[points - 1] = price;
   return series;
 }
+
+/** Keep enough points for a sparkline without shipping 90 daily closes. */
+export function downsampleSparkline(
+  points: number[],
+  maxPoints = 32
+): number[] {
+  if (points.length <= maxPoints) return points;
+  const last = points.length - 1;
+  const out: number[] = [];
+  for (let i = 0; i < maxPoints; i++) {
+    const idx =
+      i === maxPoints - 1
+        ? last
+        : Math.round((i / (maxPoints - 1)) * last);
+    const v = points[idx];
+    if (typeof v === "number" && Number.isFinite(v)) out.push(v);
+  }
+  return out;
+}

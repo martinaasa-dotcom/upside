@@ -14,6 +14,8 @@ import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
+import { readJsonBody } from "@/lib/http";
+import { isRecord } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -79,36 +81,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = await req.json().catch(() => ({}));
-  const name = String((body as { name?: string }).name ?? "").trim();
+  const raw = await readJsonBody(req);
+  const body = isRecord(raw) ? raw : {};
+  const name = String(body.name ?? "").trim();
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
   }
   const kind =
-    (body as { kind?: string }).kind === CLASSROOM_KIND
-      ? CLASSROOM_KIND
-      : CIRCLE_KIND;
+    body.kind === CLASSROOM_KIND ? CLASSROOM_KIND : CIRCLE_KIND;
   const classroom = isClassroomKind(kind);
   const visibility =
-    classroom || (body as { visibility?: string }).visibility !== "public"
-      ? "private"
-      : "public";
+    classroom || body.visibility !== "public" ? "private" : "public";
   const startingCash = classroom
-    ? parseStartingCash((body as { startingCash?: unknown }).startingCash) ??
-      DEFAULT_STARTING_CASH
+    ? parseStartingCash(body.startingCash) ?? DEFAULT_STARTING_CASH
     : DEFAULT_STARTING_CASH;
-  if (classroom && (body as { startingCash?: unknown }).startingCash != null) {
-    if (parseStartingCash((body as { startingCash?: unknown }).startingCash) == null) {
+  if (classroom && body.startingCash != null) {
+    if (parseStartingCash(body.startingCash) == null) {
       return NextResponse.json({ error: "invalid starting cash" }, { status: 400 });
     }
   }
   const houseNote = classroom
-    ? String((body as { assignment?: string }).assignment ?? "").trim().slice(0, 800) ||
+    ? String(body.assignment ?? "").trim().slice(0, 800) ||
       DEFAULT_CLASS_ASSIGNMENT
     : undefined;
-  const startPeriodRaw = String(
-    (body as { startPeriod?: string }).startPeriod ?? ""
-  );
+  const startPeriodRaw = String(body.startPeriod ?? "");
   const startPeriod = CLASS_PERIOD_KINDS.includes(
     startPeriodRaw as ClassPeriodKind
   )

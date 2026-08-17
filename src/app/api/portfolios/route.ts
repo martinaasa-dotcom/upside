@@ -24,6 +24,8 @@ import {
   PORTFELL_TABLES,
   PORTFOLIO_COLUMNS,
 } from "@/lib/supabase/tables";
+import { readJsonBodyOr400 } from "@/lib/http";
+import { isRecord, readString } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -174,7 +176,9 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
+  const parsedBody = await readJsonBodyOr400(req);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
   const name = sanitizeSheetName(String(body.name ?? ""));
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
@@ -233,8 +237,10 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
-  const id = body.id as string;
+  const parsedBody = await readJsonBodyOr400(req);
+  if (!parsedBody.ok) return parsedBody.response;
+  const body = isRecord(parsedBody.value) ? parsedBody.value : {};
+  const id = readString(body.id)?.trim() ?? "";
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }

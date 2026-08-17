@@ -1,4 +1,6 @@
+import { NextResponse } from "next/server";
 import { plainError } from "@/lib/plain-error";
+import { isRecord } from "@/lib/unknown";
 
 /**
  * Safe JSON reading for API responses.
@@ -55,11 +57,43 @@ export async function readJsonOrThrow<T>(
 
   if (parsed !== null && typeof parsed === "object") {
     if (!res.ok) {
-      const message = (parsed as { error?: unknown }).error;
-      throw new Error(plainError(message, fallback));
+      throw new Error(
+        plainError(isRecord(parsed) ? parsed.error : undefined, fallback)
+      );
     }
     return parsed as T;
   }
 
   throw new Error(describeNonJsonFailure(res.status, text, fallback));
+}
+
+/** Request JSON as `unknown`. Invalid JSON becomes `{}` so callers can 400 on missing fields. */
+export async function readJsonBody(req: Request): Promise<unknown> {
+  try {
+    return (await req.json()) as unknown;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Request JSON as `unknown`. Invalid JSON is a 400, not an unhandled throw
+ * that turns into a generic 500.
+ */
+export async function readJsonBodyOr400(
+  req: Request
+): Promise<
+  { ok: true; value: unknown } | { ok: false; response: NextResponse }
+> {
+  try {
+    return { ok: true, value: (await req.json()) as unknown };
+  } catch {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Couldn't read that request." },
+        { status: 400 }
+      ),
+    };
+  }
 }

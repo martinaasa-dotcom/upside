@@ -152,7 +152,7 @@ export async function GET(req: NextRequest, ctx: Ctx) {
       supabase
         .from(PORTFELL_TABLES.portfolios)
         .select(
-          "id, name, slug, sort_order, cash_balance, owner_id, classroom_community_id, created_at, updated_at"
+          "id, name, slug, sort_order, cash_balance, owner_id, classroom_community_id"
         )
         .in("id", portfolioIds)
         .order("sort_order"),

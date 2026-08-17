@@ -110,6 +110,7 @@ export function HoldingModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
+    try {
     const sharesN = parseDecimal(shares);
     const buyN = parseDecimal(buyPrice);
     const callN = Math.round(parseDecimal(targetCall));
@@ -175,6 +176,10 @@ export function HoldingModal({
       buy_price: buyUsd,
       target_call_pct: callN / 100,
     });
+    } catch {
+      setBusy(false);
+      setError("Couldn't save that holding. Try again.");
+    }
   }
 
   const normalized = looksLikeTickerQuery(ticker)

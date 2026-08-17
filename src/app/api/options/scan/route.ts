@@ -4,21 +4,12 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { readJsonBodyOr400 } from "@/lib/http";
+import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type ScanBody = {
-  positions?: Array<{
-    ticker: string;
-    spot: number;
-    shares: number;
-    target_call_pct?: number;
-    stock_target?: number | null;
-    price_history?: number[];
-  }>;
-};
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuthUser();
@@ -49,8 +40,36 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = (await req.json()) as ScanBody;
-  const positions = body.positions ?? [];
+  const parsed = await readJsonBodyOr400(req);
+  if (!parsed.ok) return parsed.response;
+  const body = isRecord(parsed.value) ? parsed.value : {};
+  const positions = Array.isArray(body.positions)
+    ? body.positions.flatMap((row) => {
+        if (!isRecord(row)) return [];
+        const ticker = readString(row.ticker);
+        const spot = readFiniteNumber(row.spot);
+        const shares = readFiniteNumber(row.shares);
+        if (!ticker || spot == null || shares == null) return [];
+        const history = Array.isArray(row.price_history)
+          ? row.price_history.filter(
+              (n): n is number => typeof n === "number" && Number.isFinite(n)
+            )
+          : undefined;
+        return [
+          {
+            ticker,
+            spot,
+            shares,
+            target_call_pct: readFiniteNumber(row.target_call_pct),
+            stock_target:
+              row.stock_target === null
+                ? null
+                : readFiniteNumber(row.stock_target),
+            price_history: history,
+          },
+        ];
+      })
+    : [];
 
   if (positions.length === 0) {
     return NextResponse.json({ options: {} });
