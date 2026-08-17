@@ -187,7 +187,7 @@ export function DailyDuelCard({
     return (
       <section
         className={cn(
-          "min-h-[13.5rem] rounded-xl bg-card p-4 ring-1 ring-foreground/10"
+          "min-h-[13.5rem] rounded-xl bg-card p-6 ring-1 ring-foreground/10"
         )}
       >
         <div className="mb-3 flex items-center gap-2.5">
@@ -281,7 +281,7 @@ export function DailyDuelCard({
   return (
     <section
       className={cn(
-        "min-h-[13.5rem] rounded-xl bg-card p-4 ring-1 ring-foreground/10"
+        "min-h-[13.5rem] rounded-xl bg-card p-6 ring-1 ring-foreground/10"
       )}
     >
       <div className={cn("mb-3", SPLIT_ROW, "sm:items-center")}>

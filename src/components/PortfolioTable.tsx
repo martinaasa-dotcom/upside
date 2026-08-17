@@ -415,7 +415,7 @@ export const PortfolioTable = memo(function PortfolioTable({
 
   return (
     <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-4 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-6">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (
@@ -482,7 +482,7 @@ export const PortfolioTable = memo(function PortfolioTable({
       </header>
 
       {/* Mobile / tablet cards. The 13-col table needs the 1080px column. */}
-      <div className="flex flex-col gap-3 p-4 lg:hidden">
+      <div className="flex flex-col gap-3 p-6 lg:hidden">
         {holdings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-muted px-4 py-8 text-center">
             <p className="text-sm text-muted-foreground">No holdings in this portfolio yet.</p>

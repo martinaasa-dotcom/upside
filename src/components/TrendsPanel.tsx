@@ -90,7 +90,7 @@ function TickerStoryCard({
   const story = useMemo(() => buildTrendStory(row), [row]);
 
   return (
-    <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+    <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
       <div className={cn(SPLIT_ROW, "sm:items-center")}>
         <div className={cn(SPLIT_COPY, "flex items-center gap-2")}>
           <span className="text-base font-semibold text-foreground">

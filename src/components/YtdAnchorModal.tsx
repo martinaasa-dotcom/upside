@@ -92,7 +92,7 @@ export function YtdAnchorModal({
       />
       <form
         onSubmit={submit}
-        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-xl sm:pb-4"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:rounded-xl sm:pb-6"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

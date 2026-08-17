@@ -46,7 +46,7 @@ export function CostBasisModal({
         onClick={onClose}
       />
       <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10">
-        <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-6 py-4">
           <div>
             <h3 className="text-base font-semibold text-foreground">
               What you paid
@@ -68,7 +68,7 @@ export function CostBasisModal({
             <X />
           </Button>
         </div>
-        <div className="min-h-0 flex-1 gap-2 overflow-y-auto px-4 py-3">
+        <div className="min-h-0 flex-1 gap-2 overflow-y-auto px-6 py-6">
           {rows.map((r) => (
             <label
               key={r.ticker}
@@ -97,7 +97,7 @@ export function CostBasisModal({
             </label>
           ))}
         </div>
-        <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
+        <div className="flex justify-end gap-2 border-t border-border px-6 py-4">
           <Button type="button" variant="ghost" onClick={onClose}>
             Skip
           </Button>

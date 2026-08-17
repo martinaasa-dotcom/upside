@@ -49,13 +49,13 @@ export function ClassroomRoster({
 
   return (
     <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-      <div className="border-b border-border px-4 py-3">
+      <div className="border-b border-border px-6 py-6">
         <h2 className="text-sm font-semibold text-foreground">Roster</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Same start. Ranked by percent vs start. Who wrote a why, who is all-in on one name.
         </p>
       </div>
-      <div className="flex flex-col gap-3 p-4 md:hidden">
+      <div className="flex flex-col gap-3 p-6 md:hidden">
         {rows.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             Nobody in the class yet.

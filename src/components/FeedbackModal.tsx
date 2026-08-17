@@ -108,7 +108,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="feedback-title"
-        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-4"
+        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-6"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3

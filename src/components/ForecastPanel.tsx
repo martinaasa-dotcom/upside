@@ -937,7 +937,6 @@ export const ForecastPanel = memo(function ForecastPanel({
               )}
               <Button
                 type="button"
-                className="rounded-full"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
                 title="Work the whole forecast out again from scratch"

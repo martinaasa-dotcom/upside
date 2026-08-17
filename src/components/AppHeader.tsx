@@ -30,7 +30,7 @@ function FeedbackHeaderButton() {
   const { openManual } = useFeedback();
   if (!user) return null;
   return (
-    <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={openManual}>
+    <Button type="button" variant="outline" size="sm" onClick={openManual}>
       Feedback
     </Button>
   );

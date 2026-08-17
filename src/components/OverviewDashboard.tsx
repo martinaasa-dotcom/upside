@@ -125,6 +125,7 @@ function EmptyBook({
           {
             key: "manual",
             label: "Buy a name with paper money",
+            hint: "Same starting cash as the rest of the class.",
             onClick: onAddHolding,
             primary: true,
           },
@@ -147,6 +148,7 @@ function EmptyBook({
           {
             key: "manual",
             label: "Add one by hand",
+            hint: "Ticker, shares, and what you paid.",
             onClick: onAddHolding,
             primary: false,
           },
@@ -195,8 +197,6 @@ function EmptyBook({
           {pasteErr && <p className="text-sm text-loss">{pasteErr}</p>}
           <Button
             type="button"
-            size="lg"
-            className="rounded-full"
             onClick={submitPaste}
             disabled={!paste.trim()}
           >
@@ -213,11 +213,11 @@ function EmptyBook({
               type="button"
               onClick={r.onClick}
               className={cn(
-                "group rounded-xl border text-left transition active:scale-[0.99]",
+                "group rounded-lg text-left transition active:scale-[0.99]",
                 NESTED_PAD,
                 r.primary
-                  ? "border-border bg-accent hover:border-foreground/20 hover:bg-accent"
-                  : "border-border bg-muted hover:border-border hover:bg-muted/70"
+                  ? "bg-accent hover:bg-accent"
+                  : "bg-muted hover:bg-muted/70"
               )}
             >
               <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">
@@ -715,8 +715,6 @@ export const OverviewDashboard = memo(function OverviewDashboard({
           {onAddHolding && (
             <Button
               type="button"
-              size="lg"
-              className="rounded-full"
               onClick={onAddHolding}
             >
               <Plus data-icon="inline-start" />

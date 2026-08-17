@@ -65,7 +65,7 @@ export function RenameSheetModal({
       />
       <form
         onSubmit={submit}
-        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-popover ring-1 ring-foreground/10 p-4"
+        className="relative max-h-full w-full max-w-md overflow-y-auto rounded-xl bg-popover p-6 ring-1 ring-foreground/10"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-base font-semibold text-foreground">{title}</h3>

@@ -1398,16 +1398,17 @@ export function CcAdvisorChat({
         </section>
       )}
 
-      <button
+      <Button
         type="button"
+        size="icon-lg"
+        className="pointer-events-auto rounded-full"
         onClick={() => setOpen((o) => !o)}
-        className="pointer-events-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground shadow-lg shadow-black/40 transition hover:bg-primary/80 hover:scale-[1.03] active:scale-[0.97]"
         aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
         aria-expanded={open}
         title="Assistant Margus"
       >
-        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
-      </button>
+        {open ? <X /> : <Sparkles />}
+      </Button>
     </div>
   );
 }

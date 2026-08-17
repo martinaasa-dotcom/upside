@@ -166,7 +166,7 @@ export function ClassroomPlanEditor({
         </ul>
       )}
 
-      <div className="flex flex-col mt-6 gap-3 rounded-lg border border-border bg-muted p-4">
+      <div className="flex flex-col mt-6 gap-3 rounded-lg bg-muted p-6">
         <p className="text-sm font-medium text-muted-foreground">Add a stretch</p>
         <NativeSelect
           value={draftKind}
