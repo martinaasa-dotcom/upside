@@ -1,33 +1,62 @@
 # Zero-downtime schema migrations
 
 Live traffic hits `portfell_portfolios` and `portfell_holdings` on every
-sheet load. A migration that takes ACCESS EXCLUSIVE for more than a
-heartbeat will queue those queries. Follow expand/contract, keep locks
-short, and lint before you apply.
+sheet load. A migration that takes an exclusive lock for more than a
+heartbeat will queue those queries. Follow this order every time.
 
-## Pipeline
+---
+
+## Each new SQL file, in order
+
+1. **Create the file the official way** (do not invent a timestamp):
 
 ```bash
-# 1. Write the SQL under supabase/migrations/ (use supabase migration new)
-# 2. Lint lock hazards
-npx tsx scripts/migrate-online.ts --lint supabase/migrations/054_your_change.sql
-
-# 3. Apply against a branch / staging DATABASE_URL first
-DATABASE_URL=... npx tsx scripts/migrate-online.ts --apply supabase/migrations/054_your_change.sql
-
-# 4. Same command against production DATABASE_URL once the app build that
-#    reads the new shape is already live (or the change is additive).
+npx supabase migration new short_description_here
 ```
 
-`--apply` sets `lock_timeout = 2s` and `statement_timeout = 30s` (override
-with `DR_LOCK_TIMEOUT` / `DR_STATEMENT_TIMEOUT`). A lock timeout retries
-with backoff instead of waiting behind a long report query. `CREATE INDEX
-CONCURRENTLY` is run outside a transaction, which Postgres requires.
+That writes `supabase/migrations/<timestamp>_short_description_here.sql`.
+Put only additive SQL in it when you can: new nullable column, new table,
+new function, `CREATE INDEX CONCURRENTLY`.
 
-`--force` applies even when the linter reports errors. That is a
-maintenance-window flag, not a default.
+2. **Lint for lock hazards** before anyone applies it:
 
-## Expand / contract
+```bash
+npx tsx scripts/migrate-online.ts --lint supabase/migrations/<the-new-file>.sql
+```
+
+Fix every `error`. `warn` means "do this in a second migration after the
+app no longer reads the old shape." `--force` skips that and is for a
+maintenance window only.
+
+3. **Apply on a copy first.** Use a Supabase branch, or a throwaway
+   project. Use the **direct** Postgres URI (port `5432`), not the
+   transaction pooler (`6543` / `pooler.supabase.com`):
+
+```bash
+DATABASE_URL='postgresql://postgres:…@db.YOUR-REF.supabase.co:5432/postgres' \
+  npx tsx scripts/migrate-online.ts --apply supabase/migrations/<the-new-file>.sql
+```
+
+The script sets `lock_timeout = 2s` and `statement_timeout = 30s`. A lock
+timeout retries instead of waiting behind a long report. `CREATE INDEX
+CONCURRENTLY` is run outside a transaction (Postgres requires that).
+
+4. **Ship the app that uses the new shape** (`git push` / Vercel). For a
+   new nullable column, this can be the same release as the SQL. For a
+   rename or a dropped column, the app that still reads the old name must
+   already be gone.
+
+5. **Apply the same file on production** with production `DATABASE_URL`,
+   same `--apply` command. Watch Vercel and the site for a minute. If
+   queries stall, the lint missed a lock. Roll *forward* with a fix. Do
+   not `git revert` SQL that already ran.
+
+6. **Tighten later** (separate file, after every live instance is on the
+   new app): `SET NOT NULL`, `DROP COLUMN`, `DROP TABLE`.
+
+---
+
+## Expand / contract (the rule behind the steps)
 
 Never change a live column's meaning in the same deploy as the app.
 
@@ -42,11 +71,13 @@ Never change a live column's meaning in the same deploy as the app.
 Renames follow the same pattern: add the new name, dual-write, drop the
 old. Do not `RENAME COLUMN` on a hot table.
 
+---
+
 ## What is safe on Postgres 15 (Supabase)
 
 - `ADD COLUMN` nullable, or with a constant `DEFAULT` (no table rewrite)
 - `CREATE INDEX CONCURRENTLY` / `DROP INDEX CONCURRENTLY`
-- `ADD CONSTRAINT ... NOT VALID` then `VALIDATE CONSTRAINT` (ShareUpdateExclusive)
+- `ADD CONSTRAINT ... NOT VALID` then `VALIDATE CONSTRAINT`
 - `CREATE OR REPLACE FUNCTION`
 - `CREATE TABLE` / `CREATE SCHEMA`
 - RLS policy changes that do not rewrite rows
@@ -63,21 +94,11 @@ The linter (`src/lib/dr/migration-locks.ts`) flags those. Indexes created
 in the same file as their `CREATE TABLE` are allowed without CONCURRENTLY:
 the table is empty and the exclusive lock is cheap.
 
-## App deploys
+---
 
-Vercel ships the Next.js build independently of `supabase db push`. Order:
+## If a migration is half-applied
 
-1. Additive SQL (expand) against production
-2. App deploy that uses the new columns
-3. Backfill
-4. Tightening SQL (NOT NULL / drop) only after every live instance is on
-   the new build
-
-Do not put a breaking SQL file and a breaking app change in the same
-git push unless the SQL is purely additive.
-
-## PITR note
-
-A failed migration is not undone by reverting git. Restore a WAL-G point
-only when the SQL left the database half-migrated and you cannot roll
-forward. That restore takes the project down. Prefer a forward fix.
+A failed migration is not undone by reverting git. Prefer a forward fix
+(add the missing column, finish the backfill). Restore a WAL-G point only
+when you cannot roll forward. That restore takes the project down. See
+`docs/DISASTER_RECOVERY.md`.

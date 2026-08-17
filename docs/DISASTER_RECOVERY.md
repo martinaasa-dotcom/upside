@@ -1,68 +1,215 @@
 # Disaster recovery
 
-Nightly in-database saves (`portfell_book_snapshots`, 02:00 UTC) are not a
-backup. They live in the same Postgres as the book. This pass adds a second
-copy: an encrypted JSON snapshot in S3-compatible cold storage (Cloudflare
-R2 or AWS S3), plus a check that Supabase still has a fresh WAL / daily
-physical backup.
+Nightly in-database saves (`portfell_book_snapshots`, 02:00 UTC) live in the
+same Postgres as the book. If that project is gone, those rows are gone.
+
+Cold copies are a second, encrypted JSON dump of every sheet's cash and
+holdings, stored in Cloudflare R2 (or AWS S3). A daily cron also checks that
+Supabase still has a fresh WAL / daily backup.
 
 Nothing here changes the app UI.
 
-## Daily job
+**Already on Vercel production:** `SNAPSHOT_ENCRYPTION_KEY`,
+`SUPABASE_PROJECT_REF`, `DR_S3_PREFIX`, `DR_S3_REGION`.
 
-`GET /api/cron/disaster-recovery` (03:00 UTC, same `CRON_SECRET` as the other
-crons):
+**You still need to create and paste:** `SUPABASE_ACCESS_TOKEN`, then the four
+R2 values. Follow parts A, B, and C in order. Do not skip the test curls.
 
-1. List backups from the Supabase Management API
-   (`GET /v1/projects/{ref}/database/backups`). Passes when WAL-G / PITR is
-   current, or when the latest completed daily backup is younger than
-   `DR_BACKUP_MAX_AGE_HOURS` (default 36).
-2. Capture every `portfell_portfolios` + `portfell_holdings` row (service
+---
+
+## Part A. Supabase access token
+
+This token lets the 03:00 UTC cron *list* backups. It cannot download your
+database. Treat it like a password anyway.
+
+1. Open [https://supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
+   while signed in as the owner of project `uzrnybyggznpvgxgrvgl`.
+2. If that URL 404s: click your avatar (top right) → **Account** →
+   **Access Tokens**.
+3. Click **Generate new token**.
+4. Name it `Upside Lab DR cron`. Leave the expiry empty / "no expiry" if the
+   form offers it.
+5. Click **Generate token**.
+6. Copy the whole string immediately. Supabase will not show it again. Paste
+   it into your password manager.
+7. Test it in Terminal (replace the token, keep the quotes):
+
+```bash
+curl -sS -o /tmp/sb-backups.json -w "%{http_code}\n" \
+  -H "Authorization: Bearer PASTE_TOKEN_HERE" \
+  "https://api.supabase.com/v1/projects/uzrnybyggznpvgxgrvgl/database/backups"
+```
+
+You want `200` printed, and `/tmp/sb-backups.json` to contain `"backups"` or
+`"walg_enabled"`. `401` means a bad token. `403` means this login cannot see
+that project.
+
+8. Put it on Vercel production:
+
+   - Open [Environment Variables](https://vercel.com/upthink-solutions/upside/settings/environment-variables)
+   - Key: `SUPABASE_ACCESS_TOKEN`
+   - Value: the token
+   - Environment: **Production** only
+   - Sensitive: on
+   - Save
+
+   Or from this repo:
+
+```bash
+printf '%s' 'PASTE_TOKEN_HERE' | npx vercel env add SUPABASE_ACCESS_TOKEN production --sensitive --yes
+```
+
+---
+
+## Part B. Cloudflare R2 bucket (cold copies)
+
+Do **not** use Upside Lab Supabase Storage for this. Deleting that project
+deletes its files. R2 is a separate account, which is the point.
+
+R2's free tier is enough. You need a Cloudflare account. If you already use
+Cloudflare for DNS, use that same login.
+
+### B1. Create the bucket
+
+1. Open [https://dash.cloudflare.com](https://dash.cloudflare.com) and pick
+   the account.
+2. Left sidebar: **Storage & databases** → **R2**.
+3. First visit: click **Purchase R2** (the free plan is fine) and accept.
+4. **Create bucket**.
+5. Name: `upside-lab-backups` (lowercase, hyphens only).
+6. Location: **Automatic**, unless you want EU only. EU-only uses a slightly
+   different endpoint (Cloudflare shows it after the token is created).
+7. Create bucket. Leave public access **off**.
+
+### B2. Create S3 access keys
+
+1. Still on **R2 → Overview**.
+2. On the right, **Account Details** → **API Tokens** → **Manage**.
+3. **Create Account API token** (or User token if you are not a Super Admin).
+4. Name: `upside-lab-dr`.
+5. Permissions: **Object Read & Write**.
+6. Apply to: **Specify buckets** → `upside-lab-backups` only.
+7. Create the token.
+8. Copy, in this order, into your password manager. The secret is shown once:
+   - **Access Key ID**
+   - **Secret Access Key**
+   - **Jurisdictional endpoint** or **S3 API** URL. It looks like
+     `https://<32-hex-chars>.r2.cloudflarestorage.com`
+9. If the confirmation page has no endpoint, the Account ID is on **R2 →
+   Overview**, right side. Endpoint is
+   `https://THAT_ACCOUNT_ID.r2.cloudflarestorage.com`.
+
+You now have four values:
+
+| Vercel name | What you copied |
+| --- | --- |
+| `DR_S3_ENDPOINT` | `https://….r2.cloudflarestorage.com` (no bucket name on the end) |
+| `DR_S3_BUCKET` | `upside-lab-backups` |
+| `DR_S3_ACCESS_KEY_ID` | Access Key ID |
+| `DR_S3_SECRET_ACCESS_KEY` | Secret Access Key |
+
+`DR_S3_REGION` is already `auto` on Vercel. Leave it.
+
+### B3. Put the four values on Vercel
+
+Same page as before:
+[Environment Variables](https://vercel.com/upthink-solutions/upside/settings/environment-variables)
+
+Add each one, **Production** only. Mark the two keys **Sensitive**.
+
+Or from this repo (one command per variable):
+
+```bash
+printf '%s' 'https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com' | npx vercel env add DR_S3_ENDPOINT production --no-sensitive --yes
+printf '%s' 'upside-lab-backups' | npx vercel env add DR_S3_BUCKET production --no-sensitive --yes
+printf '%s' 'PASTE_ACCESS_KEY_ID' | npx vercel env add DR_S3_ACCESS_KEY_ID production --sensitive --yes
+printf '%s' 'PASTE_SECRET_ACCESS_KEY' | npx vercel env add DR_S3_SECRET_ACCESS_KEY production --sensitive --yes
+```
+
+### B4. Optional: AWS S3 instead of R2
+
+Skip B1–B3. Create a private bucket in the AWS console. Then set:
+
+- `DR_S3_BUCKET` to the bucket name
+- `DR_S3_REGION` to the bucket region (`eu-north-1`, `us-east-1`, …).
+  Overwrite the current `auto` value.
+- `DR_S3_ACCESS_KEY_ID` / `DR_S3_SECRET_ACCESS_KEY` from an IAM user that can
+  `s3:PutObject`, `s3:GetObject`, `s3:ListBucket` on that bucket only.
+- Do **not** set `DR_S3_ENDPOINT`.
+
+---
+
+## Part C. Redeploy, then prove it
+
+New env vars are invisible to the running cron until the next production
+deploy.
+
+1. [Deployments](https://vercel.com/upthink-solutions/upside/deployments) →
+   the latest **Production** row → **⋯** → **Redeploy** → confirm.
+   Wait until the status is **Ready** and `upsidelab.app` points at that
+   deployment.
+2. From this repo, with `CRON_SECRET` already in `.env.local`:
+
+```bash
+set -a && source .env.local && set +a
+curl -sS -H "Authorization: Bearer $CRON_SECRET" \
+  https://upsidelab.app/api/cron/disaster-recovery | python3 -m json.tool
+```
+
+3. You want `"ok": true` and `"uploaded": true` under `cold`. If `cold`
+   says skipped, a name is missing or misspelled. If you get 401, the cron
+   secret does not match production. If you get 503, read `warnings`.
+4. In Cloudflare: **R2** → `upside-lab-backups`. You should see a folder
+   `upside-lab/book-snapshots/YYYY/MM/DD/` with a `.json.ulenc` file and a
+   `.manifest.json`.
+5. Prove the file decrypts and the money still adds up:
+
+```bash
+set -a && source .env.local && set +a
+npx tsx scripts/restore-snapshot.ts --latest
+```
+
+That should print `"ok": true` and
+`SUM(cash)+SUM(holdings)=…`. `--require-sql` also needs `DATABASE_URL` and
+`psql` (the direct 5432 URI, not the pooler).
+
+After this, the 03:00 UTC cron does the same job every night. You do not
+need to click anything daily.
+
+---
+
+## What the daily job does
+
+`GET /api/cron/disaster-recovery` (03:00 UTC, same `CRON_SECRET` as the
+other crons):
+
+1. Ask Supabase for the backup list. Pass if WAL-G / PITR is current, or if
+   the latest completed daily backup is younger than 36 hours
+   (`DR_BACKUP_MAX_AGE_HOURS`).
+2. Read every `portfell_portfolios` and `portfell_holdings` row (service
    role).
-3. Checksum: `SUM(cash_balance) + SUM(ROUND(shares * buy_price, 2))`.
-4. Encrypt the JSON with AES-256-GCM (`SNAPSHOT_ENCRYPTION_KEY`) and PUT it
-   to the bucket. A sibling `.manifest.json` stores the checksum and the WAL
-   check, not the holdings.
+3. Checksum: `SUM(cash) + SUM(shares × buy price)`, rounded to the cent.
+4. Encrypt the JSON (`SNAPSHOT_ENCRYPTION_KEY`) and PUT it to the bucket.
+   A sibling `.manifest.json` stores the checksum and the backup check, not
+   the holdings.
 
-Local:
+Local dry run (uses `.env.local`):
 
 ```bash
 npx tsx scripts/export-cold-snapshot.ts
 ```
 
-The job still captures the book if cold storage or the Management API token
-are unset. Those pieces show up as warnings. A stale WAL backup or a failed
-upload returns HTTP 503 so Vercel marks the cron red.
+If R2 or the Supabase token is missing, the job still captures the book and
+returns warnings. A stale backup or a failed upload returns HTTP 503 so
+Vercel marks the cron red.
 
-## Env
+---
 
-```env
-# 32 bytes, 64 hex chars (or standard base64). Never commit this.
-SNAPSHOT_ENCRYPTION_KEY=
-
-# Management API personal access token (database:read / backups_read).
-# https://supabase.com/dashboard/account/tokens
-SUPABASE_ACCESS_TOKEN=
-# Optional if NEXT_PUBLIC_SUPABASE_URL is https://<ref>.supabase.co
-# SUPABASE_PROJECT_REF=uzrnybyggznpvgxgrvgl
-
-# S3-compatible cold storage. R2 example:
-DR_S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com
-DR_S3_REGION=auto
-DR_S3_BUCKET=upside-lab-backups
-DR_S3_ACCESS_KEY_ID=
-DR_S3_SECRET_ACCESS_KEY=
-# DR_S3_PREFIX=upside-lab/book-snapshots
-# DR_BACKUP_MAX_AGE_HOURS=36
-```
-
-AWS S3: omit `DR_S3_ENDPOINT`, set `DR_S3_REGION` to the bucket region.
-
-## Restore validator
+## Restore validator (any time)
 
 Decrypts a snapshot, loads cash + holdings into a throwaway Postgres schema
-(`dr_restore_*`), then checks the same SUM. Drops the schema in `finally`.
-Never writes to `public`.
+(`dr_restore_*`), checks the same SUM, then drops the schema. Never writes
+to `public`.
 
 ```bash
 npx tsx scripts/restore-snapshot.ts --file path/to/book.json.ulenc
@@ -71,28 +218,33 @@ npx tsx scripts/restore-snapshot.ts --s3-key upside-lab/book-snapshots/2026/08/1
 npx tsx scripts/restore-snapshot.ts --live --require-sql
 ```
 
-`--require-sql` needs `DATABASE_URL` and `psql`. Without it, the same math
-runs in memory so CI can still prove equality. A drifted SUM exits 1.
+A drifted SUM exits 1.
+
+---
 
 ## If production Postgres is gone
 
-1. Create a new Upside Lab Supabase project. Keep the `portfell_*` names.
-2. Apply `supabase/migrations` in order.
-3. Decrypt the latest cold snapshot (`scripts/restore-snapshot.ts --latest`
-   is a verifier, not a loader). Write a one-off insert from the JSON
-   `payload.portfolios` / `payload.holdings` using the service role, or restore
-   a Supabase dashboard backup / PITR point if the project still exists.
-4. Point Vercel env at the new URL + keys. Isolation is env, not a table
-   rename.
+1. Create a new Upside Lab Supabase project. Keep the `portfell_*` table
+   names.
+2. Apply `supabase/migrations` in order (`supabase db push` against the new
+   project).
+3. If the *old* project still exists: Dashboard → **Database** →
+   **Backups** → restore the closest point. The project is down while that
+   runs. Prefer this when you only need to rewind a few hours.
+4. If the project is deleted: Supabase's own backups died with it. Decrypt
+   the latest R2 object (`npx tsx scripts/restore-snapshot.ts --latest` is
+   a check, not a loader). Insert `payload.portfolios` and
+   `payload.holdings` with the service role, or ask an agent to write that
+   one-off load. Then point Vercel at the new URL + keys. Isolation is env,
+   not a table rename.
 
-PITR restore of the live project takes the database down for the duration.
-Plan that window. Cold JSON is the copy that survives a deleted project
-(Supabase deletes its own backups with the project).
+---
 
 ## What this does not replace
 
-- Nightly `portfell_book_snapshots` (spark / in-app restore of your own sheets)
+- Nightly `portfell_book_snapshots` (the 14-day spark, in-app restore of
+  your own sheets)
 - Auth users, storage objects, Edge Config, Vercel env
-- A documented restore *into* production. The validator only proves the file
-  is intact. Loading it back onto live sheets is still a deliberate, owned
-  action.
+- A one-click "put this file back onto live sheets" button. The validator
+  only proves the file is intact. Loading it onto production is a
+  deliberate, owned action.
