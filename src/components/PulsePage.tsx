@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
-import { humanizeMargusText, trimSizeLine } from "@/lib/ai/humanize-copy";
+import { humanizeMargusText, pulseSuggestion } from "@/lib/ai/humanize-copy";
 import { isAbortError } from "@/lib/abort";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
@@ -58,7 +58,7 @@ import {
   statusLabel,
   actionLabel,
   normalizePulseSituation,
-  verdictRepeatsTrim,
+  verdictRepeatsSuggestion,
   type PulseAction,
   type PulseCheck,
   type PulseHeadline,
@@ -205,13 +205,12 @@ function PulseCard({
   const writtenThesis = thesisDisplayBullets(convictionThesis);
   const situation = shown ? normalizePulseSituation(shown.situation) : [];
   const thesisBullets = writtenThesis.length > 0 ? writtenThesis : situation;
-  const trimLine = shown?.action === "trim" && shown.trimPct;
+  const suggestion = shown ? pulseSuggestion(shown) : "";
   const hasBody =
     thesisBullets.length > 0 ||
-    Boolean(trimLine) ||
-    Boolean(shown?.addLevel) ||
+    Boolean(suggestion) ||
     Boolean(
-      shown?.verdict && !verdictRepeatsTrim(shown.verdict, shown.trimPct)
+      shown?.verdict && !verdictRepeatsSuggestion(shown.verdict, shown)
     ) ||
     Boolean(shown?.earningsNote) ||
     Boolean(shown?.thesisBreak);
@@ -375,18 +374,11 @@ function PulseCard({
               </ul>
             </Reading>
           )}
-          {trimLine ? (
-            <p className="font-medium text-primary">
-              {trimSizeLine(shown?.trimPct)}
-            </p>
-          ) : null}
-          {shown?.addLevel ? (
-            <p className="font-medium text-foreground">
-              {humanizeMargusText(shown.addLevel)}
-            </p>
+          {suggestion ? (
+            <p className="font-medium text-primary">{suggestion}</p>
           ) : null}
           {shown?.verdict &&
-          !verdictRepeatsTrim(shown.verdict, shown.trimPct) ? (
+          !verdictRepeatsSuggestion(shown.verdict, shown) ? (
             <p className="text-base leading-relaxed text-foreground">
               {humanizeMargusText(shown.verdict)}
             </p>
@@ -1057,10 +1049,17 @@ export const PulsePage = memo(function PulsePage({
         {scanRows.length > 0 && !pinnedTicker && (
         <ScanList
           label="Today's scan"
-          rows={scanRows.map((row) => ({
-            ticker: row.ticker,
-            text: scanLineBody(row.ticker, humanizeMargusText(row.line)),
-          }))}
+          rows={scanRows.map((row) => {
+            const key = row.ticker.toUpperCase();
+            const candidate = ranked.find(
+              (c) => c.ticker.toUpperCase() === key
+            );
+            return {
+              ticker: row.ticker,
+              text: scanLineBody(row.ticker, humanizeMargusText(row.line)),
+              movePct: candidate?.effectivePct,
+            };
+          })}
           onOpen={(ticker) => {
             document
               .getElementById(`pulse-card-${ticker}`)

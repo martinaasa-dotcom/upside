@@ -4,6 +4,7 @@ import { TickerSymbol } from "@/components/TickerSymbol";
 import { Badge } from "@/components/ui/badge";
 import {
   Card as SurfaceCard,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -21,6 +22,7 @@ import {
   ItemContent,
   ItemDescription,
   ItemGroup,
+  ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -31,8 +33,8 @@ import {
 } from "@/components/ui/popover";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { filledCardColumns, filledGridColumns } from "@/lib/filled-grid";
-import { cn, splitMoveTint } from "@/lib/format";
-import { ChevronRight, Info } from "lucide-react";
+import { cn, signedPercent, splitMoveTint } from "@/lib/format";
+import { ChevronRight, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import {
   Children,
   type CSSProperties,
@@ -413,7 +415,7 @@ function MoveTint({ text }: { text: string }) {
   );
 }
 
-/** Ticker + line on the field. Card + Item, not a muted slab. */
+/** Ticker + line. Card header + Item (media, title, description, actions). */
 export function ScanList({
   label,
   rows,
@@ -422,7 +424,7 @@ export function ScanList({
   className,
 }: {
   label?: ReactNode;
-  rows: { ticker: string; text: string }[];
+  rows: { ticker: string; text: string; movePct?: number | null }[];
   onOpen?: (ticker: string) => void;
   /** Inside a Panel. No second card ring. */
   nested?: boolean;
@@ -436,6 +438,7 @@ export function ScanList({
           key={row.ticker}
           ticker={row.ticker}
           text={row.text}
+          movePct={row.movePct}
           mixedListings={mixedListings}
           onOpen={onOpen}
         />
@@ -461,6 +464,9 @@ export function ScanList({
       {label != null && label !== "" ? (
         <CardHeader>
           <CardTitle>{label}</CardTitle>
+          <CardAction>
+            <Badge variant="secondary">{rows.length}</Badge>
+          </CardAction>
         </CardHeader>
       ) : null}
       <CardContent>{list}</CardContent>
@@ -468,28 +474,64 @@ export function ScanList({
   );
 }
 
+function ScanMoveIcon({ movePct }: { movePct?: number | null }) {
+  if (movePct != null && movePct < 0) return <TrendingDown />;
+  if (movePct != null && movePct > 0) return <TrendingUp />;
+  return <Minus />;
+}
+
 function ScanRow({
   ticker,
   text,
+  movePct,
   mixedListings,
   onOpen,
 }: {
   ticker: string;
   text: string;
+  movePct?: number | null;
   mixedListings: boolean;
   onOpen?: (ticker: string) => void;
 }) {
+  const hasPct = movePct != null && Number.isFinite(movePct);
+  const showMove = hasPct && movePct !== 0;
   const body = (
     <>
+      {hasPct ? (
+        <ItemMedia
+          variant="icon"
+          className={cn(
+            "size-8 rounded-lg border border-border bg-muted",
+            movePct < 0 && "text-loss",
+            movePct > 0 && "text-gain"
+          )}
+        >
+          <ScanMoveIcon movePct={movePct} />
+        </ItemMedia>
+      ) : null}
       <ItemContent>
-        <ItemTitle className="font-semibold">
+        <ItemTitle>
           <TickerSymbol ticker={ticker} showCurrency={mixedListings} />
         </ItemTitle>
         <ItemDescription className="line-clamp-none">{text}</ItemDescription>
       </ItemContent>
-      {onOpen ? (
-        <ItemActions className="self-start">
-          <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+      {(showMove || onOpen) ? (
+        <ItemActions>
+          {showMove ? (
+            <Badge
+              variant="outline"
+              className={cn(
+                "tabular-nums",
+                movePct < 0 && "border-loss/30 bg-loss/10 text-loss",
+                movePct > 0 && "border-gain/30 bg-gain/10 text-gain"
+              )}
+            >
+              {signedPercent(movePct)}
+            </Badge>
+          ) : null}
+          {onOpen ? (
+            <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+          ) : null}
         </ItemActions>
       ) : null}
     </>
@@ -497,12 +539,7 @@ function ScanRow({
 
   if (onOpen) {
     return (
-      <Item
-        variant="outline"
-        size="sm"
-        asChild
-        className="items-start hover:bg-muted"
-      >
+      <Item variant="outline" asChild className="hover:bg-muted">
         <button
           type="button"
           onClick={() => onOpen(ticker)}
@@ -514,11 +551,7 @@ function ScanRow({
     );
   }
 
-  return (
-    <Item variant="outline" size="sm" className="items-start">
-      {body}
-    </Item>
-  );
+  return <Item variant="outline">{body}</Item>;
 }
 
 /** Label over a figure. Use in a grid inside a card, never as a lonely right-edge stack. */

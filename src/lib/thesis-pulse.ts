@@ -1,4 +1,4 @@
-import { humanizeMargusText, humanizeMargusTree, trimSizeClause } from "@/lib/ai/humanize-copy";
+import { humanizeMargusText, humanizeMargusTree, pulseSuggestion } from "@/lib/ai/humanize-copy";
 import { cashtag } from "@/lib/format";
 import { TICKER_SECTORS } from "@/lib/forecast-plan";
 import type { OverviewModel, TickerScore } from "@/lib/overview";
@@ -662,20 +662,14 @@ function composeDistinctScanLine(row: {
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. ${trimSizeClause(check?.trimPct)}. The reason you own it didn't change`
+        `${move} ${when}. ${pulseSuggestion(check ?? {}).replace(/\.+$/, "")}`
       )
     );
   } else if (action === "add") {
-    const add = check?.addLevel?.trim();
-    if (add) {
-      lines.push(
-        taggedScanLine(ticker, `${move} ${when}. ${add.replace(/[.]+$/, "")}`)
-      );
-    }
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. A dip people sometimes add to if the reason still holds`
+        `${move} ${when}. ${pulseSuggestion(check ?? {}).replace(/\.+$/, "")}`
       )
     );
   } else if (action === "sell") {
@@ -691,14 +685,14 @@ function composeDistinctScanLine(row: {
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. The reason you own it looks broken.`
+        `${move} ${when}. ${pulseSuggestion(check ?? {}).replace(/\.+$/, "")}`
       )
     );
   } else if (action === "watch") {
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. Wait. Something in the story is worth tracking.`
+        `${move} ${when}. ${pulseSuggestion(check ?? {}).replace(/\.+$/, "")}`
       )
     );
   }
@@ -752,7 +746,7 @@ function pulseScanLineOptions(input: {
   consider(
     check?.verdict,
     specific,
-    verdictRepeatsTrim(check?.verdict, check?.trimPct)
+    verdictRepeatsSuggestion(check?.verdict, check)
   );
   consider(check?.moveReason, specific);
   for (const sit of normalizePulseSituation(check?.situation)) {
@@ -815,6 +809,28 @@ export function buildPulseScan(rows: PulseScanInput[]): PulseScanRow[] {
   return out;
 }
 
+/** True when verdict just restates the suggestion already on the card. */
+export function verdictRepeatsSuggestion(
+  verdict: string | undefined,
+  check:
+    | {
+        action?: string | null;
+        trimPct?: number | null;
+        addLevel?: string | null;
+      }
+    | null
+    | undefined
+): boolean {
+  const v = (verdict ?? "").trim().toLowerCase();
+  if (!v || !check) return false;
+  const line = pulseSuggestion(check).toLowerCase();
+  const norm = (s: string) => s.replace(/[^a-z0-9]+/g, " ").trim();
+  const nv = norm(v);
+  const nl = norm(line);
+  if (nv === nl || nv.includes(nl) || nl.includes(nv)) return true;
+  return verdictRepeatsTrim(verdict, check.trimPct);
+}
+
 /** True when verdict just restates the trim line already on the card. */
 export function verdictRepeatsTrim(
   verdict: string | undefined,
@@ -825,17 +841,22 @@ export function verdictRepeatsTrim(
   if (!new RegExp(`\\b${trimPct}\\s*%`).test(v)) return false;
   const isTakeOffTalk =
     /\btrim\b/.test(v) ||
+    /\btrimming\b/.test(v) ||
     /\bselling about\b/.test(v) ||
+    /\bwouldn't be a bad idea\b/.test(v) ||
     /\bpeople sometimes sell\b/.test(v) ||
     /\bone check\b/.test(v);
   if (!isTakeOffTalk) return false;
   const leftover = v
+    .replace(/\btrimming\b/g, " ")
     .replace(/\btrim\b/g, " ")
     .replace(/\bone check\b/g, " ")
     .replace(/\bselling (about|a little)\b/g, " ")
     .replace(/\babout\b/g, " ")
     .replace(new RegExp(`\\b${trimPct}\\s*%`, "g"), " ")
     .replace(/\binto (this|the) (strength|run)\b/g, " ")
+    .replace(/\bafter a jump like this\b/g, " ")
+    .replace(/\bwouldn'?t be a bad idea\b/g, " ")
     .replace(/\bkeep the rest\b/g, " ")
     .replace(/\bthe price ran\b/g, " ")
     .replace(/\bthe reason you own it didn'?t(?: change)?\b/g, " ")
@@ -871,7 +892,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: `${cashtag(candidate.ticker)} ran ${movePct}. The reason you own it is the same.`,
+      verdict: pulseSuggestion({ action: "trim", trimPct }),
       thesisBreak: "",
     };
   }
@@ -889,10 +910,11 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       earningsNote: "",
       action: "add",
       trimPct: null,
-      addLevel: `A level to think about: around $${price}. Then another look if it drops to around ${(
-        candidate.price * 0.92
-      ).toFixed(2)}.`,
-      verdict: `If you still believe the story, ${cashtag(candidate.ticker)} at $${price} is a dip people sometimes add to, not a sell.`,
+      addLevel: `around $${price}`,
+      verdict: pulseSuggestion({
+        action: "add",
+        addLevel: `around $${price}`,
+      }),
       thesisBreak: "",
     };
   }
@@ -909,7 +931,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     action: "hold",
     trimPct: null,
     addLevel: "",
-    verdict: "Hold. Come back if the story actually changes.",
+    verdict: pulseSuggestion({ action: "hold" }),
     thesisBreak: "",
   };
 }

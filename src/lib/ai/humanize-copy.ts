@@ -157,19 +157,38 @@ function scrubMarketJargon(text: string): string {
   return s;
 }
 
-/**
- * Pulse take-off size. Names why the number exists (the price ran, the
- * reason didn't, a winner can crowd the rest). Never an order.
- */
-export function trimSizeClause(pct: number | null | undefined): string {
-  if (pct != null && Number.isFinite(pct)) {
-    return `About ${Math.round(pct)}% of this holding is a size people sometimes sell after a run, so it doesn't crowd the rest`;
-  }
-  return "People sometimes sell a little after a run so a winner doesn't crowd the rest";
+function firstDollar(text: string | null | undefined): string | null {
+  const m = (text ?? "").match(/\$\s*[\d,]+(?:\.\d{1,2})?/);
+  return m ? m[0].replace(/\s+/g, "") : null;
 }
 
-export function trimSizeLine(pct: number | null | undefined): string {
-  return `The price ran. The reason you own it didn't. ${trimSizeClause(pct)}.`;
+/** One short Pulse suggestion. A thought, never an order. */
+export function pulseSuggestion(input: {
+  action?: string | null;
+  trimPct?: number | null;
+  addLevel?: string | null;
+}): string {
+  const action = String(input.action ?? "hold").trim().toLowerCase();
+  if (action === "trim") {
+    if (input.trimPct != null && Number.isFinite(input.trimPct)) {
+      return `Trimming about ${Math.round(input.trimPct)}% after a jump like this wouldn't be a bad idea.`;
+    }
+    return "Trimming a little after a jump like this wouldn't be a bad idea.";
+  }
+  if (action === "add") {
+    const price = firstDollar(input.addLevel);
+    if (price) {
+      return `Adding a bit around ${price} wouldn't be a bad idea if you still believe the reason.`;
+    }
+    return "Adding a bit here wouldn't be a bad idea if you still believe the reason.";
+  }
+  if (action === "sell") {
+    return "Selling here wouldn't be a bad idea if the reason you own it is gone.";
+  }
+  if (action === "watch") {
+    return "Waiting wouldn't be a bad idea until the story is clearer.";
+  }
+  return "Sitting tight wouldn't be a bad idea.";
 }
 
 /** Kill leftover buy/sell orders the model still emits. Ban lists may
@@ -205,31 +224,36 @@ function scrubTradeOrders(text: string): string {
   );
   s = s.replace(
     /\bLook to add this week on the dip\.?/gi,
-    "A dip this week is where people who still believe the reason sometimes add."
+    pulseSuggestion({ action: "add" })
   );
   s = s.replace(
     /\bLook to add if it dips\.?/gi,
-    "A dip is where people who still believe the reason sometimes add."
+    pulseSuggestion({ action: "add" })
   );
   s = s.replace(
-    /\bLook to add\b/gi,
-    "A dip is a place people sometimes add"
+    /\bLook to add\.?/gi,
+    pulseSuggestion({ action: "add" })
   );
   s = s.replace(
     /\bOne check:\s*selling about (\d+)\s*%(?:\s+into (?:this|the) (?:strength|run(?:-up)?))?\.?/gi,
-    (_, n: string) => trimSizeLine(Number(n))
+    (_, n: string) => pulseSuggestion({ action: "trim", trimPct: Number(n) })
   );
   s = s.replace(
     /\bTrim about (\d+)\s*%(?:\s+into (?:this|the) (?:strength|run(?:-up)?))?\.?/gi,
-    (_, n: string) => trimSizeLine(Number(n))
+    (_, n: string) => pulseSuggestion({ action: "trim", trimPct: Number(n) })
   );
   s = s.replace(
     /\bOne check:\s*selling a little into the run\.?/gi,
-    trimSizeLine(null)
+    pulseSuggestion({ action: "trim" })
   );
   s = s.replace(/\s+into this strength\.?/gi, ".");
   s = s.replace(/\s+into the strength\.?/gi, ".");
-  s = s.replace(/\bAdd now\s*~?\s*/gi, "A level to think about: around ");
+  s = s.replace(
+    /\bAdd now\s*~?\s*(\$\s*[\d,]+(?:\.\d{1,2})?)/gi,
+    (_, price: string) =>
+      pulseSuggestion({ action: "add", addLevel: price.replace(/\s+/g, "") })
+  );
+  s = s.replace(/\bAdd now\s*~?\s*/gi, "Adding a bit around ");
   s = s.replace(
     /\bdo not buy more(?: here)?(?: or chase it)?\.?/gi,
     "Buying more here is how people chase a run."
@@ -242,22 +266,30 @@ function scrubTradeOrders(text: string): string {
     /\bno trades before the (?:open|bell)(?: today)?\.?/gi,
     "Nothing you need to do before the open."
   );
-  s = s.replace(/\bYou should not add\b/gi, "Adding is how a broken story gets bigger");
+  s = s.replace(
+    /\bYou should not add\b/gi,
+    "Adding here would make a broken story bigger"
+  );
   s = s.replace(
     /\bYou should sell\b/gi,
-    "Selling is a thought some people have here"
+    pulseSuggestion({ action: "sell" })
   );
   s = s.replace(
     /\bYou should buy\b/gi,
-    "Buying is a thought some people have here"
+    pulseSuggestion({ action: "add" })
   );
   s = s.replace(
     /\bYou should add\b/gi,
-    "Adding is a thought some people have here"
+    pulseSuggestion({ action: "add" })
   );
   s = s.replace(
     /\bI recommend (buying|selling|adding|trimming)\b/gi,
-    "$1 is a thought some people have here"
+    (_, verb: string) => {
+      const a = verb.toLowerCase();
+      if (a === "selling") return pulseSuggestion({ action: "sell" });
+      if (a === "trimming") return pulseSuggestion({ action: "trim" });
+      return pulseSuggestion({ action: "add" });
+    }
   );
   s = s.replace(/[ \t]{2,}/g, " ");
   return s;

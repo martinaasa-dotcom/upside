@@ -61,7 +61,7 @@ import {
   endBackgroundLlm,
   markChatActive,
 } from "../src/lib/ai/llm-slots";
-import { humanizeMargusTree, humanizeMargusText } from "../src/lib/ai/humanize-copy";
+import { humanizeMargusTree, humanizeMargusText, pulseSuggestion } from "../src/lib/ai/humanize-copy";
 import { communityInviteCopy, emptyBookNudgeHtml } from "../src/lib/email-letter";
 import {
   fallbackNoteTake,
@@ -1085,7 +1085,7 @@ run("trim verdict that restates the size line is dropped", () => {
   );
   assert.equal(
     verdictRepeatsTrim(
-      "The price ran. The reason you own it didn't. About 20% of this holding is a size people sometimes sell after a run, so it doesn't crowd the rest.",
+      "Trimming about 20% after a jump like this wouldn't be a bad idea.",
       20
     ),
     true
@@ -1266,11 +1266,15 @@ run("humanize kills leftover market slang", () => {
   );
   assert.match(
     humanizeMargusText("Trim about 15% into this strength."),
-    /people sometimes sell/i
+    /wouldn't be a bad idea/i
+  );
+  assert.match(
+    humanizeMargusText("Trim about 15% into this strength."),
+    /15%/
   );
   assert.doesNotMatch(
     humanizeMargusText("Trim about 15% into this strength."),
-    /one check|into this strength|trim about/i
+    /one check|into this strength/i
   );
   assert.doesNotMatch(
     humanizeMargusText("One check: selling about 20% into this strength."),
@@ -1278,7 +1282,7 @@ run("humanize kills leftover market slang", () => {
   );
   assert.match(
     humanizeMargusText("Add now ~$80"),
-    /A level to think about: around \$80/
+    /Adding a bit around \$80.*wouldn't be a bad idea/i
   );
   assert.match(
     humanizeMargusText("Let the move play out, but do not buy more here or chase it."),
@@ -1287,6 +1291,26 @@ run("humanize kills leftover market slang", () => {
   assert.doesNotMatch(
     humanizeMargusText("No trades before the open today."),
     /no trades/i
+  );
+  assert.match(
+    pulseSuggestion({ action: "trim", trimPct: 20 }),
+    /^Trimming about 20% after a jump like this wouldn't be a bad idea\.$/
+  );
+  assert.match(
+    pulseSuggestion({ action: "add", addLevel: "around $80" }),
+    /^Adding a bit around \$80 wouldn't be a bad idea if you still believe the reason\.$/
+  );
+  assert.match(
+    pulseSuggestion({ action: "sell" }),
+    /^Selling here wouldn't be a bad idea if the reason you own it is gone\.$/
+  );
+  assert.match(
+    pulseSuggestion({ action: "watch" }),
+    /^Waiting wouldn't be a bad idea until the story is clearer\.$/
+  );
+  assert.match(
+    pulseSuggestion({ action: "hold" }),
+    /^Sitting tight wouldn't be a bad idea\.$/
   );
 });
 
@@ -4946,7 +4970,7 @@ run("Margus never writes trade orders to a person", () => {
   assert.doesNotMatch(pulseUi, /Trim about \{/);
   assert.doesNotMatch(pulseUi, /into this strength/);
   assert.doesNotMatch(pulseUi, /One check: selling/);
-  assert.match(pulseUi, /trimSizeLine\(/);
+  assert.match(pulseUi, /pulseSuggestion\(/);
   assert.doesNotMatch(notes, /If it runs, sell some/);
   assert.doesNotMatch(insights, /Own it on purpose or cut it/);
   assert.match(persona, /Never write trade orders/);
