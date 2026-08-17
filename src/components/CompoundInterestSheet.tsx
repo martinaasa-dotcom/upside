@@ -10,7 +10,6 @@ import {
 } from "@/lib/compound-interest";
 import {
   buildCompareScenarios,
-  buildCompareTakeaway,
   buildCompoundMilestones,
   buildMilestoneTakeaway,
   buildNarrative,
@@ -591,7 +590,6 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
     () => buildCompareScenarios(liveInputs, hideOptions ? 0 : 6),
     [liveInputs, hideOptions]
   );
-  const compareTakeaway = useMemo(() => buildCompareTakeaway(compare), [compare]);
   const narrative = useMemo(() => buildNarrative(result), [result]);
 
   const storyOpts = useMemo(
@@ -1366,12 +1364,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             icon={<Zap className="h-4 w-4" />}
             title="The same money, invested differently"
           />
-          {compareTakeaway && (
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              {compareTakeaway}
-            </p>
-          )}
-          <Scoreboard cols={2} className="mt-4 max-sm:grid-cols-1">
+          <Scoreboard cols={2} className="max-sm:grid-cols-1">
             {compare.map((s) => {
               const dashed = s.id === "mattress";
               return (

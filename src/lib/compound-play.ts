@@ -51,51 +51,6 @@ export function goalProgress(balance: number, goal: number): number {
   return Math.max(0, balance / goal);
 }
 
-/** One-line takeaway quantifying the Upside path's edge over the baselines. */
-export function buildCompareTakeaway(scenarios: CompareScenario[]): string | null {
-  const upside = scenarios.find((s) => s.id === "upside");
-  const mattress = scenarios.find((s) => s.id === "mattress");
-  const cash = scenarios.find((s) => s.id === "cash");
-  const spy = scenarios.find((s) => s.id === "spy");
-  if (!upside) return null;
-
-  const vsMattress = mattress
-    ? upside.result.futureValue - mattress.result.futureValue
-    : null;
-  const vsCash = cash ? upside.result.futureValue - cash.result.futureValue : null;
-  const vsSpy = spy ? upside.result.futureValue - spy.result.futureValue : null;
-  if (vsMattress == null && vsCash == null && vsSpy == null) return null;
-
-  const seed = hashSeed(
-    `upside-compare|${upside.result.futureValue.toFixed(0)}|${vsMattress?.toFixed(0)}|${vsCash?.toFixed(0)}|${vsSpy?.toFixed(0)}`
-  );
-  const rng = mulberry32(seed);
-
-  if (vsMattress != null && vsSpy != null) {
-    return pick(rng, [
-      `Upside path clears the inflation-eroded mattress by ${fmt(vsMattress)} and the index by ${fmt(vsSpy)} over the same stretch.`,
-      `Same principal, same years. Upside beats doing nothing by ${fmt(vsMattress)} (mattress loses real value to inflation) and beats a plain index bet by ${fmt(vsSpy)}.`,
-      `The gap: +${fmt(vsMattress)} over letting inflation eat idle cash, +${fmt(vsSpy)} over a plain index bet.`,
-    ]);
-  }
-  if (vsSpy != null) {
-    return pick(rng, [
-      `Upside path clears a plain index bet by ${fmt(vsSpy)} over the same stretch.`,
-      `+${fmt(vsSpy)} ahead of a plain index bet, same principal and years.`,
-    ]);
-  }
-  if (vsCash != null) {
-    return pick(rng, [
-      `Upside path clears even a ${COMPOUND_CASH_YIELD_ANNUAL_PCT}% savings yield by ${fmt(vsCash)} over the same stretch.`,
-      `+${fmt(vsCash)} ahead of just parking it in a high-yield savings account.`,
-    ]);
-  }
-  return pick(rng, [
-    `Upside path clears the inflation-eroded mattress by ${fmt(vsMattress!)} over the same stretch.`,
-    `+${fmt(vsMattress!)} ahead of cash losing real value under the mattress. Doing nothing has a real cost.`,
-  ]);
-}
-
 /** Long-run US CPI-ish assumption — illustrative only, for the "real
  * value" mattress contrast, not a forecast. */
 export const COMPOUND_INFLATION_ANNUAL_PCT = 3;

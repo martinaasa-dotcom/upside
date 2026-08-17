@@ -4963,6 +4963,9 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
   );
   assert.doesNotMatch(compareUi, /This plan/);
   assert.doesNotMatch(compareUi, /featured \? "brand"/);
+  assert.doesNotMatch(compareUi, /compareTakeaway/);
+  assert.doesNotMatch(compound, /buildCompareTakeaway/);
+  assert.doesNotMatch(compound, /The gap:/);
   assert.match(compareUi, /<Scoreboard cols=\{2\}/);
   assert.match(compareUi, /s\.color/);
   const play = readFileSync(
