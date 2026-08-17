@@ -103,6 +103,7 @@ export function insightWhen(
   session: SessionKind = "unknown",
   now = new Date()
 ): "today" | "friday" {
+  void session;
   return isUsWeekend(now) ? "friday" : "today";
 }
 

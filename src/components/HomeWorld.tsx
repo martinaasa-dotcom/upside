@@ -141,7 +141,7 @@ export function HomeWorld({
     return () => {
       ctrl.abort();
     };
-  }, []);
+  }, [setCommunities]);
 
   const primary = communities?.[0];
   const communityHref = primary ? `/communities/${primary.id}` : "/communities";

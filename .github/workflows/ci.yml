@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Public placeholders only. Do not map GitHub secrets into this workflow.
+# Real keys stay on Vercel. The env-check job fails if a secret name is set.
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  HUSKY: "0"
+  NEXT_PUBLIC_SUPABASE_URL: https://ci.placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-public-anon-key-placeholder
+  NEXT_PUBLIC_SITE_URL: https://ci.upsidelab.test
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint -- --max-warnings 0
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Validate public env (reject secrets)
+        run: npx tsx scripts/check-ci-env.ts
+      - run: npm run build

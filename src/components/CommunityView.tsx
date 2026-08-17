@@ -533,7 +533,7 @@ export function CommunityView({ communityId }: Props) {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [holdings]);
+  }, [holdings, communityId]);
 
   const profileName = useCallback(
     (id: string) => {

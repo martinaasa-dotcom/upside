@@ -906,7 +906,7 @@ export function ForecastPanel({
       fullyCovered,
       cachedTickers,
     });
-    if (retryCountRef.current >= MAX_AUTO_TRIES) return null;
+    if (retryCountRef.current >= MAX_AUTO_TRIES && retryTick >= 0) return null;
     if (decision.run && decision.reason === "first-run") {
       return "First time on this portfolio, Margus is working out the prices …";
     }

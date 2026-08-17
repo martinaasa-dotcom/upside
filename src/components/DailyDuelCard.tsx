@@ -66,7 +66,6 @@ function readCachedDuel(
 /** Pick who finishes the next US cash session higher. Never the previous day. */
 export function DailyDuelCard({
   tickers,
-  compact = false,
   communityId,
   initialDuel = null,
 }: Props) {

@@ -192,7 +192,6 @@ export function useBookNavHistory(input: {
 
   useLayoutEffect(() => {
     applyCached(posKey, assumed, input.cash);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- posKey fingerprints holdings
   }, [assumed, posKey, input.cash]);
 
   useEffect(() => {

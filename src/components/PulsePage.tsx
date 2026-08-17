@@ -567,7 +567,7 @@ export function PulsePage({
   const [checkingTickers, setCheckingTickers] = useState<Set<string>>(
     new Set()
   );
-  const [summary, setSummary] = useState("");
+  const [, setSummary] = useState("");
   const [lastGeneratedAt, setLastGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fearGreed, setFearGreed] = useState<FearGreedSnapshot | null>(null);

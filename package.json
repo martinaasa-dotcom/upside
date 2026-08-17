@@ -11,6 +11,8 @@
     "start": "next start",
     "lint": "eslint --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "check:ci-env": "npx tsx scripts/check-ci-env.ts",
+    "prepare": "husky",
     "validate": "npx tsx scripts/validate-audit-features.ts",
     "check:edges": "npx tsx scripts/edge-audit.mts",
     "test:invariants": "npx tsx scripts/test-invariants.ts"
@@ -42,8 +44,13 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,mts,js,mjs}": "eslint --max-warnings 0 --no-warn-ignored"
   }
 }

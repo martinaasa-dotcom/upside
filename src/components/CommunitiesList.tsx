@@ -246,7 +246,7 @@ export function CommunitiesList() {
               Circle
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              People you invite, and public circles you can ask to join. You pick which portfolios they see. They see today's prices, not what you paid.
+              People you invite, and public circles you can ask to join. You pick which portfolios they see. They see prices from today, not what you paid.
             </p>
           </div>
           {error && <p className="text-sm text-loss">{error}</p>}
