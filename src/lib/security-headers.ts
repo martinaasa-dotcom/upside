@@ -4,9 +4,9 @@
  * Static headers (HSTS, frame denial, nosniff, …) live in next.config.ts so
  * they cover every response, including static files that skip proxy.ts.
  *
- * CSP is built per-request in proxy.ts so Next.js inline scripts can carry a
- * nonce. Do not also set Content-Security-Policy in next.config: two CSP
- * headers are AND'd by the browser and the nonce policy would fail.
+ * CSP is set in proxy.ts, not next.config. Two CSP headers are AND'd by
+ * the browser, so a second copy here would only make the policy stricter
+ * in surprising ways.
  */
 
 export const STATIC_SECURITY_HEADERS: { key: string; value: string }[] = [
@@ -46,18 +46,25 @@ function supabaseConnectSrc(): string[] {
 }
 
 /**
- * Strict CSP with a per-request nonce for Next-generated scripts.
+ * CSP for the prerendered app shell.
  *
- * `'strict-dynamic'` is intentionally omitted: Vercel Analytics / Speed
- * Insights inject same-origin scripts at runtime without a nonce, and
- * `'strict-dynamic'` would ignore `'self'` and block them.
+ * A per-request script nonce cannot work here. The home HTML is ISR /
+ * CDN-cached (`x-nextjs-prerender`), and Next.js only stamps nonces onto
+ * dynamically rendered markup. Live was shipping a fresh nonce in the
+ * header against cached inline Flight scripts with no nonce, so the
+ * browser blocked hydration and the splash never left.
+ *
+ * `'unsafe-inline'` is required for those two Next.js Flight scripts.
+ * A nonce in script-src would ignore `'unsafe-inline'` (CSP spec).
+ * `'strict-dynamic'` stays off: Vercel Analytics injects same-origin
+ * scripts at runtime without a nonce.
  */
-export function buildContentSecurityPolicy(nonce: string): string {
+export function buildContentSecurityPolicy(): string {
   const isDev = process.env.NODE_ENV !== "production";
   const isPreview = process.env.VERCEL_ENV === "preview";
   const scriptSrc = [
     "'self'",
-    `'nonce-${nonce}'`,
+    "'unsafe-inline'",
     "https://va.vercel-scripts.com",
     ...(isDev ? ["'unsafe-eval'"] : []),
   ];

@@ -12,7 +12,7 @@ import {
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
 /**
- * Legacy host redirects, mutation rate limits, CSP nonce, and Supabase
+ * Legacy host redirects, mutation rate limits, CSP, and Supabase
  * session refresh.
  *
  * Document navigations to a known legacy host 301 to the canonical host,
@@ -24,8 +24,7 @@ export async function proxy(request: NextRequest) {
   const target = redirectTarget();
   const path = request.nextUrl.pathname;
   const isApi = path.startsWith("/api/");
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildContentSecurityPolicy(nonce);
+  const csp = buildContentSecurityPolicy();
 
   if (
     target &&
@@ -59,7 +58,6 @@ export async function proxy(request: NextRequest) {
   }
 
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
 
   const continueRequest = () => {
     const next = NextResponse.next({
