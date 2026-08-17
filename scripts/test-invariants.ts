@@ -831,7 +831,7 @@ run("fund report headlines number with digits, not spelled-out days", () => {
   );
   assert.equal(
     numberedReportHeadline("Quiet week, held the book", "Week", 1),
-    "Week 1: Quiet week, held our portfolio"
+    "Week 1: Quiet week, held your portfolio"
   );
 });
 
@@ -1068,11 +1068,11 @@ run("humanize kills leftover market slang", () => {
   );
   assert.equal(
     humanizeMargusText("$NBIS is 35% of the book."),
-    "$NBIS is 35% of our portfolio."
+    "$NBIS is 35% of your portfolio."
   );
   assert.equal(
     humanizeMargusText("Most of this sheet is chip makers."),
-    "Most of our portfolio is chip makers."
+    "Most of your portfolio is chip makers."
   );
   assert.equal(
     humanizeMargusText("Paste from a spreadsheet."),
@@ -1143,7 +1143,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.equal(looksLikePromptLeak(fallback), false);
   assert.ok(fallback.length >= 20);
   assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
-  assert.match(fallback, /our portfolio/i);
+  assert.match(fallback, /your portfolio/i);
   assert.match(fallback, /\$NBIS/);
   assert.doesNotMatch(fallback, /\n- \$NBIS /);
   assert.doesNotMatch(fallback, /not the same bet|Thesis intact|of the book/i);
@@ -1244,10 +1244,11 @@ run("note letters are one mix story, not stacked cards", () => {
   });
   morning.margus = fallbackNoteTake(morning);
   assert.match(morning.margus, /\$RDDT is the only name doing any real work/);
-  assert.match(morning.margus, /64% of our portfolio is AI computer companies/);
-  assert.match(morning.margus, /we barely own the utilities that sell it/);
+  assert.match(morning.margus, /64% of your portfolio is AI computer companies/);
+  assert.match(morning.margus, /you barely own the utilities that sell it/);
   assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight/);
   assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some/i);
+  assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
   const html = noteReportHtml(morning);
   assert.match(html, /Margus/);
   assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for/);
@@ -4343,7 +4344,7 @@ run("Margus never writes trade orders to a person", () => {
   assert.doesNotMatch(notes, /If it runs, sell some/);
   assert.doesNotMatch(insights, /Own it on purpose or cut it/);
   assert.match(persona, /Never write trade orders/);
-  assert.match(persona, /Say we, us, our/);
+  assert.match(persona, /Say you, your/);
   assert.match(humanize, /function scrubTradeOrders/);
   assert.match(chat, /Never write orders/);
   assert.match(chat, /Same voice as the inbox note/);

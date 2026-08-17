@@ -600,7 +600,7 @@ Requirements:
    - If nothing to do: "Hold, no add" / "Hold, no trim" (never leave blank)
    - Never use em dashes or en-dash clause breaks in add/trim lines.
 4. sectorRotation: talk through money moving between groups (AI computer builders, chip makers, data-center power, crypto, space, software, healthcare, drones, payments and finance, etc.). Chip makers and AI computer builders are different bets. Do not stay stuck in one box. Plain speech, no em dashes.
-5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences in we/us/our. Sound like a partner at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs, trade orders.
+5. generalAdvice: sizing, concentration, cash, and what NOT to do. 2-4 short spoken sentences in you/your. Sound like a note at a desk, not a generated briefing. Forbidden: em dashes, stacked jargon slogans, tidy wrap-up paragraphs, trade orders. Never we/us/our.
 6. eoyTargets: REQUIRED for EVERY ticker listed above. Use the exact ticker strings (keep ".AS", ".L", ".DE", etc.).
    - Provide a positive price for EACH of years ${yearsList}. All five required, no omissions.
    - Year ${year} is December 31 ${year}, not today's spot. Do not paste today's price into that cell.
