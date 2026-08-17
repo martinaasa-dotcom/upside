@@ -4,7 +4,9 @@ import {
   UpsideLogo,
   UPSIDE_HEADER_WORDMARK_CLASS,
 } from "@/components/UpsideLogo";
+import { usePaperClass } from "@/components/PaperClassProvider";
 import { cn } from "@/lib/format";
+import { paperClassHomeHref } from "@/lib/paper-class-cache";
 import { requestGoHome } from "@/lib/workspace-rooms";
 import Link from "next/link";
 
@@ -15,8 +17,8 @@ type Props = {
 };
 
 /**
- * App-chrome brand lockup. Gold mark plus UPSIDE LAB, same as the board.
- * Always goes to Overview at /. Never stays on Compound, Pulse, or Fund.
+ * Gold mark plus UPSIDE LAB. Goes to Overview at /, except a paper-class
+ * account which goes back to the class.
  *
  * The pointer cursor comes from the global button rule in globals.css
  * (a real button gets an arrow by default, only a link with href gets a hand).
@@ -34,13 +36,17 @@ const BRAND_INTERACTION_CLASS = cn(
 );
 
 export function HeaderBrand({ className, alwaysType = false }: Props) {
+  const paper = usePaperClass();
+  const href = paper.only ? paperClassHomeHref(paper.classIds) : "/";
   return (
     <Link
-      href="/"
+      href={href}
       className={cn(BRAND_INTERACTION_CLASS, className)}
-      title="Upside Lab home"
-      aria-label="Upside Lab home"
-      onClick={() => requestGoHome()}
+      title={paper.only ? "Back to class" : "Upside Lab home"}
+      aria-label={paper.only ? "Back to class" : "Upside Lab home"}
+      onClick={() => {
+        if (!paper.only) requestGoHome();
+      }}
     >
       <UpsideLogo
         variant="wordmark"

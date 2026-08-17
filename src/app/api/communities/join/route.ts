@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
-import { provisionClassroomSheet } from "@/lib/classroom";
+import { isClassroomKind, provisionClassroomSheet } from "@/lib/classroom";
+import { loadPaperClassGate, PAPER_CLASS_ONLY_MESSAGE } from "@/lib/paper-class-server";
 import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { clipInviteName } from "@/lib/invite-landing";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -96,6 +97,33 @@ export async function POST(req: NextRequest) {
   const token = body.token?.trim();
   if (!token) {
     return NextResponse.json({ error: "token required" }, { status: 400 });
+  }
+
+  const dataClientPeek = await getSupabaseDataClient();
+  if (dataClientPeek) {
+    const gate = await loadPaperClassGate(dataClientPeek, auth.user.id);
+    if (gate.only) {
+      const { data: invite } = await dataClientPeek
+        .from(PORTFELL_TABLES.communityInvites)
+        .select("community_id")
+        .eq("token_hash", hashToken(token))
+        .maybeSingle();
+      const communityId = (invite as { community_id?: string } | null)
+        ?.community_id;
+      if (communityId) {
+        const { data: community } = await dataClientPeek
+          .from(PORTFELL_TABLES.communities)
+          .select("kind")
+          .eq("id", communityId)
+          .maybeSingle();
+        if (!isClassroomKind((community as { kind?: string } | null)?.kind)) {
+          return NextResponse.json(
+            { error: PAPER_CLASS_ONLY_MESSAGE },
+            { status: 403 }
+          );
+        }
+      }
+    }
   }
 
   // Cookie-session client, not getSupabaseDataClient() -- this RPC is

@@ -1,4 +1,4 @@
-import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { loadPaperClassGate } from "@/lib/paper-class-server";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextResponse } from "next/server";
@@ -14,6 +14,11 @@ export async function GET() {
 
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
+    return NextResponse.json({ communities: [] });
+  }
+
+  const gate = await loadPaperClassGate(supabase, auth.user.id);
+  if (gate.only) {
     return NextResponse.json({ communities: [] });
   }
 

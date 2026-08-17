@@ -20,6 +20,8 @@ type Props = {
   guest?: boolean;
   /** Meta-tab ids to hide, driven by the viewer's experience tier. */
   hiddenModeIds?: string[];
+  /** Hide New sheet. Paper class accounts cannot open a real book. */
+  hideAdd?: boolean;
   /** Today's $ direction per portfolio id — glanceable dot per sheet tab. */
   sheetTodayTone?: Record<string, "up" | "down" | null>;
   className?: string;
@@ -41,6 +43,7 @@ export function PortfolioTabs({
   onDeleteRequest,
   guest = false,
   hiddenModeIds = [],
+  hideAdd = false,
   sheetTodayTone,
   className,
 }: Props) {
@@ -270,7 +273,7 @@ export function PortfolioTabs({
                   className="h-7 w-28 rounded border border-brand-mid bg-well px-2 text-sm text-foreground outline-none focus:border-brand"
                 />
               </form>
-            ) : !guest ? (
+            ) : !guest && !hideAdd ? (
               <button
                 type="button"
                 onClick={() => setAdding(true)}

@@ -222,6 +222,7 @@ import {
   parseClassPlan,
   parseStartingCash,
   realBookPortfolios,
+  isPaperClassOnly,
   resolveClassroomTrade,
   startPeriodNow,
 } from "../src/lib/classroom";
@@ -2526,8 +2527,9 @@ run("UPSIDE LAB always goes to Overview at /", () => {
     join(process.cwd(), "src/lib/workspace-rooms.ts"),
     "utf8"
   );
-  assert.match(brand, /href="\/"/);
-  assert.match(brand, /requestGoHome\(\)/);
+  assert.match(brand, /paperClassHomeHref/);
+  assert.match(brand, /href=\{href\}/);
+  assert.match(brand, /requestGoHome/);
   assert.match(brand, /<Link/);
   assert.doesNotMatch(brand, /<button[\s>]/);
   assert.match(header, /<HeaderBrand \/>/);
@@ -3060,7 +3062,7 @@ run("Communities list does not blank a cached circle while it refreshes", () => 
   assert.doesNotMatch(src, /fundOnly/);
   assert.doesNotMatch(src, /Compare books/);
   assert.doesNotMatch(src, /which sheets/);
-  assert.match(src, />Circle</);
+  assert.match(src, /paper\.only \? "Class" : "Circle"/);
   assert.doesNotMatch(src, /Start a class[\s\S]{0,80}How the class runs/);
 });
 
@@ -3867,8 +3869,62 @@ run("class sheets stay out of the real book", () => {
     realBookPortfolios([{ id: "hw", classroom_community_id: "class-1" }]).map(
       (p) => p.id
     ),
-    ["hw"]
+    []
   );
+  assert.equal(
+    isPaperClassOnly([{ classroom_community_id: "class-1" }]),
+    true
+  );
+  assert.equal(
+    isPaperClassOnly([{ classroom_community_id: null }]),
+    false
+  );
+  assert.equal(
+    isPaperClassOnly(
+      [{ classroom_community_id: "class-1" }],
+      [{ kind: "circle" }]
+    ),
+    false
+  );
+  assert.equal(
+    isPaperClassOnly([], [{ id: "c1", kind: "classroom" }]),
+    true
+  );
+});
+
+run("paper class accounts cannot reach Fund or Circle", () => {
+  const switcher = readFileSync(
+    join(process.cwd(), "src/components/WorkspaceSwitcher.tsx"),
+    "utf8"
+  );
+  assert.match(switcher, /paper\.only/);
+  assert.match(switcher, /GraduationCap/);
+  const dock = readFileSync(
+    join(process.cwd(), "src/components/BookModeDock.tsx"),
+    "utf8"
+  );
+  assert.match(dock, /paper\.only/);
+  const discover = readFileSync(
+    join(process.cwd(), "src/app/api/communities/discover/route.ts"),
+    "utf8"
+  );
+  assert.match(discover, /loadPaperClassGate/);
+  const joinRoute = readFileSync(
+    join(process.cwd(), "src/app/api/communities/join/route.ts"),
+    "utf8"
+  );
+  assert.match(joinRoute, /PAPER_CLASS_ONLY_MESSAGE/);
+  const portfolioRoute = readFileSync(
+    join(process.cwd(), "src/app/api/portfolios/route.ts"),
+    "utf8"
+  );
+  assert.match(portfolioRoute, /PAPER_CLASS_ONLY_MESSAGE/);
+  const notes = readFileSync(
+    join(process.cwd(), "src/lib/note-cron.ts"),
+    "utf8"
+  );
+  assert.match(notes, /kind === "sunday"/);
+  assert.match(notes, /isClassroomSheet/);
 });
 
 run("inbox notes say Thesis intact to a person", () => {

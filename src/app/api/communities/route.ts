@@ -11,7 +11,7 @@ import {
   type ClassPeriodKind,
 } from "@/lib/classroom";
 import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
-import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { loadPaperClassGate, PAPER_CLASS_ONLY_MESSAGE } from "@/lib/paper-class-server";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
@@ -76,6 +76,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "Supabase not configured" },
       { status: 400 }
+    );
+  }
+
+  const gate = await loadPaperClassGate(supabase, auth.user.id);
+  if (gate.only) {
+    return NextResponse.json(
+      { error: PAPER_CLASS_ONLY_MESSAGE },
+      { status: 403 }
     );
   }
 

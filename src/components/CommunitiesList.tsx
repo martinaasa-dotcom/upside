@@ -4,6 +4,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { BookBottomNav } from "@/components/BookBottomNav";
 import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
+import { usePaperClass } from "@/components/PaperClassProvider";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -38,6 +39,7 @@ type DiscoverRow = CommunityDiscoverRow;
 
 export function CommunitiesList() {
   const router = useRouter();
+  const paper = usePaperClass();
   // Hydration-safe: /communities has no auth gate in front of it, so this
   // component really is server-rendered, and seeding state straight from
   // localStorage during render made the server and client trees disagree.
@@ -100,6 +102,7 @@ export function CommunitiesList() {
   }
 
   async function loadDiscover(signal?: AbortSignal) {
+    if (paper.only) return;
     try {
       const res = await fetch("/api/communities/discover", {
         cache: "no-store",
@@ -242,11 +245,13 @@ export function CommunitiesList() {
         <AppHeader className="hidden md:block" title="Circle" />
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Circle</h1>
+            <h1 className="text-lg font-bold text-foreground">
+              {paper.only ? "Class" : "Circle"}
+            </h1>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              People you invite, and public circles you can ask to join. You
-              pick which portfolios they see. They see today&apos;s prices, not
-              what you paid.
+              {paper.only
+                ? "Paper class only. Homework cash, not a real book."
+                : "People you invite, and public circles you can ask to join. You pick which portfolios they see. They see today's prices, not what you paid."}
             </p>
           </div>
           {error && <p className="text-sm text-loss">{error}</p>}
@@ -279,7 +284,9 @@ export function CommunitiesList() {
                     </p>
                   </li>
                 )}
-                {communities.map((c) => (
+                {communities
+                  .filter((c) => !paper.only || c.kind === "classroom")
+                  .map((c) => (
                   <li key={c.id}>
                     <Link
                       href={`/communities/${c.id}`}
@@ -317,6 +324,7 @@ export function CommunitiesList() {
             )}
           </Panel>
 
+          {paper.only ? null : (
           <Panel>
             <PanelHeader
               title="Public circles"
@@ -504,6 +512,7 @@ export function CommunitiesList() {
               </div>
             </Panel>
           </form>
+          )}
         </main>
         <BookBottomNav />
       </div>

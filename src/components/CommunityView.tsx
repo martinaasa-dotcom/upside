@@ -1450,7 +1450,7 @@ export function CommunityView({ communityId }: Props) {
                     <p className="min-w-0 flex-1 text-sm text-foreground/80">
                       {isAdmin
                         ? "You are watching the class. Get a paper portfolio if you want to trade alongside them."
-                        : "Your paper portfolio is not on Home yet. Same starting cash as everyone else."}
+                        : "Your paper portfolio is not ready yet. Same starting cash as everyone else."}
                     </p>
                     <button
                       type="button"
@@ -1464,7 +1464,8 @@ export function CommunityView({ communityId }: Props) {
                 ) : null}
                 {isClassroom && myClassSheet ? (
                   <p className="text-sm text-muted">
-                    Your paper portfolio is on Home. Sunday note is the weekly recap.
+                    Open your paper portfolio to buy names. Sunday note is
+                    the weekly recap.
                   </p>
                 ) : null}
                 <Scoreboard cols={3}>

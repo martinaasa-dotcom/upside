@@ -1,6 +1,6 @@
 import { SUPERADMIN_EMAILS } from "@/lib/auth/superadmin";
 import { sheetCashBalance } from "@/lib/cash-balance";
-import { realBookPortfolios } from "@/lib/classroom";
+import { realBookPortfolios, isClassroomSheet } from "@/lib/classroom";
 import { hasLiveHoldings } from "@/lib/empty-book-nudge";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchMarketEvents, fetchWeekReturns } from "@/lib/market/yahoo";
@@ -120,17 +120,22 @@ export async function dispatchOptedInNotes(
       skipped += 1;
       continue;
     }
-    const { data: books } = await supabase
+    const { data: bookRows } = await supabase
       .from(PORTFELL_TABLES.portfolios)
       .select("id, cash_balance, classroom_community_id")
       .in("id", ids);
-    const noteBooks = realBookPortfolios(
-      (books ?? []) as {
-        id: string;
-        cash_balance: number;
-        classroom_community_id?: string | null;
-      }[]
-    );
+    const books = (bookRows ?? []) as {
+      id: string;
+      cash_balance: number;
+      classroom_community_id?: string | null;
+    }[];
+    const real = realBookPortfolios(books);
+    const noteBooks =
+      real.length > 0
+        ? real
+        : kind === "sunday"
+          ? books.filter(isClassroomSheet)
+          : [];
     const noteIds = new Set(
       (noteBooks as { id: string }[]).map((p) => p.id)
     );

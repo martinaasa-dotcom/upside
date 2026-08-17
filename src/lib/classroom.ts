@@ -244,12 +244,38 @@ export function isClassroomSheet(p: {
   return Boolean(p.classroom_community_id);
 }
 
-/** Real books only, unless the person has nothing but class sheets. */
+/** Real books only. Class sheets never count as the personal book. */
 export function realBookPortfolios<
   T extends { classroom_community_id?: string | null },
 >(portfolios: T[]): T[] {
-  const real = portfolios.filter((p) => !isClassroomSheet(p));
-  return real.length > 0 ? real : portfolios;
+  return portfolios.filter((p) => !isClassroomSheet(p));
+}
+
+/** True when this account has a class and no real book and no circle. */
+export function isPaperClassOnly(
+  portfolios: { classroom_community_id?: string | null }[],
+  communities: { kind?: string | null }[] = []
+): boolean {
+  if (portfolios.some((p) => !isClassroomSheet(p))) return false;
+  if (communities.some((c) => c.kind && !isClassroomKind(c.kind))) return false;
+  return (
+    portfolios.some(isClassroomSheet) ||
+    communities.some((c) => isClassroomKind(c.kind))
+  );
+}
+
+export function paperClassIds(
+  portfolios: { classroom_community_id?: string | null }[],
+  communities: { id?: string; kind?: string | null }[] = []
+): string[] {
+  const ids = new Set<string>();
+  for (const p of portfolios) {
+    if (p.classroom_community_id) ids.add(p.classroom_community_id);
+  }
+  for (const c of communities) {
+    if (c.id && isClassroomKind(c.kind)) ids.add(c.id);
+  }
+  return [...ids];
 }
 
 export function parseStartingCash(raw: unknown): number | null {

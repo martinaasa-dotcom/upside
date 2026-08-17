@@ -13,6 +13,7 @@ import {
 } from "@/lib/classroom";
 import { tracksTradeCash } from "@/lib/cash-balance";
 import { denyClassroomWrite } from "@/lib/classroom-guard";
+import { loadPaperClassGate, PAPER_CLASS_ONLY_MESSAGE } from "@/lib/paper-class-server";
 import { shareNewSheetIntoMemberCircles } from "@/lib/community-share";
 import { sanitizeSheetName } from "@/lib/input-guard";
 import { roundMoney } from "@/lib/money";
@@ -178,6 +179,17 @@ export async function POST(req: NextRequest) {
   const name = sanitizeSheetName(String(body.name ?? ""));
   if (!name) {
     return NextResponse.json({ error: "name required" }, { status: 400 });
+  }
+
+  const gateClient = await getSupabaseDataClient();
+  if (gateClient) {
+    const gate = await loadPaperClassGate(gateClient, auth.user.id);
+    if (gate.only) {
+      return NextResponse.json(
+        { error: PAPER_CLASS_ONLY_MESSAGE },
+        { status: 403 }
+      );
+    }
   }
 
   // Security-definer RPC, not a plain insert + upsert: creating a sheet and
