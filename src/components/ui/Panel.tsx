@@ -39,23 +39,30 @@ import {
  *   Stack      field is bg-background. A box on the field is bg-card.
  *              Nested is bg-muted. Never a card inside a card.
  *   Card       ring-1 ring-foreground/10. Nested boxes are muted, no second ring.
- *   Type scale, the only sizes a person should see:
- *   text-xs    12  labels, captions, table ticks, badges
+ *   Type scale, the only sizes a person should see. Down a block they
+ *   go largest to smallest, never a 24px word between a caption and a
+ *   paragraph:
+ *   text-2xl   24  page titles, and scoreboard figures that are money
+ *                  or a percent. Not a status word.
+ *   text-lg    18  panel titles, status words on a reading tile
+ *   text-base  16  card titles, tickers
+ *   text-sm    14  body, chrome, inputs, buttons, nav, reading copy
+ *   text-xs    12  captions on a figure tile, table ticks, badges
  *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
  *              which scales with the viewBox and blows up on a wide screen.
- *   text-sm    14  body, chrome, inputs, buttons, nav, reading copy
- *   text-base  16  titles, tickers
- *   text-lg    18  card titles
- *   text-2xl   24  page titles and scoreboard figures
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-4xl. The logo lockup is the exception.
  *   Headings   text-lg font-semibold tracking-tight (hero: text-2xl) · sentence case
  *   Type       Geist for titles, body, labels, and money. Lockup too.
  *   Micro      text-xs font-medium text-muted-foreground · sentence case
- *              Caps stay on the logo only.
+ *              Caps stay on the logo only. Micro sits above a figure,
+ *              never above a paragraph.
  *   Metrics    A row of numbers is separate cards (Scoreboard) with air
  *              between them (Score). Do not nest four Stat tiles in a panel.
  *              Stat is the same cell, used alone. Figures are text-2xl.
+ *              A Score with bullets is a reading tile: label text-sm
+ *              semibold, status text-lg, bullets text-sm. Do not use
+ *              the 24px figure style on a word like "Weakening".
  *              Do not park a paragraph in the sub line.
  *              Do not park unlabeled numbers on the far right of a row.
  *   Reading    a bordered card, quiet label, same type as the page. Thesis
@@ -118,6 +125,9 @@ const FIGURE =
   "mt-2 font-sans text-2xl font-semibold tabular-nums";
 const DISPLAY =
   "mt-2 min-w-0 font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums whitespace-nowrap";
+/** Status word on a reading tile. Not the 24px figure style. */
+const STATUS =
+  "mt-1.5 min-w-0 font-heading text-lg font-semibold tracking-tight";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -634,17 +644,33 @@ export function Score({
   bulletsClassName,
   className,
 }: ScoreProps) {
-  const noteClass = cn("mt-2 text-sm leading-snug", subClassName ?? "text-muted-foreground");
+  const reading = Boolean(bullets && bullets.length > 0);
+  const noteClass = cn(
+    reading ? "mt-3 text-sm leading-relaxed" : "mt-2 text-sm leading-snug",
+    subClassName ?? "text-muted-foreground"
+  );
   return (
     <div className={cn(SCORE_CELL, className)}>
-      <MicroLabel>
-        {label}
-        {explain && <InfoTip text={explain} />}
-      </MicroLabel>
-      <p className={cn(DISPLAY, valueClassName ?? scoreTone(tone))}>
+      {reading ? (
+        <p className="flex items-center gap-1 text-sm font-semibold tracking-tight text-foreground">
+          {label}
+          {explain && <InfoTip text={explain} />}
+        </p>
+      ) : (
+        <MicroLabel>
+          {label}
+          {explain && <InfoTip text={explain} />}
+        </MicroLabel>
+      )}
+      <p
+        className={cn(
+          reading ? STATUS : DISPLAY,
+          valueClassName ?? scoreTone(tone)
+        )}
+      >
         {value}
       </p>
-      {bullets && bullets.length > 0 ? (
+      {reading && bullets ? (
         <ul className={cn(noteClass, "flex flex-col gap-1", bulletsClassName)}>
           {bullets.map((line, i) => (
             <li key={`${i}:${line}`} className="flex gap-1.5">

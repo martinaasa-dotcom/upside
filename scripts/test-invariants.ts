@@ -2083,6 +2083,12 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.match(panel, /padded && "flex flex-col gap-6 p-6"/);
   assert.match(panel, /export function Scoreboard/);
   assert.match(panel, /font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums whitespace-nowrap/);
+  assert.match(panel, /const STATUS/);
+  assert.match(panel, /font-heading text-lg font-semibold tracking-tight/);
+  assert.match(
+    panel.slice(panel.indexOf("export function Score")),
+    /reading \? STATUS : DISPLAY/
+  );
   assert.match(panel, /bg-primary text-primary-foreground/);
   const segmented = panel.slice(panel.indexOf("export function Segmented"));
   assert.doesNotMatch(segmented, /font-semibold/);
@@ -2243,6 +2249,10 @@ run("Geist headings and body, no third face", () => {
   assert.match(css, /--font-heading: "Geist"/);
   assert.match(css, /--font-logo: "Geist"/);
   assert.match(css, /--font-mono: "Geist Mono"/);
+  assert.match(css, /h1 \{\n  font-size: 1\.5rem;/);
+  assert.match(css, /h2 \{\n  font-size: 1\.125rem;/);
+  assert.match(css, /h3 \{\n  font-size: 1rem;/);
+  assert.match(css, /h4 \{\n  font-size: 0\.875rem;/);
   assert.doesNotMatch(css, /font-newsreader|font-outfit|font-montserrat|font-inter/);
   assert.match(code(logo), /font-logo/);
   assert.match(code(logo), /uppercase/);

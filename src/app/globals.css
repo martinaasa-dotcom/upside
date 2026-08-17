@@ -165,6 +165,26 @@ h4 {
   font-weight: 600;
 }
 
+h1 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+h3 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+h4 {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
 /* Hide scrollbars in horizontal tab rails (still scrollable). */
 .scrollbar-none {
   -ms-overflow-style: none;
