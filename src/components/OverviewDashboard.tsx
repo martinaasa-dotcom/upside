@@ -735,6 +735,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
           label="Portfolio"
           value={currency(totals.totalValue, 0)}
           sub={plural(totals.sheetCount, "portfolio")}
+          valueClassName="text-primary"
         />
         <Score
           label={morning.moveLabel}

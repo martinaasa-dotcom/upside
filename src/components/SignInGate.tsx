@@ -29,7 +29,7 @@ import {
   SIGNIN_WHO,
 } from "@/lib/product";
 import { supabaseIsConfigured } from "@/lib/supabase/env";
-import { pickLoadingMessage } from "@/lib/loading-messages";
+import { useLoadingMessage } from "@/lib/use-loading-message";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -51,7 +51,7 @@ export function SignInGate({ children }: Props) {
   const [deletedNotice, setDeletedNotice] = useState<"full" | "data" | null>(
     null
   );
-  const [loadingMessage] = useState(pickLoadingMessage);
+  const loadingMessage = useLoadingMessage();
   const [invite, setInvite] = useState<InviteLanding | null>(null);
   const needsAuth = supabaseIsConfigured();
 

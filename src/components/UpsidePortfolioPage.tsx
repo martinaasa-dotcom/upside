@@ -31,7 +31,7 @@ import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { isWorkspaceRoomActive } from "@/lib/workspace-rooms";
 import { UPSIDE_PORTFOLIO_DISCLAIMER } from "@/lib/disclaimer";
 import { FUND_X_URL } from "@/lib/product";
-import { pickLoadingMessage } from "@/lib/loading-messages";
+import { useLoadingMessage } from "@/lib/use-loading-message";
 import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import { concentrationRead, themeBreakdown } from "@/lib/allocation";
 import {
@@ -599,7 +599,7 @@ export function UpsidePortfolioPage() {
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [sheetYtd, setSheetYtd] = useState<YtdNavPoint[] | null>(null);
   const [spyYtd, setSpyYtd] = useState<YtdNavPoint[] | null>(null);
-  const [loadingMessage] = useState(pickLoadingMessage);
+  const loadingMessage = useLoadingMessage();
   const [dailyVisible, setDailyVisible] = useState(1);
   const [weeklyVisible, setWeeklyVisible] = useState(1);
 

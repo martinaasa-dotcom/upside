@@ -186,7 +186,7 @@ import { MobileTopBar } from "@/components/mobile/MobileTopBar";
 import { SheetPicker } from "@/components/SheetPicker";
 import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
-import { pickLoadingMessage } from "@/lib/loading-messages";
+import { useLoadingMessage } from "@/lib/use-loading-message";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes, quotesUnchanged } from "@/lib/quote-cache";
 import { quotesAreDelayed, quotesStampMs } from "@/lib/market/quote-freshness";
 import { OFFLINE_CACHE_READY } from "@/lib/offline/snapshots";
@@ -349,8 +349,7 @@ export function Dashboard() {
   const router = useRouter();
   const pathname = usePathname();
   const onBook = workspaceRoomId(pathname) === "book";
-  // Picked once per mount, not per render, so it doesn't shuffle mid-load.
-  const [loadingMessage] = useState(pickLoadingMessage);
+  const loadingMessage = useLoadingMessage();
   const [source, setSource] = useState<DataSource>(
     user ? "supabase" : "demo"
   );

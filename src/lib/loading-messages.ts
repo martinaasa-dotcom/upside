@@ -49,6 +49,9 @@ const LOADING_MESSAGES = [
   "Tidying up before you walk in …",
 ];
 
+/** Stable SSR + first paint. Random line swaps in after mount. */
+export const DEFAULT_LOADING_MESSAGE = LOADING_MESSAGES[0]!;
+
 export function pickLoadingMessage(): string {
   return LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]!;
 }
