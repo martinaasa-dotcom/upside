@@ -335,6 +335,9 @@ run("power animals each keep their own color", () => {
   assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
   assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
   assert.equal(PALETTE.brand, "#e5e5e5");
+  assert.equal(PALETTE.bronze, "#d6ad69");
+  assert.equal(PALETTE.teal, "#2dd4bf");
+  assert.equal(PALETTE.steel, "#60a5fa");
   assert.equal(PALETTE.gain, "#34d399");
   assert.equal(PALETTE.loss, "#f43f5e");
   const community = readFileSync(
@@ -4778,6 +4781,14 @@ run("fun facts and circle facts do not say NAV or dry powder", () => {
   assert.doesNotMatch(compareUi, /featured \? "brand"/);
   assert.match(compareUi, /<Scoreboard cols=\{2\}/);
   assert.match(compareUi, /s\.color/);
+  const play = readFileSync(
+    join(process.cwd(), "src/lib/compound-play.ts"),
+    "utf8"
+  );
+  assert.match(play, /PALETTE\.muted/);
+  assert.match(play, /PALETTE\.teal/);
+  assert.match(play, /PALETTE\.steel/);
+  assert.match(play, /PALETTE\.bronze/);
 });
 
 run("Fund page labels Margus's note Thesis", () => {

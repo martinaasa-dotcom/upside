@@ -187,7 +187,7 @@ export function buildCompareScenarios(
       label: "Cash / HYSA",
       tagline: `~${COMPOUND_CASH_YIELD_ANNUAL_PCT}% · savings / money-market yield`,
       result: cashYield,
-      color: PALETTE.brandBright,
+      color: PALETTE.teal,
     },
     {
       id: "spy",
@@ -201,7 +201,7 @@ export function buildCompareScenarios(
       label: "Upside path",
       tagline: `~${upsideRate.toFixed(0)}% · your rate on this plan`,
       result: upside,
-      color: PALETTE.brand,
+      color: PALETTE.bronze,
     },
   ];
 }

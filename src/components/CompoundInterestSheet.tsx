@@ -424,7 +424,7 @@ function ComparePathsChart({
           );
         })}
       </ChartXRail>
-      <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm text-muted-foreground sm:grid-cols-4">
+      <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 text-sm sm:grid-cols-4">
         {paths.map((p) => (
           <li key={p.id} className="inline-flex min-w-0 items-center gap-1.5">
             <span
@@ -436,7 +436,7 @@ function ComparePathsChart({
               }}
               aria-hidden
             />
-            {p.label}
+            <span style={{ color: p.color }}>{p.label}</span>
           </li>
         ))}
       </ul>
@@ -1368,12 +1368,6 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           <Scoreboard cols={2} className="mt-4 max-sm:grid-cols-1">
             {compare.map((s) => {
               const dashed = s.id === "mattress";
-              const valueClass =
-                s.id === "upside"
-                  ? "text-primary"
-                  : s.id === "mattress"
-                    ? "text-muted-foreground"
-                    : undefined;
               return (
                 <Score
                   key={s.id}
@@ -1392,8 +1386,11 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                       {s.label}
                     </span>
                   }
-                  value={show(s.result.futureValue)}
-                  valueClassName={valueClass}
+                  value={
+                    <span style={{ color: s.color }}>
+                      {show(s.result.futureValue)}
+                    </span>
+                  }
                   sub={
                     <>
                       <span
