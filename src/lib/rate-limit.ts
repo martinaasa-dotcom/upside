@@ -80,6 +80,7 @@ const TIGHT_PATHS = [
   "/api/auth",
   "/api/account/delete",
   "/api/account/export",
+  "/api/user/export",
   "/api/communities/join",
   "/api/portfolios/join",
   "/api/demo/lock",
@@ -114,7 +115,9 @@ export function limitMutationRequest(req: Request): RateLimitResult | null {
   if (pathname.startsWith("/api/cron/")) return null;
 
   const joinPeek = method === "GET" && pathname === "/api/communities/join";
-  const exportGet = method === "GET" && pathname === "/api/account/export";
+  const exportGet =
+    method === "GET" &&
+    (pathname === "/api/account/export" || pathname === "/api/user/export");
   if (!MUTATION.has(method) && !joinPeek && !exportGet) return null;
 
   const tight = joinPeek || exportGet || isTightPath(pathname);

@@ -56,6 +56,48 @@ export type Database = {
         }
         Relationships: []
       }
+      portfell_cash_events: {
+        Row: {
+          balance_after: number
+          created_at: string
+          delta: number
+          id: string
+          portfolio_id: string
+          user_id: string | null
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string
+          delta: number
+          id?: string
+          portfolio_id: string
+          user_id?: string | null
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string
+          delta?: number
+          id?: string
+          portfolio_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfell_cash_events_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfell_portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfell_cash_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "portfell_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfell_communities: {
         Row: {
           class_plan: Json
@@ -869,6 +911,27 @@ export type Database = {
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portfell_quote_cache: {
+        Row: {
+          quote: Json
+          quoted_at: string
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          quote: Json
+          quoted_at: string
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          quote?: Json
+          quoted_at?: string
+          ticker?: string
           updated_at?: string
         }
         Relationships: []

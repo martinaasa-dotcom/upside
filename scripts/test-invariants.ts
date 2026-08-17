@@ -5942,6 +5942,77 @@ run("offline-first engine caches the book and queues safe writes", () => {
   assert.match(quotes, /persistQuotesSnapshot/);
 });
 
+run("GDPR hard-delete, export engine, and session purge", () => {
+  const mig = readFileSync(
+    join(
+      process.cwd(),
+      "supabase/migrations/20260817124031_gdpr_hard_delete_cash_events.sql"
+    ),
+    "utf8"
+  );
+  assert.match(mig, /create table if not exists public\.portfell_cash_events/);
+  assert.match(mig, /references public\.portfell_portfolios\(id\) on delete cascade/);
+  assert.match(mig, /portfell_purge_user_data/);
+  assert.match(mig, /portfell_scrub_snapshot_payload/);
+  assert.match(mig, /portfell_profiles_before_delete/);
+  assert.match(mig, /delete from public\.portfell_error_log where user_id = p_uid/);
+  assert.match(mig, /insert into public\.portfell_cash_events/);
+  assert.doesNotMatch(mig, /grant execute[^;]*portfell_purge_user_data[^;]*to authenticated/i);
+
+  const userExport = readFileSync(
+    join(process.cwd(), "src/app/api/user/export/route.ts"),
+    "utf8"
+  );
+  assert.match(userExport, /observeRoute\(handleGET, "\/api\/user\/export"\)/);
+  assert.match(userExport, /encrypt: true/);
+
+  const accountExport = readFileSync(
+    join(process.cwd(), "src/app/api/account/export/route.ts"),
+    "utf8"
+  );
+  assert.match(accountExport, /encrypt: false/);
+  assert.match(accountExport, /userExportResponse/);
+
+  const accountPage = readFileSync(
+    join(process.cwd(), "src/components/AccountPage.tsx"),
+    "utf8"
+  );
+  assert.match(accountPage, /fetch\("\/api\/account\/export"/);
+  assert.match(accountPage, /fetch\("\/api\/account\/delete"/);
+
+  const del = readFileSync(
+    join(process.cwd(), "src/app/api/account/delete/route.ts"),
+    "utf8"
+  );
+  assert.match(del, /revokeAllUserSessions/);
+  assert.match(del, /signOut\(jwt, "global"\)/);
+  assert.match(del, /deleteUser/);
+
+  const auth = readFileSync(
+    join(process.cwd(), "src/components/AuthProvider.tsx"),
+    "utf8"
+  );
+  assert.match(auth, /\/api\/auth\/sign-out/);
+  assert.match(auth, /signOut\(\{ scope: "global" \}\)/);
+  assert.match(auth, /purgeClientSession/);
+
+  const signOut = readFileSync(
+    join(process.cwd(), "src/app/api/auth/sign-out/route.ts"),
+    "utf8"
+  );
+  assert.match(signOut, /observeRoute\(handlePOST, "\/api\/auth\/sign-out"\)/);
+  assert.match(signOut, /revokeAllUserSessions/);
+
+  const engine = readFileSync(
+    join(process.cwd(), "src/lib/gdpr/user-export.ts"),
+    "utf8"
+  );
+  assert.match(engine, /cash_events/);
+  assert.match(engine, /omitKeys\(row, \["token_hash", "token_hint"\]\)/);
+  assert.match(engine, /sliceSnapshotPayload/);
+  assert.doesNotMatch(engine, /select\([^)]*token_hash/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

@@ -7,6 +7,7 @@ export const PORTFELL_TABLES = {
   portfolios: "portfell_portfolios",
   holdings: "portfell_holdings",
   snapshots: "portfell_book_snapshots",
+  cashEvents: "portfell_cash_events",
   labState: "portfell_lab_state",
   profiles: "portfell_profiles",
   seedClaims: "portfell_seed_claims",

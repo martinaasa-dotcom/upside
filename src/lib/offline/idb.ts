@@ -130,3 +130,33 @@ export async function idbQueueClear(): Promise<void> {
     /* ignore */
   }
 }
+
+export async function idbKvClear(): Promise<void> {
+  try {
+    await runRequest(KV_STORE, "readwrite", (store) => store.clear());
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Close the connection and drop the offline DB. Used on sign-out. */
+export async function idbWipe(): Promise<void> {
+  await idbKvClear();
+  await idbQueueClear();
+  if (typeof indexedDB === "undefined") return;
+  try {
+    if (dbPromise) {
+      const db = await dbPromise.catch(() => null);
+      db?.close();
+      dbPromise = null;
+    }
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+      req.onblocked = () => resolve();
+    });
+  } catch {
+    /* ignore */
+  }
+}

@@ -13,6 +13,7 @@ import {
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
+import { purgeClientSession } from "@/lib/auth/purge-session";
 import { clearBookCache } from "@/lib/book-cache";
 import { loadLastUser, saveLastUser } from "@/lib/last-session";
 import { currentInternalNext } from "@/lib/site-url";
@@ -159,9 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT") {
         setUser(null);
         setReady(true);
-        saveLastUser(null);
         setProfile(null);
-        clearBookCache();
+        void purgeClientSession();
       }
     });
     return () => {
@@ -185,13 +185,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      await fetch("/api/auth/sign-out", { method: "POST", cache: "no-store" });
+    } catch {
+      /* still wipe local state */
+    }
     const supabase = createSupabaseBrowser();
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    if (supabase) {
+      try {
+        await supabase.auth.signOut({ scope: "global" });
+      } catch {
+        /* tokens may already be revoked */
+      }
+    }
     setUser(null);
     setProfile(null);
-    saveLastUser(null);
-    clearBookCache();
+    await purgeClientSession();
   }, []);
 
   const value = useMemo(

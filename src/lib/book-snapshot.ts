@@ -83,6 +83,73 @@ export function snapshotSheetsForOwner(
 }
 
 /**
+ * Keep only this person's sheets from a mixed nightly/manual snapshot.
+ * Other people's cash and holdings never leave in an export.
+ */
+export function sliceSnapshotPayload(
+  payload: BookSnapshotPayload,
+  ownedIds: string[]
+): BookSnapshotPayload | null {
+  const keep = new Set(snapshotSheetsForOwner(payload, ownedIds));
+  if (keep.size === 0) return null;
+  const portfolios = (Array.isArray(payload.portfolios) ? payload.portfolios : []).filter(
+    (raw) => {
+      const id = (raw as { id?: string }).id;
+      return Boolean(id && keep.has(id));
+    }
+  );
+  const holdings = (Array.isArray(payload.holdings) ? payload.holdings : []).filter(
+    (raw) => {
+      const id = (raw as { portfolio_id?: string }).portfolio_id;
+      return Boolean(id && keep.has(id));
+    }
+  );
+  const marks = payload.marks
+    ? {
+        ...payload.marks,
+        navByPortfolio: Object.fromEntries(
+          Object.entries(payload.marks.navByPortfolio ?? {}).filter(([id]) =>
+            keep.has(id)
+          )
+        ),
+      }
+    : undefined;
+  return { portfolios, holdings, ...(marks ? { marks } : {}) };
+}
+
+/** Drop deleted sheet ids from a snapshot payload. Mirrors the SQL scrub. */
+export function scrubSnapshotPayload(
+  payload: BookSnapshotPayload,
+  deletedIds: string[]
+): BookSnapshotPayload {
+  const drop = new Set(deletedIds.filter(Boolean));
+  if (drop.size === 0) return payload;
+  const portfolios = (Array.isArray(payload.portfolios) ? payload.portfolios : []).filter(
+    (raw) => {
+      const id = (raw as { id?: string }).id;
+      return !id || !drop.has(id);
+    }
+  );
+  const holdings = (Array.isArray(payload.holdings) ? payload.holdings : []).filter(
+    (raw) => {
+      const id = (raw as { portfolio_id?: string }).portfolio_id;
+      return !id || !drop.has(id);
+    }
+  );
+  const marks = payload.marks
+    ? {
+        ...payload.marks,
+        navByPortfolio: Object.fromEntries(
+          Object.entries(payload.marks.navByPortfolio ?? {}).filter(
+            ([id]) => !drop.has(id)
+          )
+        ),
+      }
+    : undefined;
+  return { portfolios, holdings, ...(marks ? { marks } : {}) };
+}
+
+/**
  * Nightly NAV per sheet, from live quotes. Restore ignores this. Home's
  * 14-day spark reads it. Missing quotes fall back to cost, which is worse
  * than a hole, so callers should only attach marks when quotes actually
