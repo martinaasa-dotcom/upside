@@ -1,0 +1,17 @@
+---
+description: Instructions for Cursor Agent on how to plan, edit files, and respond
+alwaysApply: true
+---
+
+# Agent Execution Rules
+
+Follow this loop when handling tasks in this repository.
+
+## Execution Strategy
+1. **Plan First**: Briefly outline the approach in 2-3 concise bullet points before modifying files.
+2. **Targeted Edits**: Only modify files directly related to the task. Do not touch untouched files, refactor adjacent code, or change formatting elsewhere without asking.
+3. **Verify**: Check that imports, exports, and types align across modified files before marking a task done.
+
+## Output Style
+- Show code first or inline changes immediately.
+- Never write post-mortem essays explaining what you just did. Summarize edits in 1-2 practical sentences at most.

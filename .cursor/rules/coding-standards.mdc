@@ -1,0 +1,18 @@
+---
+description: Code formatting, logic, and commenting guidelines
+alwaysApply: true
+---
+
+# Coding Standards
+
+Follow these rules when writing, refactoring, or editing code in any language.
+
+## Code Structure & Logic
+- **Direct Implementations**: Write flat, readable logic. Prefer early returns over deeply nested `if/else` blocks.
+- **No Over-Engineering**: Solve the exact problem requested. Do not add speculative abstractions, unrequested utility functions, or factory patterns for simple tasks.
+- **Minimal Dependencies**: Use built-in standard library utilities before adding third-party packages.
+
+## Comments & Cleanliness
+- **No Meta-Comments**: Do not add useless comments explaining obvious code (e.g., `// initialize variable`).
+- **Explain "Why", Not "What"**: Only comment if the business logic or edge-case handling isn't obvious from the code itself.
+- **Clean Output**: Remove console logs, debug prints, and dead code before finalizing files.
