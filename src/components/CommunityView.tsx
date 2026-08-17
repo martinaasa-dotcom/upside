@@ -32,7 +32,23 @@ import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTo
 import { listingCurrenciesAreMixed, listingCurrency, listingPriceDigits } from "@/lib/listing-currency";
 import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item";
 import { combineHouseholdNames } from "@/lib/auth/identity";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -96,6 +112,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  Fragment,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -202,6 +219,61 @@ function readCommunityCache(communityId: string): CommunityCache {
     meta: (cached.meta as CommunityMetaResponse) ?? null,
     book: (cached.book as CommunityBookResponse) ?? null,
   };
+}
+
+function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  const first = parts[0]![0] ?? "";
+  const last = parts[parts.length - 1]![0] ?? "";
+  return `${first}${last}`.toUpperCase();
+}
+
+function SharedNameRow({
+  ticker,
+  people,
+  todayPct,
+  avatarByName,
+}: {
+  ticker: string;
+  people: string[];
+  todayPct: number | null;
+  avatarByName: Map<string, string>;
+}) {
+  return (
+    <Item size="sm" className="px-0">
+      <ItemMedia>
+        <AvatarGroup>
+          {people.map((name) => {
+            const src = avatarByName.get(name);
+            return (
+              <Avatar key={name} size="sm">
+                {src ? <AvatarImage src={src} alt="" /> : null}
+                <AvatarFallback>{initialsFromName(name)}</AvatarFallback>
+              </Avatar>
+            );
+          })}
+        </AvatarGroup>
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>{cashtag(ticker)}</ItemTitle>
+        <ItemDescription className="line-clamp-none">
+          {people.join(" · ")}
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <span
+          className={cn(
+            "text-sm font-semibold tabular-nums",
+            signedTone(todayPct, "text-muted-foreground")
+          )}
+        >
+          {todayPct != null ? signedPercent(todayPct) : "—"}
+        </span>
+      </ItemActions>
+    </Item>
+  );
 }
 
 export function CommunityView({ communityId }: Props) {
@@ -811,6 +883,20 @@ export function CommunityView({ communityId }: Props) {
       }),
     [overview.tickers, ownership, profileName]
   );
+
+  const avatarByName = useMemo(() => {
+    const map = new Map<string, string>();
+    const add = (name: string, url: string | null | undefined) => {
+      if (name && url && !map.has(name)) map.set(name, url);
+    };
+    for (const m of members) {
+      add(profileName(m.user_id), m.profile?.avatar_url);
+    }
+    for (const p of profiles) {
+      add(p.display_name || p.email || "Member", p.avatar_url);
+    }
+    return map;
+  }, [members, profiles, profileName]);
 
   // Fun superlative badges — deliberately don't repeat what the leaderboard
   // already shows (today's move, lifetime return); these highlight the
@@ -1839,40 +1925,19 @@ export function CommunityView({ communityId }: Props) {
                           </p>
                         </div>
                       </div>
-                      <ul className="flex flex-col gap-2">
-                        {sharedNames.map((row) => (
-                          <li
-                            key={row.ticker}
-                            className="rounded-lg bg-muted px-4 py-3"
-                          >
-                            <div className="flex items-baseline justify-between gap-3">
-                              <span className="font-heading text-base font-bold text-foreground">
-                                {cashtag(row.ticker)}
-                              </span>
-                              <span
-                                className={cn(
-                                  "text-sm font-semibold tabular-nums",
-                                  signedTone(row.todayPct, "text-muted-foreground")
-                                )}
-                              >
-                                {row.todayPct != null
-                                  ? signedPercent(row.todayPct)
-                                  : "—"}
-                              </span>
-                            </div>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {row.people.map((name) => (
-                                <span
-                                  key={name}
-                                  className="rounded-lg border border-border bg-muted/50 px-2 py-1 text-sm text-foreground/80"
-                                >
-                                  {name}
-                                </span>
-                              ))}
-                            </div>
-                          </li>
+                      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
+                        {sharedNames.map((row, i) => (
+                          <Fragment key={row.ticker}>
+                            {i > 0 ? <ItemSeparator className="my-0" /> : null}
+                            <SharedNameRow
+                              ticker={row.ticker}
+                              people={row.people}
+                              todayPct={row.todayPct}
+                              avatarByName={avatarByName}
+                            />
+                          </Fragment>
                         ))}
-                      </ul>
+                      </ItemGroup>
                     </section>
                   )}
 
@@ -1905,25 +1970,15 @@ export function CommunityView({ communityId }: Props) {
                           />
                         ))}
                       </div>
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {communityThemeBreakdown.map((t) => (
-                          <div
-                            key={t.theme}
-                            className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted px-3 py-2.5"
-                          >
-                            <span className="flex items-center gap-2 text-sm text-foreground/80">
-                              <span
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ backgroundColor: THEME_COLOR[t.theme] }}
-                              />
-                              {t.label}
-                            </span>
-                            <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">
-                              {Math.round(t.pct * 100)}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      <SwatchLegend
+                        className="mt-4"
+                        items={communityThemeBreakdown.map((t) => ({
+                          key: t.theme,
+                          label: t.label,
+                          color: THEME_COLOR[t.theme],
+                          value: `${Math.round(t.pct * 100)}%`,
+                        }))}
+                      />
                     </section>
                   )}
 

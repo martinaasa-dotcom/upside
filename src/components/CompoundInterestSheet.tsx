@@ -51,7 +51,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
+import { Fragment, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { useTimeout } from "@/lib/use-timeout";
 import {
   Card,
@@ -64,6 +64,14 @@ import {
   Segmented,
 } from "@/components/ui/Panel";
 import { Input } from "@/components/ui/input";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+} from "@/components/ui/item";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -1415,16 +1423,23 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             icon={<Sparkles className="h-4 w-4" />}
             title="What this actually tells you"
           />
-          <ul className="flex flex-col mt-3 gap-2">
-            {narrative.map((line) => (
-              <li
-                key={line}
-                className="rounded-lg border border-border bg-muted px-3 py-2 text-sm leading-relaxed text-foreground/80"
-              >
-                {line}
-              </li>
+          <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
+            {narrative.map((line, i) => (
+              <Fragment key={line}>
+                {i > 0 ? <ItemSeparator className="my-0" /> : null}
+                <Item size="sm" className="px-0">
+                  <ItemMedia className="text-sm tabular-nums text-muted-foreground">
+                    {i + 1}
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemDescription className="line-clamp-none text-foreground">
+                      {line}
+                    </ItemDescription>
+                  </ItemContent>
+                </Item>
+              </Fragment>
             ))}
-          </ul>
+          </ItemGroup>
         </Panel>
 
       </section>

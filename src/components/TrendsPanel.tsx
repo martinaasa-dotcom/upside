@@ -2,8 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { CARD, InfoTip, NESTED_PAD, Panel, PanelHeader, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { InfoTip, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Signal, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -63,10 +71,10 @@ const TONE_TEXT: Record<Tone, string> = {
 };
 
 const TONE_BADGE: Record<Tone, string> = {
-  gain: "bg-gain/15 text-gain border-gain/30",
-  loss: "bg-loss/15 text-loss border-loss/30",
-  warn: "bg-caution/15 text-caution border-caution/40",
-  neutral: "bg-accent text-foreground/80 border-border",
+  gain: "border-gain/40 text-gain",
+  loss: "border-loss/40 text-loss",
+  warn: "border-caution/50 text-caution",
+  neutral: "",
 };
 
 function ToneIcon({ tone, className }: { tone: Tone; className?: string }) {
@@ -76,36 +84,29 @@ function ToneIcon({ tone, className }: { tone: Tone; className?: string }) {
   return <Minus className={className} />;
 }
 
-function SignalTile({
+function SignalCell({
   signal,
-  wide = false,
+  className,
 }: {
   signal: Signal;
-  wide?: boolean;
+  className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        CARD,
-        NESTED_PAD,
-        "text-center",
-        wide && "sm:col-span-2"
-      )}
-    >
-      <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground">
+    <div className={cn("px-(--card-spacing) py-(--card-spacing)", className)}>
+      <p className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
         <span>{signal.label}</span>
         <InfoTip text={signal.help} />
       </p>
       <p
         className={cn(
-          "mt-1.5 inline-flex items-center justify-center gap-1.5 font-heading text-lg font-semibold tracking-tight",
+          "mt-1.5 inline-flex items-center gap-1.5 font-heading text-lg font-semibold tracking-tight",
           TONE_TEXT[signal.tone]
         )}
       >
         <ToneIcon tone={signal.tone} className="h-4 w-4" />
         {signal.value}
       </p>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm tabular-nums text-muted-foreground">
+      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm tabular-nums text-muted-foreground">
         {signal.detail.map((line) => (
           <span key={line}>{line}</span>
         ))}
@@ -124,48 +125,45 @@ function TickerStoryCard({
   isHolding: boolean;
 }) {
   const story = useMemo(() => buildTrendStory(row), [row]);
+  const trend = story.signals.find((s) => s.key === "trend");
+  const rest = story.signals.filter((s) => s.key !== "trend");
 
   return (
-    <div className="rounded-xl bg-card p-6 ring-1 ring-foreground/10">
-      <div className={cn(SPLIT_ROW, "sm:items-center")}>
-        <div className={cn(SPLIT_COPY, "flex items-center gap-2")}>
-          <span className="text-base font-semibold text-foreground">
-            {cashtag(row.ticker)}
-          </span>
-          {!isHolding && (
-            <Badge variant="outline">watching</Badge>
-          )}
+    <Card className="gap-0">
+      <CardHeader className="border-b">
+        <CardTitle className="flex items-center gap-2">
+          {cashtag(row.ticker)}
+          {!isHolding ? <Badge variant="outline">watching</Badge> : null}
+        </CardTitle>
+        <CardDescription>{story.sentence}</CardDescription>
+        <CardAction>
+          <Badge variant="outline" className={TONE_BADGE[story.tone]}>
+            <ToneIcon tone={story.tone} data-icon="inline-start" />
+            {story.headline}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="-mb-(--card-spacing) px-0">
+        {trend ? <SignalCell signal={trend} /> : null}
+        <div className="grid sm:grid-cols-2">
+          {rest.map((s, i) => (
+            <SignalCell
+              key={s.key}
+              signal={s}
+              className={cn("border-t", i % 2 === 0 && "sm:border-r")}
+            />
+          ))}
         </div>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium",
-            TONE_BADGE[story.tone]
-          )}
-        >
-          <ToneIcon tone={story.tone} className="h-3.5 w-3.5" />
-          {story.headline}
-        </span>
-      </div>
-
-      <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-        {story.sentence}
-      </p>
-
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {story.signals.map((s) => (
-          <SignalTile key={s.key} signal={s} wide={s.key === "trend"} />
-        ))}
-      </div>
-
-      {row.divergence && (
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
-          {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
-          other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
-          {row.divergence.weeksAgo === 0 ? "this week" : `${row.divergence.weeksAgo}w ago`}.
-        </p>
-      )}
-    </div>
+        {row.divergence ? (
+          <p className="border-t px-(--card-spacing) py-(--card-spacing) text-sm leading-relaxed text-muted-foreground">
+            Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
+            {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
+            other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
+            {row.divergence.weeksAgo === 0 ? "this week" : `${row.divergence.weeksAgo}w ago`}.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -317,7 +315,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               ? ` (${Math.min(combined.length, MAX_TICKERS)} on the list).`
               : "."}{" "}
           Weekly bars, so this answers whether the story changed, not what
-          happened today. Each box shows the verdict and the numbers it
+          happened today. Each card shows the verdict and the numbers it
           used.
         </p>
 

@@ -11,7 +11,7 @@ import {
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
 import { ScenarioSimulator } from "@/components/ScenarioSimulator";
-import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -492,25 +492,15 @@ export const LabSheet = memo(function LabSheet({
                       />
                     ))}
                   </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {themes.map((t) => (
-                      <div
-                        key={t.theme}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted px-3 py-2.5"
-                      >
-                        <span className="flex items-center gap-2 text-sm text-foreground/80">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: THEME_COLOR[t.theme] }}
-                          />
-                          {t.label}
-                        </span>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">
-                          {Math.round(t.pct * 100)}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <SwatchLegend
+                    className="mt-4"
+                    items={themes.map((t) => ({
+                      key: t.theme,
+                      label: t.label,
+                      color: THEME_COLOR[t.theme],
+                      value: `${Math.round(t.pct * 100)}%`,
+                    }))}
+                  />
                 </Panel>
               )}
 

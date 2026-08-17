@@ -11,6 +11,14 @@ import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { cashtag, cn, currency, percent, signedCurrency, signedPercent, signedTone } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { CARD, Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   Activity,
@@ -264,25 +272,32 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           <p className="mt-1 text-sm text-muted-foreground">
             Your holdings pooled by what they actually bet on.
           </p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {analysis.themeBreakdown.map((t) => (
-              <div
-                key={t.theme}
-                className="flex h-full items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2 text-sm"
-              >
-                <span className="truncate text-foreground/80">{t.theme}</span>
-                <span
-                  className={cn(
-                    "shrink-0 font-semibold tabular-nums",
-                    t.deltaVal >= 0 ? "text-gain" : "text-loss"
-                  )}
-                >
-                  {t.deltaVal >= 0 ? "+" : ""}
-                  {currency(t.deltaVal, 0)}
-                </span>
-              </div>
-            ))}
-          </div>
+          <Table className="mt-3">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Theme</TableHead>
+                <TableHead className="text-right">Change</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {analysis.themeBreakdown.map((t) => (
+                <TableRow key={t.theme} className="hover:bg-transparent">
+                  <TableCell className="whitespace-normal font-medium">
+                    {t.theme}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "text-right tabular-nums",
+                      t.deltaVal >= 0 ? "text-gain" : "text-loss"
+                    )}
+                  >
+                    {t.deltaVal >= 0 ? "+" : ""}
+                    {currency(t.deltaVal, 0)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </Panel>
       )}
 

@@ -57,6 +57,8 @@ import {
  *   Stack      field is bg-background. A box on the field is bg-card.
  *              Nested is bg-muted. Never a card inside a card.
  *   Card       ring-1 ring-foreground/10. Nested boxes are muted, no second ring.
+ *              Static facts are not nested pills. Use Item, Table, or
+ *              SwatchLegend. A filled rounded box reads as a button.
  *   Type scale, the only sizes a person should see. Down a block they
  *   go largest to smallest, never a 24px word between a caption and a
  *   paragraph:
@@ -118,7 +120,7 @@ import {
 /** Page-level box. shadcn Card shell: ring, not a gold hairline. */
 export const BOX =
   "rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10";
-/** Nested surface inside a box. Not a second card. */
+/** Nested well inside a box. Not a second card, and not for static facts. */
 export const CARD = "rounded-lg bg-muted";
 /** Panel padding. Comfortable density, same on phone and desktop. */
 export const PANEL_PAD = "p-6";
@@ -633,6 +635,39 @@ export function HairlineGrid({
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * Chart / theme legend. Swatch, label, value. No filled chips, so it
+ * does not read as a row of buttons.
+ */
+export function SwatchLegend({
+  items,
+  className,
+}: {
+  items: {
+    key: string;
+    label: string;
+    color: string;
+    value: ReactNode;
+  }[];
+  className?: string;
+}) {
+  return (
+    <ul className={cn("flex flex-wrap gap-x-5 gap-y-2", className)}>
+      {items.map((item) => (
+        <li key={item.key} className="flex items-center gap-1.5 text-sm">
+          <span
+            className="size-2 shrink-0 rounded-[2px]"
+            style={{ backgroundColor: item.color }}
+            aria-hidden
+          />
+          <span className="text-muted-foreground">{item.label}</span>
+          <span className="tabular-nums text-foreground">{item.value}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -5,7 +5,7 @@ import { BookBottomNav } from "@/components/BookBottomNav";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
-import { MicroLabel, Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
+import { MicroLabel, Panel, PanelHeader, Score, Scoreboard, SwatchLegend } from "@/components/ui/Panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -1334,25 +1334,15 @@ export function UpsidePortfolioPage() {
                       />
                     ))}
                   </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {bettingSlices.map((t) => (
-                      <div
-                        key={t.key}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted px-3 py-2.5"
-                      >
-                        <span className="flex items-center gap-2 text-sm text-foreground/80">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: t.color }}
-                          />
-                          {t.label}
-                        </span>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums text-muted-foreground">
-                          {Math.round(t.pct * 100)}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <SwatchLegend
+                    className="mt-4"
+                    items={bettingSlices.map((t) => ({
+                      key: t.key,
+                      label: t.label,
+                      color: t.color,
+                      value: `${Math.round(t.pct * 100)}%`,
+                    }))}
+                  />
                   <Scoreboard className="mt-4" cols={4}>
                     <Score
                       label="Spread"
