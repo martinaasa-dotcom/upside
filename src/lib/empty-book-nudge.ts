@@ -1,6 +1,11 @@
 /** One-time nudge when someone signs up and never imports a name. */
 
 import { isClassroomSheet } from "@/lib/classroom";
+import {
+  collapseMailRecipients,
+  connectedEmailsFor,
+  loadAliasMap,
+} from "@/lib/auth/identity";
 import { emptyBookNudgeHtml } from "@/lib/email-letter";
 import { PRODUCT_NAME, PRODUCT_ORIGIN } from "@/lib/product";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
@@ -135,10 +140,12 @@ export async function dispatchEmptyBookNudges(): Promise<{
     };
   }
 
+  const aliasMap = await loadAliasMap(supabase);
+  const recipients = collapseMailRecipients(profiles ?? [], aliasMap);
+
   let sent = 0;
   let skipped = 0;
-  for (const profile of profiles ?? []) {
-    const email = String(profile.email ?? "").trim();
+  for (const { to: email, profile } of recipients) {
     if (
       !email ||
       !isEmptyBookNudgeDue({
@@ -196,7 +203,7 @@ export async function dispatchEmptyBookNudges(): Promise<{
     const { error: markErr } = await supabase
       .from(PORTFELL_TABLES.profiles)
       .update({ empty_book_nudge_sent_at: new Date().toISOString() })
-      .eq("id", profile.id);
+      .in("email", connectedEmailsFor(email, aliasMap));
     if (markErr) {
       skipped += 1;
       continue;

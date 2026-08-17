@@ -4,6 +4,9 @@ export const SUPERADMIN_EMAILS = [
   "aasamartinaasa@gmail.com",
 ] as const;
 
+/** Inbox notes go to the first connected email only. */
+export const SUPERADMIN_NOTE_EMAIL = SUPERADMIN_EMAILS[0];
+
 export function isSuperadminEmail(
   email: string | null | undefined
 ): boolean {

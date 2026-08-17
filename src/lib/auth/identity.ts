@@ -123,6 +123,54 @@ export function primaryEmailFromMap(
   return aliasToPrimary[e] ?? e;
 }
 
+/** Primary first, then every extra login that maps to it. */
+export function connectedEmailsFor(
+  email: string | null | undefined,
+  aliasToPrimary: Record<string, string> = ACCOUNT_ALIAS_FALLBACK
+): string[] {
+  const primary = primaryEmailFromMap(email, aliasToPrimary);
+  if (!primary) return [];
+  const extras = Object.entries(aliasToPrimary)
+    .filter(([alias, dest]) => dest === primary && alias !== primary)
+    .map(([alias]) => alias);
+  return [primary, ...extras];
+}
+
+export function emailMatchesAllowlist(
+  email: string | null | undefined,
+  allow: ReadonlySet<string>,
+  aliasToPrimary: Record<string, string> = ACCOUNT_ALIAS_FALLBACK
+): boolean {
+  if (allow.size === 0) return true;
+  const raw = normalizeEmail(email);
+  if (!raw) return false;
+  const primary = primaryEmailFromMap(raw, aliasToPrimary) ?? raw;
+  return allow.has(raw) || allow.has(primary);
+}
+
+export type MailRecipient<T> = { to: string; profile: T };
+
+/** One mailbox per person. Extra connected emails collapse to the first. */
+export function collapseMailRecipients<T extends { email?: string | null }>(
+  profiles: readonly T[],
+  aliasToPrimary: Record<string, string> = ACCOUNT_ALIAS_FALLBACK
+): MailRecipient<T>[] {
+  const byTo = new Map<string, T>();
+  for (const profile of profiles) {
+    const to = primaryEmailFromMap(profile.email, aliasToPrimary);
+    if (!to) continue;
+    const existing = byTo.get(to);
+    if (!existing) {
+      byTo.set(to, profile);
+      continue;
+    }
+    const existingIsFirst = normalizeEmail(existing.email) === to;
+    const incomingIsFirst = normalizeEmail(profile.email) === to;
+    if (!existingIsFirst && incomingIsFirst) byTo.set(to, profile);
+  }
+  return [...byTo.entries()].map(([to, profile]) => ({ to, profile }));
+}
+
 export async function loadAliasMap(
   supabase: SupabaseClient | null
 ): Promise<Record<string, string>> {

@@ -62,6 +62,7 @@ import {
   looksLikePromptLeak,
 } from "../src/lib/note-margus";
 import { noteTestAudience } from "../src/lib/note-cron";
+import { SUPERADMIN_NOTE_EMAIL } from "../src/lib/auth/superadmin";
 import {
   buildNoteReport,
   loudNoteMoves,
@@ -102,8 +103,11 @@ import {
   AASA_PARTNER_EMAIL,
   AASA_PRIMARY_EMAIL,
   ACCOUNT_ALIAS_FALLBACK,
+  collapseMailRecipients,
   collapseMembersByAlias,
   combineHouseholdNames,
+  connectedEmailsFor,
+  emailMatchesAllowlist,
   expandHouseholdUserIds,
   householdEmailsFor,
   KARUD_ALIAS_EMAIL,
@@ -1331,18 +1335,62 @@ run("manual note cron stays on Martin", () => {
   const manual = noteTestAudience(
     new Request("https://upsidelab.app/api/cron/sunday-note")
   );
-  assert.ok(manual.onlyEmails?.includes("aasamartinaasa@gmail.com"));
-  assert.ok(manual.onlyEmails?.includes("martin.aasa@upthink.ee"));
+  assert.deepEqual(manual.onlyEmails, [SUPERADMIN_NOTE_EMAIL]);
+  assert.equal(SUPERADMIN_NOTE_EMAIL, AASA_PRIMARY_EMAIL);
   const me = noteTestAudience(
     new Request("https://upsidelab.app/api/cron/sunday-note?only=me")
   );
-  assert.ok(me.onlyEmails?.includes("aasamartinaasa@gmail.com"));
+  assert.deepEqual(me.onlyEmails, [AASA_PRIMARY_EMAIL]);
   const sunday = readFileSync("src/app/api/cron/sunday-note/route.ts", "utf8");
   const morning = readFileSync("src/app/api/cron/morning-note/route.ts", "utf8");
   const close = readFileSync("src/app/api/cron/close-note/route.ts", "utf8");
   assert.match(sunday, /noteTestAudience\(req\)/);
   assert.match(morning, /noteTestAudience\(req\)/);
   assert.match(close, /noteTestAudience\(req\)/);
+});
+
+run("connected emails send notes to the first address only", () => {
+  const collapsed = collapseMailRecipients([
+    { id: "gmail", email: AASA_ALIAS_EMAIL, name: "Martin Gmail" },
+    { id: "work", email: AASA_PRIMARY_EMAIL, name: "Martin Work" },
+    { id: "amanda", email: AASA_PARTNER_EMAIL, name: "Amanda" },
+  ]);
+  assert.equal(collapsed.length, 2);
+  assert.deepEqual(
+    collapsed.map((r) => r.to).sort(),
+    [AASA_PARTNER_EMAIL, AASA_PRIMARY_EMAIL].sort()
+  );
+  assert.ok(!collapsed.some((r) => r.to === AASA_ALIAS_EMAIL));
+  const martin = collapsed.find((r) => r.to === AASA_PRIMARY_EMAIL);
+  assert.equal(martin?.profile.id, "work");
+
+  const aliasOnly = collapseMailRecipients([
+    { id: "gmail", email: AASA_ALIAS_EMAIL },
+  ]);
+  assert.deepEqual(
+    aliasOnly.map((r) => r.to),
+    [AASA_PRIMARY_EMAIL]
+  );
+
+  assert.deepEqual(connectedEmailsFor(AASA_ALIAS_EMAIL), [
+    AASA_PRIMARY_EMAIL,
+    AASA_ALIAS_EMAIL,
+  ]);
+  const allow = new Set([AASA_PRIMARY_EMAIL]);
+  assert.equal(emailMatchesAllowlist(AASA_ALIAS_EMAIL, allow), true);
+  assert.equal(emailMatchesAllowlist(AASA_PARTNER_EMAIL, allow), false);
+
+  const cron = readFileSync(
+    join(process.cwd(), "src/lib/note-cron.ts"),
+    "utf8"
+  );
+  const nudge = readFileSync(
+    join(process.cwd(), "src/lib/empty-book-nudge.ts"),
+    "utf8"
+  );
+  assert.match(cron, /collapseMailRecipients/);
+  assert.match(nudge, /collapseMailRecipients/);
+  assert.match(nudge, /connectedEmailsFor/);
 });
 
 run("novice hides Lab, not Pulse", () => {

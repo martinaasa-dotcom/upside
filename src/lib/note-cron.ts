@@ -1,4 +1,9 @@
-import { SUPERADMIN_EMAILS } from "@/lib/auth/superadmin";
+import {
+  collapseMailRecipients,
+  emailMatchesAllowlist,
+  loadAliasMap,
+} from "@/lib/auth/identity";
+import { SUPERADMIN_NOTE_EMAIL } from "@/lib/auth/superadmin";
 import { sheetCashBalance } from "@/lib/cash-balance";
 import { ownedBookPortfolios } from "@/lib/classroom";
 import { hasLiveHoldings } from "@/lib/empty-book-nudge";
@@ -27,9 +32,9 @@ export type NoteDispatchOpts = {
 /** Vercel Cron still mails everyone opted in. A manual hit stays on Martin. */
 export function noteTestAudience(req: Request): NoteDispatchOpts {
   const only = new URL(req.url).searchParams.get("only")?.trim().toLowerCase();
-  if (only === "me") return { onlyEmails: SUPERADMIN_EMAILS };
+  if (only === "me") return { onlyEmails: [SUPERADMIN_NOTE_EMAIL] };
   if (req.headers.get("x-vercel-cron") === "1") return {};
-  return { onlyEmails: SUPERADMIN_EMAILS };
+  return { onlyEmails: [SUPERADMIN_NOTE_EMAIL] };
 }
 
 export async function dispatchOptedInNotes(
@@ -85,13 +90,15 @@ export async function dispatchOptedInNotes(
     };
   }
 
+  const aliasMap = await loadAliasMap(supabase);
   const allow = (opts.onlyEmails ?? []).map((e) => e.trim().toLowerCase());
   const allowSet = new Set(allow.filter(Boolean));
-  const recipients = (profiles ?? []).filter((profile) => {
-    if (allowSet.size === 0) return true;
-    const email = String(profile.email ?? "").trim().toLowerCase();
-    return allowSet.has(email);
-  });
+  const recipients = collapseMailRecipients(
+    (profiles ?? []).filter((profile) =>
+      emailMatchesAllowlist(profile.email, allowSet, aliasMap)
+    ),
+    aliasMap
+  );
 
   const emailed = noteEmailConfigured();
   if (!emailed) {
@@ -105,8 +112,7 @@ export async function dispatchOptedInNotes(
   }
   let sent = 0;
   let skipped = 0;
-  for (const profile of recipients) {
-    const email = String(profile.email ?? "").trim();
+  for (const { to: email, profile } of recipients) {
     if (!email) {
       skipped += 1;
       continue;
