@@ -414,7 +414,7 @@ export function ScanList({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="border-b border-border px-4 py-3">
+        <div className="border-b border-border px-6 py-4">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
         </div>
       ) : null}
@@ -444,12 +444,12 @@ export function ScanList({
                 <button
                   type="button"
                   onClick={() => onOpen(row.ticker)}
-                  className="flex w-full gap-3 px-4 py-3 text-left transition hover:bg-accent"
+                  className="flex w-full gap-3 px-6 py-3 text-left transition hover:bg-accent"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="flex gap-3 px-4 py-3">{body}</div>
+                <div className="flex gap-3 px-6 py-3">{body}</div>
               )}
             </li>
           );
@@ -712,6 +712,7 @@ export function Segmented<T extends string>({
   ariaLabel,
   className,
   columns,
+  look = "grid",
 }: {
   options: readonly { id: T; label: string; title?: string }[];
   value: T | null;
@@ -724,6 +725,8 @@ export function Segmented<T extends string>({
    * row is always full. Omit for a compact inline toggle.
    */
   columns?: number;
+  /** grid = hairline table. buttons = separate rounded controls. */
+  look?: "grid" | "buttons";
 }) {
   const fill = columns != null && columns > 0;
   if (!fill) {
@@ -757,12 +760,16 @@ export function Segmented<T extends string>({
     );
   }
   const cols = filledGridColumns(options.length, columns);
+  const buttons = look === "buttons";
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "grid w-full min-w-0 max-w-full gap-px overflow-hidden rounded-lg bg-border",
+        "grid w-full min-w-0 max-w-full",
+        buttons
+          ? "gap-2"
+          : "gap-px overflow-hidden rounded-lg bg-border",
         className
       )}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
@@ -777,10 +784,17 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.id)}
           className={cn(
-            "touch-target flex min-w-0 items-center justify-center bg-muted px-2 py-2.5 text-sm font-medium transition disabled:opacity-40 md:min-h-0 md:min-w-0",
+            "flex min-w-0 items-center justify-center px-2 text-sm font-medium transition disabled:opacity-40",
+            buttons
+              ? "touch-target min-h-9 rounded-lg border border-border"
+              : "touch-target bg-muted py-2.5 md:min-h-0 md:min-w-0",
             value === o.id
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              ? buttons
+                ? "border-transparent bg-primary text-primary-foreground"
+                : "bg-primary text-primary-foreground"
+              : buttons
+                ? "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           )}
         >
           <span className="block max-w-full text-center leading-snug break-words">

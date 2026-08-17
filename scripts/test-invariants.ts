@@ -2571,7 +2571,8 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.doesNotMatch(controls, /Your book/);
   assert.doesNotMatch(controls, /flex-wrap/);
   assert.doesNotMatch(controls, /ChipButton/);
-  assert.match(controls, /columns=\{2\}/);
+  assert.match(controls, /columns=\{4\}/);
+  assert.match(controls, /look="buttons"/);
   assert.match(controls, /This portfolio/);
   assert.doesNotMatch(src, /tipFlash|setTipFlash/);
   assert.doesNotMatch(controls, /bg-gain\/\[0\.06\]/);

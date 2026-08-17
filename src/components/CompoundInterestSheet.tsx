@@ -85,8 +85,8 @@ const SHEET_PANEL = "h-auto min-w-0 max-w-full lg:h-full";
 
 const YEAR_PRESETS = [5, 10, 20, 30] as const;
 const RATE_PRESETS = [
-  { id: "book", label: "This portfolio" },
-  { id: "spy", label: "S&P 500" },
+  { id: "book", label: "Yours", title: "This portfolio" },
+  { id: "spy", label: "S&P", title: "S&P 500" },
   { id: "15", label: "15%" },
   { id: "25", label: "25%" },
 ] as const;
@@ -827,7 +827,8 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </div>
           <Segmented
             ariaLabel="Growth rate preset"
-            columns={2}
+            columns={4}
+            look="buttons"
             options={RATE_PRESETS}
             value={ratePreset}
             onChange={applyRatePreset}
@@ -857,10 +858,12 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </div>
           <Segmented
             ariaLabel="How many years"
-            columns={2}
+            columns={4}
+            look="buttons"
             options={YEAR_PRESETS.map((yr) => ({
               id: String(yr),
-              label: `${yr} years`,
+              label: `${yr}y`,
+              title: `${yr} years`,
             }))}
             value={yearPreset}
             onChange={(id) => patchDraft("years", Number(id))}
@@ -873,11 +876,12 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           </span>
           <Segmented
             ariaLabel="Deposits or withdrawals"
-            columns={2}
+            columns={4}
+            look="buttons"
             options={[
               { id: "none", label: "None" },
-              { id: "deposits", label: "Paying in" },
-              { id: "withdrawals", label: "Taking out" },
+              { id: "deposits", label: "In", title: "Paying in" },
+              { id: "withdrawals", label: "Out", title: "Taking out" },
               { id: "both", label: "Both" },
             ]}
             value={draft.contributionMode}
@@ -904,9 +908,10 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             <Segmented
               ariaLabel="How often you pay in"
               columns={2}
+              look="buttons"
               options={[
-                { id: "monthly", label: "A month" },
-                { id: "annually", label: "A year" },
+                { id: "monthly", label: "Month" },
+                { id: "annually", label: "Year" },
               ]}
               value={draft.depositFrequency}
               onChange={(id) =>
