@@ -6,6 +6,8 @@ import {
 } from "@/lib/market/resistance";
 import { fetchNextEarningsDate, resolveYahooListedSymbol } from "@/lib/market/yahoo";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
+import { isPlausiblePrice, yahooQuotePayloadSchema } from "@/lib/market/quote-sanitize";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -99,14 +101,18 @@ async function fetchSpotAndHistory(ticker: string): Promise<{
   spot: number;
   history: number[];
 } | null> {
+  if (isMarketCircuitOpen("yahoo")) return null;
   try {
     const yf = await getYahoo();
     const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
-    const [quote, chart] = await Promise.all([
-      yf.quote(symbol),
-      yf.chart(symbol, { period1, interval: "1d" }),
+    const [quoteRaw, chart] = await Promise.all([
+      withMarketCircuit("yahoo", () => yf.quote(symbol)),
+      yf.chart(symbol, { period1, interval: "1d" }).catch(() => null),
     ]);
+    const parsed = yahooQuotePayloadSchema.safeParse(quoteRaw);
+    if (!parsed.success) return null;
+    const quote = parsed.data;
     // Same fix as fetchQuotesYahoo: regularMarketPrice is stale (last
     // regular-session trade) through an active pre/post-market window —
     // strike/target math has to be grounded in the actually-current price.
@@ -131,12 +137,12 @@ async function fetchSpotAndHistory(ticker: string): Promise<{
         : (state === "PRE" || state === "PREPRE") && rawPre
           ? rawPre
           : rawRegular ?? rawPost ?? rawPre ?? 0;
-    if (!spot) return null;
+    if (!spot || !isPlausiblePrice(spot)) return null;
     const history =
-      chart.quotes && chart.quotes.length > 1
+      chart?.quotes && chart.quotes.length > 1
         ? chart.quotes
             .map((row) => row.close)
-            .filter((c): c is number => typeof c === "number")
+            .filter((c): c is number => typeof c === "number" && isPlausiblePrice(c))
         : [spot * 0.92, spot * 0.97, spot, spot * 1.05, spot * 1.1];
     return { spot, history };
   } catch (err) {
@@ -148,8 +154,9 @@ async function fetchSpotAndHistory(ticker: string): Promise<{
 type ExpCandidate = { exp: Date; days: number; key: string };
 
 async function listExpirations(ticker: string): Promise<ExpCandidate[]> {
+  if (isMarketCircuitOpen("yahoo")) return [];
   const yf = await getYahoo();
-  const chain = await yf.options(ticker);
+  const chain = await withMarketCircuit("yahoo", () => yf.options(ticker));
   return (chain.expirationDates ?? [])
     .map((d: Date | string) => {
       const exp = typeof d === "string" ? new Date(d) : d;
@@ -378,9 +385,12 @@ async function quoteCallPremium(params: {
   strike: number;
   spot: number;
 }): Promise<{ mid: number; yield: number } | null> {
+  if (isMarketCircuitOpen("yahoo")) return null;
   try {
     const yf = await getYahoo();
-    const detailed = await yf.options(params.ticker, { date: params.exp });
+    const detailed = await withMarketCircuit("yahoo", () =>
+      yf.options(params.ticker, { date: params.exp })
+    );
     const calls = detailed.options?.[0]?.calls ?? [];
     if (!calls.length) return null;
 

@@ -57,6 +57,10 @@ export type Quote = {
   currency?: string | null;
   /** Last price in listing currency (pounds, not pence). */
   nativePrice?: number | null;
+  /** True when this print came from last-known cache, not a live feed. */
+  stale?: boolean;
+  /** Epoch ms when this print was actually fetched. */
+  quotedAt?: number;
 };
 
 export type OptionCandidate = {

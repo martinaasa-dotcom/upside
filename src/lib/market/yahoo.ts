@@ -12,6 +12,15 @@ import {
   normalizeListedPrice,
   usdPerMapFromFx,
 } from "@/lib/listing-currency";
+import {
+  CircuitOpenError,
+  isMarketCircuitOpen,
+  withMarketCircuit,
+} from "@/lib/market/circuit-breaker";
+import {
+  isPlausiblePrice,
+  yahooQuotePayloadSchema,
+} from "@/lib/market/quote-sanitize";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -77,19 +86,23 @@ function numOrNull(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
 }
 
+function yahooCall<T>(fn: () => Promise<T>): Promise<T> {
+  return withMarketCircuit("yahoo", fn);
+}
+
 async function usdPerUnit(
   yf: YahooFinanceInstance,
   code: string
 ): Promise<number | null> {
   try {
-    const direct = await yf.quote(`${code}USD=X`);
+    const direct = await yahooCall(() => yf.quote(`${code}USD=X`));
     const n = numOrNull(direct.regularMarketPrice);
     if (n) return n;
   } catch {
     /* try the inverted pair */
   }
   try {
-    const inverted = await yf.quote(`USD${code}=X`);
+    const inverted = await yahooCall(() => yf.quote(`USD${code}=X`));
     const n = numOrNull(inverted.regularMarketPrice);
     if (n && n > 0) return 1 / n;
   } catch {
@@ -102,8 +115,8 @@ async function fetchFxRates(yf: YahooFinanceInstance): Promise<FxRates> {
   try {
     const extras = extraFxCodes();
     const [eur, gbp, extraRates] = await Promise.all([
-      yf.quote("EURUSD=X"),
-      yf.quote("GBPUSD=X"),
+      yahooCall(() => yf.quote("EURUSD=X")),
+      yahooCall(() => yf.quote("GBPUSD=X")),
       Promise.all(extras.map((code) => usdPerUnit(yf, code))),
     ]);
     const last = numOrNull(eur.regularMarketPrice);
@@ -131,6 +144,9 @@ async function fetchFxRates(yf: YahooFinanceInstance): Promise<FxRates> {
 
 /** Fetch EURUSD/GBPUSD only (for Compound / empty books). */
 export async function fetchFxOnly(): Promise<FxRates> {
+  if (isMarketCircuitOpen("yahoo")) {
+    return { ...EMPTY_FX };
+  }
   try {
     const yf = await getYahoo();
     return await fetchFxRates(yf);
@@ -166,7 +182,7 @@ export async function resolveYahooListedSymbol(
   const yf = await getYahoo();
   for (const symbol of yahooQuoteCandidates(raw)) {
     try {
-      const quote = await yf.quote(symbol);
+      const quote = await yahooCall(() => yf.quote(symbol));
       if (
         numOrNull(quote.regularMarketPrice) ||
         numOrNull(quote.postMarketPrice) ||
@@ -187,10 +203,13 @@ async function quoteOneSymbol(
   fx: FxRates,
   period1: Date
 ): Promise<Quote | null> {
-  const [quote, chart] = await Promise.all([
-    yf.quote(symbol),
-    yf.chart(symbol, { period1, interval: "1d" }),
+  const [quoteRaw, chart] = await Promise.all([
+    yahooCall(() => yf.quote(symbol)),
+    yf.chart(symbol, { period1, interval: "1d" }).catch(() => null),
   ]);
+  const parsed = yahooQuotePayloadSchema.safeParse(quoteRaw);
+  if (!parsed.success) return null;
+  const quote = parsed.data;
 
   // regularMarketPrice is the last REGULAR-session trade and does
   // NOT move during extended hours — it holds yesterday's (or this
@@ -207,7 +226,7 @@ async function quoteOneSymbol(
   const rawPre = numOrNull(quote.preMarketPrice);
   const rawPreviousClose =
     numOrNull(quote.regularMarketPreviousClose) ??
-    (rawRegular != null && quote.regularMarketChange != null
+    (rawRegular != null && typeof quote.regularMarketChange === "number"
       ? rawRegular - quote.regularMarketChange
       : null);
 
@@ -219,6 +238,7 @@ async function quoteOneSymbol(
     previousClose: rawPreviousClose,
   });
   const yahooNative = mark.price;
+  if (!isPlausiblePrice(yahooNative)) return null;
   const yahooCurrency =
     typeof quote.currency === "string" ? quote.currency : undefined;
   const listed = normalizeListedPrice(yahooNative, yahooCurrency);
@@ -234,13 +254,13 @@ async function quoteOneSymbol(
   const change = previousClose > 0 ? price - previousClose : 0;
   const changePercent = previousClose > 0 ? change / previousClose : 0;
   const sparkline =
-    chart.quotes && chart.quotes.length > 1
+    chart?.quotes && chart.quotes.length > 1
       ? chart.quotes
           .map((row) => row.close)
-          .filter((c): c is number => typeof c === "number")
+          .filter((c): c is number => typeof c === "number" && isPlausiblePrice(c))
           .map((c) => priceToUsd(c, yahooCurrency, fx))
       : synthesizeSparkline(price, changePercent * 100);
-  const dailyCloses = (chart.quotes ?? [])
+  const dailyCloses = (chart?.quotes ?? [])
     .map((row) => {
       const close = row.close;
       const rawDate = row.date;
@@ -310,6 +330,8 @@ async function quoteOneSymbol(
     dailyCloses,
     currency,
     nativePrice,
+    stale: false,
+    quotedAt: Date.now(),
   } satisfies Quote;
 }
 
@@ -324,6 +346,10 @@ export async function fetchQuotesYahoo(
     return { quotes: {}, fx: { ...EMPTY_FX }, failed: [] };
   }
 
+  if (isMarketCircuitOpen("yahoo")) {
+    return { quotes: {}, fx: { ...EMPTY_FX }, failed: unique };
+  }
+
   try {
     const yf = await getYahoo();
     const fx = await fetchFxRates(yf);
@@ -331,13 +357,15 @@ export async function fetchQuotesYahoo(
 
     const results = await Promise.all(
       unique.map(async (requested) => {
+        if (isMarketCircuitOpen("yahoo")) return null;
         for (const symbol of yahooQuoteCandidates(requested)) {
           try {
             const quote = await quoteOneSymbol(yf, symbol, fx, period1);
             // A stub with price 0 is not a hit. Keep walking suffixes
             // (LHV1T is empty; LHV1T.TL is the Tallinn listing).
             if (quote && quote.price > 0) return { requested, symbol, quote };
-          } catch {
+          } catch (err) {
+            if (err instanceof CircuitOpenError) return null;
             /* try the next exchange */
           }
         }
@@ -425,7 +453,9 @@ async function ytdClosesForSymbol(
 
   const task = (async () => {
     try {
-      const chart = await yf.chart(symbol, { period1, interval: "1d" });
+      const chart = await yahooCall(() =>
+        yf.chart(symbol, { period1, interval: "1d" })
+      );
       const currency =
         typeof chart.meta?.currency === "string"
           ? chart.meta.currency
@@ -498,7 +528,9 @@ export async function fetchWeekReturns(
       unique.map(async (ticker) => {
         for (const symbol of yahooQuoteCandidates(ticker)) {
           try {
-            const chart = await yf.chart(symbol, { period1, interval: "1d" });
+            const chart = await yahooCall(() =>
+              yf.chart(symbol, { period1, interval: "1d" })
+            );
             const currency =
               typeof chart.meta?.currency === "string"
                 ? chart.meta.currency
@@ -614,9 +646,11 @@ export async function fetchNextEarningsDate(
   try {
     const yf = await getYahoo();
     const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
-    const summary = await yf.quoteSummary(symbol, {
-      modules: ["earnings", "calendarEvents", "earningsHistory"],
-    });
+    const summary = await yahooCall(() =>
+      yf.quoteSummary(symbol, {
+        modules: ["earnings", "calendarEvents", "earningsHistory"],
+      })
+    );
     const calendar = summary.calendarEvents?.earnings;
     const resolved = resolveYahooEarnings({
       history: summary.earningsHistory?.history ?? [],

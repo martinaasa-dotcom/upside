@@ -47,7 +47,7 @@ async function handleGET(req: NextRequest) {
     );
   }
 
-  const { quotes, delayed, fx, sources, missing } =
+  const { quotes, delayed, fx, sources, missing, updatedAt } =
     await fetchQuotesWithFallback(tickers);
   return NextResponse.json(
     {
@@ -56,7 +56,7 @@ async function handleGET(req: NextRequest) {
       delayed,
       sources,
       missing,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(updatedAt).toISOString(),
     },
     { headers: publicCdnHeaders(cacheSeconds()) }
   );

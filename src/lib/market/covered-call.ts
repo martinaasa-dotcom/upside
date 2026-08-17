@@ -6,6 +6,7 @@ import {
 } from "@/lib/market/resistance";
 import type { OptionCandidate } from "@/lib/types";
 import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -84,9 +85,11 @@ export async function scanCoveredCall(params: {
     return null;
   }
 
+  if (isMarketCircuitOpen("yahoo")) return null;
+
   try {
     const yf = await getYahoo();
-    const chain = await yf.options(ticker);
+    const chain = await withMarketCircuit("yahoo", () => yf.options(ticker));
     const expirations: Date[] = (chain.expirationDates ?? []).map(
       (d: Date | string) => (typeof d === "string" ? new Date(d) : d)
     );
@@ -122,7 +125,9 @@ export async function scanCoveredCall(params: {
     let best: Quoted | null = null;
 
     for (const { exp, days, key } of nearby) {
-      const detailed = await yf.options(ticker, { date: exp });
+      const detailed = await withMarketCircuit("yahoo", () =>
+        yf.options(ticker, { date: exp })
+      );
       const calls = detailed.options?.[0]?.calls ?? [];
       if (!calls.length) continue;
 

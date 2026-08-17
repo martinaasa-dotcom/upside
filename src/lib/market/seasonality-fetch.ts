@@ -5,6 +5,7 @@ import {
 } from "@/lib/market/seasonality";
 import { yahooQuoteCandidates } from "@/lib/ticker";
 import { unstable_cache } from "next/cache";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -30,16 +31,19 @@ function num(v: unknown): number | null {
 export async function fetchSeasonalityBars(ticker: string): Promise<{
   daily: DailyBar[];
 }> {
+  if (isMarketCircuitOpen("yahoo")) return { daily: [] };
   const yf = await getYahoo();
   const daily: DailyBar[] = [];
 
   for (const symbol of yahooQuoteCandidates(ticker)) {
     try {
-      const dailyChart = await yf.chart(symbol, {
-        period1: new Date("1993-01-01"),
-        period2: new Date(),
-        interval: "1d",
-      });
+      const dailyChart = await withMarketCircuit("yahoo", () =>
+        yf.chart(symbol, {
+          period1: new Date("1993-01-01"),
+          period2: new Date(),
+          interval: "1d",
+        })
+      );
 
       for (const row of dailyChart.quotes ?? []) {
         const rawDate = row.date as Date | string | undefined;

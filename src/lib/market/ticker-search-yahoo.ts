@@ -9,6 +9,7 @@ import {
   normalizeYahooTicker,
   tickerStem,
 } from "@/lib/ticker";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 
 const WATCH_SYMBOL = /^[A-Z0-9.=^-]{1,12}$/;
 const SKIP_TYPES = new Set([
@@ -69,11 +70,13 @@ async function searchOnce(
   yf: YahooFinanceInstance,
   query: string
 ): Promise<unknown[]> {
-  const result = await yf.search(query, {
-    quotesCount: 8,
-    newsCount: 0,
-    enableFuzzyQuery: true,
-  });
+  const result = await withMarketCircuit("yahoo", () =>
+    yf.search(query, {
+      quotesCount: 8,
+      newsCount: 0,
+      enableFuzzyQuery: true,
+    })
+  );
   return result.quotes ?? [];
 }
 
@@ -82,6 +85,7 @@ export async function searchYahooTickers(
 ): Promise<TickerSuggestion[]> {
   const q = query.trim();
   if (q.length < 1 || q.length > TICKER_QUERY_MAX) return [];
+  if (isMarketCircuitOpen("yahoo")) return [];
   try {
     const yf = await getYahoo();
     const tickerQuery = looksLikeTickerQuery(q);

@@ -11,6 +11,7 @@ import {
 } from "@/lib/format";
 import { sanitizeTickerQuery } from "@/lib/input-guard";
 import { quotesUrl, isQuotePollFresh } from "@/lib/market/session";
+import { quoteAsOfTitle } from "@/lib/market/quote-freshness";
 import {
   localTickerSuggestions,
   looksLikeTickerQuery,
@@ -333,7 +334,10 @@ export function WatchlistStrip({
                     onClick={() => onOpenPulse?.(ticker)}
                     className="flex flex-1 flex-col px-3 pb-3 text-left"
                   >
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                    <p
+                      className="mt-1 text-sm font-semibold tabular-nums text-foreground"
+                      title={quoteAsOfTitle(q)}
+                    >
                       {q ? currency(q.price) : "—"}
                     </p>
                     <p

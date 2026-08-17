@@ -1,5 +1,6 @@
 import { resolveYahooEarnings } from "@/lib/market/earnings-dates";
 import { resolveYahooListedSymbol } from "@/lib/market/yahoo";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 import { sectorForTicker, type PulseHeadline } from "@/lib/thesis-pulse";
 import { unstable_cache } from "next/cache";
 
@@ -35,9 +36,12 @@ async function fetchTickerNewsUncached(
   count = 5
 ): Promise<PulseHeadline[]> {
   try {
+    if (isMarketCircuitOpen("yahoo")) return [];
     const yf = await getYahoo();
     const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
-    const result = await yf.search(symbol, { newsCount: count });
+    const result = await withMarketCircuit("yahoo", () =>
+      yf.search(symbol, { newsCount: count })
+    );
     const items = result.news ?? [];
     return items.slice(0, count).map((n) => ({
       title: String(n.title ?? "").trim(),
@@ -77,10 +81,13 @@ async function fetchTickerPulseContextUncached(
     (async () => {
       try {
         const yf = await getYahoo();
+        if (isMarketCircuitOpen("yahoo")) return null;
         const symbol = (await resolveYahooListedSymbol(ticker)) ?? ticker;
-        return await yf.quoteSummary(symbol, {
-          modules: ["earningsHistory", "calendarEvents", "earnings"],
-        });
+        return await withMarketCircuit("yahoo", () =>
+          yf.quoteSummary(symbol, {
+            modules: ["earningsHistory", "calendarEvents", "earnings"],
+          })
+        );
       } catch (err) {
         console.error(`Pulse context failed for ${ticker}`, err);
         return null;

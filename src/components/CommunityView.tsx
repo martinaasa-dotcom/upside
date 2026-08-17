@@ -103,6 +103,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
+import { quoteAsOfTitle } from "@/lib/market/quote-freshness";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import {
@@ -3138,7 +3139,7 @@ function ReadOnlyHoldings({
                   {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
                 </p>
               </div>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-sm text-muted" title={quoteAsOfTitle(quotes[h.ticker])}>
                 {percent(pctBook)} of portfolio · {h.shares} sh · {currency(native, digits, listed)} · {currency(value)}
               </p>
             </Card>
@@ -3205,7 +3206,10 @@ function ReadOnlyHoldings({
                   <td className={cn(htmlCell, "tabular-nums text-muted")}>
                     {h.shares}
                   </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted")}>
+                  <td
+                    className={cn(htmlCell, "tabular-nums text-muted")}
+                    title={quoteAsOfTitle(quotes[h.ticker])}
+                  >
                     {currency(native, digits, listed)}
                   </td>
                   <td className={cn(htmlCell, "tabular-nums text-muted")}>

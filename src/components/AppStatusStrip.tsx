@@ -63,7 +63,11 @@ export function AppStatusStrip({
         )}
       >
         <span className="shrink-0 whitespace-nowrap text-sm tabular-nums text-muted">
-          {sec == null ? "Prices · —" : `Prices · ${formatAge(sec)}`}
+          {sec == null
+            ? "Prices · —"
+            : quotesDelayed && sec >= 60
+              ? `Price as of ${formatAge(sec)}`
+              : `Prices · ${formatAge(sec)}`}
           {quotedCount != null && totalCount != null ? (
             <span className="hidden sm:inline">
               {` · ${quotedCount}/${totalCount} names`}

@@ -1,4 +1,5 @@
 import { sanitizePopularTickers } from "@/lib/popular-tickers";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -24,10 +25,15 @@ function symbolOf(row: unknown): string | null {
  * capped at 30. Volume is the popularity we can actually measure.
  */
 export async function fetchMonthlyPopularTickers(): Promise<string[]> {
+  if (isMarketCircuitOpen("yahoo")) {
+    throw new Error("Yahoo circuit open");
+  }
   const yf = await getYahoo();
   const [actives, trending] = await Promise.allSettled([
-    yf.screener({ scrIds: "most_actives", count: 40 }),
-    yf.trendingSymbols("US", { count: 20 }),
+    withMarketCircuit("yahoo", () =>
+      yf.screener({ scrIds: "most_actives", count: 40 })
+    ),
+    withMarketCircuit("yahoo", () => yf.trendingSymbols("US", { count: 20 })),
   ]);
 
   const raw: string[] = [];

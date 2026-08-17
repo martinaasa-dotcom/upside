@@ -10,6 +10,7 @@ import { dateKeyInTz, daysUntilInTz } from "@/lib/timezone";
 import { normalizeYahooTicker } from "@/lib/ticker";
 import { resolveYahooListedSymbol } from "@/lib/market/yahoo";
 import { unstable_cache } from "next/cache";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 
 type YahooFinanceInstance = InstanceType<
   typeof import("yahoo-finance2").default
@@ -263,16 +264,20 @@ async function fetchEarningsBriefUncached(
     }),
   };
 
+  if (isMarketCircuitOpen("yahoo")) return empty;
   try {
     const yf = await getYahoo();
     const period1 = new Date(Date.now() - 800 * 24 * 60 * 60 * 1000);
     const [summary, chart, quote] = await Promise.all([
-      yf.quoteSummary(symbol, {
-        modules: ["earnings", "calendarEvents"],
-      }),
-      yf.chart(symbol, { period1, interval: "1d" }),
-      yf.quote(symbol),
+      withMarketCircuit("yahoo", () =>
+        yf.quoteSummary(symbol, {
+          modules: ["earnings", "calendarEvents"],
+        })
+      ),
+      yf.chart(symbol, { period1, interval: "1d" }).catch(() => null),
+      withMarketCircuit("yahoo", () => yf.quote(symbol)),
     ]);
+    const chartRows = chart?.quotes ?? [];
 
     const dateIsEstimate = Boolean(
       summary.calendarEvents?.earnings?.isEarningsDateEstimate
@@ -282,7 +287,7 @@ async function fetchEarningsBriefUncached(
         ? quote.regularMarketPrice
         : null;
     const bars: Bar[] = [];
-    for (const row of chart.quotes ?? []) {
+    for (const row of chartRows) {
       const raw = row.date as Date | string | undefined;
       const close = typeof row.close === "number" ? row.close : null;
       if (!raw || close == null || close <= 0) continue;

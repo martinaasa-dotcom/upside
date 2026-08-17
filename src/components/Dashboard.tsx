@@ -173,6 +173,7 @@ import { useLabSync } from "@/components/use-lab-sync";
 import { FIRST_SHEET_NAME } from "@/lib/product";
 import { pickLoadingMessage } from "@/lib/loading-messages";
 import { loadCachedQuotes, mergeQuotes, saveCachedQuotes, quotesUnchanged } from "@/lib/quote-cache";
+import { quotesAreDelayed, quotesStampMs } from "@/lib/market/quote-freshness";
 import { OFFLINE_CACHE_READY } from "@/lib/offline/snapshots";
 import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { markSheetImported } from "@/lib/sheet-import-stamp";
@@ -413,8 +414,7 @@ export function Dashboard() {
   const quotesAbortRef = useRef<AbortController | null>(null);
   const quotesRef = useRef(quotes);
   quotesRef.current = quotes;
-  const quotesUpdatedAtRef = useRef(quotesUpdatedAt);
-  quotesUpdatedAtRef.current = quotesUpdatedAt;
+  const quotesPolledAtRef = useRef(0);
   const bookFetchedAtRef = useRef(0);
   const holdingPatchSeqRef = useRef(new Map<string, number>());
   const cashWriteSeqRef = useRef(new Map<string, number>());
@@ -458,6 +458,7 @@ export function Dashboard() {
     const cachedQuotes = loadCachedQuotes();
     setQuotes(cachedQuotes.quotes);
     setQuotesUpdatedAt(cachedQuotes.savedAt);
+    quotesPolledAtRef.current = cachedQuotes.savedAt ?? 0;
     const eur = cachedQuotes.quotes["EURUSD=X"]?.price;
     if (eur && eur > 0) setEurUsd(eur);
     const gbp = cachedQuotes.quotes["GBPUSD=X"]?.price;
@@ -494,6 +495,7 @@ export function Dashboard() {
       ) {
         setQuotes(cachedQuotes.quotes);
         setQuotesUpdatedAt(cachedQuotes.savedAt);
+        quotesPolledAtRef.current = cachedQuotes.savedAt ?? 0;
       }
     };
     window.addEventListener(OFFLINE_CACHE_READY, apply);
@@ -1142,9 +1144,10 @@ export function Dashboard() {
             return merged;
           });
           saveCachedQuotes(merged);
-          setQuotesUpdatedAt(Date.now());
+          quotesPolledAtRef.current = Date.now();
+          setQuotesUpdatedAt(quotesStampMs(quotesJson));
           if (!unchanged) {
-            setQuotesDelayed(Boolean(quotesJson.delayed) || missing.length > 0);
+            setQuotesDelayed(quotesAreDelayed(quotesJson));
             setMissingTickers((prev) =>
               prev.length === missing.length &&
               prev.every((t, i) => t === missing[i])
@@ -1206,7 +1209,7 @@ export function Dashboard() {
     const id = window.setInterval(() => {
       if (document.hidden) return;
       if (!isWorkspaceRoomActive("book")) return;
-      if (isQuotePollFresh(quotesUpdatedAtRef.current)) return;
+      if (isQuotePollFresh(quotesPolledAtRef.current)) return;
       void refreshFx(ctrl.signal);
     }, 120_000);
     return () => {
@@ -1494,7 +1497,7 @@ export function Dashboard() {
   // background. There is no header Refresh.
   useEffect(() => {
     if (holdings.length === 0) return;
-    const fresh = isQuotePollFresh(quotesUpdatedAtRef.current);
+    const fresh = isQuotePollFresh(quotesPolledAtRef.current);
     const cachedQuotes =
       fresh && Object.keys(quotesRef.current).length > 0
         ? quotesRef.current
@@ -1545,7 +1548,7 @@ export function Dashboard() {
     const tick = () => {
       if (cancelled || document.hidden) return;
       if (!isWorkspaceRoomActive("book")) return;
-      if (isQuotePollFresh(quotesUpdatedAtRef.current)) return;
+      if (isQuotePollFresh(quotesPolledAtRef.current)) return;
       const { holdings: rowsAll, isMetaTab: meta, portfolioId } =
         pollRowsRef.current;
       const rows = meta

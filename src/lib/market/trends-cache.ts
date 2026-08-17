@@ -8,6 +8,7 @@
 
 import { yahooQuoteCandidates } from "@/lib/ticker";
 import { unstable_cache } from "next/cache";
+import { isMarketCircuitOpen, withMarketCircuit } from "@/lib/market/circuit-breaker";
 import {
   macd,
   nWeekChange,
@@ -100,16 +101,19 @@ function pruneCacheIfNeeded() {
 async function fetchWeeklyClosesUncached(
   ticker: string
 ): Promise<number[] | null> {
+  if (isMarketCircuitOpen("yahoo")) return null;
   try {
     const yf = await getYahoo();
     const period1 = new Date();
     period1.setFullYear(period1.getFullYear() - YEARS_BACK);
     for (const symbol of yahooQuoteCandidates(ticker)) {
       try {
-        const chart = await yf.chart(symbol, {
-          period1,
-          interval: "1d",
-        });
+        const chart = await withMarketCircuit("yahoo", () =>
+          yf.chart(symbol, {
+            period1,
+            interval: "1d",
+          })
+        );
         const bars: Bar[] = [];
         for (const row of chart.quotes ?? []) {
           const raw = row.date as Date | string | undefined;

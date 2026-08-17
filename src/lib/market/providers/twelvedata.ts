@@ -8,16 +8,18 @@
 import { synthesizeSparkline } from "@/lib/market/sparkline";
 import { listingCurrency } from "@/lib/listing-currency";
 import type { Quote } from "@/lib/types";
-
-type TwelveDataQuote = {
-  symbol?: string;
-  close?: string;
-  previous_close?: string;
-  change?: string;
-  percent_change?: string;
-  status?: string;
-  code?: number;
-};
+import {
+  isMarketCircuitOpen,
+  marketFetch,
+  MarketHttpError,
+  noteMarketFailure,
+} from "@/lib/market/circuit-breaker";
+import {
+  isPlausiblePrice,
+  numFromUnknown,
+  twelveDataPayloadSchema,
+  twelveDataQuoteSchema,
+} from "@/lib/market/quote-sanitize";
 
 export function twelveDataConfigured(): boolean {
   const key = process.env.TWELVE_DATA_API_KEY;
@@ -30,40 +32,62 @@ export async function fetchQuotesTwelveData(
 ): Promise<Record<string, Quote>> {
   const apiKey = process.env.TWELVE_DATA_API_KEY;
   if (!apiKey || tickers.length === 0) return {};
+  if (isMarketCircuitOpen("twelvedata")) return {};
 
-  // Batch endpoint accepts comma-joined symbols and returns either a single
-  // object (1 symbol) or a map of symbol -> quote (multiple symbols).
   const symbols = tickers.join(",");
   try {
-    const res = await fetch(
+    const res = await marketFetch(
+      "twelvedata",
       `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbols)}&apikey=${encodeURIComponent(apiKey)}`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return {};
-    const data = (await res.json()) as
-      | TwelveDataQuote
-      | Record<string, TwelveDataQuote>;
+    const json: unknown = await res.json();
+    const parsed = twelveDataPayloadSchema.safeParse(json);
+    if (!parsed.success) return {};
+    const data = parsed.data;
 
-    const rows: TwelveDataQuote[] =
-      tickers.length === 1
-        ? [data as TwelveDataQuote]
-        : Object.values(data as Record<string, TwelveDataQuote>);
+    if (
+      data &&
+      typeof data === "object" &&
+      "status" in data &&
+      data.status === "error"
+    ) {
+      const code = typeof data.code === "number" ? data.code : 0;
+      if (code === 429 || code === 500 || code === 502 || code === 503) {
+        noteMarketFailure("twelvedata");
+      }
+      return {};
+    }
 
+    const rawRows =
+      tickers.length === 1 && "close" in data
+        ? [data]
+        : Object.values(data);
+    const rows = rawRows.flatMap((row) => {
+      const parsedRow = twelveDataQuoteSchema.safeParse(row);
+      return parsedRow.success ? [parsedRow.data] : [];
+    });
+
+    const now = Date.now();
     const out: Record<string, Quote> = {};
     for (const row of rows) {
       if (!row || row.status === "error" || !row.symbol) continue;
-      const price = Number(row.close);
-      if (!Number.isFinite(price) || price <= 0) continue;
-      const previousClose = Number(row.previous_close);
-      const change = Number(row.change ?? price - (previousClose || price));
-      const changePercent = Number(row.percent_change ?? 0) / 100;
+      const price = numFromUnknown(row.close);
+      if (price == null || !isPlausiblePrice(price)) continue;
+      const previousClose = numFromUnknown(row.previous_close);
+      const change = numFromUnknown(row.change) ?? price - (previousClose || price);
+      const changePercent = (numFromUnknown(row.percent_change) ?? 0) / 100;
       const ticker = row.symbol.toUpperCase();
       out[ticker] = {
         ticker,
         price,
         change: Number.isFinite(change) ? change : 0,
         changePercent: Number.isFinite(changePercent) ? changePercent : 0,
-        previousClose: Number.isFinite(previousClose) ? previousClose : price,
+        previousClose:
+          previousClose != null && isPlausiblePrice(Math.abs(previousClose))
+            ? previousClose
+            : price,
         sparkline: synthesizeSparkline(
           price,
           Number.isFinite(changePercent) ? changePercent * 100 : 0
@@ -77,11 +101,17 @@ export async function fetchQuotesTwelveData(
         postMarketChangePercent: null,
         currency: listingCurrency(ticker),
         nativePrice: price,
+        stale: false,
+        quotedAt: now,
       };
     }
     return out;
   } catch (err) {
-    console.error("Twelve Data fallback failed", err);
+    if (err instanceof MarketHttpError) {
+      console.error("Twelve Data rate limited", err.status);
+    } else {
+      console.error("Twelve Data fallback failed", err);
+    }
     return {};
   }
 }

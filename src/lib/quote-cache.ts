@@ -122,7 +122,9 @@ export function quotesUnchanged(
       a.previousClose !== b.previousClose ||
       a.marketState !== b.marketState ||
       a.preMarketPrice !== b.preMarketPrice ||
-      a.postMarketPrice !== b.postMarketPrice
+      a.postMarketPrice !== b.postMarketPrice ||
+      a.stale !== b.stale ||
+      a.quotedAt !== b.quotedAt
     ) {
       return false;
     }
@@ -143,7 +145,15 @@ export function saveCachedQuotes(next: Record<string, Quote>) {
             keys.slice(keys.length - MAX_TICKERS).map((k) => [k, merged[k]!])
           )
         : merged;
-    const snap = { savedAt: Date.now(), quotes: trimmed };
+    const quotedAts = Object.values(trimmed)
+      .map((q) => q.quotedAt)
+      .filter((n): n is number => typeof n === "number" && n > 0);
+    const allStale =
+      Object.keys(trimmed).length > 0 &&
+      Object.values(trimmed).every((q) => q.stale === true);
+    const savedAt =
+      allStale && quotedAts.length > 0 ? Math.min(...quotedAts) : Date.now();
+    const snap = { savedAt, quotes: trimmed };
     window.localStorage.setItem(KEY, JSON.stringify(snap));
     persistQuotesSnapshot(snap);
   } catch {

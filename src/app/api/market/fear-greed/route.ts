@@ -1,5 +1,5 @@
 import { noStoreHeaders, publicCdnHeaders } from "@/lib/cdn-cache";
-import { fetchFearGreedIndex } from "@/lib/market/fear-greed";
+import { fetchFearGreedIndex } from "@/lib/market/fear-greed-fetch";
 import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 

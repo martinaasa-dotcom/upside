@@ -14,6 +14,7 @@ import {
   usdToListingAmount,
 } from "@/lib/listing-currency";
 import { TickerSymbol } from "@/components/TickerSymbol";
+import { quoteAsOfTitle } from "@/lib/market/quote-freshness";
 import { Card, MicroLabel } from "@/components/ui/Panel";
 import {
   blockWheelChange,
@@ -549,7 +550,10 @@ export const PortfolioTable = memo(function PortfolioTable({
                 </label>
                 <div>
                   <MicroLabel>Price</MicroLabel>
-                  <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+                  <p
+                    className="mt-1 text-base font-semibold tabular-nums text-foreground"
+                    title={quoteAsOfTitle(h.quote)}
+                  >
                     {currency(listed.nativeSpot, listed.digits, listed.code)}
                   </p>
                 </div>
@@ -719,7 +723,10 @@ export const PortfolioTable = memo(function PortfolioTable({
                     onCommit={(buy_price) => commitBuy(h, buy_price)}
                   />
                 </div>
-                <div className={cn(cellBase, "tabular-nums font-semibold text-foreground")}>
+                <div
+                  className={cn(cellBase, "tabular-nums font-semibold text-foreground")}
+                  title={quoteAsOfTitle(h.quote)}
+                >
                   {currency(listed.nativeSpot, listed.digits, listed.code)}
                 </div>
                 <div

@@ -8,7 +8,7 @@ import {
   PORTFELL_TABLES,
 } from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
-import { fetchFearGreedIndex } from "@/lib/market/fear-greed";
+import { fetchFearGreedIndex } from "@/lib/market/fear-greed-fetch";
 import {
   STRUCTURED_PROVIDER_OPTIONS,
   buildAdvisorProviderChain,
