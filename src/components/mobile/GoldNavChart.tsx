@@ -428,7 +428,11 @@ export function GoldNavChart({
     const dataMin = Math.min(...vals);
     const dataMax = Math.max(...vals);
     const scale = niceScale(dataMin, dataMax, 4);
-    const axisSpan = scale.max - scale.min || 1;
+    const span = scale.max - scale.min || 1;
+    // Empty plot above the peak so the line never kisses the top tick
+    // or the day chip in the reserved lane above the SVG.
+    const plotMax = scale.max + span * 0.18;
+    const axisSpan = plotMax - scale.min;
     const innerW = width - padL - padR;
     const innerH = height - padT - padB;
     const lastIdx = usable.length - 1;
@@ -527,10 +531,10 @@ export function GoldNavChart({
 
   return (
     <div className={className}>
-      <div className="relative">
-        {hoverPoint ? (
-          <div className="pointer-events-none absolute inset-x-0 top-1 z-10 flex justify-center px-10">
-            <p className="max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
+      <div>
+        <div className="flex min-h-9 items-end justify-center px-10 pb-1">
+          {hoverPoint ? (
+            <p className="pointer-events-none max-w-full truncate rounded-lg border border-border bg-raised/95 px-2.5 py-1 text-sm tabular-nums shadow-sm">
               <span className="text-muted">{formatDay(hoverPoint.date)}</span>
               <span className="mx-1.5 font-semibold text-foreground">
                 {currency(hoverPoint.nav, 0)}
@@ -546,8 +550,8 @@ export function GoldNavChart({
                 </span>
               ) : null}
             </p>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
         <div className="relative">
           <div
