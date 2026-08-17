@@ -9,7 +9,9 @@ import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/compone
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { cashtag, cn, currency, percent, signedCurrency, signedPercent, signedTone } from "@/lib/format";
-import { Card, EmptyState, HairlineGrid, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { CARD, Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -107,43 +109,40 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           title="What a bad day costs you"
         />
 
-        <HairlineGrid className="mt-4" mobilePreferred={2} preferred={5}>
-          {SHOCKS.map((s) => {
-            const Icon = DRIVER_ICONS[s.driver] ?? Activity;
-            const isSelected = selectedShock === s.id;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() => setSelectedShock(s.id)}
-                className={cn(
-                  "flex min-w-0 items-center justify-center gap-1.5 bg-muted px-2 py-2.5 text-sm font-medium transition",
-                  isSelected
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                )}
-              >
-                <Icon
+        <div className={cn(CARD, "overflow-hidden")}>
+          <div
+            role="group"
+            aria-label="Market scenario"
+            className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-5"
+          >
+            {SHOCKS.map((s) => {
+              const Icon = DRIVER_ICONS[s.driver] ?? Activity;
+              const isSelected = selectedShock === s.id;
+              return (
+                <Button
+                  key={s.id}
+                  type="button"
+                  variant={isSelected ? "default" : "outline"}
+                  size="lg"
+                  aria-pressed={isSelected}
+                  title={s.label}
+                  onClick={() => setSelectedShock(s.id)}
                   className={cn(
-                    "h-3.5 w-3.5 shrink-0",
-                    isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                    "h-9 w-full min-w-0 touch-target overflow-hidden md:min-h-9",
+                    !isSelected && "bg-background text-muted-foreground dark:bg-background"
                   )}
-                  aria-hidden
-                />
-                <span className="truncate">{s.shortLabel}</span>
-              </button>
-            );
-          })}
-        </HairlineGrid>
-
-        <Card className="mt-4 min-h-[8.5rem]">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
+                >
+                  <Icon data-icon="inline-start" aria-hidden />
+                  <span className="min-w-0 truncate">{s.shortLabel}</span>
+                </Button>
+              );
+            })}
+          </div>
+          <Separator />
+          <div className="flex flex-col gap-2 px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <DriverIcon
-                  className="h-4 w-4 shrink-0 text-primary"
-                  aria-hidden
-                />
+                <DriverIcon className="h-4 w-4 shrink-0" aria-hidden />
                 <h3 className="text-sm font-semibold text-foreground">
                   {activeScenario.label}
                 </h3>
@@ -157,12 +156,13 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 </span>
               </span>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               {activeScenario.mechanism}
             </p>
-          </Card>
+          </div>
+        </div>
 
-        <div className="mt-4">
+        <div>
           <MicroLabel>Portfolio after this</MicroLabel>
           <p className="mt-1 break-all text-2xl font-bold tabular-nums text-foreground">
             {currency(analysis.shockedTotalVal, 0)}
@@ -215,7 +215,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           )}
         </div>
 
-        <Scoreboard className="mt-4" cols={2}>
+        <Scoreboard cols={2}>
           <Score
             label="Hurts most"
             value={
