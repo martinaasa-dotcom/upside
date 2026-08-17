@@ -2131,7 +2131,18 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
   );
-  assert.match(panel, /text-xs font-medium text-muted-foreground/);
+  assert.match(
+    panel.slice(panel.indexOf("export function MicroLabel")),
+    /text-sm font-medium text-muted-foreground/
+  );
+  const card = readFileSync(
+    join(process.cwd(), "src/components/ui/card.tsx"),
+    "utf8"
+  );
+  assert.match(
+    card.slice(card.indexOf("function CardDescription")),
+    /text-sm text-muted-foreground/
+  );
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
     /text-sm font-semibold tracking-tight text-foreground/

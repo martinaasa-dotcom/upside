@@ -153,7 +153,7 @@ export function HeaderOverflowMenu({
               >
                 <span>{item.label}</span>
                 {item.hint && (
-                  <span className="tabular-nums text-xs text-muted-foreground">
+                  <span className="tabular-nums text-sm text-muted-foreground">
                     {item.hint}
                   </span>
                 )}

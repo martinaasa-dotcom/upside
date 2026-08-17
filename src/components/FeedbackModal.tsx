@@ -168,7 +168,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
               <legend className="text-sm font-medium text-foreground">
                 What actually helped?
               </legend>
-              <p className="text-xs text-muted-foreground">Pick every one that did.</p>
+              <p className="text-sm text-muted-foreground">Pick every one that did.</p>
               <div className="grid gap-2">
                 {WEEKLY_HELPED.map((opt) => (
                   <Chip
@@ -191,7 +191,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
               <legend className="text-sm font-medium text-foreground">
                 What got in the way?
               </legend>
-              <p className="text-xs text-muted-foreground">Pick every one that did.</p>
+              <p className="text-sm text-muted-foreground">Pick every one that did.</p>
               <div className="grid gap-2">
                 {WEEKLY_BLOCKED.map((opt) => (
                   <Chip

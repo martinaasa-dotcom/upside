@@ -1070,7 +1070,7 @@ export const ForecastPanel = memo(function ForecastPanel({
           {/* Desktop */}
           <div className="hidden md:block">
             <FluidTable template={template}>
-              <FluidRow className="text-xs font-medium text-muted-foreground">
+              <FluidRow className="text-sm font-medium text-muted-foreground">
                 <div className={tickerCell}>Ticker</div>
                 <div className={cn(cellBase, "tabular-nums")}>Price now</div>
                 {yearCols.map((y) => (

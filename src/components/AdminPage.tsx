@@ -229,7 +229,7 @@ export function AdminPage() {
                   <h2 className="text-sm font-semibold text-muted-foreground">
                     Activation
                   </h2>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Signed in, has a sheet, has holdings, signed in this week,
                     and holdings plus a visit in the last 7 days.
                   </p>
@@ -250,7 +250,7 @@ export function AdminPage() {
                         <p className="text-lg font-semibold tabular-nums text-foreground">
                           {n}
                         </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">{label}</p>
                       </div>
                     ))}
                   </div>
@@ -264,7 +264,7 @@ export function AdminPage() {
                     Errors
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       {errorLog.length >= 150 ? "150+" : errorLog.length} recent
                     </span>
                     {errorLog.length > 0 && (
@@ -308,7 +308,7 @@ export function AdminPage() {
                             className="flex w-full items-start justify-between gap-2 text-left"
                           >
                             <div className="min-w-0">
-                              <p className="flex items-center gap-1.5 text-xs">
+                              <p className="flex items-center gap-1.5 text-sm">
                                 <span
                                   className={
                                     e.source === "server"
@@ -326,17 +326,17 @@ export function AdminPage() {
                                 {e.message}
                               </p>
                             </div>
-                            <span className="shrink-0 text-xs text-muted-foreground">
+                            <span className="shrink-0 text-sm text-muted-foreground">
                               {fmtDate(e.created_at)}
                             </span>
                           </button>
                           {open && (
-                            <div className="flex flex-col mt-2 gap-1 rounded-lg bg-muted/80 p-2.5 text-xs text-muted-foreground">
+                            <div className="flex flex-col mt-2 gap-1 rounded-lg bg-muted/80 p-2.5 text-sm text-muted-foreground">
                               {e.user_email && <p>User: {e.user_email}</p>}
                               {e.route_type && <p>Route type: {e.route_type}</p>}
                               {e.digest && <p>Digest: {e.digest}</p>}
                               {e.stack && (
-                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-xs text-muted-foreground">
+                                <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-all font-mono text-sm text-muted-foreground">
                                   {e.stack}
                                 </pre>
                               )}
@@ -355,7 +355,7 @@ export function AdminPage() {
                     Users signed in
                   </h2>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       {filteredUsers.length}
                       {search ? ` of ${users.length}` : ""} profile
                       {users.length === 1 ? "" : "s"}
@@ -403,18 +403,18 @@ export function AdminPage() {
                             <p className="truncate text-sm font-medium text-foreground">
                               {u.display_name || "—"}
                             </p>
-                            <p className="truncate text-xs text-muted-foreground">
+                            <p className="truncate text-sm text-muted-foreground">
                               {u.email || u.id}
                             </p>
                             {u.bio ? (
-                              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                              <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
                                 {u.bio}
                               </p>
                             ) : null}
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               {noPortfolios ? (
                                 <span
-                                  className="inline-flex items-center gap-1 rounded-md bg-caution/15 px-1.5 py-0.5 text-xs font-medium text-caution"
+                                  className="inline-flex items-center gap-1 rounded-md bg-caution/15 px-1.5 py-0.5 text-sm font-medium text-caution"
                                   title="Signed in but owns/co-owns no sheet. Possible broken seed claim or invite redemption"
                                 >
                                   <AlertTriangle className="h-3 w-3" />
@@ -424,21 +424,21 @@ export function AdminPage() {
                                 u.portfolios!.map((p) => (
                                   <span
                                     key={p.id}
-                                    className="rounded-md bg-accent/90 px-1.5 py-0.5 text-xs text-foreground/80"
+                                    className="rounded-md bg-accent/90 px-1.5 py-0.5 text-sm text-foreground/80"
                                   >
                                     {p.name}
                                   </span>
                                 ))
                               )}
                               {(u.holding_count ?? 0) > 0 && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-sm text-muted-foreground">
                                   {u.holding_count} holding
                                   {u.holding_count === 1 ? "" : "s"}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="shrink-0 text-left text-xs text-muted-foreground sm:text-right">
+                          <div className="shrink-0 text-left text-sm text-muted-foreground sm:text-right">
                             <p>Last sign-in - {fmtDate(u.last_sign_in_at)}</p>
                             <p>Profile - {fmtDate(u.profile_created_at)}</p>
                           </div>
@@ -454,7 +454,7 @@ export function AdminPage() {
                   <h2 className="text-sm font-semibold text-muted-foreground">
                     Communities
                   </h2>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {communities.length}{" "}
                     {communities.length === 1 ? "community" : "communities"}
                   </span>
@@ -475,7 +475,7 @@ export function AdminPage() {
                             <h3 className="text-base font-semibold text-foreground">
                               {c.name}
                             </h3>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               Created {fmtDate(c.created_at)} ·{" "}
                               {c.member_count} member
                               {c.member_count === 1 ? "" : "s"}
@@ -483,7 +483,7 @@ export function AdminPage() {
                           </div>
                           <Link
                             href={`/communities/${c.id}`}
-                            className="text-xs font-medium text-primary/90 hover:underline"
+                            className="text-sm font-medium text-primary/90 hover:underline"
                           >
                             Open
                           </Link>
@@ -499,7 +499,7 @@ export function AdminPage() {
                                   {m.display_name || m.email || m.user_id}
                                 </p>
                                 {m.display_name && m.email ? (
-                                  <p className="truncate text-xs text-muted-foreground">
+                                  <p className="truncate text-sm text-muted-foreground">
                                     {m.email}
                                   </p>
                                 ) : null}
@@ -507,8 +507,8 @@ export function AdminPage() {
                               <span
                                 className={
                                   m.role === "admin"
-                                    ? "shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-primary"
-                                    : "shrink-0 text-xs text-muted-foreground"
+                                    ? "shrink-0 rounded-md bg-muted px-2 py-0.5 text-sm font-semibold text-primary"
+                                    : "shrink-0 text-sm text-muted-foreground"
                                 }
                               >
                                 {m.role}

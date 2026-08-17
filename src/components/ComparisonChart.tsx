@@ -188,7 +188,7 @@ export const ComparisonChart = memo(function ComparisonChart({
           </svg>
         </div>
         {active != null && dayLabel && (
-          <div className="pointer-events-none absolute left-1/2 top-1 z-10 -translate-x-1/2 rounded-md border border-border bg-muted/95 px-2 py-1 text-xs shadow-lg">
+          <div className="pointer-events-none absolute left-1/2 top-1 z-10 -translate-x-1/2 rounded-md border border-border bg-muted/95 px-2 py-1 text-sm shadow-lg">
             <p className="text-center font-medium text-foreground">{dayLabel}</p>
             <div className="mt-0.5 flex flex-wrap justify-center gap-x-3">
               {usable.map((s) => {

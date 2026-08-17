@@ -23,7 +23,7 @@ export const Sparkline = memo(function Sparkline({
   if (!points.length) {
     return (
       <div
-        className={cn("text-xs text-muted-foreground", className)}
+        className={cn("text-sm text-muted-foreground", className)}
         style={fill ? { height } : { width, height }}
       >
         —

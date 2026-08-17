@@ -313,7 +313,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
       {/* Desktop table */}
       <div className="hidden md:block">
         <FluidTable template={template}>
-          <FluidRow className="border-border text-xs font-medium text-muted-foreground">
+          <FluidRow className="border-border text-sm font-medium text-muted-foreground">
             {HEADERS.map((label, i) => (
               <div
                 key={label}

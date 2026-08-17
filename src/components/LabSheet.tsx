@@ -580,14 +580,14 @@ export const LabSheet = memo(function LabSheet({
                       <div
                         key={`h-${t}`}
                         title={cashtag(t)}
-                        className="flex h-8 items-end justify-center px-0.5 pb-0.5 text-xs font-medium leading-none text-muted-foreground"
+                        className="flex h-8 items-end justify-center px-0.5 pb-0.5 text-sm font-medium leading-none text-muted-foreground"
                       >
                         <span className="whitespace-nowrap">{cashtag(t)}</span>
                       </div>
                     ))}
                     {corrHeat.tickers.map((row, i) => (
                       <div key={row} className="contents">
-                        <div className="flex h-10 items-center pr-2 text-xs font-medium text-muted-foreground">
+                        <div className="flex h-10 items-center pr-2 text-sm font-medium text-muted-foreground">
                           {cashtag(row)}
                         </div>
                         {corrHeat.grid[i]!.map((c, j) => (
@@ -598,15 +598,17 @@ export const LabSheet = memo(function LabSheet({
                                 ? "—"
                                 : `${row} ↔ ${corrHeat.tickers[j]}: ${c.toFixed(2)}`
                             }
-                            className="flex h-10 min-w-10 w-full items-center justify-center rounded-md tabular-nums text-xs font-medium text-foreground"
-                            style={{
-                              background:
-                                c == null
-                                  ? "#0a0b0a"
-                                  : c >= 0
-                                    ? `rgba(212, 160, 64, ${0.15 + Math.abs(c) * 0.7})`
-                                    : `rgba(196, 106, 88, ${0.15 + Math.abs(c) * 0.7})`,
-                            }}
+                            className={cn(
+                              "flex h-10 min-w-10 w-full items-center justify-center rounded-md tabular-nums text-sm font-medium text-foreground",
+                              c == null && "bg-muted"
+                            )}
+                            style={
+                              c == null
+                                ? undefined
+                                : {
+                                    background: `color-mix(in oklch, var(--${c >= 0 ? "gain" : "loss"}) ${Math.round((0.18 + Math.abs(c) * 0.72) * 100)}%, transparent)`,
+                                  }
+                            }
                           >
                             {c == null ? "—" : c.toFixed(1)}
                           </div>
@@ -617,14 +619,14 @@ export const LabSheet = memo(function LabSheet({
                 </div>
 
                 <div className="flex min-w-0 flex-col">
-                  <p className="flex h-8 items-end pb-0.5 text-xs text-muted-foreground">
+                  <p className="flex h-8 items-end pb-0.5 text-sm text-muted-foreground">
                     Tightest pairs
                   </p>
                   <ul className="flex min-h-0 flex-1 flex-col gap-1">
                     {corrPairs.map((c) => (
                       <li
                         key={`${c.a}-${c.b}`}
-                        className="flex flex-1 items-center justify-between gap-3 rounded-md border border-border px-2.5 text-xs"
+                        className="flex flex-1 items-center justify-between gap-3 rounded-md border border-border px-2.5 text-sm"
                       >
                         <span className="truncate text-foreground/80">
                           {cashtag(c.a)} ↔ {cashtag(c.b)}
@@ -646,20 +648,18 @@ export const LabSheet = memo(function LabSheet({
                   </ul>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <span
                     aria-hidden
-                    className="h-2.5 w-2.5 rounded-sm"
-                    style={{ background: "rgba(212, 160, 64, 0.75)" }}
+                    className="h-2.5 w-2.5 rounded-sm bg-gain"
                   />
                   Move together
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span
                     aria-hidden
-                    className="h-2.5 w-2.5 rounded-sm"
-                    style={{ background: "rgba(56, 189, 248, 0.75)" }}
+                    className="h-2.5 w-2.5 rounded-sm bg-loss"
                   />
                   Move opposite
                 </span>

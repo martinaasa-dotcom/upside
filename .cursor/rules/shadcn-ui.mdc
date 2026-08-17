@@ -16,7 +16,7 @@ Money up/down is `text-gain` / `text-destructive`. Not a wash.
 
 ## Density
 
-- Page titles: `text-2xl font-semibold tracking-tight`. Card titles: `text-lg`. Body: `text-sm`. Labels: `text-xs text-muted-foreground`.
+- Page titles: `text-2xl font-semibold tracking-tight`. Card titles: `text-lg`. Body and labels: `text-sm`. Chart ticks, Badge, and kbd stay `text-xs`.
 - Scoreboard figures: `text-2xl`. Each Score is its own card with `gap-4` between cards, not a hairline bar.
 - Controls are `h-8` / `rounded-lg`. Only the signed-out landing CTA is `h-10 rounded-full`.
 - Page gutter is `px-6`. Panel pad is `p-6`. Drawers and overlays use the same pad.

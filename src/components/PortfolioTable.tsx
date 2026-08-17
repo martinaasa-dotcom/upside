@@ -402,13 +402,13 @@ export const PortfolioTable = memo(function PortfolioTable({
           </Button>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Screenshot or CSV drops every row in at once. Pick whichever&apos;s
         easier to get your hands on.
       </p>
     </div>
   ) : (
-    <p className="mt-4 text-center text-xs text-muted-foreground">
+    <p className="mt-4 text-center text-sm text-muted-foreground">
       {tradeLock?.message}
     </p>
   );
@@ -646,7 +646,7 @@ export const PortfolioTable = memo(function PortfolioTable({
           </div>
         ) : (
           <FluidTable template={template}>
-            <FluidRow className="border-border text-xs font-medium text-muted-foreground">
+            <FluidRow className="border-border text-sm font-medium text-muted-foreground">
               {COLUMNS.map((col, i) => (
                 <div key={col.label} className={i === 0 ? tickerCell : cellBase}>
                   {col.key ? (

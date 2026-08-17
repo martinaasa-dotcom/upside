@@ -142,7 +142,7 @@ function Progress({ stage }: { stage: Stage }) {
           <p
             key={s.id}
             className={cn(
-              "min-w-0 flex-1 truncate text-xs",
+              "min-w-0 flex-1 truncate text-sm",
               i === active
                 ? "font-medium text-foreground"
                 : "text-muted-foreground"

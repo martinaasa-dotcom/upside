@@ -149,7 +149,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 </h3>
                 <Pill tone="neutral">{activeScenario.driver}</Pill>
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 Headline move{" "}
                 <span className="font-semibold tabular-nums text-foreground">
                   {activeScenario.headlinePct > 0 ? "+" : ""}
@@ -370,7 +370,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             </p>
           ) : (
             <FluidTable template={template}>
-              <FluidRow className="text-xs font-medium text-muted-foreground">
+              <FluidRow className="text-sm font-medium text-muted-foreground">
                 <button
                   type="button"
                   onClick={() => handleSort("ticker")}

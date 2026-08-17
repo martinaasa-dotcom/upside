@@ -442,7 +442,7 @@ function ComparePathsChart({
       </ul>
       {hoverIdx != null && (
         <div
-          className="pointer-events-none absolute top-2 max-w-[min(16rem,calc(100%-0.75rem))] rounded-md border border-border bg-card/95 px-2.5 py-1.5 text-xs shadow-lg backdrop-blur"
+          className="pointer-events-none absolute top-2 max-w-[min(16rem,calc(100%-0.75rem))] rounded-md border border-border bg-card/95 px-2.5 py-1.5 text-sm shadow-lg backdrop-blur"
           style={{
             left: `${Math.min(
               82,
@@ -462,7 +462,7 @@ function ComparePathsChart({
             </p>
           ))}
           {tippingYear === hoverIdx && (
-            <p className="mt-0.5 text-xs font-semibold text-gain">
+            <p className="mt-0.5 text-sm font-semibold text-gain">
               Tipping year
             </p>
           )}
@@ -1130,9 +1130,9 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             ref={milestoneScrollRef}
             className="relative mt-4 hidden max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-muted lg:block"
           >
-            <table className={cn(htmlTable, "min-w-[30rem] text-xs")}>
+            <table className={cn(htmlTable, "min-w-[30rem]")}>
               <thead className="sticky top-0 z-10 bg-card">
-                <tr className="border-b border-border text-xs text-muted-foreground">
+                <tr className="border-b border-border text-sm text-muted-foreground">
                   <th className={cn(htmlCell, "font-medium")}>Milestone</th>
                   <th className={cn(htmlCell, "font-medium")}>On this plan</th>
                   <th className={cn(htmlCell, "font-medium")}>How far off</th>
@@ -1203,7 +1203,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                               setMilestoneActual(row.goal, e.target.value)
                             }
                             className={cn(
-                              "h-7 max-w-[9.5rem] px-1.5 text-xs tabular-nums",
+                              "h-7 max-w-[9.5rem] px-1.5 text-sm tabular-nums",
                               done
                                 ? "border-gain/40 text-gain"
                                 : "text-foreground/80"
@@ -1307,9 +1307,9 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               })}
             </div>
             <div className="hidden min-w-0 max-w-full overflow-x-auto border-t border-border md:block">
-              <table className={cn(htmlTable, "min-w-[32rem] text-xs")}>
+              <table className={cn(htmlTable, "min-w-[32rem]")}>
                 <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground">
+                  <tr className="border-b border-border text-sm text-muted-foreground">
                     <th className={cn(htmlCell, "font-medium")}>Year</th>
                     <th className={cn(htmlCell, "font-medium")}>Your money in</th>
                     <th className={cn(htmlCell, "font-medium")}>Growth that year</th>

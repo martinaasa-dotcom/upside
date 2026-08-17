@@ -467,7 +467,7 @@ function FundMetric({
         {value}
       </p>
       {hint ? (
-        <p className="truncate text-xs tabular-nums text-muted-foreground">
+        <p className="truncate text-sm tabular-nums text-muted-foreground">
           {hint}
         </p>
       ) : null}

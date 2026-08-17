@@ -133,7 +133,7 @@ function CycleMonthlyChart({
             </div>
             <span
               className={cn(
-                "text-xs",
+                "text-sm",
                 isSelected
                   ? "font-bold text-foreground"
                   : isCurrent
@@ -143,7 +143,7 @@ function CycleMonthlyChart({
             >
               {row.label}
             </span>
-            <span className={cn("text-xs tabular-nums", retText(v))}>
+            <span className={cn("text-sm tabular-nums", retText(v))}>
               {fmtPct(v)}
             </span>
           </button>
@@ -416,7 +416,7 @@ function DayOfMonthChart({
             >
               <span
                 className={cn(
-                  "text-sm tabular-nums md:text-xs",
+                  "text-sm tabular-nums",
                   isSelected || isToday
                     ? "font-bold text-foreground"
                     : "text-foreground/80"
@@ -426,7 +426,7 @@ function DayOfMonthChart({
               </span>
               <span
                 className={cn(
-                  "mt-0.5 hidden font-semibold tabular-nums md:block md:text-xs",
+                  "mt-0.5 hidden font-semibold tabular-nums md:block",
                   empty ? "text-muted-foreground" : retText(v)
                 )}
               >

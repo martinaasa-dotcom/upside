@@ -1730,7 +1730,7 @@ export function CommunityView({ communityId }: Props) {
                                 · {a.stat}
                               </span>
                             </p>
-                            <p className="mt-auto pt-1 text-xs leading-relaxed text-muted-foreground">
+                            <p className="mt-auto pt-1 text-sm leading-relaxed text-muted-foreground">
                               {a.description}
                             </p>
                           </div>
@@ -1781,7 +1781,7 @@ export function CommunityView({ communityId }: Props) {
                                   ) : i === 2 ? (
                                     <Medal className="mx-auto h-4 w-4 text-caution" />
                                   ) : (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-sm text-muted-foreground">
                                       {i + 1}
                                     </span>
                                   )}
@@ -1789,7 +1789,7 @@ export function CommunityView({ communityId }: Props) {
                                 <span className="min-w-0 flex-1 truncate text-sm text-foreground">
                                   {m.name}
                                   {m.isYou && (
-                                    <span className="ml-1.5 text-xs text-muted-foreground">
+                                    <span className="ml-1.5 text-sm text-muted-foreground">
                                       (you)
                                     </span>
                                   )}
@@ -1810,7 +1810,7 @@ export function CommunityView({ communityId }: Props) {
                                 </span>
                                 <span
                                   className={cn(
-                                    "hidden w-24 shrink-0 text-right text-xs tabular-nums sm:inline-block",
+                                    "hidden w-24 shrink-0 text-right text-sm tabular-nums sm:inline-block",
                                     signedTone(m.todayDollar, "text-muted-foreground")
                                   )}
                                 >
@@ -1864,7 +1864,7 @@ export function CommunityView({ communityId }: Props) {
                               {row.people.map((name) => (
                                 <span
                                   key={name}
-                                  className="rounded-lg border border-border bg-muted/50 px-2 py-1 text-xs text-foreground/80"
+                                  className="rounded-lg border border-border bg-muted/50 px-2 py-1 text-sm text-foreground/80"
                                 >
                                   {name}
                                 </span>
@@ -2069,14 +2069,14 @@ export function CommunityView({ communityId }: Props) {
                               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                                 {profileName(m.user_id)}
                                 {m.is_you && (
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-sm text-muted-foreground">
                                     (you)
                                   </span>
                                 )}
                                 {personality && animalTone && (
                                   <span
                                     className={cn(
-                                      "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
+                                      "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm font-medium",
                                       animalTone.border,
                                       animalTone.wash,
                                       animalTone.name
@@ -2091,16 +2091,16 @@ export function CommunityView({ communityId }: Props) {
                                 )}
                               </div>
                               {m.profile?.bio ? (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-sm text-muted-foreground">
                                   {m.profile.bio}
                                 </div>
                               ) : null}
                               {emails.length > 1 ? (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-sm text-muted-foreground">
                                   {emails.join(" · ")}
                                 </div>
                               ) : null}
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-sm text-muted-foreground">
                                 {m.role}
                                 {" · "}
                                 {sheets.length} portfolio
@@ -2135,7 +2135,7 @@ export function CommunityView({ communityId }: Props) {
                                       m.role === "admin" ? "member" : "admin"
                                     )
                                   }
-                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
                                 >
                                   <Shield className="h-3 w-3" />
                                   {m.role === "admin" ? "Demote" : "Make admin"}
@@ -2149,7 +2149,7 @@ export function CommunityView({ communityId }: Props) {
                                       name: profileName(m.user_id),
                                     })
                                   }
-                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-red-300"
+                                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-muted-foreground hover:text-red-300"
                                 >
                                   <UserMinus className="h-3 w-3" />
                                   Remove
@@ -2161,7 +2161,7 @@ export function CommunityView({ communityId }: Props) {
                                 type="button"
                                 disabled={busy}
                                 onClick={() => setLeaveOpen(true)}
-                                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:border-loss/40 hover:text-loss"
+                                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-sm text-muted-foreground hover:border-loss/40 hover:text-loss"
                               >
                                 <LogOut className="h-3 w-3" />
                                 Leave
@@ -2203,16 +2203,16 @@ export function CommunityView({ communityId }: Props) {
                             >
                               <div className="text-sm font-medium text-foreground">
                                 {p.label}
-                                <span className="ml-2 text-xs font-normal text-caution">
+                                <span className="ml-2 text-sm font-normal text-caution">
                                   awaiting sign-in
                                 </span>
                               </div>
                               {p.emails.length ? (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-sm text-muted-foreground">
                                   {p.emails.join(" · ")}
                                 </div>
                               ) : null}
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-sm text-muted-foreground">
                                 {sheets.length} portfolio
                                 {sheets.length === 1 ? "" : "s"}
                                 {sheets.length > 0 && (
@@ -2245,11 +2245,11 @@ export function CommunityView({ communityId }: Props) {
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <UserCheck className="h-4 w-4 text-foreground/80" />
                         Join requests
-                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
+                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-sm font-semibold text-primary-foreground">
                           {joinRequests.length}
                         </span>
                       </h2>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         This community is public, so anyone can ask to join,
                         but nothing happens until you approve them here.
                       </p>
@@ -2263,7 +2263,7 @@ export function CommunityView({ communityId }: Props) {
                               <p className="truncate text-sm text-foreground">
                                 {r.profile?.display_name ?? r.profile?.email ?? "Unknown"}
                               </p>
-                              <p className="truncate text-xs text-muted-foreground">
+                              <p className="truncate text-sm text-muted-foreground">
                                 {r.profile?.email}
                               </p>
                             </div>
@@ -2297,7 +2297,7 @@ export function CommunityView({ communityId }: Props) {
                       <h2 className="text-sm font-medium text-foreground">
                         Admin - invite
                       </h2>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         {isClassroom
                           ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty portfolio. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."
                           : "This link stays live. Anyone with it can join. Their portfolios show up here. They can turn one off later. Today's prices only. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."}
@@ -2334,14 +2334,14 @@ export function CommunityView({ communityId }: Props) {
                       {inviteUrl && (
                         <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted px-3 py-2">
                           {inviteEmailed > 0 && (
-                            <p className="text-xs text-foreground">
+                            <p className="text-sm text-foreground">
                               {inviteEmailed === 1
                                 ? "Sent the link to 1 person."
                                 : `Sent the link to ${inviteEmailed} people.`}
                             </p>
                           )}
                           <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 flex-1 break-all text-xs text-foreground">
+                          <p className="min-w-0 flex-1 break-all text-sm text-foreground">
                             {inviteUrl}
                           </p>
                           <Button
@@ -2405,7 +2405,7 @@ export function CommunityView({ communityId }: Props) {
                                         · {creatorName}
                                       </span>
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-sm text-muted-foreground">
                                       {inviteLockLabel(inv.email)}
                                       {" · "}
                                       {inviteDayLabel(inv.created_at)}
@@ -2415,7 +2415,7 @@ export function CommunityView({ communityId }: Props) {
                                       {statusLabel}
                                     </p>
                                     {usedLine && (
-                                      <p className="text-xs text-foreground/80">
+                                      <p className="text-sm text-foreground/80">
                                         {usedLine}
                                       </p>
                                     )}
@@ -2425,7 +2425,7 @@ export function CommunityView({ communityId }: Props) {
                                       type="button"
                                       disabled={busy}
                                       onClick={() => setRetireTarget(inv)}
-                                      className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:bg-accent disabled:opacity-50"
+                                      className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-sm font-medium text-foreground/80 hover:bg-accent disabled:opacity-50"
                                     >
                                       Retire this link
                                     </button>
@@ -2457,7 +2457,7 @@ export function CommunityView({ communityId }: Props) {
                   setSelectedPortfolioId(null);
                   setSelectedOwnerId(null);
                 }}
-                className="touch-target inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                className="touch-target inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
@@ -2468,7 +2468,7 @@ export function CommunityView({ communityId }: Props) {
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
                     profileName(selectedOwnerId)}
                 </p>
-                <p className="text-xs leading-relaxed text-muted-foreground">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   This is their portfolio. You can look, you cannot edit. Nothing
                   you tap here changes their holdings.
                   {selectedPortfolio ? ` Viewing ${selectedPortfolio.name}.` : ""}
@@ -2481,7 +2481,7 @@ export function CommunityView({ communityId }: Props) {
                     type="button"
                     onClick={() => setSelectedPortfolioId(null)}
                     className={cn(
-                      "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                      "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-sm font-medium transition",
                       selectedPortfolioId === null
                         ? "bg-primary text-primary-foreground border-transparent"
                         : "border-border text-muted-foreground hover:border-border hover:text-foreground"
@@ -2498,7 +2498,7 @@ export function CommunityView({ communityId }: Props) {
                       type="button"
                       onClick={() => setSelectedPortfolioId(p.id)}
                       className={cn(
-                        "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                        "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-sm font-medium transition",
                         selectedPortfolioId === p.id
                           ? "bg-primary text-primary-foreground border-transparent"
                           : "border-border text-muted-foreground hover:border-border hover:text-foreground"
@@ -2597,7 +2597,7 @@ export function CommunityView({ communityId }: Props) {
               </Button>
             </div>
 
-            <label className="block text-xs font-medium text-muted-foreground">
+            <label className="block text-sm font-medium text-muted-foreground">
               Community name
             </label>
             <Input
@@ -2611,7 +2611,7 @@ export function CommunityView({ communityId }: Props) {
               className="mt-1.5"
             />
             {settingsError && (
-              <p className="mt-2 text-xs text-loss">{settingsError}</p>
+              <p className="mt-2 text-sm text-loss">{settingsError}</p>
             )}
             <div className="mt-3 flex justify-end">
               <Button
@@ -2627,10 +2627,10 @@ export function CommunityView({ communityId }: Props) {
               </Button>
             </div>
 
-            <label className="mt-4 block text-xs font-medium text-muted-foreground">
+            <label className="mt-4 block text-sm font-medium text-muted-foreground">
               {isClassroom ? "What we're learning" : "House note"}
             </label>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               {isClassroom
                 ? "Change this whenever the lesson changes. Students see it at the top."
                 : "One paragraph for the room. Public circles show this on Discover too."}
@@ -2677,7 +2677,7 @@ export function CommunityView({ communityId }: Props) {
                     disabled={settingsBusy}
                   />
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                   Classes stay invite-only. Changing this adds or takes the
                   difference from every paper portfolio already handed out.
                 </p>
@@ -2696,10 +2696,10 @@ export function CommunityView({ communityId }: Props) {
               </>
             ) : (
             <div className="mt-4 border-t border-border pt-4">
-              <label className="block text-xs font-medium text-muted-foreground">
+              <label className="block text-sm font-medium text-muted-foreground">
                 Visibility
               </label>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 {community?.visibility === "public"
                   ? "Public: anyone signed in can find this community and ask to join. You still approve every request."
                   : "Private: invite-only. No one can find or join without a link."}
@@ -2717,7 +2717,7 @@ export function CommunityView({ communityId }: Props) {
                     disabled={settingsBusy}
                     onClick={() => void handleVisibilityChange(id)}
                     className={cn(
-                      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50",
+                      "inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition disabled:opacity-50",
                       (community?.visibility ?? "private") === id
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -2733,10 +2733,10 @@ export function CommunityView({ communityId }: Props) {
 
             {isAdmin && (
               <div className="mt-6 rounded-xl border border-loss/40 bg-loss/10 p-3.5">
-                <p className="text-xs font-semibold text-loss">
+                <p className="text-sm font-semibold text-loss">
                   Danger zone
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-loss">
+                <p className="mt-1 text-sm leading-relaxed text-loss">
                   Deleting the community removes it for every member. Their
                   own portfolios and holdings are never affected.
                 </p>
@@ -2746,7 +2746,7 @@ export function CommunityView({ communityId }: Props) {
                     setSettingsOpen(false);
                     setDeleteConfirmOpen(true);
                   }}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-loss/40 bg-loss/10 px-3 py-1.5 text-xs font-semibold text-loss hover:bg-loss/15"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-loss/40 bg-loss/10 px-3 py-1.5 text-sm font-semibold text-loss hover:bg-loss/15"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Delete community
@@ -2771,7 +2771,7 @@ export function CommunityView({ communityId }: Props) {
                 <h3 className="text-base font-semibold text-foreground">
                   The power animal field guide
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Every portfolio gets scored on how spread out it is, how jumpy
                   the names are, and how big the largest name is. Then it
                   gets the animal that fits. A fun lens, not a grade.
@@ -2818,13 +2818,13 @@ export function CommunityView({ communityId }: Props) {
                         <p className={cn("text-sm font-semibold", tone.name)}>
                           {a.animal}
                         </p>
-                        <p className="text-xs text-muted-foreground">{a.criteria}</p>
+                        <p className="text-sm text-muted-foreground">{a.criteria}</p>
                       </div>
                     </div>
-                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {a.vibe}
                     </p>
-                    <div className="flex flex-col mt-2 gap-1 text-xs leading-relaxed">
+                    <div className="flex flex-col mt-2 gap-1 text-sm leading-relaxed">
                       <p className="flex gap-1.5 text-gain">
                         <Shield className="mt-0.5 h-3 w-3 shrink-0" />
                         <span>{a.strength}</span>
@@ -2911,12 +2911,12 @@ function PowerAnimalCard({
               <p className="truncate text-sm font-semibold text-foreground">
                 {name}
                 {isYou && (
-                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                  <span className="ml-1.5 text-sm font-normal text-muted-foreground">
                     (you)
                   </span>
                 )}
                 {isPending && (
-                  <span className="ml-1.5 text-xs font-normal text-caution">
+                  <span className="ml-1.5 text-sm font-normal text-caution">
                     awaiting sign-in
                   </span>
                 )}
@@ -3005,7 +3005,7 @@ function PowerAnimalCard({
           <div className={milestone.next == null ? "max-lg:hidden" : undefined}>
             {milestone.next != null && (
               <>
-                <div className="flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                <div className="flex items-baseline justify-between gap-2 text-sm text-muted-foreground">
                   <span>
                     Next{" "}
                     <span className="font-medium text-foreground/80">
@@ -3155,7 +3155,7 @@ function ReadOnlyHoldings({
       </div>
       <div className="hidden overflow-x-auto rounded-xl bg-card ring-1 ring-foreground/10 md:block">
         <table className={cn(htmlTable, "min-w-[36rem]")}>
-          <thead className="border-b border-border text-xs text-muted-foreground">
+          <thead className="border-b border-border text-sm text-muted-foreground">
             <tr>
               <th className={cn(tickerTd, "font-medium")}>Ticker</th>
               <th className={cn(htmlCell, "font-medium")}>Today</th>

@@ -50,15 +50,15 @@ import {
  *                  or a percent. Not a status word.
  *   text-lg    18  panel titles, status words on a reading tile
  *   text-base  16  card titles, tickers
- *   text-sm    14  body, chrome, inputs, buttons, nav, reading copy
- *   text-xs    12  captions on a figure tile, table ticks, badges
+ *   text-sm    14  body, chrome, labels, inputs, buttons, nav, tables
+ *   text-xs    12  chart ticks, Badge, kbd shortcuts, listing chips
  *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
  *              which scales with the viewBox and blows up on a wide screen.
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-4xl. The logo lockup is the exception.
  *   Headings   text-lg font-semibold tracking-tight (hero: text-2xl) · sentence case
  *   Type       Geist for titles, body, labels, and money. Lockup too.
- *   Micro      text-xs font-medium text-muted-foreground · sentence case
+ *   Micro      text-sm font-medium text-muted-foreground · sentence case
  *              Caps stay on the logo only. Micro sits above a figure,
  *              never above a paragraph.
  *   Metrics    A row of numbers is separate cards (Scoreboard) with air
@@ -73,7 +73,7 @@ import {
  *              and Worth noticing live in a box. Not a cream slab, and
  *              not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted-foreground for chrome
- *   Floor      nothing below text-xs. Ever.
+ *   Floor      reading copy is text-sm. text-xs is ticks, Badge, kbd.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
  *              a blurb, and a hint that all say the same thing.
  *   Measure    copy inside a panel fills the panel. Do not pinch it to a
@@ -306,7 +306,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-1 text-xs font-medium text-muted-foreground",
+        "flex items-center gap-1 text-sm font-medium text-muted-foreground",
         className
       )}
     >
@@ -419,7 +419,7 @@ export function ScanList({
     >
       {label != null && label !== "" ? (
         <div className="border-b border-border px-6 py-4">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
         </div>
       ) : null}
       <ul>
@@ -511,7 +511,7 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
       <PopoverContent
         side="bottom"
         align="center"
-        className="w-64 max-w-[min(16rem,calc(100vw-1.5rem))] text-xs font-normal normal-case leading-relaxed tracking-normal"
+        className="w-64 max-w-[min(16rem,calc(100vw-1.5rem))] text-sm font-normal normal-case leading-relaxed tracking-normal"
       >
         {text}
       </PopoverContent>

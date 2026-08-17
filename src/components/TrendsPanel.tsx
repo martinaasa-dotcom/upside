@@ -92,7 +92,7 @@ function SignalTile({
         wide && "sm:col-span-2"
       )}
     >
-      <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground">
         <span>{signal.label}</span>
         <InfoTip text={signal.help} />
       </p>
@@ -425,7 +425,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                   const width = Math.min(100, Math.abs(v) * 100 * 1.6);
                   return (
                     <div key={r.ticker} className="flex items-center gap-3">
-                      <span className="w-16 shrink-0 truncate text-xs font-medium text-foreground">
+                      <span className="w-16 shrink-0 truncate text-sm font-medium text-foreground">
                         {cashtag(r.ticker)}
                       </span>
                       <div className="relative h-2 min-w-0 flex-1 rounded-full bg-muted">
@@ -440,7 +440,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
                       </div>
                       <span
                         className={cn(
-                          "w-16 shrink-0 text-right text-xs tabular-nums",
+                          "w-16 shrink-0 text-right text-sm tabular-nums",
                           v >= 0 ? "text-gain" : "text-loss"
                         )}
                       >

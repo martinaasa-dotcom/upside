@@ -132,7 +132,7 @@ export function MobileTopBar({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-xs font-semibold text-foreground/80">
+                <span className="text-sm font-semibold text-foreground/80">
                   {avatar.initial ?? "?"}
                 </span>
               )}

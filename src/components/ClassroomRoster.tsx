@@ -160,7 +160,7 @@ export function ClassroomRoster({
         )}
       </div>
       <div className="hidden overflow-x-auto md:block">
-        <table className={cn(htmlTable, "min-w-[36rem] text-xs")}>
+        <table className={cn(htmlTable, "min-w-[36rem]")}>
           <thead>
             <tr className="border-b border-border text-muted-foreground">
               <th className={cn(htmlCell, "font-medium")}>Student</th>
