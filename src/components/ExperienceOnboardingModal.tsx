@@ -4,10 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
+  FieldContent,
   FieldDescription,
+  FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Input } from "@/components/ui/input";
+import { SUGGEST_MENU } from "@/components/ui/Panel";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { ownedBookPortfolios } from "@/lib/classroom";
@@ -537,19 +547,22 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 </p>
               </div>
               {added.length > 0 && (
-                <ul className="flex flex-col gap-1.5 text-sm">
+                <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                   {added.map((row) => (
-                    <li
-                      key={row.ticker}
-                      className="flex items-center justify-between rounded-lg bg-muted px-3 py-2"
-                    >
-                      <TickerSymbol ticker={row.ticker} />
-                      <span className="tabular-nums text-muted-foreground">
-                        {row.shares} @ {row.buyPrice}
-                      </span>
-                    </li>
+                    <Item key={row.ticker} size="sm" className="px-0">
+                      <ItemContent>
+                        <ItemTitle>
+                          <TickerSymbol ticker={row.ticker} />
+                        </ItemTitle>
+                      </ItemContent>
+                      <ItemActions>
+                        <span className="tabular-nums text-muted-foreground">
+                          {row.shares} @ {row.buyPrice}
+                        </span>
+                      </ItemActions>
+                    </Item>
                   ))}
-                </ul>
+                </ItemGroup>
               )}
               <Field>
                 <FieldLabel htmlFor="onboard-ticker">Ticker or company</FieldLabel>
@@ -577,7 +590,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     autoComplete="off"
                   />
                   {listOpen && suggestions.length > 0 && (
-                    <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-sm">
+                    <ul className={SUGGEST_MENU}>
                       {suggestions.map((row) => (
                         <li key={row.symbol}>
                           <button
@@ -777,35 +790,35 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   in Account.
                 </p>
               </div>
-              <div className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
-                <Checkbox
-                  id="note-morning"
-                  checked={noteMorning}
-                  onCheckedChange={(v) => setNoteMorning(v === true)}
-                  className="mt-0.5"
-                />
-                <label htmlFor="note-morning" className="min-w-0">
-                  <span className="font-medium text-foreground">Weekdays</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">
-                    What to watch before the open, then a recap after the US
-                    close.
-                  </span>
-                </label>
-              </div>
-              <div className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
-                <Checkbox
-                  id="note-sunday"
-                  checked={noteSunday}
-                  onCheckedChange={(v) => setNoteSunday(v === true)}
-                  className="mt-0.5"
-                />
-                <label htmlFor="note-sunday" className="min-w-0">
-                  <span className="font-medium text-foreground">Sundays</span>
-                  <span className="mt-0.5 block text-sm text-muted-foreground">
-                    The week that just finished, plus a look at the next ones.
-                  </span>
-                </label>
-              </div>
+              <FieldGroup>
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="note-morning"
+                    checked={noteMorning}
+                    onCheckedChange={(v) => setNoteMorning(v === true)}
+                  />
+                  <FieldContent>
+                    <FieldLabel htmlFor="note-morning">Weekdays</FieldLabel>
+                    <FieldDescription>
+                      What to watch before the open, then a recap after the US
+                      close.
+                    </FieldDescription>
+                  </FieldContent>
+                </Field>
+                <Field orientation="horizontal">
+                  <Checkbox
+                    id="note-sunday"
+                    checked={noteSunday}
+                    onCheckedChange={(v) => setNoteSunday(v === true)}
+                  />
+                  <FieldContent>
+                    <FieldLabel htmlFor="note-sunday">Sundays</FieldLabel>
+                    <FieldDescription>
+                      The week that just finished, plus a look at the next ones.
+                    </FieldDescription>
+                  </FieldContent>
+                </Field>
+              </FieldGroup>
               <Button
                 type="button"
                 className="w-full"

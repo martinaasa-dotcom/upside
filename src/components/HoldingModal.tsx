@@ -9,6 +9,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { SUGGEST_MENU } from "@/components/ui/Panel";
 import { Spinner } from "@/components/ui/spinner";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import { ChevronRight, X } from "lucide-react";
@@ -429,7 +430,7 @@ export function HoldingModal({
                 aria-invalid={Boolean(error)}
               />
               {listOpen && suggestions.length > 0 && (
-                <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover shadow-sm">
+                <ul className={SUGGEST_MENU}>
                   {suggestions.map((row) => (
                     <li key={row.symbol}>
                       <button

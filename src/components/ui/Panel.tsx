@@ -57,6 +57,7 @@ import {
  *   Shell      black field, lifted cards. Primary is near-white. Nested is muted.
  *              Green is an up number, not a wash.
  *   Stack      field is bg-background. A box on the field is bg-card.
+ *              Floating menus are bg-popover, never muted (muted is hover).
  *              Nested is bg-muted. Never a card inside a card.
  *   Card       ring-1 ring-foreground/10. Nested boxes are muted, no second ring.
  *              Static facts are not nested pills. Use Item, Table, or
@@ -80,7 +81,7 @@ import {
  *              Caps stay on the logo only. Micro sits above a figure,
  *              never above a paragraph.
  *   Metrics    A row of numbers is separate cards (Scoreboard) with air
- *              between them (Score). Do not nest four Stat tiles in a panel.
+ *              between them (Score, gap-6). Do not nest four Stat tiles in a panel.
  *              Stat is the same cell, used alone. Figures are text-2xl.
  *              A Score with bullets is a reading tile: label text-sm
  *              semibold, status text-lg, bullets text-sm. Do not use
@@ -112,7 +113,7 @@ import {
  *              HairlineGrid) paint every track. The last row must be
  *              full. Never an empty leftover box. Snap columns with
  *              filledGridColumns / filledCardColumns. Do not hand-roll
- *              grid-cols-N on that pattern. Scoreboard is a gap-4 card
+ *              grid-cols-N on that pattern. Scoreboard is a gap-6 card
  *              grid, not a hairline bar.
  *
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
@@ -134,6 +135,9 @@ export const SCORE_CELL =
 /** Member / row list on the field. */
 export const LIST =
   "divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10";
+/** Anchored ticker/search menu. Popover fill plus a real edge on black. */
+export const SUGGEST_MENU =
+  "absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/20";
 
 const SHELL_TONES = {
   default: "bg-card ring-foreground/10",
@@ -721,7 +725,7 @@ export function Scoreboard({
   return (
     <div
       className={cn(
-        "grid gap-4",
+        "grid gap-6",
         HAIRLINE_TRACKS,
         className
       )}
@@ -820,6 +824,15 @@ export function Stat(props: ScoreProps) {
 }
 
 /**
+ * shadcn Tabs default trigger on a ToggleGroup. Muted track, no extra
+ * border (outline items inside a bordered well stacked two strokes).
+ * Off = muted type. Hover = brighter type + faint wash. On = lifted
+ * pill (background, input border, shadow), same as TabsTrigger.
+ */
+const SEGMENTED_ITEM =
+  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-foreground/10 hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:hover:bg-background dark:data-[state=on]:border-input dark:data-[state=on]:bg-input/30 dark:data-[state=on]:text-foreground dark:data-[state=on]:hover:bg-input/30";
+
+/**
  * The one segmented toggle. Overview's today/lifetime, the drawer's 3y/5y,
  * and the scenario picker used to be four hand-rolled copies with three
  * different active states. Labels always paint in full: compact pills size
@@ -859,20 +872,20 @@ export function Segmented<T extends string>({
           if (next) onChange(next as T);
         }}
         spacing={0}
-        variant="outline"
         disabled={disabled}
         aria-label={ariaLabel}
-        className={cn(
-          "max-w-full min-w-0 border border-border bg-muted p-0.5",
-          className
-        )}
+        className={cn("max-w-full min-w-0 bg-muted p-[3px]", className)}
       >
         {options.map((o) => (
           <ToggleGroupItem
             key={o.id}
             value={o.id}
             title={o.title}
-            className="touch-target md:min-h-0 md:min-w-0"
+            className={cn(
+              "min-w-0 flex-1 px-1.5",
+              SEGMENTED_ITEM,
+              "touch-target md:min-h-0 md:min-w-0"
+            )}
           >
             {o.label}
           </ToggleGroupItem>
@@ -895,34 +908,37 @@ export function Segmented<T extends string>({
       )}
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role="tab"
-          aria-selected={value === o.id}
-          disabled={disabled}
-          title={o.title}
-          onClick={() => onChange(o.id)}
-          className={cn(
-            "flex min-w-0 items-center justify-center px-2 text-sm font-medium transition disabled:opacity-40",
-            buttons
-              ? "touch-target min-h-9 rounded-lg border border-border"
-              : "touch-target bg-muted py-2.5 md:min-h-0 md:min-w-0",
-            value === o.id
-              ? buttons
-                ? "border-transparent bg-primary text-primary-foreground"
-                : "bg-primary text-primary-foreground"
-              : buttons
-                ? "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          )}
-        >
-          <span className="block max-w-full text-center leading-snug break-words">
-            {o.label}
-          </span>
-        </button>
-      ))}
+      {options.map((o) => {
+        const on = value === o.id;
+        return (
+          <button
+            key={o.id}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            disabled={disabled}
+            title={o.title}
+            onClick={() => onChange(o.id)}
+            className={cn(
+              "flex min-w-0 items-center justify-center px-2 text-sm font-medium transition-all disabled:opacity-40",
+              buttons
+                ? "touch-target min-h-9 rounded-lg border"
+                : "touch-target py-2.5 md:min-h-0 md:min-w-0",
+              on
+                ? buttons
+                  ? "border-input bg-input/30 text-foreground shadow-sm"
+                  : "bg-background text-foreground"
+                : buttons
+                  ? "border-input bg-transparent text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+            )}
+          >
+            <span className="block max-w-full text-center leading-snug break-words">
+              {o.label}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

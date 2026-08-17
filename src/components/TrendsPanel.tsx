@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -7,11 +8,12 @@ import {
   CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { InfoTip, Panel, PanelHeader } from "@/components/ui/Panel";
+import { EmptyState, InfoTip, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Signal, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -133,7 +135,7 @@ function TickerStoryCard({
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           {cashtag(row.ticker)}
-          {!isHolding ? <Badge variant="outline">watching</Badge> : null}
+          {!isHolding ? <Badge variant="secondary">watching</Badge> : null}
         </CardTitle>
         <CardDescription>{story.sentence}</CardDescription>
         <CardAction>
@@ -143,7 +145,7 @@ function TickerStoryCard({
           </Badge>
         </CardAction>
       </CardHeader>
-      <CardContent className="-mb-(--card-spacing) px-0">
+      <CardContent className={cn("px-0", row.divergence && "-mb-(--card-spacing)")}>
         {trend ? <SignalCell signal={trend} /> : null}
         <div className="grid sm:grid-cols-2">
           {rest.map((s, i) => (
@@ -154,15 +156,15 @@ function TickerStoryCard({
             />
           ))}
         </div>
-        {row.divergence ? (
-          <p className="border-t px-(--card-spacing) py-(--card-spacing) text-sm leading-relaxed text-muted-foreground">
-            Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
-            {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
-            other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
-            {row.divergence.weeksAgo === 0 ? "this week" : `${row.divergence.weeksAgo}w ago`}.
-          </p>
-        ) : null}
       </CardContent>
+      {row.divergence ? (
+        <CardFooter className="items-start text-sm leading-relaxed text-muted-foreground">
+          Price made a {row.divergence.kind === "bearish" ? "higher high" : "lower low"} (
+          {row.divergence.priceFrom.toFixed(0)} → {row.divergence.priceTo.toFixed(0)}) while RSI went the
+          other way ({row.divergence.rsiFrom.toFixed(0)} → {row.divergence.rsiTo.toFixed(0)}). Confirmed{" "}
+          {row.divergence.weeksAgo === 0 ? "this week" : `${row.divergence.weeksAgo}w ago`}.
+        </CardFooter>
+      ) : null}
     </Card>
   );
 }
@@ -288,7 +290,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
     .sort((a, b) => (b.rs13 ?? 0) - (a.rs13 ?? 0));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <Panel>
         <PanelHeader
           title="Is the trend changing?"
@@ -350,20 +352,17 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               Add
             </Button>
             {watchlist.map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2.5 py-1.5 text-sm text-foreground"
-              >
+              <Badge key={t} variant="secondary" className="h-8 gap-1.5 pr-1">
                 {cashtag(t)}
                 <button
                   type="button"
                   onClick={() => removeFromWatchlist(t)}
                   aria-label={`Remove ${t} from watchlist`}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="size-3" />
                 </button>
-              </span>
+              </Badge>
             ))}
           </div>
           {addError && (
@@ -373,22 +372,21 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
       </Panel>
 
       {error && (
-        <div className="rounded-xl border border-loss/30 bg-loss/10 px-4 py-3 text-sm text-loss">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertTriangle />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {rows == null && !error && (
-        <div className="rounded-xl bg-card px-4 py-10 text-center text-sm text-muted-foreground">
-          Reading four years of weekly bars …
-        </div>
+        <EmptyState title="Reading four years of weekly bars …" />
       )}
 
       {rows != null && rows.length === 0 && !error && (
-        <div className="rounded-xl bg-card px-4 py-10 text-center text-sm text-muted-foreground">
-          Add a holding, or watch a ticker above, and its trend read shows up
-          here.
-        </div>
+        <EmptyState
+          title="Nothing to read yet"
+          detail="Add a holding, or watch a ticker above, and its trend read shows up here."
+        />
       )}
 
       {rows != null && rows.length > 0 && (
@@ -399,7 +397,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
               : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing, those come first.`}
           </p>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-6">
             {stories.map(({ row }) => (
               <TickerStoryCard
                 key={row.ticker}

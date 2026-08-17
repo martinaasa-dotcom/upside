@@ -3,6 +3,7 @@
 import { track } from "@vercel/analytics";
 import { htmlCell, htmlTable } from "@/components/FluidTable";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { humanizeMargusText } from "@/lib/ai/humanize-copy";
 import type { CcChatContext } from "@/lib/ai/cc-advisor";
@@ -1072,7 +1073,7 @@ export function CcAdvisorChat({
                     <BookOpen className="h-4 w-4" />
                   </button>
                   {rulesOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl bg-popover p-3 text-popover-foreground shadow-sm ring-1 ring-foreground/10">
+                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-md ring-1 ring-foreground/20">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-muted-foreground">
                           Strategy rules
@@ -1293,33 +1294,37 @@ export function CcAdvisorChat({
             )}
 
             {error && isQuietChatFailure(error.message) && chatRetryRef.current ? (
-              <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                Didn&apos;t land that time. Send it again.
-              </div>
+              <Alert>
+                <AlertDescription>
+                  Didn&apos;t land that time. Send it again.
+                </AlertDescription>
+              </Alert>
             ) : screenshotTurn && !busy && (lastIsEmptyAssistant || error) ? (
-              <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted px-3 py-2">
-                <p className="text-sm font-semibold text-foreground">
-                  {screenshotFailCopy.title}
-                </p>
-                {screenshotFailCopy.lines.map((line, i) => (
-                  <p
-                    key={i}
-                    className={`text-sm leading-relaxed ${
-                      i === 0 ? "text-caution" : "text-muted-foreground"
-                    }`}
-                  >
-                    {line}
-                  </p>
-                ))}
-              </div>
+              <Alert>
+                <AlertTitle>{screenshotFailCopy.title}</AlertTitle>
+                <AlertDescription>
+                  {screenshotFailCopy.lines.map((line, i) => (
+                    <p
+                      key={i}
+                      className={i === 0 ? "text-caution" : undefined}
+                    >
+                      {line}
+                    </p>
+                  ))}
+                </AlertDescription>
+              </Alert>
             ) : error && !isQuietChatFailure(error.message) ? (
-              <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                {describeChatUiError(error.message)}
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {describeChatUiError(error.message)}
+                </AlertDescription>
+              </Alert>
             ) : lastIsEmptyAssistant && !error ? (
-              <div className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                Didn&apos;t land that time. Send it again.
-              </div>
+              <Alert>
+                <AlertDescription>
+                  Didn&apos;t land that time. Send it again.
+                </AlertDescription>
+              </Alert>
             ) : null}
           </div>
 

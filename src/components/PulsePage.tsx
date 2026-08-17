@@ -1,7 +1,16 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { track } from "@vercel/analytics";
 import {
@@ -15,14 +24,14 @@ import {
 } from "@/lib/format";
 import {
   EmptyState,
+  Metric,
   MicroLabel,
   Panel,
   PanelHeader,
   Pill,
   Reading,
   ScanList,
-  Score,
-  Scoreboard,
+  SUGGEST_MENU,
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
@@ -159,15 +168,11 @@ function pulseCardChrome({
   needsLook: boolean;
   downDay: boolean;
   status: ThesisStatus | null;
-}): string {
-  if (pinned) return "border-border bg-accent ring-1 ring-ring/30";
-  if (needsLook) {
-    if (downDay || status === "broken") {
-      return "border-l-[3px] border-loss/50 border-l-loss bg-loss/[0.12]";
-    }
-    return "border-l-[3px] border-caution/50 border-l-caution bg-caution/[0.12]";
-  }
-  return "border-border bg-muted";
+}): string | undefined {
+  if (pinned) return "bg-accent ring-ring/30";
+  if (!needsLook) return undefined;
+  if (downDay || status === "broken") return "ring-destructive/40";
+  return "ring-warning/40";
 }
 
 function PulseCard({
@@ -218,68 +223,49 @@ function PulseCard({
     Boolean(shown?.thesisBreak);
 
   return (
-    <li
-      id={`pulse-card-${c.ticker}`}
-      className={cn(
-        "rounded-xl border px-4 py-4 scroll-mt-28",
-        pulseCardChrome({
+    <li id={`pulse-card-${c.ticker}`} className="scroll-mt-28">
+      <Card
+        className={pulseCardChrome({
           pinned,
           needsLook,
           downDay: pct < 0,
           status: shown ? status : null,
-        })
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-base font-semibold text-foreground">
-              {cashtag(c.ticker)}
-            </span>
-            {pinned && (
-              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-muted-foreground">
-                Your check
-              </span>
-            )}
-            {!c.inBook && (
-              <span className="rounded-md bg-accent px-2 py-0.5 text-sm text-muted-foreground">
-                Lookup
-              </span>
-            )}
-            {leftHold && (
-              <span className="rounded-md bg-accent px-2 py-0.5 text-sm font-medium text-muted-foreground">
-                Was Hold
-              </span>
-            )}
-            {c.isBigMove && (
-              <span
-                className={cn(
-                  "rounded-md px-2 py-0.5 text-sm font-medium",
-                  (c.effectivePct ?? 0) < 0
-                    ? "bg-loss/15 text-loss"
-                    : "bg-gain/15 text-gain"
-                )}
-              >
-                {(c.effectivePct ?? 0) < 0 ? "Down ≥5%" : "Up ≥5%"}
-              </span>
-            )}
-          </div>
-          <p
-            className={cn(
-              "mt-1 inline-flex items-center gap-1 text-sm font-medium tabular-nums",
-              up ? "text-gain" : "text-loss"
-            )}
-          >
-            {up ? (
-              <TrendingUp className="h-3.5 w-3.5" />
-            ) : (
-              <TrendingDown className="h-3.5 w-3.5" />
-            )}
-            {formatMovePct(c.effectivePct)}
-            <span className="font-normal text-muted-foreground">{c.moveLabel}</span>
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+        })}
+      >
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2">
+          {cashtag(c.ticker)}
+          {pinned ? <Badge variant="secondary">Your check</Badge> : null}
+          {!c.inBook ? <Badge variant="secondary">Lookup</Badge> : null}
+          {leftHold ? <Badge variant="secondary">Was Hold</Badge> : null}
+          {c.isBigMove ? (
+            <Badge
+              variant="outline"
+              className={
+                (c.effectivePct ?? 0) < 0
+                  ? "border-loss/30 bg-loss/10 text-loss"
+                  : "border-gain/30 bg-gain/10 text-gain"
+              }
+            >
+              {(c.effectivePct ?? 0) < 0 ? "Down ≥5%" : "Up ≥5%"}
+            </Badge>
+          ) : null}
+        </CardTitle>
+        <CardDescription
+          className={cn(
+            "inline-flex items-center gap-1 font-medium tabular-nums",
+            up ? "text-gain" : "text-loss"
+          )}
+        >
+          {up ? (
+            <TrendingUp className="size-3.5" />
+          ) : (
+            <TrendingDown className="size-3.5" />
+          )}
+          {formatMovePct(c.effectivePct)}
+          <span className="font-normal text-muted-foreground">{c.moveLabel}</span>
+        </CardDescription>
+        <CardAction className="flex flex-wrap items-center justify-end gap-1.5">
           {shown ? (
             <>
               <ActionBadge action={action} />
@@ -317,34 +303,35 @@ function PulseCard({
               <RefreshCw className={cn(loading && "animate-spin")} />
             </Button>
           )}
-        </div>
-      </div>
-
+        </CardAction>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
       {c.inBook ? (
-        <Scoreboard className="mt-4">
-          <Score
-            label="Price"
-            value={currency(c.price)}
-            sub={currency(c.currentValue)}
-          />
-          <Score
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Metric label="Price" hint={currency(c.currentValue)}>
+            {currency(c.price)}
+          </Metric>
+          <Metric
             label="Today"
-            value={signedCurrency(c.todayDollar)}
             valueClassName={signedTone(c.todayDollar, "text-foreground")}
-          />
-          <Score
+          >
+            {signedCurrency(c.todayDollar)}
+          </Metric>
+          <Metric
             label="Lifetime"
-            value={percent(c.roiPct)}
             valueClassName={signedTone(c.roiPct, "text-foreground")}
-          />
-          <Score
+          >
+            {percent(c.roiPct)}
+          </Metric>
+          <Metric
             label="Portfolio"
-            value={percent(c.bookPct)}
-            sub={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
-          />
-        </Scoreboard>
+            hint={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
+          >
+            {percent(c.bookPct)}
+          </Metric>
+        </div>
       ) : (
-        <p className="mt-3 text-sm tabular-nums text-muted-foreground">
+        <p className="text-sm tabular-nums text-muted-foreground">
           {currency(c.price)} - not in your portfolio
         </p>
       )}
@@ -352,7 +339,7 @@ function PulseCard({
       <PulseHistory ticker={c.ticker} />
 
       {hasBody ? (
-        <div className="flex flex-col mt-6 gap-4 border-t border-border pt-4">
+        <div className="flex flex-col gap-4 border-t border-border pt-4">
           {thesisBullets.length > 0 && (
             <Reading
               nested
@@ -360,13 +347,15 @@ function PulseCard({
                 <span className="flex w-full items-baseline justify-between gap-2">
                   <span>Thesis</span>
                   {onWriteThesis ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={onWriteThesis}
-                      className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                      className="h-auto px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
                     >
                       {writtenThesis.length > 0 ? "Edit" : "Add yours"}
-                    </button>
+                    </Button>
                   ) : null}
                 </span>
               }
@@ -403,9 +392,9 @@ function PulseCard({
       ) : null}
 
       {headlines.length > 0 && (
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="border-t border-border pt-4">
           <MicroLabel>In the news</MicroLabel>
-          <ul className="flex flex-col mt-2 gap-2">
+          <ul className="mt-2 flex flex-col gap-2">
             {headlines.slice(0, 2).map((h) => (
               <li key={h.link || h.title}>
                 <a
@@ -421,6 +410,8 @@ function PulseCard({
           </ul>
         </div>
       )}
+      </CardContent>
+      </Card>
     </li>
   );
 }
@@ -1005,12 +996,12 @@ export const PulsePage = memo(function PulsePage({
                   autoComplete="off"
                 />
                 {suggestions.length > 0 && searchInput.trim().length > 0 && (
-                  <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
+                  <ul className={SUGGEST_MENU}>
                     {suggestions.map((row) => (
                       <li key={row.symbol}>
                         <button
                           type="button"
-                          className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+                          className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
                           onClick={() => void checkTicker(row.symbol)}
                         >
                           <span className="font-medium">{cashtag(row.symbol)}</span>
@@ -1049,10 +1040,10 @@ export const PulsePage = memo(function PulsePage({
         )}
 
         {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-loss/30 bg-loss/10 px-3 py-2 text-sm text-loss">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <AlertTriangle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
       </Panel>
 
@@ -1083,7 +1074,7 @@ export const PulsePage = memo(function PulsePage({
           <h3 className="mb-3 text-sm font-medium text-muted-foreground">
             The one you asked about
           </h3>
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-6">
             <PulseCard
               candidate={pinnedCandidate}
               check={checksByTicker[pinnedCandidate.ticker.toUpperCase()]}
@@ -1116,7 +1107,7 @@ export const PulsePage = memo(function PulsePage({
           detail="Add a holding and Pulse starts watching it automatically. You can also type any ticker above for a one-off look."
         />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {attention.length > 0 && (
             <section>
               <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
@@ -1126,7 +1117,7 @@ export const PulsePage = memo(function PulsePage({
                 />
                 Needs a look
               </h3>
-              <ul className="flex flex-col gap-4">
+              <ul className="flex flex-col gap-6">
                 {attention.map((c) => (
                   <PulseCard
                     key={c.ticker}
@@ -1157,7 +1148,7 @@ export const PulsePage = memo(function PulsePage({
                   ? "Everything else"
                   : `Your ${plural(rest.length, "biggest holding")}`}
               </h3>
-              <ul className="flex flex-col gap-4">
+              <ul className="flex flex-col gap-6">
                 {rest.map((c) => (
                   <PulseCard
                     key={c.ticker}

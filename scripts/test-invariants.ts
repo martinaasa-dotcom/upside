@@ -2220,10 +2220,14 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /reading \? STATUS : DISPLAY/
   );
   assert.match(panel, /bg-primary text-primary-foreground/);
-  const segmented = panel.slice(panel.indexOf("export function Segmented"));
+  const segmented = panel.slice(panel.indexOf("const SEGMENTED_ITEM"));
   assert.doesNotMatch(segmented, /font-semibold/);
   assert.doesNotMatch(segmented, /flex-wrap/);
   assert.doesNotMatch(segmented, /truncate/);
+  assert.doesNotMatch(segmented, /border border-border bg-muted p-0.5/);
+  assert.doesNotMatch(segmented, /variant="outline"/);
+  assert.match(segmented, /data-\[state=on\]:bg-background/);
+  assert.match(segmented, /hover:bg-foreground\/10/);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),

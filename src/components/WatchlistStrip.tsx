@@ -438,7 +438,7 @@ export function WatchlistStrip({
             </PopoverAnchor>
             <PopoverContent
               align="end"
-              className="w-64 p-1"
+              className="w-64 border-border p-1 shadow-md ring-foreground/20"
               onOpenAutoFocus={(e) => e.preventDefault()}
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
