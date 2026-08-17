@@ -8,7 +8,6 @@ import {
 } from "@/lib/experience-tier";
 import { Button } from "@/components/ui/button";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
-import { cn } from "@/lib/format";
 import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { Check, GraduationCap, Settings, Sparkles, TrendingUp } from "lucide-react";
 import { useState } from "react";
@@ -113,7 +112,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
 
             {step === 3 ? (
               <div className="flex flex-col gap-3">
-                <label className="flex items-start gap-3 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground">
+                <label className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteMorning}
@@ -127,7 +126,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     </span>
                   </span>
                 </label>
-                <label className="flex items-start gap-3 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground">
+                <label className="flex items-start gap-3 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={noteSunday}
@@ -149,13 +148,14 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 >
                   {saving ? "Saving…" : "Continue"}
                 </Button>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  className="w-full"
                   onClick={() => setStep(2)}
-                  className="w-full text-sm text-muted-foreground hover:text-foreground/80"
                 >
-                  ← Back
-                </button>
+                  Back
+                </Button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -163,44 +163,44 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                   ? Q1_OPTIONS.map((opt) => {
                       const Icon = opt.icon;
                       return (
-                        <button
+                        <Button
                           key={opt.id}
                           type="button"
+                          variant="outline"
+                          className="h-auto w-full justify-start py-3"
                           onClick={() => {
                             setQ1(opt.id);
                             setStep(2);
                           }}
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                            "border-border bg-muted text-foreground hover:bg-accent"
-                          )}
                         >
-                          <Icon className="h-4 w-4 shrink-0 text-foreground/80" />
+                          <Icon data-icon="inline-start" />
                           {opt.label}
-                        </button>
+                        </Button>
                       );
                     })
                   : Q2_OPTIONS.map((opt) => (
-                      <button
+                      <Button
                         key={opt.id}
                         type="button"
+                        variant="outline"
+                        className="h-auto w-full justify-start py-3"
                         onClick={() => {
                           setQ2(opt.id);
                           setStep(3);
                         }}
-                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent"
                       >
                         {opt.label}
-                      </button>
+                      </Button>
                     ))}
                 {step === 2 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    className="mt-1 w-full"
                     onClick={() => setStep(1)}
-                    className="mt-1 text-sm text-muted-foreground hover:text-foreground/80"
                   >
-                    ← Back
-                  </button>
+                    Back
+                  </Button>
                 )}
               </div>
             )}
@@ -218,7 +218,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                 Next, paste what you own. That is the whole start.
               </p>
             </div>
-            <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted px-3.5 py-3 text-left text-sm text-foreground/80">
+            <div className="flex items-center gap-2.5 rounded-lg bg-muted px-3.5 py-3 text-left text-sm text-foreground/80">
               <Settings className="h-4 w-4 shrink-0 text-foreground/80" />
               <span>
                 Change the view and the email notes anytime in{" "}

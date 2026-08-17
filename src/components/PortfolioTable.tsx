@@ -606,7 +606,7 @@ export const PortfolioTable = memo(function PortfolioTable({
         )}
 
         {holdings.length > 0 && (
-          <div className="rounded-xl border border-border bg-muted px-4 py-4 text-sm">
+          <div className="rounded-lg bg-muted px-4 py-4 text-sm">
             <div className="flex justify-between font-semibold">
               <span className="text-foreground">Portfolio</span>
               <span className={cn("tabular-nums", signedTone(totals.roiPct))}>

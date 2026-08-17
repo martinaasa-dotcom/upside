@@ -383,7 +383,7 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted px-3 py-3">
+            <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-3">
               {avatarUrl && !avatarBroken ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -590,7 +590,7 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-border bg-muted px-3 py-3")}>
+            <div className={cn(SPLIT_ROW, "sm:items-center rounded-lg bg-muted px-3 py-3")}>
               <div className={SPLIT_COPY}>
                 <p className="text-sm font-medium text-foreground">
                   Download everything

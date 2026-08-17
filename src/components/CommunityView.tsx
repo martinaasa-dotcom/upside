@@ -1686,14 +1686,16 @@ export function CommunityView({ communityId }: Props) {
                             </p>
                           </div>
                         </div>
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-label="Field guide"
                           onClick={() => setBestiaryOpen(true)}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2.5 py-1.5 text-xs font-medium text-foreground/80 hover:bg-accent hover:text-foreground"
                         >
-                          <HelpCircle className="h-3.5 w-3.5" />
+                          <HelpCircle data-icon="inline-start" />
                           <span className="hidden sm:inline">Field guide</span>
-                        </button>
+                        </Button>
                       </div>
                       <div className="grid gap-6 lg:grid-cols-2 lg:gap-y-5">
                         {membersWithBooks.map((m) => (
@@ -1735,7 +1737,7 @@ export function CommunityView({ communityId }: Props) {
                         {achievements.map((a) => (
                           <div
                             key={a.id}
-                            className="flex h-full flex-col rounded-xl border border-border bg-muted p-3.5"
+                            className="flex h-full flex-col rounded-lg bg-muted p-3.5"
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-xl" aria-hidden>
@@ -1792,7 +1794,7 @@ export function CommunityView({ communityId }: Props) {
                                     setSelectedOwnerId(m.id);
                                     setSelectedPortfolioId(null);
                                   }}
-                                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3.5 py-2.5 text-left transition hover:bg-accent"
+                                  className="flex w-full items-center gap-3 rounded-lg bg-muted px-3.5 py-2.5 text-left transition hover:bg-accent"
                                 >
                                 <span className="w-6 shrink-0 text-center">
                                   {i === 0 ? (
@@ -1864,7 +1866,7 @@ export function CommunityView({ communityId }: Props) {
                         {sharedNames.map((row) => (
                           <li
                             key={row.ticker}
-                            className="rounded-xl border border-border bg-muted px-4 py-3"
+                            className="rounded-lg bg-muted px-4 py-3"
                           >
                             <div className="flex items-baseline justify-between gap-3">
                               <span className="font-heading text-base font-bold text-foreground">
@@ -1966,15 +1968,17 @@ export function CommunityView({ communityId }: Props) {
                           </p>
                         </div>
                       </div>
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
+                        className="touch-target"
                         onClick={() => setFunFactsShuffle((n) => n + 1)}
-                        className="touch-target inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:border-foreground/20 hover:bg-accent active:scale-95"
                         title="Get a fresh random batch"
                       >
-                        <Shuffle className="h-3.5 w-3.5" />
+                        <Shuffle data-icon="inline-start" />
                         Shuffle
-                      </button>
+                      </Button>
                     </div>
                     <ul className="flex flex-col gap-3">
                       {communityFunFacts.length === 0 ? (
@@ -1985,7 +1989,7 @@ export function CommunityView({ communityId }: Props) {
                         communityFunFacts.map((fact, i) => (
                           <li
                             key={`${i}-${fact.slice(0, 24)}`}
-                            className="rounded-xl border border-border/70 bg-muted p-4 text-sm leading-relaxed text-foreground"
+                            className="rounded-lg bg-muted p-4 text-sm leading-relaxed text-foreground"
                           >
                             {fact}
                           </li>
@@ -2252,7 +2256,7 @@ export function CommunityView({ communityId }: Props) {
                   </section>
 
                   {isAdmin && joinRequests.length > 0 && (
-                    <section className="flex flex-col gap-3 rounded-xl border border-border bg-accent p-4">
+                    <section className="flex flex-col gap-3 rounded-lg bg-accent p-4">
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <UserCheck className="h-4 w-4 text-foreground/80" />
                         Join requests
@@ -2473,7 +2477,7 @@ export function CommunityView({ communityId }: Props) {
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to community
               </button>
-              <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg shadow-black/40 backdrop-blur-sm">
+              <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl bg-card/95 px-4 py-3 shadow-sm ring-1 ring-foreground/10 backdrop-blur-sm">
                 <p className="text-sm font-semibold text-foreground">
                   Read-only · owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
@@ -3164,7 +3168,7 @@ function ReadOnlyHoldings({
           </div>
         </Card>
       </div>
-      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
+      <div className="hidden overflow-x-auto rounded-xl bg-card ring-1 ring-foreground/10 md:block">
         <table className={cn(htmlTable, "min-w-[36rem]")}>
           <thead className="border-b border-border text-xs text-muted-foreground">
             <tr>

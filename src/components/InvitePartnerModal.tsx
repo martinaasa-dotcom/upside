@@ -183,7 +183,7 @@ export function InvitePartnerModal({
         {err && <p className="mt-2 text-sm text-loss">{err}</p>}
         {msg && <p className="mt-2 text-sm text-gain">{msg}</p>}
         {(link || code) && (
-          <div className="flex flex-col mt-3 gap-2 rounded-xl border border-border bg-muted p-3">
+          <div className="flex flex-col mt-3 gap-2 rounded-lg bg-muted p-3">
             {code && (
               <div className="flex items-center justify-between gap-2">
                 <p className="font-mono text-sm text-primary">{code}</p>

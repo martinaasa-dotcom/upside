@@ -390,7 +390,7 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl border border-border bg-muted px-3.5 py-3 text-left"
+              className="w-full rounded-lg bg-muted px-3.5 py-3 text-left"
             >
               <MicroLabel>
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
@@ -426,7 +426,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl border border-border bg-muted py-3.5 pl-4 pr-3 text-left transition hover:bg-accent sm:gap-3 sm:pr-4"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg bg-muted py-3.5 pl-4 pr-3 text-left transition hover:bg-accent sm:gap-3 sm:pr-4"
     >
       <span
         className={cn(

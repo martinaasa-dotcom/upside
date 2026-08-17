@@ -426,17 +426,18 @@ export function TickerDrawer({
           </Card>
 
           {onAskMargus && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              className="h-auto w-full py-3"
               onClick={() => {
                 onClose();
                 onAskMargus();
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-accent"
             >
-              <Bot className="h-4 w-4 text-primary" />
+              <Bot data-icon="inline-start" />
               Ask Margus about {cashtag(ticker)}
-            </button>
+            </Button>
           )}
         </div>
       </div>

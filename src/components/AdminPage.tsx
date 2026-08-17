@@ -200,7 +200,7 @@ export function AdminPage() {
 
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
               <Shield className="h-5 w-5" />
             </div>
             <div>
@@ -245,7 +245,7 @@ export function AdminPage() {
                     ).map(([label, n]) => (
                       <div
                         key={label}
-                        className="rounded-xl border border-border bg-card px-3 py-3"
+                        className="rounded-xl bg-card ring-1 ring-foreground/10 px-3 py-3"
                       >
                         <p className="text-lg font-semibold tabular-nums text-foreground">
                           {n}
@@ -488,7 +488,7 @@ export function AdminPage() {
                             Open
                           </Link>
                         </div>
-                        <ul className="divide-y divide-border/80 overflow-hidden rounded-xl border border-border bg-card">
+                        <ul className="divide-y divide-border/80 overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
                           {(c.members ?? []).map((m) => (
                             <li
                               key={`${c.id}-${m.user_id}`}

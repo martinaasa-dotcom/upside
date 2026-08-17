@@ -1070,19 +1070,20 @@ export function CcAdvisorChat({
                     <BookOpen className="h-4 w-4" />
                   </button>
                   {rulesOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-popover p-3 text-popover-foreground">
+                    <div className="absolute right-0 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl bg-popover p-3 text-popover-foreground shadow-sm ring-1 ring-foreground/10">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-muted-foreground">
                           Strategy rules
                         </p>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={() => setRulesOpen(false)}
-                          className="rounded p-3 text-muted-foreground hover:text-foreground/80 sm:p-0.5"
                           aria-label="Close rules"
                         >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                          <X />
+                        </Button>
                       </div>
                       <ul className="flex flex-col max-h-72 gap-2.5 overflow-y-auto">
                         {RULES.map((r) => (
@@ -1137,15 +1138,16 @@ export function CcAdvisorChat({
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestions.map((s) => (
-                    <button
+                    <Button
                       key={s}
                       type="button"
+                      variant="outline"
+                      size="sm"
                       disabled={busy}
                       onClick={() => sendMessage({ text: s })}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-foreground/80 hover:bg-accent hover:text-primary disabled:opacity-50"
                     >
                       {s}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -1207,7 +1209,7 @@ export function CcAdvisorChat({
                   className={
                     message.role === "user"
                       ? "ml-0 max-w-[95%] rounded-lg bg-accent/80 px-3 py-2 text-sm text-foreground sm:ml-6"
-                      : "w-full min-w-0 rounded-xl border border-border bg-card px-4 py-3 text-base text-foreground"
+                      : "w-full min-w-0 rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-3 text-base text-foreground"
                   }
                 >
                   <p

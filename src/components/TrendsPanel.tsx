@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Panel, PanelHeader, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
@@ -96,9 +97,7 @@ function TickerStoryCard({
             {cashtag(row.ticker)}
           </span>
           {!isHolding && (
-            <span className="rounded-lg border border-border px-2 py-0.5 text-sm text-muted-foreground">
-              watching
-            </span>
+            <Badge variant="outline">watching</Badge>
           )}
         </div>
         <span

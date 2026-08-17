@@ -6,6 +6,7 @@ import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { MicroLabel, Panel, PanelHeader, Score, Scoreboard } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/button";
 import { plainError } from "@/lib/plain-error";
 import { isAbortError, isNetworkError } from "@/lib/abort";
 import { useNetworkResume } from "@/lib/use-network-resume";
@@ -382,14 +383,15 @@ function ViewMoreButton({
 }) {
   if (remaining <= 0) return null;
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      className="w-full"
       onClick={onClick}
-      className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground"
     >
       View more
       {remaining > 7 ? ` · ${remaining}` : ""}
-    </button>
+    </Button>
   );
 }
 

@@ -16,6 +16,7 @@ import {
   SPLIT_COPY,
   SPLIT_ROW,
 } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/button";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { PALETTE } from "@/lib/palette";
@@ -192,7 +193,7 @@ function PlaybookItem({
 
 export function ForecastOffStub({ onShow }: { onShow: () => void }) {
   return (
-    <div className={cn(SPLIT_ROW, NESTED_PAD, "sm:items-center rounded-xl border border-border bg-muted")}>
+    <div className={cn(SPLIT_ROW, NESTED_PAD, "sm:items-center rounded-lg bg-muted")}>
       <div className={SPLIT_COPY}>
         <p className="text-sm font-medium text-foreground">Forecast is off</p>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -925,30 +926,29 @@ export const ForecastPanel = memo(function ForecastPanel({
           actions={
             <>
               {overrideCount > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onClearOverrides}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:border-foreground/20 hover:text-foreground"
                   title="Throw away every price you or Margus changed on this portfolio"
                 >
-                  <RotateCcw className="h-3 w-3" aria-hidden />
+                  <RotateCcw data-icon="inline-start" aria-hidden />
                   Undo my changes ({overrideCount})
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="button"
                 disabled={busy || model.rows.length === 0}
                 onClick={() => void askMargus()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-accent px-3 py-1.5 text-sm font-semibold text-foreground transition hover:border-foreground/20 hover:bg-primary hover:text-primary-foreground disabled:opacity-40"
                 title="Work the whole forecast out again from scratch"
               >
                 {busy ? (
-                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                  <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
                 ) : (
-                  <Sparkles className="h-3 w-3" aria-hidden />
+                  <Sparkles data-icon="inline-start" aria-hidden />
                 )}
                 {busy ? "Thinking …" : plan ? "Work it out again" : "Ask Margus"}
-              </button>
+              </Button>
             </>
           }
         />
@@ -1034,7 +1034,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               </Card>
             ))}
 
-            <div className={cn("rounded-xl border border-border bg-muted", NESTED_PAD)}>
+            <div className={cn("rounded-lg bg-muted", NESTED_PAD)}>
               <p className="text-sm font-medium text-muted-foreground">
                 Whole portfolio
               </p>
@@ -1216,7 +1216,7 @@ export const ForecastPanel = memo(function ForecastPanel({
             )}
 
             {lastPlanDiffs.length > 0 && (
-              <div className="overflow-hidden rounded-xl border border-border bg-muted">
+              <div className="overflow-hidden rounded-lg bg-muted">
                 <div className="border-b border-border px-4 py-3">
                   <p className="text-sm font-medium text-muted-foreground">Vs last plan</p>
                 </div>
@@ -1250,7 +1250,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               <div
                 className={cn(
                   SPLIT_ROW,
-                  "sm:items-center rounded-xl border border-border bg-muted px-4 py-4 text-sm text-foreground"
+                  "sm:items-center rounded-lg bg-muted px-4 py-4 text-sm text-foreground"
                 )}
               >
                 <span className={SPLIT_COPY}>
@@ -1259,13 +1259,14 @@ export const ForecastPanel = memo(function ForecastPanel({
                   {busy ? " Updating …" : ""}
                 </span>
                 {!busy && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => void askMargus()}
-                    className="shrink-0 rounded-lg border border-border px-2.5 py-1 font-semibold text-foreground transition hover:bg-accent"
                   >
                     Update it
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

@@ -264,12 +264,12 @@ export function CommunitiesList() {
                 {[0, 1].map((i) => (
                   <div
                     key={i}
-                    className="h-[3.75rem] animate-pulse rounded-xl border border-border bg-muted"
+                    className="h-[3.75rem] animate-pulse rounded-lg bg-muted"
                   />
                 ))}
               </div>
             ) : (
-              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted">
+              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg bg-muted">
                 {communities.length === 0 && (
                   <li className="flex flex-col items-center gap-2 px-4 py-10 text-center">
                     <Users className="h-6 w-6 text-muted-foreground" />
@@ -328,12 +328,12 @@ export function CommunitiesList() {
               icon={<Compass className="h-4 w-4" />}
             />
             {discover.length === 0 ? (
-              <p className="mt-4 rounded-xl border border-border bg-muted px-4 py-6 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-4 rounded-lg bg-muted px-4 py-6 text-sm leading-relaxed text-muted-foreground">
                 No public circles right now. If you start one, flip it to
                 Public so people can ask in.
               </p>
             ) : (
-              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted">
+              <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg bg-muted">
                 {discover.map((c) => (
                   <li
                     key={c.id}
@@ -361,18 +361,18 @@ export function CommunitiesList() {
                         Requested · pending
                       </span>
                     ) : (
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
                         onClick={() => void beginJoinRequest(c.id, c.name)}
                         disabled={requestBusyId === c.id}
-                        className="shrink-0 rounded-lg border border-border bg-muted px-3 py-1.5 text-sm font-semibold text-foreground hover:border-foreground/20/50 hover:text-foreground disabled:opacity-50"
                       >
                         {requestBusyId === c.id
                           ? "Requesting …"
                           : c.requestStatus === "rejected"
                             ? "Request again"
                             : "Request to join"}
-                      </button>
+                      </Button>
                     )}
                   </li>
                 ))}

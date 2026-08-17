@@ -1078,7 +1078,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           )}
           <div className="mt-4 lg:hidden">
             {upcomingMilestones.length > 0 ? (
-              <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-muted">
+              <ul className="divide-y divide-border overflow-hidden rounded-lg bg-muted">
                 {upcomingMilestones.map((row, i) => (
                   <MilestoneLadderRow
                     key={row.goal}
@@ -1093,7 +1093,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             {clearedMilestones.length > 0 ? (
               <details
                 className={cn(
-                  "rounded-xl border border-border bg-muted",
+                  "rounded-lg bg-muted",
                   upcomingMilestones.length > 0 && "mt-3"
                 )}
                 {...(upcomingMilestones.length === 0 ? { open: true } : {})}
@@ -1244,7 +1244,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
 
           {/* The full grid used to be its own panel below. Same numbers, so it
             * lives here folded up instead of as a seventh thing to scroll past. */}
-          <details className="mt-4 rounded-xl border border-border bg-muted">
+          <details className="mt-4 rounded-lg bg-muted">
             <summary className="cursor-pointer px-3.5 py-2.5 text-sm font-medium text-foreground/80 transition hover:text-foreground">
               Show every year as a table
             </summary>

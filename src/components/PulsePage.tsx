@@ -292,8 +292,10 @@ function PulseCard({
             <span className="text-sm text-muted-foreground">Checking …</span>
           ) : null}
           {onRefresh && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={onRefresh}
               disabled={loading}
               title={
@@ -302,10 +304,10 @@ function PulseCard({
                   : "Re-check just this ticker now"
               }
               aria-label={`Re-check ${c.ticker}`}
-              className="relative rounded-lg border border-border/80 bg-muted/70 p-1.5 text-muted-foreground transition after:absolute after:-inset-2 after:content-[''] hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
+              className="relative text-muted-foreground after:absolute after:-inset-2 after:content-['']"
             >
-              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
-            </button>
+              <RefreshCw className={cn(loading && "animate-spin")} />
+            </Button>
           )}
         </div>
       </div>
