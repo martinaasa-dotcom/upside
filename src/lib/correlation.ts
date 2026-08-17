@@ -3,23 +3,29 @@
 export function pearson(a: number[], b: number[]): number | null {
   const n = Math.min(a.length, b.length);
   if (n < 5) return null;
-  const ax = a.slice(-n);
-  const bx = b.slice(-n);
-  const meanA = ax.reduce((s, x) => s + x, 0) / n;
-  const meanB = bx.reduce((s, x) => s + x, 0) / n;
+  const pairs: Array<[number, number]> = [];
+  for (let i = a.length - n, j = b.length - n; i < a.length && j < b.length; i++, j++) {
+    const x = a[i]!;
+    const y = b[j]!;
+    if (Number.isFinite(x) && Number.isFinite(y)) pairs.push([x, y]);
+  }
+  if (pairs.length < 5) return null;
+  const meanA = pairs.reduce((s, [x]) => s + x, 0) / pairs.length;
+  const meanB = pairs.reduce((s, [, y]) => s + y, 0) / pairs.length;
   let num = 0;
   let denA = 0;
   let denB = 0;
-  for (let i = 0; i < n; i++) {
-    const da = ax[i]! - meanA;
-    const db = bx[i]! - meanB;
+  for (const [x, y] of pairs) {
+    const da = x - meanA;
+    const db = y - meanB;
     num += da * db;
     denA += da * da;
     denB += db * db;
   }
   const den = Math.sqrt(denA * denB);
-  if (den === 0) return null;
-  return num / den;
+  if (!(den > 0)) return null;
+  const out = num / den;
+  return Number.isFinite(out) ? out : null;
 }
 
 export type CorrCell = {

@@ -3,6 +3,7 @@
 import { FluidRow, FluidTable, cellBase } from "@/components/FluidTable";
 import { Card, EmptyState, Panel, PanelHeader } from "@/components/ui/Panel";
 import { cn, signedTone, currency, percent, cashtag } from "@/lib/format";
+import { isSafePositiveMoney } from "@/lib/input-guard";
 import {
   blockWheelChange,
   formatDecimal,
@@ -50,8 +51,10 @@ function InlineTargetCall({
         onBlur={() => {
           focused.current = false;
           const n = parseDecimal(draft);
-          if (!Number.isNaN(n) && Math.round(n) / 100 !== value) {
-            onCommit(Math.round(n) / 100);
+          if (Number.isFinite(n) && n >= 0 && n <= 100) {
+            const pct = Math.round(n) / 100;
+            if (pct !== value) onCommit(pct);
+            else setDraft(display);
           } else setDraft(display);
         }}
         onKeyDown={(e) => {
@@ -102,7 +105,7 @@ function InlineStockTarget({
         onBlur={() => {
           focused.current = false;
           const n = parseDecimal(draft);
-          if (!Number.isNaN(n) && n > 0 && n !== value) {
+          if (isSafePositiveMoney(n) && n !== value) {
             onCommit(Math.round(n * 100) / 100);
           } else setDraft(display);
         }}

@@ -1468,6 +1468,7 @@ export function CommunityView({ communityId }: Props) {
                     the weekly recap.
                   </p>
                 ) : null}
+                <WidgetErrorBoundary name="Community totals">
                 <Scoreboard cols={3}>
                   <Score
                     label="Today"
@@ -1514,6 +1515,7 @@ export function CommunityView({ communityId }: Props) {
                     />
                   )}
                 </Scoreboard>
+                </WidgetErrorBoundary>
               </section>
 
               <div className="flex gap-1 rounded-lg border border-border bg-well/50 p-1 w-fit">
@@ -2816,6 +2818,7 @@ function bookTodayPct(
 }
 
 function signedPctPoints(n: number): string {
+  if (!Number.isFinite(n)) return "—";
   const abs = Math.abs(n).toFixed(1);
   if (n > 0) return `+${abs}%`;
   if (n < 0) return `-${abs}%`;
@@ -2947,7 +2950,11 @@ function PowerAnimalCard({
           <Scoreboard className="min-h-min shrink-0 lg:h-full" cols={2}>
             <Score
               label="Modeled year"
-              value={`${personality.expectedAnnualReturnPct.toFixed(1)}% a year`}
+              value={
+                Number.isFinite(personality.expectedAnnualReturnPct)
+                  ? `${personality.expectedAnnualReturnPct.toFixed(1)}% a year`
+                  : "—"
+              }
               sub={`${signedPctPoints(personality.modeledAlphaPct)} vs index`}
               subClassName={signedTone(personality.modeledAlphaPct, "text-muted")}
             />

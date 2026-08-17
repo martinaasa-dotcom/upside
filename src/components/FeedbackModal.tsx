@@ -14,6 +14,7 @@ import {
   type WeeklyHelpedId,
 } from "@/lib/feedback";
 import { plainError } from "@/lib/plain-error";
+import { useTimeout } from "@/lib/use-timeout";
 import { X } from "lucide-react";
 import { useState } from "react";
 
@@ -55,6 +56,7 @@ function toggleId<T extends string>(list: T[], id: T): T[] {
 }
 
 export function FeedbackModal({ mode, onClose, onSent }: Props) {
+  const later = useTimeout();
   const [weekly, setWeekly] = useState<WeeklyFeedbackAnswers>(emptyWeeklyAnswers);
   const [topic, setTopic] = useState("");
   const [body, setBody] = useState("");
@@ -82,7 +84,7 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
       }
       setSent(true);
       onSent();
-      window.setTimeout(onClose, 1400);
+      later(onClose, 1400);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send that.");
     } finally {

@@ -365,6 +365,7 @@ export function LabSheet({
       </Panel>
 
       {tab === "alloc" && !hiddenTabs.includes("alloc") && (
+        <WidgetErrorBoundary name="Allocation">
         <div className="space-y-4">
           {concentration.positionCount === 0 ? (
             <EmptyState
@@ -515,6 +516,7 @@ export function LabSheet({
             </>
           )}
         </div>
+        </WidgetErrorBoundary>
       )}
 
       {tab === "trends" && !hiddenTabs.includes("trends") && (
@@ -531,15 +533,12 @@ export function LabSheet({
 
       {tab === "risk" && !hiddenTabs.includes("risk") && (
         <WidgetErrorBoundary name="Risk">
+        <>
         <ScenarioSimulator
           holdings={scopedTickers}
           cash={scopedCash}
           scopeLabel={scopeLabel}
         />
-        </WidgetErrorBoundary>
-      )}
-
-      {tab === "risk" && !hiddenTabs.includes("risk") && (
         <Panel tone="plain" className="space-y-4">
           <div>
             <h3 className="text-base font-bold text-foreground">
@@ -635,7 +634,7 @@ export function LabSheet({
                                 : "text-muted"
                           )}
                         >
-                          {c.corr.toFixed(2)}
+                          {Number.isFinite(c.corr) ? c.corr.toFixed(2) : "—"}
                         </span>
                       </li>
                     ))}
@@ -664,6 +663,8 @@ export function LabSheet({
             </div>
           )}
         </Panel>
+        </>
+        </WidgetErrorBoundary>
       )}
     </div>
   );
@@ -685,7 +686,9 @@ function AllocCard({
             <div className="mb-0.5 flex justify-between text-sm text-muted">
               <span>{s.label}</span>
               <span className="tabular-nums">
-                {(s.pct * 100).toFixed(1)}% · {currency(s.value, 0)}
+                {Number.isFinite(s.pct)
+                  ? `${(s.pct * 100).toFixed(1)}% · ${currency(s.value, 0)}`
+                  : currency(s.value, 0)}
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-well">

@@ -112,7 +112,7 @@ export function FormattedNumberInput(props: FormattedNumberInputProps) {
       onFocus={handleFocus}
       onBlur={handleBlur}
       onWheel={blockWheelChange}
-      className={cn(className)}
+      className={cn("tabular-nums", className)}
     />
   );
 }

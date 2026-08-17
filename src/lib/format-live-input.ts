@@ -1,6 +1,11 @@
 /** Live-format helpers for money / percent inputs (en-US, as-you-type). */
 
+import { MAX_SAFE_MONEY } from "@/lib/money";
+
 export type CurrencyCode = "USD" | "EUR";
+
+/** A typed percent above this is a joke, not a rate. */
+const MAX_SAFE_PERCENT = 1_000_000;
 
 function currencySymbol(currency: CurrencyCode): string {
   return currency === "EUR" ? "€" : "$";
@@ -70,6 +75,13 @@ export function formatMoneyFromRaw(
       ? Number(`${intPart || "0"}.${fracPart}`)
       : Number(intPart || "0");
 
+  if (!Number.isFinite(value) || value > MAX_SAFE_MONEY) {
+    return {
+      display: formatLiveMoney(MAX_SAFE_MONEY, currency, fractionDigits),
+      value: MAX_SAFE_MONEY,
+    };
+  }
+
   const intFmt = formatIntCommas(intPart || "0");
   let body = intFmt;
   if (fractionDigits > 0) {
@@ -79,7 +91,7 @@ export function formatMoneyFromRaw(
 
   return {
     display: `${symbol}${body}`,
-    value: Number.isFinite(value) ? value : 0,
+    value,
   };
 }
 
@@ -108,6 +120,13 @@ export function formatPercentFromRaw(
       ? Number(`${intPart || "0"}.${fracPart}`)
       : Number(intPart || "0");
 
+  if (!Number.isFinite(value) || value > MAX_SAFE_PERCENT) {
+    return {
+      display: formatLivePercent(MAX_SAFE_PERCENT, fractionDigits),
+      value: MAX_SAFE_PERCENT,
+    };
+  }
+
   const intFmt = formatIntCommas(intPart || "0");
   let body = intFmt;
   if (trailingDot) body = `${intFmt}.`;
@@ -115,7 +134,7 @@ export function formatPercentFromRaw(
 
   return {
     display: `${body}%`,
-    value: Number.isFinite(value) ? value : 0,
+    value,
   };
 }
 

@@ -15,6 +15,7 @@ import {
 } from "@/lib/forecast";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import type { CoveredCallRow } from "@/lib/types";
+import { isSafePositiveMoney } from "@/lib/input-guard";
 import { Bot, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -98,7 +99,10 @@ export function TickerDrawer({
   const streak = estimateGreenStreak(sparkline);
   const roi =
     spot != null && buyPrice != null && buyPrice > 0
-      ? (spot - buyPrice) / buyPrice
+      ? (() => {
+          const v = (spot - buyPrice) / buyPrice;
+          return Number.isFinite(v) ? v : null;
+        })()
       : null;
   const level = conviction?.level ?? 3;
   const theme = forecastThemeForTicker(ticker);
@@ -120,7 +124,7 @@ export function TickerDrawer({
 
   function handleYearEditCommit(year: ForecastYear) {
     const parsed = Number.parseFloat(yearDraftPrice.replace(/,/g, "."));
-    if (!Number.isNaN(parsed) && parsed > 0 && onSetEoyPrice) {
+    if (isSafePositiveMoney(parsed) && onSetEoyPrice) {
       onSetEoyPrice(ticker!, year, Math.round(parsed * 100) / 100);
     }
     setEditingYear(null);
@@ -232,8 +236,9 @@ export function TickerDrawer({
                   <p className="mt-0.5 text-sm text-muted">
                     Works out to about{" "}
                     <span className="font-medium tabular-nums text-gain">
-                      {targetCagrPct >= 0 ? "+" : ""}
-                      {targetCagrPct.toFixed(1)}%
+                      {Number.isFinite(targetCagrPct)
+                        ? `${targetCagrPct >= 0 ? "+" : ""}${targetCagrPct.toFixed(1)}%`
+                        : "—"}
                     </span>{" "}
                     a year
                   </p>

@@ -71,7 +71,7 @@ const CURRENCIES: { code: CurrencyCode; label: string }[] = [
 ];
 
 const FIELD_CLASS =
-  "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-brand";
+  "w-full min-w-0 max-w-full rounded-lg border border-border bg-well px-3 py-2.5 text-sm font-semibold tabular-nums text-foreground outline-none focus:border-brand";
 
 const SHEET_PANEL = "h-auto min-w-0 max-w-full lg:h-full";
 
@@ -99,6 +99,7 @@ function milestoneWhen(row: CompoundMilestone): string {
 
 function milestoneWait(row: CompoundMilestone): string | null {
   if (milestoneDone(row) || row.yearsUntil == null) return null;
+  if (!Number.isFinite(row.yearsUntil)) return null;
   return `${row.yearsUntil.toFixed(1)} years`;
 }
 
@@ -806,7 +807,7 @@ export function CompoundInterestSheet({
               kind="percent"
               value={annualRateInput}
               onChange={(n) => {
-                patchDraft("ratePercent", Math.max(0, n));
+                patchDraft("ratePercent", Math.min(2000, Math.max(0, n)));
                 patchDraft("ratePeriod", "annual");
               }}
               className={cn(FIELD_CLASS, "pr-16")}
@@ -1168,7 +1169,7 @@ export function CompoundInterestSheet({
                         <td className="py-2.5 px-3 tabular-nums text-foreground/80">
                           {row.hit
                             ? "—"
-                            : row.yearsUntil != null
+                            : row.yearsUntil != null && Number.isFinite(row.yearsUntil)
                               ? `${row.yearsUntil.toFixed(1)} years`
                               : "—"}
                         </td>

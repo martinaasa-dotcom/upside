@@ -19,6 +19,7 @@ import {
   formatDecimal,
   parseDecimal,
 } from "@/lib/number-input";
+import { MAX_SAFE_MONEY, MAX_SAFE_SHARES } from "@/lib/money";
 import { sheetCashBalance } from "@/lib/cash-balance";
 import type { EnrichedHolding, Portfolio } from "@/lib/types";
 import { todayDollarFor } from "@/lib/overview";
@@ -91,7 +92,9 @@ function InlineNumber({
   const editDisplay =
     digits <= 0
       ? formatDecimal(value, 0)
-      : String(Number(value.toFixed(digits)));
+      : Number.isFinite(value)
+        ? String(Number(value.toFixed(digits)))
+        : "";
   const [draft, setDraft] = useState(display);
   const focused = useRef(false);
   const allowDecimal = digits > 0;
@@ -103,7 +106,7 @@ function InlineNumber({
   async function commit() {
     focused.current = false;
     const n = parseDecimal(draft);
-    if (Number.isNaN(n)) {
+    if (!Number.isFinite(n)) {
       setDraft(display);
       return;
     }
@@ -111,6 +114,11 @@ function InlineNumber({
       digits <= 0
         ? Math.round(n)
         : Math.round(n * 10 ** digits) / 10 ** digits;
+    const cap = digits <= 0 || digits >= 4 ? MAX_SAFE_SHARES : MAX_SAFE_MONEY;
+    if (!Number.isFinite(rounded) || rounded <= 0 || rounded > cap) {
+      setDraft(display);
+      return;
+    }
     if (rounded === value) {
       setDraft(display);
       return;

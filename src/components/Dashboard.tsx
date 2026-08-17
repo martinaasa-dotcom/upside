@@ -74,6 +74,10 @@ import {
   type PortfolioEoyOverrides,
 } from "@/lib/forecast-overrides";
 import { tradeCashDelta } from "@/lib/cash-delta";
+import { roundMoney } from "@/lib/money";
+import { parseHolding, parseHoldingList, parsePortfolio, parsePortfolioList } from "@/lib/parse-book";
+import { readJsonOrThrow } from "@/lib/http";
+import { isRecord, readFiniteNumber } from "@/lib/unknown";
 import {
   addPortfolio,
   deleteHolding,
@@ -389,6 +393,14 @@ export function Dashboard() {
   const bookAbortRef = useRef<AbortController | null>(null);
   const quotesAbortRef = useRef<AbortController | null>(null);
   const holdingPatchSeqRef = useRef(new Map<string, number>());
+  const cashWriteSeqRef = useRef(new Map<string, number>());
+  const pendingBookWritesRef = useRef(0);
+  const reloadAfterWritesRef = useRef(false);
+  const bookWriteChainRef = useRef(Promise.resolve());
+  const addingSheetRef = useRef<Promise<Portfolio | undefined> | null>(null);
+  const loadPortfoliosRef = useRef<(opts?: { silent?: boolean; retry?: boolean }) => Promise<void>>(
+    async () => undefined
+  );
   const [ccVisibleByPortfolio, setCcVisibleByPortfolio] =
     useState<VisibilityMap>({});
   const [forecastVisibleByPortfolio, setForecastVisibleByPortfolio] =
@@ -848,7 +860,10 @@ export function Dashboard() {
         }
         throw new Error(`Portfolios request failed (${res.status})`);
       }
-      return res.json();
+      return readJsonOrThrow<unknown>(
+        res,
+        "Couldn't load your portfolios. Try again."
+      );
     };
 
     try {
@@ -860,11 +875,7 @@ export function Dashboard() {
         if (userId) markSeedClaimed(userId);
       }
 
-      let data: {
-        source?: string;
-        portfolios?: Portfolio[];
-        holdings?: Holding[];
-      };
+      let data: unknown;
       try {
         data = opts?.retry
           ? await retryOnNetwork(fetchBook, { signal: ctrl.signal })
@@ -885,9 +896,16 @@ export function Dashboard() {
 
       if (ctrl.signal.aborted) return;
 
-      if (data.source === "supabase") {
-        const nextPortfolios = data.portfolios ?? [];
-        const nextHoldings = data.holdings ?? [];
+      if (pendingBookWritesRef.current > 0) {
+        reloadAfterWritesRef.current = true;
+        return;
+      }
+
+      const payload = isRecord(data) ? data : {};
+      const sourceName = typeof payload.source === "string" ? payload.source : "";
+      if (sourceName === "supabase") {
+        const nextPortfolios = parsePortfolioList(payload.portfolios);
+        const nextHoldings = parseHoldingList(payload.holdings);
         setSource("supabase");
         setPortfolios(nextPortfolios);
         setHoldings(nextHoldings);
@@ -952,6 +970,26 @@ export function Dashboard() {
       if (bookAbortRef.current === ctrl) setLoading(false);
     }
   }, [pickInitialSheet, refresh, user?.id]);
+  loadPortfoliosRef.current = loadPortfolios;
+
+  function beginBookWrite() {
+    pendingBookWritesRef.current += 1;
+  }
+  function endBookWrite() {
+    pendingBookWritesRef.current = Math.max(0, pendingBookWritesRef.current - 1);
+    if (pendingBookWritesRef.current === 0 && reloadAfterWritesRef.current) {
+      reloadAfterWritesRef.current = false;
+      void loadPortfolios({ silent: true });
+    }
+  }
+  function enqueueBookWrite(task: () => Promise<void>) {
+    const run = bookWriteChainRef.current.then(task, task);
+    bookWriteChainRef.current = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  }
 
   const applyFxPayload = useCallback((fx: {
     eurUsd?: number | null;
@@ -1514,6 +1552,17 @@ export function Dashboard() {
     const next = Number(cash);
     setPortfolios((prev) =>
       prev.map((p) => (p.id === portfolioId ? { ...p, cash_balance: next } : p))
+    );
+  }
+
+  function applyCashDelta(portfolioId: string, delta: number) {
+    if (!Number.isFinite(delta) || delta === 0) return;
+    setPortfolios((prev) =>
+      prev.map((p) =>
+        p.id === portfolioId
+          ? { ...p, cash_balance: roundMoney(p.cash_balance + delta) }
+          : p
+      )
     );
   }
 
@@ -2893,6 +2942,7 @@ export function Dashboard() {
         )}
 
         {isAlerts ? (
+          <WidgetErrorBoundary name="Alerts">
           <div className="space-y-4">
             {activeAlerts.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted">
@@ -2914,6 +2964,7 @@ export function Dashboard() {
               ))
             )}
           </div>
+          </WidgetErrorBoundary>
         ) : isPulse ? (
           <WidgetErrorBoundary name="Pulse">
           <PulsePage
@@ -3321,6 +3372,7 @@ export function Dashboard() {
         }}
       />
 
+      <WidgetErrorBoundary name="Ticker">
       <TickerDrawer
         open={Boolean(drawerTicker)}
         ticker={drawerTicker}
@@ -3341,7 +3393,8 @@ export function Dashboard() {
                   (s, h) => s + h.shares * h.buy_price,
                   0
                 );
-                return sh > 0 ? cost / sh : null;
+                const avg = sh > 0 ? cost / sh : NaN;
+                return Number.isFinite(avg) && avg > 0 ? avg : null;
               })()
             : null
         }
@@ -3373,6 +3426,7 @@ export function Dashboard() {
           setMargusExpandSignal((n) => n + 1);
         }}
       />
+      </WidgetErrorBoundary>
 
       <WidgetErrorBoundary name="Margus">
       <CcAdvisorChat

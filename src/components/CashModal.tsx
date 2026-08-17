@@ -99,7 +99,7 @@ export function CashModal({
               setError(null);
             }}
             onWheel={blockWheelChange}
-            className="rounded-lg border border-border bg-well px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+            className="rounded-lg border border-border bg-well px-3 py-2 text-sm tabular-nums text-foreground outline-none focus:border-brand"
             required
           />
         </label>

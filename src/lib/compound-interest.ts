@@ -1,5 +1,7 @@
 /** Pure compound-interest math for the Compound sheet. */
 
+import { finiteNumber, MAX_SAFE_MONEY } from "@/lib/money";
+
 export type RatePeriod = "annual" | "monthly" | "quarterly" | "daily";
 export type CompoundFrequency =
   | "annually"
@@ -158,7 +160,10 @@ function contribEachMonth(
  * stay accurate under any compound frequency.
  */
 export function calculateCompound(inputs: CompoundInputs): CompoundResult {
-  const principal = Math.max(0, Number(inputs.principal) || 0);
+  const principal = Math.min(
+    MAX_SAFE_MONEY,
+    Math.max(0, finiteNumber(inputs.principal))
+  );
   const rawRate = toAnnualRate(inputs.ratePercent, inputs.ratePeriod);
   // Cap so Math.exp / Math.pow stay finite. 2000%/yr is already a toy.
   const annualRate = Number.isFinite(rawRate)
@@ -187,8 +192,14 @@ export function calculateCompound(inputs: CompoundInputs): CompoundResult {
   let balance = principal;
   let accruedInterest = 0;
   let accruedContributions = 0;
-  let depositAmt = Math.max(0, Number(inputs.depositAmount) || 0);
-  let withdrawalAmt = Math.max(0, Number(inputs.withdrawalAmount) || 0);
+  let depositAmt = Math.min(
+    MAX_SAFE_MONEY,
+    Math.max(0, finiteNumber(inputs.depositAmount))
+  );
+  let withdrawalAmt = Math.min(
+    MAX_SAFE_MONEY,
+    Math.max(0, finiteNumber(inputs.withdrawalAmount))
+  );
 
   const mode = inputs.contributionMode;
   const useDeposits = mode === "deposits" || mode === "both";
@@ -220,8 +231,15 @@ export function calculateCompound(inputs: CompoundInputs): CompoundResult {
       }
     }
 
+    if (!Number.isFinite(interest)) interest = 0;
     balance += interest;
+    if (!Number.isFinite(balance) || balance > MAX_SAFE_MONEY) {
+      balance = MAX_SAFE_MONEY;
+    }
     accruedInterest += interest;
+    if (!Number.isFinite(accruedInterest) || accruedInterest > MAX_SAFE_MONEY) {
+      accruedInterest = MAX_SAFE_MONEY;
+    }
 
     // Contributions at end of month
     let contrib = 0;
@@ -231,18 +249,32 @@ export function calculateCompound(inputs: CompoundInputs): CompoundResult {
     if (useWithdrawals) {
       contrib -= contribEachMonth(withdrawalAmt, inputs.withdrawalFrequency, m);
     }
-    balance = Math.max(0, balance + contrib);
+    if (!Number.isFinite(contrib)) contrib = 0;
+    balance = Math.max(0, Math.min(MAX_SAFE_MONEY, balance + contrib));
     accruedContributions += contrib;
+    if (
+      !Number.isFinite(accruedContributions) ||
+      Math.abs(accruedContributions) > MAX_SAFE_MONEY
+    ) {
+      accruedContributions =
+        accruedContributions < 0 ? -MAX_SAFE_MONEY : MAX_SAFE_MONEY;
+    }
 
     // Annual increase after each completed year
     if ((m + 1) % 12 === 0 && inputs.annualIncrease) {
       if (inputs.increaseMode === "percent") {
-        const factor = 1 + inputs.annualIncrease / 100;
-        depositAmt *= factor;
-        withdrawalAmt *= factor;
+        const factor = 1 + finiteNumber(inputs.annualIncrease) / 100;
+        depositAmt = Math.min(MAX_SAFE_MONEY, depositAmt * factor);
+        withdrawalAmt = Math.min(MAX_SAFE_MONEY, withdrawalAmt * factor);
       } else {
-        depositAmt += inputs.annualIncrease;
-        withdrawalAmt += inputs.annualIncrease;
+        depositAmt = Math.min(
+          MAX_SAFE_MONEY,
+          depositAmt + finiteNumber(inputs.annualIncrease)
+        );
+        withdrawalAmt = Math.min(
+          MAX_SAFE_MONEY,
+          withdrawalAmt + finiteNumber(inputs.annualIncrease)
+        );
       }
     }
 

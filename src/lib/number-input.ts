@@ -9,7 +9,10 @@ export function blockWheelChange(e: WheelEvent<HTMLInputElement>) {
 /** Always parse with `.` as decimal (accepts `,` from paste). */
 export function parseDecimal(raw: string): number {
   const cleaned = raw.trim().replace(/\s/g, "").replace(",", ".");
-  return Number(cleaned);
+  if (!cleaned) return 0;
+  if (/^[+-]?(inf(inity)?|nan)$/i.test(cleaned)) return Number.NaN;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : Number.NaN;
 }
 
 /** Fixed decimal string with period separator (never locale commas). */

@@ -42,10 +42,17 @@ export function InvitePartnerModal({
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
   const [removeTarget, setRemoveTarget] = useState<OwnerRow | null>(null);
 
-  const loadOwners = useCallback(async () => {
-    const res = await fetch(`/api/portfolios/${portfolioId}/owners`);
-    const data = (await res.json().catch(() => ({}))) as { owners?: OwnerRow[] };
-    setOwners(data.owners ?? []);
+  const loadOwners = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const res = await fetch(`/api/portfolios/${portfolioId}/owners`, {
+        signal,
+      });
+      const data = (await res.json().catch(() => ({}))) as { owners?: OwnerRow[] };
+      if (signal?.aborted) return;
+      setOwners(data.owners ?? []);
+    } catch {
+      /* closed or network */
+    }
   }, [portfolioId]);
 
   useEffect(() => {
@@ -55,7 +62,9 @@ export function InvitePartnerModal({
     setCode(null);
     setMsg(null);
     setErr(null);
-    void loadOwners();
+    const ctrl = new AbortController();
+    void loadOwners(ctrl.signal);
+    return () => ctrl.abort();
   }, [open, loadOwners]);
 
   if (!open) return null;

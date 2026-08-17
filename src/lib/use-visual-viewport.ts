@@ -149,7 +149,7 @@ export function useVisualViewportVars() {
     }
 
     function onFocusOut() {
-      window.setTimeout(applyVisualViewportVars, 80);
+      keepTimers.push(window.setTimeout(applyVisualViewportVars, 80));
     }
 
     vv?.addEventListener("resize", applyVisualViewportVars);

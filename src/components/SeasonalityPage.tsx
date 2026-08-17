@@ -36,6 +36,7 @@ type Props = {
 };
 
 function fmtPct(v: number, digits = 1): string {
+  if (!Number.isFinite(v)) return "—";
   return `${v >= 0 ? "+" : ""}${v.toFixed(digits)}%`;
 }
 
@@ -387,8 +388,8 @@ function DayOfMonthChart({
             );
           }
           const v = row.avgReturnPct;
-          const mag = Math.min(1, Math.abs(v) / maxAbs);
-          const empty = row.samples === 0;
+          const mag = Number.isFinite(v) ? Math.min(1, Math.abs(v) / maxAbs) : 0;
+          const empty = row.samples === 0 || !Number.isFinite(v);
           const isSelected = selectedDay === day;
           const isToday = todayDay === day;
           return (

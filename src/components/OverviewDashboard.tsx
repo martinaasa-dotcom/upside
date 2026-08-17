@@ -45,6 +45,7 @@ import {
   saveVisitSnapshot,
   type VisitDiff,
 } from "@/lib/visit-diff";
+import { finiteNumber } from "@/lib/money";
 import { ArrowRight, Plus } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 
@@ -505,7 +506,7 @@ function PortfolioLane({
           <>
             {" · "}
             <span className={tone(sheet.todayDollar)}>
-              {signedCurrency(sheet.todayDollar)}
+              {signedCurrency(sheet.todayDollar, 0)}
             </span>
             {" today"}
           </>
@@ -569,7 +570,10 @@ export function OverviewDashboard({
     todayLosers,
     tickers,
   } = model;
-  const maxSheet = Math.max(...sheets.map((s) => s.totalValue), 1);
+  const maxSheet = Math.max(
+    1,
+    ...sheets.map((s) => finiteNumber(s.totalValue))
+  );
   const [visitDiff, setVisitDiff] = useState<VisitDiff | null>(null);
   const [moverHorizon, setMoverHorizon] = useState<"today" | "lifetime">(
     "today"
@@ -739,22 +743,15 @@ export function OverviewDashboard({
           />
           <Score
             label={morning.moveLabel}
-            value={signedCurrency(totals.todayDollar)}
+            value={signedCurrency(totals.todayDollar, 0)}
             sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
             valueClassName={tone(totals.todayDollar)}
             subClassName={tone(totals.todayDollar)}
           />
           <Score
             label="All time"
-            value={signedCurrency(totals.roiDollar)}
-            sub={
-              <>
-                <span className="md:hidden">{percent(totals.roiPct)}</span>
-                <span className="hidden md:inline">
-                  {percent(totals.roiPct)} vs cost you typed
-                </span>
-              </>
-            }
+            value={signedCurrency(totals.roiDollar, 0)}
+            sub={percent(totals.roiPct)}
             valueClassName={tone(totals.roiDollar)}
             subClassName={tone(totals.roiDollar)}
           />
@@ -888,12 +885,14 @@ export function OverviewDashboard({
         </Panel>
       )}
 
+      <WidgetErrorBoundary name="Watchlist">
       <Panel className="overview-fade">
         <WatchlistStrip
           heldTickers={tickers.map((t) => t.ticker)}
           onOpenPulse={onOpenPulse}
         />
       </Panel>
+      </WidgetErrorBoundary>
 
       {showCommunities ? (
         <WidgetErrorBoundary name="Around Upside Lab">

@@ -16,21 +16,24 @@ export function useTickerSearch(query: string): TickerSuggestion[] {
       return;
     }
     const id = ++gen.current;
+    const ctrl = new AbortController();
     const timer = window.setTimeout(() => {
       void fetch(`/api/market/search?q=${encodeURIComponent(q)}`, {
         cache: "no-store",
+        signal: ctrl.signal,
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((data: { results?: TickerSuggestion[] } | null) => {
-          if (gen.current !== id) return;
+          if (gen.current !== id || ctrl.signal.aborted) return;
           setRemote(Array.isArray(data?.results) ? data.results : []);
         })
         .catch(() => {
-          if (gen.current === id) setRemote([]);
+          if (gen.current === id && !ctrl.signal.aborted) setRemote([]);
         });
     }, 220);
     return () => {
       window.clearTimeout(timer);
+      ctrl.abort();
     };
   }, [query]);
 

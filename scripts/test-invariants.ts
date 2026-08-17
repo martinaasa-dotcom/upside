@@ -197,6 +197,7 @@ import { upsertHolding } from "../src/lib/demo-store";
 import {
   cagr,
   finiteNumber,
+  MAX_SAFE_MONEY,
   mean,
   roundMoney,
   safeDiv,
@@ -205,6 +206,9 @@ import {
 } from "../src/lib/money";
 import { cashtag, percent, signedPercent, splitMoveTint } from "../src/lib/format";
 import { sanitizeTickerDraft, sanitizeTickerQuery } from "../src/lib/input-guard";
+import { parseDecimal } from "../src/lib/number-input";
+import { formatMoneyFromRaw } from "../src/lib/format-live-input";
+import { pearson } from "../src/lib/correlation";
 import { priorPriceFromChange, synthesizeSparkline } from "../src/lib/market/sparkline";
 import { concentrationRead, themeBreakdown } from "../src/lib/allocation";
 import { analyzePortfolioShock } from "../src/lib/book-shock";
@@ -1198,7 +1202,7 @@ run("Sunday note never ships the writing brief", () => {
   assert.match(email, /Open your portfolio/);
   const notes = readFileSync("src/lib/note-margus.ts", "utf8");
   assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
-  assert.match(notes, /maxOutputTokens: report\.kind === "sunday" \? 560/);
+  assert.match(notes, /maxOutputTokens: 640/);
   assert.equal(
     looksLikePromptLeak(
       "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
@@ -1243,15 +1247,27 @@ run("note letters are one mix story, not stacked cards", () => {
     },
   });
   morning.margus = fallbackNoteTake(morning);
-  assert.match(morning.margus, /\$RDDT is the only name doing any real work/);
+  assert.match(morning.margus, /\$RDDT is \+8\.0% overnight/);
+  assert.match(morning.margus, /The move for you is doing nothing/);
+  assert.match(morning.margus, /As for the rest of your portfolio/);
   assert.match(morning.margus, /64% of your portfolio is AI computer companies/);
   assert.match(morning.margus, /you barely own the utilities that sell it/);
+  assert.match(morning.margus, /Nothing you need to do before the open/);
   assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight/);
-  assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some/i);
+  assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some|no moves/i);
   assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
   const html = noteReportHtml(morning);
-  assert.match(html, /Margus/);
+  assert.match(html, /Morning Pre-Market/);
   assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for/);
+  morning.news = {
+    ticker: "RDDT",
+    title: "Reddit to join the S&P 500",
+    publisher: "TradingView",
+  };
+  morning.margus = fallbackNoteTake(morning);
+  assert.match(morning.margus, /\[\[source: TradingView\]\]/);
+  assert.match(noteReportHtml(morning), /TradingView/);
+  assert.match(noteReportHtml(morning), /border-radius:999px/);
   const close = buildNoteReport({
     kind: "close",
     name: "Test",
@@ -1272,7 +1288,7 @@ run("note letters are one mix story, not stacked cards", () => {
   const closeTake = fallbackNoteTake(close);
   assert.match(closeTake, /\$RDDT did the work today/);
   assert.match(closeTake, /64%/);
-  assert.match(closeTake, /tonight/);
+  assert.match(closeTake, /Nothing you need to change tonight/);
   const sunday = buildNoteReport({
     kind: "sunday",
     name: "Test",
@@ -1290,10 +1306,10 @@ run("note letters are one mix story, not stacked cards", () => {
     },
   });
   const sundayTake = fallbackNoteTake(sunday);
-  assert.match(sundayTake, /\$RDDT/);
+  assert.match(sundayTake, /\$RDDT stole the show this week/);
   assert.doesNotMatch(sundayTake, /\n- \$/);
   assert.match(sundayTake, /64%/);
-  assert.match(sundayTake, /this weekend/);
+  assert.match(sundayTake, /Enjoy the rest of your Sunday/);
 });
 
 run("manual note cron stays on Martin", () => {
@@ -1700,7 +1716,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /default: "border-border bg-card"/);
   assert.match(panel, /rounded-xl border border-border bg-border/);
-  assert.match(panel, /SCORE_CELL = "min-w-0 bg-raised p-nested"/);
+  assert.match(panel, /SCORE_CELL = "min-w-0 bg-raised p-5"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -4561,6 +4577,42 @@ run("zero-balance books and junk inputs never emit NaN or Infinity", () => {
   assert.ok(Number.isFinite(compound.futureValue));
   assert.ok(Number.isFinite(compound.allTimeRoR));
 
+  const huge = calculateCompound({
+    principal: 1e308,
+    ratePercent: 1e9,
+    ratePeriod: "annual",
+    compound: "continuous",
+    years: 80,
+    months: 0,
+    contributionMode: "deposits",
+    depositAmount: 1e308,
+    depositFrequency: "monthly",
+    withdrawalAmount: 0,
+    withdrawalFrequency: "monthly",
+    increaseMode: "percent",
+    annualIncrease: 1e6,
+  });
+  assert.ok(Number.isFinite(huge.futureValue));
+  assert.ok(huge.futureValue <= MAX_SAFE_MONEY);
+  assert.ok(Number.isFinite(huge.allTimeRoR));
+  assert.notEqual(huge.futureValue, Number.POSITIVE_INFINITY);
+
+  assert.ok(Number.isNaN(parseDecimal("Infinity")));
+  assert.ok(Number.isNaN(parseDecimal("1e400")));
+  assert.equal(parseDecimal(""), 0);
+  assert.equal(parseDecimal("12.5"), 12.5);
+  const hugeMoney = formatMoneyFromRaw("999999999999999999", "USD", 0);
+  assert.equal(hugeMoney.value, MAX_SAFE_MONEY);
+  assert.ok(Number.isFinite(hugeMoney.value));
+  assert.equal(pearson([1, 2, Number.NaN], [1, 2, 3]), null);
+  const aligned = pearson([1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6]);
+  assert.equal(aligned, 1);
+  const gapped = pearson(
+    [1, 2, Number.NaN, 4, 5, 6, 7],
+    [1, 2, 3, 4, 5, 6, 7]
+  );
+  assert.ok(gapped != null && Number.isFinite(gapped));
+
   assert.equal(priorPriceFromChange(10, -100), 10);
   assert.ok(synthesizeSparkline(10, -100).every(Number.isFinite));
   assert.equal(percent(0.1 + 0.2), "30.0%");
@@ -4712,7 +4764,7 @@ run("dashboard modules sit behind an error boundary", () => {
     join(process.cwd(), "src/components/Dashboard.tsx"),
     "utf8"
   );
-  for (const name of ["Pulse", "Lab", "Overview", "Holdings", "Forecast", "Margus"]) {
+  for (const name of ["Pulse", "Lab", "Overview", "Holdings", "Forecast", "Margus", "Alerts", "Ticker"]) {
     assert.ok(
       dash.includes(`<WidgetErrorBoundary name="${name}">`),
       `Dashboard must isolate ${name}`
@@ -4731,6 +4783,7 @@ run("dashboard modules sit behind an error boundary", () => {
   );
   assert.ok(community.includes(`<WidgetErrorBoundary name="Daily Duel"`));
   assert.ok(/WidgetErrorBoundary[\s\S]{0,80}name="Member portfolio"/.test(community));
+  assert.ok(community.includes(`<WidgetErrorBoundary name="Community totals">`));
   const fund = readFileSync(
     join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
     "utf8"
@@ -4741,6 +4794,21 @@ run("dashboard modules sit behind an error boundary", () => {
     "utf8"
   );
   assert.ok(account.includes(`<WidgetErrorBoundary name="Account">`));
+  const overview = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  assert.ok(overview.includes(`<WidgetErrorBoundary name="Watchlist">`));
+  const lab = readFileSync(
+    join(process.cwd(), "src/components/LabSheet.tsx"),
+    "utf8"
+  );
+  assert.ok(lab.includes(`<WidgetErrorBoundary name="Allocation">`));
+  const strip = readFileSync(
+    join(process.cwd(), "src/components/AppStatusStrip.tsx"),
+    "utf8"
+  );
+  assert.ok(strip.includes(`<WidgetErrorBoundary name="Market"`));
 });
 
 run("no Refresh button in the top header", () => {
@@ -5156,6 +5224,31 @@ run("saved/copied flashes cannot setState after unmount", () => {
   );
   assert.ok(/useTimeout\(\)/.test(account));
   assert.ok(!/setTimeout\(\(\) => setTierSaved/.test(account));
+  const feedback = readFileSync(
+    join(process.cwd(), "src/components/FeedbackModal.tsx"),
+    "utf8"
+  );
+  assert.ok(/useTimeout\(\)/.test(feedback));
+  assert.ok(!/setTimeout\(onClose/.test(feedback));
+});
+
+run("search, long-press, and keyboard timers abort on unmount", () => {
+  const search = readFileSync(
+    join(process.cwd(), "src/lib/use-ticker-search.ts"),
+    "utf8"
+  );
+  assert.ok(/ctrl\.abort\(\)/.test(search));
+  assert.ok(/signal: ctrl\.signal/.test(search));
+  const tabs = readFileSync(
+    join(process.cwd(), "src/components/PortfolioTabs.tsx"),
+    "utf8"
+  );
+  assert.ok(/clearTimeout\(longPressRef\.current\)/.test(tabs));
+  const vv = readFileSync(
+    join(process.cwd(), "src/lib/use-visual-viewport.ts"),
+    "utf8"
+  );
+  assert.ok(/keepTimers\.push\(window\.setTimeout\(applyVisualViewportVars/.test(vv));
 });
 
 run("offline status is not read during render", () => {

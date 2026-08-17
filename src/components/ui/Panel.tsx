@@ -65,9 +65,10 @@ import {
  *              shrink-0 chrome. On a phone that leftover strip is ~80px
  *              and the sentence wraps one word per line.
  *   Inset      page gutter and panel pad are p-panel (20px). Nested
- *              cards and score cells are p-nested (16px). Same on a
- *              phone. Do not override to p-4 on mobile. Label to
- *              figure is mt-1. InfoTip must not stretch that row.
+ *              cards are p-nested (16px). Score cells use p-5 so the
+ *              figures have air. Same on a phone. Do not override to
+ *              p-4 on mobile. Label to figure is mt-2. InfoTip must
+ *              not stretch that row.
  *              A row of numbers is Scoreboard, never a loose
  *              MicroLabel grid with its own padding.
  *   Hairline   gap-px + bg-border grids (Scoreboard, Segmented fill,
@@ -89,7 +90,7 @@ export const PANEL_PAD = "p-panel";
 /** Nested card / score-cell padding. One step in from the panel. */
 export const NESTED_PAD = "p-nested";
 /** A Scoreboard cell. Use this instead of hand-rolling px-4 py-3.5. */
-export const SCORE_CELL = "min-w-0 bg-raised p-nested";
+export const SCORE_CELL = "min-w-0 bg-raised p-5";
 /** Member / row list on the field. */
 export const LIST =
   "divide-y divide-border overflow-hidden rounded-xl border border-border bg-card";
@@ -103,9 +104,9 @@ const SHELL_TONES = {
 } as const;
 
 const FIGURE =
-  "mt-1 font-sans text-base font-semibold tabular-nums";
+  "mt-2 font-sans text-base font-semibold tabular-nums";
 const DISPLAY =
-  "mt-1 min-w-0 font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg";
+  "mt-2 min-w-0 font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -606,7 +607,7 @@ export function Score({
   bulletsClassName,
   className,
 }: ScoreProps) {
-  const noteClass = cn("mt-1.5 text-sm leading-snug", subClassName ?? "text-muted");
+  const noteClass = cn("mt-2 text-sm leading-snug", subClassName ?? "text-muted");
   return (
     <div className={cn(SCORE_CELL, className)}>
       <MicroLabel>

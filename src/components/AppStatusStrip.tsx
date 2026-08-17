@@ -1,6 +1,7 @@
 "use client";
 
 import { MacroStrip } from "@/components/MacroStrip";
+import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { cn } from "@/lib/format";
 import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import { loadCachedQuotes } from "@/lib/quote-cache";
@@ -70,7 +71,9 @@ export function AppStatusStrip({
           ) : null}
           {quotesDelayed && sec != null && sec >= 30 * 60 ? " · delayed" : ""}
         </span>
-        <MacroStrip />
+        <WidgetErrorBoundary name="Market" className="min-w-0">
+          <MacroStrip />
+        </WidgetErrorBoundary>
       </div>
     </div>
   );

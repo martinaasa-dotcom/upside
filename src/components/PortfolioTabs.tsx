@@ -53,6 +53,15 @@ export function PortfolioTabs({
   const [mounted, setMounted] = useState(false);
   const dockRef = useRef<HTMLElement>(null);
   const longPressRef = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (longPressRef.current != null) {
+        window.clearTimeout(longPressRef.current);
+        longPressRef.current = null;
+      }
+    },
+    []
+  );
   useDockPad(dockRef);
   const sheetRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sheetActive = portfolios.some((p) => p.id === activeId);

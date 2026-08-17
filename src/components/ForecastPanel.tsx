@@ -50,6 +50,7 @@ import { countOverrides } from "@/lib/forecast-overrides";
 import type { PortfolioEoyOverrides } from "@/lib/forecast-overrides";
 import { isForecastFullyCovered } from "@/lib/forecast";
 import { playbookBullets, type PlaybookBullet } from "@/lib/forecast-playbook";
+import { isSafePositiveMoney } from "@/lib/input-guard";
 import { blockWheelChange } from "@/lib/number-input";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
 import {
@@ -230,7 +231,7 @@ function EoyPriceInput({
   targeted: boolean;
   onCommit: (n: number) => void;
 }) {
-  const display = value.toFixed(2);
+  const display = Number.isFinite(value) ? value.toFixed(2) : "";
   const [draft, setDraft] = useState(display);
   const focused = useRef(false);
 
@@ -254,7 +255,7 @@ function EoyPriceInput({
       onBlur={() => {
         focused.current = false;
         const n = Number.parseFloat(draft);
-        if (!Number.isNaN(n) && n > 0) {
+        if (isSafePositiveMoney(n)) {
           onCommit(Math.round(n * 100) / 100);
         } else {
           setDraft(display);
